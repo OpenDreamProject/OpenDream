@@ -136,14 +136,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public ProcStatus OperatorOutput(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorOutput(DreamValue a, DreamValue b, DMProcState state) {
             if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client))
                 throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Client}");
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
             state.Push(DreamValue.Null);
-            return ProcStatus.Returned;
+            return null;
         }
 
         private void ScreenValueAssigned(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {

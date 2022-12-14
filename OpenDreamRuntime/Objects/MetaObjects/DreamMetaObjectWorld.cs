@@ -180,12 +180,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public ProcStatus OperatorOutput(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorOutput(DreamValue a, DreamValue b, DMProcState state) {
             foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }
             state.Push(DreamValue.Null);
-            return ProcStatus.Returned;
+            return null;
         }
     }
 }

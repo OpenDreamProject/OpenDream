@@ -51,7 +51,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             yield return ret;
         }
 
-        public ProcStatus OperatorMultiply(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorMultiply(DreamValue a, DreamValue b, DMProcState state) {
             if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject left))
                 throw new ArgumentException($"Invalid matrix {a}");
 
@@ -72,7 +72,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 output.SetVariable("f", new(lF * bFloat));
 
                 state.Push(new DreamValue(output));
-                return ProcStatus.Returned;
+                return null;
             } else if (b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject right)) {
                 right.GetVariable("a").TryGetValueAsFloat(out float rA);
                 right.GetVariable("b").TryGetValueAsFloat(out float rB);
@@ -90,7 +90,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 output.SetVariable("f", new(rC * lD + rF * lE + lF));
 
                 state.Push(new DreamValue(output));
-                return ProcStatus.Returned;
+                return null;
             }
 
             if (ParentType == null)
@@ -99,7 +99,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorMultiply(a, b, state);
         }
 
-        public ProcStatus OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? right)) {
                 const string elements = "abcdef";
                 for (int i = 0; i < elements.Length; i++) {
@@ -108,17 +108,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (leftValue != rightValue)
                     {
                         state.Push(DreamValue.False);
-                        return ProcStatus.Returned;
+                        return null;
                     }
                 }
                 state.Push(DreamValue.True);
-                return ProcStatus.Returned;
+                return null;
             }
             state.Push(DreamValue.False); // This will never be true, because reaching this line means b is not a matrix, while a will always be.
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorBitNot(DreamValue a, DMProcState state)
+        public ProcStatus? OperatorBitNot(DreamValue a, DMProcState state)
         {
             throw new NotImplementedException("/matrix does not support the '~' operator yet");
         }

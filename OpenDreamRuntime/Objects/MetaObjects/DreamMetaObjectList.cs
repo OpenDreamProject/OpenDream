@@ -72,7 +72,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public ProcStatus OperatorAdd(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorAdd(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
             DreamList listCopy = list.CreateCopy();
 
@@ -85,10 +85,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             state.Push(new DreamValue(listCopy));
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorSubtract(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorSubtract(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
             DreamList listCopy = list.CreateCopy();
 
@@ -101,10 +101,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             state.Push(new DreamValue(listCopy));
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorAppend(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorAppend(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -115,10 +115,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 list.AddValue(b);
             }
             state.Push(new DreamValue(list));
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorRemove(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorRemove(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -132,10 +132,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             state.Push(a);
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorOr(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorOr(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {    // List | List
@@ -146,15 +146,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             state.Push(new DreamValue(list));
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamList(out var firstList) && b.TryGetValueAsDreamList(out var secondList)) {
                 if (firstList.GetLength() != secondList.GetLength())
                 {
                     state.Push(DreamValue.False);
-                    return ProcStatus.Returned;
+                    return null;
                 }
                 var firstValues = firstList.GetValues();
                 var secondValues = secondList.GetValues();
@@ -162,17 +162,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (!firstValues[i].Equals(secondValues[i]))
                     {
                         state.Push(DreamValue.False);
-                        return ProcStatus.Returned;
+                        return null;
                     }
                 }
                 state.Push(DreamValue.True);
-                return ProcStatus.Returned;
+                return null;
             }
             state.Push(DreamValue.False);
-            return ProcStatus.Returned;// This will never be true, because reaching this line means b is not a list, while a will always be.
+            return null;// This will never be true, because reaching this line means b is not a list, while a will always be.
         }
 
-        public ProcStatus OperatorCombine(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorCombine(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -186,10 +186,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             state.Push(a);
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorMask(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorMask(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -209,10 +209,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             state.Push(a);
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorBitAnd(DreamValue a, DreamValue b, DMProcState state)
+        public ProcStatus? OperatorBitAnd(DreamValue a, DreamValue b, DMProcState state)
         {
             if (a.TryGetValueAsDreamList(out DreamList list)) {
                 DreamList newList = DreamList.Create();
@@ -249,10 +249,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             {
                 state.Push(new DreamValue(0));
             }
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorBitXor(DreamValue a, DreamValue b, DMProcState state)
+        public ProcStatus? OperatorBitXor(DreamValue a, DreamValue b, DMProcState state)
         {
             DreamList list = a.MustGetValueAsDreamList();
             DreamList newList = DreamList.Create();
@@ -277,18 +277,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
 
             state.Push(new DreamValue(newList));
-            return ProcStatus.Returned;
+            return null;
         }
-        public ProcStatus OperatorIndex(DreamValue a, DreamValue index, DMProcState state) {
+        public ProcStatus? OperatorIndex(DreamValue a, DreamValue index, DMProcState state) {
             DreamList dreamList = a.MustGetValueAsDreamList();
             state.Push(dreamList.GetValue(index));
-            return ProcStatus.Returned;
+            return null;
         }
 
-        public ProcStatus OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
+        public ProcStatus? OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
             DreamList dreamList = a.MustGetValueAsDreamList();
             dreamList.SetValue(index, value);
-            return ProcStatus.Returned;
+            return null;
         }
     }
 }

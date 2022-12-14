@@ -455,7 +455,7 @@ namespace OpenDreamRuntime.Procs {
             return (indexing, index);
         }
 
-        public ProcStatus AssignReference(DMReference reference, DreamValue value) {
+        public ProcStatus? AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
                 case DMReference.Type.Argument: _localVariables[reference.Index] = value; break;
@@ -488,7 +488,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
             }
-            return ProcStatus.Returned;
+            return null;
         }
 
         public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {
@@ -552,8 +552,9 @@ namespace OpenDreamRuntime.Procs {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
                         {
-                            ProcStatus opStatus = metaObject.OperatorIndex(indexing, index, this);
+                            ProcStatus? opStatus = metaObject.OperatorIndex(indexing, index, this);
                             switch(opStatus){
+                                case(null):
                                 case(ProcStatus.Returned):
                                     return this.Pop();
                                 case(ProcStatus.Called):

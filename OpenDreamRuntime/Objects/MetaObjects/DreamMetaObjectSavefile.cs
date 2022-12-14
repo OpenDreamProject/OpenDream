@@ -98,7 +98,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public ProcStatus OperatorIndex(DreamValue a, DreamValue index, DMProcState state) {
+        public ProcStatus? OperatorIndex(DreamValue a, DreamValue index, DMProcState state) {
             if(!a.TryGetValueAsDreamObject(out DreamObject dreamObject))
                 throw new Exception("SaveFile is not a DreamObject???");
             Savefile savefile = ObjectToSavefile[dreamObject];
@@ -107,14 +107,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             if (savefile.CurrentDir.TryGetValue(entryName, out DreamValue entry)) {
                 state.Push(entry);
-                return ProcStatus.Returned;
+                return null;
             } else {
                 state.Push(DreamValue.Null);
-                return ProcStatus.Returned;
+                return null;
             }
         }
 
-        public ProcStatus OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
+        public ProcStatus? OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
             if(!a.TryGetValueAsDreamObject(out DreamObject dreamObject))
                 throw new Exception("SaveFile is not a DreamObject???");
             Savefile savefile = ObjectToSavefile[dreamObject];
@@ -125,7 +125,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             savefile.Flush(); //TODO: Don't flush after every change
             state.Push(DreamValue.Null);
-            return ProcStatus.Returned;
+            return null;
         }
     }
 }

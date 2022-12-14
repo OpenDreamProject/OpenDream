@@ -595,7 +595,8 @@ namespace OpenDreamRuntime.Procs {
                     ++i;
                 }
             }
-            // Callers can supply extra arguments beyond those named.
+            // If the caller supplied excess positional arguments, they have no
+            // name, but the debugger should report them anyways.
             while (i < ArgumentCount) {
                 yield return (i.ToString(), _localVariables[i]);
                 ++i;

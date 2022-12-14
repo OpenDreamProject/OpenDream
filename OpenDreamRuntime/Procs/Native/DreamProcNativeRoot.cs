@@ -688,7 +688,7 @@ namespace OpenDreamRuntime.Procs.Native {
             List<DreamValue> gradientList;
 
             if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradList)) {
-                gradientList = gradList.GetValues();
+                gradientList = gradList.CreateCopy().GetValues();
                 indx = arguments.OrderedArguments[1];
 
                 DreamValue dictSpace = gradList.GetValue(new("space"));
@@ -737,30 +737,35 @@ namespace OpenDreamRuntime.Procs.Native {
                     continue; // Successful parse
                 }
 
-                if (value.TryGetValueAsString(out string? strValue) && ColorHelpers.TryParseColor(strValue, out Color color)) {
-
-                    if (loop && index >= maxValue) {
-                        index %= maxValue;
-                    }
-
-                    if (workingFloat >= index) {
-                        right = color;
-                        rightBound = workingFloat;
-                        rightExists = true;
-                        break;
-                    }
-                    else {
-                        left = color;
-                        leftExists = true;
-                        leftBound = workingFloat;
-                    }
-
-                    if (colorOrInt) {
-                        workingFloat = 1;
-                    }
-
-                    colorOrInt = true;
+                if (!value.TryGetValueAsString(out string? strValue)) {
+                    strValue = "#00000000";
                 }
+
+                if (!ColorHelpers.TryParseColor(strValue, out Color color))
+                    color = new(0, 0, 0, 0);
+                
+
+                if (loop && index >= maxValue) {
+                    index %= maxValue;
+                }
+
+                if (workingFloat >= index) {
+                    right = color;
+                    rightBound = workingFloat;
+                    rightExists = true;
+                    break;
+                }
+                else {
+                    left = color;
+                    leftExists = true;
+                    leftBound = workingFloat;
+                }
+
+                if (colorOrInt) {
+                    workingFloat = 1;
+                }
+
+                colorOrInt = true;
             }
 
             /// Convert the index to a 0-1 range

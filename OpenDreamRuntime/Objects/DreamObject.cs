@@ -36,7 +36,7 @@ namespace OpenDreamRuntime.Objects {
             Deleted = true;
             //we release all relevant information, making this a very tiny object
             _variables = null;
-            ObjectDefinition = null;
+            ObjectDefinition = null!;
 
             manager.ReferenceIDs.Remove(this);
         }
@@ -190,7 +190,7 @@ namespace OpenDreamRuntime.Objects {
         /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
         /// </summary>
         public string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
+            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
             bool isProper = StringIsProper(name);
             name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
@@ -214,7 +214,7 @@ namespace OpenDreamRuntime.Objects {
         /// </summary>
         public string GetNameUnformatted()
         {
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
+            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
             return StringFormatEncoder.RemoveFormatting(name);
         }

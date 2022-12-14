@@ -20,9 +20,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private bool _stopOnEntry = false;
 
     // State
-    private bool Stopped = false;
+    private bool _stopped = false;
     private bool _terminated = false;
-    private DreamThread? stoppedThread;
+    private DreamThread? _stoppedThread;
 
     private enum StepMode {
         None,
@@ -30,7 +30,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         StepIn,
         StepOut,
     }
-    private readonly Dictionary<int, (StepMode Mode, int FrameId)> threadStepModes = new();
+    private readonly Dictionary<int, (StepMode Mode, int FrameId)> _threadStepModes = new();
 
     // Breakpoint storage
     private const string ExceptionFilterRuntimes = "runtimes";
@@ -57,7 +57,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private int _breakpointIdCounter = 1;
-    private readonly Dictionary<string, List<FileBreakpointSlot>> _breakpoints = new();
 
     private Dictionary<string, Dictionary<int, FileBreakpointSlot>>? _possibleBreakpoints;
     private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
@@ -87,12 +86,11 @@ sealed class DreamDebugManager : IDreamDebugManager {
     public void Update() {
         _adapter?.HandleMessages();
         if (!CanStop()) {
-            Stopped = false;
+            _stopped = false;
         }
     }
 
     public void Shutdown() {
-        _breakpoints.Clear();
         _breakpointIdCounter = 0;
         _adapter?.Shutdown();
     }
@@ -109,7 +107,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     public void HandleLineChange(DMProcState state, int line) {
         if (_stopOnEntry) {
             _stopOnEntry = false;
-            stoppedThread = state.Thread;
+            _stoppedThread = state.Thread;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonEntry,
             });
@@ -117,21 +115,21 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         bool stoppedOnStep = false;
-        switch (threadStepModes.GetValueOrDefault(state.Thread.Id)) {
+        switch (_threadStepModes.GetValueOrDefault(state.Thread.Id)) {
             case (StepMode.StepIn, _):
                 stoppedOnStep = true;
                 break;
             case (StepMode.StepOut, int whenNotInStack):
-                stoppedOnStep = !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
+                stoppedOnStep = whenNotInStack == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
                 break;
             case (StepMode.StepOver, int whenTop):
-                stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
+                stoppedOnStep = state.Id == whenTop || whenTop == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
                 break;
         }
 
         if (stoppedOnStep) {
-            threadStepModes.Remove(state.Thread.Id);
-            stoppedThread = state.Thread;
+            _threadStepModes.Remove(state.Thread.Id);
+            _stoppedThread = state.Thread;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonStep,
             });
@@ -197,23 +195,23 @@ sealed class DreamDebugManager : IDreamDebugManager {
         if (_adapter == null || !CanStop())
             return;
 
-        stoppedThread = thread;
+        _stoppedThread = thread;
         stoppedEvent.ThreadId = thread?.Id;
         stoppedEvent.AllThreadsStopped = true;
         _adapter.SendAll(stoppedEvent);
 
-        Stopped = true;
+        _stopped = true;
 
         // We have to block the DM runtime no matter where we are in its call
         // stack. Unfortunately this also blocks the Robust engine.
-        while (Stopped) {
+        while (_stopped) {
             Update();
             System.Threading.Thread.Sleep(50);
         }
     }
 
     private void Resume() {
-        Stopped = false;
+        _stopped = false;
         stackFramesById.Clear();
         variableReferences.Clear();
     }
@@ -362,7 +360,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         reqDisconnect.Respond(client);
         _server.Shutdown("A shutdown was initiated by the debug adapter");
         _terminated = true;
-        Stopped = false;
+        _stopped = false;
     }
 
     private void HandleRequestSetBreakpoints(DebugAdapterClient client, RequestSetBreakpoints reqSetBreakpoints) {
@@ -484,21 +482,21 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestStepIn(DebugAdapterClient client, RequestStepIn requestStepIn) {
-        threadStepModes[requestStepIn.Arguments.ThreadId] = (StepMode.StepIn, 0);
+        _threadStepModes[requestStepIn.Arguments.ThreadId] = (StepMode.StepIn, 0);
         Resume();
         requestStepIn.Respond(client);
     }
 
     private void HandleRequestNext(DebugAdapterClient client, RequestNext requestNext) {
         var thread = InspectThreads().First(t => t.Id == requestNext.Arguments.ThreadId);
-        threadStepModes[requestNext.Arguments.ThreadId] = (StepMode.StepOver, thread.InspectStack().First().Id);
+        _threadStepModes[requestNext.Arguments.ThreadId] = (StepMode.StepOver, thread.InspectStack().FirstOrDefault()?.Id ?? -1);
         Resume();
         requestNext.Respond(client);
     }
 
     private void HandleRequestStepOut(DebugAdapterClient client, RequestStepOut requestStepOut) {
         var thread = InspectThreads().First(t => t.Id == requestStepOut.Arguments.ThreadId);
-        threadStepModes[requestStepOut.Arguments.ThreadId] = (StepMode.StepOut, thread.InspectStack().First().Id);
+        _threadStepModes[requestStepOut.Arguments.ThreadId] = (StepMode.StepOut, thread.InspectStack().FirstOrDefault()?.Id ?? -1);
         Resume();
         requestStepOut.Respond(client);
     }

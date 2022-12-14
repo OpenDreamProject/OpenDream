@@ -270,8 +270,7 @@ namespace DMCompiler {
             return maps;
         }
 
-        private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile)
-        {
+        private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;

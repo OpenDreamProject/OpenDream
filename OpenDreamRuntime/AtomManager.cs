@@ -12,6 +12,7 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
         private readonly Dictionary<DreamObject, EntityUid> _atomToEntity = new();
@@ -52,17 +53,17 @@ namespace OpenDreamRuntime {
         }
 
         public IconAppearance? GetAppearance(DreamObject atom) {
-            return atom.IsSubtypeOf(DreamPath.Turf)
+            return atom.IsSubtypeOf(_objectTree.Turf)
                 ? _dreamMapManager.GetTurfAppearance(atom)
                 : _entityManager.GetComponent<DMISpriteComponent>(GetMovableEntity(atom)).Appearance;
         }
 
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-            if (atom.IsSubtypeOf(DreamPath.Turf)) {
+            if (atom.IsSubtypeOf(_objectTree.Turf)) {
                 IconAppearance appearance = new IconAppearance(_dreamMapManager.GetTurfAppearance(atom));
                 update(appearance);
                 _dreamMapManager.SetTurfAppearance(atom, appearance);
-            } else if (atom.IsSubtypeOf(DreamPath.Movable)) {
+            } else if (atom.IsSubtypeOf(_objectTree.Movable)) {
                 if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
                     return;
 
@@ -73,7 +74,7 @@ namespace OpenDreamRuntime {
         }
 
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate) {
-            if (!atom.IsSubtypeOf(DreamPath.Movable))
+            if (!atom.IsSubtypeOf(_objectTree.Movable))
                 return; //Animating non-movables is unimplemented
             if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
                 return;

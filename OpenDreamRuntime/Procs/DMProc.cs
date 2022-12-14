@@ -8,6 +8,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     sealed class DMProc : DreamProc {
+        public readonly IDreamObjectTree ObjectTree;
         public byte[] Bytecode { get; }
 
         private readonly int _maxStackSize;
@@ -15,15 +16,14 @@ namespace OpenDreamRuntime.Procs {
         public string? Source { get; set; }
         public int Line { get; set; }
 
-        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
-        {
+        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, IDreamObjectTree objectTree)
+            : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility) {
+            ObjectTree = objectTree;
             Bytecode = bytecode;
             _maxStackSize = maxStackSize;
         }
 
-        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments)
-        {
+        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
             return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
         }
     }
@@ -149,8 +149,8 @@ namespace OpenDreamRuntime.Procs {
         public readonly int ArgumentCount;
         public string? CurrentSource;
         public int CurrentLine;
-        private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
-        public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
+        private Stack<IDreamValueEnumerator>? _enumeratorStack;
+        public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
         private int _pc = 0;
 
@@ -158,7 +158,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly DreamValue[] _localVariables;
 
         private readonly DMProc _proc;
-        public override DreamProc Proc => _proc;
+        public override DMProc Proc => _proc;
 
         public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
@@ -354,7 +354,7 @@ namespace OpenDreamRuntime.Procs {
         public string ReadString() {
             int stringID = ReadInt();
 
-            return DreamManager.ObjectTree.Strings[stringID];
+            return Proc.ObjectTree.Strings[stringID];
         }
 
         public DMReference ReadReference() {

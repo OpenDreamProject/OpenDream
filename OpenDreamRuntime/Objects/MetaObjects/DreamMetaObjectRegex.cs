@@ -9,6 +9,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => false;
         public IDreamMetaObject? ParentType { get; set; }
 
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+
+        public DreamMetaObjectRegex() {
+            IoCManager.InjectDependencies(this);
+        }
+
         public struct DreamRegex {
             public Regex Regex;
             public bool IsGlobal;
@@ -19,7 +25,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             DreamValue flags = creationArguments.GetArgument(1, "flags");
             DreamRegex regex;
 
-            if (pattern.TryGetValueAsDreamObjectOfType(DreamPath.Regex, out DreamObject copyFrom)) {
+            if (pattern.TryGetValueAsDreamObjectOfType(_objectTree.Regex, out DreamObject copyFrom)) {
                 regex = ObjectToDreamRegex[copyFrom];
             } else if (pattern.TryGetValueAsString(out string patternString)) {
                 regex = new DreamRegex();

@@ -6,7 +6,6 @@ namespace OpenDreamRuntime {
     public interface IDreamManager {
         public bool Initialized { get; }
         public GameTick InitializedTick { get; }
-        public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
 
         /// <summary>

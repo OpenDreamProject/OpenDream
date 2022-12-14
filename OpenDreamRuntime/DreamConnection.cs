@@ -15,6 +15,7 @@ namespace OpenDreamRuntime
     public sealed class DreamConnection
     {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
@@ -47,22 +48,18 @@ namespace OpenDreamRuntime
             get => _mobDreamObject;
             set
             {
-                if (_mobDreamObject != value)
-                {
+                if (_mobDreamObject != value) {
                     if (_mobDreamObject != null) _mobDreamObject.SpawnProc("Logout");
 
-                    if (value != null && value.IsSubtypeOf(DreamPath.Mob))
-                    {
+                    if (value != null && value.IsSubtypeOf(_objectTree.Mob)) {
                         DreamConnection oldMobConnection = _dreamManager.GetConnectionFromMob(value);
                         if (oldMobConnection != null) oldMobConnection.MobDreamObject = null;
 
                         _mobDreamObject = value;
                         ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
-                        _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject );
+                        _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject);
                         Session.AttachToEntity(_atomManager.GetMovableEntity(_mobDreamObject));
-                    }
-                    else
-                    {
+                    } else {
                         Session.DetachFromEntity();
                         _mobDreamObject = null;
                     }
@@ -212,7 +209,7 @@ namespace OpenDreamRuntime
 
         public void OutputDreamValue(DreamValue value) {
             if (value.TryGetValueAsDreamObject(out DreamObject outputObject)) {
-                if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
+                if (outputObject?.IsSubtypeOf(_objectTree.Sound) == true) {
                     UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
                     DreamValue file = outputObject.GetVariable("file");
@@ -317,13 +314,13 @@ namespace OpenDreamRuntime
             for (int i = 0; i < listValues.Count; i++) {
                 DreamValue value = listValues[i];
 
-                if (types.HasFlag(DMValueType.Obj) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out _))
+                if (types.HasFlag(DMValueType.Obj) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out _))
                     continue;
-                if (types.HasFlag(DMValueType.Mob) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out _))
+                if (types.HasFlag(DMValueType.Mob) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Mob, out _))
                     continue;
-                if (types.HasFlag(DMValueType.Turf) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out _))
+                if (types.HasFlag(DMValueType.Turf) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out _))
                     continue;
-                if (types.HasFlag(DMValueType.Area) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Area, out _))
+                if (types.HasFlag(DMValueType.Area) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Area, out _))
                     continue;
 
                 promptValues.Add(value.Stringify());

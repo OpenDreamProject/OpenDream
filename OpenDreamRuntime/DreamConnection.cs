@@ -86,11 +86,11 @@ namespace OpenDreamRuntime
 
             if (MobDreamObject != null)
             {
-                List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").GetValueAsDreamList().GetValues();
+                List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").MustGetValueAsDreamList().GetValues();
                 verbs = new List<(string, string, string)>(mobVerbPaths.Count);
                 foreach (DreamValue mobVerbPath in mobVerbPaths)
                 {
-                    DreamPath path = mobVerbPath.GetValueAsPath();
+                    DreamPath path = mobVerbPath.MustGetValueAsPath();
                     if (path.LastElement is null) continue;
                     var proc = MobDreamObject.GetProc(path.LastElement);
                     _availableVerbs.Add(path.LastElement, proc);
@@ -211,9 +211,7 @@ namespace OpenDreamRuntime
 
 
         public void OutputDreamValue(DreamValue value) {
-            if (value.Type == DreamValue.DreamValueType.DreamObject) {
-                DreamObject outputObject = value.GetValueAsDreamObject();
-
+            if (value.TryGetValueAsDreamObject(out DreamObject outputObject)) {
                 if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
                     UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();

@@ -1883,7 +1883,9 @@ namespace OpenDreamRuntime.Procs {
 
                 type = typeObject.ObjectDefinition.Type;
             } else {
-                type = typeValue.GetValueAsPath();
+                if(!typeValue.TryGetValueAsPath(out type)) {
+                    throw new Exception($"istype() attempted to check non-path {typeValue}");
+                }
             }
 
             if (value.TryGetValueAsDreamObject(out DreamObject dreamObject) && dreamObject != null) {
@@ -1965,7 +1967,7 @@ namespace OpenDreamRuntime.Procs {
                             proc = dreamObject.GetProc(procId.GetValueAsString());
                             break;
                         case DreamValue.DreamValueType.DreamPath: {
-                            DreamPath fullProcPath = procId.GetValueAsPath();
+                            DreamPath fullProcPath = procId.MustGetValueAsPath();
                             int procElementIndex = fullProcPath.FindElement("proc");
 
                             if (procElementIndex != -1) {
@@ -1985,7 +1987,7 @@ namespace OpenDreamRuntime.Procs {
                     throw new Exception("Invalid proc (" + procId + ")");
                 }
                 case DreamValue.DreamValueType.DreamPath: {
-                    DreamPath fullProcPath = source.GetValueAsPath();
+                    DreamPath fullProcPath = source.MustGetValueAsPath();
                     if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) //Only global procs are supported here currently
                         throw new Exception($"Invalid call() proc \"{fullProcPath}\"");
                     string procName = fullProcPath.LastElement;
@@ -1998,8 +2000,13 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.String:
                     unsafe
                     {
-                        var dllName = source.GetValueAsString();
-                        var procName = state.Pop().GetValueAsString();
+                        if(!source.TryGetValueAsString(out var dllName)) {
+                            throw new Exception($"{source} is not a valid DLL");
+                        }
+                        var popProc = state.Pop();
+                        if(!popProc.TryGetValueAsString(out var procName)) {
+                            throw new Exception($"{popProc} is not a valid proc name");
+                        }
                         // DLL Invoke
                         var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
 
@@ -2611,10 +2618,10 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsEqual(DreamValue first, DreamValue second) {
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject firstValue = first.GetValueAsDreamObject();
+                    DreamObject firstValue = first.MustGetValueAsDreamObject();
 
                     switch (second.Type) {
-                        case DreamValue.DreamValueType.DreamObject: return firstValue == second.GetValueAsDreamObject();
+                        case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
                         case DreamValue.DreamValueType.DreamPath:
                         case DreamValue.DreamValueType.String:
                         case DreamValue.DreamValueType.Float: return false;
@@ -2623,10 +2630,10 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DreamValue.DreamValueType.Float: {
-                    float firstValue = first.GetValueAsFloat();
+                    float firstValue = first.MustGetValueAsFloat();
 
                     switch (second.Type) {
-                        case DreamValue.DreamValueType.Float: return firstValue == second.GetValueAsFloat();
+                        case DreamValue.DreamValueType.Float: return firstValue == second.MustGetValueAsFloat();
                         case DreamValue.DreamValueType.DreamPath:
                         case DreamValue.DreamValueType.DreamObject:
                         case DreamValue.DreamValueType.String: return false;
@@ -2635,10 +2642,10 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DreamValue.DreamValueType.String: {
-                    string firstValue = first.GetValueAsString();
+                    string firstValue = first.MustGetValueAsString();
 
                     switch (second.Type) {
-                        case DreamValue.DreamValueType.String: return firstValue == second.GetValueAsString();
+                        case DreamValue.DreamValueType.String: return firstValue == second.MustGetValueAsString();
                         case DreamValue.DreamValueType.DreamObject:
                         case DreamValue.DreamValueType.Float: return false;
                     }
@@ -2646,10 +2653,10 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DreamValue.DreamValueType.DreamPath: {
-                    DreamPath firstValue = first.GetValueAsPath();
+                    DreamPath firstValue = first.MustGetValueAsPath();
 
                     switch (second.Type) {
-                        case DreamValue.DreamValueType.DreamPath: return firstValue.Equals(second.GetValueAsPath());
+                        case DreamValue.DreamValueType.DreamPath: return firstValue.Equals(second.MustGetValueAsPath());
                         case DreamValue.DreamValueType.Float:
                         case DreamValue.DreamValueType.DreamObject:
                         case DreamValue.DreamValueType.String: return false;
@@ -2658,10 +2665,10 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DreamValue.DreamValueType.DreamResource: {
-                    DreamResource firstValue = first.GetValueAsDreamResource();
+                    DreamResource firstValue = first.MustGetValueAsDreamResource();
 
                     switch (second.Type) {
-                        case DreamValue.DreamValueType.DreamResource: return firstValue.ResourcePath == second.GetValueAsDreamResource().ResourcePath;
+                        case DreamValue.DreamValueType.DreamResource: return firstValue.ResourcePath == second.MustGetValueAsDreamResource().ResourcePath;
                         default: return false;
                     }
                 }
@@ -2683,14 +2690,14 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {
             switch (first.Type) {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    return first.GetValueAsFloat() > second.GetValueAsFloat();
+                    return first.MustGetValueAsFloat() > second.MustGetValueAsFloat();
                 case DreamValue.DreamValueType.Float when second.Value == null:
-                    return first.GetValueAsFloat() > 0;
+                    return first.MustGetValueAsFloat() > 0;
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) > 0;
+                    return string.Compare(first.MustGetValueAsString(), second.MustGetValueAsString(), StringComparison.Ordinal) > 0;
                 default: {
                     if (first == DreamValue.Null) {
-                        if (second.Type == DreamValue.DreamValueType.Float) return 0 > second.GetValueAsFloat();
+                        if (second.Type == DreamValue.DreamValueType.Float) return 0 > second.MustGetValueAsFloat();
                         if (second.TryGetValueAsString(out var s)) return false;
                         if (second.Value == null) return false;
                     }
@@ -2702,14 +2709,14 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsLessThan(DreamValue first, DreamValue second) {
             switch (first.Type) {
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    return first.GetValueAsFloat() < second.GetValueAsFloat();
+                    return first.MustGetValueAsFloat() < second.MustGetValueAsFloat();
                 case DreamValue.DreamValueType.Float when second.Value == null:
-                    return first.GetValueAsFloat() < 0;
+                    return first.MustGetValueAsFloat() < 0;
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    return string.Compare(first.GetValueAsString(), second.GetValueAsString(), StringComparison.Ordinal) < 0;
+                    return string.Compare(first.MustGetValueAsString(), second.MustGetValueAsString(), StringComparison.Ordinal) < 0;
                 default: {
                     if (first == DreamValue.Null) {
-                        if (second.Type == DreamValue.DreamValueType.Float) return 0 < second.GetValueAsFloat();
+                        if (second.Type == DreamValue.DreamValueType.Float) return 0 < second.MustGetValueAsFloat();
                         if (second.TryGetValueAsString(out var s)) return s != "";
                         if (second.Value == null) return false;
                     }
@@ -2748,7 +2755,7 @@ namespace OpenDreamRuntime.Procs {
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
             if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger());
+                return new DreamValue(first.MustGetValueAsInteger() % second.MustGetValueAsInteger());
             } else {
                 throw new Exception("Invalid modulus operation on " + first + " and " + second);
             }

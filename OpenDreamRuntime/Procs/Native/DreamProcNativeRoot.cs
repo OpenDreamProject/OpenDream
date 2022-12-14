@@ -722,11 +722,8 @@ namespace OpenDreamRuntime.Procs.Native {
             float rightBound = 1;
 
             /// None of these should be null however C# is "special"
-            Color left = new();
-            Color right = new();
-
-            bool leftExists = false;
-            bool rightExists = false;
+            Color? left = new();
+            Color? right = new();
 
             foreach (DreamValue value in gradientList) {
                 if (colorOrInt && value.TryGetValueAsFloat(out float flt)) { // Int
@@ -752,12 +749,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (workingFloat >= index) {
                     right = color;
                     rightBound = workingFloat;
-                    rightExists = true;
                     break;
                 }
                 else {
                     left = color;
-                    leftExists = true;
                     leftBound = workingFloat;
                 }
 
@@ -772,17 +767,17 @@ namespace OpenDreamRuntime.Procs.Native {
             float normalized = (index - leftBound) / (rightBound - leftBound);
 
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
-            if (!leftExists || (rightExists && normalized == 1) || (rightExists && normalized == 0)) {
-                if (right.AByte == 255) {
-                    return new DreamValue(right.ToHexNoAlpha().ToLower());
+            if (!left.HasValue || (right.HasValue && normalized == 1) || (right.HasValue && normalized == 0)) {
+                if (right?.AByte == 255) {
+                    return new DreamValue(right?.ToHexNoAlpha().ToLower());
                 }
-                return new DreamValue(right.ToHex().ToLower());
-            } else if (!rightExists) {
-                if (left.AByte == 255) {
-                    return new DreamValue(left.ToHexNoAlpha().ToLower());
+                return new DreamValue(right?.ToHex().ToLower());
+            } else if (!right.HasValue) {
+                if (left?.AByte == 255) {
+                    return new DreamValue(left?.ToHexNoAlpha().ToLower());
                 }
-                return new DreamValue(left.ToHex().ToLower());
-            } else if (!leftExists && !rightExists) {
+                return new DreamValue(left?.ToHex().ToLower());
+            } else if (!left.HasValue && !right.HasValue) {
                 throw new InvalidOperationException("Failed to find any colors");
             }
 

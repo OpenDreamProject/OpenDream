@@ -38,6 +38,8 @@ namespace OpenDreamRuntime.Objects {
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
         private Dictionary<string, int> _globalProcIds;
 
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+
         public void LoadJson(DreamCompiledJson json) {
             Strings = json.Strings;
 
@@ -296,7 +298,7 @@ namespace OpenDreamRuntime.Objects {
             }
 
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
-            var proc = new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility, this);
+            var proc = new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility, this, _resourceManager);
             proc.Source = procDefinition.Source;
             proc.Line = procDefinition.Line;
             return proc;

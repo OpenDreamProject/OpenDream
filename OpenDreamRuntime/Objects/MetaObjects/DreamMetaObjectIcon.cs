@@ -30,8 +30,7 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
         DreamValue frame = creationArguments.GetArgument(3, "frame");
         DreamValue moving = creationArguments.GetArgument(4, "moving");
 
-        DreamIcon dreamIcon = new(_rscMan);
-        ObjectToDreamIcon.Add(dreamObject, dreamIcon);
+        var dreamIcon = InitializeIcon(_rscMan, dreamObject);
 
         if (icon != DreamValue.Null) {
             // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
@@ -59,6 +58,18 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
 
                 break;
         }
+    }
+
+    /// <summary>
+    /// A fast path for initializing an /icon object
+    /// </summary>
+    /// <remarks>Doesn't call any DM code</remarks>
+    /// <returns>The /icon's DreamIcon</returns>
+    public static DreamIcon InitializeIcon(DreamResourceManager rscMan, DreamObject icon) {
+        DreamIcon dreamIcon = new(rscMan);
+
+        ObjectToDreamIcon.Add(icon, dreamIcon);
+        return dreamIcon;
     }
 
     public static (DreamResource Resource, ParsedDMIDescription Description) GetIconResourceAndDescription(

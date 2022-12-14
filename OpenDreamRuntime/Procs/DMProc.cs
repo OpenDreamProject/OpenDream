@@ -3,12 +3,14 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     sealed class DMProc : DreamProc {
         public readonly IDreamObjectTree ObjectTree;
+        public readonly DreamResourceManager ResourceManager;
         public byte[] Bytecode { get; }
 
         private readonly int _maxStackSize;
@@ -16,9 +18,10 @@ namespace OpenDreamRuntime.Procs {
         public string? Source { get; set; }
         public int Line { get; set; }
 
-        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, IDreamObjectTree objectTree)
+        public DMProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, byte[] bytecode, int maxStackSize, ProcAttributes attributes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, IDreamObjectTree objectTree, DreamResourceManager resourceManager)
             : base(owningType, name, superProc, attributes, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility) {
             ObjectTree = objectTree;
+            ResourceManager = resourceManager;
             Bytecode = bytecode;
             _maxStackSize = maxStackSize;
         }

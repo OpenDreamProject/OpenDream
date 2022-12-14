@@ -254,44 +254,39 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public ProcStatus OperatorBitXor(DreamValue a, DreamValue b, DMProcState state)
         {
-            if(a.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
-                List<DreamValue> values;
+            DreamList list = a.MustGetValueAsDreamList();
+            DreamList newList = DreamList.Create();
+            List<DreamValue> values;
 
-                if (b.TryGetValueAsDreamList(out DreamList secondList)) {
-                    values = secondList.GetValues();
-                } else {
-                    values = new List<DreamValue>() { b };
-                }
-
-                foreach (DreamValue value in values) {
-                    bool inFirstList = list.ContainsValue(value);
-                    bool inSecondList = secondList.ContainsValue(value);
-
-                    if (inFirstList ^ inSecondList) {
-                        newList.AddValue(value);
-
-                        DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
-                        if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
-                    }
-                }
-
-                state.Push(new DreamValue(newList));
-                return ProcStatus.Returned;
+            if (b.TryGetValueAsDreamList(out DreamList secondList)) {
+                values = secondList.GetValues();
+            } else {
+                values = new List<DreamValue>() { b };
             }
-            else
-                throw new Exception("List bit-xor on not list???");
+
+            foreach (DreamValue value in values) {
+                bool inFirstList = list.ContainsValue(value);
+                bool inSecondList = secondList.ContainsValue(value);
+
+                if (inFirstList ^ inSecondList) {
+                    newList.AddValue(value);
+
+                    DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
+                    if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
+                }
+            }
+
+            state.Push(new DreamValue(newList));
+            return ProcStatus.Returned;
         }
         public ProcStatus OperatorIndex(DreamValue a, DreamValue index, DMProcState state) {
-            if(!a.TryGetValueAsDreamList(out DreamList dreamList))
-                throw new Exception("List isn't a list!!");
+            DreamList dreamList = a.MustGetValueAsDreamList();
             state.Push(dreamList.GetValue(index));
             return ProcStatus.Returned;
         }
 
         public ProcStatus OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
-            if(!a.TryGetValueAsDreamList(out DreamList dreamList))
-                throw new Exception("List isn't a list!!");
+            DreamList dreamList = a.MustGetValueAsDreamList();
             dreamList.SetValue(index, value);
             return ProcStatus.Returned;
         }

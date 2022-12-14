@@ -721,9 +721,8 @@ namespace OpenDreamRuntime.Procs.Native {
             float leftBound = 0;
             float rightBound = 1;
 
-            /// None of these should be null however C# is "special"
-            Color? left = new();
-            Color? right = new();
+            Color? left = null;
+            Color? right = null;
 
             foreach (DreamValue value in gradientList) {
                 if (colorOrInt && value.TryGetValueAsFloat(out float flt)) { // Int

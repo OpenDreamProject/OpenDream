@@ -627,8 +627,8 @@ namespace OpenDreamRuntime.Procs {
                 // Implicitly create a new /icon and ICON_ADD blend it
                 // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
                 DreamObject iconObj = state.Proc.ObjectTree.CreateObject(DreamPath.Icon);
-                var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.ResourceManager, iconObj);
-                var from = DreamMetaObjectIcon.GetIconResourceAndDescription(state.Proc.ObjectTree, state.Proc.ResourceManager, first);
+                var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
+                var from = DreamMetaObjectIcon.GetIconResourceAndDescription(state.Proc.ObjectTree, state.Proc.DreamResourceManager, first);
 
                 icon.InsertStates(from.Resource, from.Description, DreamValue.Null, DreamValue.Null, DreamValue.Null);
                 DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);

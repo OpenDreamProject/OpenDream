@@ -7,7 +7,7 @@ using System.Linq;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        public DreamObjectDefinition? ObjectDefinition { get; private set; }
+        public DreamObjectDefinition ObjectDefinition { get; private set; }
         public bool Deleted { get; private set; } = false;
 
         private Dictionary<string, DreamValue>? _variables;
@@ -17,7 +17,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
-            var thread = new DreamThread("new " + ObjectDefinition?.Type);
+            var thread = new DreamThread("new " + ObjectDefinition.Type);
             var procState = InitProc(thread, null, creationArguments);
             thread.PushProcState(procState);
             thread.Resume();
@@ -70,7 +70,7 @@ namespace OpenDreamRuntime.Objects {
 
         public IEnumerable<KeyValuePair<string, DreamValue>> GetAllVariables() {
             return (_variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
-                .Concat(ObjectDefinition?.Variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
+                .Concat(ObjectDefinition.Variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
                 .DistinctBy(kvp => kvp.Key);
         }
 
@@ -78,7 +78,7 @@ namespace OpenDreamRuntime.Objects {
             if (Deleted) {
                 throw new Exception("Cannot get variable names of a deleted object");
             }
-            return ObjectDefinition!.Variables.Keys;
+            return ObjectDefinition.Variables.Keys;
         }
 
         public bool TryGetVariable(string name, out DreamValue variableValue) {
@@ -222,8 +222,6 @@ namespace OpenDreamRuntime.Objects {
         public override string ToString() {
             if (Deleted) {
                 return "<deleted>";
-            } else if (ObjectDefinition is null) {
-                return GetType().Name;
             }
 
             string name = GetNameUnformatted();

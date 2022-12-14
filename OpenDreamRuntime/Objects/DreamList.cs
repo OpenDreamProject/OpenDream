@@ -207,11 +207,11 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override int GetLength() {
-            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition!.GlobalVariables.Keys).Count();
+            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
         }
 
         public override List<DreamValue> GetValues() {
-            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition!.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
+            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
         }
 
         public override bool ContainsKey(DreamValue value) {

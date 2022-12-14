@@ -36,7 +36,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private const string ExceptionFilterRuntimes = "runtimes";
     private bool breakOnRuntimes = true;
 
-    private class FileBreakpointSlot {
+    private sealed class FileBreakpointSlot {
         public List<ActiveBreakpoint> Breakpoints = new();
         //public DMProc Proc;
         //public int BytecodeOffset;
@@ -44,7 +44,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         public FileBreakpointSlot() {}
     }
 
-    private class FunctionBreakpointSlot {
+    private sealed class FunctionBreakpointSlot {
         public List<ActiveBreakpoint> Breakpoints = new();
         public FunctionBreakpointSlot() {}
     }

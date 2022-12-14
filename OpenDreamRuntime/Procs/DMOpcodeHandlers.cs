@@ -458,8 +458,6 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new(), new());
-
             if (state.Pop().TryGetValueAsDreamList(out var argList)) {
                 List<DreamValue> ordered = new();
                 Dictionary<string, DreamValue> named = new();

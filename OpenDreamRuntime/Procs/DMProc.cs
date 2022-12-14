@@ -207,7 +207,7 @@ namespace OpenDreamRuntime.Procs {
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
             for (int i = 0; i < ArgumentCount; i++) {
-                _localVariables[i] = (arguments.OrderedArguments != null && i < arguments.OrderedArguments.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
+                _localVariables[i] = (i < arguments.OrderedArguments?.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
             }
 
             //Named arguments

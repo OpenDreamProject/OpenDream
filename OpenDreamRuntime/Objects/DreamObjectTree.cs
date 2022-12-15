@@ -25,6 +25,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
+        public DreamProc? GlobalInitProc;
         public TreeEntry[] Types;
         public List<DreamProc> Procs;
         public List<string> Strings; //TODO: Store this somewhere else
@@ -34,6 +35,12 @@ namespace OpenDreamRuntime.Objects {
 
         public void LoadJson(DreamCompiledJson json) {
             Strings = json.Strings;
+
+            if (json.GlobalInitProc is ProcDefinitionJson initProcDef) {
+                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, name: "<global init>");
+            } else {
+                GlobalInitProc = null;
+            }
 
             // Load procs first so types can set their init proc's super proc
             LoadProcsFromJson(json.Types, json.Procs, json.GlobalProcs);
@@ -257,25 +264,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamProc LoadProcJson(DreamTypeJson[] types, ProcDefinitionJson procDefinition) {
-            byte[] bytecode = procDefinition.Bytecode ?? Array.Empty<byte>();
-            List<string> argumentNames = new();
-            List<DMValueType> argumentTypes = new();
-
-            if (procDefinition.Arguments != null) {
-                argumentNames.EnsureCapacity(procDefinition.Arguments.Count);
-                argumentTypes.EnsureCapacity(procDefinition.Arguments.Count);
-
-                foreach (ProcArgumentJson argument in procDefinition.Arguments) {
-                    argumentNames.Add(argument.Name);
-                    argumentTypes.Add(argument.Type);
-                }
-            }
-
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
-            var proc = new DMProc(owningType, procDefinition.Name, null, argumentNames, argumentTypes, bytecode, procDefinition.MaxStackSize, procDefinition.Attributes, procDefinition.VerbName, procDefinition.VerbCategory, procDefinition.VerbDesc, procDefinition.Invisibility);
-            proc.Source = procDefinition.Source;
-            proc.Line = procDefinition.Line;
-            return proc;
+            return new DMProc(owningType, procDefinition);
         }
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs)

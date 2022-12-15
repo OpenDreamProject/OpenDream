@@ -162,16 +162,18 @@ namespace OpenDreamRuntime.Procs {
             _taskFunc = taskFunc;
         }
 
-        public override ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-        {
+        public override ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
             if (_defaultArgumentValues != null) {
+                var newNamedArguments = arguments.NamedArguments;
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames?.IndexOf(defaultArgumentValue.Key) ?? -1;
+                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
 
                     if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
-                        arguments.NamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
+                        newNamedArguments ??= new();
+                        newNamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
                     }
                 }
+                arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
             }
 
             return new State(this, _taskFunc, thread, src, usr, arguments);

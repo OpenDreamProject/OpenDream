@@ -8,12 +8,16 @@ namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectDefinition
     {
         [Dependency] private readonly IDreamManager _dreamMan = default!;
+
         public DreamPath Type;
-        public IDreamMetaObject MetaObject = null;
+        public IDreamMetaObject? MetaObject = null;
         public int? InitializationProc;
         public readonly Dictionary<string, int> Procs = new();
         public readonly Dictionary<string, int> OverridingProcs = new();
+
+        // Maps variables from their name to their initial value.
         public readonly Dictionary<string, DreamValue> Variables = new();
+        // Maps /static variables from name to their index in the global variable table.
         public readonly Dictionary<string, int> GlobalVariables = new();
 
         private readonly DreamObjectDefinition? _parentObjectDefinition = null;

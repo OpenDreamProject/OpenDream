@@ -8,7 +8,7 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamPath Type => _treeNode.Path;
         public DreamObjectDefinition? Parent => _treeNode.ParentEntry?.ObjectDefinition;
-        public IDreamMetaObject MetaObject = null;
+        public IDreamMetaObject? MetaObject = null;
         public int? InitializationProc;
         public readonly Dictionary<string, int> Procs = new();
         public readonly Dictionary<string, int> OverridingProcs = new();

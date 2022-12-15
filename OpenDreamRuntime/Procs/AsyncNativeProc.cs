@@ -1,8 +1,6 @@
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs.DebugAdapter;
-using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 

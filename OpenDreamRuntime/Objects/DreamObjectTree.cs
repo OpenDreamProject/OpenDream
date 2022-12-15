@@ -6,7 +6,6 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using TreeEntry = OpenDreamRuntime.Objects.IDreamObjectTree.TreeEntry;
 
@@ -15,6 +14,7 @@ namespace OpenDreamRuntime.Objects {
         public TreeEntry[] Types { get; private set; }
         public List<DreamProc> Procs { get; private set; }
         public List<string> Strings { get; private set; } //TODO: Store this somewhere else
+        public DreamProc? GlobalInitProc { get; private set; }
 
         public TreeEntry Root { get; private set; }
         public TreeEntry World { get; private set; }
@@ -48,7 +48,7 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings;
 
             if (json.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", DreamManager, DreamMapManager, DreamDebugManager, DreamResourceManager);
+                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", DreamManager, DreamMapManager, DreamDebugManager, DreamResourceManager, this);
             } else {
                 GlobalInitProc = null;
             }
@@ -401,6 +401,7 @@ namespace OpenDreamRuntime.Objects {
         public TreeEntry[] Types { get; }
         public List<DreamProc> Procs { get; }
         public List<string> Strings { get; }
+        public DreamProc? GlobalInitProc { get; }
 
         // All the built-in types
         public TreeEntry World { get; }

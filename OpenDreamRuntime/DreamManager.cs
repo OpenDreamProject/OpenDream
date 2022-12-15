@@ -49,7 +49,6 @@ namespace OpenDreamRuntime {
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string jsonPath) {
-            ObjectTree = new(); // cheesy, sorts out a load order conflict.
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 

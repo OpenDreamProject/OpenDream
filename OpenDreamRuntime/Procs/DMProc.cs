@@ -11,10 +11,7 @@ using OpenDreamShared.Json;
 
 namespace OpenDreamRuntime.Procs {
     sealed class DMProc : DreamProc {
-        public readonly IDreamObjectTree ObjectTree;
         public byte[] Bytecode { get; }
-
-        private readonly int _maxStackSize;
 
         public string? Source { get; }
         public int Line { get; }
@@ -25,6 +22,8 @@ namespace OpenDreamRuntime.Procs {
         public readonly IDreamDebugManager DreamDebugManager;
         public readonly DreamResourceManager DreamResourceManager;
         public readonly IDreamObjectTree ObjectTree;
+
+        private readonly int _maxStackSize;
 
         public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
             : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)

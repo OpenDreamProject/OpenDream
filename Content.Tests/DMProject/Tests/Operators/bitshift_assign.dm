@@ -15,7 +15,12 @@
 	for(var/i = 1; i < 6; i += 1)
 		a[i] <<= 1
 		ASSERT(a[i] == (i << 1))
+		a[i] >>= 1
+		ASSERT(a[i] == i)
 	//Make sure cursed behaviour still works in the assignment situation
 	var/n = null
 	n <<= 1
+	ASSERT(n == 0)
+	n = null
+	n >>= 1
 	ASSERT(n == 0)

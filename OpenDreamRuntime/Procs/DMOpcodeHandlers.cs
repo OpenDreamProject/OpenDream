@@ -28,6 +28,23 @@ namespace OpenDreamRuntime.Procs {
             state.Push(value);
             return null;
         }
+        public static ProcStatus? AssignInto(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue value = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference);
+            if(first.TryGetValueAsDreamObject(out DreamObject firstObject))
+            {
+                IDreamMetaObject? metaObject = firstObject!.ObjectDefinition?.MetaObject;
+                state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                return metaObject?.OperatorAssignInto(first, value, state);
+            }
+            else
+            {
+                state.AssignReference(reference, value);
+                state.Push(value);
+            }
+            return null;
+        }
 
         public static ProcStatus? CreateList(DMProcState state) {
             int size = state.ReadInt();

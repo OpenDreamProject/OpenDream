@@ -606,7 +606,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Assign);
             WriteReference(reference);
         }
-
+        public void AssignInto(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.AssignInto);
+            WriteReference(reference);
+        }
         public void CreateObject() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CreateObject);

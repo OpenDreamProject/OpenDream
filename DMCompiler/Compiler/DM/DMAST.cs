@@ -65,6 +65,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitPick(DMASTPick pick) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
+        public void VisitAssignInto(DMASTAssignInto assign) { throw new NotImplementedException(); }
         public void VisitVarDeclExpression(DMASTVarDeclExpression vardecl) { throw new NotImplementedException(); }
         public void VisitNewPath(DMASTNewPath newPath) { throw new NotImplementedException(); }
         public void VisitNewIdentifier(DMASTNewIdentifier newIdentifier) { throw new NotImplementedException(); }
@@ -1029,6 +1030,21 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAssign(this);
+        }
+    }
+
+    public class DMASTAssignInto : DMASTExpression {
+        public DMASTExpression Expression, Value;
+
+        public DMASTAssignInto(Location location, DMASTExpression expression, DMASTExpression value) : base(location) {
+            Expression = expression;
+            Value = value;
+        }
+
+        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; yield return Value; }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitAssignInto(this);
         }
     }
 

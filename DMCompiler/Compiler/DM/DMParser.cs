@@ -38,7 +38,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_RightShiftEquals,
             TokenType.DM_XorEquals,
             TokenType.DM_ModulusEquals,
-            TokenType.DM_ModulusModulusEquals
+            TokenType.DM_ModulusModulusEquals,
+            TokenType.DM_AssignInto
         };
 
         /// <remarks>This (and other similar TokenType[] sets here) is public because <see cref="DMPreprocessorParser"/> needs it.</remarks>
@@ -1618,6 +1619,7 @@ namespace DMCompiler.Compiler.DM {
                             case TokenType.DM_XorEquals: return new DMASTXorAssign(token.Location, expression, value);
                             case TokenType.DM_ModulusEquals: return new DMASTModulusAssign(token.Location, expression, value);
                             case TokenType.DM_ModulusModulusEquals: return new DMASTModulusModulusAssign(token.Location, expression, value);
+                            case TokenType.DM_AssignInto: return new DMASTAssignInto(token.Location, expression, value);
                         }
                     } else {
                         Error("Expected a value");

@@ -204,6 +204,16 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
         }
 
+        public void VisitAssignInto(DMASTAssignInto assign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
+            if(lhs.TryAsConstant(out var _))
+            {
+                DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
+            }
+            Result = new Expressions.AssignmentInto(assign.Location, lhs, rhs);
+        }
+
         public void VisitNegate(DMASTNegate negate) {
             var expr = DMExpression.Create(_dmObject, _proc, negate.Expression, _inferredPath);
             Result = new Expressions.Negate(negate.Location, expr);

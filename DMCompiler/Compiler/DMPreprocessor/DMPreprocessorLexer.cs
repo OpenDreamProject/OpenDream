@@ -42,7 +42,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case '}':
                     case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
-                    case ':': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c); break;
+                    case ':':
+                        if(Advance() == '=')
+                        {
+                            Advance();
+                            token = CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                        }
+                        else
+                            token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
+                        break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
                     case '(': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c); break;

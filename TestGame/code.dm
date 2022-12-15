@@ -6,6 +6,9 @@
 		a = _a
 		b = _b
 
+	proc/operator:=(datum/complex/C)
+		return new /datum/complex(3.14,8888)
+
 	proc/operator+(datum/complex/C)
 		if(istype(C)) return new /datum/complex(a+C.a, b+C.b)
 		if(isnum(C)) return new /datum/complex(a+C, b)
@@ -166,6 +169,9 @@
 	world.log << "World loaded!"
 	var/datum/complex/A = new /datum/complex(5,-1)
 	var/datum/complex/B = new /datum/complex(0,-9.5)
-	world.log << json_encode(A & B)
-	A &= B
 	world.log << json_encode(A)
+	world.log << json_encode(B)
+	world.log << "assign into"
+	A := B
+	world.log << json_encode(A)
+	world.log << "[A.a], [A.b]"

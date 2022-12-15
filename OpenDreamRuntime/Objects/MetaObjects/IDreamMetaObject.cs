@@ -26,11 +26,27 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         //Each of these operator functions *must* either push a value onto the stack, push a proc call, or throw an error.
         //If it pushes a proc call, it must return ProcStatus.Called, otherwise ProcStatus.Returned.
+
+        //AssignInto is a little bit of an odd one, which essential turns A := B into A = A.operator:=(B)
+        //so, this operator method will always either call the operator overload, or just push the argument onto the stack
+        //for a subopcode of assign
+        //like the other opcodes, the proc has an implicit . = src as the first line
+        public ProcStatus? OperatorAssignInto(DreamValue a, DreamValue b, DMProcState state) {
+            if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator:=", out DreamProc overload))
+            {
+                state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                return ProcStatus.Called;
+            }
+            else
+                state.Push(b);
+
+            return null;
+        }
         public ProcStatus? OperatorAdd(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator+", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -43,7 +59,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator++", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a}));
+                    state.Call(overload, obj, new DreamProcArguments());
                     return ProcStatus.Called;
                 }
                 else
@@ -56,7 +72,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator-", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -69,7 +85,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator--", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a}));
+                    state.Call(overload, obj, new DreamProcArguments());
                     return ProcStatus.Called;
                 }
                 else
@@ -82,7 +98,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator*", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -95,7 +111,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator+=", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -108,7 +124,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator-=", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -121,7 +137,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -134,7 +150,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator~=", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -151,7 +167,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|=", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -164,7 +180,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&=", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -203,7 +219,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -216,7 +232,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator~", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a}));
+                    state.Call(overload, obj, new DreamProcArguments());
                     return ProcStatus.Called;
                 }
                 else
@@ -229,7 +245,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -242,7 +258,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator<<", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -254,7 +270,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator>>", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -267,7 +283,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator^", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -279,7 +295,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator/", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -291,7 +307,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator%", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -303,7 +319,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator%%", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -327,7 +343,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator^", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
@@ -340,7 +356,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator^=", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){a,b}));
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else

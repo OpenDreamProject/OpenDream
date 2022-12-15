@@ -43,6 +43,9 @@
 		src.a = 3.14
 		src.b = 6.28
 
+	proc/operator:=(datum/complex/C)
+		return new /datum/complex(3.14,8888)		
+
 
 /proc/RunTest()
 	var/datum/complex/A = new /datum/complex(5,-1)
@@ -50,6 +53,11 @@
 	ASSERT((A & B) == 3.14)
 	A &= B
 	ASSERT((A.a == 3.14) && (A.b == 6.28))
+	world.log << json_encode(A)
+	world.log << json_encode(B)
+	world.log << "assign into"
+	A := B
+	world.log << json_encode(A)
 
 
 /proc/main()

@@ -131,6 +131,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus},
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.CreateFilteredListEnumerator,DMOpcodeHandlers.CreateFilteredListEnumerator},
+            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
 
         };
         #endregion

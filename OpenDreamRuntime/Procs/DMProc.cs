@@ -4,6 +4,7 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs.DebugAdapter;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
@@ -18,15 +19,24 @@ namespace OpenDreamRuntime.Procs {
         public int Line { get; }
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
 
-        public DMProc(DreamPath owningType, OpenDreamShared.Json.ProcDefinitionJson json, string? name = null)
+        public IDreamManager DreamManager;
+        public IDreamMapManager DreamMapManager;
+        public IDreamDebugManager DreamDebugManager;
+        public DreamResourceManager DreamResourceManager;
+
+        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager)
             : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)
         {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
-            _maxStackSize = json.MaxStackSize;
-
+            LocalNames = json.Locals;
             Source = json.Source;
             Line = json.Line;
-            LocalNames = json.Locals;
+            _maxStackSize = json.MaxStackSize;
+
+            DreamManager = dreamManager;
+            DreamMapManager = dreamMapManager;
+            DreamDebugManager = dreamDebugManager;
+            DreamResourceManager = dreamResourceManager;
         }
 
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
@@ -162,9 +172,10 @@ namespace OpenDreamRuntime.Procs {
 
         };
         #endregion
+
         private static OpcodeHandler?[] _opcodeHandlers = {};
-        public readonly IDreamManager DreamManager = IoCManager.Resolve<IDreamManager>();
-        public readonly IDreamDebugManager DebugManager = IoCManager.Resolve<IDreamDebugManager>();
+        public IDreamManager DreamManager => _proc.DreamManager;
+        public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;

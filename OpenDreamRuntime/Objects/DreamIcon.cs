@@ -357,8 +357,10 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
     private readonly ParsedDMIDescription _blendingDescription;
 
     public DreamIconOperationBlendImage(BlendType type, int xOffset, int yOffset, DreamValue blending) : base(type, xOffset, yOffset) {
+        //TODO: Find a way to get rid of this!
         var objectTree = IoCManager.Resolve<IDreamObjectTree>();
         var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+
         (var blendingResource, _blendingDescription) = DreamMetaObjectIcon.GetIconResourceAndDescription(objectTree, resourceManager, blending);
         _blending = resourceManager.LoadImage(blendingResource);
     }

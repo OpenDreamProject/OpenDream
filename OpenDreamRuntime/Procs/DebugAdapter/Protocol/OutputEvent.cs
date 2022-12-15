@@ -8,6 +8,12 @@ public sealed class OutputEvent : IEvent {
     [JsonPropertyName("category")] public string Category { get; set; }
     [JsonPropertyName("output")] public string Output { get; set; }
 
+    public const string CategoryConsole = "console";
+    public const string CategoryImportant = "important";
+    public const string CategoryStdout = "stdout";
+    public const string CategoryStderr = "stderr";
+    public const string CategoryTelemetry = "telemetry";
+
     public OutputEvent(string category, string output) {
         Category = category;
         Output = output;

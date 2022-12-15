@@ -4,6 +4,7 @@ using System.Text.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
@@ -20,8 +21,11 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
         [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
+        [Dependency] private readonly ITaskManager _taskManager = default!;
+        [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
         public DreamObject WorldInstance { get; private set; }
@@ -29,6 +33,7 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
+        public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
         public DreamList WorldContentsList { get; private set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -48,20 +53,17 @@ namespace OpenDreamRuntime {
             _dreamResourceManager.Initialize();
 
             if (!LoadJson(jsonPath)) {
-                IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
+                _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
             }
         }
 
         public void StartWorld() {
             // It is now OK to call user code, like /New procs.
             Initialized = true;
-            InitializedTick = IoCManager.Resolve<IGameTiming>().CurTick;
+            InitializedTick = _gameTiming.CurTick;
 
             // Call global <init> with waitfor=FALSE
-            if (_compiledJson.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                var globalInitProc = new DMProc(DreamPath.Root, "(global init)", null, null, null, initProcDef.Bytecode, initProcDef.MaxStackSize, initProcDef.Attributes, initProcDef.VerbName, initProcDef.VerbCategory, initProcDef.VerbDesc, initProcDef.Invisibility, _objectTree, _dreamResourceManager);
-                globalInitProc.Spawn(WorldInstance, new DreamProcArguments());
-            }
+            _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
@@ -116,6 +118,7 @@ namespace OpenDreamRuntime {
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
                 Globals.Clear();
                 Globals.EnsureCapacity(jsonGlobals.GlobalCount);
+                GlobalNames = jsonGlobals.Names;
 
                 for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
                     object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);

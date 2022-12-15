@@ -19,7 +19,7 @@ namespace OpenDreamRuntime {
         public string Name { get; }
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
-        public DreamProc SuperProc { set; get; }
+        public DreamProc? SuperProc { set; get; }
 
         public ProcAttributes Attributes { get; }
 
@@ -31,7 +31,7 @@ namespace OpenDreamRuntime {
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
 
-        protected DreamProc(DreamPath owningType, string name, DreamProc superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
+        protected DreamProc(DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
             OwningType = owningType;
             Name = name;
             SuperProc = superProc;
@@ -124,6 +124,12 @@ namespace OpenDreamRuntime {
         public virtual void ReturnedInto(DreamValue value) {}
 
         public virtual void Cancel() {}
+
+        public override string ToString() {
+            var sb = new StringBuilder();
+            AppendStackFrame(sb);
+            return sb.ToString();
+        }
     }
 
     public sealed class DreamThread {
@@ -149,7 +155,7 @@ namespace OpenDreamRuntime {
             Name = name;
         }
 
-        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments? arguments) {
+        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, DreamProcArguments? arguments) {
             var context = new DreamThread(proc.ToString());
             var state = proc.CreateState(context, src, usr, arguments ?? new DreamProcArguments(null));
             context.PushProcState(state);
@@ -250,17 +256,17 @@ namespace OpenDreamRuntime {
 
             // `WaitFor = true` frames
             while (_current is not null && _current.WaitFor) {
-                var frame = _current;
+                newStackReversed.Push(_current);
                 PopProcState();
-                newStackReversed.Push(frame);
             }
 
             // `WaitFor = false` frame
             if(_current == null) throw new InvalidOperationException();
+            var threadName = _current.ToString();
             newStackReversed.Push(_current);
             PopProcState();
 
-            DreamThread newThread = new DreamThread("defer " + Name);
+            DreamThread newThread = new DreamThread(threadName);
             foreach (var frame in newStackReversed) {
                 frame.Thread = newThread;
                 newThread.PushProcState(frame);
@@ -309,10 +315,6 @@ namespace OpenDreamRuntime {
         {
             _current?.Cancel();
 
-            if (_current is DMProcState state) {
-                state.ReturnPools();
-            }
-
             var dreamMan = IoCManager.Resolve<IDreamManager>();
             dreamMan.LastDMException = exception;
 
@@ -330,6 +332,11 @@ namespace OpenDreamRuntime {
             dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
 
             IoCManager.Resolve<Procs.DebugAdapter.IDreamDebugManager>()?.HandleException(this, exception);
+
+            // Only return pools after giving the debugger a chance to inspect them.
+            if (_current is DMProcState state) {
+                state.ReturnPools();
+            }
         }
 
         public IEnumerable<ProcState> InspectStack() {

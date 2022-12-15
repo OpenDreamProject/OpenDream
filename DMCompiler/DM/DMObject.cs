@@ -29,7 +29,7 @@ namespace DMCompiler.DM {
 
         public List<DMASTObjectVarOverride>? danglingOverrides = null; // Overrides waiting for the LateVarDef event to happen
         private bool _isSubscribedToVarDef = false;
-        
+
         public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
             Path = path;
@@ -90,7 +90,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        ///<remarks> 
+        ///<remarks>
         /// Note that this DOES NOT query our <see cref= "GlobalVariables" />. <br/>
         /// <see langword="TODO:"/> Make this (and other things) match the nomenclature of <see cref="HasLocalVariable"/>
         /// </remarks>
@@ -179,8 +179,7 @@ namespace DMCompiler.DM {
         }
 
         public void CreateInitializationProc() {
-            if (InitializationProcExpressions.Count > 0 && InitializationProc == null)
-            {
+            if (InitializationProcExpressions.Count > 0 && InitializationProc == null) {
                 var init = DMObjectTree.CreateDMProc(this, null);
                 InitializationProc = init.Id;
                 init.PushArguments(0);
@@ -188,6 +187,10 @@ namespace DMCompiler.DM {
 
                 foreach (DMExpression expression in InitializationProcExpressions) {
                     try {
+                        if (expression.Location.Line is int line) {
+                            init.DebugSource(expression.Location.SourceFile);
+                            init.DebugLine(line);
+                        }
                         expression.EmitPushValue(this, init);
                     } catch (CompileErrorException e) {
                         DMCompiler.Emit(e.Error);

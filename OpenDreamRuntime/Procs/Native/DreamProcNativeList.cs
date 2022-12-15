@@ -1,4 +1,5 @@
-﻿using OpenDreamRuntime.Objects;
+﻿using System.Linq;
+using OpenDreamRuntime.Objects;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
@@ -8,7 +9,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Add(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = (DreamList)instance;
 
-            foreach (DreamValue argument in arguments.OrderedArguments) {
+            foreach (DreamValue argument in arguments.IterOrderedArguments) {
                 if (argument.TryGetValueAsDreamList(out DreamList argumentList)) {
                     foreach (DreamValue value in argumentList.GetValues()) {
                         list.AddValue(value);
@@ -66,11 +67,9 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = (DreamList)instance;
 
             if (index <= 0) index = list.GetLength() + 1;
-            if (arguments.OrderedArguments.Count < 2) throw new Exception("No value given to insert");
+            if (arguments.OrderedArgumentCount < 2) throw new Exception("No value given to insert");
 
-            for (int i = 1; i < arguments.OrderedArguments.Count; i++) {
-                DreamValue item = arguments.OrderedArguments[i];
-
+            foreach (DreamValue item in arguments.IterOrderedArguments.Skip(1)) {
                 if (item.TryGetValueAsDreamList(out DreamList valueList)) {
                     foreach (DreamValue value in valueList.GetValues()) {
                         list.Insert(index++, value);

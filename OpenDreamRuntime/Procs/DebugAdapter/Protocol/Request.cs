@@ -20,6 +20,7 @@ public class Request : ProtocolMessage {
             "disconnect" => json.Deserialize<RequestDisconnect>(),
             "setBreakpoints" => json.Deserialize<RequestSetBreakpoints>(),
             "setFunctionBreakpoints" => json.Deserialize<RequestSetFunctionBreakpoints>(),
+            "setExceptionBreakpoints" => json.Deserialize<RequestSetExceptionBreakpoints>(),
             "configurationDone" => json.Deserialize<RequestConfigurationDone>(),
             "threads" => json.Deserialize<RequestThreads>(),
             "continue" => json.Deserialize<RequestContinue>(),
@@ -28,6 +29,9 @@ public class Request : ProtocolMessage {
             "scopes" => json.Deserialize<RequestScopes>(),
             "variables" => json.Deserialize<RequestVariables>(),
             "exceptionInfo" => json.Deserialize<RequestExceptionInfo>(),
+            "next" => json.Deserialize<RequestNext>(),
+            "stepIn" => json.Deserialize<RequestStepIn>(),
+            "stepOut" => json.Deserialize<RequestStepOut>(),
             // Caller will fail to recognize it and can respond with `success: false`.
             _ => request,
         };

@@ -48,7 +48,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public Location Location = Location.Unknown;
         public ProcAttributes Attributes;
-        public string Name { get => _astDefinition?.Name; }
+        public string Name { get => _astDefinition?.Name ?? "<init>"; }
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 
@@ -65,12 +65,23 @@ namespace DMCompiler.DM {
         [CanBeNull] private Stack<string> _loopStack = null;
         private Stack<DMProcScope> _scopes = new();
         private Dictionary<string, LocalVariable> _parameters = new();
-        private int _localVariableIdCounter = 0;
         private int _labelIdCounter = 0;
         private int _maxStackSize = 0;
         private int _currentStackSize = 0;
         private bool _negativeStackSizeError = false;
 
+        private List<LocalVariableJson> _localVariableNames = new();
+        private int _localVariableIdCounter = 0;
+        private int AllocLocalVariable(string name) {
+            _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
+            return _localVariableIdCounter++;
+        }
+        private void DeallocLocalVariables(int amount) {
+            if (amount > 0) {
+                _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Remove = amount });
+                _localVariableIdCounter -= amount;
+            }
+        }
 
         public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
         {
@@ -135,6 +146,9 @@ namespace DMCompiler.DM {
                         Type = argumentType
                     });
                 }
+            }
+            if (_localVariableNames.Count > 0) {
+                procDefinition.Locals = _localVariableNames;
             }
 
             return procDefinition;
@@ -214,7 +228,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
-            int localVarId = _localVariableIdCounter++;
+            int localVarId = AllocLocalVariable(name);
             return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
         }
 
@@ -222,7 +236,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
-            int localVarId = _localVariableIdCounter++;
+            int localVarId = AllocLocalVariable(name);
             return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
         }
 
@@ -544,7 +558,7 @@ namespace DMCompiler.DM {
 
         public void EndScope() {
             DMProcScope destroyedScope = _scopes.Pop();
-            _localVariableIdCounter -= destroyedScope.LocalVariables.Count;
+            DeallocLocalVariables(destroyedScope.LocalVariables.Count);
         }
 
         public void Jump(string label) {

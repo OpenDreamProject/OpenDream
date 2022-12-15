@@ -9,6 +9,9 @@ public sealed class RequestLaunch : Request {
         [JsonPropertyName("noDebug")] public bool NoDebug { get; set; }
         [JsonPropertyName("__restart")] public object? RestartData { get; set; }
 
+        // VSCode specific
+        [JsonPropertyName("stopOnEntry")] public bool? StopOnEntry { get; set; }
+
         // OpenDream debugger specific
         [JsonPropertyName("json_path")] public string? JsonPath { get; set; }
     }

@@ -1,7 +1,9 @@
 using System.IO;
 using System.Linq;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Dream.Procs;
 using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;
@@ -12,12 +14,56 @@ sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
 
+    // Setup
     private DebugAdapter? _adapter;
-    private readonly Dictionary<string, List<Breakpoint>> _breakpoints = new();
+    private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
+    private bool _stopOnEntry = false;
+
+    // State
+    private bool _stopped = false;
+    private bool _terminated = false;
+    private DreamThread? _stoppedThread;
+
+    private enum StepMode {
+        None,
+        StepOver,  // aka "next"
+        StepIn,
+        StepOut,
+    }
+    private readonly Dictionary<int, (StepMode Mode, int FrameId)> _threadStepModes = new();
+
+    // Breakpoint storage
+    private const string ExceptionFilterRuntimes = "runtimes";
+    private bool breakOnRuntimes = true;
+
+    private sealed class FileBreakpointSlot {
+        public List<ActiveBreakpoint> Breakpoints = new();
+        //public DMProc Proc;
+        //public int BytecodeOffset;
+
+        public FileBreakpointSlot() {}
+    }
+
+    private sealed class FunctionBreakpointSlot {
+        public List<ActiveBreakpoint> Breakpoints = new();
+        public FunctionBreakpointSlot() {}
+    }
+
+    private struct ActiveBreakpoint {
+        public int Id;
+        public string? Condition;
+        public string? HitCondition;
+        public string? LogMessage;
+    }
 
     private int _breakpointIdCounter = 1;
 
-    private ILookup<(string Type, string Proc), ActiveFunctionBreakpoint>? functionBreakpoints;
+    private Dictionary<string, Dictionary<int, FileBreakpointSlot>>? _possibleBreakpoints;
+    private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
+
+    // Temporary data for a given Stop
+    private Exception? _exception;
+
     private Dictionary<int, WeakReference<ProcState>> stackFramesById = new();
 
     private int _variablesIdCounter = 0;
@@ -28,23 +74,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         return id;
     }
 
-    private Exception? _exception;
-
-    public bool Stopped { get; private set; }
-
-    private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
-
-    private struct Breakpoint {
-        public int Id;
-        public int Line;
-    }
-
-    private struct ActiveFunctionBreakpoint {
-        public int Id;
-        public string? Condition;
-        public string? HitCondition;
-    }
-
+    // Lifecycle
     public void Initialize(int port) {
         _adapter = new DebugAdapter();
 
@@ -55,47 +85,70 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public void Update() {
         _adapter?.HandleMessages();
-        if (_adapter == null || !_adapter.AnyClientsConnected()) {
-            Stopped = false;
+        if (!CanStop()) {
+            _stopped = false;
         }
     }
 
     public void Shutdown() {
-        _breakpoints.Clear();
         _breakpointIdCounter = 0;
         _adapter?.Shutdown();
     }
 
+    // Callbacks from the runtime
     public void HandleOutput(LogLevel logLevel, string message) {
-        if (_adapter == null)
-            return;
-
         string category = logLevel switch {
-            LogLevel.Fatal => "stderr",
-            LogLevel.Error => "stderr",
-            _ => "stdout"
+            LogLevel.Fatal or LogLevel.Error => OutputEvent.CategoryStderr,
+            _ => OutputEvent.CategoryStdout,
         };
-
-        _adapter.SendAll(new OutputEvent(category, $"{message}\n"));
+        Output(message, category);
     }
 
     public void HandleLineChange(DMProcState state, int line) {
-        if (!_breakpoints.TryGetValue(state.CurrentSource, out var breakpoints))
+        if (_stopOnEntry) {
+            _stopOnEntry = false;
+            _stoppedThread = state.Thread;
+            Stop(state.Thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonEntry,
+            });
+            return;
+        }
+
+        bool stoppedOnStep = false;
+        switch (_threadStepModes.GetValueOrDefault(state.Thread.Id)) {
+            case (StepMode.StepIn, _):
+                stoppedOnStep = true;
+                break;
+            case (StepMode.StepOut, int whenNotInStack):
+                stoppedOnStep = whenNotInStack == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
+                break;
+            case (StepMode.StepOver, int whenTop):
+                stoppedOnStep = state.Id == whenTop || whenTop == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
+                break;
+        }
+
+        if (stoppedOnStep) {
+            _threadStepModes.Remove(state.Thread.Id);
+            _stoppedThread = state.Thread;
+            Stop(state.Thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonStep,
+            });
+            return;
+        }
+
+        if (state.CurrentSource is null || _possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(state.CurrentSource, out var fileSlots))
             return;
 
         var hit = new List<int>();
-        foreach (Breakpoint breakpoint in breakpoints) {
-            if (breakpoint.Line == line) {
-                Logger.Info($"Breakpoint hit at {state.CurrentSource}:{line}");
-                hit.Add(breakpoint.Id);
-                return;
+        foreach (var bp in fileSlots[line].Breakpoints ?? Enumerable.Empty<ActiveBreakpoint>()) {
+            if (TestBreakpoint(bp)) {
+                hit.Add(bp.Id);
             }
         }
         if (hit.Any()) {
-            Stop(new StoppedEvent {
+            Output($"Breakpoint hit at {state.CurrentSource}:{line}");
+            Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonBreakpoint,
-                ThreadId = state.Thread.Id,
-                AllThreadsStopped = true,
                 HitBreakpointIds = hit,
             });
         }
@@ -103,50 +156,67 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     public void HandleProcStart(DMProcState state) {
         var hit = new List<int>();
-        if (functionBreakpoints != null) {
-            foreach (var bp in functionBreakpoints[(state.Proc.OwningType.PathString, state.Proc.Name)]) {
-                if (bp.Condition is null && bp.HitCondition is null) {
+        if (_possibleFunctionBreakpoints?.GetValueOrDefault((state.Proc.OwningType.PathString, state.Proc.Name)) is FunctionBreakpointSlot slot) {
+            foreach (var bp in slot.Breakpoints) {
+                if (TestBreakpoint(bp)) {
                     hit.Add(bp.Id);
-                    break;
                 }
             }
         }
         if (hit.Any()) {
-            Logger.Info($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
-            Stop(new StoppedEvent {
+            Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
+            Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonFunctionBreakpoint,
-                ThreadId = state.Thread.Id,
-                AllThreadsStopped = true,
                 HitBreakpointIds = hit,
             });
         }
     }
 
     public void HandleException(DreamThread thread, Exception exception) {
-        _exception = exception;
-        Stop(new StoppedEvent {
-            Reason = StoppedEvent.ReasonException,
-            ThreadId = thread.Id,
-            AllThreadsStopped = true,
-        });
+        if (breakOnRuntimes) {
+            _exception = exception;
+            Output("Stopped on exception");
+            Stop(thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonException,
+            });
+        }
     }
 
-    private void Stop(StoppedEvent stoppedEvent) {
-        if (_adapter == null || !_adapter.AnyClientsConnected())
+    private bool TestBreakpoint(ActiveBreakpoint bp) => bp.Condition is null && bp.HitCondition is null;
+
+    // Utilities
+    private void Output(string message, string category = OutputEvent.CategoryConsole) {
+        _adapter?.SendAll(new OutputEvent(category, $"{message}\n"));
+    }
+
+    private bool CanStop() => _adapter != null && _adapter.AnyClientsConnected() && !_terminated;
+
+    private void Stop(DreamThread? thread, StoppedEvent stoppedEvent) {
+        if (_adapter == null || !CanStop())
             return;
 
+        _stoppedThread = thread;
+        stoppedEvent.ThreadId = thread?.Id;
+        stoppedEvent.AllThreadsStopped = true;
         _adapter.SendAll(stoppedEvent);
 
-        Stopped = true;
+        _stopped = true;
 
         // We have to block the DM runtime no matter where we are in its call
         // stack. Unfortunately this also blocks the Robust engine.
-        while (Stopped) {
+        while (_stopped) {
             Update();
             System.Threading.Thread.Sleep(50);
         }
     }
 
+    private void Resume() {
+        _stopped = false;
+        stackFramesById.Clear();
+        variableReferences.Clear();
+    }
+
+    // DAP request handlers
     private void OnClientConnected(DebugAdapterClient client) {
         client.OnRequest += OnRequest;
     }
@@ -166,11 +236,14 @@ sealed class DreamDebugManager : IDreamDebugManager {
             case RequestSetBreakpoints reqSetBreakpoints:
                 HandleRequestSetBreakpoints(client, reqSetBreakpoints);
                 break;
-            case RequestConfigurationDone reqConfigDone:
-                HandleRequestConfigurationDone(client, reqConfigDone);
-                break;
             case RequestSetFunctionBreakpoints reqFuncBreakpoints:
                 HandleRequestSetFunctionBreakpoints(client, reqFuncBreakpoints);
+                break;
+            case RequestSetExceptionBreakpoints requestSetExceptionBreakpoints:
+                HandleRequestSetExceptionBreakpoints(client, requestSetExceptionBreakpoints);
+                break;
+            case RequestConfigurationDone reqConfigDone:
+                HandleRequestConfigurationDone(client, reqConfigDone);
                 break;
             case RequestThreads reqThreads:
                 HandleRequestThreads(client, reqThreads);
@@ -193,6 +266,15 @@ sealed class DreamDebugManager : IDreamDebugManager {
             case RequestExceptionInfo requestExceptionInfo:
                 HandleRequestExceptionInfo(client, requestExceptionInfo);
                 break;
+            case RequestStepIn requestStepIn:
+                HandleRequestStepIn(client, requestStepIn);
+                break;
+            case RequestNext requestNext:
+                HandleRequestNext(client, requestNext);
+                break;
+            case RequestStepOut requestStepOut:
+                HandleRequestStepOut(client, requestStepOut);
+                break;
             default:
                 req.RespondError(client, $"Unknown request \"{req.Command}\"");
                 break;
@@ -213,6 +295,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
             SupportsConfigurationDoneRequest = true,
             SupportsFunctionBreakpoints = true,
             SupportsExceptionInfoRequest = true,
+            ExceptionBreakpointFilters = new[] {
+                new ExceptionBreakpointsFilter(ExceptionFilterRuntimes, "Runtime errors") { Default = true },
+            },
         });
         // ... opportunity to do stuff that might take time here if needed ...
         client.SendMessage(new InitializedEvent());
@@ -226,19 +311,56 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         _dreamManager.PreInitialize(reqLaunch.Arguments.JsonPath);
+        _possibleBreakpoints = IteratePossibleBreakpoints()
+            .GroupBy(pair => pair.Source, pair => pair.Line)
+            .ToDictionary(group => group.Key, group => group.Distinct().ToDictionary(line => line, _ => new FileBreakpointSlot()));
+        _possibleFunctionBreakpoints = IterateProcs()
+            .Distinct()
+            .ToDictionary(t => t, _ => new FunctionBreakpointSlot());
+
+        _stopOnEntry = reqLaunch.Arguments.StopOnEntry is true;
         reqLaunch.Respond(client);
+    }
+
+    private IEnumerable<(string Source, int Line)> IteratePossibleBreakpoints() {
+        foreach (var proc in _dreamManager.ObjectTree.Procs.Concat(new[] { _dreamManager.ObjectTree.GlobalInitProc }).OfType<DMProc>()) {
+            string? source = proc.Source;
+            if (source != null) {
+                yield return (source, proc.Line);
+            }
+            foreach (var (_, instruction) in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
+                switch (instruction) {
+                    case (DreamProcOpcode.DebugSource, string newSource):
+                        source = newSource;
+                        break;
+                    case (DreamProcOpcode.DebugLine, int line):
+                        yield return (source!, line);
+                        break;
+                }
+            }
+        }
+    }
+
+    private IEnumerable<(string Type, string Proc)> IterateProcs() {
+        foreach (var proc in _dreamManager.ObjectTree.Procs) {
+            yield return (proc.OwningType.PathString, proc.Name);
+        }
     }
 
     private void HandleRequestConfigurationDone(DebugAdapterClient client, RequestConfigurationDone reqConfigDone) {
         _dreamManager.StartWorld();
         reqConfigDone.Respond(client);
-        client.SendMessage(new ODReadyEvent(IoCManager.Resolve<Robust.Shared.Network.IServerNetManager>().Port));
+        if (!_terminated) {
+            client.SendMessage(new ODReadyEvent(IoCManager.Resolve<Robust.Shared.Network.IServerNetManager>().Port));
+        }
     }
 
     private void HandleRequestDisconnect(DebugAdapterClient client, RequestDisconnect reqDisconnect) {
         // TODO: Don't terminate if launch type was "attach"
         reqDisconnect.Respond(client);
         _server.Shutdown("A shutdown was initiated by the debug adapter");
+        _terminated = true;
+        _stopped = false;
     }
 
     private void HandleRequestSetBreakpoints(DebugAdapterClient client, RequestSetBreakpoints reqSetBreakpoints) {
@@ -249,27 +371,41 @@ sealed class DreamDebugManager : IDreamDebugManager {
             return;
         }
 
-        sourcePath = Path.GetRelativePath(RootPath, sourcePath);
-        if (!_breakpoints.TryGetValue(sourcePath, out var breakpoints)) {
-            breakpoints = new List<Breakpoint>();
-            _breakpoints.Add(sourcePath, breakpoints);
-        }
-
-        breakpoints.Clear();
-
         var setBreakpoints = reqSetBreakpoints.Arguments.Breakpoints;
         var responseBreakpoints = new Protocol.Breakpoint[setBreakpoints?.Length ?? 0];
+
+        sourcePath = Path.GetRelativePath(RootPath, sourcePath).Replace("\\", "/");
+        if (_possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(sourcePath, out var fileSlots)) {
+            // File isn't known - every breakpoint is invalid.
+            for (int i = 0; i < responseBreakpoints.Length; ++i) {
+                responseBreakpoints[i] = new Breakpoint(message: $"Unknown file \"{sourcePath}\"");
+            }
+            reqSetBreakpoints.Respond(client, responseBreakpoints);
+            return;
+        }
+
+        foreach (var slot in fileSlots.Values) {
+            slot.Breakpoints.Clear();
+        }
+
+        // We've unset old breakpoints, so set new ones if needed.
         if (setBreakpoints != null) {
             for (int i = 0; i < setBreakpoints.Length; i++) {
-                int id = ++_breakpointIdCounter;
-                SourceBreakpoint breakpoint = setBreakpoints[i];
+                SourceBreakpoint setBreakpoint = setBreakpoints[i];
+                if (fileSlots.TryGetValue(setBreakpoint.Line, out var slot)) {
+                    int id = ++_breakpointIdCounter;
 
-                breakpoints.Add(new Breakpoint {
-                    Id = id,
-                    Line = breakpoint.Line,
-                });
+                    slot.Breakpoints.Add(new ActiveBreakpoint {
+                        Id = id,
+                        Condition = setBreakpoint.Condition,
+                        HitCondition = setBreakpoint.HitCondition,
+                        LogMessage = setBreakpoint.LogMessage,
+                    });
 
-                responseBreakpoints[i] = new(id, source, breakpoint.Line, breakpoint.Column ?? 0);
+                    responseBreakpoints[i] = new(id, source, setBreakpoint.Line);
+                } else {
+                    responseBreakpoints[i] = new(message: $"No code on line {setBreakpoint.Line}") { Line = setBreakpoint.Line };
+                }
             }
         }
 
@@ -280,34 +416,40 @@ sealed class DreamDebugManager : IDreamDebugManager {
         var input = reqFuncBreakpoints.Arguments.Breakpoints;
         var output = new Protocol.Breakpoint[input.Length];
 
-        if (input.Length == 0) {
-            this.functionBreakpoints = null;
-        } else {
-            var toSave = new List<(string Type, string Proc, ActiveFunctionBreakpoint Breakpoint)>();
+        foreach (var v in _possibleFunctionBreakpoints!.Values) {
+            v.Breakpoints.Clear();
+        }
 
-            for (int i = 0; i < input.Length; ++i) {
-                var bp = input[i];
+        for (int i = 0; i < input.Length; ++i) {
+            var bp = input[i];
 
-                string name = bp.Name.Replace("/proc/", "/").Replace("/verb/", "/");
-                int last = name.LastIndexOf('/');
-                string type = name[..last];
-                string proc = name[(last + 1)..];
-                if (type == "") {
-                    type = "/";
-                }
+            string name = bp.Name.Replace("/proc/", "/").Replace("/verb/", "/");
+            int last = name.LastIndexOf('/');
+            string type = name[..last];
+            string proc = name[(last + 1)..];
+            if (type == "") {
+                type = "/";
+            }
 
+            if (_possibleFunctionBreakpoints.GetValueOrDefault((type, proc)) is FunctionBreakpointSlot slot) {
                 int id = ++_breakpointIdCounter;
                 output[i] = new(id, verified: true);
-                toSave.Add((type, proc, new ActiveFunctionBreakpoint {
+                slot.Breakpoints.Add(new ActiveBreakpoint {
                     Id = id,
                     Condition = bp.Condition,
                     HitCondition = bp.HitCondition,
-                }));
+                });
+            } else {
+                output[i] = new(message: $"No proc {type}::{proc}");
             }
-
-            this.functionBreakpoints = toSave.ToLookup(triplet => (triplet.Type, triplet.Proc), triplet => triplet.Breakpoint);
         }
+
         reqFuncBreakpoints.Respond(client, output);
+    }
+
+    private void HandleRequestSetExceptionBreakpoints(DebugAdapterClient client, RequestSetExceptionBreakpoints requestSetExceptionBreakpoints) {
+        breakOnRuntimes = requestSetExceptionBreakpoints.Arguments.Filters.Contains(ExceptionFilterRuntimes);
+        requestSetExceptionBreakpoints.Respond(client, null);
     }
 
     private IEnumerable<DreamThread> InspectThreads() {
@@ -325,21 +467,38 @@ sealed class DreamDebugManager : IDreamDebugManager {
         reqThreads.Respond(client, threads);
     }
 
-    private void HandleRequestContinue(DebugAdapterClient client, RequestContinue reqContinue) {
-        Stopped = false;
-        stackFramesById.Clear();
-        variableReferences.Clear();
-        reqContinue.Respond(client, allThreadsContinued: true);
-    }
-
     private void HandleRequestPause(DebugAdapterClient client, RequestPause reqPause) {
         // "The debug adapter first sends the response and then a stopped event (with reason pause) after the thread has been paused successfully."
         reqPause.Respond(client);
-        Stop(new StoppedEvent {
+        Stop(null, new StoppedEvent {
             Reason = StoppedEvent.ReasonPause,
-            AllThreadsStopped = true,
             Description = "Paused by request",
         });
+    }
+
+    private void HandleRequestContinue(DebugAdapterClient client, RequestContinue reqContinue) {
+        Resume();
+        reqContinue.Respond(client, allThreadsContinued: true);
+    }
+
+    private void HandleRequestStepIn(DebugAdapterClient client, RequestStepIn requestStepIn) {
+        _threadStepModes[requestStepIn.Arguments.ThreadId] = (StepMode.StepIn, 0);
+        Resume();
+        requestStepIn.Respond(client);
+    }
+
+    private void HandleRequestNext(DebugAdapterClient client, RequestNext requestNext) {
+        var thread = InspectThreads().First(t => t.Id == requestNext.Arguments.ThreadId);
+        _threadStepModes[requestNext.Arguments.ThreadId] = (StepMode.StepOver, thread.InspectStack().FirstOrDefault()?.Id ?? -1);
+        Resume();
+        requestNext.Respond(client);
+    }
+
+    private void HandleRequestStepOut(DebugAdapterClient client, RequestStepOut requestStepOut) {
+        var thread = InspectThreads().First(t => t.Id == requestStepOut.Arguments.ThreadId);
+        _threadStepModes[requestStepOut.Arguments.ThreadId] = (StepMode.StepOut, thread.InspectStack().FirstOrDefault()?.Id ?? -1);
+        Resume();
+        requestStepOut.Respond(client);
     }
 
     private void HandleRequestExceptionInfo(DebugAdapterClient client, RequestExceptionInfo requestExceptionInfo) {
@@ -370,13 +529,25 @@ sealed class DreamDebugManager : IDreamDebugManager {
             frame.AppendStackFrame(nameBuilder);
             output.Add(new StackFrame {
                 Id = frame.Id,
-                Source = source is null ? null : new Source(Path.GetFileName(source), Path.Join(RootPath, source)),
+                Source = TranslateSource(source),
                 Line = line ?? 0,
                 Name = nameBuilder.ToString(),
             });
             stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
         }
         reqStackTrace.Respond(client, output, output.Count);
+    }
+
+    private Source? TranslateSource(string? source) {
+        if (source is null)
+            return null;
+
+        var fname = Path.GetFileName(source);
+        if (Path.IsPathRooted(source)) {
+            return new Source(fname, source);
+        } else {
+            return new Source(fname, Path.Join(RootPath, source));
+        }
     }
 
     private void HandleRequestScopes(DebugAdapterClient client, RequestScopes requestScopes) {
@@ -392,18 +563,40 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         requestScopes.Respond(client, new[] {
             new Scope {
+                Name = "Arguments",
+                PresentationHint = Scope.PresentationHintArguments,
+                VariablesReference = AllocVariableRef(req => ExpandArguments(req, dmFrame)),
+            },
+            new Scope {
                 Name = "Locals",
+                PresentationHint = Scope.PresentationHintLocals,
                 VariablesReference = AllocVariableRef(req => ExpandLocals(req, dmFrame)),
+            },
+            new Scope {
+                Name = "Globals",
+                VariablesReference = AllocVariableRef(req => ExpandGlobals(req)),
             },
         });
     }
 
-    private IEnumerable<Variable> ExpandLocals(RequestVariables req, DMProcState dmFrame) {
+    private IEnumerable<Variable> ExpandArguments(RequestVariables req, DMProcState dmFrame) {
         if (dmFrame.Proc.OwningType != OpenDreamShared.Dream.DreamPath.Root) {
             yield return DescribeValue("src", new(dmFrame.Instance));
         }
         yield return DescribeValue("usr", new(dmFrame.Usr));
-        foreach (var (name, value) in dmFrame.InspectLocals()) {
+        foreach (var (name, value) in dmFrame.DebugArguments()) {
+            yield return DescribeValue(name, value);
+        }
+    }
+
+    private IEnumerable<Variable> ExpandLocals(RequestVariables req, DMProcState dmFrame) {
+        foreach (var (name, value) in dmFrame.DebugLocals()) {
+            yield return DescribeValue(name, value);
+        }
+    }
+
+    private IEnumerable<Variable> ExpandGlobals(RequestVariables req) {
+        foreach (var (name, value) in _dreamManager.GlobalNames.Zip(_dreamManager.Globals)) {
             yield return DescribeValue(name, value);
         }
     }
@@ -411,16 +604,46 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private Variable DescribeValue(string name, DreamValue value) {
         var varDesc = new Variable { Name = name };
         varDesc.Value = value.ToString();
-        if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
+        if (value.TryGetValueAsDreamList(out var list) && list != null) {
+            if (list.GetLength() > 0) {
+                varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
+                varDesc.IndexedVariables = list.GetLength() * (list.IsAssociative ? 2 : 1);
+            }
+        } else if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
-            varDesc.IndexedVariables = obj.GetVariableNames().Count;
+            varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;
         }
         return varDesc;
     }
 
-    private IEnumerable<Variable> ExpandObject(RequestVariables req, Objects.DreamObject obj) {
-        foreach (var (name, value) in obj.GetAllVariables()) {
-            yield return DescribeValue(name, value);
+    private IEnumerable<Variable> ExpandList(RequestVariables req, DreamList list) {
+        if (list.IsAssociative) {
+            var assoc = list.GetAssociativeValues();
+            foreach (var (i, key) in list.GetValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take((req.Arguments.Count ?? int.MaxValue) / 2)) {
+                assoc.TryGetValue(key, out var value);
+                yield return DescribeValue($"keys[{i}]", key);
+                yield return DescribeValue($"vals[{i}]", value);
+            }
+        } else {
+            foreach (var (i, value) in list.GetValues().Select((v, i) => (i + 1, v)).Skip(req.Arguments.Start ?? 0).Take(req.Arguments.Count ?? int.MaxValue)) {
+                yield return DescribeValue($"[{i}]", value);
+            }
+        }
+    }
+
+    private IEnumerable<Variable> ExpandObject(RequestVariables req, DreamObject obj) {
+        foreach (var name in obj.GetVariableNames().OrderBy(k => k)) {
+            Variable described;
+            try {
+                described = DescribeValue(name, obj.GetVariable(name));
+            } catch (Exception ex) {
+                Logger.ErrorS("debug", ex, $"Error in GetVariable({name})");
+                described = new Variable {
+                    Name = name,
+                    Value = $"<error: {ex.Message}>",
+                };
+            }
+            yield return described;
         }
     }
 
@@ -434,9 +657,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 }
 
-public interface IDreamDebugManager {
-    bool Stopped { get; }
-
+interface IDreamDebugManager {
     public void Initialize(int port);
     public void Update();
     public void Shutdown();

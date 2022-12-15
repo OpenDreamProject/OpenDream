@@ -48,7 +48,7 @@ namespace OpenDreamRuntime.Objects {
             _parentObjectDefinition = parentObjectDefinition;
 
             Variables = new Dictionary<string, DreamValue>(parentObjectDefinition.Variables);
-            GlobalVariables = new Dictionary<string, int>();
+            GlobalVariables = new Dictionary<string, int>(parentObjectDefinition.GlobalVariables);
         }
 
         public void SetVariableDefinition(string variableName, DreamValue value) {

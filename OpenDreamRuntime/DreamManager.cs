@@ -4,6 +4,7 @@ using System.Text.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
@@ -20,10 +21,13 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
         [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
+        [Dependency] private readonly ITaskManager _taskManager = default!;
+        [Dependency] private readonly IGameTiming _gameTiming = default!;
 
-        public DreamObjectTree ObjectTree { get; private set; } = new();
+        public DreamObjectTree ObjectTree { get; private set; }
         public DreamObject WorldInstance { get; private set; }
         public Exception? LastDMException { get; set; }
 
@@ -45,18 +49,19 @@ namespace OpenDreamRuntime {
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string jsonPath) {
+            ObjectTree = new(); // cheesy, sorts out a load order conflict.
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 
             if (!LoadJson(jsonPath)) {
-                IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
+                _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
             }
         }
 
         public void StartWorld() {
             // It is now OK to call user code, like /New procs.
             Initialized = true;
-            InitializedTick = IoCManager.Resolve<IGameTiming>().CurTick;
+            InitializedTick = _gameTiming.CurTick;
 
             // Call global <init> with waitfor=FALSE
             ObjectTree.GlobalInitProc?.Spawn(WorldInstance, new());

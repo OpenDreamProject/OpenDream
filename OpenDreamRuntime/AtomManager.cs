@@ -172,7 +172,7 @@ namespace OpenDreamRuntime {
         }
     }
 
-    internal interface IAtomManager {
+    public interface IAtomManager {
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 

@@ -21,10 +21,10 @@ namespace OpenDreamRuntime.Procs {
 
         public IDreamManager DreamManager;
         public IDreamMapManager DreamMapManager;
-        public IDreamDebugManager DreamDebugManager;
+        internal IDreamDebugManager DreamDebugManager;
         public DreamResourceManager DreamResourceManager;
 
-        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager)
+        internal DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager)
             : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)
         {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
@@ -175,7 +175,7 @@ namespace OpenDreamRuntime.Procs {
 
         private static OpcodeHandler?[] _opcodeHandlers = {};
         public IDreamManager DreamManager => _proc.DreamManager;
-        public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
+        internal IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;

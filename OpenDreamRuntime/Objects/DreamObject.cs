@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System.Globalization;
 using System.Linq;
@@ -46,8 +45,8 @@ namespace OpenDreamRuntime.Objects {
             _variables?.Clear();
         }
 
-        public bool IsSubtypeOf(DreamPath path) {
-            return ObjectDefinition.IsSubtypeOf(path);
+        public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
+            return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 
         public bool HasVariable(string name) {

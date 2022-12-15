@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
 
-        protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List)) {
+        protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamObjectTree>().GetObjectDefinition(DreamPath.List)) {
             _values = new List<DreamValue>(size);
         }
 
@@ -256,6 +256,7 @@ namespace OpenDreamRuntime.Objects {
     // global.vars list
     sealed class DreamGlobalVars : DreamList {
         [Dependency] private readonly IDreamManager _dreamMan = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
         public override bool IsAssociative =>
             true; // We don't use the associative array but, yes, we behave like an associative list
@@ -270,7 +271,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override List<DreamValue> GetValues() {
-            var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+            var root = _objectTree.GetObjectDefinition(DreamPath.Root);
             List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
             // Skip world
             foreach (var key in root.GlobalVariables.Keys.Skip(1)) {
@@ -285,7 +286,7 @@ namespace OpenDreamRuntime.Objects {
                 return false;
             }
 
-            return _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root).GlobalVariables.ContainsKey(varName);
+            return _objectTree.GetObjectDefinition(DreamPath.Root).GlobalVariables.ContainsKey(varName);
         }
 
         public override bool ContainsValue(DreamValue value) {
@@ -297,7 +298,7 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception($"Invalid var index {key}");
             }
 
-            var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+            var root = _objectTree.GetObjectDefinition(DreamPath.Root);
             if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
                 throw new Exception($"Invalid global {varName}");
             }
@@ -307,7 +308,7 @@ namespace OpenDreamRuntime.Objects {
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
             if (key.TryGetValueAsString(out var varName)) {
-                var root = _dreamMan.ObjectTree.GetObjectDefinition(DreamPath.Root);
+                var root = _objectTree.GetObjectDefinition(DreamPath.Root);
                 if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
                     throw new Exception($"Cannot set value of undefined global \"{varName}\"");
                 }
@@ -322,16 +323,15 @@ namespace OpenDreamRuntime.Objects {
     // atom.filters list
     // Operates on an atom's appearance
     public sealed class DreamFilterList : DreamList {
-        private readonly IDreamManager _dreamManager;
-        private readonly IAtomManager _atomManager;
-        private readonly ISerializationManager _serializationManager;
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly IAtomManager _atomManager = default!;
+        [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
         private readonly DreamObject _atom;
 
         public DreamFilterList(DreamObject atom) {
-            _dreamManager = IoCManager.Resolve<IDreamManager>();
-            _atomManager = IoCManager.Resolve<IAtomManager>();
-            _serializationManager = IoCManager.Resolve<ISerializationManager>();
+            IoCManager.InjectDependencies(this);
             _atom = atom;
         }
 
@@ -374,13 +374,13 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception($"Atom only has {appearance.Filters.Count} filter(s), cannot index {filterIndex}");
 
             DreamFilter filter = appearance.Filters[filterIndex - 1];
-            DreamObject filterObject = _dreamManager.ObjectTree.CreateObject(DreamPath.Filter);
+            DreamObject filterObject = _objectTree.CreateObject(DreamPath.Filter);
             DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
             return new DreamValue(filterObject);
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
-            if (!value.TryGetValueAsDreamObjectOfType(DreamPath.Filter, out var filterObject))
+            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Filter, out var filterObject))
                 throw new Exception($"Cannot set value of filter list to {value}");
             if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
                 throw new Exception($"Invalid index into filter list: {key}");
@@ -390,7 +390,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override void AddValue(DreamValue value) {
-            if (!value.TryGetValueAsDreamObjectOfType(DreamPath.Filter, out var filterObject))
+            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Filter, out var filterObject))
                 throw new Exception($"Cannot add {value} to filter list");
 
             DreamFilter filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];

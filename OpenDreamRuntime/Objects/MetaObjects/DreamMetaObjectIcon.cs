@@ -12,6 +12,7 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
     public IDreamMetaObject? ParentType { get; set; }
 
     [Dependency] private readonly DreamResourceManager _rscMan = default!;
+    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
     public DreamMetaObjectIcon() {
         IoCManager.InjectDependencies(this);
@@ -34,7 +35,7 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
 
         if (icon != DreamValue.Null) {
             // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
-            var (iconRsc, iconDescription) = GetIconResourceAndDescription(_rscMan, icon);
+            var (iconRsc, iconDescription) = GetIconResourceAndDescription(_objectTree, _rscMan, icon);
 
             dreamIcon.InsertStates(iconRsc, iconDescription, state, dir, frame, useStateName: false);
         }
@@ -61,8 +62,8 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
     }
 
     public static (DreamResource Resource, ParsedDMIDescription Description) GetIconResourceAndDescription(
-        DreamResourceManager resourceManager, DreamValue value) {
-        if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var iconObj)) {
+        IDreamObjectTree objectTree, DreamResourceManager resourceManager, DreamValue value) {
+        if (value.TryGetValueAsDreamObjectOfType(objectTree.Icon, out var iconObj)) {
             DreamIcon dreamIcon = ObjectToDreamIcon[iconObj];
 
             return dreamIcon.GenerateDMI();

@@ -10,6 +10,7 @@ namespace OpenDreamRuntime.Procs.DebugAdapter;
 
 sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IDreamManager _dreamManager = default!;
+    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
@@ -323,12 +324,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<(string Source, int Line)> IteratePossibleBreakpoints() {
-        foreach (var proc in _dreamManager.ObjectTree.Procs.Concat(new[] { _dreamManager.ObjectTree.GlobalInitProc }).OfType<DMProc>()) {
+        foreach (var proc in _objectTree.Procs.Concat(new[] { _objectTree.GlobalInitProc }).OfType<DMProc>()) {
             string? source = proc.Source;
             if (source != null) {
                 yield return (source, proc.Line);
             }
-            foreach (var (_, instruction) in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
+            foreach (var (_, instruction) in new ProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
                 switch (instruction) {
                     case (DreamProcOpcode.DebugSource, string newSource):
                         source = newSource;
@@ -342,7 +343,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<(string Type, string Proc)> IterateProcs() {
-        foreach (var proc in _dreamManager.ObjectTree.Procs) {
+        foreach (var proc in _objectTree.Procs) {
             yield return (proc.OwningType.PathString, proc.Name);
         }
     }

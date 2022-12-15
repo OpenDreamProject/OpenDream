@@ -1,6 +1,8 @@
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Dream;
+using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeIcon {
@@ -46,6 +48,17 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        public static void Blend(DreamIcon icon, DreamValue blend, BlendType function, int x, int y) {
+            if (blend.TryGetValueAsString(out var colorStr)) {
+                if (!ColorHelpers.TryParseColor(colorStr, out var color))
+                    throw new Exception($"Invalid color {colorStr}");
+
+                icon.ApplyOperation(new DreamIconOperationBlendColor(function, x, y, color));
+            } else {
+                icon.ApplyOperation(new DreamIconOperationBlendImage(function, x, y, blend));
+            }
+        }
+
         [DreamProc("Blend")]
         [DreamProcParameter("icon", Type = DreamValue.DreamValueType.DreamObject)]
         [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float)]
@@ -63,10 +76,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!function.TryGetValueAsInteger(out var functionValue))
                 throw new Exception($"Invalid 'function' argument {function}");
 
-            var blendType = (DreamIconOperationBlend.BlendType) functionValue;
-
-            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
-            iconObj.ApplyOperation(new DreamIconOperationBlend(blendType, icon, x, y));
+            Blend(DreamMetaObjectIcon.ObjectToDreamIcon[instance], icon, (BlendType)functionValue, x, y);
             return DreamValue.Null;
         }
 

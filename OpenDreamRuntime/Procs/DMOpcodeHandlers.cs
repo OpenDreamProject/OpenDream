@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -617,11 +618,21 @@ namespace OpenDreamRuntime.Procs {
 
                         return null;
                     } else {
-                        throw new Exception("Invalid append operation on " + first + " and " + second);
+                        throw new Exception($"Invalid append operation on {first} and {second}");
                     }
                 } else {
                     result = second;
                 }
+            } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)) {
+                // Implicitly create a new /icon and ICON_ADD blend it
+                // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
+                DreamObject iconObj = state.Proc.ObjectTree.CreateObject(DreamPath.Icon);
+                var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
+                var from = DreamMetaObjectIcon.GetIconResourceAndDescription(state.Proc.ObjectTree, state.Proc.DreamResourceManager, first);
+
+                icon.InsertStates(from.Resource, from.Description, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+                DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
+                result = new DreamValue(iconObj);
             } else if (second.Value != null) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
@@ -629,11 +640,6 @@ namespace OpenDreamRuntime.Procs {
                         break;
                     case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                         result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
-                        break;
-                    case DreamValue.DreamValueType.DreamResource when (second.Type == DreamValue.DreamValueType.String && first.TryGetValueAsDreamResource(out var rsc) &&  rsc.ResourcePath.EndsWith("dmi")):
-                        // TODO icon += hexcolor is the same as Blend()
-                        state.DreamManager.WriteWorldLog("Appending colors to DMIs is not implemented", LogLevel.Warning, "opendream.unimplemented");
-                        result = first;
                         break;
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);

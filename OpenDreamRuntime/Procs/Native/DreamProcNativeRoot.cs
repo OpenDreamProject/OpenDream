@@ -87,17 +87,17 @@ namespace OpenDreamRuntime.Procs.Native {
 
             IAtomManager atomManager = IoCManager.Resolve<IAtomManager>();
             atomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
-                if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
+                if (arguments.NamedArguments?.TryGetValue("pixel_x", out DreamValue pixelX) is true) {
                     obj.SetVariableValue("pixel_x", pixelX);
                     pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
                 }
 
-                if (arguments.NamedArguments.TryGetValue("pixel_y", out DreamValue pixelY)) {
+                if (arguments.NamedArguments?.TryGetValue("pixel_y", out DreamValue pixelY) is true) {
                     obj.SetVariableValue("pixel_y", pixelY);
                     pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
                 }
 
-                if (arguments.NamedArguments.TryGetValue("dir", out DreamValue dir)) {
+                if (arguments.NamedArguments?.TryGetValue("dir", out DreamValue dir) is true) {
                     obj.SetVariableValue("dir", dir);
                     dir.TryGetValueAsInteger(out int dirValue);
                     appearance.Direction = (AtomDirection)dirValue;

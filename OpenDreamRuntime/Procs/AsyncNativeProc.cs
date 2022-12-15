@@ -8,8 +8,7 @@ namespace OpenDreamRuntime.Procs {
     public sealed class AsyncNativeProc : DreamProc {
         public delegate Task<DreamValue> HandlerFn(State s);
 
-        public sealed class State : ProcState
-        {
+        public sealed class State : ProcState {
             public DreamObject Src;
             public DreamObject Usr;
             public DreamProcArguments Arguments;
@@ -151,10 +150,6 @@ namespace OpenDreamRuntime.Procs {
         private Dictionary<string, DreamValue> _defaultArgumentValues;
         private Func<State, Task<DreamValue>> _taskFunc;
 
-        private AsyncNativeProc()
-            : base(DreamPath.Root, "<anonymous async proc>", null, ProcAttributes.DisableWaitfor, null, null, null, null, null, null)
-        {}
-
         public AsyncNativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
             : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility)
         {
@@ -162,16 +157,18 @@ namespace OpenDreamRuntime.Procs {
             _taskFunc = taskFunc;
         }
 
-        public override ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-        {
+        public override ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
             if (_defaultArgumentValues != null) {
+                var newNamedArguments = arguments.NamedArguments;
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames?.IndexOf(defaultArgumentValue.Key) ?? -1;
+                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
 
                     if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
-                        arguments.NamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
+                        newNamedArguments ??= new();
+                        newNamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
                     }
                 }
+                arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
             }
 
             return new State(this, _taskFunc, thread, src, usr, arguments);

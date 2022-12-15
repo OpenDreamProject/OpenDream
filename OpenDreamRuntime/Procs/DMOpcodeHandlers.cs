@@ -151,8 +151,7 @@ namespace OpenDreamRuntime.Procs {
                 if (!loc.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Turf, out var turf))
                     throw new Exception($"Invalid turf loc {loc}");
 
-                IDreamMapManager dreamMapManager = IoCManager.Resolve<IDreamMapManager>();
-                dreamMapManager.SetTurf(turf, objectDef, arguments);
+                state.Proc.DreamMapManager.SetTurf(turf, objectDef, arguments);
 
                 state.Push(loc);
                 return null;
@@ -458,23 +457,25 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamProcArguments arguments = new DreamProcArguments(new(), new());
-
             if (state.Pop().TryGetValueAsDreamList(out var argList)) {
+                List<DreamValue> ordered = new();
+                Dictionary<string, DreamValue> named = new();
                 foreach (DreamValue value in argList.GetValues()) {
                     if (argList.ContainsKey(value)) { //Named argument
                         if (value.TryGetValueAsString(out string name)) {
-                            arguments.NamedArguments.Add(name, argList.GetValue(value));
+                            named.Add(name, argList.GetValue(value));
                         } else {
                             throw new Exception("List contains a non-string key, and cannot be used as an arglist");
                         }
                     } else { //Ordered argument
-                        arguments.OrderedArguments.Add(value);
+                        ordered.Add(value);
                     }
                 }
+                state.Push(new DreamProcArguments(ordered, named));
+            } else {
+                state.Push(new DreamProcArguments());
             }
 
-            state.Push(arguments);
             return null;
         }
 
@@ -492,11 +493,11 @@ namespace OpenDreamRuntime.Procs {
                     case DreamProcOpcodeParameterType.Named: {
                         string argumentName = state.ReadString();
 
-                        arguments.NamedArguments[argumentName] = argumentValues[i];
+                        arguments.NamedArguments![argumentName] = argumentValues[i];
                         break;
                     }
                     case DreamProcOpcodeParameterType.Unnamed:
-                        arguments.OrderedArguments.Add(argumentValues[i]);
+                        arguments.OrderedArguments!.Add(argumentValues[i]);
                         break;
                     default:
                         throw new Exception("Invalid argument type (" + argumentType + ")");
@@ -544,7 +545,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? PushResource(DMProcState state) {
             string resourcePath = state.ReadString();
 
-            state.Push(new DreamValue(IoCManager.Resolve<DreamResourceManager>().LoadResource(resourcePath)));
+            state.Push(new DreamValue(state.Proc.DreamResourceManager.LoadResource(resourcePath)));
             return null;
         }
 
@@ -1332,7 +1333,7 @@ namespace OpenDreamRuntime.Procs {
                             throw new Exception($"{popProc} is not a valid proc name");
                         }
                         // DLL Invoke
-                        var entryPoint = DllHelper.ResolveDllTarget(IoCManager.Resolve<DreamResourceManager>(), dllName, procName);
+                        var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
 
                         Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
                         argV.Fill(0);
@@ -1743,7 +1744,7 @@ namespace OpenDreamRuntime.Procs {
             if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
                 z.TryGetValueAsInteger(out var zInt))
             {
-                IoCManager.Resolve<IDreamMapManager>().TryGetTurfAt((xInt, yInt), zInt, out var turf);
+                state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
                 state.Push(new DreamValue(turf));
             }
             else

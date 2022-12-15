@@ -302,8 +302,10 @@ public sealed class DreamIconOperationBlend : IDreamIconOperation {
         _xOffset = xOffset;
         _yOffset = yOffset;
 
+        //TODO: Find a way to get rid of this!
         var objectTree = IoCManager.Resolve<IDreamObjectTree>();
         var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+
         (var blendingResource, _blendingDescription) = DreamMetaObjectIcon.GetIconResourceAndDescription(objectTree, resourceManager, blending);
         _blending = resourceManager.LoadImage(blendingResource);
 

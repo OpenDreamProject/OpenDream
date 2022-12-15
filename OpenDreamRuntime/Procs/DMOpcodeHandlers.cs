@@ -805,7 +805,7 @@ namespace OpenDreamRuntime.Procs {
                     result = new DreamValue(0);
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.GetValueAsInteger() << second.GetValueAsInteger());
+                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
                     break;
                 default:
                     throw new Exception($"Invalid bit shift left operation on {first} and {second}");
@@ -840,7 +840,7 @@ namespace OpenDreamRuntime.Procs {
                     result = new DreamValue(0);
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.GetValueAsInteger() >> second.GetValueAsInteger());
+                    result = new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger());
                     break;
                 default:
                     throw new Exception($"Invalid bit shift right operation on {first} and {second}");

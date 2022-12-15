@@ -658,8 +658,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
 }
 
 internal interface IDreamDebugManager {
-    bool Stopped { get; }
-    
     public void Initialize(int port);
     public void Update();
     public void Shutdown();

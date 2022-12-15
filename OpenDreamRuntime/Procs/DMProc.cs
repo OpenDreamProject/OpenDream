@@ -19,16 +19,12 @@ namespace OpenDreamRuntime.Procs {
         public int Line { get; }
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
 
-        private readonly IDreamManager _dreamManager;
-        internal override IDreamManager DreamManager => _dreamManager;
-        private readonly IDreamMapManager _dreamMapManager;
-        internal override IDreamMapManager DreamMapManager => _dreamMapManager;
-        private readonly IDreamDebugManager _dreamDebugManager;
-        internal override IDreamDebugManager DreamDebugManager => _dreamDebugManager;
-        private readonly DreamResourceManager _dreamResourceManager;
-        internal override DreamResourceManager DreamResourceManager => _dreamResourceManager;
+        public IDreamManager DreamManager;
+        public IDreamMapManager DreamMapManager;
+        public IDreamDebugManager DreamDebugManager;
+        public DreamResourceManager DreamResourceManager;
 
-        public DMProc(DreamPath owningType, OpenDreamShared.Json.ProcDefinitionJson json, string? name = null, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager)
+        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager)
             : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)
         {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
@@ -36,11 +32,11 @@ namespace OpenDreamRuntime.Procs {
             Source = json.Source;
             Line = json.Line;
             _maxStackSize = json.MaxStackSize;
-            
-            _dreamManager = dreamManager;
-            _dreamMapManager = dreamMapManager;
-            _dreamDebugManager = dreamDebugManager;
-            _dreamResourceManager = dreamResourceManager;
+
+            DreamManager = dreamManager;
+            DreamMapManager = dreamMapManager;
+            DreamDebugManager = dreamDebugManager;
+            DreamResourceManager = dreamResourceManager;
         }
 
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {

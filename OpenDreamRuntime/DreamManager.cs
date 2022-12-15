@@ -64,7 +64,7 @@ namespace OpenDreamRuntime {
             InitializedTick = _gameTiming.CurTick;
 
             // Call global <init> with waitfor=FALSE
-            ObjectTree.GlobalInitProc?.Spawn(WorldInstance, new
+            ObjectTree.GlobalInitProc?.Spawn(WorldInstance, new());
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]

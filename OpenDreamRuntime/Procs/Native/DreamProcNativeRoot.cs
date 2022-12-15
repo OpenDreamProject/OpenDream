@@ -86,17 +86,17 @@ namespace OpenDreamRuntime.Procs.Native {
 
             IAtomManager atomManager = IoCManager.Resolve<IAtomManager>();
             atomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
-                if (arguments.NamedArguments.TryGetValue("pixel_x", out DreamValue pixelX)) {
+                if (arguments.NamedArguments?.TryGetValue("pixel_x", out DreamValue pixelX) is true) {
                     obj.SetVariableValue("pixel_x", pixelX);
                     pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
                 }
 
-                if (arguments.NamedArguments.TryGetValue("pixel_y", out DreamValue pixelY)) {
+                if (arguments.NamedArguments?.TryGetValue("pixel_y", out DreamValue pixelY) is true) {
                     obj.SetVariableValue("pixel_y", pixelY);
                     pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
                 }
 
-                if (arguments.NamedArguments.TryGetValue("dir", out DreamValue dir)) {
+                if (arguments.NamedArguments?.TryGetValue("dir", out DreamValue dir) is true) {
                     obj.SetVariableValue("dir", dir);
                     dir.TryGetValueAsInteger(out int dirValue);
                     appearance.Direction = (AtomDirection)dirValue;
@@ -1308,14 +1308,16 @@ namespace OpenDreamRuntime.Procs.Native {
             if (arguments.ArgumentCount > 0) {
                 DreamValue firstArgument = arguments.GetArgument(0, "Dist");
 
-                if (firstArgument.Type == DreamValueType.DreamObject) {
-                    center = firstArgument.GetValueAsDreamObject();
+                if (firstArgument.TryGetValueAsDreamObject(out var firstObj)) {
+                    center = firstObj;
 
                     if (arguments.ArgumentCount > 1) {
                         distance = arguments.GetArgument(1, "Center").GetValueAsInteger();
                     }
                 } else {
-                    distance = firstArgument.GetValueAsInteger();
+                    if(!firstArgument.TryGetValueAsInteger(out distance)) {
+                         throw new Exception("distance is not a number");
+                     }
 
                     if (arguments.ArgumentCount > 1) {
                         center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();
@@ -2220,8 +2222,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if (arguments.ArgumentCount > 0) {
                 DreamValue firstArgument = arguments.GetArgument(0, "Depth");
 
-                if (firstArgument.Type == DreamValueType.DreamObject) {
-                    center = firstArgument.GetValueAsDreamObject();
+                if (firstArgument.TryGetValueAsDreamObject(out var firstObj)) {
+                    center = firstObj;
 
                     if (arguments.ArgumentCount > 1) {
                         depthValue = arguments.GetArgument(1, "Center");
@@ -2236,13 +2238,13 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             DreamList view = DreamList.Create();
-            int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
-            int centerX = center.GetVariable("x").GetValueAsInteger();
-            int centerY = center.GetVariable("y").GetValueAsInteger();
+            int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.MustGetValueAsInteger() : 5; //TODO: Default to world.view
+            int centerX = center.GetVariable("x").MustGetValueAsInteger();
+            int centerY = center.GetVariable("y").MustGetValueAsInteger();
 
             foreach (DreamObject mob in DreamManager.Mobs) {
-                int mobX = mob.GetVariable("x").GetValueAsInteger();
-                int mobY = mob.GetVariable("y").GetValueAsInteger();
+                int mobX = mob.GetVariable("x").MustGetValueAsInteger();
+                int mobY = mob.GetVariable("y").MustGetValueAsInteger();
 
                 if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
                     view.AddValue(new DreamValue(mob));

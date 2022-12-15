@@ -33,6 +33,7 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
+        public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
         public DreamList WorldContentsList { get; private set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -63,13 +64,7 @@ namespace OpenDreamRuntime {
             InitializedTick = _gameTiming.CurTick;
 
             // Call global <init> with waitfor=FALSE
-            if (_compiledJson.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                var globalInitProc = new DMProc(DreamPath.Root, "(global init)", null, null, null, initProcDef.Bytecode,
-                    initProcDef.MaxStackSize, initProcDef.Attributes, initProcDef.VerbName, initProcDef.VerbCategory,
-                    initProcDef.VerbDesc, initProcDef.Invisibility, this, _dreamMapManager, _dreamDebugManager,
-                    _dreamResourceManager);
-                globalInitProc.Spawn(WorldInstance, new DreamProcArguments());
-            }
+            ObjectTree.GlobalInitProc?.Spawn(WorldInstance, new
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
@@ -124,6 +119,7 @@ namespace OpenDreamRuntime {
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
                 Globals.Clear();
                 Globals.EnsureCapacity(jsonGlobals.GlobalCount);
+                GlobalNames = jsonGlobals.Names;
 
                 for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
                     object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);

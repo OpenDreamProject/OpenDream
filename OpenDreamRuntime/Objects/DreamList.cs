@@ -20,9 +20,8 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
 
-        protected DreamList(int size = 0) : base(null) {
+        protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List)) {
             _values = new List<DreamValue>(size);
-            ObjectDefinition = _listDef ??= IoCManager.Resolve<IDreamManager>().ObjectTree.GetObjectDefinition(DreamPath.List);
         }
 
         public static DreamList CreateUninitialized(int size = 0) {
@@ -183,6 +182,11 @@ namespace OpenDreamRuntime.Objects {
 
             return newList;
         }
+
+        public override string ToString() {
+            string assoc = IsAssociative ? ", assoc" : "";
+            return $"/list{{len={GetLength()}{assoc}}}";
+        }
     }
 
     // /datum.vars list
@@ -202,8 +206,12 @@ namespace OpenDreamRuntime.Objects {
             return list;
         }
 
+        public override int GetLength() {
+            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
+        }
+
         public override List<DreamValue> GetValues() {
-            return _dreamObject.GetVariableNames();
+            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
         }
 
         public override bool ContainsKey(DreamValue value) {

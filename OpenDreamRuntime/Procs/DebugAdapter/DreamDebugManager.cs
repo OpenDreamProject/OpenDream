@@ -722,7 +722,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private void HandleRequestVariables(DebugAdapterClient client, RequestVariables requestVariables) {
         if (!variableReferences.TryGetValue(requestVariables.Arguments.VariablesReference, out var varFunc)) {
-            requestVariables.RespondError(client, $"No variables reference with ID {requestVariables.Arguments.VariablesReference}");
+            // When stepping quickly, we may receive such requests for old scopes we've already dropped.
+            // Fail silently instead of loudly to avoid spamming error messages.
+            requestVariables.Respond(client, Enumerable.Empty<Variable>());
             return;
         }
 

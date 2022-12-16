@@ -745,14 +745,14 @@ sealed class DreamDebugManager : IDreamDebugManager {
         List<DisassembledInstruction> output = new();
         DisassembledInstruction? previousInstruction = null;
         int previousOffset = 0;
-        foreach (var (offset, instruction) in new ProcDecoder(_dreamManager.ObjectTree.Strings, proc.Bytecode).Disassemble()) {
+        foreach (var (offset, instruction) in new ProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
             if (previousInstruction != null) {
                 previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ").ToLowerInvariant();
             }
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
                 Address = EncodeInstructionPointer(proc, offset),
-                Instruction = ProcDecoder.Format(instruction, type => _dreamManager.ObjectTree.Types[type].Path.ToString()),
+                Instruction = ProcDecoder.Format(instruction, type => _objectTree.Types[type].Path.ToString()),
             };
             switch (instruction) {
                 case (DreamProcOpcode.DebugSource, string source):

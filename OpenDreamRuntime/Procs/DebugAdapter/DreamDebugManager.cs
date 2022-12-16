@@ -35,7 +35,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     // Breakpoint storage
     private const string ExceptionFilterRuntimes = "runtimes";
-    private bool breakOnRuntimes = true;
+    private bool _breakOnRuntimes = true;
 
     private sealed class FileBreakpointSlot {
         public List<ActiveBreakpoint> Breakpoints = new();
@@ -66,13 +66,13 @@ sealed class DreamDebugManager : IDreamDebugManager {
     // Temporary data for a given Stop
     private Exception? _exception;
 
-    private Dictionary<int, WeakReference<ProcState>> stackFramesById = new();
+    private Dictionary<int, WeakReference<ProcState>> _stackFramesById = new();
 
     private int _variablesIdCounter = 0;
-    private Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> variableReferences = new();
+    private Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> _variableReferences = new();
     private int AllocVariableRef(Func<RequestVariables, IEnumerable<Variable>> func) {
         int id = ++_variablesIdCounter;
-        variableReferences[id] = func;
+        _variableReferences[id] = func;
         return id;
     }
 
@@ -202,7 +202,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleException(DreamThread thread, Exception exception) {
-        if (breakOnRuntimes) {
+        if (_breakOnRuntimes) {
             _exception = exception;
             Output("Stopped on exception");
             Stop(thread, new StoppedEvent {
@@ -241,8 +241,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private void Resume() {
         _stopped = false;
-        stackFramesById.Clear();
-        variableReferences.Clear();
+        _stackFramesById.Clear();
+        _variableReferences.Clear();
     }
 
     // DAP request handlers
@@ -482,7 +482,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestSetExceptionBreakpoints(DebugAdapterClient client, RequestSetExceptionBreakpoints requestSetExceptionBreakpoints) {
-        breakOnRuntimes = requestSetExceptionBreakpoints.Arguments.Filters.Contains(ExceptionFilterRuntimes);
+        _breakOnRuntimes = requestSetExceptionBreakpoints.Arguments.Filters.Contains(ExceptionFilterRuntimes);
         requestSetExceptionBreakpoints.Respond(client, null);
     }
 
@@ -573,7 +573,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
             }
 
             output.Add(outputFrame);
-            stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
+            _stackFramesById[frame.Id] = new WeakReference<ProcState>(frame);
         }
         reqStackTrace.Respond(client, output, output.Count);
     }
@@ -591,7 +591,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestScopes(DebugAdapterClient client, RequestScopes requestScopes) {
-        if (!stackFramesById.TryGetValue(requestScopes.Arguments.FrameId, out var weak) || !weak.TryGetTarget(out var frame)) {
+        if (!_stackFramesById.TryGetValue(requestScopes.Arguments.FrameId, out var weak) || !weak.TryGetTarget(out var frame)) {
             requestScopes.RespondError(client, $"No frame with ID {requestScopes.Arguments.FrameId}");
             return;
         }
@@ -721,7 +721,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestVariables(DebugAdapterClient client, RequestVariables requestVariables) {
-        if (!variableReferences.TryGetValue(requestVariables.Arguments.VariablesReference, out var varFunc)) {
+        if (!_variableReferences.TryGetValue(requestVariables.Arguments.VariablesReference, out var varFunc)) {
             // When stepping quickly, we may receive such requests for old scopes we've already dropped.
             // Fail silently instead of loudly to avoid spamming error messages.
             requestVariables.Respond(client, Enumerable.Empty<Variable>());

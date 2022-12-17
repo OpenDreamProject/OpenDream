@@ -451,7 +451,7 @@ namespace OpenDreamRuntime {
         public string Read(ISerializationManager serializationManager, DreamValueDataNode node,
             IDependencyCollection dependencies,
             bool skipHook,
-            ISerializationContext? context = null, string? value = default) {
+            ISerializationContext? context, ISerializationManager.InstantiationDelegate<string>? instantiationDelegate) {
             if (!node.Value.TryGetValueAsString(out var strValue))
                 throw new Exception($"Value {node.Value} was not a string");
 
@@ -473,7 +473,7 @@ namespace OpenDreamRuntime {
         public float Read(ISerializationManager serializationManager, DreamValueDataNode node,
             IDependencyCollection dependencies,
             bool skipHook,
-            ISerializationContext? context = null, float value = default) {
+            ISerializationContext? context, ISerializationManager.InstantiationDelegate<float>? instantiationDelegate) {
             if (!node.Value.TryGetValueAsFloat(out var floatValue))
                 throw new Exception($"Value {node.Value} was not a float");
 
@@ -495,7 +495,7 @@ namespace OpenDreamRuntime {
         public Color Read(ISerializationManager serializationManager, DreamValueDataNode node,
             IDependencyCollection dependencies,
             bool skipHook,
-            ISerializationContext? context = null, Color value = default) {
+            ISerializationContext? context, ISerializationManager.InstantiationDelegate<Color>? instantiationDelegate) {
             if (!node.Value.TryGetValueAsString(out var strValue) || !ColorHelpers.TryParseColor(strValue, out var color))
                 throw new Exception($"Value {node.Value} was not a color");
 
@@ -519,7 +519,7 @@ namespace OpenDreamRuntime {
         public Matrix3 Read(ISerializationManager serializationManager, DreamValueDataNode node,
             IDependencyCollection dependencies,
             bool skipHook,
-            ISerializationContext? context = null, Matrix3 value = default) {
+            ISerializationContext? context, ISerializationManager.InstantiationDelegate<Matrix3>? instantiationDelegate) {
             if (!node.Value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var matrixObject))
                 throw new Exception($"Value {node.Value} was not a matrix");
 

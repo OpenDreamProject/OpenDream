@@ -152,12 +152,9 @@ namespace DMCompiler.Compiler.DM {
         /// Gets whether this statement is or contains some <see cref="DMASTProcStatementSet"/>s.<br/>
         /// This is <see langword="fucked"/> but having the helper in general is actually quite convenient.
         /// </summary>
-        public bool IsSetStatement
-        {
-            get
-            {
-                switch (this)
-                {
+        public bool IsSetStatement {
+            get {
+                switch (this) {
                     case (DMASTProcStatementSet):
                         return true;
                     case (DMASTAggregate<DMASTProcStatementSet>):

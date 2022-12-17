@@ -821,19 +821,16 @@ namespace DMCompiler.Compiler.DM {
         {
             var loc = Current().Location;
 
-            if (allowMultiple)
-            {
+            if (allowMultiple) {
                 DMASTProcStatementSet[] block = ProcSetBlock();
                 if (block != null) return block;
             }
 
             List<DMASTProcStatementSet> setDeclarations = new(); // It's a list even in the non-block case because we could be comma-separated right mcfricking now
-            while (true) // x [in|=] y{, a [in|=] b} or something. I'm a comment, not a formal BNF expression.
-            {
+            while (true) { // x [in|=] y{, a [in|=] b} or something. I'm a comment, not a formal BNF expression.
                 Whitespace();
                 Token attributeToken = Current();
-                if(!Check(TokenType.DM_Identifier))
-                {
+                if(!Check(TokenType.DM_Identifier)) {
                     Error("Expected an identifier for set declaration");
                     return setDeclarations.ToArray();
                 }
@@ -1006,10 +1003,8 @@ namespace DMCompiler.Compiler.DM {
                     body = ProcBlock();
                 }
 
-                if (body == null)
-                {
+                if (body is null)
                     body = new DMASTProcBlockInner(loc);
-                }
                 Token afterIfBody = Current();
                 bool newLineAfterIf = Delimiter();
                 if (newLineAfterIf) Whitespace();

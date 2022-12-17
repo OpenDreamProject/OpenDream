@@ -172,8 +172,7 @@ namespace DMCompiler.DM.Visitors {
         {
             var attribute = statementSet.Attribute.ToLower();
             // TODO deal with "src"
-            if(attribute == "src")
-            {
+            if(attribute == "src") {
                 DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
                 return;
             }
@@ -188,8 +187,7 @@ namespace DMCompiler.DM.Visitors {
             } else {
                 previousSetStatementValue = constant;
             }
-            if (statementSet.WasInKeyword)  // check if it was 'set x in y' or whatever
-            {                               // (which is illegal for everything except setting src to something)
+            if (statementSet.WasInKeyword) { // check if it was 'set x in y' or whatever                               // (which is illegal for everything except setting src to something)
                 DMCompiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
                 //fallthrough into normal behaviour because this error is kinda pedantic
             }
@@ -201,58 +199,38 @@ namespace DMCompiler.DM.Visitors {
                 }
                 case "opendream_unimplemented": {
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Unimplemented;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Unimplemented;
-                    }
                     break;
                 }
                 case "hidden":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Hidden;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Hidden;
-                    }
                     break;
                 case "popup_menu":
                     if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
-                    {
                         _proc.Attributes &= ~ProcAttributes.HidePopupMenu;
-                    }
                     else
-                    {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
-                    }
 
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Instant;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Instant;
-                    }
 
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
                     break;
                 case "background":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Background;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Background;
-                    }
                     break;
                 case "name":
                     if (constant is not Expressions.String nameStr) {

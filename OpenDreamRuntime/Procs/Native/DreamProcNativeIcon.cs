@@ -61,9 +61,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("Blend")]
         [DreamProcParameter("icon", Type = DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("x", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("y", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)] // ICON_ADD
+        [DreamProcParameter("x", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("y", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_Blend(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO Figure out what happens when you pass the wrong types as args
 

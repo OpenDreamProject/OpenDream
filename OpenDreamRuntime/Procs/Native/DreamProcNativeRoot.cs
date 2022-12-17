@@ -2070,6 +2070,14 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(format);
         }
 
+        [DreamProc("trimtext")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_trimtext(DreamObject instance, DreamObject usr,
+            DreamProcArguments arguments)
+        {
+            return new DreamValue(arguments.GetArgument(0, "Text").GetValueAsString().Trim());
+        }
+
         [DreamProc("trunc")]
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_trunc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -2320,14 +2328,6 @@ namespace OpenDreamRuntime.Procs.Native {
 
             connection.WinSet(winsetControlId, winsetParams);
             return DreamValue.Null;
-        }
-
-        [DreamProc("trimtext")]
-        [DreamProcParameter("text", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_trimtext(DreamObject instance, DreamObject usr,
-            DreamProcArguments arguments)
-        {
-            return new DreamValue(arguments.GetArgument(0, "text").GetValueAsString().Trim());
         }
     }
 }

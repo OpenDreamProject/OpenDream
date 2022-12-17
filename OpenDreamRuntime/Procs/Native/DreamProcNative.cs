@@ -100,6 +100,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_text2num);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_text2path);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_time2text);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_trimtext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_trunc);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_typesof);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_uppertext);

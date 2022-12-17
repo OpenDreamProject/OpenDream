@@ -394,7 +394,7 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception($"Cannot add {value} to filter list");
 
             DreamFilter filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];
-            DreamFilter copy = _serializationManager.Copy(filter); // Adding a filter creates a copy
+            DreamFilter copy = _serializationManager.CreateCopy(filter); // Adding a filter creates a copy
 
             DreamMetaObjectFilter.FilterAttachedTo[copy] = this;
             _atomManager.UpdateAppearance(_atom, appearance => {

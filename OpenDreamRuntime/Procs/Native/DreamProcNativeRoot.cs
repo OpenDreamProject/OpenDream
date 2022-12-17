@@ -2075,7 +2075,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_trimtext(DreamObject instance, DreamObject usr,
             DreamProcArguments arguments)
         {
-            return new DreamValue(arguments.GetArgument(0, "Text").MustGetValueAsString().Trim());
+            return arguments.GetArgument(0, "Text").TryGetValueAsString(out var val) ? new DreamValue(val.Trim()) : DreamValue.Null;
         }
 
         [DreamProc("trunc")]

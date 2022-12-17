@@ -61,7 +61,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("Blend")]
         [DreamProcParameter("icon", Type = DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)] // ICON_ADD
+        [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float, DefaultValue = BlendType.Add)] // ICON_ADD
         [DreamProcParameter("x", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("y", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_Blend(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

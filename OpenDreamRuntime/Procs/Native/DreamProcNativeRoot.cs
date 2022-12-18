@@ -707,7 +707,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new FormatException("Failed to parse index as float");
             }
 
-            bool loop = gradientList.Remove(new("loop"));
+            bool loop = gradientList.Contains(new("loop"));
             if (arguments.NamedArguments.TryGetValue("space", out DreamValue namedLookup))
                 namedLookup.TryGetValueAsInteger(out colorSpace);
 
@@ -735,6 +735,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (!value.TryGetValueAsString(out string? strValue)) {
                     strValue = "#00000000";
                 }
+
+                if (strValue == "loop") continue;
 
                 if (!ColorHelpers.TryParseColor(strValue, out Color color))
                     color = new(0, 0, 0, 0);

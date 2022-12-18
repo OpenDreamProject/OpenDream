@@ -677,10 +677,6 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("A", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("index", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_gradient(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (arguments.ArgumentCount <= 1) {
-                throw new IndexOutOfRangeException("Not enough arguments");
-            }
-
             // We dont want keyword arguments screwing with this
             DreamValue dreamIndex;
 
@@ -688,7 +684,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             List<DreamValue> gradientList;
 
-            if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradList)) {
+            if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList? gradList)) {
                 gradientList = gradList.GetValues();
                 dreamIndex = arguments.OrderedArguments[1];
 
@@ -826,7 +822,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     returnval = Color.FromHsv(holder);
                     break;
                 default:
-                    throw new NotSupportedException("Cannot interpolate colorSpace");
+                    throw new NotSupportedException("Cannot interpolate colorspace");
             }
 
             if (returnval.AByte == 255) {
@@ -1747,7 +1743,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (!arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
-                throw new NotImplementedException($"Failed to parse colorSpace {arguments.GetArgument(1, "space")}");
+                throw new NotImplementedException($"Failed to parse colorspace {arguments.GetArgument(1, "space")}");
             }
 
             if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {

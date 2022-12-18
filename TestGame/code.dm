@@ -8,7 +8,6 @@
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
-	var/gradient_index = 0.5
 
 	New()
 		..()

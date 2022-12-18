@@ -311,8 +311,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandleException(Exception exception)
-        {
+        public void HandleException(Exception exception) {
             _current?.Cancel();
 
             var dreamMan = IoCManager.Resolve<IDreamManager>();

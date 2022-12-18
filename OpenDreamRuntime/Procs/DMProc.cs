@@ -376,7 +376,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamProcArguments PopArguments() {
-            return (DreamProcArguments)(Pop().Value);
+            return Pop().MustGetValueAsProcArguments();
         }
         #endregion
 

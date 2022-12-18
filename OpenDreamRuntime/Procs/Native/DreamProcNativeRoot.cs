@@ -686,18 +686,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList? gradList)) {
                 gradientList = gradList.GetValues();
-                dreamIndex = arguments.OrderedArguments?.ElementAt(1) ?? throw new Exception("Failed to find an index");
+                arguments.TryGetPositionalArgument(1, out dreamIndex);
 
                 DreamValue dictSpace = gradList.GetValue(new("space"));
                 dictSpace.TryGetValueAsInteger(out colorSpace);
             } else {
-                if (arguments.NamedArguments?.TryGetValue("index", out DreamValue indexLookup) == true) {
-                    dreamIndex = indexLookup;
-                } else if (arguments.OrderedArguments != null){
-                    dreamIndex = arguments.OrderedArguments[^1];
-                    arguments.OrderedArguments.Pop();
-                } else {
-                    throw new Exception("Could not parse arguments");
+                if (!arguments.TryGetNamedArgument("index", out dreamIndex)) {
+                    arguments.TryGetPositionalArgument(arguments.OrderedArgumentCount - 1, out dreamIndex);
+                    arguments.OrderedArguments?.Pop();
                 }
                 gradientList = arguments.GetAllArguments();
             }
@@ -707,7 +703,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             bool loop = gradientList.Contains(new("loop"));
-            if (arguments.NamedArguments?.TryGetValue("space", out DreamValue namedLookup) == true) {
+            if (arguments.TryGetNamedArgument("space", out DreamValue namedLookup)) {
                 namedLookup.TryGetValueAsInteger(out colorSpace);
             }
 
@@ -769,14 +765,14 @@ namespace OpenDreamRuntime.Procs.Native {
             /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!left.HasValue || (right.HasValue && normalized == 1) || (right.HasValue && normalized == 0)) {
                 if (right?.AByte == 255) {
-                    return new DreamValue(right?.ToHexNoAlpha().ToLower());
+                    return new DreamValue(right?.ToHexNoAlpha().ToLower() ?? "#00000000");
                 }
-                return new DreamValue(right?.ToHex().ToLower());
+                return new DreamValue(right?.ToHex().ToLower() ?? "#00000000");
             } else if (!right.HasValue) {
                 if (left?.AByte == 255) {
-                    return new DreamValue(left?.ToHexNoAlpha().ToLower());
+                    return new DreamValue(left?.ToHexNoAlpha().ToLower() ?? "#00000000");
                 }
-                return new DreamValue(left?.ToHex().ToLower());
+                return new DreamValue(left?.ToHex().ToLower() ?? "#00000000");
             } else if (!left.HasValue && !right.HasValue) {
                 throw new InvalidOperationException("Failed to find any colors");
             }

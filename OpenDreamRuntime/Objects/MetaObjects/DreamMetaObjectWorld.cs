@@ -75,8 +75,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 _viewRange = new ViewRange(viewString);
             } else {
                 if (!view.TryGetValueAsInteger(out var viewInt)) {
-                    Logger.Warning("world.view did not contain a valid value. A default of 5 is being used.");
-                    viewInt = 5;
+                    Logger.Warning("world.view did not contain a valid value. A default of 7 is being used.");
+                    viewInt = 7;
                 }
 
                 _viewRange = new ViewRange(viewInt);
@@ -168,7 +168,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "view": {
                     //Number if square & centerable, string representation otherwise
                     if (_viewRange.IsSquare && _viewRange.IsCenterable) {
-                        return new DreamValue(_viewRange.Width);
+                        return new DreamValue(_viewRange.Range);
                     } else {
                         return new DreamValue(_viewRange.ToString());
                     }

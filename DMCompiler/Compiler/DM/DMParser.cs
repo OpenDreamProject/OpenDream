@@ -89,7 +89,7 @@ namespace DMCompiler.Compiler.DM {
 
         private static readonly TokenType[] IdentifierTypes = {TokenType.DM_Identifier, TokenType.DM_Step};
 
-        private static readonly TokenType[]  ValidPathElementTokens = {
+        private static readonly TokenType[] ValidPathElementTokens = {
             TokenType.DM_Identifier,
             TokenType.DM_Var,
             TokenType.DM_Proc,
@@ -468,7 +468,9 @@ namespace DMCompiler.Compiler.DM {
                         if (blockInner != null) statements.AddRange(blockInner);
 
                         if (!Check(TokenType.DM_RightCurlyBracket)) {
-                            Error("Expected end of proc statement", throwException: false);
+                            Error(WarningCode.BadToken, "Expected end of braced block");
+                            Check(TokenType.DM_Dedent); // Have to do this ensure that the current token will ALWAYS move forward,
+                                                        // and not get stuck once we reach this branch!
                             LocateNextStatement();
                             Delimiter();
                         } else {
@@ -1447,12 +1449,13 @@ namespace DMCompiler.Compiler.DM {
                 }
                 if (Check(TokenType.DM_Null)){
                     // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
-                    Error($"error: 'null' is not a valid variable name", false);
-                    Advance();
-                    BracketWhitespace();
-                    Check(TokenType.DM_Comma);
-                    BracketWhitespace();
-                    parameters.AddRange(DefinitionParameters());
+                    if (Error(WarningCode.SoftReservedKeyword, "'null' is not a valid variable name")) { // If it's an error, skip over this var instantiation.
+                        Advance();
+                        BracketWhitespace();
+                        Check(TokenType.DM_Comma);
+                        BracketWhitespace();
+                        parameters.AddRange(DefinitionParameters());
+                    }
                 }
             }
 

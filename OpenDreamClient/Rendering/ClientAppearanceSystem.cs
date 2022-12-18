@@ -3,12 +3,15 @@ using Robust.Client.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
+using Robust.Client.Graphics;
+using Robust.Shared.Prototypes;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
         private readonly Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
         private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
+        private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
         /// <summary>
         /// Holds the entities used by opaque turfs to block vision
@@ -80,6 +83,68 @@ namespace OpenDreamClient.Rendering {
             });
         }
 
+        public void ResetFilterUsageFlags() {
+            foreach (DreamFilter key in _filterShaders.Keys) {
+                key.Used = false;
+            }
+        }
+
+        public void CleanUpUnusedFilters() {
+            foreach (DreamFilter key in _filterShaders.Keys) {
+                if (!key.Used)
+                    _filterShaders.Remove(key);
+            }
+        }
+
+        public ShaderInstance GetFilterShader(DreamFilter filter) {
+            if (!_filterShaders.TryGetValue(filter, out var instance)) {
+                var protoManager = IoCManager.Resolve<IPrototypeManager>();
+
+                instance = protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
+
+                switch (filter) {
+                    case DreamFilterAlpha alpha:
+                        break;
+                    case DreamFilterAngularBlur angularBlur:
+                        break;
+                    case DreamFilterBloom bloom:
+                        break;
+                    case DreamFilterBlur blur:
+                        instance.SetParameter("size", blur.Size);
+                        break;
+                    case DreamFilterColor color:
+                        break;
+                    case DreamFilterDisplace displace:
+                        break;
+                    case DreamFilterDropShadow dropShadow:
+                        break;
+                    case DreamFilterLayer layer:
+                        break;
+                    case DreamFilterMotionBlur motionBlur:
+                        break;
+                    case DreamFilterOutline outline:
+                        instance.SetParameter("size", outline.Size);
+                        instance.SetParameter("color", outline.Color);
+                        instance.SetParameter("flags", outline.Flags);
+                        break;
+                    case DreamFilterRadialBlur radialBlur:
+                        break;
+                    case DreamFilterRays rays:
+                        break;
+                    case DreamFilterRipple ripple:
+                        break;
+                    case DreamFilterWave wave:
+                        break;
+                    case DreamFilterGreyscale greyscale:
+                        break;
+                }
+            }
+
+            filter.Used = true;
+            _filterShaders[filter] = instance;
+            return instance;
+        }
+
         private void OnGridModified(GridModifiedEvent e) {
             foreach (var modified in e.Modified) {
                 UpdateTurfOpacity(e.Grid, modified.position, modified.tile);
@@ -109,3 +174,4 @@ namespace OpenDreamClient.Rendering {
         }
     }
 }
+

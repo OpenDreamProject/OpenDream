@@ -12,6 +12,7 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
         private readonly Dictionary<DreamObject, EntityUid> _atomToEntity = new();
@@ -51,16 +52,18 @@ namespace OpenDreamRuntime {
             _entityManager.DeleteEntity(entity);
         }
 
-        public IconAppearance? GetMovableAppearance(DreamObject movable) {
-            return _entityManager.GetComponent<DMISpriteComponent>(GetMovableEntity(movable)).Appearance;
+        public IconAppearance? GetAppearance(DreamObject atom) {
+            return atom.IsSubtypeOf(_objectTree.Turf)
+                ? _dreamMapManager.GetTurfAppearance(atom)
+                : _entityManager.GetComponent<DMISpriteComponent>(GetMovableEntity(atom)).Appearance;
         }
 
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-            if (atom.IsSubtypeOf(DreamPath.Turf)) {
+            if (atom.IsSubtypeOf(_objectTree.Turf)) {
                 IconAppearance appearance = new IconAppearance(_dreamMapManager.GetTurfAppearance(atom));
                 update(appearance);
                 _dreamMapManager.SetTurfAppearance(atom, appearance);
-            } else if (atom.IsSubtypeOf(DreamPath.Movable)) {
+            } else if (atom.IsSubtypeOf(_objectTree.Movable)) {
                 if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
                     return;
 
@@ -71,7 +74,7 @@ namespace OpenDreamRuntime {
         }
 
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate) {
-            if (!atom.IsSubtypeOf(DreamPath.Movable))
+            if (!atom.IsSubtypeOf(_objectTree.Movable))
                 return; //Animating non-movables is unimplemented
             if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
                 return;
@@ -91,7 +94,7 @@ namespace OpenDreamRuntime {
             IconAppearance appearance = new IconAppearance();
 
             if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource icon)) {
-                appearance.Icon = icon.ResourcePath;
+                appearance.Icon = icon.Id;
             }
 
             if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
@@ -133,14 +136,14 @@ namespace OpenDreamRuntime {
             IconAppearance appearance = new IconAppearance();
 
             if (def.TryGetVariable("icon", out var iconVar) && iconVar.TryGetValueAsDreamResource(out DreamResource icon)) {
-                appearance.Icon = icon.ResourcePath;
+                appearance.Icon = icon.Id;
             }
 
-            if (def.TryGetVariable("icon_state", out var stateVar) && stateVar.TryGetValueAsString(out string iconState)) {
+            if (def.TryGetVariable("icon_state", out var stateVar) && stateVar.TryGetValueAsString(out var iconState)) {
                 appearance.IconState = iconState;
             }
 
-            if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out string color)) {
+            if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out var color)) {
                 appearance.SetColor(color);
             }
 
@@ -170,15 +173,15 @@ namespace OpenDreamRuntime {
         }
     }
 
-    internal interface IAtomManager {
+    public interface IAtomManager {
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 
         public EntityUid GetMovableEntity(DreamObject movable);
         public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);
         public void DeleteMovableEntity(DreamObject movable);
-        public IconAppearance? GetMovableAppearance(DreamObject movable);
 
+        public IconAppearance? GetAppearance(DreamObject atom);
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);

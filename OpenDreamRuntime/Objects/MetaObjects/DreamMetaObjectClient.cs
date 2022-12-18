@@ -11,7 +11,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private readonly Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
-        private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+
+        public DreamMetaObjectClient() {
+            IoCManager.InjectDependencies(this);
+        }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
@@ -137,7 +142,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OperatorOutput(DreamValue a, DreamValue b) {
-            if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client))
+            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Client, out var client))
                 throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Client}");
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
@@ -145,7 +150,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         private void ScreenValueAssigned(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (!screenValue.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movable))
+            if (!screenValue.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
                 return;
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
@@ -153,7 +158,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
-            if (!screenValue.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movable))
+            if (!screenValue.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
                 return;
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);

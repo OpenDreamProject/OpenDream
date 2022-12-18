@@ -40,14 +40,13 @@ namespace OpenDreamClient.Rendering {
             if (Icon.Appearance.Invisibility > 0) return false; //TODO: mob.see_invisibility
 
             if (checkWorld) {
-                //Only render turfs (children of map entity) and their contents (secondary child of map entity)
+                //Only render movables not inside another movable's contents (parented to the grid)
                 //TODO: Use RobustToolbox's container system/components?
                 if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
                     return false;
 
                 IoCManager.Resolve(ref mapManager);
-                EntityUid mapEntity = mapManager.GetMapEntityId(transform.MapID);
-                if (transform.ParentUid != mapEntity && transform.Parent?.ParentUid != mapEntity)
+                if (transform.ParentUid != transform.GridUid)
                     return false;
             }
 

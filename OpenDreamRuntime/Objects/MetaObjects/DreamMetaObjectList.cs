@@ -10,38 +10,40 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             // Named arguments are ignored
-            if (creationArguments.OrderedArguments.Count > 1) { // Multi-dimensional
-                DreamList[] lists = { (DreamList)dreamObject };
+            if (creationArguments.OrderedArguments != null) {
+                if (creationArguments.OrderedArguments.Count > 1) { // Multi-dimensional
+                    DreamList[] lists = { (DreamList)dreamObject };
 
-                int dimensions = creationArguments.OrderedArguments.Count;
-                for (int argIndex = 0; argIndex < dimensions; argIndex++) {
-                    DreamValue arg = creationArguments.OrderedArguments[argIndex];
-                    arg.TryGetValueAsInteger(out int size);
+                    int dimensions = creationArguments.OrderedArguments.Count;
+                    for (int argIndex = 0; argIndex < dimensions; argIndex++) {
+                        DreamValue arg = creationArguments.OrderedArguments[argIndex];
+                        arg.TryGetValueAsInteger(out int size);
 
-                    DreamList[] newLists = null;
-                    if (argIndex < dimensions) {
-                        newLists = new DreamList[size * lists.Length];
-                    }
+                        DreamList[] newLists = null;
+                        if (argIndex < dimensions) {
+                            newLists = new DreamList[size * lists.Length];
+                        }
 
-                    for (int i = 0; i < lists.Length; i++) {
-                        DreamList list = lists[i];
+                        for (int i = 0; i < lists.Length; i++) {
+                            DreamList list = lists[i];
 
-                        for (int j = 0; j < size; j++) {
-                            if (argIndex < dimensions - 1) {
-                                DreamList newList = DreamList.Create();
+                            for (int j = 0; j < size; j++) {
+                                if (argIndex < dimensions - 1) {
+                                    DreamList newList = DreamList.Create();
 
-                                list.AddValue(new DreamValue(newList));
-                                newLists[i * size + j] = newList;
-                            } else {
-                                list.AddValue(DreamValue.Null);
+                                    list.AddValue(new DreamValue(newList));
+                                    newLists[i * size + j] = newList;
+                                } else {
+                                    list.AddValue(DreamValue.Null);
+                                }
                             }
                         }
-                    }
 
-                    lists = newLists;
+                        lists = newLists;
+                    }
+                } else if (creationArguments.OrderedArguments.Count == 1 && creationArguments.OrderedArguments[0].TryGetValueAsInteger(out int size)) {
+                    ((DreamList)dreamObject).Resize(size);
                 }
-            } else if (creationArguments.OrderedArguments.Count == 1 && creationArguments.OrderedArguments[0].TryGetValueAsInteger(out int size)) {
-                ((DreamList)dreamObject).Resize(size);
             }
         }
 
@@ -73,7 +75,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorAdd(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
             DreamList listCopy = list.CreateCopy();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -88,7 +90,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorSubtract(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
             DreamList listCopy = list.CreateCopy();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
@@ -103,7 +105,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorAppend(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
@@ -117,7 +119,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorRemove(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 DreamValue[] values = bList.GetValues().ToArray();
@@ -133,7 +135,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorOr(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {    // List | List
                 list = list.Union(bList);
@@ -160,7 +162,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorCombine(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
@@ -176,7 +178,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OperatorMask(DreamValue a, DreamValue b) {
-            DreamList list = a.GetValueAsDreamList();
+            DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {
                 for (int i = 1; i <= list.GetLength(); i++) {

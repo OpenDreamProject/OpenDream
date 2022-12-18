@@ -16,8 +16,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
 
         private Dictionary<string, State> _states;
 
-        public DMIResource(string resourcePath, byte[] data) : base(resourcePath, data)
-        {
+        public DMIResource(int id, byte[] data) : base(id, data) {
             if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
 
             Stream dmiStream = new MemoryStream(data);
@@ -42,7 +41,8 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         }
 
         public State? GetState(string stateName) {
-            if (stateName == null || !_states.ContainsKey(stateName)) return null;
+            if (stateName == null || !_states.ContainsKey(stateName))
+                return _states.TryGetValue(String.Empty, out var state) ? state : null; // Default state, if one exists
 
             return _states[stateName];
         }

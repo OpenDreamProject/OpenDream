@@ -77,8 +77,8 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (replace.TryGetValueAsPath(out var procPath) && procPath.LastElement is not null) {
-                var dreamMan = IoCManager.Resolve<IDreamManager>();
-                if (dreamMan.ObjectTree.TryGetGlobalProc(procPath.LastElement, out DreamProc? proc)) {
+                var objectTree = IoCManager.Resolve<IDreamObjectTree>();
+                if (objectTree.TryGetGlobalProc(procPath.LastElement, out DreamProc? proc)) {
                     return await DoProcReplace(state, proc);
                 }
             }

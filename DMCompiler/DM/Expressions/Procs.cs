@@ -21,7 +21,7 @@ namespace DMCompiler.DM.Expressions {
                 return (DMReference.CreateGlobalProc(globalProc.Id), false);
             }
             
-            DMCompiler.Error(Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             //Just... pretend there is one for the sake of argument.
             return (DMReference.CreateSrcProc(_identifier), false);
         }
@@ -45,7 +45,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            DMCompiler.Error(Location, $"Attempt to use proc \"{_name}\" as value");
+            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_name}\" as value");
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
@@ -56,7 +56,7 @@ namespace DMCompiler.DM.Expressions {
 
         public DMProc GetProc() {
             if (!DMObjectTree.TryGetGlobalProc(_name, out DMProc globalProc)) {
-                DMCompiler.Error(Location, $"No global proc named \"{_name}\"");
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{_name}\"");
                 return DMObjectTree.GlobalInitProc; // Just give this, who cares
             }
 
@@ -83,13 +83,13 @@ namespace DMCompiler.DM.Expressions {
         public ProcSuper(Location location) : base(location) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use proc as value");
+            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride)
             {
-                DMCompiler.Warning(new CompilerWarning(Location, "Calling parents via ..() in a proc definition does nothing"));
+                DMCompiler.Emit(WarningCode.PointlessParentCall, Location, "Calling parents via ..() in a proc definition does nothing");
             }
             return (DMReference.SuperProc, false);
         }

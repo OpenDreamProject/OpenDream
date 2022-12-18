@@ -45,7 +45,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "contents": {
                     (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(dreamObject);
 
-                    HashSet<EntityUid> entities = _entityLookup.GetEntitiesIntersecting(level.Grid.GridEntityId, pos, LookupFlags.Uncontained);
+                    HashSet<EntityUid> entities = _entityLookup.GetEntitiesIntersecting(level.Grid.Owner, pos, LookupFlags.Uncontained);
                     DreamList contents = DreamList.Create(entities.Count);
                     foreach (EntityUid movableEntity in entities) {
                         if (!_transformQuery.TryGetComponent(movableEntity, out var transform))
@@ -54,7 +54,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         // Entities on neighboring tiles seem to be caught as well
                         if (transform.WorldPosition != pos)
                             continue;
-                        if (transform.ParentUid != level.Grid.GridEntityId)
+                        if (transform.ParentUid != level.Grid.Owner)
                             continue;
                         if (!_atomManager.TryGetMovableFromEntity(movableEntity, out var movable))
                             continue;

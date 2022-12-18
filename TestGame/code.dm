@@ -118,5 +118,3 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
-	var/list/gradlist = list(0, "#ff0000", 1, "#00ff00")
-	world.log << gradient(gradlist, "loop", index=1.5)

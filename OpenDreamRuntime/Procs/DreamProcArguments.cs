@@ -1,5 +1,4 @@
 ﻿using Robust.Shared.Utility;
-using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace OpenDreamRuntime.Procs {

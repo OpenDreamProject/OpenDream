@@ -197,18 +197,15 @@ namespace OpenDreamClient.Interface.Controls
                     _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
                 };
                 // Can't have out-of-order components, so make sure they're ordered properly
-                if(ChildControls.Count > 0)
-                {
+                if(ChildControls.Count > 0) {
                     var prevPos = ChildControls[ChildControls.Count-1].Pos.GetValueOrDefault();
                     var curPos = control.Pos.GetValueOrDefault();
                     if(prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                         ChildControls.Add(control);
-                    else
-                    {
+                    else {
                         Logger.Warning($"Out of order component {control.Name}. Elements should be defined in order of position. Attempting to fix automatically.");
                         int i = 0;
-                        while(i < ChildControls.Count)
-                        {
+                        while(i < ChildControls.Count) {
                             prevPos = ChildControls[i].Pos.GetValueOrDefault();
                             if(prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                                 i++;
@@ -217,8 +214,7 @@ namespace OpenDreamClient.Interface.Controls
                         }
                         ChildControls.Insert(i, control);
                     }
-                }
-                else
+                } else
                     ChildControls.Add(control);
 
                 _canvas.Children.Add(control.UIElement);

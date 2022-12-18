@@ -31,6 +31,8 @@ namespace OpenDreamRuntime {
         public DreamObject WorldInstance { get; private set; }
         public Exception? LastDMException { get; set; }
 
+        public event EventHandler<Exception>? OnException;
+
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
         public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
@@ -261,6 +263,11 @@ namespace OpenDreamRuntime {
                         throw new Exception($"Invalid reference type for ref {refString}");
                 }
             }
+        }
+
+        public void HandleException(Exception e) {
+            LastDMException = e;
+            OnException?.Invoke(this, e);
         }
     }
 }

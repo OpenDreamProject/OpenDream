@@ -316,7 +316,7 @@ namespace OpenDreamRuntime {
             _current?.Cancel();
 
             var dreamMan = IoCManager.Resolve<IDreamManager>();
-            dreamMan.LastDMException = exception;
+            dreamMan.HandleException(exception);
 
             StringBuilder builder = new();
             builder.AppendLine($"Exception occurred: {exception.Message}");

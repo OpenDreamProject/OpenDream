@@ -16,8 +16,7 @@ namespace DMCompiler.DM.Visitors {
         // NOTE This needs to be turned into a Stack of modes if more complicated scope changes are added in the future
         public static string _scopeMode;
 
-        internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath)
-        {
+        internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
             _dmObject = dmObject;
             _proc = proc;
             _inferredPath = inferredPath;
@@ -26,7 +25,6 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementExpression(DMASTProcStatementExpression statement) {
             statement.Expression.Visit(this);
         }
-
 
         public void VisitConstantNull(DMASTConstantNull constant) {
             Result = new Expressions.Null(constant.Location);
@@ -49,12 +47,13 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
-            Result = new Expressions.Path(constant.Location, constant.Value.Path);
+            Result = new Expressions.Path(constant.Location, _dmObject, constant.Value.Path);
         }
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
             DMExpression.TryConstant(_dmObject, _proc, constant.Path, out var pathExpr);
-            if (pathExpr is not Expressions.Path expr) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
+            if (pathExpr is not Expressions.Path expr)
+                throw new CompileErrorException(constant.Location, $"Cannot do an upward path search on {pathExpr}");
 
             DreamPath path = expr.Value;
             DreamPath? foundPath = DMObjectTree.UpwardSearch(path, constant.Search.Path);
@@ -63,7 +62,7 @@ namespace DMCompiler.DM.Visitors {
                 throw new CompileErrorException(constant.Location,$"Invalid path {path}.{constant.Search.Path}");
             }
 
-            Result = new Expressions.Path(constant.Location, foundPath.Value);
+            Result = new Expressions.Path(constant.Location, _dmObject, foundPath.Value);
         }
 
         public void VisitStringFormat(DMASTStringFormat stringFormat) {

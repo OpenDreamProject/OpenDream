@@ -8,15 +8,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
-        private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+
+        public DreamMetaObjectMatrix() {
+            IoCManager.InjectDependencies(this);
+        }
 
         /// <summary> Used to create a float array understandable by <see cref="IconAppearance.Transform"/> to be a transform. </summary>
         /// <returns>The matrix's values in an array, in [a,d,b,e,c,f] order.</returns>
-        /// <exception cref="ArgumentException">Thrown when matrix is invalid.</exception>
+        /// <remarks>This will not verify that this is a /matrix</remarks>
         public static float[] MatrixToTransformFloatArray(DreamObject matrix) {
-            if (!matrix.IsSubtypeOf(DreamPath.Matrix))
-                throw new ArgumentException($"Invalid matrix {matrix}");
-
             float[] array = new float[6];
             matrix.GetVariable("a").TryGetValueAsFloat(out array[0]);
             matrix.GetVariable("d").TryGetValueAsFloat(out array[1]);
@@ -31,11 +33,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         /// Used when printing this matrix to enumerate its values in order.
         /// </summary>
         /// <returns>The matrix's values in [a,b,c,d,e,f] order.</returns>
-        /// <exception cref="ArgumentException">Thrown when matrix is invalid.</exception>
+        /// <remarks>This will not verify that this is a /matrix</remarks>
         public static IEnumerable<float> EnumerateMatrix(DreamObject matrix) {
-            if (!matrix.IsSubtypeOf(DreamPath.Matrix))
-                throw new ArgumentException($"Invalid matrix {matrix}");
-
             float ret = 0f;
             matrix.GetVariable("a").TryGetValueAsFloat(out ret);
             yield return ret;
@@ -52,7 +51,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public ProcStatus? OperatorMultiply(DreamValue a, DreamValue b, DMProcState state) {
-            if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject left))
+            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject left))
                 throw new ArgumentException($"Invalid matrix {a}");
 
             left.GetVariable("a").TryGetValueAsFloat(out float lA);
@@ -63,7 +62,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             left.GetVariable("f").TryGetValueAsFloat(out float lF);
 
             if (b.TryGetValueAsFloat(out float bFloat)) {
-                DreamObject output = _dreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
+                DreamObject output = _objectTree.CreateObject(DreamPath.Matrix);
                 output.SetVariable("a", new(lA * bFloat));
                 output.SetVariable("b", new(lB * bFloat));
                 output.SetVariable("c", new(lC * bFloat));
@@ -73,7 +72,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 state.Push(new DreamValue(output));
                 return null;
-            } else if (b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject right)) {
+            } else if (b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject right)) {
                 right.GetVariable("a").TryGetValueAsFloat(out float rA);
                 right.GetVariable("b").TryGetValueAsFloat(out float rB);
                 right.GetVariable("c").TryGetValueAsFloat(out float rC);
@@ -81,7 +80,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 right.GetVariable("e").TryGetValueAsFloat(out float rE);
                 right.GetVariable("f").TryGetValueAsFloat(out float rF);
 
-                DreamObject output = _dreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
+                DreamObject output = _objectTree.CreateObject(DreamPath.Matrix);
                 output.SetVariable("a", new(rA * lA + rD * lB));
                 output.SetVariable("b", new(rB * lA + rE * lB));
                 output.SetVariable("c", new(rC * lA + rF * lB + lC));
@@ -100,7 +99,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
-            if (a.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out DreamObject? right)) {
+            if (a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? right)) {
                 const string elements = "abcdef";
                 for (int i = 0; i < elements.Length; i++) {
                     left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float

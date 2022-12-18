@@ -13,18 +13,19 @@ namespace OpenDreamRuntime.Procs {
     public sealed class DMProc : DreamProc {
         public byte[] Bytecode { get; }
 
-        private readonly int _maxStackSize;
-
         public string? Source { get; }
         public int Line { get; }
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
 
-        public IDreamManager DreamManager;
-        public IDreamMapManager DreamMapManager;
-        internal IDreamDebugManager DreamDebugManager;
-        public DreamResourceManager DreamResourceManager;
+        public readonly IDreamManager DreamManager;
+        public readonly IDreamMapManager DreamMapManager;
+        public readonly IDreamDebugManager DreamDebugManager;
+        public readonly DreamResourceManager DreamResourceManager;
+        public readonly IDreamObjectTree ObjectTree;
 
-        internal DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager)
+        private readonly int _maxStackSize;
+
+        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
             : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)
         {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
@@ -37,6 +38,18 @@ namespace OpenDreamRuntime.Procs {
             DreamMapManager = dreamMapManager;
             DreamDebugManager = dreamDebugManager;
             DreamResourceManager = dreamResourceManager;
+            ObjectTree = objectTree;
+        }
+
+        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
+        }
+
+        public override string ToString() {
+            var procElement = (SuperProc == null) ? "proc/" : String.Empty; // Has "proc/" only if it's not an override
+            // TODO: "verb/" proc element
+
+            return $"{OwningType}/{procElement}{Name}";
         }
 
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
@@ -58,15 +71,9 @@ namespace OpenDreamRuntime.Procs {
                 return argumentTypes;
             }
         }
-
-        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments)
-        {
-            return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
-        }
     }
 
-    public sealed class DMProcState : ProcState
-    {
+    public sealed class DMProcState : ProcState {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
         // TODO: These pools are not returned to if the proc runtimes while _current is null
@@ -81,7 +88,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.FormatString, DMOpcodeHandlers.FormatString},
             {DreamProcOpcode.SwitchCaseRange, DMOpcodeHandlers.SwitchCaseRange},
             {DreamProcOpcode.PushReferenceValue, DMOpcodeHandlers.PushReferenceValue},
-            {DreamProcOpcode.PushPath, DMOpcodeHandlers.PushPath},
             {DreamProcOpcode.Add, DMOpcodeHandlers.Add},
             {DreamProcOpcode.Assign, DMOpcodeHandlers.Assign},
             {DreamProcOpcode.Call, DMOpcodeHandlers.Call},
@@ -169,7 +175,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.CreateFilteredListEnumerator,DMOpcodeHandlers.CreateFilteredListEnumerator},
             {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
-
+            {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
+            {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub}
         };
         #endregion
 
@@ -183,8 +190,8 @@ namespace OpenDreamRuntime.Procs {
         public readonly int ArgumentCount;
         public string? CurrentSource;
         public int CurrentLine;
-        private Stack<IEnumerator<DreamValue>>? _enumeratorStack;
-        public Stack<IEnumerator<DreamValue>> EnumeratorStack => _enumeratorStack ??= new Stack<IEnumerator<DreamValue>>(1);
+        private Stack<IDreamValueEnumerator>? _enumeratorStack;
+        public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
         private int _pc = 0;
         private int? _subOpcode;
@@ -423,7 +430,7 @@ namespace OpenDreamRuntime.Procs {
         public string ReadString() {
             int stringID = ReadInt();
 
-            return DreamManager.ObjectTree.Strings[stringID];
+            return Proc.ObjectTree.Strings[stringID];
         }
 
         public DMReference ReadReference() {

@@ -530,7 +530,9 @@ namespace DMCompiler.Compiler.DM {
                         if (blockInner != null) statements.AddRange(blockInner);
 
                         if (!Check(TokenType.DM_RightCurlyBracket)) {
-                            Error("Expected end of proc statement", throwException: false);
+                            Error(WarningCode.BadToken, "Expected end of braced block");
+                            Check(TokenType.DM_Dedent); // Have to do this ensure that the current token will ALWAYS move forward,
+                                                        // and not get stuck once we reach this branch!
                             LocateNextStatement();
                             Delimiter();
                         } else {

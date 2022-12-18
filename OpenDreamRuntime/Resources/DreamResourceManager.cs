@@ -15,9 +15,10 @@ namespace OpenDreamRuntime.Resources {
         private readonly Dictionary<string, int> _resourcePathToId = new();
         private readonly Dictionary<DreamResource, Image<Rgba32>> _imageCache = new();
 
-        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.res");
+        private ISawmill _sawmill;
 
         public void Initialize() {
+            _sawmill = Logger.GetSawmill("opendream.res");
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
 

@@ -41,6 +41,17 @@ namespace OpenDreamRuntime.Procs {
             ObjectTree = objectTree;
         }
 
+        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
+        }
+
+        public override string ToString() {
+            var procElement = (SuperProc == null) ? "proc/" : String.Empty; // Has "proc/" only if it's not an override
+            // TODO: "verb/" proc element
+
+            return $"{OwningType}/{procElement}{Name}";
+        }
+
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
             if (json.Arguments == null) {
                 return new();
@@ -60,14 +71,9 @@ namespace OpenDreamRuntime.Procs {
                 return argumentTypes;
             }
         }
-
-        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-            return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
-        }
     }
 
-    sealed class DMProcState : ProcState
-    {
+    sealed class DMProcState : ProcState {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
         // TODO: These pools are not returned to if the proc runtimes while _current is null
@@ -84,7 +90,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.FormatString,
             DMOpcodeHandlers.SwitchCaseRange,
             DMOpcodeHandlers.PushReferenceValue,
-            DMOpcodeHandlers.PushPath,
+            null, //0x7
             DMOpcodeHandlers.Add,
             DMOpcodeHandlers.Assign,
             DMOpcodeHandlers.Call,
@@ -115,7 +121,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CallStatement,
             DMOpcodeHandlers.BitAnd,
             DMOpcodeHandlers.CompareNotEquals,
-            DMOpcodeHandlers.ListAppend,
+            DMOpcodeHandlers.PushProc,
             DMOpcodeHandlers.Divide,
             DMOpcodeHandlers.Multiply,
             DMOpcodeHandlers.BitXorReference,
@@ -129,7 +135,7 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.CompareGreaterThanOrEqual,
             DMOpcodeHandlers.SwitchCase,
             DMOpcodeHandlers.Mask,
-            DMOpcodeHandlers.ListAppendAssociated,
+            null, //0x34
             DMOpcodeHandlers.Error,
             DMOpcodeHandlers.IsInList,
             DMOpcodeHandlers.PushArguments,
@@ -174,7 +180,9 @@ namespace OpenDreamRuntime.Procs {
             null, //0x5E
             DMOpcodeHandlers.PushGlobalVars,
             DMOpcodeHandlers.ModulusModulus,
-            DMOpcodeHandlers.ModulusModulusReference
+            DMOpcodeHandlers.ModulusModulusReference,
+            DMOpcodeHandlers.PushProcStub,
+            DMOpcodeHandlers.PushVerbStub
         };
         #endregion
 

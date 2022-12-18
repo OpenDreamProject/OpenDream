@@ -2070,6 +2070,14 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(format);
         }
 
+        [DreamProc("trimtext")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_trimtext(DreamObject instance, DreamObject usr,
+            DreamProcArguments arguments)
+        {
+            return arguments.GetArgument(0, "Text").TryGetValueAsString(out var val) ? new DreamValue(val.Trim()) : DreamValue.Null;
+        }
+
         [DreamProc("trunc")]
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_trunc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -2081,43 +2089,46 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("typesof")]
-        [DreamProcParameter("Item1")]
+        [DreamProcParameter("Item1", Type = DreamValueType.DreamPath | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = DreamList.Create();
 
-            foreach (DreamValue type in arguments.GetAllArguments()) {
-                if (!type.TryGetValueAsPath(out var typePath)) {
-                    if (!type.TryGetValueAsDreamObject(out var typeObj) || typeObj?.ObjectDefinition is null || typeObj is DreamList) {
-                        if (type.TryGetValueAsString(out var typeString)) {
-                            var stringToPath = new DreamPath(typeString);
-                            if (stringToPath.LastElement == "proc") {
-                                DreamPath objectPath = stringToPath.AddToPath("..");
-                                if (!ObjectTree.HasTreeEntry(objectPath))
-                                {
-                                    continue;
-                                }
-                            }
-                            else if (!ObjectTree.HasTreeEntry(stringToPath)) {
-                                continue;
-                            }
-                            typePath = stringToPath;
-                        } else {
-                            continue;
-                        }
+            foreach (DreamValue typeValue in arguments.GetAllArguments()) {
+                DreamObjectDefinition type;
+                IEnumerable<int>? addingProcs = null;
+
+                if (typeValue.TryGetValueAsPath(out var typePath)) {
+                    type = ObjectTree.GetObjectDefinition(typePath);
+                } else if (typeValue.TryGetValueAsDreamObject(out var typeObj)) {
+                    if (typeObj is null or DreamList) // typesof() ignores nulls and lists
+                        continue;
+
+                    type = typeObj.ObjectDefinition;
+                } else if (typeValue.TryGetValueAsString(out var typeString)) {
+                    DreamPath path = new DreamPath(typeString);
+
+                    if (path.LastElement is "proc" or "verb") {
+                        type = ObjectTree.GetObjectDefinition(path.FromElements(0, -2));
+                        addingProcs = type.Procs.Values;
                     } else {
-                        typePath = typeObj.ObjectDefinition.Type;
+                        type = ObjectTree.GetObjectDefinition(path);
                     }
+                } else if (typeValue.TryGetValueAsProcStub(out var owner)) {
+                    type = owner.ObjectDefinition;
+                    addingProcs = type.Procs.Values;
+                } else if (typeValue.TryGetValueAsVerbStub(out owner)) {
+                    type = owner.ObjectDefinition;
+                    addingProcs = type.Verbs;
+                } else {
+                    continue;
                 }
 
-                if (typePath.LastElement == "proc") {
-                    DreamPath objectTypePath = typePath.AddToPath("..");
-                    DreamObjectDefinition objectDefinition = ObjectTree.GetObjectDefinition(objectTypePath);
-
-                    foreach (KeyValuePair<string, int> proc in objectDefinition.Procs) {
-                        list.AddValue(new DreamValue(proc.Key));
+                if (addingProcs != null) {
+                    foreach (var procId in addingProcs) {
+                        list.AddValue(new DreamValue(ObjectTree.Procs[procId]));
                     }
                 } else {
-                    var descendants = ObjectTree.GetAllDescendants(typePath);
+                    var descendants = ObjectTree.GetAllDescendants(type.Type);
 
                     foreach (var descendant in descendants) {
                         list.AddValue(new DreamValue(descendant.ObjectDefinition.Type));

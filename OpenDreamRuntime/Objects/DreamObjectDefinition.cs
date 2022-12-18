@@ -12,6 +12,7 @@ namespace OpenDreamRuntime.Objects {
         public int? InitializationProc;
         public readonly Dictionary<string, int> Procs = new();
         public readonly Dictionary<string, int> OverridingProcs = new();
+        public List<int>? Verbs;
 
         // Maps variables from their name to their initial value.
         public readonly Dictionary<string, DreamValue> Variables = new();
@@ -32,6 +33,8 @@ namespace OpenDreamRuntime.Objects {
             GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
             Procs = new Dictionary<string, int>(copyFrom.Procs);
             OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
+            if (copyFrom.Verbs != null)
+                Verbs = new List<int>(copyFrom.Verbs);
         }
 
         public DreamObjectDefinition(IDreamObjectTree objectTree, IDreamObjectTree.TreeEntry treeNode) {

@@ -1,7 +1,7 @@
-using System;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler.DM;
 using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
@@ -81,6 +81,7 @@ namespace DMCompiler.DM {
                         break;
                 }
             }
+
             DebugTools.Assert(path == DreamPath.Root || parent != null); // Parent SHOULD NOT be null here! (unless we're root lol)
 
             DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
@@ -89,8 +90,7 @@ namespace DMCompiler.DM {
             return dmObject;
         }
 
-        public static bool TryGetGlobalProc(string name, [CanBeNull] out DMProc proc)
-        {
+        public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] [CanBeNull] out DMProc proc) {
             proc = null;
             return GlobalProcs.TryGetValue(name, out var id) && AllProcs.TryGetValue(id, out proc);
         }
@@ -99,45 +99,56 @@ namespace DMCompiler.DM {
             return _pathToTypeId.TryGetValue(path, out typeId);
         }
 
+        // TODO: This is all so snowflake and needs redone
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
             bool requireProcElement = search.Type == DreamPath.PathType.Absolute;
+            string searchingProcName = null;
 
-            DreamPath searchObjectPath;
-
-            int procElement = search.FindElement("proc");
-            if (procElement == -1) procElement = search.FindElement("verb");
+            int procElement = path.FindElement("proc");
+            if (procElement == -1) procElement = path.FindElement("verb");
             if (procElement != -1) {
-                searchObjectPath = search.FromElements(0, procElement);
-                searchObjectPath.Type = DreamPath.PathType.Relative; // FromElements makes an absolute path
-            } else {
-                if (requireProcElement) return null;
-
-                searchObjectPath = search;
+                searchingProcName = search.LastElement;
+                path = path.RemoveElement(procElement);
+                search = search.FromElements(0, -2);
+                search.Type = DreamPath.PathType.Relative;
             }
 
-            int foundTypeId;
+            procElement = search.FindElement("proc");
+            if (procElement == -1) procElement = search.FindElement("verb");
+            if (procElement != -1) {
+                searchingProcName = search.LastElement;
+                search = search.FromElements(0, procElement);
+                search.Type = DreamPath.PathType.Relative;
+            }
+
+            if (searchingProcName == null && requireProcElement)
+                return null;
+
             DreamPath currentPath = path;
-            while (!_pathToTypeId.TryGetValue(currentPath.Combine(searchObjectPath), out foundTypeId)) {
-                if (currentPath == DreamPath.Root) break;
+            while (true) {
+                bool foundType = _pathToTypeId.TryGetValue(currentPath.Combine(search), out var foundTypeId);
+
+                // We're searching for a proc
+                if (searchingProcName != null && foundType) {
+                    DMObject type = AllObjects[foundTypeId];
+
+                    if (type.HasProc(searchingProcName)) {
+                        return new DreamPath(type.Path.PathString + "/proc/" + searchingProcName);
+                    } else if (foundTypeId == Root.Id && GlobalProcs.ContainsKey(searchingProcName)) {
+                        return new DreamPath("/proc/" + searchingProcName);
+                    }
+                } else if (foundType) { // We're searching for a type
+                    break;
+                }
+
+                if (currentPath == DreamPath.Root) {
+                    break; // Nothing found
+                }
 
                 currentPath = currentPath.AddToPath("..");
             }
 
-            DMObject found = AllObjects[foundTypeId];
-
-            //We're searching for a proc
-            if (procElement != -1) {
-                DreamPath procPath = search.FromElements(procElement + 1);
-                if (procPath.Elements.Length != 1 || procPath.LastElement is null) return null;
-
-                if (found.HasProc(procPath.LastElement)) {
-                    return new DreamPath(found.Path.PathString + "/proc" + procPath);
-                } else {
-                    return null;
-                }
-            } else { //We're searching for an object
-                return found?.Path;
-            }
+            return null;
         }
 
         public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {

@@ -34,5 +34,35 @@ namespace OpenDreamRuntime.Procs {
             }
             return DreamValue.Null;
         }
+
+        public bool TryGetNamedArgument(string argumentName, [NotNullWhen(true)] out DreamValue? value) {
+            if(NamedArguments == null) {
+                value = DreamValue.Null;
+                return false;
+            }
+
+            if(NamedArguments.TryGetValue(argumentName, out DreamValue lookup)) {
+                value = lookup;
+                return true;
+            }
+
+            value = DreamValue.Null;
+            return false;
+        }
+
+        public bool TryGetPositionalArgument(int index, [NotNullWhen(true)] out DreamValue? value) {
+            if(OrderedArguments == null) {
+                value = DreamValue.Null;
+                return false;
+            }
+
+            if(OrderedArguments.TryGetValue(index, out DreamValue lookup)) {
+                value = lookup;
+                return true;
+            }
+
+            value = DreamValue.Null;
+            return false;
+        }
     }
 }

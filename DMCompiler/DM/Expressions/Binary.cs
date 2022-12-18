@@ -381,13 +381,22 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            var lhsIsConst = LHS.TryAsConstant(out var lhs);
+            var rhsIsConst = RHS.TryAsConstant(out var rhs);
+
+            if (lhsIsConst && rhsIsConst) {
+                constant = lhs.Or(rhs);
+                return true;
             }
 
-            constant = lhs.Or(rhs);
-            return true;
+            if ((lhsIsConst && lhs.IsTruthy()) ||
+                (rhsIsConst && rhs.IsTruthy())) {
+                constant = new Number(Location, 1);
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -406,13 +415,22 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            var lhsIsConst = LHS.TryAsConstant(out var lhs);
+            var rhsIsConst = RHS.TryAsConstant(out var rhs);
+
+            if (lhsIsConst && rhsIsConst) {
+                constant = lhs.And(rhs);
+                return true;
             }
 
-            constant = lhs.And(rhs);
-            return true;
+            if ((lhsIsConst && !lhs.IsTruthy()) ||
+                (rhsIsConst && !rhs.IsTruthy())) {
+                constant = new Number(Location, 0);
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

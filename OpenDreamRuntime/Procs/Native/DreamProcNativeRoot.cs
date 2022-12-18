@@ -681,29 +681,29 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             // We dont want keyword arguments screwing with this
-            DreamValue indx;
+            DreamValue dreamIndex;
 
             int colorSpace = 0;
 
             List<DreamValue> gradientList;
 
             if (arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList gradList)) {
-                gradientList = gradList.CreateCopy().GetValues();
-                indx = arguments.OrderedArguments[1];
+                gradientList = gradList.GetValues();
+                dreamIndex = arguments.OrderedArguments[1];
 
                 DreamValue dictSpace = gradList.GetValue(new("space"));
                 dictSpace.TryGetValueAsInteger(out colorSpace);
             } else {
-                if(!arguments.NamedArguments.TryGetValue("index", out DreamValue indxlookup)) {
-                    indx = arguments.OrderedArguments[arguments.OrderedArguments.Count - 1];
-                    arguments.OrderedArguments.RemoveAt(arguments.OrderedArguments.Count - 1);
+                if(!arguments.NamedArguments.TryGetValue("index", out DreamValue indexLookup)) {
+                    dreamIndex = arguments.OrderedArguments[^1];
+                    arguments.OrderedArguments.Pop();
                 } else {
-                    indx = indxlookup;
+                    dreamIndex = indexLookup;
                 }
                 gradientList = arguments.GetAllArguments();
             }
 
-            if (!indx.TryGetValueAsFloat(out float index)) {
+            if (!dreamIndex.TryGetValueAsFloat(out float index)) {
                 throw new FormatException("Failed to parse index as float");
             }
 

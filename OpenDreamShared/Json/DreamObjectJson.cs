@@ -3,8 +3,11 @@
 namespace OpenDreamShared.Json {
     public enum JsonVariableType {
         Resource = 0,
-        Path = 1,
-        List = 2
+        Type = 1,
+        Proc = 2,
+        List = 3,
+        ProcStub = 4,
+        VerbStub = 5
     }
 
     public sealed class DreamTypeJson {
@@ -12,9 +15,9 @@ namespace OpenDreamShared.Json {
         public int? Parent { get; set; }
         public int? InitProc { get; set; }
         public List<List<int>> Procs { get; set; }
+        public List<int> Verbs { get; set; }
         public Dictionary<string, object> Variables { get; set; }
         public Dictionary<string, int> GlobalVariables { get; set; }
-        public List<int> Children { get; set; }
     }
 
     public sealed class GlobalListJson {

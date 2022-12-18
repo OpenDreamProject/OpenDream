@@ -79,7 +79,6 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.PushString:
             case DreamProcOpcode.PushResource:
-            case DreamProcOpcode.PushPath:
             case DreamProcOpcode.DebugSource:
                 return (opcode, ReadString());
 
@@ -122,6 +121,9 @@ public struct ProcDecoder {
             case DreamProcOpcode.JumpIfFalse:
             case DreamProcOpcode.JumpIfTrue:
             case DreamProcOpcode.PushType:
+            case DreamProcOpcode.PushProc:
+            case DreamProcOpcode.PushProcStub:
+            case DreamProcOpcode.PushVerbStub:
             case DreamProcOpcode.DebugLine:
             case DreamProcOpcode.MassConcatenation:
                 return (opcode, ReadInt());

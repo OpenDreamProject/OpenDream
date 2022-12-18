@@ -818,17 +818,28 @@ namespace DMCompiler.DM {
             WriteString(value);
         }
 
-        public void PushPath(DreamPath value) {
+        public void PushType(int typeId) {
             GrowStack(1);
-            if (DMObjectTree.TryGetTypeId(value, out int typeId)) {
-                WriteOpcode(DreamProcOpcode.PushType);
-                WriteInt(typeId);
-            } else {
-                //TODO: Remove PushPath?
-                //It's currently still used by things like paths to procs
-                WriteOpcode(DreamProcOpcode.PushPath);
-                WriteString(value.PathString);
-            }
+            WriteOpcode(DreamProcOpcode.PushType);
+            WriteInt(typeId);
+        }
+
+        public void PushProc(int procId) {
+            GrowStack(1);
+            WriteOpcode(DreamProcOpcode.PushProc);
+            WriteInt(procId);
+        }
+
+        public void PushProcStub(int typeId) {
+            GrowStack(1);
+            WriteOpcode(DreamProcOpcode.PushProcStub);
+            WriteInt(typeId);
+        }
+
+        public void PushVerbStub(int typeId) {
+            GrowStack(1);
+            WriteOpcode(DreamProcOpcode.PushVerbStub);
+            WriteInt(typeId);
         }
 
         public void PushNull() {

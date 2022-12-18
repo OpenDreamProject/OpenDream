@@ -4,8 +4,6 @@
 	var/list/gradlist = list(0, "#ff0000", 1, "#00ff00")
 	var/list/gradlistloop = list(0, "#ff0000", "loop", 1, "#00ff00")
 
-	CRASH(gradient("#ff0000", "#00ff00", 0.5))
-
 	ASSERT(gradient("#ff0000", "#00ff00", 0.5) == "#7f7f00")
 	ASSERT(gradient(gradlist, 0.5) == "#7f7f00")
 	ASSERT(gradient(gradlist, 0) == "#ff0000")

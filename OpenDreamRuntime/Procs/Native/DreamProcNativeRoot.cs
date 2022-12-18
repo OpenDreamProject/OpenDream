@@ -694,11 +694,11 @@ namespace OpenDreamRuntime.Procs.Native {
                 DreamValue dictSpace = gradList.GetValue(new("space"));
                 dictSpace.TryGetValueAsInteger(out colorSpace);
             } else {
-                if(!arguments.NamedArguments.TryGetValue("index", out DreamValue indexLookup)) {
+                if (arguments.NamedArguments.TryGetValue("index", out DreamValue indexLookup)) {
+                    dreamIndex = indexLookup;
+                } else {
                     dreamIndex = arguments.OrderedArguments[^1];
                     arguments.OrderedArguments.Pop();
-                } else {
-                    dreamIndex = indexLookup;
                 }
                 gradientList = arguments.GetAllArguments();
             }

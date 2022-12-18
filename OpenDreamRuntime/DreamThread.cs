@@ -151,6 +151,8 @@ namespace OpenDreamRuntime {
 
         public string Name { get; }
 
+        internal Procs.DebugAdapter.DreamDebugManager.ThreadStepMode? StepMode { get; set; }
+
         public DreamThread(string name) {
             Name = name;
         }

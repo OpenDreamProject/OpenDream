@@ -25,13 +25,17 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private bool _terminated = false;
     private DreamThread? _stoppedThread;
 
-    private enum StepMode {
+    public enum StepMode {
         None,
         StepOver,  // aka "next"
         StepIn,
         StepOut,
     }
-    private readonly Dictionary<int, (StepMode Mode, int FrameId, string? Granularity)> _threadStepModes = new();
+    public struct ThreadStepMode {
+        public StepMode Mode;
+        public int FrameId;
+        public string? Granularity;
+    }
 
     // Breakpoint storage
     private const string ExceptionFilterRuntimes = "runtimes";
@@ -133,19 +137,19 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
         // Stop if we're instruction stepping.
         bool stoppedOnStep = false;
-        switch (_threadStepModes.GetValueOrDefault(state.Thread.Id)) {
-            case (StepMode.StepIn, _, SteppingGranularity.Instruction):
+        switch (state.Thread.StepMode) {
+            case ThreadStepMode { Mode: StepMode.StepIn, FrameId: _, Granularity: SteppingGranularity.Instruction }:
                 stoppedOnStep = true;
                 break;
-            case (StepMode.StepOut, int whenNotInStack, SteppingGranularity.Instruction):
+            case ThreadStepMode { Mode: StepMode.StepOut, FrameId: int whenNotInStack, Granularity: SteppingGranularity.Instruction }:
                 stoppedOnStep = !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
                 break;
-            case (StepMode.StepOver, int whenTop, SteppingGranularity.Instruction):
+            case ThreadStepMode { Mode: StepMode.StepOver, FrameId: int whenTop, Granularity: SteppingGranularity.Instruction }:
                 stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
                 break;
         }
         if (stoppedOnStep) {
-            _threadStepModes.Remove(state.Thread.Id);
+            state.Thread.StepMode = null;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonStep,
             });
@@ -163,20 +167,20 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         bool stoppedOnStep = false;
-        switch (_threadStepModes.GetValueOrDefault(state.Thread.Id)) {
-            case (StepMode.StepIn, _, null or SteppingGranularity.Line or SteppingGranularity.Statement):
+        switch (state.Thread.StepMode) {
+            case ThreadStepMode { Mode: StepMode.StepIn, FrameId: _, Granularity: null or SteppingGranularity.Line or SteppingGranularity.Statement }:
                 stoppedOnStep = true;
                 break;
-            case (StepMode.StepOut, int whenNotInStack, null or SteppingGranularity.Line or SteppingGranularity.Statement):
+            case ThreadStepMode { Mode: StepMode.StepOut, FrameId: int whenNotInStack, Granularity: null or SteppingGranularity.Line or SteppingGranularity.Statement }:
                 stoppedOnStep = whenNotInStack == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
                 break;
-            case (StepMode.StepOver, int whenTop, null or SteppingGranularity.Line or SteppingGranularity.Statement):
+            case ThreadStepMode { Mode: StepMode.StepOver, FrameId: int whenTop, Granularity: null or SteppingGranularity.Line or SteppingGranularity.Statement }:
                 stoppedOnStep = state.Id == whenTop || whenTop == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
                 break;
         }
 
         if (stoppedOnStep) {
-            _threadStepModes.Remove(state.Thread.Id);
+            state.Thread.StepMode = null;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonStep,
             });
@@ -516,21 +520,33 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestStepIn(DebugAdapterClient client, RequestStepIn requestStepIn) {
-        _threadStepModes[requestStepIn.Arguments.ThreadId] = (StepMode.StepIn, 0, requestStepIn.Arguments.Granularity);
+        var thread = InspectThreads().First(t => t.Id == requestStepIn.Arguments.ThreadId);
+        thread.StepMode = new ThreadStepMode {
+            Mode = StepMode.StepIn,
+            Granularity = requestStepIn.Arguments.Granularity,
+        };
         Resume();
         requestStepIn.Respond(client);
     }
 
     private void HandleRequestNext(DebugAdapterClient client, RequestNext requestNext) {
         var thread = InspectThreads().First(t => t.Id == requestNext.Arguments.ThreadId);
-        _threadStepModes[requestNext.Arguments.ThreadId] = (StepMode.StepOver, thread.InspectStack().FirstOrDefault()?.Id ?? -1, requestNext.Arguments.Granularity);
+        thread.StepMode = new ThreadStepMode {
+            Mode = StepMode.StepOver,
+            FrameId = thread.InspectStack().FirstOrDefault()?.Id ?? -1,
+            Granularity = requestNext.Arguments.Granularity,
+        };
         Resume();
         requestNext.Respond(client);
     }
 
     private void HandleRequestStepOut(DebugAdapterClient client, RequestStepOut requestStepOut) {
         var thread = InspectThreads().First(t => t.Id == requestStepOut.Arguments.ThreadId);
-        _threadStepModes[requestStepOut.Arguments.ThreadId] = (StepMode.StepOut, thread.InspectStack().FirstOrDefault()?.Id ?? -1, requestStepOut.Arguments.Granularity);
+        thread.StepMode = new ThreadStepMode {
+            Mode = StepMode.StepOut,
+            FrameId = thread.InspectStack().FirstOrDefault()?.Id ?? -1,
+            Granularity = requestStepOut.Arguments.Granularity,
+        };
         Resume();
         requestStepOut.Respond(client);
     }

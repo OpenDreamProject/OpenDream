@@ -4,13 +4,14 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     /// <remarks>
     /// This doesn't represent a particular, specific instance of an object, <br/>
-    /// but rather stores the compiletime information necessary to describe a certain object definition, <br/>
+    /// but rather stores the compile-time information necessary to describe a certain object definition, <br/>
     /// including its procs, vars, path, parent, etc.
     /// </remarks>
     class DMObject {
@@ -25,7 +26,9 @@ namespace DMCompiler.DM {
         /// <summary>A list of var and verb initializations implicitly done before the user's New() is called.</summary>
         public List<DMExpression> InitializationProcExpressions = new();
         public int? InitializationProc;
-        private bool IAmRoot => Path == DreamPath.Root;
+
+        private bool IsRoot => Path == DreamPath.Root;
+        [CanBeNull] private List<DMProc> _verbs;
 
         public List<DMASTObjectVarOverride>? danglingOverrides = null; // Overrides waiting for the LateVarDef event to happen
         private bool _isSubscribedToVarDef = false;
@@ -35,6 +38,7 @@ namespace DMCompiler.DM {
             Path = path;
             Parent = parent;
         }
+
         public void AddProc(string name, DMProc proc) {
             if (!Procs.ContainsKey(name)) Procs.Add(name, new List<int>(1));
 
@@ -114,17 +118,16 @@ namespace DMCompiler.DM {
 
         /// <summary> Similar to <see cref="HasLocalVariable"/>, just checks our globals/statics instead. </summary>
         /// <remarks> Does NOT return true if the global variable is in the root namespace, unless called on the Root object itself.</remarks>
-        public bool HasGlobalVariable(string name)
-        {
-            if (IAmRoot)
+        public bool HasGlobalVariable(string name) {
+            if (IsRoot)
                 return GlobalVariables.ContainsKey(name);
             return HasGlobalVariableNotInRoot(name);
         }
-        private bool HasGlobalVariableNotInRoot(string name)
-        {
+
+        private bool HasGlobalVariableNotInRoot(string name) {
             if (GlobalVariables.ContainsKey(name))
                 return true;
-            if (Parent == null || Parent.IAmRoot)
+            if (Parent == null || Parent.IsRoot)
                 return false;
             return Parent.HasGlobalVariable(name);
         }
@@ -135,22 +138,14 @@ namespace DMCompiler.DM {
             return Parent?.HasProc(name) ?? false;
         }
 
+        [CanBeNull]
         public List<int> GetProcs(string name) {
             return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
         }
 
-        public bool IsProcUnimplemented(string name) {
-            List<int> procs = GetProcs(name);
-
-            if (procs != null) {
-                foreach (int procId in procs)
-                {
-                    DMProc proc = DMObjectTree.AllProcs[procId];
-                    if ((proc.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) return true;
-                }
-            }
-
-            return false;
+        public void AddVerb(DMProc verb) {
+            _verbs ??= new();
+            _verbs.Add(verb);
         }
 
         public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
@@ -185,12 +180,19 @@ namespace DMCompiler.DM {
                 init.PushArguments(0);
                 init.Call(DMReference.SuperProc);
 
+                string lastSource = null;
                 foreach (DMExpression expression in InitializationProcExpressions) {
                     try {
                         if (expression.Location.Line is int line) {
-                            init.DebugSource(expression.Location.SourceFile);
+                            // Only emit DebugSource when source changes
+                            if (expression.Location.SourceFile != lastSource) {
+                                init.DebugSource(expression.Location.SourceFile);
+                                lastSource = expression.Location.SourceFile;
+                            }
+
                             init.DebugLine(line);
                         }
+
                         expression.EmitPushValue(this, init);
                     } catch (CompileErrorException e) {
                         DMCompiler.Emit(e.Error);
@@ -227,15 +229,22 @@ namespace DMCompiler.DM {
                 typeJson.GlobalVariables = GlobalVariables;
             }
 
-            if (InitializationProc != null)
-            {
+            if (InitializationProc != null) {
                 typeJson.InitProc = InitializationProc;
             }
 
-            if (Procs.Count > 0)
-            {
+            if (Procs.Count > 0) {
                 typeJson.Procs = new List<List<int>>(Procs.Values);
             }
+
+            if (_verbs != null) {
+                typeJson.Verbs = new List<int>(_verbs.Count);
+
+                foreach (var verb in _verbs) {
+                    typeJson.Verbs.Add(verb.Id);
+                }
+            }
+
             return typeJson;
         }
 

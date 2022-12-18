@@ -149,14 +149,23 @@ namespace OpenDreamRuntime.Objects {
                                     throw new Exception("Property 'resourcePath' must be a string or null");
                             }
                         }
-                        case JsonVariableType.Path:
+                        case JsonVariableType.Type:
                             JsonElement pathValue = jsonElement.GetProperty("value");
+                            DreamPath path = Types[pathValue.GetInt32()].Path;
 
-                            switch (pathValue.ValueKind) {
-                                case JsonValueKind.Number: return new DreamValue(Types[pathValue.GetInt32()].Path);
-                                case JsonValueKind.String: return new DreamValue(new DreamPath(pathValue.GetString()));
-                                default: throw new Exception("Invalid path value");
-                            }
+                            return new DreamValue(path);
+                        case JsonVariableType.Proc:
+                            return new DreamValue(Procs[jsonElement.GetProperty("value").GetInt32()]);
+                        case JsonVariableType.ProcStub: {
+                            TreeEntry type = Types[jsonElement.GetProperty("value").GetInt32()];
+
+                            return DreamValue.CreateProcStub(type);
+                        }
+                        case JsonVariableType.VerbStub: {
+                            TreeEntry type = Types[jsonElement.GetProperty("value").GetInt32()];
+
+                            return DreamValue.CreateVerbStub(type);
+                        }
                         case JsonVariableType.List:
                             DreamList list = DreamList.Create();
 
@@ -176,11 +185,11 @@ namespace OpenDreamRuntime.Objects {
 
                             return new DreamValue(list);
                         default:
-                            throw new Exception("Invalid variable type (" + variableType + ")");
+                            throw new Exception($"Invalid variable type ({variableType})");
                     }
                 }
                 default:
-                    throw new Exception("Invalid value kind for dream value (" + jsonElement.ValueKind + ")");
+                    throw new Exception($"Invalid value kind for dream value ({jsonElement.ValueKind})");
             }
         }
 
@@ -249,9 +258,14 @@ namespace OpenDreamRuntime.Objects {
                     foreach (var procList in jsonType.Procs) {
                         foreach (var procId in procList) {
                             var proc = Procs[procId];
-                            type.ObjectDefinition.SetProcDefinition(proc.Name, procId);
+
+                            definition.SetProcDefinition(proc.Name, procId);
                         }
                     }
+                }
+
+                if (jsonType.Verbs != null) {
+                    definition.Verbs = jsonType.Verbs;
                 }
 
                 if (jsonType.InitProc != null) {

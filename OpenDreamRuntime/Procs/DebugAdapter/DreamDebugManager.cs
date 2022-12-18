@@ -652,9 +652,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
         }
     }
 
-    private IEnumerable<Variable> ExpandStack(RequestVariables req, DreamValue[] stack) {
+    private IEnumerable<Variable> ExpandStack(RequestVariables req, ReadOnlyMemory<DreamValue> stack) {
         for (int i = stack.Length - 1; i >= 0; --i) {
-            yield return DescribeValue($"{i}", stack[i]);
+            yield return DescribeValue($"{i}", stack.Span[i]);
         }
     }
 

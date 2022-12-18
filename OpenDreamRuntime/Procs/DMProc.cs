@@ -337,7 +337,7 @@ namespace OpenDreamRuntime.Procs {
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
-        public DreamValue[] DebugStack() => _stack[.._stackIndex];
+        public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
 
         public void Push(DreamValue value) {
             _stack[_stackIndex++] = value;

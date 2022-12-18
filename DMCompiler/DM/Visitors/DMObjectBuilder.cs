@@ -7,7 +7,6 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     static class DMObjectBuilder {
-
         /// <summary>
         /// In DM, the definition of a base class may occur way after the definition of (perhaps numerous) derived classes. <br/>
         /// At the time that we first evaluate the derived class, we do not know some important information, like the implicit type of certain things.<br/>
@@ -227,12 +226,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (procDefinition.IsVerb && (dmObject.IsSubtypeOf(DreamPath.Atom) || dmObject.IsSubtypeOf(DreamPath.Client)) && !DMCompiler.Settings.NoStandard) {
-                    var initLoc = procDefinition.Location;
-                    Expressions.Field field = new Expressions.Field(initLoc, dmObject.GetVariable("verbs"));
-                    DreamPath procPath = new DreamPath(".proc/" + procName);
-                    Expressions.Append append = new Expressions.Append(initLoc, field, new Expressions.Path(initLoc, procPath));
-
-                    dmObject.InitializationProcExpressions.Add(append);
+                    dmObject.AddVerb(proc);
                 }
             } catch (CompileErrorException e) {
                 DMCompiler.Emit(e.Error);

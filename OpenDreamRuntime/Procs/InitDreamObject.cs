@@ -5,6 +5,8 @@ namespace OpenDreamRuntime.Procs {
     sealed class InitDreamObjectState : ProcState
     {
         [Dependency] private readonly IDreamManager _dreamMan = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+
         enum Stage {
             // Need to call the object's (init) proc
             Init,
@@ -34,7 +36,7 @@ namespace OpenDreamRuntime.Procs {
 
         public override void AppendStackFrame(StringBuilder builder)
         {
-            builder.AppendLine($"<InitDreamObject {_dreamObject}>");
+            builder.AppendLine($"new {_dreamObject.ObjectDefinition?.Type}");
         }
 
         protected override ProcStatus InternalResume()
@@ -50,7 +52,7 @@ namespace OpenDreamRuntime.Procs {
                         goto switch_start;
                     }
 
-                    var proc = _dreamMan.ObjectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
+                    var proc = _objectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
                     var initProcState = proc.CreateState(Thread, src, _usr, new(null));
                     Thread.PushProcState(initProcState);
                     return ProcStatus.Called;

@@ -52,6 +52,7 @@ namespace OpenDreamRuntime {
 
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         private ServerAppearanceSystem _appearanceSystem = default!;  // set in Initialize
 
@@ -67,40 +68,32 @@ namespace OpenDreamRuntime {
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
 
-            DreamObjectDefinition worldDefinition = _dreamManager.ObjectTree.GetObjectDefinition(DreamPath.World);
+            DreamObjectDefinition worldDefinition = _objectTree.GetObjectDefinition(DreamPath.World);
 
             // Default area
-            if (worldDefinition.Variables["area"].TryGetValueAsPath(out var area))
-            {
-                if(!_dreamManager.ObjectTree.GetObjectDefinition(area).IsSubtypeOf(DreamPath.Area)) throw new Exception("bad area");
+            if (worldDefinition.Variables["area"].TryGetValueAsPath(out var area)) {
+                if(!_objectTree.GetObjectDefinition(area).IsSubtypeOf(_objectTree.Area)) throw new Exception("bad area");
 
-                _defaultArea = new MapObjectJson(_dreamManager.ObjectTree.GetTreeEntry(area).Id);
-            }
-            else if (worldDefinition.Variables["area"] == DreamValue.Null ||
-                     worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0)
-            {
+                _defaultArea = new MapObjectJson(_objectTree.GetTreeEntry(area).Id);
+            } else if (worldDefinition.Variables["area"] == DreamValue.Null ||
+                     worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0) {
                 //TODO: Properly handle disabling default area
-                _defaultArea = new MapObjectJson(_dreamManager.ObjectTree.GetTreeEntry(DreamPath.Area).Id);
+                _defaultArea = new MapObjectJson(_objectTree.GetTreeEntry(DreamPath.Area).Id);
             }
-            else
-            {
+            else {
                 throw new Exception("bad area");
             }
 
             //Default turf
-            if (worldDefinition.Variables["turf"].TryGetValueAsPath(out var turf))
-            {
-                if(!_dreamManager.ObjectTree.GetObjectDefinition(turf).IsSubtypeOf(DreamPath.Turf)) throw new Exception("bad turf");
+            if (worldDefinition.Variables["turf"].TryGetValueAsPath(out var turf)) {
+                if (!_objectTree.GetObjectDefinition(turf).IsSubtypeOf(_objectTree.Turf))
+                    throw new Exception("bad turf");
                 _defaultTurf = turf;
-            }
-            else if (worldDefinition.Variables["turf"] == DreamValue.Null ||
-                     worldDefinition.Variables["turf"].TryGetValueAsInteger(out var turfInt) && turfInt == 0)
-            {
+            } else if (worldDefinition.Variables["turf"] == DreamValue.Null ||
+                       worldDefinition.Variables["turf"].TryGetValueAsInteger(out var turfInt) && turfInt == 0) {
                 //TODO: Properly handle disabling default turf
                 _defaultTurf = DreamPath.Turf;
-            }
-            else
-            {
+            } else {
                 throw new Exception("bad turf");
             }
         }
@@ -152,7 +145,7 @@ namespace OpenDreamRuntime {
             // Also call New() on all /area not in the grid.
             // This may call New() a SECOND TIME. This is intentional.
             foreach (var thing in _dreamManager.WorldContentsList.GetValues()) {
-                if (thing.TryGetValueAsDreamObjectOfType(DreamPath.Area, out var area)) {
+                if (thing.TryGetValueAsDreamObjectOfType(_objectTree.Area, out var area)) {
                     if (seenAreas.Add(area)) {
                         area.SpawnProc("New");
                     }
@@ -259,7 +252,7 @@ namespace OpenDreamRuntime {
 
         public void SetZLevels(int levels) {
             if (levels > Levels) {
-                DreamObjectDefinition defaultTurfDef = _dreamManager.ObjectTree.GetObjectDefinition(_defaultTurf);
+                DreamObjectDefinition defaultTurfDef = _objectTree.GetObjectDefinition(_defaultTurf);
                 DreamObject defaultArea = GetOrCreateArea(_defaultArea);
 
                 for (int z = Levels + 1; z <= levels; z++) {
@@ -344,13 +337,13 @@ namespace OpenDreamRuntime {
         }
 
         private DreamObjectDefinition CreateMapObjectDefinition(MapObjectJson mapObject) {
-            DreamObjectDefinition definition = _dreamManager.ObjectTree.GetObjectDefinition(mapObject.Type);
+            DreamObjectDefinition definition = _objectTree.GetObjectDefinition(mapObject.Type);
             if (mapObject.VarOverrides?.Count > 0) {
                 definition = new DreamObjectDefinition(definition);
 
                 foreach (KeyValuePair<string, object> varOverride in mapObject.VarOverrides) {
                     if (definition.HasVariable(varOverride.Key)) {
-                        definition.Variables[varOverride.Key] = _dreamManager.ObjectTree.GetDreamValueFromJsonElement(varOverride.Value);
+                        definition.Variables[varOverride.Key] = _objectTree.GetDreamValueFromJsonElement(varOverride.Value);
                     }
                 }
             }

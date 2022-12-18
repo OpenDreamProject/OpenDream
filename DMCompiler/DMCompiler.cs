@@ -131,10 +131,8 @@ namespace DMCompiler {
 
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it
-                DMPreprocessor dumpPreproc = build();
-
                 StringBuilder result = new();
-                foreach (Token t in dumpPreproc) {
+                foreach (Token t in build()) {
                     result.Append(t.Text);
                 }
 
@@ -270,8 +268,7 @@ namespace DMCompiler {
             return maps;
         }
 
-        private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile)
-        {
+        private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
@@ -284,12 +281,15 @@ namespace DMCompiler {
             if (DMObjectTree.Globals.Count > 0) {
                 GlobalListJson globalListJson = new GlobalListJson();
                 globalListJson.GlobalCount = DMObjectTree.Globals.Count;
+                globalListJson.Names = new List<string>(globalListJson.GlobalCount);
 
                 // Approximate capacity (4/285 in tgstation, ~3%)
                 globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
 
                 for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                     DMVariable global = DMObjectTree.Globals[i];
+                    globalListJson.Names.Add(global.Name);
+
                     if (!global.TryAsJsonRepresentation(out var globalJson))
                         ForcedError(global.Value.Location, $"Failed to serialize global {global.Name}");
 

@@ -24,6 +24,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
             }
 
+            // TODO: Create a special list to prevent this needless list creation
+            List<int>? objectVerbs = dreamObject.ObjectDefinition.Verbs;
+            if (objectVerbs != null) {
+                DreamList verbsList = DreamList.Create(objectVerbs.Count);
+
+                foreach (int verbId in objectVerbs) {
+                    DreamProc verb = _objectTree.Procs[verbId];
+
+                    verbsList.AddValue(new DreamValue(verb));
+                }
+
+                dreamObject.SetVariableValue("verbs", new DreamValue(verbsList));
+            }
+
             _filterLists[dreamObject] = new DreamFilterList(dreamObject);
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);

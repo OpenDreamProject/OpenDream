@@ -76,39 +76,35 @@ namespace OpenDreamRuntime
             Session = session;
         }
 
-        public void UpdateAvailableVerbs()
-        {
+        public void UpdateAvailableVerbs() {
             _availableVerbs.Clear();
             List<(string, string, string)>? verbs = null;
 
-            if (MobDreamObject != null)
-            {
+            if (MobDreamObject != null) {
                 List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").MustGetValueAsDreamList().GetValues();
                 verbs = new List<(string, string, string)>(mobVerbPaths.Count);
-                foreach (DreamValue mobVerbPath in mobVerbPaths)
-                {
-                    DreamPath path = mobVerbPath.MustGetValueAsPath();
-                    if (path.LastElement is null) continue;
-                    var proc = MobDreamObject.GetProc(path.LastElement);
-                    _availableVerbs.Add(path.LastElement, proc);
+                foreach (DreamValue mobVerb in mobVerbPaths) {
+                    if (!mobVerb.TryGetValueAsProc(out var proc))
+                        continue;
+
+                    _availableVerbs.Add(proc.Name, proc);
 
                     // Don't send hidden verbs. Names starting with "." count as hidden.
                     if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||
-                        (proc.VerbName != null && proc.VerbName[0] == '.'))
-                    {
+                        (proc.VerbName != null && proc.VerbName[0] == '.')) {
                         continue;
                     }
 
                     string? category = proc.VerbCategory;
                     // Explicitly null category is hidden from verb panels, "" category becomes the default_verb_category
-                    if (category == string.Empty)
-                    {
+                    if (category == string.Empty) {
                         // But if default_verb_category is null, we hide it from the verb panel
                         category = ClientDreamObject.GetVariable("default_verb_category").TryGetValueAsString(out var value) ? value : null;
                     }
+
                     // No set name is serialized as an empty string and the last element will be used
                     // Null category is serialized as an empty string and treated as hidden
-                    verbs.Add((path.LastElement, proc.VerbName ?? string.Empty, category ?? string.Empty));
+                    verbs.Add((proc.Name, proc.VerbName ?? string.Empty, category ?? string.Empty));
                 }
             }
 
@@ -119,8 +115,7 @@ namespace OpenDreamRuntime
             Session.ConnectedClient.SendMessage(msg);
         }
 
-        public void UpdateStat()
-        {
+        public void UpdateStat() {
             if (_currentlyUpdatingStat)
                 return;
 

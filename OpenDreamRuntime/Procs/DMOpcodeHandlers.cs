@@ -428,30 +428,6 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? ListAppend(DMProcState state) {
-            DreamValue value = state.Pop();
-            DreamList list = state.Pop().GetValueAsDreamList();
-
-            list.AddValue(value);
-            state.Push(new DreamValue(list));
-            return null;
-        }
-
-        public static ProcStatus? ListAppendAssociated(DMProcState state) {
-            DreamValue index = state.Pop();
-            DreamValue value = state.Pop();
-            DreamList list = state.Pop().GetValueAsDreamList();
-
-            if (index.TryGetValueAsInteger(out var idx) && idx == list.GetLength() + 1)
-            {
-                list.Resize(list.GetLength() + 1);
-            }
-
-            list.SetValue(index, value);
-            state.Push(new DreamValue(list));
-            return null;
-        }
-
         public static ProcStatus? Pop(DMProcState state) {
             state.Pop();
             return null;
@@ -521,18 +497,34 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushPath(DMProcState state) {
-            DreamPath path = new DreamPath(state.ReadString());
-
-            state.Push(new DreamValue(path));
-            return null;
-        }
-
         public static ProcStatus? PushType(DMProcState state) {
             int typeId = state.ReadInt();
             DreamPath path = state.Proc.ObjectTree.Types[typeId].Path;
 
             state.Push(new DreamValue(path));
+            return null;
+        }
+
+        public static ProcStatus? PushProc(DMProcState state) {
+            int procId = state.ReadInt();
+
+            state.Push(new DreamValue(state.Proc.ObjectTree.Procs[procId]));
+            return null;
+        }
+
+        public static ProcStatus? PushProcStub(DMProcState state) {
+            int ownerTypeId = state.ReadInt();
+            var owner = state.Proc.ObjectTree.GetTreeEntry(ownerTypeId);
+
+            state.Push(DreamValue.CreateProcStub(owner));
+            return null;
+        }
+
+        public static ProcStatus? PushVerbStub(DMProcState state) {
+            int ownerTypeId = state.ReadInt();
+            var owner = state.Proc.ObjectTree.GetTreeEntry(ownerTypeId);
+
+            state.Push(DreamValue.CreateVerbStub(owner));
             return null;
         }
 
@@ -1297,16 +1289,8 @@ namespace OpenDreamRuntime.Procs {
                         case DreamValue.DreamValueType.String:
                             proc = dreamObject.GetProc(procId.GetValueAsString());
                             break;
-                        case DreamValue.DreamValueType.DreamPath: {
-                            DreamPath fullProcPath = procId.MustGetValueAsPath();
-                            int procElementIndex = fullProcPath.FindElement("proc");
-
-                            if (procElementIndex != -1) {
-                                DreamPath procPath = fullProcPath.FromElements(procElementIndex + 1);
-                                string? procName = procPath.LastElement;
-
-                                if(procName != null) proc = dreamObject.GetProc(procName);
-                            }
+                        case DreamValue.DreamValueType.DreamProc: {
+                            proc = procId.MustGetValueAsProc();
                             break;
                         }
                     }
@@ -1315,38 +1299,29 @@ namespace OpenDreamRuntime.Procs {
                         state.Call(proc, dreamObject, arguments);
                         return ProcStatus.Called;
                     }
-                    throw new Exception("Invalid proc (" + procId + ")");
-                }
-                case DreamValue.DreamValueType.DreamPath: {
-                    DreamPath fullProcPath = source.MustGetValueAsPath();
-                    if (fullProcPath.Elements.Length != 2 || fullProcPath.LastElement is null) //Only global procs are supported here currently
-                        throw new Exception($"Invalid call() proc \"{fullProcPath}\"");
-                    string procName = fullProcPath.LastElement;
-                    if (!state.Proc.ObjectTree.TryGetGlobalProc(procName, out DreamProc? proc))
-                        throw new Exception($"Failed to get global proc \"{procName}\"");
 
-                    state.Call(proc, state.Instance, arguments);
-                    return ProcStatus.Called;
+                    throw new Exception($"Invalid proc ({procId})");
                 }
+                case DreamValue.DreamValueType.DreamProc:
+                    state.Call(source.MustGetValueAsProc(), state.Instance, arguments);
+                    return ProcStatus.Called;
                 case DreamValue.DreamValueType.String:
-                    unsafe
-                    {
-                        if(!source.TryGetValueAsString(out var dllName)) {
+                    unsafe {
+                        if(!source.TryGetValueAsString(out var dllName))
                             throw new Exception($"{source} is not a valid DLL");
-                        }
+
                         var popProc = state.Pop();
                         if(!popProc.TryGetValueAsString(out var procName)) {
                             throw new Exception($"{popProc} is not a valid proc name");
                         }
+
                         // DLL Invoke
                         var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
 
                         Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
                         argV.Fill(0);
-                        try
-                        {
-                            for (var i = 0; i < argV.Length; i++)
-                            {
+                        try {
+                            for (var i = 0; i < argV.Length; i++) {
                                 var arg = arguments.OrderedArguments[i].Stringify();
                                 argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
                             }
@@ -1368,18 +1343,15 @@ namespace OpenDreamRuntime.Procs {
                             var retString = Marshal.PtrToStringUTF8((nint)ret);
                             state.Push(new DreamValue(retString));
                             return null;
-                        }
-                        finally
-                        {
-                            foreach (var arg in argV)
-                            {
+                        } finally {
+                            foreach (var arg in argV) {
                                 if (arg != 0)
                                     Marshal.ZeroFreeCoTaskMemUTF8(arg);
                             }
                         }
                     }
                 default:
-                    throw new Exception("Call statement has an invalid source (" + source + ")");
+                    throw new Exception($"Call statement has an invalid source ({source})");
             }
         }
 
@@ -1995,6 +1967,12 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     break;
+                }
+                case DreamValue.DreamValueType.DreamProc: {
+                    if (second.Type != DreamValue.DreamValueType.DreamProc)
+                        return false;
+
+                    return first.MustGetValueAsProc() == second.MustGetValueAsProc();
                 }
                 case DreamValue.DreamValueType.DreamResource: {
                     DreamResource firstValue = first.MustGetValueAsDreamResource();

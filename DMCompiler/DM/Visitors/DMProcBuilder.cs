@@ -609,8 +609,12 @@ namespace DMCompiler.DM.Visitors {
                 return DMProcTerminator.None;
             }
 
-            _proc.PushPath(type.Value);
-            _proc.CreateTypeEnumerator();
+            if (DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
+                _proc.PushType(typeId);
+                _proc.CreateTypeEnumerator();
+            } else {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, initializer.Location, $"Type {type.Value} does not exist");
+            }
 
             _proc.StartScope();
             DMProcTerminator terminator;

@@ -3,15 +3,19 @@ using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
+using System.Text.RegularExpressions;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class ScreenLocation {
+        [CanBeNull] public string MapControl;
         public int X, Y;
         public int PixelOffsetX, PixelOffsetY;
         public ScreenLocation Range;
-        public int RepeatX { get => (Range?.X - X + 1) ?? 1; }
-        public int RepeatY { get => (Range?.Y - Y + 1) ?? 1; }
+
+        public int RepeatX => Range?.X - X + 1 ?? 1;
+        public int RepeatY => Range?.Y - Y + 1 ?? 1;
 
         public ScreenLocation(int x, int y, int pixelOffsetX, int pixelOffsetY, ScreenLocation range = null) {
             X = x;
@@ -33,44 +37,50 @@ namespace OpenDreamShared.Dream {
         public ScreenLocation(string screenLocation) {
             screenLocation = screenLocation.ToUpper(CultureInfo.InvariantCulture);
 
-            (X, Y, PixelOffsetX, PixelOffsetY, Range) = screenLocation switch {
-                "TOPLEFT" => (1, 15, 0, 0, null),
-                "TOPRIGHT" => (15, 15, 0, 0, null),
-                "BOTTOMLEFT" => (1, 1, 0, 0, null),
-                "BOTTOMRIGHT" => (1, 15, 0, 0, null),
-                "CENTER" => (7, 7, 0, 0, null),
-                _ => ParseScreenLoc(screenLocation)
-            };
+            (MapControl, X, Y, PixelOffsetX, PixelOffsetY, Range) = ParseScreenLoc(screenLocation);
         }
 
         public Vector2 GetViewPosition(Vector2 viewOffset, float iconSize) {
-            return viewOffset + ((X - 1) + (PixelOffsetX / iconSize), (Y - 1) + (PixelOffsetY / iconSize));
+            return viewOffset + (X - 1 + PixelOffsetX / iconSize, Y - 1 + PixelOffsetY / iconSize);
         }
 
         public override string ToString() {
-            return X + ":" + PixelOffsetX + "," + Y + ":" + PixelOffsetY;
+            string mapControl = MapControl != null ? $"{MapControl}:" : string.Empty;
+
+            return $"{mapControl}{X}:{PixelOffsetX},{Y}:{PixelOffsetY}";
         }
 
-        private static (int X, int Y, int PixelOffsetX, int PixelOffsetY, ScreenLocation Range) ParseScreenLoc(string screenLoc) {
+        private static (string MapControl, int X, int Y, int PixelOffsetX, int PixelOffsetY, ScreenLocation Range) ParseScreenLoc(string screenLoc) {
             string[] rangeSplit = screenLoc.Split(" TO ");
-            ScreenLocation range = (rangeSplit.Length > 1) ? new ScreenLocation(rangeSplit[1]) : null;
+            ScreenLocation range = rangeSplit.Length > 1 ? new ScreenLocation(rangeSplit[1]) : null;
 
             string[] coordinateSplit = rangeSplit[0].Split(",");
-            if (coordinateSplit.Length != 2) throw new Exception("Invalid screen_loc");
 
-            (int x, int pixelOffsetX) = ParseScreenLocCoordinate(coordinateSplit[0]);
-            (int y, int pixelOffsetY) = ParseScreenLocCoordinate(coordinateSplit[1]);
-            return (x, y, pixelOffsetX, pixelOffsetY, range);
+            if (coordinateSplit.Length == 1) {
+                string replaced = ReplaceMacros(coordinateSplit[0], true);
+
+                coordinateSplit = replaced.Split(",");
+            }
+
+            if (coordinateSplit.Length != 2)
+                throw new Exception($"Invalid screen_loc \"{screenLoc}\"");
+
+            string horizontal = ReplaceMacros(coordinateSplit[0], false);
+            string vertical = ReplaceMacros(coordinateSplit[1], false);
+            (string mapControl, horizontal) = ParseSecondaryMapControl(horizontal);
+
+            (int x, int pixelOffsetX) = ParseScreenLocCoordinate(horizontal);
+            (int y, int pixelOffsetY) = ParseScreenLocCoordinate(vertical);
+            return (mapControl, x, y, pixelOffsetX, pixelOffsetY, range);
         }
 
-        private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {
+        private static string ReplaceMacros(string coordinate, bool isSingular) {
             coordinate = coordinate.Trim();
-            if (coordinate == String.Empty) throw new Exception("Invalid screen_loc coordinate");
+            if (coordinate == string.Empty) throw new Exception("Invalid screen_loc coordinate");
             coordinate = coordinate.Replace("SOUTH", "1");
             coordinate = coordinate.Replace("WEST", "1");
             coordinate = coordinate.Replace("NORTH", "15");
             coordinate = coordinate.Replace("EAST", "15");
-            coordinate = coordinate.Replace("CENTER", "8");
 
             // TODO: These interact with map zoom in some way
             coordinate = coordinate.Replace("LEFT", "1");
@@ -78,23 +88,49 @@ namespace OpenDreamShared.Dream {
             coordinate = coordinate.Replace("RIGHT", "15");
             coordinate = coordinate.Replace("TOP", "15");
 
+            if (isSingular) {
+                coordinate = coordinate.Replace("TOPLEFT", "1,15");
+                coordinate = coordinate.Replace("TOPRIGHT", "15,15");
+                coordinate = coordinate.Replace("BOTTOMLEFT", "1,1");
+                coordinate = coordinate.Replace("BOTTOMRIGHT", "1,15");
+                coordinate = coordinate.Replace("CENTER", "8,8");
+            } else {
+                coordinate = coordinate.Replace("CENTER", "8");
+            }
+
+            return coordinate;
+        }
+
+        private static (string SecondaryMapControl, string Other) ParseSecondaryMapControl(string coordinate) {
+            if (char.IsLetter(coordinate, 0)) { // If it starts with a letter then treat it as a map control
+                string[] split = coordinate.Split(':', 2);
+                if (split.Length != 2)
+                    throw new Exception($"Invalid coordinate {coordinate}");
+
+                return (split[0], split[1]);
+            }
+
+            return (null, coordinate);
+        }
+
+        private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {
             List<(string Operation, float Number, int PixelOffset)> operations = new();
             string currentOperation = null;
-            string currentNumber = String.Empty;
+            string currentNumber = string.Empty;
             int i = 0;
             do {
-                char c = (i < coordinate.Length) ? coordinate[i] : '\0';
+                char c = i < coordinate.Length ? coordinate[i] : '\0';
                 i++;
 
-                if ((c >= '0' && c <= '9') || (currentNumber != String.Empty && (c == '.' || c == ':')) || ((currentNumber == String.Empty || currentNumber.EndsWith(":")) && c == '-')) {
+                if (c >= '0' && c <= '9' || currentNumber != string.Empty && (c == '.' || c == ':') || (currentNumber == string.Empty || currentNumber.EndsWith(":")) && c is '-' or ' ' or '\t') {
                     currentNumber += c;
                 } else {
-                    if (currentNumber == String.Empty) throw new Exception("Expected a number in screen_loc");
+                    if (currentNumber == string.Empty) throw new Exception("Expected a number in screen_loc");
 
                     string[] numberSplit = currentNumber.Split(":");
                     if (numberSplit.Length > 2) throw new Exception("Invalid number in screen_loc");
 
-                    operations.Add((currentOperation, float.Parse(numberSplit[0], CultureInfo.InvariantCulture), (numberSplit.Length == 2) ? int.Parse(numberSplit[1]) : 0));
+                    operations.Add((currentOperation, float.Parse(numberSplit[0].Trim(), CultureInfo.InvariantCulture), numberSplit.Length == 2 ? int.Parse(numberSplit[1].Trim()) : 0));
                     currentOperation = c.ToString();
                     currentNumber = String.Empty;
                 }

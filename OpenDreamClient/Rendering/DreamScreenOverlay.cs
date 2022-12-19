@@ -45,7 +45,10 @@ public sealed class DreamScreenOverlay : Overlay {
 
         List<DMISpriteComponent> sprites = new();
         foreach (DMISpriteComponent sprite in screenOverlaySystem.EnumerateScreenObjects()) {
-            if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager)) continue;
+            if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager))
+                continue;
+            if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
+                continue;
 
             sprites.Add(sprite);
         }

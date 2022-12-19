@@ -363,25 +363,53 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private DMProcTerminator ProcessStatementIf(DMASTProcStatementIf statement) {
-            DMExpression.Emit(_dmObject, _proc, statement.Condition);
+            var expr = DMExpression.Create(_dmObject, _proc, statement.Condition);
+            var exprIsConst = expr.TryAsConstant(out var constExpr);
+            if(!exprIsConst)
+                expr.EmitPushValue(_dmObject, _proc);
 
             if (statement.ElseBody == null) {
-                string endLabel = _proc.NewLabelName();
+                if (exprIsConst) {
+                    if(!constExpr.IsTruthy()) {
+                        DMCompiler.Emit(WarningCode.DeadCode, statement.Body.Location, "If-statement is never true.");
+                        return DMProcTerminator.None;
+                    }
 
+                    _proc.StartScope();
+                    var terminator = ProcessBlockInner(statement.Body);
+                    _proc.EndScope();
+                    return terminator;
+                }
+
+                string endLabel = _proc.NewLabelName();
                 _proc.JumpIfFalse(endLabel);
                 _proc.StartScope();
                 ProcessBlockInner(statement.Body);
                 _proc.EndScope();
                 _proc.AddLabel(endLabel);
-                return DMProcTerminator.None; //todo after const-folding: return terminator of always-true bodys
+                return DMProcTerminator.None;
             } else {
+                if (exprIsConst) {
+                    var constTrue = constExpr.IsTruthy();
+                    if(constTrue) {
+                        DMCompiler.Emit(WarningCode.DeadCode, statement.ElseBody.Location, "If-statement is always true.");
+                    } else {
+                        DMCompiler.Emit(WarningCode.DeadCode, statement.Body.Location, "If-statement is never true.");
+                    }
+
+                    _proc.StartScope();
+                    var terminator = ProcessBlockInner(constTrue ? statement.Body : statement.ElseBody);
+                    _proc.EndScope();
+                    return terminator;
+                }
+
                 string elseLabel = _proc.NewLabelName();
                 string endLabel = _proc.NewLabelName();
 
                 _proc.JumpIfFalse(elseLabel);
 
                 _proc.StartScope();
-                var terminator = ProcessBlockInner(statement.Body);
+                var mainTerminator = ProcessBlockInner(statement.Body);
                 _proc.EndScope();
                 _proc.Jump(endLabel);
 
@@ -390,7 +418,7 @@ namespace DMCompiler.DM.Visitors {
                 var elseTerminator = ProcessBlockInner(statement.ElseBody);
                 _proc.EndScope();
                 _proc.AddLabel(endLabel);
-                return terminator > elseTerminator ? elseTerminator : terminator;
+                return mainTerminator > elseTerminator ? elseTerminator : mainTerminator;
             }
         }
 

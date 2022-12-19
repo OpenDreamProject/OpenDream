@@ -716,14 +716,16 @@ namespace DMCompiler.DM.Visitors {
 
         private DMProcTerminator ProcessStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             string endLabel = _proc.NewLabelName();
-            List<(string CaseLabel, DMASTProcBlockInner CaseBody)> valueCases = new();
+            List<(string CaseLabel, DMASTProcBlockInner CaseBody, bool constResult)> valueCases = new();
             DMASTProcBlockInner defaultCaseBody = null;
 
             DMExpression.Emit(_dmObject, _proc, statementSwitch.Value);
+            var valueIsConst = DMExpression.TryConstant(_dmObject, _proc, statementSwitch.Value, out var constValue);
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
                 if (switchCase is DMASTProcStatementSwitch.SwitchCaseValues switchCaseValues) {
                     string caseLabel = _proc.NewLabelName();
 
+                    bool constResult = false;
                     foreach (DMASTExpression value in switchCaseValues.Values) {
                         Constant GetCaseValue(DMASTExpression expression) {
                             Constant constant = null;
@@ -761,6 +763,9 @@ namespace DMCompiler.DM.Visitors {
                                 return bound;
                             }
 
+                            if (valueIsConst && !constResult)
+                                constResult = constValue.InRange(lower, upper).IsTruthy();
+
                             lower = CoerceBound(lower);
                             upper = CoerceBound(upper);
 
@@ -770,35 +775,60 @@ namespace DMCompiler.DM.Visitors {
                         } else {
                             Constant constant = GetCaseValue(value);
 
+                            if (valueIsConst && !constResult)
+                                constResult = constant.Equal(constValue).IsTruthy();
+
                             constant.EmitPushValue(_dmObject, _proc);
                             _proc.SwitchCase(caseLabel);
                         }
                     }
 
-                    valueCases.Add((caseLabel, switchCase.Body));
+                    valueCases.Add((caseLabel, switchCase.Body, constResult));
                 } else {
                     defaultCaseBody = ((DMASTProcStatementSwitch.SwitchCaseDefault)switchCase).Body;
                 }
             }
             _proc.Pop();
 
-            var terminators = new DMProcTerminator[valueCases.Count + (defaultCaseBody != null ? 1 : 0)];
-            var terminatorIdx = 0;
+            var terminator = DMProcTerminator.None;
 
             if (defaultCaseBody != null) {
-                _proc.StartScope();
-                {
-                    terminators[terminatorIdx++] = ProcessBlockInner(defaultCaseBody);
+                if (valueIsConst && valueCases.Any(x => x.constResult)) {
+                    DMCompiler.Emit(WarningCode.DeadCode, defaultCaseBody.Location, "Default case will never trigger due to previous case being always true.");
+                } else {
+                    _proc.StartScope();
+                    {
+                        var defaultTerminator = ProcessBlockInner(defaultCaseBody);
+                        if (valueIsConst && valueCases.All(x => !x.constResult))
+                            terminator = defaultTerminator;
+                    }
+                    _proc.EndScope();
                 }
-                _proc.EndScope();
             }
             _proc.Jump(endLabel);
 
-            foreach ((string CaseLabel, DMASTProcBlockInner CaseBody) valueCase in valueCases) {
+            var firstStatementFound = false;
+            foreach ((string CaseLabel, DMASTProcBlockInner CaseBody, bool constResult) valueCase in valueCases) {
+                if (valueIsConst) {
+                    if (!valueCase.constResult) {
+                        DMCompiler.Emit(WarningCode.DeadCode, valueCase.CaseBody.Location, "Switch case is never true.");
+                        continue;
+                    }
+
+                    if (firstStatementFound) {
+                        DMCompiler.Emit(WarningCode.DeadCode, valueCase.CaseBody.Location, "Switch case will never be reached due to previous case being always true.");
+                        continue;
+                    }
+
+                    firstStatementFound = true;
+                }
+
                 _proc.AddLabel(valueCase.CaseLabel);
                 _proc.StartScope();
                 {
-                    terminators[terminatorIdx++] = ProcessBlockInner(valueCase.CaseBody);
+                    var caseTerminator = ProcessBlockInner(valueCase.CaseBody);
+                    if (valueIsConst)
+                        terminator = caseTerminator; // if we reach this point, then this is the first alwaystrue switch case we encountered, meaning its the one that will always run
                 }
                 _proc.EndScope();
                 _proc.Jump(endLabel);
@@ -806,7 +836,7 @@ namespace DMCompiler.DM.Visitors {
 
             _proc.AddLabel(endLabel);
 
-            return terminators.Min(); //todo return corresponding terminator here on always-true switch cases
+            return terminator;
         }
 
         public void ProcessStatementBrowse(DMASTProcStatementBrowse statementBrowse) {

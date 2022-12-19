@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using Robust.Shared.Localization;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -87,7 +88,15 @@ namespace DMCompiler.DM.Expressions {
         public virtual Constant BinaryOr(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
         }
+
+        public virtual Constant Equal(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} == {rhs}\" is invalid");
+        }
         #endregion
+
+        public virtual Constant InRange(Constant lower, Constant upper) {
+            throw new CompileErrorException(Location, $"const operation \"{this} in ({lower}, {upper})\" is invalid");
+        }
     }
 
     // null
@@ -103,6 +112,11 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
             return true;
+        }
+
+        public override Constant Equal(Constant rhs) {
+            if (rhs is not Null) return base.Equal(rhs);
+            return new Number(Location, 1);
         }
     }
 
@@ -238,6 +252,17 @@ namespace DMCompiler.DM.Expressions {
 
             return new Number(Location, ((int)Value) | ((int)rhsNum.Value));
         }
+
+        public override Constant InRange(Constant lower, Constant upper) {
+            if(lower is not Number lowerNum || upper is not Number upperNum)
+                return base.InRange(lower, upper);
+            return Value >= lowerNum.Value && Value <= upperNum.Value ? new Number(Location, 1) : new Number(Location, 0);
+        }
+
+        public override Constant Equal(Constant rhs) {
+            if (rhs is not Number num) return base.Equal(rhs);
+            return Value == num.Value ? new Number(Location, 1) : new Number(Location, 0);
+        }
     }
 
     // "abc"
@@ -266,6 +291,11 @@ namespace DMCompiler.DM.Expressions {
 
             return new String(Location, Value + rhsString.Value);
         }
+
+        public override Constant Equal(Constant rhs) {
+            if (rhs is not String str) return base.Equal(rhs);
+            return Value == str.Value ? new Number(Location, 1) : new Number(Location, 0);
+        }
     }
 
     // 'abc'
@@ -289,6 +319,11 @@ namespace DMCompiler.DM.Expressions {
             };
 
             return true;
+        }
+
+        public override Constant Equal(Constant rhs) {
+            if (rhs is not Resource res) return base.Equal(rhs);
+            return Value == res.Value ? new Number(Location, 1) : new Number(Location, 0);
         }
     }
 
@@ -321,6 +356,11 @@ namespace DMCompiler.DM.Expressions {
             };
 
             return true;
+        }
+
+        public override Constant Equal(Constant rhs) {
+            if (rhs is not Path path) return base.Equal(rhs);
+            return Value == path.Value ? new Number(Location, 1) : new Number(Location, 0);
         }
     }
 }

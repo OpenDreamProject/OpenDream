@@ -53,5 +53,9 @@ namespace OpenDreamRuntime.Procs {
 
             return OrderedArguments.TryGetValue(index, out value);
         }
+
+        public override string ToString() {
+            return $"<Arguments {OrderedArgumentCount} {NamedArgumentCount}>";
+        }
     }
 }

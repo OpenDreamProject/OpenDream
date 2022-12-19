@@ -199,6 +199,7 @@ namespace OpenDreamRuntime.Procs {
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
         private int _pc = 0;
+        public int ProgramCounter => _pc;
 
         // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
         private readonly DreamValue[] _localVariables;
@@ -272,11 +273,8 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Returned;
             }
 
-            if (_pc == 0) {
-                DebugManager.HandleProcStart(this);
-            }
-
             while (_pc < _proc.Bytecode.Length) {
+                DebugManager.HandleInstruction(this);
                 int opcode = _proc.Bytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
@@ -347,6 +345,7 @@ namespace OpenDreamRuntime.Procs {
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
+        public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
 
         public void Push(DreamValue value) {
             _stack[_stackIndex++] = value;

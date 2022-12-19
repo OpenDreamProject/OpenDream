@@ -687,7 +687,11 @@ namespace DMCompiler.DM.Visitors {
         }
 
         //Generic infinite loop, while loops with static expression as their conditional with positive truthfullness get turned into this as well as empty for() calls
-        private DMProcTerminator ProcessStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop){
+        private DMProcTerminator ProcessStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop) {
+            return ProcessStatementInfLoopBody(statementInfLoop.Body);
+        }
+
+        private DMProcTerminator ProcessStatementInfLoopBody(DMASTProcBlockInner body) {
             _proc.StartScope();
             DMProcTerminator terminator;
             {
@@ -695,7 +699,7 @@ namespace DMCompiler.DM.Visitors {
                 _proc.LoopStart(loopLabel);
                 {
                     _proc.MarkLoopContinue(loopLabel);
-                    terminator = ProcessBlockInner(statementInfLoop.Body, inLoop: true);
+                    terminator = ProcessBlockInner(body, inLoop: true);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -705,13 +709,23 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private DMProcTerminator ProcessStatementWhile(DMASTProcStatementWhile statementWhile) {
+            var conditionExpr = DMExpression.Create(_dmObject, _proc, statementWhile.Conditional);
+            if (conditionExpr.TryAsConstant(out var constant)) {
+                if (constant.IsTruthy()) {
+                    return ProcessStatementInfLoopBody(statementWhile.Body);
+                }
+
+                DMCompiler.Emit(WarningCode.DeadCode, statementWhile.Body.Location, "Loop condition is always false.");
+                return DMProcTerminator.None;
+            }
+
             string loopLabel = _proc.NewLabelName();
 
             DMProcTerminator terminator;
             _proc.LoopStart(loopLabel);
             {
                 _proc.MarkLoopContinue(loopLabel);
-                DMExpression.Emit(_dmObject, _proc, statementWhile.Conditional);
+                conditionExpr.EmitPushValue(_dmObject, _proc);
                 _proc.BreakIfFalse();
 
                 _proc.StartScope();

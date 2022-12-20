@@ -13,10 +13,21 @@ namespace DMCompiler.DM.Visitors {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
+        [Flags]
         private enum DMProcTerminator {
             None = 0,
-            LoopReturn = 1, // break or continue
-            Return = 2,
+            /// <summary>
+            /// The processed statement contains a loop return (break or continue)
+            /// </summary>
+            LoopReturn = 1 << 0,
+            /// <summary>
+            /// The processed statement contains a proc return.
+            /// </summary>
+            Return = 1 << 1,
+            /// <summary>
+            /// The processed statement contains a conditional (loop) return.
+            /// </summary>
+            PotentialLoopReturn = 1 << 2,
         }
 
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
@@ -83,7 +94,10 @@ namespace DMCompiler.DM.Visitors {
                     continue;
                 }
 
-                if (terminator == DMProcTerminator.Return || (inLoop && terminator == DMProcTerminator.LoopReturn)) {
+                //if the terminator flag has a potential return in it, this means we've encountered a potential return
+                //before encountering the actual return, which means the actual return is also conditional
+                if ((!inLoop || !terminator.HasFlag(DMProcTerminator.PotentialLoopReturn)) &&
+                    (terminator.HasFlag(DMProcTerminator.Return) || (inLoop && terminator.HasFlag(DMProcTerminator.LoopReturn)))) {
                     DMCompiler.Emit(WarningCode.DeadCode, statement.Location, "Code cannot be reached.");
                     continue;
                 }
@@ -93,8 +107,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 try {
-                    var newTerminator = ProcessStatement(statement);
-                    if (terminator < newTerminator) terminator = newTerminator;
+                    terminator |= ProcessStatement(statement);
                 } catch (CompileAbortException e) {
                     // The statement's location info isn't passed all the way down so change the error to make it more accurate
                     e.Error.Location = statement.Location;
@@ -121,7 +134,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
                 case DMASTProcStatementReturn statementReturn: terminator = ProcessStatementReturn(statementReturn); break;
                 case DMASTProcStatementIf statementIf: terminator = ProcessStatementIf(statementIf); break;
-                case DMASTProcStatementFor statementFor: ProcessStatementFor(statementFor); break;
+                case DMASTProcStatementFor statementFor: terminator = ProcessStatementFor(statementFor); break;
                 case DMASTProcStatementInfLoop statementInfLoop: ProcessStatementInfLoop(statementInfLoop); break;
                 case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
                 case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
@@ -376,18 +389,20 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     _proc.StartScope();
-                    var terminator = ProcessBlockInner(statement.Body);
+                    var ensuredTerminator = ProcessBlockInner(statement.Body);
                     _proc.EndScope();
-                    return terminator;
+                    return ensuredTerminator;
                 }
 
                 string endLabel = _proc.NewLabelName();
                 _proc.JumpIfFalse(endLabel);
                 _proc.StartScope();
-                ProcessBlockInner(statement.Body);
+                var terminator = ProcessBlockInner(statement.Body);
                 _proc.EndScope();
                 _proc.AddLabel(endLabel);
-                return DMProcTerminator.None;
+                return terminator != DMProcTerminator.None
+                    ? DMProcTerminator.PotentialLoopReturn
+                    : DMProcTerminator.None;
             } else {
                 if (exprIsConst) {
                     var constTrue = constExpr.IsTruthy();
@@ -418,13 +433,16 @@ namespace DMCompiler.DM.Visitors {
                 var elseTerminator = ProcessBlockInner(statement.ElseBody);
                 _proc.EndScope();
                 _proc.AddLabel(endLabel);
-                return mainTerminator > elseTerminator ? elseTerminator : mainTerminator;
+                if ((mainTerminator & elseTerminator) == mainTerminator) return mainTerminator;
+                return (mainTerminator | elseTerminator) != DMProcTerminator.None
+                    ? DMProcTerminator.PotentialLoopReturn
+                    : DMProcTerminator.None;
             }
         }
 
-        //todo implement dead code detection for const here
-        private void ProcessStatementFor(DMASTProcStatementFor statementFor) {
+        private DMProcTerminator ProcessStatementFor(DMASTProcStatementFor statementFor) {
             _proc.StartScope();
+            DMProcTerminator terminator = DMProcTerminator.None;
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
                     ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null));
@@ -436,7 +454,7 @@ namespace DMCompiler.DM.Visitors {
                     var comparator = statementFor.Expression2 != null ? DMExpression.Create(_dmObject, _proc, statementFor.Expression2) : null;
                     var incrementor = statementFor.Expression3 != null ? DMExpression.Create(_dmObject, _proc, statementFor.Expression3) : null;
 
-                    ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
+                    terminator = ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
                 } else {
                     switch (statementFor.Expression1) {
                         case DMASTAssign {Expression: DMASTVarDeclExpression decl, Value: DMASTExpressionInRange range}: {
@@ -449,7 +467,7 @@ namespace DMCompiler.DM.Visitors {
                                 ? DMExpression.Create(_dmObject, _proc, range.Step)
                                 : new Number(range.Location, 1);
 
-                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            terminator = ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
                             break;
                         }
                         case DMASTExpressionInRange exprRange: {
@@ -473,7 +491,7 @@ namespace DMCompiler.DM.Visitors {
                                 ? DMExpression.Create(_dmObject, _proc, exprRange.Step)
                                 : new Number(exprRange.Location, 1);
 
-                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            terminator = ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
                             break;
                         }
                         case DMASTVarDeclExpression vd: {
@@ -506,6 +524,8 @@ namespace DMCompiler.DM.Visitors {
             }
             _proc.EndScope();
 
+            return terminator;
+
             IEnumerable<DMASTVarDeclExpression> FindVarDecls(DMASTExpression expr) {
                 if (expr is DMASTVarDeclExpression p) {
                     yield return p;
@@ -518,8 +538,9 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private void ProcessStatementForStandard(DMExpression initializer, DMExpression comparator, DMExpression incrementor, DMASTProcBlockInner body) {
+        private DMProcTerminator ProcessStatementForStandard(DMExpression initializer, DMExpression comparator, DMExpression incrementor, DMASTProcBlockInner body) {
             _proc.StartScope();
+            DMProcTerminator terminator;
             {
                 if (initializer != null) {
                     initializer.EmitPushValue(_dmObject, _proc);
@@ -534,7 +555,7 @@ namespace DMCompiler.DM.Visitors {
                         _proc.BreakIfFalse();
                     }
 
-                    ProcessBlockInner(body, inLoop: true);
+                    terminator = ProcessBlockInner(body, inLoop: true);
 
                     _proc.MarkLoopContinue(loopLabel);
                     if (incrementor != null) {
@@ -546,8 +567,14 @@ namespace DMCompiler.DM.Visitors {
                 _proc.LoopEnd();
             }
             _proc.EndScope();
+            //todo try to determine loops for loop optimizations,
+            //then return terminator here if you can be sure the loop will run at least once
+            return comparator == null || (comparator.TryAsConstant(out var constComp) && constComp.IsTruthy())
+                ? terminator
+                : DMProcTerminator.None;
         }
 
+        //todo determine if list is const & non-empty, then return terminator here
         private void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
@@ -638,7 +665,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        private void ProcessStatementForRange(DMExpression initializer, DMExpression outputVar, DMExpression start, DMExpression end, DMExpression step, DMASTProcBlockInner body) {
+        private DMProcTerminator ProcessStatementForRange(DMExpression initializer, DMExpression outputVar, DMExpression start, DMExpression end, DMExpression step, DMASTProcBlockInner body) {
             start.EmitPushValue(_dmObject, _proc);
             end.EmitPushValue(_dmObject, _proc);
             if (step != null) {
@@ -647,6 +674,7 @@ namespace DMCompiler.DM.Visitors {
                 _proc.PushFloat(1.0f);
             }
 
+            DMProcTerminator terminator;
             _proc.CreateRangeEnumerator();
             _proc.StartScope();
             {
@@ -667,13 +695,14 @@ namespace DMCompiler.DM.Visitors {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
-                    ProcessBlockInner(body, inLoop: true);
+                    terminator = ProcessBlockInner(body, inLoop: true);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
             }
             _proc.EndScope();
             _proc.DestroyEnumerator();
+            return terminator;
         }
 
         //Generic infinite loop, while loops with static expression as their conditional with positive truthfullness get turned into this as well as empty for() calls
@@ -832,6 +861,9 @@ namespace DMCompiler.DM.Visitors {
                         var defaultTerminator = ProcessBlockInner(defaultCaseBody);
                         if (valueIsConst && valueCases.All(x => !x.constResult))
                             terminator = defaultTerminator;
+
+                        if (!valueIsConst)
+                            terminator = defaultTerminator;
                     }
                     _proc.EndScope();
                 }
@@ -860,6 +892,8 @@ namespace DMCompiler.DM.Visitors {
                     var caseTerminator = ProcessBlockInner(valueCase.CaseBody);
                     if (valueIsConst)
                         terminator = caseTerminator; // if we reach this point, then this is the first alwaystrue switch case we encountered, meaning its the one that will always run
+                    else
+                        terminator |= caseTerminator;
                 }
                 _proc.EndScope();
                 _proc.Jump(endLabel);
@@ -867,7 +901,9 @@ namespace DMCompiler.DM.Visitors {
 
             _proc.AddLabel(endLabel);
 
-            return terminator;
+            return valueIsConst
+                ? terminator
+                : (terminator != DMProcTerminator.None ? DMProcTerminator.PotentialLoopReturn : DMProcTerminator.None);
         }
 
         public void ProcessStatementBrowse(DMASTProcStatementBrowse statementBrowse) {
@@ -961,7 +997,9 @@ namespace DMCompiler.DM.Visitors {
             }
             _proc.AddLabel(endLabel);
 
-            return terminator > catchTerminator ? catchTerminator : terminator;
+            return (terminator & catchTerminator) == terminator ? terminator :
+                (terminator | catchTerminator) != DMProcTerminator.None ? DMProcTerminator.PotentialLoopReturn :
+                DMProcTerminator.None;
         }
 
         public void ProcessStatementThrow(DMASTProcStatementThrow statement) {

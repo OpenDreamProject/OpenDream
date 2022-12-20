@@ -1,4 +1,5 @@
-﻿using OpenDreamRuntime.Procs;
+﻿using System.Linq;
+using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
@@ -150,10 +151,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamList(out var firstList) && b.TryGetValueAsDreamList(out var secondList)) {
                 if (firstList.GetLength() != secondList.GetLength()) return DreamValue.False;
-                var firstValues = firstList.GetValues();
-                var secondValues = secondList.GetValues();
-                for (var i = 0; i < firstValues.Count; i++) {
-                    if (!firstValues[i].Equals(secondValues[i])) return DreamValue.False;
+                using var firstValues = firstList.GetValues().GetEnumerator();
+                using var secondValues = secondList.GetValues().GetEnumerator();
+                while (firstValues.MoveNext() && secondValues.MoveNext()) {
+                    if (!firstValues.Current.Equals(secondValues.Current)) return DreamValue.False;
                 }
 
                 return DreamValue.True;

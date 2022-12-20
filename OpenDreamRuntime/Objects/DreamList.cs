@@ -66,8 +66,11 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Returns the list of array values. Doesn't include the associative values indexable by some of these.
         /// </summary>
-        public virtual List<DreamValue> GetValues() {
-            return _values ?? new List<DreamValue>();
+        public virtual IEnumerable<DreamValue> GetValues() {
+            if(_values == null) yield break;
+            for (int i = 0; i < _values.Count; i++) {
+                yield return _values[i];
+            }
         }
 
         public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
@@ -76,13 +79,17 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual DreamValue GetValue(DreamValue key) {
             if (key.TryGetValueAsInteger(out int keyInteger)) {
-                if (_values == null) throw new IndexOutOfRangeException();
-                return _values[keyInteger - 1]; //1-indexed
+                return GetValue(keyInteger - 1); //1-indexed
             }
             if (_associativeValues == null)
                 return DreamValue.Null;
 
             return _associativeValues.TryGetValue(key, out DreamValue value) ? value : DreamValue.Null;
+        }
+
+        public virtual DreamValue GetValue(int key) {
+            if (_values == null) throw new IndexOutOfRangeException();
+            return _values[key];
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -193,7 +200,7 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamList Union(DreamList other) {
             DreamList newList = new DreamList();
-            newList._values = _values?.Union(other.GetValues()).ToList() ?? other.GetValues();
+            newList._values = _values?.Union(other.GetValues()).ToList() ?? other.GetValues().ToList();
             foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
                 newList.SetValue(key, value);
             }
@@ -228,8 +235,8 @@ namespace OpenDreamRuntime.Objects {
             return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Count();
         }
 
-        public override List<DreamValue> GetValues() {
-            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name)).ToList();
+        public override IEnumerable<DreamValue> GetValues() {
+            return _dreamObject.GetVariableNames().Concat(_dreamObject.ObjectDefinition.GlobalVariables.Keys).Select(name => new DreamValue(name));
         }
 
         public override bool ContainsKey(DreamValue value) {
@@ -255,6 +262,10 @@ namespace OpenDreamRuntime.Objects {
             }
 
             return objectVar;
+        }
+
+        public override DreamValue GetValue(int key) {
+            throw new Exception($"Invalid var index {key}");
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -288,15 +299,12 @@ namespace OpenDreamRuntime.Objects {
             return list;
         }
 
-        public override List<DreamValue> GetValues() {
+        public override IEnumerable<DreamValue> GetValues() {
             var root = _objectTree.GetObjectDefinition(DreamPath.Root);
-            List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
             // Skip world
             foreach (var key in root.GlobalVariables.Keys.Skip(1)) {
-                values.Add(new DreamValue(key));
+                yield return new DreamValue(key);
             }
-
-            return values;
         }
 
         public override bool ContainsKey(DreamValue value) {
@@ -322,6 +330,10 @@ namespace OpenDreamRuntime.Objects {
             }
 
             return _dreamMan.Globals[globalId];
+        }
+
+        public override DreamValue GetValue(int key) {
+            throw new Exception($"Invalid var index {key}");
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -384,14 +396,21 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override DreamValue GetValue(DreamValue key) {
-            if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
+            if (!key.TryGetValueAsInteger(out var filterIndex))
+                throw new Exception($"Invalid index into filter list: {key}");
+
+            return GetValue(filterIndex);
+        }
+
+        public override DreamValue GetValue(int key) {
+            if(key < 1)
                 throw new Exception($"Invalid index into filter list: {key}");
 
             IconAppearance appearance = GetAppearance();
-            if (filterIndex > appearance.Filters.Count)
-                throw new Exception($"Atom only has {appearance.Filters.Count} filter(s), cannot index {filterIndex}");
+            if (key > appearance.Filters.Count)
+                throw new Exception($"Atom only has {appearance.Filters.Count} filter(s), cannot index {key}");
 
-            DreamFilter filter = appearance.Filters[filterIndex - 1];
+            DreamFilter filter = appearance.Filters[key - 1];
             DreamObject filterObject = _objectTree.CreateObject(DreamPath.Filter);
             DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
             return new DreamValue(filterObject);

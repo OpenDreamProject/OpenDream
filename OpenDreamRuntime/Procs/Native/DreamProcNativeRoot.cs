@@ -1098,8 +1098,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             StringBuilder paramBuilder = new StringBuilder();
 
-            List<DreamValue> values = list.GetValues();
-            foreach (DreamValue entry in values) {
+            foreach (DreamValue entry in list.GetValues()) {
                 if (list.ContainsKey(entry))
                 {
                     paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(list.GetValue(entry).Value.ToString())}");
@@ -1153,7 +1152,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (!arg.TryGetValueAsDreamList(out var list))
                     return arg;
 
-                values = list.GetValues();
+                values = list.GetValues().ToList();
             } else {
                 values = arguments.GetAllArguments();
             }
@@ -1226,7 +1225,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (!arg.TryGetValueAsDreamList(out var list))
                     return arg;
 
-                values = list.GetValues();
+                values = list.GetValues().ToList();
             } else {
                 values = arguments.GetAllArguments();
             }

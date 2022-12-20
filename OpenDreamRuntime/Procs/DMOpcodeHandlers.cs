@@ -1828,7 +1828,7 @@ namespace OpenDreamRuntime.Procs {
 
                 List<DreamValue> values;
                 if (value.TryGetValueAsDreamList(out DreamList list)) {
-                    values = list.GetValues();
+                    values = list.GetValues().ToList();
                 } else if (value.Value is DreamProcArguments args) {
                     values = args.GetAllArguments();
                 } else {
@@ -2066,7 +2066,7 @@ namespace OpenDreamRuntime.Procs {
         private static DreamValue BitXorValues(DreamValue first, DreamValue second) {
             if (first.TryGetValueAsDreamList(out DreamList list)) {
                 DreamList newList = DreamList.Create();
-                List<DreamValue> values;
+                IEnumerable<DreamValue> values;
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
                     values = secondList.GetValues();

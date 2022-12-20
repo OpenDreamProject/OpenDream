@@ -113,6 +113,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
+                case "process":
+                    return new DreamValue(Environment.ProcessId);
                 case "tick_lag":
                     return new DreamValue(TickLag);
                 case "fps":

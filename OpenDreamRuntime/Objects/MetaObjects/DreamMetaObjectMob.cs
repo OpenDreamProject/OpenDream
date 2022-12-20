@@ -64,7 +64,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public void OperatorOutput(DreamValue a, DreamValue b) {
             if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Mob, out var mob))
-                throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Mob}");
+                throw new ArgumentException($"Left-hand value was not the expected type {_objectTree.Mob}");
             if (!mob.GetVariable("client").TryGetValueAsDreamObjectOfType(_objectTree.Client, out var client))
                 throw new Exception($"Failed to get client from {mob}");
 

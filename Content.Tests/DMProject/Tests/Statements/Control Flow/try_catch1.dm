@@ -27,5 +27,15 @@
 	catch(var/e4)
 		ASSERT(e4 == "test")
 
+	try
+		NestedCatch()
+	catch
+		ASSERT(FALSE)
+
 /proc/NestedThrow()
 	throw "test"
+
+/proc/NestedCatch()
+	try
+		NestedThrow()
+	catch

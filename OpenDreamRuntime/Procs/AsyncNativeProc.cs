@@ -77,7 +77,7 @@ namespace OpenDreamRuntime.Procs {
                 Result = await _taskFunc(this);
             }
 
-            protected override ProcStatus InternalResume()
+            public override ProcStatus Resume()
             {
                 _inResume = true;
 

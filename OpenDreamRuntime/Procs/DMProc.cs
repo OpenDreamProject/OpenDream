@@ -273,7 +273,7 @@ namespace OpenDreamRuntime.Procs {
             WaitFor = other.WaitFor;
         }
 
-        protected override ProcStatus InternalResume() {
+        public override ProcStatus Resume() {
             if (Instance is not null && Instance.Deleted) {
                 ReturnPools();
                 return ProcStatus.Returned;
@@ -292,16 +292,11 @@ namespace OpenDreamRuntime.Procs {
                 ProcStatus? status;
                 try {
                     status = handler.Invoke(this);
-                } catch (CancellingRuntime ce) {
-                    if (CatchPosition == NoTryCatch)
+                } catch (DMRuntime ce) {
+                    if (!IsCatching())
                         throw;
 
-                    Jump(CatchPosition);
-                    if (CatchVarIndex != NoTryCatch) {
-                        _localVariables[CatchVarIndex] = ce.Value;
-                    }
-                    CatchPosition = NoTryCatch;
-                    CatchVarIndex = NoTryCatch;
+                    CatchException(ce.Value);
                     continue;
                 }
 
@@ -355,6 +350,30 @@ namespace OpenDreamRuntime.Procs {
             thread.PushProcState(state);
 
             return thread;
+        }
+
+        public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatch) {
+            CatchPosition = catchPosition;
+            CatchVarIndex = catchVarIndex;
+        }
+
+        public void EndTryBlock() {
+            CatchPosition = NoTryCatch;
+            CatchVarIndex = NoTryCatch;
+        }
+
+        public override bool IsCatching() => CatchPosition != NoTryCatch;
+
+        public override void CatchException(DreamValue value) {
+            if (!IsCatching())
+                base.CatchException(value);
+
+            Jump(CatchPosition);
+            if (CatchVarIndex != NoTryCatch) {
+                _localVariables[CatchVarIndex] = value;
+            }
+            CatchPosition = NoTryCatch;
+            CatchVarIndex = NoTryCatch;
         }
 
         public void ReturnPools()

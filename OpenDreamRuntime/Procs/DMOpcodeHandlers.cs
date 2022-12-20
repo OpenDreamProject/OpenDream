@@ -1409,27 +1409,24 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             if (value.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Exception, out DreamObject exception)) {
-                throw new CancellingRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
+                throw new DMRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
             }
 
-            throw new CancellingRuntime(value);
+            throw new DMRuntime(value);
         }
 
         public static ProcStatus? Try(DMProcState state) {
-            state.CatchPosition = state.ReadInt();
-            state.CatchVarIndex = state.ReadReference().Index;
+            state.StartTryBlock(state.ReadInt(), state.ReadReference().Index);
             return null;
         }
 
         public static ProcStatus? TryNoValue(DMProcState state) {
-            state.CatchPosition = state.ReadInt();
-            state.CatchVarIndex = DMProcState.NoTryCatch;
+            state.StartTryBlock(state.ReadInt());
             return null;
         }
 
         public static ProcStatus? EndTry(DMProcState state) {
-            state.CatchPosition = DMProcState.NoTryCatch;
-            state.CatchVarIndex = DMProcState.NoTryCatch;
+            state.EndTryBlock();
             return null;
         }
 

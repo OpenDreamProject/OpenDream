@@ -39,7 +39,7 @@ namespace OpenDreamRuntime.Procs {
             builder.AppendLine($"new {_dreamObject.ObjectDefinition?.Type}");
         }
 
-        protected override ProcStatus InternalResume()
+        public override ProcStatus Resume()
         {
             var src = _dreamObject;
 

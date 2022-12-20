@@ -143,7 +143,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public void OperatorOutput(DreamValue a, DreamValue b) {
             if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Client, out var client))
-                throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Client}");
+                throw new ArgumentException($"Left-hand value was not the expected type {_objectTree.Client}");
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);

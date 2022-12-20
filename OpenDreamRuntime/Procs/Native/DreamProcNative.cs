@@ -113,33 +113,29 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winexists);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
-            DreamObjectDefinition list = objectTree.GetObjectDefinition(DreamPath.List);
-            objectTree.SetNativeProc(list, DreamProcNativeList.NativeProc_Add);
-            objectTree.SetNativeProc(list, DreamProcNativeList.NativeProc_Copy);
-            objectTree.SetNativeProc(list, DreamProcNativeList.NativeProc_Cut);
-            objectTree.SetNativeProc(list, DreamProcNativeList.NativeProc_Find);
-            objectTree.SetNativeProc(list, DreamProcNativeList.NativeProc_Insert);
-            objectTree.SetNativeProc(list, DreamProcNativeList.NativeProc_Remove);
-            objectTree.SetNativeProc(list, DreamProcNativeList.NativeProc_Swap);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Add);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Copy);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Cut);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Find);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Insert);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 
-            DreamObjectDefinition regex = objectTree.GetObjectDefinition(DreamPath.Regex);
-            objectTree.SetNativeProc(regex, DreamProcNativeRegex.NativeProc_Find);
-            objectTree.SetNativeProc(regex, DreamProcNativeRegex.NativeProc_Replace);
+            objectTree.SetNativeProc(objectTree.Regex, DreamProcNativeRegex.NativeProc_Find);
+            objectTree.SetNativeProc(objectTree.Regex, DreamProcNativeRegex.NativeProc_Replace);
 
-            DreamObjectDefinition icon = objectTree.GetObjectDefinition(DreamPath.Icon);
-            objectTree.SetNativeProc(icon, DreamProcNativeIcon.NativeProc_Width);
-            objectTree.SetNativeProc(icon, DreamProcNativeIcon.NativeProc_Height);
-            objectTree.SetNativeProc(icon, DreamProcNativeIcon.NativeProc_Insert);
-            objectTree.SetNativeProc(icon, DreamProcNativeIcon.NativeProc_Blend);
-            objectTree.SetNativeProc(icon, DreamProcNativeIcon.NativeProc_Scale);
+            objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Width);
+            objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Height);
+            objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Insert);
+            objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Blend);
+            objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Scale);
 
             //DreamObjectDefinition savefile = objectTree.GetObjectDefinitionFromPath(DreamPath.Savefile);
             //savefile.SetNativeProc(DreamProcNativeSavefile.NativeProc_Flush);
 
-            DreamObjectDefinition world = objectTree.GetObjectDefinition(DreamPath.World);
-            objectTree.SetNativeProc(world, DreamProcNativeWorld.NativeProc_Export);
-            objectTree.SetNativeProc(world, DreamProcNativeWorld.NativeProc_GetConfig);
-            objectTree.SetNativeProc(world, DreamProcNativeWorld.NativeProc_SetConfig);
+            objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_Export);
+            objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_GetConfig);
+            objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_SetConfig);
         }
     }
 }

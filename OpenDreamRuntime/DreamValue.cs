@@ -95,7 +95,7 @@ namespace OpenDreamRuntime {
                 float => DreamValueType.Float,
                 DreamResource => DreamValueType.DreamResource,
                 DreamObject => DreamValueType.DreamObject,
-                DreamPath => DreamValueType.DreamType,
+                IDreamObjectTree.TreeEntry => DreamValueType.DreamType,
                 DreamProc => DreamValueType.DreamProc,
                 DreamProcArguments => DreamValueType.ProcArguments,
                 _ => throw new ArgumentException($"Invalid DreamValue value ({value}, {value.GetType()})")

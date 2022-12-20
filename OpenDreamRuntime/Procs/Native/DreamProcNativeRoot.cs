@@ -2015,6 +2015,8 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             DreamPath path = new DreamPath(text);
+            if (path.FindElement("proc") != -1 || path.FindElement("verb") != -1)
+                throw new NotImplementedException("text2path() for procs is not implemented");
 
             if (ObjectTree.TryGetTreeEntry(path, out var type)) {
                 return new DreamValue(type);

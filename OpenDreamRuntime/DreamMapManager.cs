@@ -68,7 +68,7 @@ namespace OpenDreamRuntime {
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
 
-            DreamObjectDefinition worldDefinition = _objectTree.GetObjectDefinition(DreamPath.World);
+            DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
 
             // Default area
             if (worldDefinition.Variables["area"].TryGetValueAsType(out var area)) {
@@ -78,7 +78,7 @@ namespace OpenDreamRuntime {
             } else if (worldDefinition.Variables["area"] == DreamValue.Null ||
                      worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0) {
                 //TODO: Properly handle disabling default area
-                _defaultArea = new MapObjectJson(_objectTree.GetTreeEntry(DreamPath.Area).Id);
+                _defaultArea = new MapObjectJson(_objectTree.Area.Id);
             }
             else {
                 throw new Exception("bad area");

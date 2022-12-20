@@ -363,16 +363,16 @@ namespace OpenDreamRuntime.Objects {
             Procs[_globalProcIds[name]] = proc;
         }
 
-        public void SetNativeProc(DreamObjectDefinition definition, NativeProc.HandlerFn func) {
-            var proc = CreateNativeProc(definition.Type, func, out var procId);
+        public void SetNativeProc(TreeEntry type, NativeProc.HandlerFn func) {
+            var proc = CreateNativeProc(type.Path, func, out var procId);
 
-            definition.SetProcDefinition(proc.Name, procId);
+            type.ObjectDefinition.SetProcDefinition(proc.Name, procId);
         }
 
-        public void SetNativeProc(DreamObjectDefinition definition, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
-            var proc = CreateAsyncNativeProc(definition.Type, func, out var procId);
+        public void SetNativeProc(TreeEntry type, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+            var proc = CreateAsyncNativeProc(type.Path, func, out var procId);
 
-            definition.SetProcDefinition(proc.Name, procId);
+            type.ObjectDefinition.SetProcDefinition(proc.Name, procId);
         }
 
         /// <summary>
@@ -414,6 +414,10 @@ namespace OpenDreamRuntime.Objects {
                 Path = path;
                 Id = id;
             }
+
+            public override string ToString() {
+                return Path.PathString;
+            }
         }
 
         public TreeEntry[] Types { get; }
@@ -422,8 +426,9 @@ namespace OpenDreamRuntime.Objects {
         public DreamProc? GlobalInitProc { get; }
 
         // All the built-in types
-        public TreeEntry World { get; }
+        public TreeEntry Root { get; }
         public TreeEntry List { get; }
+        public TreeEntry World { get; }
         public TreeEntry Client { get; }
         public TreeEntry Datum { get; }
         public TreeEntry Sound { get; }
@@ -446,8 +451,8 @@ namespace OpenDreamRuntime.Objects {
         public void SetMetaObject(TreeEntry type, IDreamMetaObject metaObject);
         public void SetGlobalNativeProc(NativeProc.HandlerFn func);
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
-        public void SetNativeProc(DreamObjectDefinition definition, NativeProc.HandlerFn func);
-        public void SetNativeProc(DreamObjectDefinition definition, Func<AsyncNativeProc.State, Task<DreamValue>> func);
+        public void SetNativeProc(TreeEntry type, NativeProc.HandlerFn func);
+        public void SetNativeProc(TreeEntry type, Func<AsyncNativeProc.State, Task<DreamValue>> func);
 
         public DreamObject CreateObject(TreeEntry type);
         public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc);

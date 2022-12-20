@@ -72,7 +72,7 @@ namespace OpenDreamRuntime.Procs {
                 } else if (listObject.IsSubtypeOf(objectTree.Atom) || listObject.IsSubtypeOf(objectTree.World)) {
                     list = listObject.GetVariable("contents").GetValueAsDreamList();
                 } else {
-                    throw new Exception($"Object {listObject} is not a {DreamPath.List}, {DreamPath.Atom} or {DreamPath.World}");
+                    throw new Exception($"Object {listObject} is not a {objectTree.List}, {objectTree.Atom} or {objectTree.World}");
                 }
             }
 
@@ -414,7 +414,7 @@ namespace OpenDreamRuntime.Procs {
                     if (listObject.IsSubtypeOf(state.Proc.ObjectTree.Atom) || listObject.IsSubtypeOf(state.Proc.ObjectTree.World)) {
                         list = listObject.GetVariable("contents").GetValueAsDreamList();
                     } else {
-                        throw new Exception($"Value {listObject} is not a {DreamPath.List}, {DreamPath.Atom}, or {DreamPath.World}");
+                        throw new Exception($"Value {listObject} is not a {state.Proc.ObjectTree.List}, {state.Proc.ObjectTree.Atom}, or {state.Proc.ObjectTree.World}");
                     }
                 }
 

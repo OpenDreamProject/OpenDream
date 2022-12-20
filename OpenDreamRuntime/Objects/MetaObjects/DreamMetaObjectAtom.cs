@@ -202,7 +202,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             switch (varName) {
                 case "transform":
                     // Clone the matrix
-                    DreamObject matrix = _objectTree.CreateObject(DreamPath.Matrix);
+                    DreamObject matrix = _objectTree.CreateObject(_objectTree.Matrix);
                     matrix.InitSpawn(new DreamProcArguments(new() { value }));
 
                     return new DreamValue(matrix);
@@ -265,9 +265,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.IconState = dmiDescription.GetStateOrDefault(iconState)?.Name;
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var overlayAtom)) {
                 appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
-            } else if (value.TryGetValueAsPath(out DreamPath path)) {
-                var def = _objectTree.GetObjectDefinition(path);
-                appearance = _atomManager.CreateAppearanceFromDefinition(def);
+            } else if (value.TryGetValueAsType(out var type)) {
+                appearance = _atomManager.CreateAppearanceFromDefinition(type.ObjectDefinition);
             } else {
                 throw new Exception($"Invalid overlay {value}");
             }

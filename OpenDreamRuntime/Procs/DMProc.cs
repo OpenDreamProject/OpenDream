@@ -45,13 +45,6 @@ namespace OpenDreamRuntime.Procs {
             return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
         }
 
-        public override string ToString() {
-            var procElement = (SuperProc == null) ? "proc/" : String.Empty; // Has "proc/" only if it's not an override
-            // TODO: "verb/" proc element
-
-            return $"{OwningType}/{procElement}{Name}";
-        }
-
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
             if (json.Arguments == null) {
                 return new();
@@ -300,8 +293,7 @@ namespace OpenDreamRuntime.Procs {
             Push(value);
         }
 
-        public override void AppendStackFrame(StringBuilder builder)
-        {
+        public override void AppendStackFrame(StringBuilder builder) {
             if (Proc.OwningType != DreamPath.Root) {
                 builder.Append(Proc.OwningType.ToString());
                 builder.Append('/');
@@ -375,7 +367,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamProcArguments PopArguments() {
-            return (DreamProcArguments)(Pop().Value);
+            return Pop().MustGetValueAsProcArguments();
         }
         #endregion
 

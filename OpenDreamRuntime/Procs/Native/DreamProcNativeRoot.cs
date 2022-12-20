@@ -469,7 +469,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (filter == null)
                 throw new Exception($"Failed to create filter of type {filterType}");
 
-            DreamObject filterObject = ObjectTree.CreateObject(DreamPath.Filter);
+            DreamObject filterObject = ObjectTree.CreateObject(ObjectTree.Filter);
             DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
             return new DreamValue(filterObject);
         }
@@ -908,7 +908,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("layer", Type = DreamValueType.Float)]
         [DreamProcParameter("dir", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_image(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamObject imageObject = ObjectTree.CreateObject(DreamPath.Image);
+            DreamObject imageObject = ObjectTree.CreateObject(ObjectTree.Image);
             imageObject.InitSpawn(arguments);
             return new DreamValue(imageObject);
         }
@@ -1045,16 +1045,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("ispath")]
         [DreamProcParameter("Val")]
-        [DreamProcParameter("Type", Type = DreamValueType.DreamPath)]
+        [DreamProcParameter("Type", Type = DreamValueType.DreamType)]
         public static DreamValue NativeProc_ispath(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue value = arguments.GetArgument(0, "Val");
             DreamValue type = arguments.GetArgument(1, "Type");
 
-            if (value.TryGetValueAsPath(out DreamPath valuePath)) {
-                if (type.TryGetValueAsPath(out DreamPath typePath)) {
-                    DreamObjectDefinition valueDefinition = ObjectTree.GetObjectDefinition(valuePath);
-
-                    return new DreamValue(valueDefinition.IsSubtypeOf(ObjectTree.GetTreeEntry(typePath)) ? 1 : 0);
+            if (value.TryGetValueAsType(out var valueType)) {
+                if (type.TryGetValueAsType(out var ancestor)) {
+                    return new DreamValue(valueType.ObjectDefinition.IsSubtypeOf(ancestor) ? 1 : 0);
                 } else {
                     return new DreamValue(1);
                 }
@@ -1151,8 +1149,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return floatValue;
             if (value.TryGetValueAsString(out string text))
                 return HttpUtility.JavaScriptStringEncode(text);
-            if (value.TryGetValueAsPath(out var path))
-                return HttpUtility.JavaScriptStringEncode(path.ToString());
+            if (value.TryGetValueAsType(out var type))
+                return HttpUtility.JavaScriptStringEncode(type.Path.PathString);
             if (value.TryGetValueAsDreamList(out DreamList list)) {
                 if (list.IsAssociative) {
                     Dictionary<Object, Object?> jsonObject = new(list.GetLength());
@@ -1176,7 +1174,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
             if (value.Type == DreamValueType.DreamObject) {
-                if (value.Value == null) return null;
+                if (value == DreamValue.Null) return null;
                 if(value.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) { // Special behaviour for /matrix values
                     StringBuilder builder = new(13); // 13 is the minimum character count this could have: "[1,2,3,4,5,6]"
                     builder.Append('[');
@@ -1188,13 +1186,14 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
                 return value.Stringify();
             }
-            if(value.Type == DreamValueType.DreamResource) {
-                DreamResource dreamResource = (DreamResource)value.Value;
+
+            if(value.TryGetValueAsDreamResource(out var dreamResource)) {
                 string? output = dreamResource.ReadAsString();
                 if (output == null)
                     return "";
                 return output;
             }
+
             throw new Exception("Cannot json_encode " + value);
         }
 
@@ -1225,7 +1224,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
             } else if (value.TryGetValueAsDreamList(out var list)) {
                 return new DreamValue(list.GetLength());
-            } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamPath) {
+            } else if (value.Type is DreamValueType.Float or DreamValueType.DreamObject or DreamValueType.DreamType) {
                 return new DreamValue(0);
             }
 
@@ -1250,26 +1249,27 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("list2params")]
         [DreamProcParameter("List")]
-        public static DreamValue NativeProc_list2params(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
-            if (!arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list)) return new DreamValue(string.Empty);
+        public static DreamValue NativeProc_list2params(DreamObject instance, DreamObject usr,
+            DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list))
+                return new DreamValue(string.Empty);
 
             StringBuilder paramBuilder = new StringBuilder();
 
             List<DreamValue> values = list.GetValues();
             foreach (DreamValue entry in values) {
-                if (list.ContainsKey(entry))
-                {
-                    paramBuilder.Append($"{HttpUtility.UrlEncode(entry.Value.ToString())}={HttpUtility.UrlEncode(list.GetValue(entry).Value.ToString())}");
+                if (list.ContainsKey(entry)) {
+                    paramBuilder.Append(
+                        $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(list.GetValue(entry).Stringify())}");
                 } else {
-                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Value.ToString()));
+                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Stringify()));
                 }
 
                 paramBuilder.Append('&');
             }
 
             //Remove trailing &
-            if (paramBuilder.Length > 0) paramBuilder.Remove(paramBuilder.Length-1, 1);
+            if (paramBuilder.Length > 0) paramBuilder.Remove(paramBuilder.Length - 1, 1);
             return new DreamValue(paramBuilder.ToString());
         }
 
@@ -1638,7 +1638,7 @@ namespace OpenDreamRuntime.Procs.Native {
                         return new DreamValue(text.Replace("$", "$$"));
                 };
             }
-            var newRegex = ObjectTree.CreateObject(DreamPath.Regex);
+            var newRegex = ObjectTree.CreateObject(ObjectTree.Regex);
             newRegex.InitSpawn(arguments);
             return new DreamValue(newRegex);
         }
@@ -2012,7 +2012,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("channel", Type = DreamValueType.Float)]
         [DreamProcParameter("volume", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_sound(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamObject soundObject = ObjectTree.CreateObject(DreamPath.Sound);
+            DreamObject soundObject = ObjectTree.CreateObject(ObjectTree.Sound);
             soundObject.InitSpawn(arguments);
             return new DreamValue(soundObject);
         }
@@ -2168,14 +2168,16 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_text2path(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if(!arguments.GetArgument(0, "T").TryGetValueAsString(out var text))
-            {
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out var text)) {
                 return DreamValue.Null;
             }
-            DreamPath path = new DreamPath(text);
 
-            if (ObjectTree.HasTreeEntry(path)) {
-                return new DreamValue(path);
+            DreamPath path = new DreamPath(text);
+            if (path.FindElement("proc") != -1 || path.FindElement("verb") != -1)
+                throw new NotImplementedException("text2path() for procs is not implemented");
+
+            if (ObjectTree.TryGetTreeEntry(path, out var type)) {
+                return new DreamValue(type);
             } else {
                 return DreamValue.Null;
             }
@@ -2247,38 +2249,37 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("typesof")]
-        [DreamProcParameter("Item1", Type = DreamValueType.DreamPath | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
+        [DreamProcParameter("Item1", Type = DreamValueType.DreamType | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = DreamList.Create();
 
             foreach (DreamValue typeValue in arguments.GetAllArguments()) {
-                DreamObjectDefinition type;
                 IEnumerable<int>? addingProcs = null;
 
-                if (typeValue.TryGetValueAsPath(out var typePath)) {
-                    type = ObjectTree.GetObjectDefinition(typePath);
-                } else if (typeValue.TryGetValueAsDreamObject(out var typeObj)) {
-                    if (typeObj is null or DreamList) // typesof() ignores nulls and lists
-                        continue;
+                if (!typeValue.TryGetValueAsType(out var type)) {
+                    if (typeValue.TryGetValueAsDreamObject(out var typeObj)) {
+                        if (typeObj is null or DreamList) // typesof() ignores nulls and lists
+                            continue;
 
-                    type = typeObj.ObjectDefinition;
-                } else if (typeValue.TryGetValueAsString(out var typeString)) {
-                    DreamPath path = new DreamPath(typeString);
+                        type = typeObj.ObjectDefinition.TreeEntry;
+                    } else if (typeValue.TryGetValueAsString(out var typeString)) {
+                        DreamPath path = new DreamPath(typeString);
 
-                    if (path.LastElement is "proc" or "verb") {
-                        type = ObjectTree.GetObjectDefinition(path.FromElements(0, -2));
-                        addingProcs = type.Procs.Values;
+                        if (path.LastElement is "proc" or "verb") {
+                            type = ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                            addingProcs = type.ObjectDefinition.Procs.Values;
+                        } else {
+                            type = ObjectTree.GetTreeEntry(path);
+                        }
+                    } else if (typeValue.TryGetValueAsProcStub(out var owner)) {
+                        type = owner;
+                        addingProcs = type.ObjectDefinition.Procs.Values;
+                    } else if (typeValue.TryGetValueAsVerbStub(out owner)) {
+                        type = owner;
+                        addingProcs = type.ObjectDefinition.Verbs;
                     } else {
-                        type = ObjectTree.GetObjectDefinition(path);
+                        continue;
                     }
-                } else if (typeValue.TryGetValueAsProcStub(out var owner)) {
-                    type = owner.ObjectDefinition;
-                    addingProcs = type.Procs.Values;
-                } else if (typeValue.TryGetValueAsVerbStub(out owner)) {
-                    type = owner.ObjectDefinition;
-                    addingProcs = type.Verbs;
-                } else {
-                    continue;
                 }
 
                 if (addingProcs != null) {
@@ -2286,10 +2287,10 @@ namespace OpenDreamRuntime.Procs.Native {
                         list.AddValue(new DreamValue(ObjectTree.Procs[procId]));
                     }
                 } else {
-                    var descendants = ObjectTree.GetAllDescendants(type.Type);
+                    var descendants = ObjectTree.GetAllDescendants(type);
 
                     foreach (var descendant in descendants) {
-                        list.AddValue(new DreamValue(descendant.ObjectDefinition.Type));
+                        list.AddValue(new DreamValue(descendant));
                     }
                 }
             }

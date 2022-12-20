@@ -61,6 +61,22 @@ namespace OpenDreamRuntime {
             return context.Resume();
         }
 
+        public DreamValue GetField(string field) {
+            // TODO: Figure out what byond does when these are null
+            switch (field) {
+                case "name":
+                    return new DreamValue(VerbName);
+                case "category":
+                    return new DreamValue(VerbCategory);
+                case "description":
+                    return new DreamValue(VerbDesc);
+                case "invisibility":
+                    return new DreamValue(Invisibility);
+                default:
+                    throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
+            }
+        }
+
         public override string ToString() {
             if (OwningType == DreamPath.Root) {
                 return Name;

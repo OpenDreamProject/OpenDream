@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream {
     public struct DreamPath {
@@ -247,6 +248,22 @@ namespace OpenDreamShared.Dream {
             }
 
             Elements = _elements[..writeIdx];
+        }
+
+        public bool SplitObjAndProc(out DreamPath? obj, [CanBeNull] out string procName) {
+            var procIdx = FindElement("proc");
+            if (procIdx == -1) {
+                procIdx = FindElement("verb");
+            }
+            if (procIdx == -1) {
+                obj = null;
+                procName = null;
+                return false;
+            }
+
+            obj = FromElements(0, procIdx);
+            procName = GetElements(procIdx + 1)[0];
+            return true;
         }
     }
 }

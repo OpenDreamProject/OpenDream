@@ -15,13 +15,15 @@ namespace OpenDreamRuntime.Objects {
         internal event DreamListValueAssignedEventHandler? ValueAssigned;
         internal event DreamListBeforeValueRemovedEventHandler? BeforeValueRemoved;
 
-        private List<DreamValue> _values;
+        private List<DreamValue>? _values;
         private Dictionary<DreamValue, DreamValue>? _associativeValues;
+
+        public int Count => _values?.Count ?? 0;
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
 
         protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamObjectTree>().GetObjectDefinition(DreamPath.List)) {
-            _values = new List<DreamValue>(size);
+            if (size != 0) _values = new List<DreamValue>(size);
         }
 
         public static DreamList CreateUninitialized(int size = 0) {
@@ -36,7 +38,7 @@ namespace OpenDreamRuntime.Objects {
             var list = new DreamList(collection.Length);
 
             foreach (string value in collection) {
-                list._values.Add(new DreamValue(value));
+                list._values!.Add(new DreamValue(value));
             }
 
             return list;
@@ -44,15 +46,15 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
             if (start == 0) ++start; //start being 0 and start being 1 are equivalent
-            if (end > _values.Count + 1) throw new Exception("list index out of bounds");
-            if (end == 0) end = _values.Count + 1;
+            if (end > Count + 1) throw new Exception("list index out of bounds");
+            if (end == 0) end = Count + 1;
 
             DreamList copy = Create(end);
 
             for (int i = start; i < end; i++) {
-                DreamValue value = _values[i - 1];
+                DreamValue value = _values![i - 1];
 
-                copy._values.Add(value);
+                copy._values!.Add(value);
                 if (ContainsKey(value)) {
                     copy.SetValue(value, _associativeValues[value]);
                 }
@@ -65,7 +67,7 @@ namespace OpenDreamRuntime.Objects {
         /// Returns the list of array values. Doesn't include the associative values indexable by some of these.
         /// </summary>
         public virtual List<DreamValue> GetValues() {
-            return _values;
+            return _values ?? new List<DreamValue>();
         }
 
         public Dictionary<DreamValue, DreamValue> GetAssociativeValues() {
@@ -74,6 +76,7 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual DreamValue GetValue(DreamValue key) {
             if (key.TryGetValueAsInteger(out int keyInteger)) {
+                if (_values == null) throw new IndexOutOfRangeException();
                 return _values[keyInteger - 1]; //1-indexed
             }
             if (_associativeValues == null)
@@ -86,13 +89,17 @@ namespace OpenDreamRuntime.Objects {
             ValueAssigned?.Invoke(this, key, value);
 
             if (key.TryGetValueAsInteger(out int keyInteger)) {
-                if (allowGrowth && keyInteger == _values.Count + 1) {
+                _values ??= new List<DreamValue>();
+                if (allowGrowth && keyInteger == Count + 1) {
                     _values.Add(value);
                 } else {
                     _values[keyInteger - 1] = value;
                 }
             } else {
-                if (!ContainsValue(key)) _values.Add(key);
+                if (!ContainsValue(key)) {
+                    _values ??= new List<DreamValue>();
+                    _values.Add(key);
+                }
 
                 _associativeValues ??= new Dictionary<DreamValue, DreamValue>(1);
                 _associativeValues[key] = value;
@@ -100,6 +107,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void RemoveValue(DreamValue value) {
+            if(_values == null) return;
+
             int valueIndex = _values.LastIndexOf(value);
 
             if (valueIndex != -1) {
@@ -110,6 +119,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual void AddValue(DreamValue value) {
+            _values ??= new List<DreamValue>();
             _values.Add(value);
 
             ValueAssigned?.Invoke(this, new DreamValue(_values.Count), value);
@@ -117,7 +127,7 @@ namespace OpenDreamRuntime.Objects {
 
         //Does not include associations
         public virtual bool ContainsValue(DreamValue value) {
-            return _values.Contains(value);
+            return _values?.Contains(value) ?? false;
         }
 
         public virtual bool ContainsKey(DreamValue value) {
@@ -125,6 +135,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public int FindValue(DreamValue value, int start = 1, int end = 0) {
+            if (_values == null) return 0;
             if (end == 0 || end > _values.Count) end = _values.Count;
 
             for (int i = start; i <= end; i++) {
@@ -135,6 +146,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual void Cut(int start = 1, int end = 0) {
+            if (_values == null) throw new IndexOutOfRangeException();
             if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
             if (BeforeValueRemoved != null) {
@@ -147,6 +159,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void Insert(int index, DreamValue value) {
+            _values ??= new List<DreamValue>();
             _values.Insert(index - 1, value);
         }
 
@@ -158,6 +171,11 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void Resize(int size) {
+            if (_values == null) {
+                _values = new List<DreamValue>(size);
+                return;
+            }
+
             if (size > _values.Count) {
                 _values.Capacity = size;
 
@@ -170,12 +188,12 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual int GetLength() {
-            return _values.Count;
+            return Count;
         }
 
         public DreamList Union(DreamList other) {
             DreamList newList = new DreamList();
-            newList._values = _values.Union(other.GetValues()).ToList();
+            newList._values = _values?.Union(other.GetValues()).ToList() ?? other.GetValues();
             foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
                 newList.SetValue(key, value);
             }

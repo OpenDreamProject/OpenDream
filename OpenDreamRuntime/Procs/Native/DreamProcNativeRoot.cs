@@ -235,19 +235,22 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("cmptext")]
         [DreamProcParameter("T1", Type = DreamValueType.String)]
         public static DreamValue NativeProc_cmptext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> values = arguments.GetAllArguments();
-            if (!values[0].TryGetValueAsString(out var t1))
-            {
-                return new DreamValue(0);
+            var argEnumerator = arguments.AllArgumentsEnumerator();
+
+            if (!argEnumerator.MoveNext() || !argEnumerator.Current.TryGetValueAsString(out var t1))
+                return DreamValue.False;
+
+            while (argEnumerator.MoveNext()) {
+                DreamValue arg = argEnumerator.Current;
+
+                if (!arg.TryGetValueAsString(out var t2))
+                    return DreamValue.False;
+
+                if (!t2.Equals(t1, StringComparison.InvariantCultureIgnoreCase))
+                    return DreamValue.False;
             }
 
-            t1 = t1.ToLower();
-
-            for (int i = 1; i < values.Count; i++) {
-                if (!values[i].TryGetValueAsString(out var t2) || t2.ToLower() != t1) return new DreamValue(0);
-            }
-
-            return new DreamValue(1);
+            return DreamValue.True;
         }
 
         [DreamProc("copytext")]
@@ -707,7 +710,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 namedLookup.TryGetValueAsInteger(out colorSpace);
             }
 
-            /// true: look for int: false look for color
+            // true: look for int: false look for color
             bool colorOrInt = true;
 
             float workingFloat = 0;
@@ -736,7 +739,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 if (!ColorHelpers.TryParseColor(strValue, out Color color))
                     color = new(0, 0, 0, 0);
-                
+
 
                 if (loop && index >= maxValue) {
                     index %= maxValue;
@@ -759,10 +762,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 colorOrInt = true;
             }
 
-            /// Convert the index to a 0-1 range
+            // Convert the index to a 0-1 range
             float normalized = (index - leftBound) / (rightBound - leftBound);
 
-            /// Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
+            // Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
             if (!left.HasValue || (right.HasValue && normalized == 1) || (right.HasValue && normalized == 0)) {
                 if (right?.AByte == 255) {
                     return new DreamValue(right?.ToHexNoAlpha().ToLower() ?? "#00000000");
@@ -786,13 +789,13 @@ namespace OpenDreamRuntime.Procs.Native {
                     Vector4 vect1 = new(Color.ToHsv(left.GetValueOrDefault()));
                     Vector4 vect2 = new(Color.ToHsv(right.GetValueOrDefault()));
 
-                    /// Some precision is lost when coverting back to HSV at very small values this fixes that issue
+                    // Some precision is lost when coverting back to HSV at very small values this fixes that issue
                     if (normalized < 0.05f) {
                         normalized += 0.001f;
                     }
 
-                    /// This time it's overshooting
-                    /// dw these numbers are insanely arbitrary
+                    // This time it's overshooting
+                    // dw these numbers are insanely arbitrary
                     if(normalized > 0.9f) {
                         normalized -= 0.00445f;
                     }
@@ -916,13 +919,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isarea")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_isarea(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> locs = arguments.GetAllArguments();
+            var argEnumerator = arguments.AllArgumentsEnumerator();
 
-            foreach (DreamValue loc in locs) {
-                if (!loc.TryGetValueAsDreamObjectOfType(ObjectTree.Area, out _)) return new DreamValue(0);
+            while (argEnumerator.MoveNext()) {
+                if (!argEnumerator.Current.TryGetValueAsDreamObjectOfType(ObjectTree.Area, out _))
+                    return DreamValue.False;
             }
 
-            return new DreamValue(1);
+            return DreamValue.True;
         }
 
         [DreamProc("isfile")]
@@ -974,48 +978,46 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isloc")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_isloc(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> locs = arguments.GetAllArguments();
+            var argEnumerator = arguments.AllArgumentsEnumerator();
 
-            foreach (DreamValue loc in locs) {
-                if (loc.TryGetValueAsDreamObject(out DreamObject? locObject) && locObject is not null) {
-                    bool isLoc = locObject.IsSubtypeOf(ObjectTree.Mob) || locObject.IsSubtypeOf(ObjectTree.Obj) || locObject.IsSubtypeOf(ObjectTree.Turf) || locObject.IsSubtypeOf(ObjectTree.Area);
+            while (argEnumerator.MoveNext()) {
+                if (!argEnumerator.Current.TryGetValueAsDreamObject(out var loc))
+                    return DreamValue.False;
 
-                    if (!isLoc) {
-                        return new DreamValue(0);
-                    }
-                } else {
-                    return new DreamValue(0);
-                }
+                bool isLoc = loc.IsSubtypeOf(ObjectTree.Mob) || loc.IsSubtypeOf(ObjectTree.Obj) ||
+                             loc.IsSubtypeOf(ObjectTree.Turf) || loc.IsSubtypeOf(ObjectTree.Area);
+
+                if (!isLoc)
+                    return DreamValue.False;
             }
 
-            return new DreamValue(1);
+            return DreamValue.True;
         }
 
         [DreamProc("ismob")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ismob(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> locs = arguments.GetAllArguments();
+            var argEnumerator = arguments.AllArgumentsEnumerator();
 
-            foreach (DreamValue loc in locs) {
-                if (!loc.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out _))
-                    return new DreamValue(0);
+            while (argEnumerator.MoveNext()) {
+                if (!argEnumerator.Current.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out _))
+                    return DreamValue.False;
             }
 
-            return new DreamValue(1);
+            return DreamValue.True;
         }
 
         [DreamProc("ismovable")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ismovable(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> locs = arguments.GetAllArguments();
+            var argEnumerator = arguments.AllArgumentsEnumerator();
 
-            foreach (DreamValue loc in locs) {
-                if (!loc.TryGetValueAsDreamObjectOfType(ObjectTree.Movable, out _)) {
-                    return new DreamValue(0);
-                }
+            while (argEnumerator.MoveNext()) {
+                if (!argEnumerator.Current.TryGetValueAsDreamObjectOfType(ObjectTree.Movable, out _))
+                    return DreamValue.False;
             }
 
-            return new DreamValue(1);
+            return DreamValue.True;
         }
 
         [DreamProc("isnan")]
@@ -1072,15 +1074,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isturf")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_isturf(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> locs = arguments.GetAllArguments();
+            var argEnumerator = arguments.AllArgumentsEnumerator();
 
-            foreach (DreamValue loc in locs) {
-                if (!loc.TryGetValueAsDreamObjectOfType(ObjectTree.Turf, out _)) {
-                    return new DreamValue(0);
-                }
+            while (argEnumerator.MoveNext()) {
+                if (!argEnumerator.Current.TryGetValueAsDreamObjectOfType(ObjectTree.Turf, out _))
+                    return DreamValue.False;
             }
 
-            return new DreamValue(1);
+            return DreamValue.True;
         }
 
         private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement)
@@ -1304,25 +1305,25 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("max")]
         [DreamProcParameter("A")]
         public static DreamValue NativeProc_max(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> values;
+            IEnumerator<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
                 DreamValue arg = arguments.GetArgument(0, "A");
                 if (!arg.TryGetValueAsDreamList(out var list))
                     return arg;
 
-                values = list.GetValues();
+                values = list.GetValues().GetEnumerator();
             } else {
-                values = arguments.GetAllArguments();
+                values = arguments.AllArgumentsEnumerator();
             }
 
-            if (values.Count == 0)
+            if (!values.MoveNext())
                 return DreamValue.Null;
 
-            DreamValue max = values[0];
+            DreamValue max = values.Current;
 
-            for (int i = 1; i < values.Count; i++) {
-                DreamValue value = values[i];
+            while (values.MoveNext()) {
+                DreamValue value = values.Current;
 
                 if (value.TryGetValueAsFloat(out var lFloat)) {
                     if (max == DreamValue.Null && lFloat >= 0)
@@ -1342,6 +1343,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
+            values.Dispose();
             return max;
         }
 
@@ -1377,35 +1379,39 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("min")]
         [DreamProcParameter("A")]
         public static DreamValue NativeProc_min(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            List<DreamValue> values;
+            IEnumerator<DreamValue> values;
 
             if (arguments.ArgumentCount == 1) {
                 DreamValue arg = arguments.GetArgument(0, "A");
                 if (!arg.TryGetValueAsDreamList(out var list))
                     return arg;
 
-                values = list.GetValues();
+                values = list.GetValues().GetEnumerator();
             } else {
-                values = arguments.GetAllArguments();
+                values = arguments.AllArgumentsEnumerator();
             }
 
-            DreamValue min = values[0];
-            if (min == DreamValue.Null) return min;
+            if (!values.MoveNext())
+                return DreamValue.Null;
 
-            for (int i = 1; i < values.Count; i++) {
-                DreamValue value = values[i];
+            DreamValue min = values.Current;
+
+            while (values.MoveNext()) {
+                DreamValue value = values.Current;
 
                 if (value.TryGetValueAsFloat(out var lFloat) && min.TryGetValueAsFloat(out var rFloat)) {
                     if (lFloat < rFloat) min = value;
                 } else if (value.TryGetValueAsString(out var lString) && min.TryGetValueAsString(out var rString)) {
                     if (string.Compare(lString, rString, StringComparison.Ordinal) < 0) min = value;
                 } else if (value == DreamValue.Null) {
-                    return value;
+                    min = value;
+                    break;
                 } else {
                     throw new Exception($"Cannot compare {min} and {value}");
                 }
             }
 
+            values.Dispose();
             return min;
         }
 
@@ -2251,9 +2257,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("typesof")]
         [DreamProcParameter("Item1", Type = DreamValueType.DreamType | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamList list = DreamList.Create();
+            DreamList list = DreamList.Create(arguments.ArgumentCount); // Assume every arg will add at least one type
+            var argEnumerator = arguments.AllArgumentsEnumerator();
 
-            foreach (DreamValue typeValue in arguments.GetAllArguments()) {
+            while (argEnumerator.MoveNext()) {
+                DreamValue typeValue = argEnumerator.Current;
                 IEnumerable<int>? addingProcs = null;
 
                 if (!typeValue.TryGetValueAsType(out var type)) {

@@ -11,7 +11,7 @@ using OpenDreamShared.Json;
 
 namespace OpenDreamRuntime.Procs {
     sealed class DMProc : DreamProc {
-        public byte[] Bytecode { get; }
+        public readonly byte[] Bytecode;
 
         public string? Source { get; }
         public int Line { get; }

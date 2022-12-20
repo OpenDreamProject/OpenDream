@@ -875,11 +875,15 @@ namespace DMCompiler.DM.Visitors {
                 if (valueIsConst) {
                     if (!valueCase.constResult) {
                         DMCompiler.Emit(WarningCode.DeadCode, valueCase.CaseBody.Location, "Switch case is never true.");
+                        _proc.AddLabel(valueCase.CaseLabel);
+                        _proc.Jump(endLabel);
                         continue;
                     }
 
                     if (firstStatementFound) {
                         DMCompiler.Emit(WarningCode.DeadCode, valueCase.CaseBody.Location, "Switch case will never be reached due to previous case being always true.");
+                        _proc.AddLabel(valueCase.CaseLabel);
+                        _proc.Jump(endLabel);
                         continue;
                     }
 

@@ -192,6 +192,7 @@ namespace OpenDreamRuntime.Procs {
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
         private int _pc = 0;
+        public int ProgramCounter => _pc;
 
         // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
         private readonly DreamValue[] _localVariables;
@@ -265,11 +266,8 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Returned;
             }
 
-            if (_pc == 0) {
-                DebugManager.HandleProcStart(this);
-            }
-
             while (_pc < _proc.Bytecode.Length) {
+                DebugManager.HandleInstruction(this);
                 int opcode = _proc.Bytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
@@ -339,6 +337,7 @@ namespace OpenDreamRuntime.Procs {
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
+        public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
 
         public void Push(DreamValue value) {
             _stack[_stackIndex++] = value;
@@ -532,12 +531,17 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
-                    if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
-                    if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
-                        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
 
-                    return fieldValue;
+                    if (owner.TryGetValueAsDreamObject(out var ownerObj) && ownerObj != null) {
+                        if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
+                            throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
+
+                        return fieldValue;
+                    } else if (owner.TryGetValueAsProc(out var ownerProc)) {
+                        return ownerProc.GetField(reference.Name);
+                    } else {
+                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
+                    }
                 }
                 case DMReference.Type.SrcField: {
                     if (Instance == null)

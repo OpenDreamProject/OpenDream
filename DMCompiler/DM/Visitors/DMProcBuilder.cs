@@ -122,9 +122,9 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementReturn statementReturn: terminator = ProcessStatementReturn(statementReturn); break;
                 case DMASTProcStatementIf statementIf: terminator = ProcessStatementIf(statementIf); break;
                 case DMASTProcStatementFor statementFor: ProcessStatementFor(statementFor); break;
-                case DMASTProcStatementInfLoop statementInfLoop: terminator = ProcessStatementInfLoop(statementInfLoop); break;
+                case DMASTProcStatementInfLoop statementInfLoop: ProcessStatementInfLoop(statementInfLoop); break;
                 case DMASTProcStatementWhile statementWhile: ProcessStatementWhile(statementWhile); break;
-                case DMASTProcStatementDoWhile statementDoWhile: terminator = ProcessStatementDoWhile(statementDoWhile); break;
+                case DMASTProcStatementDoWhile statementDoWhile: ProcessStatementDoWhile(statementDoWhile); break;
                 case DMASTProcStatementSwitch statementSwitch: terminator = ProcessStatementSwitch(statementSwitch); break;
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
@@ -677,25 +677,23 @@ namespace DMCompiler.DM.Visitors {
         }
 
         //Generic infinite loop, while loops with static expression as their conditional with positive truthfullness get turned into this as well as empty for() calls
-        private DMProcTerminator ProcessStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop) {
-            return ProcessStatementInfLoopBody(statementInfLoop.Body);
+        private void ProcessStatementInfLoop(DMASTProcStatementInfLoop statementInfLoop) {
+            ProcessStatementInfLoopBody(statementInfLoop.Body);
         }
 
-        private DMProcTerminator ProcessStatementInfLoopBody(DMASTProcBlockInner body) {
+        private void ProcessStatementInfLoopBody(DMASTProcBlockInner body) {
             _proc.StartScope();
-            DMProcTerminator terminator;
             {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
                     _proc.MarkLoopContinue(loopLabel);
-                    terminator = ProcessBlockInner(body, inLoop: true);
+                    ProcessBlockInner(body, inLoop: true);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
             }
             _proc.EndScope();
-            return terminator == DMProcTerminator.Return ? terminator : DMProcTerminator.None;
         }
 
         private void ProcessStatementWhile(DMASTProcStatementWhile statementWhile) {
@@ -728,14 +726,13 @@ namespace DMCompiler.DM.Visitors {
             _proc.LoopEnd();
         }
 
-        private DMProcTerminator ProcessStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
+        private void ProcessStatementDoWhile(DMASTProcStatementDoWhile statementDoWhile) {
             string loopLabel = _proc.NewLabelName();
             string loopEndLabel = _proc.NewLabelName();
 
-            DMProcTerminator terminator;
             _proc.LoopStart(loopLabel);
             {
-                terminator = ProcessBlockInner(statementDoWhile.Body, inLoop: true);
+                ProcessBlockInner(statementDoWhile.Body, inLoop: true);
 
                 _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementDoWhile.Conditional);
@@ -746,7 +743,6 @@ namespace DMCompiler.DM.Visitors {
                 _proc.Break();
             }
             _proc.LoopEnd();
-            return terminator == DMProcTerminator.Return ? terminator : DMProcTerminator.None;
         }
 
         private DMProcTerminator ProcessStatementSwitch(DMASTProcStatementSwitch statementSwitch) {

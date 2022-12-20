@@ -21,3 +21,11 @@
 		throw "test"
 	catch(var/e3)
 		ASSERT(e3 == "test")
+
+	try
+		NestedThrow()
+	catch(var/e4)
+		ASSERT(e4 == "test")
+
+/proc/NestedThrow()
+	throw "test"

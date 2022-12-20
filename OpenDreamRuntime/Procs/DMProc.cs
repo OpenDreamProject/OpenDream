@@ -45,13 +45,6 @@ namespace OpenDreamRuntime.Procs {
             return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
         }
 
-        public override string ToString() {
-            var procElement = (SuperProc == null) ? "proc/" : String.Empty; // Has "proc/" only if it's not an override
-            // TODO: "verb/" proc element
-
-            return $"{OwningType}/{procElement}{Name}";
-        }
-
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
             if (json.Arguments == null) {
                 return new();
@@ -199,6 +192,7 @@ namespace OpenDreamRuntime.Procs {
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
         private int _pc = 0;
+        public int ProgramCounter => _pc;
 
         // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
         private readonly DreamValue[] _localVariables;
@@ -272,11 +266,8 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Returned;
             }
 
-            if (_pc == 0) {
-                DebugManager.HandleProcStart(this);
-            }
-
             while (_pc < _proc.Bytecode.Length) {
+                DebugManager.HandleInstruction(this);
                 int opcode = _proc.Bytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
@@ -302,8 +293,7 @@ namespace OpenDreamRuntime.Procs {
             Push(value);
         }
 
-        public override void AppendStackFrame(StringBuilder builder)
-        {
+        public override void AppendStackFrame(StringBuilder builder) {
             if (Proc.OwningType != DreamPath.Root) {
                 builder.Append(Proc.OwningType.ToString());
                 builder.Append('/');
@@ -347,6 +337,7 @@ namespace OpenDreamRuntime.Procs {
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
+        public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
 
         public void Push(DreamValue value) {
             _stack[_stackIndex++] = value;
@@ -376,7 +367,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamProcArguments PopArguments() {
-            return (DreamProcArguments)(Pop().Value);
+            return Pop().MustGetValueAsProcArguments();
         }
         #endregion
 
@@ -540,12 +531,17 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
-                    if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
-                    if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
-                        throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
 
-                    return fieldValue;
+                    if (owner.TryGetValueAsDreamObject(out var ownerObj) && ownerObj != null) {
+                        if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
+                            throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
+
+                        return fieldValue;
+                    } else if (owner.TryGetValueAsProc(out var ownerProc)) {
+                        return ownerProc.GetField(reference.Name);
+                    } else {
+                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
+                    }
                 }
                 case DMReference.Type.SrcField: {
                     if (Instance == null)

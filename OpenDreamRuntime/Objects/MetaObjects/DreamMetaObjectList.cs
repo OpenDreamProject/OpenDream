@@ -7,6 +7,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => false;
         public IDreamMetaObject? ParentType { get; set; }
 
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+
+        public DreamMetaObjectList() {
+            IoCManager.InjectDependencies(this);
+        }
+
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
@@ -59,17 +65,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value)
-        {
-            switch (varName)
-            {
-                case "len":
-                {
-                    DreamList list = (DreamList)dreamObject;
+        public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
+            switch (varName) {
+                case "len": {
+                    DreamList list = (DreamList) dreamObject;
+
                     return new DreamValue(list.GetLength());
                 }
                 case "type":
-                    return new DreamValue(DreamPath.List);
+                    return new DreamValue(_objectTree.List);
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }

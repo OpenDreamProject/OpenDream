@@ -76,13 +76,6 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DoTextReplace(replaceString);
             }
 
-            if (replace.TryGetValueAsPath(out var procPath) && procPath.LastElement is not null) {
-                var objectTree = IoCManager.Resolve<IDreamObjectTree>();
-                if (objectTree.TryGetGlobalProc(procPath.LastElement, out DreamProc? proc)) {
-                    return await DoProcReplace(state, proc);
-                }
-            }
-
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
             async Task<DreamValue> DoProcReplace(AsyncNativeProc.State state, DreamProc proc) {

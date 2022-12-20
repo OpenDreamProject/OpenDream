@@ -410,8 +410,8 @@ namespace OpenDreamRuntime.Objects {
             if (key > appearance.Filters.Count)
                 throw new Exception($"Atom only has {appearance.Filters.Count} filter(s), cannot index {key}");
 
-            DreamFilter filter = appearance.Filters[filterIndex - 1];
-            DreamObject filterObject = _objectTree.CreateObject(DreamPath.Filter);
+            DreamFilter filter = appearance.Filters[key - 1];
+            DreamObject filterObject = _objectTree.CreateObject(_objectTree.Filter);
             DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
             return new DreamValue(filterObject);
         }

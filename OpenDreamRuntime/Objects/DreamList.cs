@@ -123,6 +123,8 @@ namespace OpenDreamRuntime.Objects {
 
                 _values.RemoveAt(valueIndex);
             }
+
+            if (_values.Count == 0) _values = null;
         }
 
         public virtual void AddValue(DreamValue value) {
@@ -163,6 +165,7 @@ namespace OpenDreamRuntime.Objects {
             }
 
             _values.RemoveRange(start - 1, end - start);
+            if (_values.Count == 0) _values = null;
         }
 
         public void Insert(int index, DreamValue value) {

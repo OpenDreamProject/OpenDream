@@ -381,17 +381,13 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            var lhsIsConst = LHS.TryAsConstant(out var lhs);
-            var rhsIsConst = RHS.TryAsConstant(out var rhs);
-
-            if (lhsIsConst && rhsIsConst) {
-                constant = lhs.Or(rhs);
+            if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
+                constant = lhs;
                 return true;
             }
 
-            if ((lhsIsConst && lhs.IsTruthy()) ||
-                (rhsIsConst && rhs.IsTruthy())) {
-                constant = new Number(Location, 1);
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
                 return true;
             }
 
@@ -415,17 +411,13 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            var lhsIsConst = LHS.TryAsConstant(out var lhs);
-            var rhsIsConst = RHS.TryAsConstant(out var rhs);
-
-            if (lhsIsConst && rhsIsConst) {
-                constant = lhs.And(rhs);
+            if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {
+                constant = lhs;
                 return true;
             }
 
-            if ((lhsIsConst && !lhs.IsTruthy()) ||
-                (rhsIsConst && !rhs.IsTruthy())) {
-                constant = new Number(Location, 0);
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
                 return true;
             }
 

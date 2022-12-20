@@ -103,7 +103,10 @@ namespace OpenDreamShared.Dream.Procs {
         ModulusModulus = 0x60,
         ModulusModulusReference = 0x61,
         PushProcStub = 0x62,
-        PushVerbStub = 0x63
+        PushVerbStub = 0x63,
+        Try = 0x64,
+        TryNoValue = 0x65,
+        EndTry = 0x66,
     }
 
     public enum DreamProcOpcodeParameterType {

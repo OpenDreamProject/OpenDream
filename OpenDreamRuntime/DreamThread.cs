@@ -71,9 +71,15 @@ namespace OpenDreamRuntime {
     }
 
     sealed class CancellingRuntime : Exception {
+        public readonly DreamValue Value;
         public CancellingRuntime(string message)
-            : base(message)
-        {}
+            : base(message) {
+            Value = new DreamValue(message);
+        }
+
+        public CancellingRuntime(DreamValue value) : base($"'throw' thrown ({value})") {
+            Value = value;
+        }
     }
 
     sealed class PropagatingRuntime : Exception {

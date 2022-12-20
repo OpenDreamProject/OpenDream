@@ -1412,7 +1412,25 @@ namespace OpenDreamRuntime.Procs {
                 throw new CancellingRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
             }
 
-            throw new CancellingRuntime($"'throw' thrown ({value})");
+            throw new CancellingRuntime(value);
+        }
+
+        public static ProcStatus? Try(DMProcState state) {
+            state.CatchPosition = state.ReadInt();
+            state.CatchVarIndex = state.ReadReference().Index;
+            return null;
+        }
+
+        public static ProcStatus? TryNoValue(DMProcState state) {
+            state.CatchPosition = state.ReadInt();
+            state.CatchVarIndex = DMProcState.NoTryCatch;
+            return null;
+        }
+
+        public static ProcStatus? EndTry(DMProcState state) {
+            state.CatchPosition = DMProcState.NoTryCatch;
+            state.CatchVarIndex = DMProcState.NoTryCatch;
+            return null;
         }
 
         public static ProcStatus? SwitchCase(DMProcState state) {

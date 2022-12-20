@@ -182,7 +182,11 @@ namespace OpenDreamRuntime.Procs {
             DMOpcodeHandlers.ModulusModulus,
             DMOpcodeHandlers.ModulusModulusReference,
             DMOpcodeHandlers.PushProcStub,
-            DMOpcodeHandlers.PushVerbStub
+            DMOpcodeHandlers.PushVerbStub,
+            DMOpcodeHandlers.Try,
+            DMOpcodeHandlers.TryNoValue,
+            DMOpcodeHandlers.EndTry
+
         };
         #endregion
 
@@ -195,6 +199,9 @@ namespace OpenDreamRuntime.Procs {
         public readonly int ArgumentCount;
         public string? CurrentSource;
         public int CurrentLine;
+        public int CatchPosition = NoTryCatch;
+        public int CatchVarIndex = NoTryCatch;
+        public const int NoTryCatch = -1;
         private Stack<IDreamValueEnumerator>? _enumeratorStack;
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
@@ -281,7 +288,23 @@ namespace OpenDreamRuntime.Procs {
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
                     throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
-                ProcStatus? status = handler.Invoke(this);
+
+                ProcStatus? status;
+                try {
+                    status = handler.Invoke(this);
+                } catch (CancellingRuntime ce) {
+                    if (CatchPosition == NoTryCatch)
+                        throw;
+
+                    Jump(CatchPosition);
+                    if (CatchVarIndex != NoTryCatch) {
+                        _localVariables[CatchVarIndex] = ce.Value;
+                    }
+                    CatchPosition = NoTryCatch;
+                    CatchVarIndex = NoTryCatch;
+                    continue;
+                }
+
                 if (status != null) {
                     if (status == ProcStatus.Returned || status == ProcStatus.Cancelled) {
                         // TODO: This should be automatic (dispose pattern?)

@@ -828,21 +828,23 @@ namespace DMCompiler.DM.Visitors {
             string catchLabel = _proc.NewLabelName();
             string endLabel = _proc.NewLabelName();
 
-            _proc.StartScope();
-            ProcessBlockInner(tryCatch.TryBody);
-            _proc.EndScope();
-            _proc.Jump(endLabel);
-
             if (tryCatch.CatchParameter != null)
             {
-                //TODO set the value to what is thrown in try
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
                 if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
+                _proc.StartTry(catchLabel, _proc.GetLocalVariableReference(param.Name));
+            } else {
+                _proc.StartTryNoValue(catchLabel);
             }
 
-            //TODO make catching actually work
+            _proc.StartScope();
+            ProcessBlockInner(tryCatch.TryBody);
+            _proc.EndScope();
+            _proc.EndTry();
+            _proc.Jump(endLabel);
+
             _proc.AddLabel(catchLabel);
             if (tryCatch.CatchBody != null) {
                 _proc.StartScope();
@@ -854,8 +856,6 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementThrow(DMASTProcStatementThrow statement) {
-            //TODO proper value handling and catching
-
             DMExpression.Emit(_dmObject, _proc, statement.Value);
             _proc.Throw();
         }

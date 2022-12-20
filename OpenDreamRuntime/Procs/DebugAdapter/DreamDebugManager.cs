@@ -685,7 +685,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         } else if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
             varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;
-        } else if (value.Value is DreamProcArguments procArgs) {
+        } else if (value.TryGetValueAsProcArguments(out var procArgs)) {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandProcArguments(req, procArgs));
         }
         return varDesc;

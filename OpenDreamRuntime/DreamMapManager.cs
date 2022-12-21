@@ -57,7 +57,7 @@ namespace OpenDreamRuntime {
 
         public Vector2i Size { get; private set; }
         public int Levels => _levels.Count;
-        public List<DreamObject> AllAtoms { get; } = new();
+        public List<DreamObject> AllAtoms { get; } = new(410000); // ~400K elements after Paradise init
 
         private readonly List<Level> _levels = new();
         private readonly Dictionary<DreamObject, (Vector2i Pos, Level Level)> _turfToTilePos = new();

@@ -1,7 +1,7 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
-using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectAtom : IDreamMetaObject {
@@ -9,6 +9,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
 
@@ -21,7 +22,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
             if (!dreamObject.IsSubtypeOf(_objectTree.Turf)) {
-                _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
+                _mapManager.AllAtoms.Add(dreamObject);
             }
 
             // TODO: Create a special list to prevent this needless list creation
@@ -47,7 +48,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             _filterLists.Remove(dreamObject);
 
             _atomManager.DeleteMovableEntity(dreamObject);
-            _dreamManager.WorldContentsList.RemoveValue(new DreamValue(dreamObject));
+
+            // Replace our world.contents spot with the last so this doesn't mess with enumerators
+            // Results in a different order than BYOND, but nothing about our order resembles BYOND at all right now
+            int worldContentsIndex = _mapManager.AllAtoms.IndexOf(dreamObject);
+            _mapManager.AllAtoms.RemoveSwap(worldContentsIndex);
 
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());

@@ -19,6 +19,7 @@ using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -1083,13 +1084,10 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(1);
         }
 
-        private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement)
-        {
-            switch (jsonElement.ValueKind)
-            {
-                case JsonValueKind.Array:
-                {
-                    DreamList list = DreamList.Create();
+        private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement) {
+            switch (jsonElement.ValueKind) {
+                case JsonValueKind.Array: {
+                    DreamList list = DreamList.Create(jsonElement.GetArrayLength());
 
                     foreach (JsonElement childElement in jsonElement.EnumerateArray()) {
                         DreamValue value = CreateValueFromJsonElement(childElement);
@@ -1099,8 +1097,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                     return new DreamValue(list);
                 }
-                case JsonValueKind.Object:
-                {
+                case JsonValueKind.Object: {
                     DreamList list = DreamList.Create();
 
                     foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
@@ -1131,79 +1128,86 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         /// <summary>
-        /// A helper function for /proc/json_encode(). Takes in a value and returns its json-able equivalent.
+        /// A helper function for /proc/json_encode(). Encodes a DreamValue into a json writer.
         /// </summary>
-        /// <returns>Something that <see cref="JsonSerializer.Serialize"/> can parse.</returns>
-        public static object? CreateJsonElementFromValue(DreamValue value) {
-            return CreateJsonElementFromValueRecursive(value, 0);
+        /// <param name="writer">The json writer to encode into</param>
+        /// <param name="value">The DreamValue to encode</param>
+        private static void JsonEncode(Utf8JsonWriter writer, DreamValue value) {
+            JsonEncodeRecursive(writer, value, 0);
+            writer.Flush();
         }
 
-        /// <remarks> This exists to allow for some control over the recursion.<br/>
-        /// DM is actually not very smart about deep recursion or lists referencing their parents; it just goes to ~19 depth and gives up.</remarks>
-        private static object? CreateJsonElementFromValueRecursive(DreamValue value, int recursionLevel) {
+        /// <remarks>
+        /// This exists to allow for some control over the recursion.<br/>
+        /// DM is actually not very smart about deep recursion or lists referencing their parents; it just goes to ~19 depth and gives up.
+        /// </remarks>
+        private static void JsonEncodeRecursive(Utf8JsonWriter writer, DreamValue value, int recursionLevel) {
             const int maximumRecursions = 20; // In parity with DM, we give up and just print a 'null' at the maximum recursion.
-            if (recursionLevel == maximumRecursions)
-                return null; // This will be turned into the string "null" higher up in the stack.
+            if (recursionLevel == maximumRecursions) {
+                writer.WriteNullValue();
+                return;
+            }
 
-            if(value.TryGetValueAsFloat(out float floatValue))
-                return floatValue;
-            if (value.TryGetValueAsString(out string text))
-                return HttpUtility.JavaScriptStringEncode(text);
-            if (value.TryGetValueAsType(out var type))
-                return HttpUtility.JavaScriptStringEncode(type.Path.PathString);
-            if (value.TryGetValueAsDreamList(out DreamList list)) {
+            if (value.TryGetValueAsFloat(out float floatValue))
+                writer.WriteNumberValue(floatValue);
+            else if (value.TryGetValueAsString(out var text))
+                writer.WriteStringValue(text);
+            else if (value.TryGetValueAsType(out var type))
+                writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(type.Path.PathString));
+            else if (value.TryGetValueAsDreamList(out var list)) {
                 if (list.IsAssociative) {
-                    Dictionary<Object, Object?> jsonObject = new(list.GetLength());
+                    writer.WriteStartObject();
+
                     foreach (DreamValue listValue in list.GetValues()) {
+                        var key = HttpUtility.JavaScriptStringEncode(listValue.Stringify());
+
                         if (list.ContainsKey(listValue)) {
-                            var key = HttpUtility.JavaScriptStringEncode(listValue.Stringify());
-                            var val = CreateJsonElementFromValueRecursive(list.GetValue(listValue), recursionLevel+1);
-                            jsonObject[key] = val;
+                            writer.WritePropertyName(key);
+                            JsonEncodeRecursive(writer, list.GetValue(listValue), recursionLevel + 1);
                         } else {
-                            var key = CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1);
-                            jsonObject[key] = null; // list[x] = null
+                            writer.WriteNull(key);
                         }
                     }
-                    return jsonObject;
+
+                    writer.WriteEndObject();
                 } else {
-                    List<Object?> jsonArray = new();
+                    writer.WriteStartArray();
+
                     foreach (DreamValue listValue in list.GetValues()) {
-                        jsonArray.Add(CreateJsonElementFromValueRecursive(listValue, recursionLevel + 1));
+                        JsonEncodeRecursive(writer, listValue, recursionLevel + 1);
                     }
-                    return jsonArray;
+
+                    writer.WriteEndArray();
                 }
-            }
-            if (value.Type == DreamValueType.DreamObject) {
-                if (value == DreamValue.Null) return null;
-                if(value.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) { // Special behaviour for /matrix values
-                    StringBuilder builder = new(13); // 13 is the minimum character count this could have: "[1,2,3,4,5,6]"
-                    builder.Append('[');
-                    builder.AppendJoin(',',DreamMetaObjectMatrix.EnumerateMatrix(matrix));
-                    builder.Append(']');
-                    return builder.ToString();
+            } else if (value.TryGetValueAsDreamObject(out var dreamObject)) {
+                if (dreamObject == null)
+                    writer.WriteNullValue();
+                else if (dreamObject.IsSubtypeOf(ObjectTree.Matrix)) { // Special behaviour for /matrix values
+                    writer.WriteStartArray();
+
+                    foreach (var f in DreamMetaObjectMatrix.EnumerateMatrix(dreamObject)) {
+                        writer.WriteNumberValue(f);
+                    }
+
+                    writer.WriteEndArray();
                     // This doesn't have any corresponding snowflaking in CreateValueFromJsonElement()
                     // because BYOND actually just forgets that this was a matrix after doing json encoding.
-                }
-                return value.Stringify();
+                } else
+                    writer.WriteStringValue(value.Stringify());
+            } else if (value.TryGetValueAsDreamResource(out var dreamResource)) {
+                writer.WriteStringValue(dreamResource.ResourcePath);
+            } else {
+                throw new Exception($"Cannot json_encode {value}");
             }
-
-            if(value.TryGetValueAsDreamResource(out var dreamResource)) {
-                string? output = dreamResource.ReadAsString();
-                if (output == null)
-                    return "";
-                return output;
-            }
-
-            throw new Exception("Cannot json_encode " + value);
         }
 
         [DreamProc("json_decode")]
         [DreamProcParameter("JSON", Type = DreamValueType.String)]
         public static DreamValue NativeProc_json_decode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "JSON").TryGetValueAsString(out var jsonString))
-            {
+            if (!arguments.GetArgument(0, "JSON").TryGetValueAsString(out var jsonString)) {
                 throw new Exception("Unknown value");
             }
+
             JsonElement jsonRoot = JsonSerializer.Deserialize<JsonElement>(jsonString);
 
             return CreateValueFromJsonElement(jsonRoot);
@@ -1212,14 +1216,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("json_encode")]
         [DreamProcParameter("Value")]
         public static DreamValue NativeProc_json_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            object? jsonObject = CreateJsonElementFromValue(arguments.GetArgument(0, "Value"));
-            string result = JsonSerializer.Serialize(jsonObject);
+            using MemoryStream stream = new MemoryStream();
+            using Utf8JsonWriter jsonWriter = new(stream);
 
-            return new DreamValue(result);
+            JsonEncode(jsonWriter, arguments.GetArgument(0, "Value"));
+            return new DreamValue(Encoding.UTF8.GetString(stream.AsSpan()));
         }
 
-        private static DreamValue _length(DreamValue value, bool countBytes)
-        {
+        private static DreamValue _length(DreamValue value, bool countBytes) {
             if (value.TryGetValueAsString(out var str)) {
                 return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
             } else if (value.TryGetValueAsDreamList(out var list)) {

@@ -268,7 +268,8 @@ namespace OpenDreamRuntime.Objects {
                 }
 
                 if (jsonType.Verbs != null) {
-                    definition.Verbs = jsonType.Verbs;
+                    definition.Verbs ??= new(jsonType.Verbs.Count);
+                    definition.Verbs.AddRange(jsonType.Verbs);
                 }
 
                 if (jsonType.InitProc != null) {

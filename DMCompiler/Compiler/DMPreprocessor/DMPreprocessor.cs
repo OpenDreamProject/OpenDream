@@ -5,7 +5,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using DMCompiler.Compiler.DM;
-using DMCompiler.DM;
 using OpenDreamShared.Compiler;
 using Robust.Shared.Utility;
 
@@ -315,7 +314,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 continue;
                             }
                             parameters.Add(parameterToken.Text);
-                            
+
                             continue;
                         case TokenType.DM_Preproc_Punctuator_Period: // One of those "..." things, maybe?
                             if (!Check(TokenType.DM_Preproc_Punctuator_Period) || !Check(TokenType.DM_Preproc_Punctuator_Period)) {

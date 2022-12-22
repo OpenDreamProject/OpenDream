@@ -200,17 +200,14 @@ namespace OpenDreamRuntime.Procs {
         public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
         /// Static initialiser for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
-        static DMProcState()
-        {
+        static DMProcState() {
             int maxOpcode = 0;
-            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys)
-            {
+            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys) {
                 if(maxOpcode < (int) dpo)
                     maxOpcode = (int) dpo;
             }
             _opcodeHandlers = new OpcodeHandler?[maxOpcode+1];
-            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys)
-            {
+            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys) {
                 _opcodeHandlers[(int) dpo] = OpcodeHandlers[dpo];
             }
         }

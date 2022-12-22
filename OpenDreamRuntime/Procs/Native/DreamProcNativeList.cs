@@ -86,10 +86,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Remove(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamList list = (DreamList)instance;
-            List<DreamValue> argumentValues = arguments.GetAllArguments();
             bool itemRemoved = false;
+            var argEnumerator = arguments.AllArgumentsEnumerator();
 
-            foreach (DreamValue argument in argumentValues) {
+            while (argEnumerator.MoveNext()) {
+                DreamValue argument = argEnumerator.Current;
+
                 if (argument.TryGetValueAsDreamList(out DreamList argumentList)) {
                     foreach (DreamValue value in argumentList.GetValues()) {
                         if (list.ContainsValue(value)) {

@@ -38,6 +38,10 @@ namespace DMDisassembler {
                 Console.Write("> ");
 
                 string input = Console.ReadLine();
+                if (input == null) {
+                    // EOF
+                    break;
+                }
                 string[] split = input.Split(" ");
                 string command = split[0].ToLower();
 

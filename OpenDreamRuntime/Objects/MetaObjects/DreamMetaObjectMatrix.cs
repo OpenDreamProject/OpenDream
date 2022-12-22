@@ -62,7 +62,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             left.GetVariable("f").TryGetValueAsFloat(out float lF);
 
             if (b.TryGetValueAsFloat(out float bFloat)) {
-                DreamObject output = _objectTree.CreateObject(DreamPath.Matrix);
+                DreamObject output = _objectTree.CreateObject(_objectTree.Matrix);
                 output.SetVariable("a", new(lA * bFloat));
                 output.SetVariable("b", new(lB * bFloat));
                 output.SetVariable("c", new(lC * bFloat));
@@ -80,7 +80,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 right.GetVariable("e").TryGetValueAsFloat(out float rE);
                 right.GetVariable("f").TryGetValueAsFloat(out float rF);
 
-                DreamObject output = _objectTree.CreateObject(DreamPath.Matrix);
+                DreamObject output = _objectTree.CreateObject(_objectTree.Matrix);
                 output.SetVariable("a", new(rA * lA + rD * lB));
                 output.SetVariable("b", new(rB * lA + rE * lB));
                 output.SetVariable("c", new(rC * lA + rF * lB + lC));

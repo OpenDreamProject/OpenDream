@@ -74,6 +74,7 @@ namespace OpenDreamRuntime.Procs {
         private static ArrayPool<DreamValue> _stackPool = ArrayPool<DreamValue>.Shared;
 
         #region Opcode Handlers
+        //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
         private static readonly Dictionary<DreamProcOpcode, OpcodeHandler?> OpcodeHandlers = new Dictionary<DreamProcOpcode, OpcodeHandler?>(){
             {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
             {DreamProcOpcode.PushType, DMOpcodeHandlers.PushType},
@@ -171,9 +172,9 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
             {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
         };
-        #endregion
 
         private static OpcodeHandler?[] _opcodeHandlers = {};
+        #endregion
         public IDreamManager DreamManager => _proc.DreamManager;
         internal IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
@@ -199,23 +200,18 @@ namespace OpenDreamRuntime.Procs {
 
         public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
-
         /// Static initialiser for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
-        static DMProcState()
-        {
+        static DMProcState() {
             int maxOpcode = 0;
-            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys)
-            {
+            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys) {
                 if(maxOpcode < (int) dpo)
                     maxOpcode = (int) dpo;
             }
             _opcodeHandlers = new OpcodeHandler?[maxOpcode+1];
-            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys)
-            {
+            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys) {
                 _opcodeHandlers[(int) dpo] = OpcodeHandlers[dpo];
             }
         }
-
         /// <param name="instance">This is our 'src'.</param>
         /// <exception cref="Exception">Thrown, at time of writing, when an invalid named arg is given</exception>
         public DMProcState(DMProc proc, DreamThread thread, int maxStackSize, DreamObject? instance, DreamObject? usr, DreamProcArguments arguments)

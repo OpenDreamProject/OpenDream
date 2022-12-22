@@ -124,7 +124,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             savefile.CurrentDir[entryName] = value;
 
             savefile.Flush(); //TODO: Don't flush after every change
-            state.Push(DreamValue.Null);
             return null;
         }
     }

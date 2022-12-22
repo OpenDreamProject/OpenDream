@@ -1,53 +1,3 @@
-/datum/complex	 // complex number a+bi
-	var/a as num
-	var/b as num
-
-	New(_a,_b)
-		a = _a
-		b = _b
-
-	proc/operator:=(datum/complex/C)
-		return new /datum/complex(3.14,8888)
-
-	proc/operator+(datum/complex/C)
-		if(istype(C)) return new /datum/complex(a+C.a, b+C.b)
-		if(isnum(C)) return new /datum/complex(a+C, b)
-		return src
-
-	proc/operator+=(datum/complex/C)
-		if(istype(C))
-			a += C.a
-			b += C.b
-		else if(isnum(C)) 
-			a += C
-
-	proc/operator-()
-		 return new /datum/complex(a*-1, b*-1)
-		 
-	proc/operator*(datum/complex/C) 
-		if(isnum(C))
-			return new /datum/complex(a*C, b*C)
-		else
-			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
-
-	proc/operator[](index)
-		switch(index)
-			if(1)
-				return src.a
-			if(2)
-				return src.b
-			else
-				throw EXCEPTION("Invalid index on complex number")
-
-	proc/operator&(datum/complex/C)
-		world.log << "OPERATOR RAN &"
-		return 3.14
-
-	proc/operator&=(datum/complex/C)
-		world.log << "OPERATOR RAN &="
-		src.a = 3.14
-		src.b = 6.28
-
 /turf
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
@@ -164,14 +114,42 @@
 		stat("tick_usage", world.tick_usage)
 		stat("time", world.time)
 
+/datum/fuck
+	var/x=1
+	var/y=2
+
+	New(x,y)
+		src.x = x
+		src.y = y
+
+	proc/operator[](var/index)
+		world.log << "operator\[\] with index [index]"
+		if(index == 1)
+			return src.x
+		else
+			return src.y
+
+	proc/operator[]=(var/index, var/value)
+		world.log << "operator\[\]= with index [index] and value [value]"
+		//sleep(50)
+		if(index == 1)
+			src.x = value
+		else
+			src.y = value
+
+
 /world/New()
 	..()
 	world.log << "World loaded!"
-	var/datum/complex/A = new /datum/complex(5,-1)
-	var/datum/complex/B = new /datum/complex(0,-9.5)
-	world.log << json_encode(A)
-	world.log << json_encode(B)
-	world.log << "assign into"
-	A := B
-	world.log << json_encode(A)
-	world.log << "[A.a], [A.b]"
+
+	var/list/A = list()
+	A["key"] = 0
+	A["key"]++
+	ASSERT(A["key"] == 1)
+	world.log << "new"
+	var/datum/fuck/G = new(3,10)
+	world.log << "index 1 assign = 5"
+	G[1] = 5
+	world.log << "index 1 ++"
+	G[1]++
+	ASSERT(G.x == 6)

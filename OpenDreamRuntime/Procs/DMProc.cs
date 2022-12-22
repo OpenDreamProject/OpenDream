@@ -492,7 +492,7 @@ namespace OpenDreamRuntime.Procs {
             return (indexing, index);
         }
 
-        public ProcStatus? AssignReference(DMReference reference, DreamValue value) {
+        public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
                 case DMReference.Type.Argument: _localVariables[reference.Index] = value; break;
@@ -518,14 +518,27 @@ namespace OpenDreamRuntime.Procs {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        return metaObject!.OperatorIndexAssign(indexing, index, value, this);
-                    } else {
-                        throw new Exception($"Cannot assign to index {index} of {indexing}");
+                        if (metaObject != null)
+                        {
+                            ProcStatus? opStatus = metaObject.OperatorIndexAssign(indexing, index, value, this);
+                            switch(opStatus){
+                                case(null):
+                                case(ProcStatus.Returned):
+                                    return;
+                                case(ProcStatus.Called):
+                                    this.Push(this.Thread.Resume());
+                                    return;
+                                case(ProcStatus.Deferred):
+                                    throw new Exception("Using sleep() in an operator overload is not supported.");
+                                case(ProcStatus.Cancelled):
+                                    throw new Exception("Runtime occurred in operator");
+                            }
+                        }
                     }
+                    throw new Exception($"Cannot assign to index {index} of {indexing}");
                 }
                 default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
             }
-            return null;
         }
 
         public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {

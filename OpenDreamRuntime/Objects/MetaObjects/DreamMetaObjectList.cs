@@ -231,7 +231,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                             DreamValue associativeValue = list.GetValue(value);
 
                             newList.AddValue(value);
-                            if (associativeValue.Value != null) newList.SetValue(value, associativeValue);
+                            if (associativeValue != DreamValue.Null) newList.SetValue(value, associativeValue);
                         }
                     }
                 } else {
@@ -244,7 +244,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                             DreamValue associativeValue = list.GetValue(value);
 
                             newList.AddValue(value);
-                            if (associativeValue.Value != null) newList.SetValue(value, associativeValue);
+                            if (associativeValue != DreamValue.Null) newList.SetValue(value, associativeValue);
                         }
                     }
                 }
@@ -278,7 +278,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     newList.AddValue(value);
 
                     DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
-                    if (associatedValue.Value != null) newList.SetValue(value, associatedValue);
+                    if (associatedValue != DreamValue.Null) newList.SetValue(value, associatedValue);
                 }
             }
 

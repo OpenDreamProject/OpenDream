@@ -294,6 +294,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public ProcStatus? OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
             DreamList dreamList = a.MustGetValueAsDreamList();
             dreamList.SetValue(index, value);
+            state.Push(value);
             return null;
         }
     }

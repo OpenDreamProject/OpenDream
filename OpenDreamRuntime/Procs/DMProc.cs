@@ -520,18 +520,24 @@ namespace OpenDreamRuntime.Procs {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
                         {
-                            ProcStatus? opStatus = metaObject.OperatorIndexAssign(indexing, index, value, this);
-                            switch(opStatus){
-                                case(null):
-                                case(ProcStatus.Returned):
-                                    return;
-                                case(ProcStatus.Called):
-                                    this.Push(this.Thread.Resume());
-                                    return;
-                                case(ProcStatus.Deferred):
-                                    throw new Exception("Using sleep() in an operator overload is not supported.");
-                                case(ProcStatus.Cancelled):
-                                    throw new Exception("Runtime occurred in operator");
+                            DMProcState substate = new DMProcState(this, new DreamThread("operator[]="));
+                            ProcStatus? opStatus = metaObject.OperatorIndexAssign(indexing, index, value, substate);
+                            while(true){
+                                switch(opStatus){
+                                    case(null):
+                                        this.Push(substate.Pop());
+                                        return;
+                                    case(ProcStatus.Returned):
+                                        this.Push(substate.Result);
+                                        return;
+                                    case(ProcStatus.Called):
+                                        opStatus = substate.Resume();
+                                        break;
+                                    case(ProcStatus.Deferred):
+                                        throw new Exception("Using sleep() in an operator overload is not supported.");
+                                    case(ProcStatus.Cancelled):
+                                        throw new Exception("Runtime occurred in operator");
+                                }
                             }
                         }
                     }
@@ -607,17 +613,22 @@ namespace OpenDreamRuntime.Procs {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
                         {
-                            ProcStatus? opStatus = metaObject.OperatorIndex(indexing, index, this);
-                            switch(opStatus){
-                                case(null):
-                                case(ProcStatus.Returned):
-                                    return this.Pop();
-                                case(ProcStatus.Called):
-                                    return this.Thread.Resume();
-                                case(ProcStatus.Deferred):
-                                    throw new Exception("Using sleep() in an operator overload is not supported.");
-                                case(ProcStatus.Cancelled):
-                                    throw new Exception("Runtime occurred in operator");
+                            DMProcState substate = new DMProcState(this, new DreamThread("operator[]"));
+                            ProcStatus? opStatus = metaObject.OperatorIndex(indexing, index, substate);
+                            while(true){
+                                switch(opStatus){
+                                    case(null):
+                                        return substate.Pop();
+                                    case(ProcStatus.Returned):
+                                        return substate.Result;
+                                    case(ProcStatus.Called):
+                                        opStatus = substate.Resume();
+                                        break;
+                                    case(ProcStatus.Deferred):
+                                        throw new Exception("Using sleep() in an operator overload is not supported.");
+                                    case(ProcStatus.Cancelled):
+                                        throw new Exception("Runtime occurred in operator");
+                                }
                             }
                         }
                     }

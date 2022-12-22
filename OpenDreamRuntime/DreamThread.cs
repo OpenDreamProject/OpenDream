@@ -61,12 +61,31 @@ namespace OpenDreamRuntime {
             return context.Resume();
         }
 
+        public DreamValue GetField(string field) {
+            // TODO: Figure out what byond does when these are null
+            switch (field) {
+                case "name":
+                    return new DreamValue(VerbName);
+                case "category":
+                    return new DreamValue(VerbCategory);
+                case "description":
+                    return new DreamValue(VerbDesc);
+                case "invisibility":
+                    return new DreamValue(Invisibility);
+                default:
+                    throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
+            }
+        }
+
         public override string ToString() {
             if (OwningType == DreamPath.Root) {
                 return Name;
-            } else {
-                return $"{OwningType}/{Name}";
             }
+
+            var procElement = (SuperProc == null) ? "proc/" : String.Empty; // Has "proc/" only if it's not an override
+            // TODO: "verb/" proc element
+
+            return $"{OwningType}/{procElement}{Name}";
         }
     }
 
@@ -159,6 +178,8 @@ namespace OpenDreamRuntime {
         private int _syncCount = 0;
 
         public string Name { get; }
+
+        internal Procs.DebugAdapter.DreamDebugManager.ThreadStepMode? StepMode { get; set; }
 
         public DreamThread(string name) {
             Name = name;
@@ -354,8 +375,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandleException(Exception exception)
-        {
+        public void HandleException(Exception exception) {
             _current?.Cancel();
 
             var dreamMan = IoCManager.Resolve<IDreamManager>();

@@ -31,15 +31,6 @@ namespace DMCompiler.DM.Expressions {
         #endregion
 
         #region Binary Operations
-        public Constant And(Constant rhs) {
-            var truthy = IsTruthy() && rhs.IsTruthy();
-            return new Number(Location, truthy ? 1 : 0);
-        }
-
-        public Constant Or(Constant rhs) {
-            var truthy = IsTruthy() || rhs.IsTruthy();
-            return new Number(Location, truthy ? 1 : 0);
-        }
 
         public virtual Constant Add(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} + {rhs}\" is invalid");

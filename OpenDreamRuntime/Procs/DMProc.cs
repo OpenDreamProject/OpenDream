@@ -111,6 +111,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.CallStatement, DMOpcodeHandlers.CallStatement},
             {DreamProcOpcode.BitAnd, DMOpcodeHandlers.BitAnd},
             {DreamProcOpcode.CompareNotEquals, DMOpcodeHandlers.CompareNotEquals},
+            {DreamProcOpcode.PushProc, DMOpcodeHandlers.PushProc},
             {DreamProcOpcode.Divide, DMOpcodeHandlers.Divide},
             {DreamProcOpcode.Multiply, DMOpcodeHandlers.Multiply},
             {DreamProcOpcode.BitXorReference, DMOpcodeHandlers.BitXorReference},
@@ -136,6 +137,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.BrowseResource, DMOpcodeHandlers.BrowseResource},
             {DreamProcOpcode.OutputControl, DMOpcodeHandlers.OutputControl},
             {DreamProcOpcode.BitShiftRight, DMOpcodeHandlers.BitShiftRight},
+            {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
             {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
             {DreamProcOpcode.DebugSource, DMOpcodeHandlers.DebugSource},
             {DreamProcOpcode.DebugLine, DMOpcodeHandlers.DebugLine},
@@ -166,10 +168,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.PushGlobalVars, DMOpcodeHandlers.PushGlobalVars},
             {DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus},
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
-            {DreamProcOpcode.CreateFilteredListEnumerator,DMOpcodeHandlers.CreateFilteredListEnumerator},
-            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
-            {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub}
+            {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
         };
         #endregion
 

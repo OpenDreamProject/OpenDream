@@ -51,6 +51,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             // Replace our world.contents spot with the last so this doesn't mess with enumerators
             // Results in a different order than BYOND, but nothing about our order resembles BYOND at all right now
+            // TODO: Handle this placing atoms earlier than an enumerator's index
             int worldContentsIndex = _mapManager.AllAtoms.IndexOf(dreamObject);
             _mapManager.AllAtoms.RemoveSwap(worldContentsIndex);
 

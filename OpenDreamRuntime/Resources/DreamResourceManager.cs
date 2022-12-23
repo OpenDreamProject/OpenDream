@@ -17,7 +17,6 @@ namespace OpenDreamRuntime.Resources {
 
         private readonly List<DreamResource> _resourceCache = new();
         private readonly Dictionary<string, int> _resourcePathToId = new();
-        private readonly Dictionary<DreamResource, Image<Rgba32>> _imageCache = new();
 
         private ISawmill _sawmill;
 
@@ -28,7 +27,6 @@ namespace OpenDreamRuntime.Resources {
 
             _resourceCache.Clear();
             _resourcePathToId.Clear();
-            _imageCache.Clear();
 
             // An empty resource path is the console
             _resourceCache.Add(new ConsoleOutputResource());
@@ -89,15 +87,6 @@ namespace OpenDreamRuntime.Resources {
 
             resource = null;
             return false;
-        }
-
-        public Image<Rgba32> LoadImage(DreamResource resource) {
-            if (_imageCache.TryGetValue(resource, out var image))
-                return image;
-
-            image = Image.Load<Rgba32>(resource.ResourceData);
-            _imageCache.Add(resource, image);
-            return image;
         }
 
         public bool TryLoadIcon(DreamValue value, [NotNullWhen(true)] out IconResource? icon) {

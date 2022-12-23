@@ -1,10 +1,11 @@
 ﻿using OpenDreamRuntime.Objects;
-using OpenDreamShared.Dream;
+using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {
         public static void SetupNativeProcs(IDreamObjectTree objectTree) {
             DreamProcNativeRoot.DreamManager = IoCManager.Resolve<IDreamManager>();
+            DreamProcNativeRoot.ResourceManager = IoCManager.Resolve<DreamResourceManager>();
             DreamProcNativeRoot.ObjectTree = objectTree;
 
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);

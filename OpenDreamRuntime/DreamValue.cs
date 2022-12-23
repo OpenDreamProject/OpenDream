@@ -117,7 +117,9 @@ namespace OpenDreamRuntime {
         }
 
         public override string ToString() {
-            if (_refValue == null) {
+            if (Type == DreamValueType.Float)
+                return _floatValue.ToString();
+            else if (_refValue == null) {
                 return "null";
             } else if (Type == DreamValueType.String) {
                 return $"\"{_refValue}\"";

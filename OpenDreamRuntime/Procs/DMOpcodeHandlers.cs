@@ -61,37 +61,48 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        private static DreamValue[] GetEnumerableContents(IDreamObjectTree objectTree, DreamValue value) {
-            DreamList? list = null;
-            if (value.TryGetValueAsDreamObject(out var listObject))
-                list = listObject as DreamList;
+        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IDreamMapManager mapManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
+            if (!value.TryGetValueAsDreamList(out var list)) {
+                if (value.TryGetValueAsDreamObject(out var dreamObject)) {
+                    if (dreamObject == null)
+                        return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
 
-            if (list == null) {
-                if (listObject == null) {
-                    list = null;
-                } else if (listObject.IsSubtypeOf(objectTree.Atom) || listObject.IsSubtypeOf(objectTree.World)) {
-                    list = listObject.GetVariable("contents").GetValueAsDreamList();
-                } else {
-                    throw new Exception($"Object {listObject} is not a {objectTree.List}, {objectTree.Atom} or {objectTree.World}");
+                    if (dreamObject.IsSubtypeOf(objectTree.Atom)) {
+                        list = dreamObject.GetVariable("contents").GetValueAsDreamList();
+                    } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
+                        return new WorldContentsEnumerator(mapManager, filterType);
+                    }
                 }
             }
 
-            return list?.GetValues().ToArray() ?? Array.Empty<DreamValue>();
+            if (list != null) {
+                // world.contents has its own special enumerator to prevent the huge copy
+                if (list is WorldContentsList)
+                    return new WorldContentsEnumerator(mapManager, filterType);
+
+                var values = list.GetValues().ToArray();
+
+                return filterType == null
+                    ? new DreamValueArrayEnumerator(values)
+                    : new FilteredDreamValueArrayEnumerator(values, filterType);
+            }
+
+            throw new Exception($"Value {value} is not a {objectTree.List}, {objectTree.Atom}, {objectTree.World}, or null");
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            var contents = GetEnumerableContents(state.Proc.ObjectTree, state.Pop());
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), null);
 
-            state.EnumeratorStack.Push(new DreamValueArrayEnumerator(contents));
+            state.EnumeratorStack.Push(enumerator);
             return null;
         }
 
         public static ProcStatus? CreateFilteredListEnumerator(DMProcState state) {
-            var contents = GetEnumerableContents(state.Proc.ObjectTree, state.Pop());
             var filterTypeId = state.ReadInt();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), filterType);
 
-            state.EnumeratorStack.Push(new FilteredDreamValueArrayEnumerator(contents, filterType));
+            state.EnumeratorStack.Push(enumerator);
             return null;
         }
 
@@ -107,9 +118,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Atom)) {
-                var worldContents = state.DreamManager.WorldContentsList.GetValues().ToArray(); // TODO: Remove the ToArray()
-
-                state.EnumeratorStack.Push(new FilteredDreamValueArrayEnumerator(worldContents, type));
+                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.DreamMapManager, type));
                 return null;
             }
 
@@ -118,7 +127,7 @@ namespace OpenDreamRuntime.Procs {
                 return null;
             }
 
-            throw new Exception($"Type enumeration of {type.ToString()} is not supported");
+            throw new Exception($"Type enumeration of {type} is not supported");
         }
 
         public static ProcStatus? CreateRangeEnumerator(DMProcState state) {

@@ -15,7 +15,6 @@ namespace OpenDreamRuntime {
 
         public List<DreamValue> Globals { get; }
         public IReadOnlyList<string> GlobalNames { get; }
-        public DreamList WorldContentsList { get; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
         public List<DreamObject> Mobs { get; set; }

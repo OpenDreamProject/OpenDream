@@ -454,7 +454,7 @@ namespace OpenDreamRuntime {
                 {
                     // TODO Check what happens with multiple states
                     var icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
-                    var (resource, _) = icon.GenerateDMI();
+                    var resource = icon.GenerateDMI();
                     var base64 = Convert.ToBase64String(resource.ResourceData);
                     writer.WriteString("Value", base64);
                     break;

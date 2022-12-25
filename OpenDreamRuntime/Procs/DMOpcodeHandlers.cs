@@ -627,9 +627,10 @@ namespace OpenDreamRuntime.Procs {
                 // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
                 DreamObject iconObj = state.Proc.ObjectTree.CreateObject(state.Proc.ObjectTree.Icon);
                 var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
-                var from = DreamMetaObjectIcon.GetIconResourceAndDescription(state.Proc.ObjectTree, state.Proc.DreamResourceManager, first);
+                if (!state.Proc.DreamResourceManager.TryLoadIcon(first, out var from))
+                    throw new Exception($"Failed to create an icon from {from}");
 
-                icon.InsertStates(from.Resource, from.Description, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+                icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
                 DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
                 result = new DreamValue(iconObj);
             } else if (second != DreamValue.Null) {
@@ -1601,10 +1602,10 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? BrowseResource(DMProcState state) {
             DreamValue filename = state.Pop();
             var value = state.Pop();
-            DreamResource file;
-            if (!value.TryGetValueAsDreamResource(out file)) {
-                if (value.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out var icon)) {
-                    (file, _) = DreamMetaObjectIcon.ObjectToDreamIcon[icon].GenerateDMI();
+
+            if (!value.TryGetValueAsDreamResource(out var file)) {
+                if (state.Proc.DreamResourceManager.TryLoadIcon(value, out var icon)) {
+                    file = icon;
                 } else {
                     throw new NotImplementedException();
                 }

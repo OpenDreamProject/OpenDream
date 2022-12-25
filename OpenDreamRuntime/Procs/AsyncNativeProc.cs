@@ -78,7 +78,7 @@ namespace OpenDreamRuntime.Procs {
 
             public override void Dispose() {
                 base.Dispose();
-                
+
                 _scheduleCancellationToken?.Cancel();
                 _scheduleCancellationToken?.Dispose();
                 _scheduleCancellationToken = null;
@@ -148,7 +148,6 @@ namespace OpenDreamRuntime.Procs {
                         throw _task.Exception;
                     }
 
-                    _scheduleCancellationToken = null;
                     return ProcStatus.Returned;
                 }
 

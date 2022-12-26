@@ -79,6 +79,7 @@ namespace OpenDreamRuntime.Procs {
             public override void Dispose() {
                 base.Dispose();
 
+                // Cancel the scheduled continuation of this state if there is one
                 _scheduleCancellationToken?.Cancel();
                 _scheduleCancellationToken?.Dispose();
                 _scheduleCancellationToken = null;

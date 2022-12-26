@@ -121,7 +121,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
-            DreamValue haystack = state.Arguments.GetArgument(0, "heystack");
+            DreamValue haystack = state.Arguments.GetArgument(0, "haystack");
             DreamValue replacement = state.Arguments.GetArgument(1, "replacement");
             int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger();
             int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger();

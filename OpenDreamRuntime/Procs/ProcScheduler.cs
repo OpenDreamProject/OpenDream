@@ -1,20 +1,28 @@
-﻿using System.Threading.Tasks;
+﻿using System.Threading;
+using System.Threading.Tasks;
 
 namespace OpenDreamRuntime.Procs {
     sealed class ProcScheduler : IProcScheduler {
-        private HashSet<AsyncNativeProc.State> _sleeping = new();
-        private Queue<AsyncNativeProc.State> _scheduled = new();
+        private readonly HashSet<AsyncNativeProc.State> _sleeping = new();
+        private readonly Queue<AsyncNativeProc.State> _scheduled = new();
         private AsyncNativeProc.State? _current;
 
-        public void ScheduleAsyncNative(AsyncNativeProc.State state, Task task) {
+        public CancellationTokenSource Schedule(AsyncNativeProc.State state, Task task) {
+            CancellationTokenSource cancellationTokenSource = new();
+            CancellationToken cancellationToken = cancellationTokenSource.Token;
+
             _sleeping.Add(state);
             task.ContinueWith(
                 _ => {
                     _sleeping.Remove(state);
-                    _scheduled.Enqueue(state);
+
+                    if (!cancellationToken.IsCancellationRequested)
+                        _scheduled.Enqueue(state);
                 },
                 TaskScheduler.FromCurrentSynchronizationContext()
             );
+
+            return cancellationTokenSource;
         }
 
         public void Process() {
@@ -37,7 +45,7 @@ namespace OpenDreamRuntime.Procs {
     }
 
     interface IProcScheduler {
-        public void ScheduleAsyncNative(AsyncNativeProc.State state, Task task);
+        public CancellationTokenSource Schedule(AsyncNativeProc.State state, Task task);
 
         public void Process();
 

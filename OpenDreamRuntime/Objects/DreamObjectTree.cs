@@ -250,7 +250,7 @@ namespace OpenDreamRuntime.Objects {
             foreach (TreeEntry type in GetAllDescendants(Root)) {
                 int typeId = pathToTypeId[type.Path];
                 DreamTypeJson jsonType = types[typeId];
-                var definition = new DreamObjectDefinition(this, type);
+                var definition = new DreamObjectDefinition(DreamManager, this, type);
 
                 type.ObjectDefinition = definition;
                 type.TreeIndex = treeIndex++;
@@ -318,8 +318,7 @@ namespace OpenDreamRuntime.Objects {
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs) {
             Procs = new(jsonProcs.Length);
-            foreach (var proc in jsonProcs)
-            {
+            foreach (var proc in jsonProcs) {
                 Procs.Add(LoadProcJson(types, proc));
             }
 

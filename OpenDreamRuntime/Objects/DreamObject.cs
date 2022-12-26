@@ -23,10 +23,16 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public ProcState InitProc(DreamThread thread, DreamObject? usr, DreamProcArguments arguments) {
-            if(Deleted){
+            if (Deleted) {
                 throw new Exception("Cannot init proc on a deleted object");
             }
-            return new InitDreamObjectState(thread, this, usr, arguments);
+
+            if (!InitDreamObjectState.Pool.TryPop(out var state)) {
+                state = new InitDreamObjectState(ObjectDefinition.DreamManager, ObjectDefinition.ObjectTree);
+            }
+
+            state.Initialize(thread, this, usr, arguments);
+            return state;
         }
 
         public void Delete(IDreamManager manager) {

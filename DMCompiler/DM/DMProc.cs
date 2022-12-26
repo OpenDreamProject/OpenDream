@@ -994,6 +994,7 @@ namespace DMCompiler.DM {
                 case DMReference.Type.Self:
                 case DMReference.Type.Args:
                 case DMReference.Type.Usr:
+                case DMReference.Type.OpenDreamProcpath:
                     break;
 
                 default:

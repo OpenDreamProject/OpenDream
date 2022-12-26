@@ -256,6 +256,7 @@ namespace OpenDreamShared.Dream.Procs {
         public static readonly DMReference Args = new() { RefType = Type.Args };
         public static readonly DMReference SuperProc = new() { RefType = Type.SuperProc };
         public static readonly DMReference ListIndex = new() { RefType = Type.ListIndex };
+        public static readonly DMReference OpenDreamProcpath = new() { RefType = Type.OpenDreamProcpath };
 
         public enum Type : byte {
             Src,
@@ -271,7 +272,8 @@ namespace OpenDreamShared.Dream.Procs {
             Proc,
             GlobalProc,
             SrcProc,
-            SuperProc
+            SuperProc,
+            OpenDreamProcpath
         }
 
         public Type RefType;

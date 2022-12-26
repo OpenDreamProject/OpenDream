@@ -425,6 +425,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Args: return DMReference.Args;
                 case DMReference.Type.SuperProc: return DMReference.SuperProc;
                 case DMReference.Type.ListIndex: return DMReference.ListIndex;
+                case DMReference.Type.OpenDreamProcpath: return DMReference.OpenDreamProcpath;
                 default: throw new Exception($"Invalid reference type {refType}");
             }
         }
@@ -584,6 +585,9 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     throw new Exception($"Cannot get index {index} of {indexing}");
+                }
+                case DMReference.Type.OpenDreamProcpath: {
+                    return new DreamValue(Proc.OwningType == DreamPath.Root ? "/proc/" + Proc.ToString() : Proc.ToString());
                 }
                 default: throw new Exception($"Cannot get value of reference type {reference.RefType}");
             }

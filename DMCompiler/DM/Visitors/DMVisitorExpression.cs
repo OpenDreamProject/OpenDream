@@ -94,6 +94,9 @@ namespace DMCompiler.DM.Visitors {
                 case "args":
                     Result = new Expressions.Args(identifier.Location);
                     break;
+                case "opendream_procpath": // Our saner alternative to .....
+                    Result = new Expressions.OpenDreamProcpath(identifier.Location, _dmObject.Path);
+                    break;
                 default:
                 {
                     DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);

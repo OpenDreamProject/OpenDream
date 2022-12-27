@@ -2,8 +2,9 @@ local objectTree = require(script.Parent.Parent)
 
 return {
 	OnCreate = function(object)
-		object.Part = Instance.new("Part", workspace)
+		object.Part = Instance.new("Part")
 		object.Part.Anchored = true
+		object.Part.Parent = workspace
 	end,
 	GetVar = function(object, varName)
 		if (varName == "position") then

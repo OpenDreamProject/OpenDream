@@ -224,7 +224,8 @@ module.RunBytecode = function(bytecodeBase64: string, args: {any})
 			local argCount = vm:ReadInt()
 			local namedCount = vm:ReadInt()
 			
-			--Assume all to be unnamed (named isn't supported)
+			assert(namedCount == 0, "Named arguments aren't supported")
+			
 			vm.pc += argCount
 			
 			local args = {}

@@ -148,7 +148,7 @@ end
 module.GetObjectType = function(id: number|string): ObjectDef
 	if (typeof(id) == "number") then
 		return objectTypes[id+1]
-	elseif (typeof(id == "string")) then
+	elseif (typeof(id) == "string") then
 		return objectTypes[objectTypePathToId[id]+1]
 	end
 end

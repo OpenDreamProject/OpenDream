@@ -110,31 +110,29 @@ sealed class DreamDebugManager : IDreamDebugManager {
         Output(message, category);
     }
 
-    public void HandleInstruction(DMProcState state) {
-        // Handle proc starts and instruction stepping as one, so instruction
-        // stepping after a function breakpoint doesn't stop at the
-        // instruction again.
+    public void HandleFirstResume(DMProcState state) {
+        if (_possibleFunctionBreakpoints == null)
+            return;
 
-        // If the PC is 0, check for a function breakpoint.
-        if (state.ProgramCounter == 0) {
-            var hit = new List<int>();
-            if (_possibleFunctionBreakpoints?.GetValueOrDefault((state.Proc.OwningType.PathString, state.Proc.Name)) is FunctionBreakpointSlot slot) {
-                foreach (var bp in slot.Breakpoints) {
-                    if (TestBreakpoint(bp)) {
-                        hit.Add(bp.Id);
-                    }
+        // Check for a function breakpoint
+        List<int>? hit = null;
+        if (_possibleFunctionBreakpoints.TryGetValue((state.Proc.OwningType.PathString, state.Proc.Name), out var slot)) {
+            foreach (var bp in slot.Breakpoints) {
+                if (TestBreakpoint(bp)) {
+                    hit ??= new(1);
+                    hit.Add(bp.Id);
                 }
-            }
-            if (hit.Any()) {
-                Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
-                Stop(state.Thread, new StoppedEvent {
-                    Reason = StoppedEvent.ReasonFunctionBreakpoint,
-                    HitBreakpointIds = hit,
-                });
-                return;
             }
         }
 
+        if (hit != null) {
+            Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
+            Stop(state.Thread,
+                new StoppedEvent {Reason = StoppedEvent.ReasonFunctionBreakpoint, HitBreakpointIds = hit});
+        }
+    }
+
+    public void HandleInstruction(DMProcState state) {
         // Stop if we're instruction stepping.
         bool stoppedOnStep = false;
         switch (state.Thread.StepMode) {
@@ -838,6 +836,7 @@ internal interface IDreamDebugManager {
     public void Shutdown();
 
     public void HandleOutput(LogLevel logLevel, string message);
+    public void HandleFirstResume(DMProcState dMProcState);
     public void HandleInstruction(DMProcState dMProcState);
     public void HandleLineChange(DMProcState state, int line);
     public void HandleException(DreamThread dreamThread, Exception exception);

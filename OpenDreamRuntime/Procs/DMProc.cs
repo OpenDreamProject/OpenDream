@@ -195,6 +195,8 @@ namespace OpenDreamRuntime.Procs {
         private int _pc = 0;
         public int ProgramCounter => _pc;
 
+        private bool _firstResume = true;
+
         // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
         private DreamValue[] _localVariables;
 
@@ -228,6 +230,7 @@ namespace OpenDreamRuntime.Procs {
             CurrentSource = other.CurrentSource;
             CurrentLine = other.CurrentLine;
             _pc = other._pc;
+            _firstResume = false;
 
             _stack = _dreamValuePool.Rent(other._stack.Length);
             _localVariables = _dreamValuePool.Rent(other._localVariables.Length);
@@ -244,6 +247,7 @@ namespace OpenDreamRuntime.Procs {
             CurrentLine = _proc.Line;
             _localVariables = _dreamValuePool.Rent(256);
             _stack = _dreamValuePool.Rent(maxStackSize);
+            _firstResume = true;
 
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
@@ -269,8 +273,16 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Returned;
             }
 
+            if (_firstResume) {
+                DebugManager.HandleFirstResume(this);
+            }
+
+            bool stepping = Thread.StepMode != null;
             while (_pc < _proc.Bytecode.Length) {
-                DebugManager.HandleInstruction(this);
+                if (stepping && !_firstResume)
+                    DebugManager.HandleInstruction(this);
+                _firstResume = false;
+
                 int opcode = _proc.Bytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)

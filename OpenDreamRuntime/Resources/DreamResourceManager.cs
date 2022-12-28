@@ -118,9 +118,23 @@ namespace OpenDreamRuntime.Resources {
         /// Dynamically create a new icon resource that clients can use
         /// </summary>
         /// <param name="data">The resource's data</param>
+        /// <param name="texture">The image texture</param>
+        /// <param name="dmi">The image's DMI information</param>
         public IconResource CreateIconResource(byte[] data, Image<Rgba32> texture, DMIParser.ParsedDMIDescription dmi) {
             int resourceId = _resourceCache.Count;
             IconResource resource = new IconResource(resourceId, data, texture, dmi);
+
+            _resourceCache.Add(resource);
+            return resource;
+        }
+
+        /// <summary>
+        /// Dynamically create a new icon resource that clients can use
+        /// </summary>
+        /// <param name="data">The resource's data</param>
+        public IconResource CreateIconResource(byte[] data) {
+            int resourceId = _resourceCache.Count;
+            IconResource resource = new IconResource(resourceId, data);
 
             _resourceCache.Add(resource);
             return resource;

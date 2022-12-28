@@ -14,6 +14,8 @@ public sealed class IconResource : DreamResource {
 
     public IconResource(int id, string? filePath, string? resourcePath) : base(id, filePath, resourcePath) { }
 
+    public IconResource(int id, byte[] data) : base(id, data) { }
+
     public IconResource(int id, byte[] data, Image<Rgba32> texture, DMIParser.ParsedDMIDescription dmi) :
         base(id, data) {
         _texture = texture;

@@ -240,9 +240,15 @@ namespace OpenDreamRuntime {
 
         public DreamObject? MustGetValueAsDreamObject() {
             try {
-                return (DreamObject)_refValue;
+                DreamObject? dreamObject = (DreamObject?) _refValue;
+                if (dreamObject?.Deleted == true) {
+                    _refValue = null;
+                    return null;
+                }
+
+                return dreamObject;
             } catch (InvalidCastException) {
-                throw new Exception("Value " + this + " was not the expected type of DreamObject");
+                throw new Exception($"Value {this} was not the expected type of DreamObject");
             }
         }
 
@@ -439,7 +445,12 @@ namespace OpenDreamRuntime {
 
     #region Serialization
     public sealed class DreamValueJsonConverter : JsonConverter<DreamValue> {
-        private readonly IDreamObjectTree _objectTree = IoCManager.Resolve<IDreamObjectTree>();
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+
+        public DreamValueJsonConverter() {
+            IoCManager.InjectDependencies(this);
+        }
 
         public override void Write(Utf8JsonWriter writer, DreamValue value, JsonSerializerOptions options) {
             writer.WriteStartObject();
@@ -448,18 +459,28 @@ namespace OpenDreamRuntime {
             switch (value.Type) {
                 case DreamValue.DreamValueType.String: writer.WriteString("Value", value.MustGetValueAsString()); break;
                 case DreamValue.DreamValueType.Float: writer.WriteNumber("Value", value.MustGetValueAsFloat()); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: writer.WriteNull("Value"); break;
-                case DreamValue.DreamValueType.DreamObject
-                    when value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var iconObj):
-                {
-                    // TODO Check what happens with multiple states
-                    var icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
-                    var resource = icon.GenerateDMI();
-                    var base64 = Convert.ToBase64String(resource.ResourceData);
-                    writer.WriteString("Value", base64);
+                case DreamValue.DreamValueType.DreamObject: {
+                    var dreamObject = value.MustGetValueAsDreamObject();
+
+                    if (dreamObject == null) {
+                        writer.WriteNull("Value");
+                    } else {
+                        writer.WriteString("Value", dreamObject.ObjectDefinition.Type.PathString);
+
+                        if (!dreamObject.IsSubtypeOf(_objectTree.Icon)) {
+                            throw new NotImplementedException($"Json serialization for {value} is not implemented");
+                        }
+
+                        // TODO Check what happens with multiple states
+                        var icon = DreamMetaObjectIcon.ObjectToDreamIcon[dreamObject];
+                        var resource = icon.GenerateDMI();
+                        var base64 = Convert.ToBase64String(resource.ResourceData);
+                        writer.WriteString("icon-data", base64);
+                    }
+
                     break;
                 }
-                default: throw new NotImplementedException("Json serialization for " + value + " is not implemented");
+                default: throw new NotImplementedException($"Json serialization for {value} is not implemented");
             }
 
             writer.WriteEndObject();
@@ -481,16 +502,36 @@ namespace OpenDreamRuntime {
             switch (type) {
                 case DreamValue.DreamValueType.String: value = new DreamValue(reader.GetString()); break;
                 case DreamValue.DreamValueType.Float: value = new DreamValue((float)reader.GetSingle()); break;
-                case DreamValue.DreamValueType.DreamObject when reader.TokenType == JsonTokenType.Null: {
-                    if (reader.TokenType == JsonTokenType.Null) {
+                case DreamValue.DreamValueType.DreamObject: {
+                    string? objectTypePath = reader.GetString();
+
+                    if (objectTypePath == null) {
                         value = DreamValue.Null;
                     } else {
-                        throw new NotImplementedException("Json deserialization for DreamObjects are not implemented");
+                        var objectDef = _objectTree.GetTreeEntry(new DreamPath(objectTypePath)).ObjectDefinition;
+                        if (!objectDef.IsSubtypeOf(_objectTree.Icon)) {
+                            throw new NotImplementedException($"Json deserialization for type {objectTypePath} is not implemented");
+                        }
+
+                        reader.Read();
+                        if (reader.GetString() != "icon-data") throw new Exception("Expected icon-data property");
+                        reader.Read();
+
+                        string? iconDataBase64 = reader.GetString();
+                        if (iconDataBase64 == null) throw new Exception("Expected a string for icon-data");
+
+                        byte[] iconData = Convert.FromBase64String(iconDataBase64);
+                        IconResource resource = _resourceManager.CreateIconResource(iconData);
+                        DreamObject iconObj = _objectTree.CreateObject(_objectTree.Icon);
+                        DreamIcon icon = DreamMetaObjectIcon.InitializeIcon(_resourceManager, iconObj);
+
+                        icon.InsertStates(resource, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+                        value = new DreamValue(iconObj);
                     }
 
                     break;
                 }
-                default: throw new NotImplementedException("Json deserialization for type " + type + " is not implemented");
+                default: throw new NotImplementedException($"Json deserialization for type {type} is not implemented");
             }
             reader.Read();
 

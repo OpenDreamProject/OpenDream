@@ -496,8 +496,7 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression Value;
         public bool WasInKeyword; // Marks whether this was a "set x in y" expression, or a "set x = y" one
 
-        public DMASTProcStatementSet(Location location, string attribute, DMASTExpression value, bool wasInKeyword) : base(location)
-        {
+        public DMASTProcStatementSet(Location location, string attribute, DMASTExpression value, bool wasInKeyword) : base(location) {
             Attribute = attribute;
             Value = value;
             WasInKeyword = wasInKeyword;

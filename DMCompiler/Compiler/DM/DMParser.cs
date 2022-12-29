@@ -811,8 +811,7 @@ namespace DMCompiler.Compiler.DM {
 
         /// <param name="allowMultiple">This may look like a derelict of ProcVarEnd but it's not;<br/>
         /// Set does not allow path-based nesting of declarations the way var does, so we only allow nesting once, deactivating it thereafter.</param>
-        private DMASTProcStatementSet[] ProcSetEnd(bool allowMultiple)
-        {
+        private DMASTProcStatementSet[] ProcSetEnd(bool allowMultiple) {
             var loc = Current().Location;
 
             if (allowMultiple) {
@@ -921,8 +920,7 @@ namespace DMCompiler.Compiler.DM {
 
                 DMASTProcStatementSet[] sets = ProcSetEnd(true);
                 Token setBlockToken = Current();
-                if (sets is null || sets.Length == 0)
-                {
+                if (sets is null || sets.Length == 0) {
                     Error("Expected set declaration");
                     return null;
                 }
@@ -1160,14 +1158,13 @@ namespace DMCompiler.Compiler.DM {
                     DMASTProcStatement statement = ProcStatement();
 
                     //Loops without a body are valid DM
-                    if (statement is null)
-                    {
+                    if (statement is null) {
                         Error(WarningCode.EmptyBlock, "Empty while-block detected");
                         statement = new DMASTProcStatementContinue(loc);
                     } else if (statement.IsAggregateOr<DMASTProcStatementSet>()) { // set statements don't count as real, imo
                         Error(WarningCode.EmptyBlock, "Empty while-block detected");
                     }
-                    
+
                     body = new DMASTProcBlockInner(loc, statement);
                 }
                 if(conditional is DMASTConstantInteger){

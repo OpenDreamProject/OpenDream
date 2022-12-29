@@ -251,66 +251,53 @@ namespace OpenDreamClient.Interface.Controls
             UpdateAnchors();
         }
 
-        private class MenuNode //why doesn't C# have a basic tree?
-        {
-            public MenuElementDescriptor data;
-            public List<MenuNode> children = new();
+        private class MenuNode {
+            public MenuElementDescriptor Data;
+            public List<MenuNode> Children = new();
 
-            public MenuNode(MenuElementDescriptor myData)
-            {
-                this.data = myData;
+            public MenuNode(MenuElementDescriptor myData) {
+                this.Data = myData;
             }
 
-            public MenuBar.MenuEntry GetMenuEntry()
-            {
-                string name = data.Name;
+            public MenuBar.MenuEntry GetMenuEntry() {
+                string name = Data.Name;
                 if (name.StartsWith("&"))
                     name = name[1..]; //TODO: First character in name becomes a selection shortcut
 
-                if(children.Count > 0)
-                {
+                if(Children.Count > 0) {
                     MenuBar.SubMenu result = new MenuBar.SubMenu();
                     result.Text = name;
-                    foreach(MenuNode child in children)
-                    {
+                    foreach(MenuNode child in Children)
                         result.Entries.Add(child.GetMenuEntry());
-                    }
+
                     return result;
                 }
-                else if(!String.IsNullOrEmpty(name))
-                {
+                else if(!String.IsNullOrEmpty(name)) {
                     MenuBar.MenuButton result = new MenuBar.MenuButton();
                     result.Text = name;
                     //result.IsCheckable = data.CanCheck;
-                    if (!String.IsNullOrEmpty(data.Command))
-                        result.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(data.Command); };
+                    if (!String.IsNullOrEmpty(Data.Command))
+                        result.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(Data.Command); };
                     return result;
                 }
                 else
-                {
                     return new MenuBar.MenuSeparator();
-                }
             }
         }
-        private void CreateMenu(MenuDescriptor menuDescriptor)
-        {
+        private void CreateMenu(MenuDescriptor menuDescriptor) {
             _menu.Menus.Clear();
             if (menuDescriptor == null) return;
             List<MenuNode> menuTree = new();
             Dictionary<string, MenuNode> treeQuickLookup = new();
 
-            foreach (MenuElementDescriptor elementDescriptor in menuDescriptor.Elements)
-            {
-                if (elementDescriptor.Category == null)
-                {
+            foreach (MenuElementDescriptor elementDescriptor in menuDescriptor.Elements) {
+                if (elementDescriptor.Category == null) {
                     MenuNode topLevelMenuItem = new(elementDescriptor);
                     treeQuickLookup.Add(elementDescriptor.Name, topLevelMenuItem);
                     menuTree.Add(topLevelMenuItem);
                 }
-                else
-                {
-                    if (!treeQuickLookup.ContainsKey(elementDescriptor.Category))
-                    {
+                else {
+                    if (!treeQuickLookup.ContainsKey(elementDescriptor.Category)) {
                         //if category is set but the parent element doesn't exist, create it
                         MenuElementDescriptor parentMenuItem = new MenuElementDescriptor();
                         parentMenuItem.Name = elementDescriptor.Category;
@@ -320,21 +307,20 @@ namespace OpenDreamClient.Interface.Controls
                     }
                     //now add this as a child
                     MenuNode childMenuItem = new MenuNode(elementDescriptor);
-                    treeQuickLookup[elementDescriptor.Category].children.Add(childMenuItem);
+                    treeQuickLookup[elementDescriptor.Category].Children.Add(childMenuItem);
                     treeQuickLookup.Add(elementDescriptor.Name, childMenuItem);
                 }
             }
 
-            foreach (MenuNode topLevelMenuItem in menuTree)
-            {
+            foreach (MenuNode topLevelMenuItem in menuTree) {
                 MenuBar.Menu menu = new MenuBar.Menu();
-                menu.Title = topLevelMenuItem.data.Name;
+                menu.Title = topLevelMenuItem.Data.Name;
                 if (menu.Title?.StartsWith("&") ?? false)
                     menu.Title = menu.Title[1..]; //TODO: First character in name becomes a selection shortcut
 
                 _menu.Menus.Add(menu);
                 //visit each node in the tree, populating the menu from that
-                foreach (MenuNode child in topLevelMenuItem.children)
+                foreach (MenuNode child in topLevelMenuItem.Children)
                     menu.Entries.Add(child.GetMenuEntry());
             }
         }

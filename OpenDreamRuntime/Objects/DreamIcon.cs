@@ -21,7 +21,7 @@ public sealed class DreamIcon {
     private readonly DreamResourceManager _resourceManager;
 
     private int _frameCount;
-    private (DreamResource, ParsedDMIDescription)? _cachedDMI;
+    private IconResource? _cachedDMI;
 
     /// <summary>
     /// A list of operations to be applied when generating the DMI, along with what frames to apply them on
@@ -106,9 +106,9 @@ public sealed class DreamIcon {
     /// <remarks>The resulting DMI will consist of one long flat row of frames</remarks>
     /// <returns>The DreamResource containing the DMI and the ParsedDMIDescription used to construct it</returns>
     /// <exception cref="NotImplementedException">Using icon states of various sizes is unimplemented</exception>
-    public (DreamResource Resource, ParsedDMIDescription Description) GenerateDMI() {
+    public IconResource GenerateDMI() {
         if (_cachedDMI != null)
-            return _cachedDMI.Value;
+            return _cachedDMI;
 
         int frameWidth = Width, frameHeight = Height;
         if (_frameCount == 0) { // No frames creates a blank 32x32 image (TODO: should be world.icon_size)
@@ -151,9 +151,9 @@ public sealed class DreamIcon {
 
             dmiImage.SaveAsPng(dmiImageStream);
 
-            DreamResource newResource = _resourceManager.CreateResource(dmiImageStream.GetBuffer());
-            _cachedDMI = (newResource, newDescription);
-            return _cachedDMI.Value;
+            IconResource newResource = _resourceManager.CreateIconResource(dmiImageStream.GetBuffer(), dmiImage, newDescription);
+            _cachedDMI = newResource;
+            return _cachedDMI;
         }
     }
 
@@ -163,8 +163,8 @@ public sealed class DreamIcon {
         _cachedDMI = null;
     }
 
-    public void InsertStates(DreamResource resource, ParsedDMIDescription fromDescription, DreamValue state,
-        DreamValue dir, DreamValue frame, bool useStateName = true) {
+    public void InsertStates(IconResource icon, DreamValue state, DreamValue dir, DreamValue frame,
+        bool useStateName = true) {
         bool copyingAllDirs = !dir.TryGetValueAsInteger(out var dirVal);
         bool copyingAllStates = !state.TryGetValueAsString(out var copyingState);
         bool copyingAllFrames = !frame.TryGetValueAsInteger(out var copyingFrame);
@@ -176,25 +176,23 @@ public sealed class DreamIcon {
         }
 
         // The size of every state will be resized to match the largest state
-        Width = Math.Max(Width, fromDescription.Width);
-        Height = Math.Max(Height, fromDescription.Height);
-
-        Image<Rgba32> image = _resourceManager.LoadImage(resource);
+        Width = Math.Max(Width, icon.DMI.Width);
+        Height = Math.Max(Height, icon.DMI.Height);
 
         if (copyingAllStates) {
-            foreach (var copyStateName in fromDescription.States.Keys) {
-                InsertState(image, fromDescription, copyStateName, copyStateName,
+            foreach (var copyStateName in icon.DMI.States.Keys) {
+                InsertState(icon, copyStateName, copyStateName,
                     copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
             }
         } else {
-            InsertState(image, fromDescription, useStateName ? copyingState! : String.Empty, copyingState!,
+            InsertState(icon, useStateName ? copyingState! : String.Empty, copyingState!,
                 copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
         }
     }
 
-    private void InsertState(Image<Rgba32> image, ParsedDMIDescription description, string stateName,
-        string copyingState, AtomDirection? dir = null, int? frame = null) {
-        ParsedDMIState? inserting = description.GetStateOrDefault(copyingState);
+    private void InsertState(IconResource icon, string stateName, string copyingState, AtomDirection? dir = null,
+        int? frame = null) {
+        ParsedDMIState? inserting = icon.DMI.GetStateOrDefault(copyingState);
         if (inserting == null)
             return;
 
@@ -211,7 +209,7 @@ public sealed class DreamIcon {
             List<IconFrame> iconFrames = new(insertingPair.Value.Length);
 
             foreach (var dmiFrame in insertingPair.Value) {
-                iconFrames.Add(new IconFrame(image, dmiFrame, description.Width, description.Height));
+                iconFrames.Add(new IconFrame(icon.Texture, dmiFrame, icon.DMI.Width, icon.DMI.Height));
             }
 
             iconState.Directions[insertingPair.Key] = iconFrames;
@@ -358,11 +356,13 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
 
     public DreamIconOperationBlendImage(BlendType type, int xOffset, int yOffset, DreamValue blending) : base(type, xOffset, yOffset) {
         //TODO: Find a way to get rid of this!
-        var objectTree = IoCManager.Resolve<IDreamObjectTree>();
         var resourceManager = IoCManager.Resolve<DreamResourceManager>();
 
-        (var blendingResource, _blendingDescription) = DreamMetaObjectIcon.GetIconResourceAndDescription(objectTree, resourceManager, blending);
-        _blending = resourceManager.LoadImage(blendingResource);
+        if (!resourceManager.TryLoadIcon(blending, out var blendingIcon)) {
+            throw new Exception($"Value {blending} is not a valid icon to blend");
+        }
+
+        _blending = blendingIcon.Texture;
     }
 
     public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {

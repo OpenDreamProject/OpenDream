@@ -381,13 +381,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
+                constant = lhs;
+                return true;
             }
 
-            constant = lhs.Or(rhs);
-            return true;
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -406,13 +411,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {
+                constant = lhs;
+                return true;
             }
 
-            constant = lhs.And(rhs);
-            return true;
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

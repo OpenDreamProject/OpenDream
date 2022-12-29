@@ -60,8 +60,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            dreamObject.SetVariable("contents", new(_dreamManager.WorldContentsList));
-
             DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
             dreamObject.SetVariable("log", log);
 
@@ -113,6 +111,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
+                case "contents":
+                    return new DreamValue(new WorldContentsList(_dreamMapManager));
+                case "process":
+                    return new DreamValue(Environment.ProcessId);
                 case "tick_lag":
                     return new DreamValue(TickLag);
                 case "fps":

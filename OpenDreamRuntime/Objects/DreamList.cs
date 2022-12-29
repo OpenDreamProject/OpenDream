@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
 
-        protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamObjectTree>().GetObjectDefinition(DreamPath.List)) {
+        protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamObjectTree>().List.ObjectDefinition) {
             _values = new List<DreamValue>(size);
         }
 
@@ -271,7 +271,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override List<DreamValue> GetValues() {
-            var root = _objectTree.GetObjectDefinition(DreamPath.Root);
+            var root = _objectTree.Root.ObjectDefinition;
             List<DreamValue> values = new List<DreamValue>(root.GlobalVariables.Keys.Count - 1);
             // Skip world
             foreach (var key in root.GlobalVariables.Keys.Skip(1)) {
@@ -286,7 +286,7 @@ namespace OpenDreamRuntime.Objects {
                 return false;
             }
 
-            return _objectTree.GetObjectDefinition(DreamPath.Root).GlobalVariables.ContainsKey(varName);
+            return _objectTree.Root.ObjectDefinition.GlobalVariables.ContainsKey(varName);
         }
 
         public override bool ContainsValue(DreamValue value) {
@@ -298,7 +298,7 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception($"Invalid var index {key}");
             }
 
-            var root = _objectTree.GetObjectDefinition(DreamPath.Root);
+            var root = _objectTree.Root.ObjectDefinition;
             if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
                 throw new Exception($"Invalid global {varName}");
             }
@@ -308,7 +308,7 @@ namespace OpenDreamRuntime.Objects {
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
             if (key.TryGetValueAsString(out var varName)) {
-                var root = _objectTree.GetObjectDefinition(DreamPath.Root);
+                var root = _objectTree.Root.ObjectDefinition;
                 if (!root.GlobalVariables.TryGetValue(varName, out var globalId)) {
                     throw new Exception($"Cannot set value of undefined global \"{varName}\"");
                 }
@@ -374,7 +374,7 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception($"Atom only has {appearance.Filters.Count} filter(s), cannot index {filterIndex}");
 
             DreamFilter filter = appearance.Filters[filterIndex - 1];
-            DreamObject filterObject = _objectTree.CreateObject(DreamPath.Filter);
+            DreamObject filterObject = _objectTree.CreateObject(_objectTree.Filter);
             DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
             return new DreamValue(filterObject);
         }
@@ -412,6 +412,45 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Atom has no appearance");
 
             return appearance;
+        }
+    }
+
+    // world.contents list
+    // Operates on a list of all atoms
+    public sealed class WorldContentsList : DreamList {
+        private readonly IDreamMapManager _mapManager;
+
+        public WorldContentsList(IDreamMapManager mapManager) {
+            _mapManager = mapManager;
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var index))
+                throw new Exception($"Invalid index into world contents list: {key}");
+            if (index < 1 || index > _mapManager.AllAtoms.Count)
+                throw new Exception($"Out of bounds index on world contents list: {index}");
+
+            return new DreamValue(_mapManager.AllAtoms[index - 1]);
+        }
+
+        public override List<DreamValue> GetValues() {
+            throw new NotImplementedException("Getting all values of the world contents list is not implemented");
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot set the value of world contents list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            throw new Exception("Cannot append to world contents list");
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            throw new Exception("Cannot cut world contents list");
+        }
+
+        public override int GetLength() {
+            return _mapManager.AllAtoms.Count;
         }
     }
 }

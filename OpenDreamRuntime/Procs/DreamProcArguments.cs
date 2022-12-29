@@ -18,12 +18,26 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public List<DreamValue> GetAllArguments() {
-            List<DreamValue> allArguments = new List<DreamValue>();
+            List<DreamValue> allArguments = new List<DreamValue>(ArgumentCount);
             if (OrderedArguments != null)
                 allArguments.AddRange(OrderedArguments);
             if (NamedArguments != null)
                 allArguments.AddRange(NamedArguments.Values);
             return allArguments;
+        }
+
+        public IEnumerator<DreamValue> AllArgumentsEnumerator() {
+            if (OrderedArguments != null) {
+                foreach (DreamValue arg in OrderedArguments) {
+                    yield return arg;
+                }
+            }
+
+            if (NamedArguments != null) {
+                foreach (DreamValue arg in NamedArguments.Values) {
+                    yield return arg;
+                }
+            }
         }
 
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
@@ -52,6 +66,10 @@ namespace OpenDreamRuntime.Procs {
             }
 
             return OrderedArguments.TryGetValue(index, out value);
+        }
+
+        public override string ToString() {
+            return $"<Arguments {OrderedArgumentCount} {NamedArgumentCount}>";
         }
     }
 }

@@ -129,7 +129,11 @@ sealed class DreamDebugManager : IDreamDebugManager {
             Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
             Stop(state.Thread,
                 new StoppedEvent {Reason = StoppedEvent.ReasonFunctionBreakpoint, HitBreakpointIds = hit});
+            return;
         }
+
+        // Otherwise check for an instruction breakpoint
+        HandleInstruction(state);
     }
 
     public void HandleInstruction(DMProcState state) {
@@ -146,12 +150,12 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
                 break;
         }
+
         if (stoppedOnStep) {
             state.Thread.StepMode = null;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonStep,
             });
-            return;
         }
     }
 

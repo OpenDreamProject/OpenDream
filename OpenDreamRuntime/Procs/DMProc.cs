@@ -279,7 +279,7 @@ namespace OpenDreamRuntime.Procs {
 
             bool stepping = Thread.StepMode != null;
             while (_pc < _proc.Bytecode.Length) {
-                if (stepping && !_firstResume)
+                if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
                     DebugManager.HandleInstruction(this);
                 _firstResume = false;
 

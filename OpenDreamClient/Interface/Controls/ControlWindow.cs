@@ -271,16 +271,14 @@ namespace OpenDreamClient.Interface.Controls
                         result.Entries.Add(child.GetMenuEntry());
 
                     return result;
-                }
-                else if(!String.IsNullOrEmpty(name)) {
+                } else if(!String.IsNullOrEmpty(name)) {
                     MenuBar.MenuButton result = new MenuBar.MenuButton();
                     result.Text = name;
                     //result.IsCheckable = data.CanCheck;
                     if (!String.IsNullOrEmpty(Data.Command))
                         result.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(Data.Command); };
                     return result;
-                }
-                else
+                } else
                     return new MenuBar.MenuSeparator();
             }
         }
@@ -295,8 +293,7 @@ namespace OpenDreamClient.Interface.Controls
                     MenuNode topLevelMenuItem = new(elementDescriptor);
                     treeQuickLookup.Add(elementDescriptor.Name, topLevelMenuItem);
                     menuTree.Add(topLevelMenuItem);
-                }
-                else {
+                } else {
                     if (!treeQuickLookup.ContainsKey(elementDescriptor.Category)) {
                         //if category is set but the parent element doesn't exist, create it
                         MenuElementDescriptor parentMenuItem = new MenuElementDescriptor();

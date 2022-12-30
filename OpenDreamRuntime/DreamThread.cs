@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -117,18 +118,14 @@ namespace OpenDreamRuntime {
         }
     }
 
-    public abstract class ProcState {
+    public abstract class ProcState : IDisposable {
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
 
         public DreamThread Thread { get; set; }
-        public DreamValue Result { set; get; } = DreamValue.Null;
+        public DreamValue Result { protected set; get; } = DreamValue.Null;
 
         public bool WaitFor { get; set; } = true;
-
-        public ProcState(DreamThread thread) {
-            Thread = thread;
-        }
 
         public virtual (string?, int?) SourceLine => (null, null);
 
@@ -152,6 +149,12 @@ namespace OpenDreamRuntime {
         public virtual void ReturnedInto(DreamValue value) {}
 
         public virtual void Cancel() {}
+
+        public virtual void Dispose() {
+            Thread = null;
+            Result = DreamValue.Null;
+            WaitFor = true;
+        }
 
         public override string ToString() {
             var sb = new StringBuilder();
@@ -179,7 +182,7 @@ namespace OpenDreamRuntime {
 
         public string Name { get; }
 
-        internal Procs.DebugAdapter.DreamDebugManager.ThreadStepMode? StepMode { get; set; }
+        internal DreamDebugManager.ThreadStepMode? StepMode { get; set; }
 
         public DreamThread(string name) {
             Name = name;
@@ -297,9 +300,14 @@ namespace OpenDreamRuntime {
             _current = state;
         }
 
-        public void PopProcState() {
+        public void PopProcState(bool dispose = true) {
             if (_current?.WaitFor == false) {
                 _syncCount--;
+            }
+
+            // Maybe a bit of a hack? If the state got deferred to another thread it shouldn't be disposed.
+            if (dispose && _current.Thread == this) {
+                _current.Dispose();
             }
 
             if (!_stack.TryPop(out _current)) {
@@ -321,14 +329,14 @@ namespace OpenDreamRuntime {
             // `WaitFor = true` frames
             while (_current is not null && _current.WaitFor) {
                 newStackReversed.Push(_current);
-                PopProcState();
+                PopProcState(dispose: false); // Dont dispose; this proc state is just being moved to another thread.
             }
 
             // `WaitFor = false` frame
             if(_current == null) throw new InvalidOperationException();
             var threadName = _current.ToString();
             newStackReversed.Push(_current);
-            PopProcState();
+            PopProcState(dispose: false);
 
             DreamThread newThread = new DreamThread(threadName);
             foreach (var frame in newStackReversed) {
@@ -339,11 +347,6 @@ namespace OpenDreamRuntime {
             // Our returning proc state is expected to be on the stack at this point, so put it back
             // For this small moment, the proc state will be on both threads.
             PushProcState(newStackReversed.Peek());
-
-            // The old thread was emptied?
-            if (_current == null) {
-                throw new InvalidOperationException();
-            }
 
             return ProcStatus.Returned;
         }
@@ -394,12 +397,7 @@ namespace OpenDreamRuntime {
 
             dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
 
-            IoCManager.Resolve<Procs.DebugAdapter.IDreamDebugManager>()?.HandleException(this, exception);
-
-            // Only return pools after giving the debugger a chance to inspect them.
-            if (_current is DMProcState state) {
-                state.ReturnPools();
-            }
+            IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }
 
         public IEnumerable<ProcState> InspectStack() {

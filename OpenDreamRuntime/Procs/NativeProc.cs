@@ -30,8 +30,9 @@ namespace OpenDreamRuntime.Procs {
             return (procAttribute.Name, defaultArgumentValues, argumentNames);
         }
 
-        public sealed class State : ProcState
-        {
+        public sealed class State : ProcState {
+            public static readonly Stack<State> Pool = new();
+
             public DreamObject Src;
             public DreamObject Usr;
             public DreamProcArguments Arguments;
@@ -39,9 +40,9 @@ namespace OpenDreamRuntime.Procs {
             private NativeProc _proc;
             public override NativeProc Proc => _proc;
 
-            public State(NativeProc proc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-                : base(thread)
-            {
+            public void Initialize(NativeProc proc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+                base.Initialize(thread, true);
+
                 _proc = proc;
                 Src = src;
                 Usr = usr;
@@ -55,14 +56,24 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Returned;
             }
 
-            public override void AppendStackFrame(StringBuilder builder)
-            {
+            public override void AppendStackFrame(StringBuilder builder) {
                 if (_proc == null) {
                     builder.Append("<anonymous proc>");
                     return;
                 }
 
                 builder.Append($"{_proc.Name}");
+            }
+
+            public override void Dispose() {
+                base.Dispose();
+
+                Src = null!;
+                Usr = null!;
+                Arguments = default;
+                _proc = null!;
+
+                Pool.Push(this);
             }
         }
 
@@ -89,11 +100,12 @@ namespace OpenDreamRuntime.Procs {
                 arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
             }
 
-            return new State(this, thread, src, usr, arguments);
-        }
+            if (!State.Pool.TryPop(out var state)) {
+                state = new State();
+            }
 
-        public static ProcState CreateAnonymousState(DreamThread thread, HandlerFn handler) {
-            return new State(null, thread, null, null, new DreamProcArguments(null));
+            state.Initialize(this, thread, src, usr, arguments);
+            return state;
         }
     }
 }

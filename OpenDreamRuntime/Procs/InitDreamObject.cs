@@ -2,10 +2,11 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs {
-    sealed class InitDreamObjectState : ProcState
-    {
-        [Dependency] private readonly IDreamManager _dreamMan = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+    sealed class InitDreamObjectState : ProcState {
+        public static readonly Stack<InitDreamObjectState> Pool = new();
+
+        private readonly IDreamManager _dreamMan;
+        private readonly IDreamObjectTree _objectTree;
 
         enum Stage {
             // Need to call the object's (init) proc
@@ -18,13 +19,18 @@ namespace OpenDreamRuntime.Procs {
             Return,
         }
 
-        public InitDreamObjectState(DreamThread thread, DreamObject dreamObject, DreamObject? usr, DreamProcArguments arguments)
-            : base(thread)
-        {
-            IoCManager.InjectDependencies(this);
+        public InitDreamObjectState(IDreamManager dreamManager, IDreamObjectTree objectTree) {
+            _dreamMan = dreamManager;
+            _objectTree = objectTree;
+        }
+
+        public void Initialize(DreamThread thread, DreamObject dreamObject, DreamObject? usr, DreamProcArguments arguments) {
+            base.Initialize(thread, true);
+
             _dreamObject = dreamObject;
             _usr = usr;
             _arguments = arguments;
+            _stage = Stage.Init;
         }
 
         private DreamObject _dreamObject;
@@ -34,13 +40,21 @@ namespace OpenDreamRuntime.Procs {
 
         public override DreamProc? Proc => null;
 
-        public override void AppendStackFrame(StringBuilder builder)
-        {
+        public override void AppendStackFrame(StringBuilder builder) {
             builder.AppendLine($"new {_dreamObject.ObjectDefinition?.Type}");
         }
 
-        public override ProcStatus Resume()
-        {
+        public override void Dispose() {
+            base.Dispose();
+
+            _dreamObject = null!;
+            _usr = null;
+            _arguments = default;
+
+            Pool.Push(this);
+        }
+
+        public override ProcStatus Resume() {
             var src = _dreamObject;
 
             switch_start:

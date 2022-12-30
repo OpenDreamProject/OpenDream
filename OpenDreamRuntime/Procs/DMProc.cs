@@ -26,8 +26,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly int _maxStackSize;
 
         public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
-            : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility)
-        {
+            : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
             Source = json.Source;
@@ -42,7 +41,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-            return new DMProcState(this, thread, _maxStackSize, src, usr, arguments);
+            if (!DMProcState.Pool.TryPop(out var state)) {
+                state = new DMProcState();
+            }
+
+            state.Initialize(this, thread, _maxStackSize, src, usr, arguments);
+            return state;
         }
 
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
@@ -69,9 +73,9 @@ namespace OpenDreamRuntime.Procs {
     sealed class DMProcState : ProcState {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
-        // TODO: These pools are not returned to if the proc runtimes while _current is null
-        private static ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Shared;
-        private static ArrayPool<DreamValue> _stackPool = ArrayPool<DreamValue>.Shared;
+        public static readonly Stack<DMProcState> Pool = new();
+
+        private static readonly ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Create();
 
         #region Opcode Handlers
         //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
@@ -176,7 +180,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
         };
 
-        private static OpcodeHandler?[] _opcodeHandlers = {};
+        private static readonly OpcodeHandler?[] _opcodeHandlers;
         #endregion
 
         public IDreamManager DreamManager => _proc.DreamManager;
@@ -184,8 +188,8 @@ namespace OpenDreamRuntime.Procs {
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;
-        public readonly DreamObject? Usr;
-        public readonly int ArgumentCount;
+        public DreamObject? Usr;
+        public int ArgumentCount;
         public string? CurrentSource;
         public int CurrentLine;
         public int CatchPosition = NoTryCatch;
@@ -197,40 +201,59 @@ namespace OpenDreamRuntime.Procs {
         private int _pc = 0;
         public int ProgramCounter => _pc;
 
-        // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
-        private readonly DreamValue[] _localVariables;
+        private bool _firstResume = true;
 
-        private readonly DMProc _proc;
+        // Contains both arguments (at index 0) and local vars (at index ArgumentCount)
+        private DreamValue[] _localVariables;
+
+        private DMProc _proc;
         public override DMProc Proc => _proc;
 
         public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
-        /// Static initialiser for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
+        /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
         static DMProcState() {
-            int maxOpcode = 0;
-            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys) {
-                if(maxOpcode < (int) dpo)
-                    maxOpcode = (int) dpo;
-            }
-            _opcodeHandlers = new OpcodeHandler?[maxOpcode+1];
-            foreach(DreamProcOpcode dpo in OpcodeHandlers.Keys) {
+            int maxOpcode = (int)OpcodeHandlers.Keys.Max();
+
+            _opcodeHandlers = new OpcodeHandler?[maxOpcode + 1];
+            foreach (DreamProcOpcode dpo in OpcodeHandlers.Keys) {
                 _opcodeHandlers[(int) dpo] = OpcodeHandlers[dpo];
             }
         }
-        /// <param name="instance">This is our 'src'.</param>
-        /// <exception cref="Exception">Thrown, at time of writing, when an invalid named arg is given</exception>
-        public DMProcState(DMProc proc, DreamThread thread, int maxStackSize, DreamObject? instance, DreamObject? usr, DreamProcArguments arguments)
-            : base(thread)
-        {
+
+        public DMProcState() { }
+
+        private DMProcState(DMProcState other, DreamThread thread) {
+            if (other._enumeratorStack?.Count > 0) {
+                throw new NotImplementedException();
+            }
+
+            base.Initialize(thread, other.WaitFor);
+            _proc = other._proc;
+            Instance = other.Instance;
+            Usr = other.Usr;
+            ArgumentCount = other.ArgumentCount;
+            CurrentSource = other.CurrentSource;
+            CurrentLine = other.CurrentLine;
+            _pc = other._pc;
+            _firstResume = false;
+
+            _stack = _dreamValuePool.Rent(other._stack.Length);
+            _localVariables = _dreamValuePool.Rent(other._localVariables.Length);
+            Array.Copy(other._localVariables, _localVariables, other._localVariables.Length);
+        }
+
+        public void Initialize(DMProc proc, DreamThread thread, int maxStackSize, DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            base.Initialize(thread, (proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor);
             _proc = proc;
-            _stack = _stackPool.Rent(maxStackSize);
             Instance = instance;
             Usr = usr;
-            ArgumentCount = Math.Max(arguments.ArgumentCount, proc.ArgumentNames?.Count ?? 0);
+            ArgumentCount = Math.Max(arguments.ArgumentCount, _proc.ArgumentNames?.Count ?? 0);
+            CurrentSource = _proc.Source;
+            CurrentLine = _proc.Line;
             _localVariables = _dreamValuePool.Rent(256);
-            CurrentSource = proc.Source;
-            CurrentLine = proc.Line;
-            WaitFor = _proc != null ? (_proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor : true;
+            _stack = _dreamValuePool.Rent(maxStackSize);
+            _firstResume = true;
 
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
@@ -241,7 +264,7 @@ namespace OpenDreamRuntime.Procs {
             //Named arguments
             if (arguments.NamedArguments != null) {
                 foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
-                    int argumentIndex = proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
+                    int argumentIndex = _proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
                     if (argumentIndex == -1) {
                         throw new Exception($"Invalid argument name \"{argumentName}\"");
                     }
@@ -251,38 +274,21 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        public DMProcState(DMProcState other, DreamThread thread)
-            : base(thread)
-        {
-            if (other.EnumeratorStack.Count > 0) {
-                throw new NotImplementedException();
-            }
-
-            _proc = other._proc;
-            Instance = other.Instance;
-            Usr = other.Usr;
-            ArgumentCount = other.ArgumentCount;
-            CurrentSource = other.CurrentSource;
-            CurrentLine = other.CurrentLine;
-            _pc = other._pc;
-
-            _stack = _stackPool.Rent(other._stack.Length);
-            Array.Copy(other._stack, _stack, _stack.Length);
-
-            _localVariables = _dreamValuePool.Rent(other._localVariables.Length);
-            Array.Copy(other._localVariables, _localVariables, other._localVariables.Length);
-
-            WaitFor = other.WaitFor;
-        }
-
         public override ProcStatus Resume() {
-            if (Instance is not null && Instance.Deleted) {
-                ReturnPools();
+            if (Instance?.Deleted == true) {
                 return ProcStatus.Returned;
             }
 
+            if (_firstResume) {
+                DebugManager.HandleFirstResume(this);
+            }
+
+            bool stepping = Thread.StepMode != null;
             while (_pc < _proc.Bytecode.Length) {
-                DebugManager.HandleInstruction(this);
+                if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
+                    DebugManager.HandleInstruction(this);
+                _firstResume = false;
+
                 int opcode = _proc.Bytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
@@ -300,22 +306,14 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 if (status != null) {
-                    if (status == ProcStatus.Returned || status == ProcStatus.Cancelled) {
-                        // TODO: This should be automatic (dispose pattern?)
-                        ReturnPools();
-                    }
-
                     return status.Value;
                 }
             }
 
-            // TODO: This should be automatic (dispose pattern?)
-            ReturnPools();
             return ProcStatus.Returned;
         }
 
-        public override void ReturnedInto(DreamValue value)
-        {
+        public override void ReturnedInto(DreamValue value) {
             Push(value);
         }
 
@@ -342,7 +340,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamThread Spawn() {
-            var thread = new DreamThread(this.Proc.ToString());
+            var thread = new DreamThread(Proc.ToString());
 
             var state = new DMProcState(this, thread);
             thread.PushProcState(state);
@@ -374,10 +372,26 @@ namespace OpenDreamRuntime.Procs {
             CatchVarIndex = NoTryCatch;
         }
 
-        public void ReturnPools()
-        {
-            _dreamValuePool.Return(_localVariables, true);
-            _stackPool.Return(_stack);
+        public override void Dispose() {
+            base.Dispose();
+
+            Instance = null;
+            Usr = null;
+            ArgumentCount = 0;
+            CurrentSource = null;
+            CurrentLine = 0;
+            _enumeratorStack = null;
+            _pc = 0;
+            _proc = null;
+
+            _dreamValuePool.Return(_stack);
+            _stackIndex = 0;
+            _stack = null;
+
+            _dreamValuePool.Return(_localVariables);
+            _localVariables = null;
+
+            Pool.Push(this);
         }
 
         public Span<DreamValue> GetArguments() {

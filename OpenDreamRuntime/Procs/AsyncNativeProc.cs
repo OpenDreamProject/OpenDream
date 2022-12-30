@@ -1,4 +1,5 @@
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
@@ -6,28 +7,29 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class AsyncNativeProc : DreamProc {
-        public delegate Task<DreamValue> HandlerFn(State s);
-
         public sealed class State : ProcState {
+            public static readonly Stack<State> Pool = new();
+
             public DreamObject Src;
             public DreamObject Usr;
             public DreamProcArguments Arguments;
 
-            private AsyncNativeProc _proc;
-            public override DreamProc Proc => _proc;
+            private AsyncNativeProc? _proc;
+            public override DreamProc? Proc => _proc;
 
             private Func<State, Task<DreamValue>> _taskFunc;
-            private Task _task;
+            private Task? _task;
+            private CancellationTokenSource? _scheduleCancellationToken;
 
             private ProcState? _callProcNotify;
-            private TaskCompletionSource<DreamValue> _callTcs;
+            private TaskCompletionSource<DreamValue>? _callTcs;
             private DreamValue? _callResult;
 
             private bool _inResume;
 
-            public State(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments)
-                : base(thread)
-            {
+            public void Initialize(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+                base.Initialize(thread, true);
+
                 _proc = proc;
                 _taskFunc = taskFunc;
                 Src = src;
@@ -69,8 +71,31 @@ namespace OpenDreamRuntime.Procs {
                 // We don't call `_callTcs.SetResult` here because we're about to be resumed and can do it there.
                 _callResult = value;
             }
+
             public override void Cancel() {
                 _callTcs?.SetCanceled();
+            }
+
+            public override void Dispose() {
+                base.Dispose();
+
+                // Cancel the scheduled continuation of this state if there is one
+                _scheduleCancellationToken?.Cancel();
+                _scheduleCancellationToken?.Dispose();
+                _scheduleCancellationToken = null;
+
+                Src = null!;
+                Usr = null!;
+                Arguments = default;
+                _proc = null!;
+                _taskFunc = null!;
+                _task = null;
+                _callProcNotify = null;
+                _callTcs = null!;
+                _callResult = null;
+                _inResume = false;
+
+                Pool.Push(this);
             }
 
             private async Task InternalResumeAsync() {
@@ -97,29 +122,26 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
-                    procScheduler.ScheduleAsyncNative(this, _task);
+                    _scheduleCancellationToken = procScheduler.Schedule(this, _task);
                 }
 
-                while (_callProcNotify != null || _callResult != null)
-                {
-                    // We need to call a proc.
-                    if (_callProcNotify != null) {
-                        var callProcNotify = _callProcNotify;
-                        _callProcNotify = null;
+                // We need to call a proc.
+                if (_callProcNotify != null) {
+                    var callProcNotify = _callProcNotify;
+                    _callProcNotify = null;
 
-                        Thread.PushProcState(callProcNotify);
-                        return ProcStatus.Called;
-                    }
+                    Thread.PushProcState(callProcNotify);
+                    return ProcStatus.Called;
+                }
 
-                    // We've just finished calling a proc, notify our task
-                    if (_callResult != null) {
-                        var callTcs = _callTcs;
-                        var callResult = _callResult.Value;
-                        _callTcs = null;
-                        _callResult = null;
+                // We've just finished calling a proc, notify our task
+                if (_callResult != null) {
+                    var callTcs = _callTcs;
+                    var callResult = _callResult.Value;
+                    _callTcs = null;
+                    _callResult = null;
 
-                        callTcs.SetResult(callResult);
-                    }
+                    callTcs.SetResult(callResult);
                 }
 
                 // If the task is finished, we're all done
@@ -136,19 +158,18 @@ namespace OpenDreamRuntime.Procs {
                 return Thread.HandleDefer();
             }
 
-            public override void AppendStackFrame(StringBuilder builder)
-            {
+            public override void AppendStackFrame(StringBuilder builder) {
                 if (_proc == null) {
                     builder.Append("<anonymous async proc>");
                     return;
                 }
 
-                builder.Append($"{_proc.Name}");
+                builder.Append($"{_proc}");
             }
         }
 
-        private Dictionary<string, DreamValue> _defaultArgumentValues;
-        private Func<State, Task<DreamValue>> _taskFunc;
+        private readonly Dictionary<string, DreamValue> _defaultArgumentValues;
+        private readonly Func<State, Task<DreamValue>> _taskFunc;
 
         public AsyncNativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
             : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility) {
@@ -170,11 +191,21 @@ namespace OpenDreamRuntime.Procs {
                 arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
             }
 
-            return new State(this, _taskFunc, thread, src, usr, arguments);
+            if (!State.Pool.TryPop(out var state)) {
+                state = new State();
+            }
+
+            state.Initialize(this, _taskFunc, thread, src, usr, arguments);
+            return state;
         }
 
         public static ProcState CreateAnonymousState(DreamThread thread, Func<State, Task<DreamValue>> taskFunc) {
-            return new State(null, taskFunc, thread, null, null, new DreamProcArguments(null));
+            if (!State.Pool.TryPop(out var state)) {
+                state = new State();
+            }
+
+            state.Initialize(null, taskFunc, thread, null, null, new DreamProcArguments(null));
+            return state;
         }
     }
 }

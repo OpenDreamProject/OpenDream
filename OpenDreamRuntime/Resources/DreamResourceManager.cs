@@ -1,19 +1,22 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Network.Messages;
+using OpenDreamShared.Resources;
 using Robust.Shared.Network;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace OpenDreamRuntime.Resources {
     public sealed class DreamResourceManager {
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         public string RootPath { get; private set; }
 
         private readonly List<DreamResource> _resourceCache = new();
         private readonly Dictionary<string, int> _resourcePathToId = new();
-        private readonly Dictionary<DreamResource, Image<Rgba32>> _imageCache = new();
 
         private ISawmill _sawmill;
 
@@ -24,7 +27,6 @@ namespace OpenDreamRuntime.Resources {
 
             _resourceCache.Clear();
             _resourcePathToId.Clear();
-            _imageCache.Clear();
 
             // An empty resource path is the console
             _resourceCache.Add(new ConsoleOutputResource());
@@ -49,8 +51,27 @@ namespace OpenDreamRuntime.Resources {
             if (_resourcePathToId.TryGetValue(resourcePath, out int resourceId)) {
                 resource = _resourceCache[resourceId];
             } else {
+                var filePath = Path.Combine(RootPath, resourcePath);
                 resourceId = _resourceCache.Count;
-                resource = new DreamResource(resourceId, Path.Combine(RootPath, resourcePath), resourcePath);
+
+                // Create a new type of resource based on its extension
+                switch (Path.GetExtension(resourcePath)) {
+                    case ".dmi":
+                        resource = new IconResource(resourceId, filePath, resourcePath);
+                        break;
+                    case ".png":
+                    case ".jpg":
+                    case ".rsi": // RT-specific, not in BYOND
+                    case ".gif":
+                    case ".bmp":
+                        // TODO implement other icon file types
+                        goto default;
+
+                    default:
+                        resource = new DreamResource(resourceId, filePath, resourcePath);
+                        break;
+                }
+
                 _resourceCache.Add(resource);
                 _resourcePathToId.Add(resourcePath, resourceId);
             }
@@ -68,22 +89,52 @@ namespace OpenDreamRuntime.Resources {
             return false;
         }
 
-        public Image<Rgba32> LoadImage(DreamResource resource) {
-            if (_imageCache.TryGetValue(resource, out var image))
-                return image;
+        public bool TryLoadIcon(DreamValue value, [NotNullWhen(true)] out IconResource? icon) {
+            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var iconObj)) {
+                DreamIcon dreamIcon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
 
-            image = Image.Load<Rgba32>(resource.ResourceData);
-            _imageCache.Add(resource, image);
-            return image;
+                icon = dreamIcon.GenerateDMI();
+                return true;
+            }
+
+            DreamResource? resource;
+
+            if (value.TryGetValueAsString(out var resourcePath)) {
+                resource = LoadResource(resourcePath);
+            } else {
+                value.TryGetValueAsDreamResource(out resource);
+            }
+
+            if (resource is IconResource iconResource) {
+                icon = iconResource;
+                return true;
+            }
+
+            icon = null;
+            return false;
         }
 
         /// <summary>
-        /// Dynamically create a new resource that clients can use
+        /// Dynamically create a new icon resource that clients can use
         /// </summary>
         /// <param name="data">The resource's data</param>
-        public DreamResource CreateResource(byte[] data) {
+        /// <param name="texture">The image texture</param>
+        /// <param name="dmi">The image's DMI information</param>
+        public IconResource CreateIconResource(byte[] data, Image<Rgba32> texture, DMIParser.ParsedDMIDescription dmi) {
             int resourceId = _resourceCache.Count;
-            DreamResource resource = new DreamResource(resourceId, data);
+            IconResource resource = new IconResource(resourceId, data, texture, dmi);
+
+            _resourceCache.Add(resource);
+            return resource;
+        }
+
+        /// <summary>
+        /// Dynamically create a new icon resource that clients can use
+        /// </summary>
+        /// <param name="data">The resource's data</param>
+        public IconResource CreateIconResource(byte[] data) {
+            int resourceId = _resourceCache.Count;
+            IconResource resource = new IconResource(resourceId, data);
 
             _resourceCache.Add(resource);
             return resource;

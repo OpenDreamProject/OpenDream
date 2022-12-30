@@ -72,8 +72,7 @@ namespace DMCompiler.Compiler.DMM {
                             DMExpression value = DMExpression.Create(DMObjectTree.GetDMObject(objectType.Path, false), null, varOverride.Value);
                             if (!value.TryAsJsonRepresentation(out var valueJson)) DMCompiler.ForcedError(statement.Location, $"Failed to serialize value to json ({value})");
 
-                            if(!mapObject.AddVarOverride(varOverride.VarName, valueJson))
-                            {
+                            if(!mapObject.AddVarOverride(varOverride.VarName, valueJson)) {
                                 DMCompiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");
                             }
 
@@ -96,7 +95,6 @@ namespace DMCompiler.Compiler.DMM {
                             cellDefinition.Objects.Add(mapObject);
                         }
                     }
-
 
                     if (Check(TokenType.DM_Comma)) {
                         objectType = Path();

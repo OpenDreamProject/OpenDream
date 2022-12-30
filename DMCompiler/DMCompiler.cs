@@ -131,10 +131,8 @@ namespace DMCompiler {
 
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it
-                DMPreprocessor dumpPreproc = build();
-
                 StringBuilder result = new();
-                foreach (Token t in dumpPreproc) {
+                foreach (Token t in build()) {
                     result.Append(t.Text);
                 }
 
@@ -253,22 +251,24 @@ namespace DMCompiler {
                 DMMParser parser = new DMMParser(lexer);
                 DreamMapJson map = parser.ParseMap();
 
+                bool hadErrors = false;
                 if (parser.Emissions.Count > 0) {
                     foreach (CompilerEmission error in parser.Emissions) {
+                        if (error.Level == ErrorLevel.Error)
+                            hadErrors = true;
+
                         Emit(error);
                     }
-
-                    continue;
                 }
 
-                maps.Add(map);
+                if (!hadErrors)
+                    maps.Add(map);
             }
 
             return maps;
         }
 
-        private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile)
-        {
+        private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
             DreamCompiledJson compiledDream = new DreamCompiledJson();
             compiledDream.Strings = DMObjectTree.StringTable;
             compiledDream.Maps = maps;
@@ -281,12 +281,15 @@ namespace DMCompiler {
             if (DMObjectTree.Globals.Count > 0) {
                 GlobalListJson globalListJson = new GlobalListJson();
                 globalListJson.GlobalCount = DMObjectTree.Globals.Count;
+                globalListJson.Names = new List<string>(globalListJson.GlobalCount);
 
                 // Approximate capacity (4/285 in tgstation, ~3%)
                 globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
 
                 for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                     DMVariable global = DMObjectTree.Globals[i];
+                    globalListJson.Names.Add(global.Name);
+
                     if (!global.TryAsJsonRepresentation(out var globalJson))
                         ForcedError(global.Value.Location, $"Failed to serialize global {global.Name}");
 
@@ -297,21 +300,20 @@ namespace DMCompiler {
                 compiledDream.Globals = globalListJson;
             }
 
-            if (DMObjectTree.GlobalProcs.Count > 0)
-            {
+            if (DMObjectTree.GlobalProcs.Count > 0) {
                 compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToList();
             }
 
-            string json = JsonSerializer.Serialize(compiledDream, new JsonSerializerOptions() {
-                DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault
-            });
-
             // Successful serialization
-            if (ErrorCount == 0)
-            {
-                File.WriteAllText(outputFile, json);
-                return "Saved to " + outputFile;
+            if (ErrorCount == 0) {
+                var outputFileHandle = File.Create(outputFile);
+
+                JsonSerializer.Serialize(outputFileHandle, compiledDream,
+                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+                outputFileHandle.Close();
+                return $"Saved to {outputFile}";
             }
+
             return string.Empty;
         }
 

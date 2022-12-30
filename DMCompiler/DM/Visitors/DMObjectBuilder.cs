@@ -7,7 +7,6 @@ using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {
     static class DMObjectBuilder {
-
         /// <summary>
         /// In DM, the definition of a base class may occur way after the definition of (perhaps numerous) derived classes. <br/>
         /// At the time that we first evaluate the derived class, we do not know some important information, like the implicit type of certain things.<br/>
@@ -227,11 +226,7 @@ namespace DMCompiler.DM.Visitors {
                 }
 
                 if (procDefinition.IsVerb && (dmObject.IsSubtypeOf(DreamPath.Atom) || dmObject.IsSubtypeOf(DreamPath.Client)) && !DMCompiler.Settings.NoStandard) {
-                    Expressions.Field field = new Expressions.Field(Location.Unknown, dmObject.GetVariable("verbs"));
-                    DreamPath procPath = new DreamPath(".proc/" + procName);
-                    Expressions.Append append = new Expressions.Append(Location.Unknown, field, new Expressions.Path(Location.Unknown, procPath));
-
-                    dmObject.InitializationProcExpressions.Add(append);
+                    dmObject.AddVerb(proc);
                 }
             } catch (CompileErrorException e) {
                 DMCompiler.Emit(e.Error);
@@ -377,8 +372,9 @@ namespace DMCompiler.DM.Visitors {
 
                 DMObjectTree.AddGlobalInitAssign(currentObject, globalId.Value, expression);
             } else {
-                Expressions.Field field = new Expressions.Field(Location.Unknown, variable);
-                Expressions.Assignment assign = new Expressions.Assignment(Location.Unknown, field, expression);
+                var initLoc = expression.Location;
+                Expressions.Field field = new Expressions.Field(initLoc, variable);
+                Expressions.Assignment assign = new Expressions.Assignment(initLoc, field, expression);
 
                 currentObject.InitializationProcExpressions.Add(assign);
             }

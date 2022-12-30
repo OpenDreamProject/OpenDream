@@ -60,8 +60,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            dreamObject.SetVariable("contents", new(_dreamManager.WorldContentsList));
-
             DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
             dreamObject.SetVariable("log", log);
 
@@ -75,8 +73,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 _viewRange = new ViewRange(viewString);
             } else {
                 if (!view.TryGetValueAsInteger(out var viewInt)) {
-                    Logger.Warning("world.view did not contain a valid value. A default of 5 is being used.");
-                    viewInt = 5;
+                    Logger.Warning("world.view did not contain a valid value. A default of 7 is being used.");
+                    viewInt = 7;
                 }
 
                 _viewRange = new ViewRange(viewInt);
@@ -113,6 +111,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
+                case "contents":
+                    return new DreamValue(new WorldContentsList(_dreamMapManager));
+                case "process":
+                    return new DreamValue(Environment.ProcessId);
                 case "tick_lag":
                     return new DreamValue(TickLag);
                 case "fps":
@@ -168,7 +170,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "view": {
                     //Number if square & centerable, string representation otherwise
                     if (_viewRange.IsSquare && _viewRange.IsCenterable) {
-                        return new DreamValue(_viewRange.Width);
+                        return new DreamValue(_viewRange.Range);
                     } else {
                         return new DreamValue(_viewRange.ToString());
                     }

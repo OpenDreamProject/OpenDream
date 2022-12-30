@@ -8,11 +8,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
-        private readonly IDreamManager _dreamManager = IoCManager.Resolve<IDreamManager>();
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+
+        public DreamMetaObjectDatum() {
+            IoCManager.InjectDependencies(this);
+        }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
-            {
+            // Atoms are in world.contents
+            if (!dreamObject.IsSubtypeOf(_objectTree.Atom)) {
                 _dreamManager.Datums.Add(dreamObject);
             }
 
@@ -22,8 +27,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectDeleted(DreamObject dreamObject) {
             ParentType?.OnObjectDeleted(dreamObject);
 
-            if (!dreamObject.IsSubtypeOf(DreamPath.Atom)) // Atoms are in world.contents
-            {
+            // Atoms are in world.contents
+            if (!dreamObject.IsSubtypeOf(_objectTree.Atom)) {
                 _dreamManager.Datums.Remove(dreamObject);
             }
 
@@ -33,11 +38,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
-            return varName switch
-            {
-                "type" => new DreamValue(dreamObject.ObjectDefinition.Type),
-                "parent_type" => new DreamValue(_dreamManager.ObjectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type)
-                    .ParentEntry.ObjectDefinition.Type),
+            return varName switch {
+                "type" => new DreamValue(dreamObject.ObjectDefinition.TreeEntry),
+                "parent_type" => new DreamValue(dreamObject.ObjectDefinition.TreeEntry.ParentEntry),
                 "vars" => new DreamValue(DreamListVars.Create(dreamObject)),
                 _ => ParentType?.OnVariableGet(dreamObject, varName, value) ?? value
             };

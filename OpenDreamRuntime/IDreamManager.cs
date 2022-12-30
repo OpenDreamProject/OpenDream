@@ -6,7 +6,6 @@ namespace OpenDreamRuntime {
     public interface IDreamManager {
         public bool Initialized { get; }
         public GameTick InitializedTick { get; }
-        public DreamObjectTree ObjectTree { get; }
         public DreamObject WorldInstance { get; }
 
         /// <summary>
@@ -14,8 +13,8 @@ namespace OpenDreamRuntime {
         /// </summary>
         public Exception? LastDMException { get; set; }
 
-        public List<DreamValue> Globals { get; set; }
-        public DreamList WorldContentsList { get; }
+        public List<DreamValue> Globals { get; }
+        public IReadOnlyList<string> GlobalNames { get; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
         public List<DreamObject> Mobs { get; set; }
@@ -48,7 +47,7 @@ namespace OpenDreamRuntime {
         Null = 0,
         DreamObject = 1,
         String = 2,
-        DreamPath = 3,
+        DreamType = 3,
         DreamResource = 4
     }
 }

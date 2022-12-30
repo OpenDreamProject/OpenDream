@@ -478,7 +478,7 @@ namespace DMCompiler.DM.Visitors {
 
                     ProcessBlockInner(body);
 
-                    _proc.LoopContinue(loopLabel);
+                    _proc.MarkLoopContinue(loopLabel);
                     if (incrementor != null) {
                         incrementor.EmitPushValue(_dmObject, _proc);
                         _proc.Pop();
@@ -491,44 +491,43 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
+            if (outputVar is not LValue lValue) {
+                DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
+                lValue = null;
+            }
+
+            // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
+            DreamPath? implicitTypeCheck = null;
+            if (dmTypes == null) {
+                // No "as" means the var's type will be used
+                implicitTypeCheck = lValue?.Path;
+            } else if (dmTypes != DMValueType.Anything) {
+                // "as anything" performs no check. Other values are unimplemented.
+                DMCompiler.UnimplementedWarning(outputVar.Location,
+                    $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+            }
+
             list.EmitPushValue(_dmObject, _proc);
-            _proc.CreateListEnumerator();
+            if (implicitTypeCheck != null) {
+                // Create an enumerator that will do the implicit istype() for us
+                _proc.CreateFilteredListEnumerator(implicitTypeCheck.Value);
+            } else {
+                _proc.CreateListEnumerator();
+            }
 
             _proc.StartScope();
             {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    if (outputVar is Expressions.LValue lValue) {
+                    _proc.MarkLoopContinue(loopLabel);
+
+                    if (lValue != null) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
-
-                        // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
-                        DreamPath? implicitTypeCheck = null;
-                        if (dmTypes == null) {
-                            // No "as" means the var's type will be used
-                            implicitTypeCheck = lValue.Path;
-                        } else if (dmTypes != DMValueType.Anything) {
-                            // "as anything" performs no check. Other values are unimplemented.
-                            DMCompiler.UnimplementedWarning(outputVar.Location,
-                                $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
-                        }
-
-                        if (implicitTypeCheck != null) {
-                            outputVar.EmitPushValue(_dmObject, _proc);
-                            _proc.PushPath(implicitTypeCheck.Value);
-                            _proc.IsType();
-
-                            _proc.ContinueIfFalse();
-                        }
-                    } else {
-                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -545,8 +544,12 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            _proc.PushPath(type.Value);
-            _proc.CreateTypeEnumerator();
+            if (DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
+                _proc.PushType(typeId);
+                _proc.CreateTypeEnumerator();
+            } else {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, initializer.Location, $"Type {type.Value} does not exist");
+            }
 
             _proc.StartScope();
             {
@@ -558,17 +561,16 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -597,17 +599,16 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -623,8 +624,8 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
                     ProcessBlockInner(statementInfLoop.Body);
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -637,14 +638,13 @@ namespace DMCompiler.DM.Visitors {
 
             _proc.LoopStart(loopLabel);
             {
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementWhile.Conditional);
                 _proc.BreakIfFalse();
 
                 _proc.StartScope();
                 {
                     ProcessBlockInner(statementWhile.Body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.EndScope();
@@ -660,7 +660,7 @@ namespace DMCompiler.DM.Visitors {
             {
                 ProcessBlockInner(statementDoWhile.Body);
 
-                _proc.LoopContinue(loopLabel);
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementDoWhile.Conditional);
                 _proc.JumpIfFalse(loopEndLabel);
                 _proc.LoopJumpToStart(loopLabel);

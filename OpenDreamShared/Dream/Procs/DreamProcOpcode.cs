@@ -11,7 +11,7 @@ namespace OpenDreamShared.Dream.Procs {
         FormatString = 0x4,
         SwitchCaseRange = 0x5,
         PushReferenceValue = 0x6,
-        PushPath = 0x7,
+        //0x7
         Add = 0x8,
         Assign = 0x9,
         Call = 0xA,
@@ -42,7 +42,7 @@ namespace OpenDreamShared.Dream.Procs {
         CallStatement = 0x23,
         BitAnd = 0x24,
         CompareNotEquals = 0x25,
-        //0x26
+        PushProc = 0x26,
         Divide = 0x27,
         Multiply = 0x28,
         BitXorReference = 0x29,
@@ -69,7 +69,7 @@ namespace OpenDreamShared.Dream.Procs {
         BrowseResource = 0x3E,
         OutputControl = 0x3F,
         BitShiftRight = 0x40,
-        //0x41
+        CreateFilteredListEnumerator = 0x41,
         Power = 0x42,
         DebugSource = 0x43,
         DebugLine = 0x44,
@@ -101,7 +101,9 @@ namespace OpenDreamShared.Dream.Procs {
         //0x5E
         PushGlobalVars = 0x5F,
         ModulusModulus = 0x60,
-        ModulusModulusReference = 0x61
+        ModulusModulusReference = 0x61,
+        PushProcStub = 0x62,
+        PushVerbStub = 0x63
     }
 
     public enum DreamProcOpcodeParameterType {

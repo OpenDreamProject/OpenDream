@@ -18,7 +18,8 @@ namespace DMCompiler.Compiler.DM {
         /// <returns> True if this will raise an error, false if not. You can use this return value to help improve error emission around this (depending on how permissive we're being)</returns>
         protected bool Error(WarningCode code, string message) {
             ErrorLevel level = DMCompiler.CodeToLevel(code);
-            Emissions.Add(new CompilerEmission(level, code, Current().Location, message));
+            if (Emissions.Count < MAX_EMISSIONS_RECORDED)
+                Emissions.Add(new CompilerEmission(level, code, Current().Location, message));
             return level == ErrorLevel.Error;
         }
 

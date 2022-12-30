@@ -45,7 +45,8 @@ namespace OpenDreamRuntime.Input {
             if (e.Shift) paramsBuilder.Add("shift", "1");
             if (e.Ctrl) paramsBuilder.Add("ctrl", "1");
             if (e.Alt) paramsBuilder.Add("alt", "1");
-            //TODO: "icon-x", "icon-y", "screen-loc"
+            paramsBuilder.Add("screen-loc", e.ScreenLoc.ToString());
+            //TODO: "icon-x", "icon-y"
 
             return new DreamProcArguments(new() {
                 new DreamValue(atom),

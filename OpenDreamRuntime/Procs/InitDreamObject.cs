@@ -2,9 +2,12 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs {
-    sealed class InitDreamObjectState : ProcState
-    {
-        [Dependency] private readonly IDreamManager _dreamMan = default!;
+    sealed class InitDreamObjectState : ProcState {
+        public static readonly Stack<InitDreamObjectState> Pool = new();
+
+        private readonly IDreamManager _dreamMan;
+        private readonly IDreamObjectTree _objectTree;
+
         enum Stage {
             // Need to call the object's (init) proc
             Init,
@@ -16,13 +19,18 @@ namespace OpenDreamRuntime.Procs {
             Return,
         }
 
-        public InitDreamObjectState(DreamThread thread, DreamObject dreamObject, DreamObject? usr, DreamProcArguments arguments)
-            : base(thread)
-        {
-            IoCManager.InjectDependencies(this);
+        public InitDreamObjectState(IDreamManager dreamManager, IDreamObjectTree objectTree) {
+            _dreamMan = dreamManager;
+            _objectTree = objectTree;
+        }
+
+        public void Initialize(DreamThread thread, DreamObject dreamObject, DreamObject? usr, DreamProcArguments arguments) {
+            base.Initialize(thread, true);
+
             _dreamObject = dreamObject;
             _usr = usr;
             _arguments = arguments;
+            _stage = Stage.Init;
         }
 
         private DreamObject _dreamObject;
@@ -32,13 +40,21 @@ namespace OpenDreamRuntime.Procs {
 
         public override DreamProc? Proc => null;
 
-        public override void AppendStackFrame(StringBuilder builder)
-        {
-            builder.AppendLine($"<InitDreamObject {_dreamObject}>");
+        public override void AppendStackFrame(StringBuilder builder) {
+            builder.AppendLine($"new {_dreamObject.ObjectDefinition?.Type}");
         }
 
-        protected override ProcStatus InternalResume()
-        {
+        public override void Dispose() {
+            base.Dispose();
+
+            _dreamObject = null!;
+            _usr = null;
+            _arguments = default;
+
+            Pool.Push(this);
+        }
+
+        protected override ProcStatus InternalResume() {
             var src = _dreamObject;
 
             switch_start:
@@ -50,7 +66,7 @@ namespace OpenDreamRuntime.Procs {
                         goto switch_start;
                     }
 
-                    var proc = _dreamMan.ObjectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
+                    var proc = _objectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
                     var initProcState = proc.CreateState(Thread, src, _usr, new(null));
                     Thread.PushProcState(initProcState);
                     return ProcStatus.Called;

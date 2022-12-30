@@ -113,7 +113,11 @@ sealed class DreamViewOverlay : Overlay {
         _renderTargetCache[rental.Size] = storeList;
     }
 
+    // TODO: Move this to DreamIcon.Draw() so screen objects can have filters
     private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
+        if (icon.Appearance == null)
+            return;
+
         position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
         foreach (DreamIcon underlay in icon.Underlays) {

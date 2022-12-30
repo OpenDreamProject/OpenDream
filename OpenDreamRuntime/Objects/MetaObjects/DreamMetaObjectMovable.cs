@@ -10,6 +10,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IMapManager _mapManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -22,7 +23,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             DreamValue locArgument = creationArguments.GetArgument(0, "loc");
-            if (locArgument.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out _)) {
+            if (locArgument.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out _)) {
                 dreamObject.SetVariable("loc", locArgument); //loc is set before /New() is ever called
             }
 
@@ -41,9 +42,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (!_entityManager.TryGetComponent(entity, out TransformComponent? transform))
                         return;
 
-                    int x = (varName == "x") ? value.GetValueAsInteger() : (int)transform.WorldPosition.X;
-                    int y = (varName == "y") ? value.GetValueAsInteger() : (int)transform.WorldPosition.Y;
-                    int z = (varName == "z") ? value.GetValueAsInteger() : (int)transform.MapID;
+                    int x = (varName == "x") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.X;
+                    int y = (varName == "y") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.Y;
+                    int z = (varName == "z") ? value.MustGetValueAsInteger() : (int)transform.MapID;
 
                     _dreamMapManager.TryGetTurfAt((x, y), z, out var newLoc);
                     dreamObject.SetVariable("loc", new DreamValue(newLoc));
@@ -54,11 +55,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (!_entityManager.TryGetComponent<TransformComponent>(entity, out var transform))
                         return;
 
-                    if (value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out var turfLoc)) {
+                    if (value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turfLoc)) {
                         (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
-                        transform.AttachParent(level.Grid.GridEntityId);
+                        transform.AttachParent(level.Grid.Owner);
                         transform.WorldPosition = pos;
-                    } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out var movableLoc)) {
+                    } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movableLoc)) {
                         EntityUid locEntity = _atomManager.GetMovableEntity(movableLoc);
                         transform.AttachParent(locEntity);
                         transform.LocalPosition = Vector2.Zero;
@@ -127,6 +128,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     }
 
                     return new(contents);
+                }
+                case "locs": {
+                    // Unimplemented; just return a list containing src.loc
+                    DreamList locs = DreamList.Create();
+                    locs.AddValue(dreamObject.GetVariable("loc"));
+
+                    return new DreamValue(locs);
                 }
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;

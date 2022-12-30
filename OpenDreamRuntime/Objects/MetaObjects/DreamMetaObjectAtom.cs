@@ -2,6 +2,7 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectAtom : IDreamMetaObject {
@@ -9,6 +10,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+        [Dependency] private readonly IDreamMapManager _mapManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
 
         private readonly Dictionary<DreamObject, DreamFilterList> _filterLists = new();
@@ -19,8 +23,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
-            if (!dreamObject.IsSubtypeOf(DreamPath.Turf)) {
-                _dreamManager.WorldContentsList.AddValue(new DreamValue(dreamObject));
+            if (!dreamObject.IsSubtypeOf(_objectTree.Turf)) {
+                _mapManager.AllAtoms.Add(dreamObject);
+            }
+
+            // TODO: Create a special list to prevent this needless list creation
+            List<int>? objectVerbs = dreamObject.ObjectDefinition.Verbs;
+            if (objectVerbs != null) {
+                DreamList verbsList = DreamList.Create(objectVerbs.Count);
+
+                foreach (int verbId in objectVerbs) {
+                    DreamProc verb = _objectTree.Procs[verbId];
+
+                    verbsList.AddValue(new DreamValue(verb));
+                }
+
+                dreamObject.SetVariableValue("verbs", new DreamValue(verbsList));
             }
 
             _filterLists[dreamObject] = new DreamFilterList(dreamObject);
@@ -32,7 +50,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             _filterLists.Remove(dreamObject);
 
             _atomManager.DeleteMovableEntity(dreamObject);
-            _dreamManager.WorldContentsList.RemoveValue(new DreamValue(dreamObject));
+
+            // Replace our world.contents spot with the last so this doesn't mess with enumerators
+            // Results in a different order than BYOND, but nothing about our order resembles BYOND at all right now
+            // TODO: Handle this placing atoms earlier than an enumerator's index
+            int worldContentsIndex = _mapManager.AllAtoms.IndexOf(dreamObject);
+            _mapManager.AllAtoms.RemoveSwap(worldContentsIndex);
 
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
@@ -45,13 +68,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             switch (varName) {
                 case "icon":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        if (value.TryGetValueAsDreamResource(out DreamResource resource)) {
-                            appearance.Icon = resource.Id;
-                        } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var iconObject)) {
-                            DreamMetaObjectIcon.DreamIconObject icon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObject];
-
-                            (resource, _) = icon.GenerateDMI();
-                            appearance.Icon = resource.Id;
+                        if (_resourceManager.TryLoadIcon(value, out var icon)) {
+                            appearance.Icon = icon.Id;
                         } else {
                             appearance.Icon = null;
                         }
@@ -118,7 +136,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "transform":
                 {
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        float[] matrixArray = value.TryGetValueAsDreamObjectOfType(DreamPath.Matrix, out var matrix)
+                        float[] matrixArray = value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var matrix)
                             ? DreamMetaObjectMatrix.MatrixToTransformFloatArray(matrix)
                             : DreamMetaObjectMatrix.IdentityMatrixArray;
 
@@ -187,7 +205,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             switch (varName) {
                 case "transform":
                     // Clone the matrix
-                    DreamObject matrix = _dreamManager.ObjectTree.CreateObject(DreamPath.Matrix);
+                    DreamObject matrix = _objectTree.CreateObject(_objectTree.Matrix);
                     matrix.InitSpawn(new DreamProcArguments(new() { value }));
 
                     return new DreamValue(matrix);
@@ -204,7 +222,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (value.TryGetValueAsString(out string valueString)) {
                 appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
                 appearance.IconState = valueString;
-            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.MutableAppearance, out var mutableAppearance)) {
+            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.MutableAppearance, out var mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
                 if (icon.TryGetValueAsDreamResource(out var iconResource)) {
                     appearance.Icon = iconResource.Id;
@@ -223,7 +241,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 mutableAppearance.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 mutableAppearance.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 mutableAppearance.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
-            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Image, out var image)) {
+            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var image)) {
                 DreamValue icon = image.GetVariable("icon");
                 DreamValue iconState = image.GetVariable("icon_state");
 
@@ -240,19 +258,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
-            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var icon)) {
+            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var icon)) {
                 var iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[icon];
-                var (resource, dmiDescription) = iconObj.GenerateDMI();
+                var resource = iconObj.GenerateDMI();
 
                 atom.GetVariable("icon_state").TryGetValueAsString(out var iconState);
 
                 appearance.Icon = resource.Id;
-                appearance.IconState = dmiDescription.GetStateOrDefault(iconState)?.Name;
-            } else if (value.TryGetValueAsDreamObjectOfType(DreamPath.Atom, out var overlayAtom)) {
+                appearance.IconState = resource.DMI.GetStateOrDefault(iconState)?.Name;
+            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var overlayAtom)) {
                 appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
-            } else if (value.TryGetValueAsPath(out DreamPath path)) {
-                var def = _dreamManager.ObjectTree.GetObjectDefinition(path);
-                appearance = _atomManager.CreateAppearanceFromDefinition(def);
+            } else if (value.TryGetValueAsType(out var type)) {
+                appearance = _atomManager.CreateAppearanceFromDefinition(type.ObjectDefinition);
             } else {
                 throw new Exception($"Invalid overlay {value}");
             }

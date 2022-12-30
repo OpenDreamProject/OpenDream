@@ -131,6 +131,11 @@ namespace OpenDreamRuntime {
 
         public abstract DreamProc? Proc { get; }
 
+        protected void Initialize(DreamThread thread, bool waitFor) {
+            Thread = thread;
+            WaitFor = waitFor;
+        }
+
         public abstract ProcStatus Resume();
 
         /// <summary>

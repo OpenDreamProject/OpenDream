@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -1989,9 +1988,9 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            if (first.Value == null) {
+            if (first == DreamValue.Null) {
                 // nulls are equal to each other
-                if (second.Value == null)
+                if (second == DreamValue.Null)
                     return true;
                 // null != 0 or ""
                 if (second.Type is DreamValue.DreamValueType.Float or DreamValue.DreamValueType.String) {
@@ -2025,9 +2024,6 @@ namespace OpenDreamRuntime.Procs {
                         if (second.TryGetValueAsString(out var s)) return false;
                         if (second == DreamValue.Null) return false;
                     }
-                    if (second.Value == null) {
-                        return false;
-                    }
                     throw new Exception("Invalid greater than comparison on " + first + " and " + second);
                 }
             }
@@ -2046,9 +2042,6 @@ namespace OpenDreamRuntime.Procs {
                         if (second.Type == DreamValue.DreamValueType.Float) return 0 < second.MustGetValueAsFloat();
                         if (second.TryGetValueAsString(out var s)) return s != "";
                         if (second == DreamValue.Null) return false;
-                    }
-                    if (second.Value == null) {
-                        return false;
                     }
                     throw new Exception("Invalid less than comparison between " + first + " and " + second);
                 }

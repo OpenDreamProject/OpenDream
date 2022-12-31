@@ -1,12 +1,12 @@
 ﻿using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
-using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls;
+using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
-using OpenDreamShared.Compiler.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;

@@ -1,5 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamShared.Interface;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;

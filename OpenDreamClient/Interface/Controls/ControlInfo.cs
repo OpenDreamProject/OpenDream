@@ -1,7 +1,7 @@
 using System.Text;
-using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Network;

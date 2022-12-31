@@ -363,6 +363,7 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
         }
 
         _blending = blendingIcon.Texture;
+        _blendingDescription = blendingIcon.DMI;
     }
 
     public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {

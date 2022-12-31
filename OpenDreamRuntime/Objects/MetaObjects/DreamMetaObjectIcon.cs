@@ -34,9 +34,10 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
 
         if (icon != DreamValue.Null) {
             // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
-            var (iconRsc, iconDescription) = GetIconResourceAndDescription(_objectTree, _rscMan, icon);
+            if (!_rscMan.TryLoadIcon(icon, out var iconRsc))
+                throw new Exception($"Cannot create an icon from {icon}");
 
-            dreamIcon.InsertStates(iconRsc, iconDescription, state, dir, frame, useStateName: false);
+            dreamIcon.InsertStates(iconRsc, state, dir, frame, useStateName: false);
         }
     }
 
@@ -70,44 +71,5 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
 
         ObjectToDreamIcon.Add(icon, dreamIcon);
         return dreamIcon;
-    }
-
-    public static (DreamResource Resource, ParsedDMIDescription Description) GetIconResourceAndDescription(
-        IDreamObjectTree objectTree, DreamResourceManager resourceManager, DreamValue value) {
-        if (value.TryGetValueAsDreamObjectOfType(objectTree.Icon, out var iconObj)) {
-            DreamIcon dreamIcon = ObjectToDreamIcon[iconObj];
-
-            return dreamIcon.GenerateDMI();
-        }
-
-        DreamResource? iconRsc;
-
-        if (value.TryGetValueAsString(out var fileString)) {
-            var ext = Path.GetExtension(fileString);
-
-            switch (ext) {
-                case ".dmi":
-                    iconRsc = resourceManager.LoadResource(fileString);
-                    break;
-
-                // TODO implement other icon file types
-                case ".png":
-                case ".jpg":
-                case ".rsi": // RT-specific, not in BYOND
-                case ".gif":
-                case ".bmp":
-                    throw new NotImplementedException($"Unimplemented icon type '{ext}'");
-                default:
-                    throw new Exception($"Invalid icon file {fileString}");
-            }
-        } else if (!value.TryGetValueAsDreamResource(out iconRsc)) {
-            throw new Exception($"Invalid icon {value}");
-        }
-
-        byte[]? rscData = iconRsc.ResourceData;
-        if (rscData == null)
-            throw new Exception($"No data in file {iconRsc} to construct icon from");
-
-        return (iconRsc, DMIParser.ParseDMI(new MemoryStream(rscData)));
     }
 }

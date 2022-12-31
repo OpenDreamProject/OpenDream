@@ -130,4 +130,42 @@ namespace OpenDreamRuntime.Procs {
             } while (true);
         }
     }
+
+    /// <summary>
+    /// Enumerates over all atoms in the world, possibly filtering for a certain type
+    /// <code>for (var/obj/item/I in world)</code>
+    /// </summary>
+    sealed class WorldContentsEnumerator : IDreamValueEnumerator {
+        private readonly IDreamMapManager _mapManager;
+        private readonly IDreamObjectTree.TreeEntry? _filterType;
+        private int _current = -1;
+
+        public WorldContentsEnumerator(IDreamMapManager mapManager, IDreamObjectTree.TreeEntry? filterType) {
+            _mapManager = mapManager;
+            _filterType = filterType;
+        }
+
+        public DreamValue Current {
+            get {
+                if (_current < _mapManager.AllAtoms.Count)
+                    return new(_mapManager.AllAtoms[_current]);
+                return DreamValue.Null;
+            }
+        }
+
+        public bool MoveNext() {
+            do {
+                _current++;
+                if (_current >= _mapManager.AllAtoms.Count)
+                    return false;
+
+                if (_filterType != null) {
+                    if (_mapManager.AllAtoms[_current].IsSubtypeOf(_filterType))
+                        return true;
+                } else {
+                    return true;
+                }
+            } while (true);
+        }
+    }
 }

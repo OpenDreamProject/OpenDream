@@ -25,6 +25,7 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
         // I don't want to edit 100 procs to have the DreamManager passed to them
         public static IDreamManager DreamManager;
+        public static DreamResourceManager ResourceManager;
         public static IDreamObjectTree ObjectTree;
 
         [DreamProc("abs")]
@@ -890,16 +891,13 @@ namespace OpenDreamRuntime.Procs.Native {
 
             var arg = arguments.GetArgument(0, "Icon");
 
-            if (arg.Equals(DreamValue.Null)) {
+            if (arg.TryGetValueAsDreamObjectOfType(ObjectTree.Icon, out var iconObj)) {
+                // Fast path for /icon, we don't need to generate the entire DMI
+                return new DreamValue(DreamList.Create(DreamMetaObjectIcon.ObjectToDreamIcon[iconObj].States.Keys.ToArray()));
+            } else if (ResourceManager.TryLoadIcon(arg, out var iconRsc)) {
+                return new DreamValue(DreamList.Create(iconRsc.DMI.States.Keys.ToArray()));
+            } else if (arg == DreamValue.Null) {
                 return DreamValue.Null;
-            }
-
-            if (arg.TryGetValueAsDreamResource(out var resource)) {
-                var dmiDescription = DMIParser.ParseDMI(new MemoryStream(resource.ResourceData));
-
-                return new DreamValue(DreamList.Create(dmiDescription.States.Keys.ToArray()));
-            } else if (arg.TryGetValueAsDreamObjectOfType(ObjectTree.Icon, out var icon)) {
-                return new DreamValue(DreamList.Create(DreamMetaObjectIcon.ObjectToDreamIcon[icon].States.Keys.ToArray()));
             } else {
                 throw new Exception($"Bad icon {arg}");
             }

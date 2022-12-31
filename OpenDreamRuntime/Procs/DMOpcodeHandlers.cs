@@ -78,37 +78,48 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        private static DreamValue[] GetEnumerableContents(IDreamObjectTree objectTree, DreamValue value) {
-            DreamList? list = null;
-            if (value.TryGetValueAsDreamObject(out var listObject))
-                list = listObject as DreamList;
+        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IDreamMapManager mapManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
+            if (!value.TryGetValueAsDreamList(out var list)) {
+                if (value.TryGetValueAsDreamObject(out var dreamObject)) {
+                    if (dreamObject == null)
+                        return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
 
-            if (list == null) {
-                if (listObject == null) {
-                    list = null;
-                } else if (listObject.IsSubtypeOf(objectTree.Atom) || listObject.IsSubtypeOf(objectTree.World)) {
-                    list = listObject.GetVariable("contents").GetValueAsDreamList();
-                } else {
-                    throw new Exception($"Object {listObject} is not a {objectTree.List}, {objectTree.Atom} or {objectTree.World}");
+                    if (dreamObject.IsSubtypeOf(objectTree.Atom)) {
+                        list = dreamObject.GetVariable("contents").GetValueAsDreamList();
+                    } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
+                        return new WorldContentsEnumerator(mapManager, filterType);
+                    }
                 }
             }
 
-            return list?.GetValues().ToArray() ?? Array.Empty<DreamValue>();
+            if (list != null) {
+                // world.contents has its own special enumerator to prevent the huge copy
+                if (list is WorldContentsList)
+                    return new WorldContentsEnumerator(mapManager, filterType);
+
+                var values = list.GetValues().ToArray();
+
+                return filterType == null
+                    ? new DreamValueArrayEnumerator(values)
+                    : new FilteredDreamValueArrayEnumerator(values, filterType);
+            }
+
+            throw new Exception($"Value {value} is not a {objectTree.List}, {objectTree.Atom}, {objectTree.World}, or null");
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            var contents = GetEnumerableContents(state.Proc.ObjectTree, state.Pop());
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), null);
 
-            state.EnumeratorStack.Push(new DreamValueArrayEnumerator(contents));
+            state.EnumeratorStack.Push(enumerator);
             return null;
         }
 
         public static ProcStatus? CreateFilteredListEnumerator(DMProcState state) {
-            var contents = GetEnumerableContents(state.Proc.ObjectTree, state.Pop());
             var filterTypeId = state.ReadInt();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), filterType);
 
-            state.EnumeratorStack.Push(new FilteredDreamValueArrayEnumerator(contents, filterType));
+            state.EnumeratorStack.Push(enumerator);
             return null;
         }
 
@@ -124,9 +135,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Atom)) {
-                var worldContents = state.DreamManager.WorldContentsList.GetValues().ToArray(); // TODO: Remove the ToArray()
-
-                state.EnumeratorStack.Push(new FilteredDreamValueArrayEnumerator(worldContents, type));
+                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.DreamMapManager, type));
                 return null;
             }
 
@@ -135,7 +144,7 @@ namespace OpenDreamRuntime.Procs {
                 return null;
             }
 
-            throw new Exception($"Type enumeration of {type.ToString()} is not supported");
+            throw new Exception($"Type enumeration of {type} is not supported");
         }
 
         public static ProcStatus? CreateRangeEnumerator(DMProcState state) {
@@ -691,13 +700,15 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource: // when (first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)):
                 {
+                    //if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)) {
                     // Implicitly create a new /icon and ICON_ADD blend it
                     // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
                     DreamObject iconObj = state.Proc.ObjectTree.CreateObject(state.Proc.ObjectTree.Icon);
                     var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
-                    var from = DreamMetaObjectIcon.GetIconResourceAndDescription(state.Proc.ObjectTree, state.Proc.DreamResourceManager, first);
+                    if (!state.Proc.DreamResourceManager.TryLoadIcon(first, out var from))
+                        throw new Exception($"Failed to create an icon from {from}");
 
-                    icon.InsertStates(from.Resource, from.Description, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+                    icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
                     DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
                     output = new DreamValue(iconObj);
                     state.AssignReference(reference, output);
@@ -2309,10 +2320,10 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? BrowseResource(DMProcState state) {
             DreamValue filename = state.Pop();
             var value = state.Pop();
-            DreamResource file;
-            if (!value.TryGetValueAsDreamResource(out file)) {
-                if (value.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out var icon)) {
-                    (file, _) = DreamMetaObjectIcon.ObjectToDreamIcon[icon].GenerateDMI();
+
+            if (!value.TryGetValueAsDreamResource(out var file)) {
+                if (state.Proc.DreamResourceManager.TryLoadIcon(value, out var icon)) {
+                    file = icon;
                 } else {
                     throw new NotImplementedException();
                 }

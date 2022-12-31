@@ -16,8 +16,12 @@ namespace DMCompiler.DM.Visitors {
         /// </remarks>
         public static event EventHandler<DMVariable> VarDefined; // Fires if we define a new variable.
 
-        public static void BuildObjectTree(DMASTFile astFile) {
+        public static void Reset() {
             DMObjectTree.Reset(); // Blank the object tree
+            VarDefined = null;
+        }
+        public static void BuildObjectTree(DMASTFile astFile) {
+            Reset();
 
             ProcessFile(astFile); // generate it
 

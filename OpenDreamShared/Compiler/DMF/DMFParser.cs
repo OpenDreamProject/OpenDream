@@ -9,48 +9,6 @@ using Robust.Shared.Serialization.Markdown.Value;
 
 namespace OpenDreamShared.Compiler.DMF {
     public sealed class DMFParser : Parser<char> {
-        public static readonly TokenType[] ValidAttributeValueTypes = {
-            TokenType.DMF_None,
-            TokenType.DMF_String,
-            TokenType.DMF_Integer,
-            TokenType.DMF_Boolean,
-            TokenType.DMF_Position,
-            TokenType.DMF_Dimension,
-            TokenType.DMF_Color,
-            TokenType.DMF_Resource,
-            TokenType.DMF_Sunken,
-            TokenType.DMF_PushBox,
-            TokenType.DMF_PushButton,
-            TokenType.DMF_Checkbox,
-            TokenType.DMF_Radio,
-            TokenType.DMF_Distort,
-            TokenType.DMF_Stretch,
-            TokenType.DMF_Center,
-            TokenType.DMF_Left,
-            TokenType.DMF_Right,
-            TokenType.DMF_Top,
-            TokenType.DMF_TopLeft,
-            TokenType.DMF_TopRight,
-            TokenType.DMF_Bottom,
-            TokenType.DMF_BottomLeft,
-            TokenType.DMF_BottomRight,
-            TokenType.DMF_Horizontal,
-            TokenType.DMF_Vertical,
-            TokenType.DMF_Line,
-
-            TokenType.DMF_Main,
-            TokenType.DMF_Input,
-            TokenType.DMF_Button,
-            TokenType.DMF_Child,
-            TokenType.DMF_Output,
-            TokenType.DMF_Info,
-            TokenType.DMF_Map,
-            TokenType.DMF_Browser,
-            TokenType.DMF_Label,
-            TokenType.DMF_Grid,
-            TokenType.DMF_Tab,
-        };
-
         public DMFParser(DMFLexer lexer) : base(lexer) { }
 
         public InterfaceDescriptor Interface() {
@@ -83,7 +41,8 @@ namespace OpenDreamShared.Compiler.DMF {
                     if (windowDescriptor == null && macroSet == null && menu == null) {
                         parsing = false;
                     }
-                } catch (CompileErrorException) { //Error recovery
+                } catch (CompileErrorException) {
+                    //Error recovery
                     Token token = Current();
                     while (token.Type is not (TokenType.DMF_Window or TokenType.DMF_Macro or TokenType.DMF_Menu)) {
                         token = Advance();
@@ -103,8 +62,8 @@ namespace OpenDreamShared.Compiler.DMF {
         public WindowDescriptor Window(ISerializationManager serializationManager) {
             if (Check(TokenType.DMF_Window)) {
                 Token windowNameToken = Current();
-                Consume(TokenType.DMF_String, "Expected a window name");
-                string windowName = (string)windowNameToken.Value;
+                Consume(TokenType.DMF_Value, "Expected a window name");
+                string windowName = windowNameToken.Text;
                 Newline();
 
                 List<ControlDescriptor> elementDescriptors = new();
@@ -124,16 +83,16 @@ namespace OpenDreamShared.Compiler.DMF {
         public ControlDescriptor Element(ISerializationManager serializationManager) {
             if (Check(TokenType.DMF_Elem)) {
                 Token elementNameToken = Current();
-                Consume(TokenType.DMF_String, "Expected an element name");
-                string elementName = (string)elementNameToken.Value;
+                Consume(TokenType.DMF_Value, "Expected an element name");
+                string elementName = elementNameToken.Text;
                 Newline();
 
                 var attributes = Attributes();
                 attributes.Add("name", elementName);
 
-                if (!attributes.TryGet("type", out var elementType) || elementType is not ValueDataNode elementTypeValue)
-                {
-                    Error("Element '" + elementName + "' does not have a valid 'type' attribute");
+                if (!attributes.TryGet("type", out var elementType) ||
+                    elementType is not ValueDataNode elementTypeValue) {
+                    Error($"Element '{elementName}' does not have a valid 'type' attribute");
                     return null;
                 }
 
@@ -152,8 +111,7 @@ namespace OpenDreamShared.Compiler.DMF {
                     _ => null
                 };
 
-                if (descriptorType == null)
-                {
+                if (descriptorType == null) {
                     Error($"Invalid descriptor type '{elementTypeValue.Value}'");
                     return null;
                 }
@@ -167,16 +125,15 @@ namespace OpenDreamShared.Compiler.DMF {
         public MacroSetDescriptor MacroSet(ISerializationManager serializationManager) {
             if (Check(TokenType.DMF_Macro)) {
                 Token macroSetNameToken = Current();
-                Consume(TokenType.DMF_String, "Expected a macro set name");
+                Consume(TokenType.DMF_Value, "Expected a macro set name");
                 Newline();
 
                 List<MacroDescriptor> macros = new();
-                MacroDescriptor macro;
-                while ((macro = Macro(serializationManager)) != null) {
+                while (Macro(serializationManager) is { } macro) {
                     macros.Add(macro);
                 }
 
-                return new MacroSetDescriptor((string)macroSetNameToken.Value, macros);
+                return new MacroSetDescriptor(macroSetNameToken.Text, macros);
             } else {
                 return null;
             }
@@ -185,7 +142,7 @@ namespace OpenDreamShared.Compiler.DMF {
         public MacroDescriptor Macro(ISerializationManager serializationManager) {
             if (Check(TokenType.DMF_Elem)) {
                 Token macroIdToken = Current();
-                bool hasId = Check(TokenType.DMF_String);
+                bool hasId = Check(TokenType.DMF_Value);
                 Newline();
 
                 var attributes = Attributes();
@@ -200,16 +157,15 @@ namespace OpenDreamShared.Compiler.DMF {
         public MenuDescriptor Menu(ISerializationManager serializationManager) {
             if (Check(TokenType.DMF_Menu)) {
                 Token menuNameToken = Current();
-                Consume(TokenType.DMF_String, "Expected a menu name");
+                Consume(TokenType.DMF_Value, "Expected a menu name");
                 Newline();
 
                 List<MenuElementDescriptor> menuElements = new();
-                MenuElementDescriptor menuElement;
-                while ((menuElement = MenuElement(serializationManager)) != null) {
+                while (MenuElement(serializationManager) is { } menuElement) {
                     menuElements.Add(menuElement);
                 }
 
-                return new MenuDescriptor((string)menuNameToken.Value, menuElements);
+                return new MenuDescriptor(menuNameToken.Text, menuElements);
             }
 
             return null;
@@ -218,12 +174,12 @@ namespace OpenDreamShared.Compiler.DMF {
         public MenuElementDescriptor MenuElement(ISerializationManager serializationManager) {
             if (Check(TokenType.DMF_Elem)) {
                 Token elementNameToken = Current();
-                bool hasId = Check(TokenType.DMF_String);
+                bool hasId = Check(TokenType.DMF_Value);
                 Newline();
 
                 var attributes = Attributes();
                 //TODO: Name and Id are separate
-                if (hasId && !attributes.Has("name")) attributes.Add("name", (string) elementNameToken.Value);
+                if (hasId && !attributes.Has("name")) attributes.Add("name", elementNameToken.Text);
 
                 return serializationManager.Read<MenuElementDescriptor>(attributes);
             }
@@ -231,13 +187,12 @@ namespace OpenDreamShared.Compiler.DMF {
             return null;
         }
 
-        public bool TryGetAttribute([NotNullWhen(true)] out string key, [NotNullWhen(true)] out string token)
-        {
+        public bool TryGetAttribute([NotNullWhen(true)] out string key, [NotNullWhen(true)] out string token) {
             key = null;
             token = null;
             Token attributeToken = Current();
 
-            if (Check(new[] { TokenType.DMF_Attribute, TokenType.DMF_Macro, TokenType.DMF_Menu, TokenType.DMF_Stretch, TokenType.DMF_Left, TokenType.DMF_Right })) {
+            if (Check(new[] { TokenType.DMF_Attribute, TokenType.DMF_Macro, TokenType.DMF_Menu })) {
                 if (!Check(TokenType.DMF_Equals)) {
                     ReuseToken(attributeToken);
 
@@ -245,7 +200,7 @@ namespace OpenDreamShared.Compiler.DMF {
                 }
 
                 Token attributeValue = Current();
-                if (!Check(ValidAttributeValueTypes))
+                if (!Check(TokenType.DMF_Value))
                     Error($"Invalid attribute value ({attributeValue.Text})");
 
                 Newline();
@@ -257,17 +212,11 @@ namespace OpenDreamShared.Compiler.DMF {
             return false;
         }
 
-        public MappingDataNode Attributes()
-        {
+        public MappingDataNode Attributes() {
             var node = new MappingDataNode();
 
-            while (TryGetAttribute(out var key, out var value))
-            {
+            while (TryGetAttribute(out var key, out var value)) {
                 if (value == "none") continue;
-                if (value[0] == '"')
-                {
-                    value = value.Substring(1, value.Length - 2);
-                }
 
                 node.Add(key, value);
             }

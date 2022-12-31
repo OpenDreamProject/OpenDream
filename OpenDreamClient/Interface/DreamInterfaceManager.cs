@@ -51,11 +51,16 @@ namespace OpenDreamClient.Interface {
 
             if (dmfParser.Emissions.Count > 0) {
                 bool wasError = interfaceDescriptor == null;
+
                 foreach (CompilerEmission warning in dmfParser.Emissions) {
-                    Logger.Warning(warning.ToString());
-                    if (warning.Level == ErrorLevel.Error)
+                    if (warning.Level == ErrorLevel.Error) {
+                        Logger.Error(warning.ToString());
                         wasError = true;
+                    } else {
+                        Logger.Warning(warning.ToString());
+                    }
                 }
+
                 if(wasError)
                     throw new Exception($"{dmfParser.Emissions.Count} Errors while parsing interface data");
             }
@@ -63,8 +68,7 @@ namespace OpenDreamClient.Interface {
             LoadInterface(interfaceDescriptor);
         }
 
-        public void Initialize()
-        {
+        public void Initialize() {
             _userInterfaceManager.MainViewport.Visible = false;
 
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
@@ -83,29 +87,24 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         }
 
-        private void RxUpdateStatPanels(MsgUpdateStatPanels message)
-        {
+        private void RxUpdateStatPanels(MsgUpdateStatPanels message) {
             DefaultInfo?.UpdateStatPanels(message);
         }
 
-        private void RxSelectStatPanel(MsgSelectStatPanel message)
-        {
+        private void RxSelectStatPanel(MsgSelectStatPanel message) {
             DefaultInfo?.SelectStatPanel(message.StatPanel);
         }
 
-        private void RxUpdateAvailableVerbs(MsgUpdateAvailableVerbs message)
-        {
+        private void RxUpdateAvailableVerbs(MsgUpdateAvailableVerbs message) {
             AvailableVerbs = message.AvailableVerbs;
-            foreach (var verb in AvailableVerbs)
-            {
+            foreach (var verb in AvailableVerbs) {
                 // Verb category
-                if (verb.Item3 != string.Empty && !DefaultInfo.HasVerbPanel(verb.Item3))
-                {
+                if (verb.Item3 != string.Empty && !DefaultInfo.HasVerbPanel(verb.Item3)) {
                     DefaultInfo.CreateVerbPanel(verb.Item3);
                 }
             }
-            DefaultInfo?.RefreshVerbs();
 
+            DefaultInfo?.RefreshVerbs();
         }
 
         public void RxOutput(MsgOutput pOutput) {
@@ -124,8 +123,7 @@ namespace OpenDreamClient.Interface {
             if (interfaceElement != null) interfaceElement.Output(pOutput.Value, data);
         }
 
-        private void RxAlert(MsgAlert message)
-        {
+        private void RxAlert(MsgAlert message) {
             OpenAlert(
                 message.PromptId,
                 message.Title,
@@ -175,13 +173,14 @@ namespace OpenDreamClient.Interface {
             ShowPrompt(prompt);
         }
 
-        private void RxBrowse(MsgBrowse pBrowse)
-        {
-            if (pBrowse.HtmlSource == null && pBrowse.Window != null) { //Closing a popup
+        private void RxBrowse(MsgBrowse pBrowse) {
+            if (pBrowse.HtmlSource == null && pBrowse.Window != null) {
+                //Closing a popup
                 if (PopupWindows.TryGetValue(pBrowse.Window, out BrowsePopup popup)) {
                     popup.Close();
                 }
-            } else if (pBrowse.HtmlSource != null) { //Outputting to a browser
+            } else if (pBrowse.HtmlSource != null) {
+                //Outputting to a browser
                 string htmlFileName;
                 ControlBrowser outputBrowser;
                 BrowsePopup popup = null;
@@ -192,12 +191,9 @@ namespace OpenDreamClient.Interface {
 
                     if (outputBrowser == null) {
 
-                        if (!PopupWindows.TryGetValue(pBrowse.Window, out popup))
-                        {
+                        if (!PopupWindows.TryGetValue(pBrowse.Window, out popup)) {
                             popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
-                            popup.Closed += () => {
-                                PopupWindows.Remove(pBrowse.Window);
-                            };
+                            popup.Closed += () => { PopupWindows.Remove(pBrowse.Window); };
 
                             PopupWindows.Add(pBrowse.Window, popup);
                         }
@@ -232,8 +228,7 @@ namespace OpenDreamClient.Interface {
             _netManager.ClientSendMessage(response);
         }
 
-        private void RxLoadInterface(MsgLoadInterface message)
-        {
+        private void RxLoadInterface(MsgLoadInterface message) {
             LoadInterfaceFromSource(message.InterfaceText);
 
             _netManager.ClientSendMessage(new MsgAckLoadInterface());
@@ -244,8 +239,7 @@ namespace OpenDreamClient.Interface {
             prompt.Show();
         }
 
-        public void FrameUpdate(FrameEventArgs frameEventArgs)
-        {
+        public void FrameUpdate(FrameEventArgs frameEventArgs) {
             if (DefaultMap != null)
                 DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
         }
@@ -284,8 +278,7 @@ namespace OpenDreamClient.Interface {
             return null;
         }
 
-        public void SaveScreenshot(bool openDialog)
-        {
+        public void SaveScreenshot(bool openDialog) {
             // ReSharper disable once AsyncVoidLambda
             DefaultMap?.Viewport.Screenshot(async img =>
             {
@@ -304,7 +297,7 @@ namespace OpenDreamClient.Interface {
             DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
             DMFParser parser = new DMFParser(lexer);
             MappingDataNode node = parser.Attributes();
-            
+
             if (parser.Emissions.Count > 0) {
                 bool hadError = false;
                 foreach (CompilerEmission emission in parser.Emissions) {
@@ -317,6 +310,11 @@ namespace OpenDreamClient.Interface {
                 }
                 if (hadError)
                     return;
+            }
+
+            if (node.TryGet("parent", out _)) {
+                Logger.ErrorS("opendream.interface.winset", "Element creation or re-parenting is not implemented");
+                return;
             }
 
             if (String.IsNullOrEmpty(controlId)) {
@@ -338,8 +336,7 @@ namespace OpenDreamClient.Interface {
             }
         }
 
-        private void LoadInterface(InterfaceDescriptor descriptor)
-        {
+        private void LoadInterface(InterfaceDescriptor descriptor) {
             InterfaceDescriptor = descriptor;
 
             _macroManager.LoadMacroSets(InterfaceDescriptor.MacroSetDescriptors);
@@ -378,8 +375,7 @@ namespace OpenDreamClient.Interface {
         }
     }
 
-    public interface IDreamInterfaceManager
-    {
+    public interface IDreamInterfaceManager {
         (string, string, string)[] AvailableVerbs { get; }
         Dictionary<string, ControlWindow> Windows { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }

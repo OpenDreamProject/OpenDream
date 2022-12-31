@@ -95,7 +95,7 @@ namespace DMCompiler.DM.Visitors {
                     Result = new Expressions.Args(identifier.Location);
                     break;
                 case "opendream_procpath": // Our saner alternative to .....
-                    Result = new Expressions.OpenDreamProcpath(identifier.Location, _dmObject.Path);
+                    Result = new Expressions.OpenDreamProcpath(identifier.Location);
                     break;
                 default:
                 {

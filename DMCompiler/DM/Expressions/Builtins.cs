@@ -506,4 +506,15 @@ namespace DMCompiler.DM.Expressions {
             proc.CallStatement();
         }
     }
+
+    // opendream_procpath
+    class OpenDreamProcpath : DMExpression {
+        public OpenDreamProcpath(Location location)
+            : base(location)
+        {}
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.PushProc(proc.Id);
+        }
+    }
 }

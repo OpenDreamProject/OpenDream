@@ -41,17 +41,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // opendream_procpath
-    class OpenDreamProcpath : LValue {
-        public OpenDreamProcpath(Location location, DreamPath? path)
-            : base(location, path)
-        {}
-
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.OpenDreamProcpath, false);
-        }
-    }
-
     // usr
     class Usr : LValue {
         public Usr(Location location)

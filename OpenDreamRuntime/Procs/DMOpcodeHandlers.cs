@@ -157,7 +157,14 @@ namespace OpenDreamRuntime.Procs {
                 return null;
             }
 
-            DreamObject newObject = state.Proc.ObjectTree.CreateObject(objectType);
+            DreamObject newObject;
+
+            // List with an initial capacity
+            if (objectType == state.Proc.ObjectTree.List && arguments.ArgumentCount == 1 && arguments.GetArgument(0, "len").TryGetValueAsInteger(out var listSize)) {
+                newObject = DreamList.CreateUninitialized(listSize);
+            } else { // Everything else
+                newObject = state.Proc.ObjectTree.CreateObject(objectType);
+            }
             state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
             return ProcStatus.Called;
         }

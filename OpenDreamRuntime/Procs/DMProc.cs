@@ -218,10 +218,6 @@ namespace OpenDreamRuntime.Procs {
         public DMProcState() { }
 
         private DMProcState(DMProcState other, DreamThread thread) {
-            if (other._enumeratorStack?.Count > 0) {
-                throw new NotImplementedException();
-            }
-
             base.Initialize(thread, other.WaitFor);
             _proc = other._proc;
             Instance = other.Instance;

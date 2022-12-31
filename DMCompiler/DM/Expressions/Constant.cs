@@ -114,25 +114,31 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override Constant GreaterThan(Constant rhs) {
-            return new Number(Location, 0); // false
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThan(rhs);
+            }
+            return new Number(Location, (0 > rhsNum.Value) ? 1 : 0);
         }
 
         public override Constant GreaterThanOrEqual(Constant rhs) {
-            if (rhs.IsTruthy()) {
-                return new Number(Location, 0); // false
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThanOrEqual(rhs);
             }
-            return new Number(Location, 1); // true
+            return new Number(Location, (0 >= rhsNum.Value) ? 1 : 0);
         }
 
         public override Constant LessThan(Constant rhs) {
-            if (rhs.IsTruthy()) {
-                return new Number(Location, 1); // true
+            if (rhs is not Number rhsNum) {
+                return base.LessThan(rhs);
             }
-            return new Number(Location, 0); // false
+            return new Number(Location, (0 < rhsNum.Value) ? 1 : 0);
         }
 
         public override Constant LessThanOrEqual(Constant rhs) {
-            return new Number(Location, 1); // true
+            if (rhs is not Number rhsNum) {
+                return base.LessThanOrEqual(rhs);
+            }
+            return new Number(Location, (0 <= rhsNum.Value) ? 1 : 0);
         }
     }
 
@@ -270,26 +276,31 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override Constant GreaterThan(Constant rhs) {
-            if (rhs.IsTruthy()) {
-                return new Number(Location, 0); // false
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThan(rhs);
             }
-            return new Number(Location, 1); // true
+            return new Number(Location, (Value > rhsNum.Value) ? 1 : 0);
         }
 
         public override Constant GreaterThanOrEqual(Constant rhs) {
-            return new Number(Location, 1); // true
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThanOrEqual(rhs);
+            }
+            return new Number(Location, (Value >= rhsNum.Value) ? 1 : 0);
         }
 
         public override Constant LessThan(Constant rhs) {
-
-            return new Number(Location, 0); // false
+            if (rhs is not Number rhsNum) {
+                return base.LessThan(rhs);
+            }
+            return new Number(Location, (Value < rhsNum.Value) ? 1 : 0);
         }
 
         public override Constant LessThanOrEqual(Constant rhs) {
-            if (rhs.IsTruthy()) {
-                return new Number(Location, 1); // true
+            if (rhs is not Number rhsNum) {
+                return base.LessThanOrEqual(rhs);
             }
-            return new Number(Location, 0); // false
+            return new Number(Location, (Value <= rhsNum.Value) ? 1 : 0);
         }
     }
 

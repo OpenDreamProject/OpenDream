@@ -1988,15 +1988,6 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            if (first == DreamValue.Null) {
-                // nulls are equal to each other
-                if (second == DreamValue.Null)
-                    return true;
-                // null != 0 or ""
-                if (second.Type is DreamValue.DreamValueType.Float or DreamValue.DreamValueType.String) {
-                    return false;
-                }
-            }
             throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
         }
 

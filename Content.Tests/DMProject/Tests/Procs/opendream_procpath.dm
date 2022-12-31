@@ -9,5 +9,5 @@
 
 /proc/RunTest()
 	var/atom/movable/A = new
-	ASSERT(A.foo() == "/atom/movable/proc/foo")
-	ASSERT(bar() == "/proc/bar")
+	ASSERT(A.foo() == /atom/movable/proc/foo)
+	ASSERT(bar() == /proc/bar)

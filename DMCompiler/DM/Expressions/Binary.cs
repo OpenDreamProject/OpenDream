@@ -185,13 +185,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             LHS.EmitPushValue(dmObject, proc);
-
-            if (RHS.TryAsConstant(out Constant constValue)) { // RHS could be a const-evaluable expr
-                constValue.EmitPushValue(dmObject, proc);
-            } else {
-                RHS.EmitPushValue(dmObject, proc);
-            }
-
+            RHS.EmitPushValue(dmObject, proc);
             proc.BitShiftLeft();
         }
     }

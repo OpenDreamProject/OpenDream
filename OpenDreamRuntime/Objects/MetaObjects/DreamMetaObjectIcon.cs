@@ -12,6 +12,7 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
     public IDreamMetaObject? ParentType { get; set; }
 
     [Dependency] private readonly DreamResourceManager _rscMan = default!;
+    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
     public DreamMetaObjectIcon() {
         IoCManager.InjectDependencies(this);
@@ -29,14 +30,14 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
         DreamValue frame = creationArguments.GetArgument(3, "frame");
         DreamValue moving = creationArguments.GetArgument(4, "moving");
 
-        DreamIcon dreamIcon = new(_rscMan);
-        ObjectToDreamIcon.Add(dreamObject, dreamIcon);
+        var dreamIcon = InitializeIcon(_rscMan, dreamObject);
 
         if (icon != DreamValue.Null) {
             // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
-            var (iconRsc, iconDescription) = GetIconResourceAndDescription(_rscMan, icon);
+            if (!_rscMan.TryLoadIcon(icon, out var iconRsc))
+                throw new Exception($"Cannot create an icon from {icon}");
 
-            dreamIcon.InsertStates(iconRsc, iconDescription, state, dir, frame, useStateName: false);
+            dreamIcon.InsertStates(iconRsc, state, dir, frame, useStateName: false);
         }
     }
 
@@ -60,42 +61,15 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
         }
     }
 
-    public static (DreamResource Resource, ParsedDMIDescription Description) GetIconResourceAndDescription(
-        DreamResourceManager resourceManager, DreamValue value) {
-        if (value.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out var iconObj)) {
-            DreamIcon dreamIcon = ObjectToDreamIcon[iconObj];
+    /// <summary>
+    /// A fast path for initializing an /icon object
+    /// </summary>
+    /// <remarks>Doesn't call any DM code</remarks>
+    /// <returns>The /icon's DreamIcon</returns>
+    public static DreamIcon InitializeIcon(DreamResourceManager rscMan, DreamObject icon) {
+        DreamIcon dreamIcon = new(rscMan);
 
-            return dreamIcon.GenerateDMI();
-        }
-
-        DreamResource? iconRsc;
-
-        if (value.TryGetValueAsString(out var fileString)) {
-            var ext = Path.GetExtension(fileString);
-
-            switch (ext) {
-                case ".dmi":
-                    iconRsc = resourceManager.LoadResource(fileString);
-                    break;
-
-                // TODO implement other icon file types
-                case ".png":
-                case ".jpg":
-                case ".rsi": // RT-specific, not in BYOND
-                case ".gif":
-                case ".bmp":
-                    throw new NotImplementedException($"Unimplemented icon type '{ext}'");
-                default:
-                    throw new Exception($"Invalid icon file {fileString}");
-            }
-        } else if (!value.TryGetValueAsDreamResource(out iconRsc)) {
-            throw new Exception($"Invalid icon {value}");
-        }
-
-        byte[]? rscData = iconRsc.ResourceData;
-        if (rscData == null)
-            throw new Exception($"No data in file {iconRsc} to construct icon from");
-
-        return (iconRsc, DMIParser.ParseDMI(new MemoryStream(rscData)));
+        ObjectToDreamIcon.Add(icon, dreamIcon);
+        return dreamIcon;
     }
 }

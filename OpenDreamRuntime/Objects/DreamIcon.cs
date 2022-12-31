@@ -7,6 +7,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Formats.Png;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using Color = Robust.Shared.Maths.Color;
 using ParsedDMIDescription = OpenDreamShared.Resources.DMIParser.ParsedDMIDescription;
 using ParsedDMIState = OpenDreamShared.Resources.DMIParser.ParsedDMIState;
 using ParsedDMIFrame = OpenDreamShared.Resources.DMIParser.ParsedDMIFrame;
@@ -20,7 +21,7 @@ public sealed class DreamIcon {
     private readonly DreamResourceManager _resourceManager;
 
     private int _frameCount;
-    private (DreamResource, ParsedDMIDescription)? _cachedDMI;
+    private IconResource? _cachedDMI;
 
     /// <summary>
     /// A list of operations to be applied when generating the DMI, along with what frames to apply them on
@@ -105,9 +106,9 @@ public sealed class DreamIcon {
     /// <remarks>The resulting DMI will consist of one long flat row of frames</remarks>
     /// <returns>The DreamResource containing the DMI and the ParsedDMIDescription used to construct it</returns>
     /// <exception cref="NotImplementedException">Using icon states of various sizes is unimplemented</exception>
-    public (DreamResource Resource, ParsedDMIDescription Description) GenerateDMI() {
+    public IconResource GenerateDMI() {
         if (_cachedDMI != null)
-            return _cachedDMI.Value;
+            return _cachedDMI;
 
         int frameWidth = Width, frameHeight = Height;
         if (_frameCount == 0) { // No frames creates a blank 32x32 image (TODO: should be world.icon_size)
@@ -150,9 +151,9 @@ public sealed class DreamIcon {
 
             dmiImage.SaveAsPng(dmiImageStream);
 
-            DreamResource newResource = _resourceManager.CreateResource(dmiImageStream.GetBuffer());
-            _cachedDMI = (newResource, newDescription);
-            return _cachedDMI.Value;
+            IconResource newResource = _resourceManager.CreateIconResource(dmiImageStream.GetBuffer(), dmiImage, newDescription);
+            _cachedDMI = newResource;
+            return _cachedDMI;
         }
     }
 
@@ -162,8 +163,8 @@ public sealed class DreamIcon {
         _cachedDMI = null;
     }
 
-    public void InsertStates(DreamResource resource, ParsedDMIDescription fromDescription, DreamValue state,
-        DreamValue dir, DreamValue frame, bool useStateName = true) {
+    public void InsertStates(IconResource icon, DreamValue state, DreamValue dir, DreamValue frame,
+        bool useStateName = true) {
         bool copyingAllDirs = !dir.TryGetValueAsInteger(out var dirVal);
         bool copyingAllStates = !state.TryGetValueAsString(out var copyingState);
         bool copyingAllFrames = !frame.TryGetValueAsInteger(out var copyingFrame);
@@ -175,25 +176,23 @@ public sealed class DreamIcon {
         }
 
         // The size of every state will be resized to match the largest state
-        Width = Math.Max(Width, fromDescription.Width);
-        Height = Math.Max(Height, fromDescription.Height);
-
-        Image<Rgba32> image = _resourceManager.LoadImage(resource);
+        Width = Math.Max(Width, icon.DMI.Width);
+        Height = Math.Max(Height, icon.DMI.Height);
 
         if (copyingAllStates) {
-            foreach (var copyStateName in fromDescription.States.Keys) {
-                InsertState(image, fromDescription, copyStateName, copyStateName,
+            foreach (var copyStateName in icon.DMI.States.Keys) {
+                InsertState(icon, copyStateName, copyStateName,
                     copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
             }
         } else {
-            InsertState(image, fromDescription, useStateName ? copyingState! : String.Empty, copyingState!,
+            InsertState(icon, useStateName ? copyingState! : String.Empty, copyingState!,
                 copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
         }
     }
 
-    private void InsertState(Image<Rgba32> image, ParsedDMIDescription description, string stateName,
-        string copyingState, AtomDirection? dir = null, int? frame = null) {
-        ParsedDMIState? inserting = description.GetStateOrDefault(copyingState);
+    private void InsertState(IconResource icon, string stateName, string copyingState, AtomDirection? dir = null,
+        int? frame = null) {
+        ParsedDMIState? inserting = icon.DMI.GetStateOrDefault(copyingState);
         if (inserting == null)
             return;
 
@@ -210,7 +209,7 @@ public sealed class DreamIcon {
             List<IconFrame> iconFrames = new(insertingPair.Value.Length);
 
             foreach (var dmiFrame in insertingPair.Value) {
-                iconFrames.Add(new IconFrame(image, dmiFrame, description.Width, description.Height));
+                iconFrames.Add(new IconFrame(icon.Texture, dmiFrame, icon.DMI.Width, icon.DMI.Height));
             }
 
             iconState.Directions[insertingPair.Key] = iconFrames;
@@ -280,7 +279,8 @@ public interface IDreamIconOperation {
     public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds);
 }
 
-public sealed class DreamIconOperationBlend : IDreamIconOperation {
+[Virtual]
+public class DreamIconOperationBlend : IDreamIconOperation {
     // With the same values as the ICON_* defines in DMStandard
     public enum BlendType {
         Add = 0,
@@ -294,23 +294,79 @@ public sealed class DreamIconOperationBlend : IDreamIconOperation {
 
     private readonly BlendType _type;
     private readonly int _xOffset, _yOffset;
-    private readonly Image<Rgba32> _blending;
-    private readonly ParsedDMIDescription _blendingDescription;
 
-    public DreamIconOperationBlend(BlendType type, DreamValue blending, int xOffset, int yOffset) {
+    protected DreamIconOperationBlend(BlendType type, int xOffset, int yOffset) {
         _type = type;
         _xOffset = xOffset;
         _yOffset = yOffset;
 
-        var resourceManager = IoCManager.Resolve<DreamResourceManager>();
-        (var blendingResource, _blendingDescription) = DreamMetaObjectIcon.GetIconResourceAndDescription(resourceManager, blending);
-        _blending = resourceManager.LoadImage(blendingResource);
-
-        if (_type is not BlendType.Overlay and not BlendType.Underlay)
+        if (_type is not BlendType.Overlay and not BlendType.Underlay and not BlendType.Add and not BlendType.Subtract)
             throw new NotImplementedException($"\"{_type}\" blending is not implemented");
     }
 
-    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
+    public virtual void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
+        throw new NotImplementedException();
+    }
+
+    protected void BlendPixel(Rgba32[] pixels, int dstPixelPosition, Rgba32 src) {
+        Rgba32 dst = pixels[dstPixelPosition];
+
+        switch (_type) {
+            case BlendType.Add: {
+                pixels[dstPixelPosition].R = (byte)Math.Min(dst.R + src.R, byte.MaxValue);
+                pixels[dstPixelPosition].G = (byte)Math.Min(dst.G + src.G, byte.MaxValue);
+                pixels[dstPixelPosition].B = (byte)Math.Min(dst.B + src.B, byte.MaxValue);
+
+                // BYOND uses the smaller of the two alphas
+                pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);
+                break;
+            }
+            case BlendType.Subtract: {
+                pixels[dstPixelPosition].R = (byte)Math.Max(dst.R - src.R, byte.MinValue);
+                pixels[dstPixelPosition].G = (byte)Math.Max(dst.G - src.G, byte.MinValue);
+                pixels[dstPixelPosition].B = (byte)Math.Max(dst.B - src.B, byte.MinValue);
+
+                // BYOND uses the smaller of the two alphas
+                pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);
+                break;
+            }
+
+            case BlendType.Overlay: {
+                pixels[dstPixelPosition].R = (byte) (dst.R + (src.R - dst.R) * src.A / 255);
+                pixels[dstPixelPosition].G = (byte) (dst.G + (src.G - dst.G) * src.A / 255);
+                pixels[dstPixelPosition].B = (byte) (dst.B + (src.B - dst.B) * src.A / 255);
+
+                byte highAlpha = Math.Max(dst.A, src.A);
+                byte lowAlpha = Math.Min(dst.A, src.A);
+                pixels[dstPixelPosition].A = (byte) (highAlpha + (highAlpha * lowAlpha / 255));
+                break;
+            }
+            case BlendType.Underlay: {
+                // Opposite of overlay
+                (dst, src) = (src, dst);
+                goto case BlendType.Overlay;
+            }
+        }
+    }
+}
+
+public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
+    private readonly Image<Rgba32> _blending;
+    private readonly ParsedDMIDescription _blendingDescription;
+
+    public DreamIconOperationBlendImage(BlendType type, int xOffset, int yOffset, DreamValue blending) : base(type, xOffset, yOffset) {
+        //TODO: Find a way to get rid of this!
+        var resourceManager = IoCManager.Resolve<DreamResourceManager>();
+
+        if (!resourceManager.TryLoadIcon(blending, out var blendingIcon)) {
+            throw new Exception($"Value {blending} is not a valid icon to blend");
+        }
+
+        _blending = blendingIcon.Texture;
+        _blendingDescription = blendingIcon.DMI;
+    }
+
+    public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
         _blending.ProcessPixelRows(accessor => {
             // The first frame of the source image blends with the first frame of the destination image
             // The second frame blends with the second, and so on
@@ -329,23 +385,7 @@ public sealed class DreamIconOperationBlend : IDreamIconOperation {
                     Rgba32 dst = pixels[dstPixelPosition];
                     Rgba32 src = row[srcFramePos.Value.X + x - bounds.Left];
 
-                    switch (_type) {
-                        case BlendType.Overlay: {
-                            pixels[dstPixelPosition].R = (byte) (dst.R + (src.R - dst.R) * src.A / 255);
-                            pixels[dstPixelPosition].G = (byte) (dst.G + (src.G - dst.G) * src.A / 255);
-                            pixels[dstPixelPosition].B = (byte) (dst.B + (src.B - dst.B) * src.A / 255);
-
-                            byte highAlpha = Math.Max(dst.A, src.A);
-                            byte lowAlpha = Math.Min(dst.A, src.A);
-                            pixels[dstPixelPosition].A = (byte) (highAlpha + (highAlpha * lowAlpha / 255));
-                            break;
-                        }
-                        case BlendType.Underlay: {
-                            // Opposite of overlay
-                            (dst, src) = (src, dst);
-                            goto case BlendType.Overlay;
-                        }
-                    }
+                    BlendPixel(pixels, dstPixelPosition, src);
                 }
             }
         });
@@ -366,5 +406,25 @@ public sealed class DreamIconOperationBlend : IDreamIconOperation {
             return null;
 
         return (column * _blendingDescription.Width, row * _blendingDescription.Height);
+    }
+}
+
+public sealed class DreamIconOperationBlendColor : DreamIconOperationBlend {
+    private readonly Rgba32 _color;
+
+    public DreamIconOperationBlendColor(BlendType type, int xOffset, int yOffset, Color color) : base(type, xOffset, yOffset) {
+        _color = new Rgba32(color.RByte, color.GByte, color.BByte, color.AByte);
+    }
+
+    public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
+        // TODO: x & y offsets
+
+        for (int y = bounds.Top; y < bounds.Bottom; y++) {
+            for (int x = bounds.Left; x < bounds.Right; x++) {
+                int dstPixelPosition = (y * imageSpan) + x;
+
+                BlendPixel(pixels, dstPixelPosition, _color);
+            }
+        }
     }
 }

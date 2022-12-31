@@ -11,6 +11,8 @@ namespace OpenDreamShared.Compiler {
         protected Lexer<SourceType> _lexer;
         private Token _currentToken;
         private readonly Stack<Token> _tokenStack = new(1);
+        /// <summary>The maximum number of errors or warnings we'd ever place into <see cref="Emissions"/>.</summary>
+        protected const int MAX_EMISSIONS_RECORDED = 50_000_000;
 
         protected Parser(Lexer<SourceType> lexer) {
             _lexer = lexer;
@@ -95,7 +97,8 @@ namespace OpenDreamShared.Compiler {
         protected void Error(string message, bool throwException = true) {
             CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken?.Location, message);
 
-            Emissions.Add(error);
+            if(Emissions.Count < MAX_EMISSIONS_RECORDED)
+                Emissions.Add(error);
             if (throwException)
                 throw new CompileErrorException(error);
         }

@@ -4,6 +4,7 @@ using System.Text.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
@@ -20,15 +21,19 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
         [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
+        [Dependency] private readonly ITaskManager _taskManager = default!;
+        [Dependency] private readonly IGameTiming _gameTiming = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
-        public DreamObjectTree ObjectTree { get; private set; } = new();
         public DreamObject WorldInstance { get; private set; }
         public Exception? LastDMException { get; set; }
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
+        public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
         public DreamList WorldContentsList { get; private set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
@@ -48,20 +53,17 @@ namespace OpenDreamRuntime {
             _dreamResourceManager.Initialize();
 
             if (!LoadJson(jsonPath)) {
-                IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
+                _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
             }
         }
 
         public void StartWorld() {
             // It is now OK to call user code, like /New procs.
             Initialized = true;
-            InitializedTick = IoCManager.Resolve<IGameTiming>().CurTick;
+            InitializedTick = _gameTiming.CurTick;
 
             // Call global <init> with waitfor=FALSE
-            if (_compiledJson.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                var globalInitProc = new DMProc(DreamPath.Root, "(global init)", null, null, null, initProcDef.Bytecode, initProcDef.MaxStackSize, initProcDef.Attributes, initProcDef.VerbName, initProcDef.VerbCategory, initProcDef.VerbDesc, initProcDef.Invisibility);
-                globalInitProc.Spawn(WorldInstance, new DreamProcArguments());
-            }
+            _objectTree.GlobalInitProc?.Spawn(WorldInstance, new());
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
@@ -100,15 +102,15 @@ namespace OpenDreamRuntime {
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
             //TODO: Empty or invalid _compiledJson.Interface should return default interface - see issue #851
-            ObjectTree.LoadJson(json);
+            _objectTree.LoadJson(json);
 
             SetMetaObjects();
 
-            DreamProcNative.SetupNativeProcs(ObjectTree);
+            DreamProcNative.SetupNativeProcs(_objectTree);
 
             _dreamMapManager.Initialize();
             WorldContentsList = DreamList.Create();
-            WorldInstance = ObjectTree.CreateObject(DreamPath.World);
+            WorldInstance = _objectTree.CreateObject(_objectTree.World);
 
             // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.
             WorldInstance.InitSpawn(new DreamProcArguments());
@@ -116,10 +118,11 @@ namespace OpenDreamRuntime {
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
                 Globals.Clear();
                 Globals.EnsureCapacity(jsonGlobals.GlobalCount);
+                GlobalNames = jsonGlobals.Names;
 
                 for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
                     object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);
-                    Globals.Add(ObjectTree.GetDreamValueFromJsonElement(globalValue));
+                    Globals.Add(_objectTree.GetDreamValueFromJsonElement(globalValue));
                 }
             }
 
@@ -134,22 +137,22 @@ namespace OpenDreamRuntime {
 
         private void SetMetaObjects() {
             // Datum needs to be set first
-            ObjectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
+            _objectTree.SetMetaObject(_objectTree.Datum, new DreamMetaObjectDatum());
 
             //TODO Investigate what types BYOND can reparent without exploding and only allow reparenting those
-            ObjectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList());
-            ObjectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient());
-            ObjectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld());
-            ObjectTree.SetMetaObject(DreamPath.Matrix, new DreamMetaObjectMatrix());
-            ObjectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex());
-            ObjectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom());
-            ObjectTree.SetMetaObject(DreamPath.Area, new DreamMetaObjectArea());
-            ObjectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
-            ObjectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
-            ObjectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
-            ObjectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
-            ObjectTree.SetMetaObject(DreamPath.Filter, new DreamMetaObjectFilter());
-            ObjectTree.SetMetaObject(DreamPath.Savefile, new DreamMetaObjectSavefile());
+            _objectTree.SetMetaObject(_objectTree.List, new DreamMetaObjectList());
+            _objectTree.SetMetaObject(_objectTree.Client, new DreamMetaObjectClient());
+            _objectTree.SetMetaObject(_objectTree.World, new DreamMetaObjectWorld());
+            _objectTree.SetMetaObject(_objectTree.Matrix, new DreamMetaObjectMatrix());
+            _objectTree.SetMetaObject(_objectTree.Regex, new DreamMetaObjectRegex());
+            _objectTree.SetMetaObject(_objectTree.Atom, new DreamMetaObjectAtom());
+            _objectTree.SetMetaObject(_objectTree.Area, new DreamMetaObjectArea());
+            _objectTree.SetMetaObject(_objectTree.Turf, new DreamMetaObjectTurf());
+            _objectTree.SetMetaObject(_objectTree.Movable, new DreamMetaObjectMovable());
+            _objectTree.SetMetaObject(_objectTree.Mob, new DreamMetaObjectMob());
+            _objectTree.SetMetaObject(_objectTree.Icon, new DreamMetaObjectIcon());
+            _objectTree.SetMetaObject(_objectTree.Filter, new DreamMetaObjectFilter());
+            _objectTree.SetMetaObject(_objectTree.Savefile, new DreamMetaObjectSavefile());
         }
 
         public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log") {
@@ -195,17 +198,15 @@ namespace OpenDreamRuntime {
                 }
             } else if (value.TryGetValueAsString(out var refStr)) {
                 refType = RefType.String;
-                idx = ObjectTree.Strings.IndexOf(refStr);
+                idx = _objectTree.Strings.IndexOf(refStr);
 
                 if (idx == -1) {
-                    ObjectTree.Strings.Add(refStr);
-                    idx = ObjectTree.Strings.Count - 1;
+                    _objectTree.Strings.Add(refStr);
+                    idx = _objectTree.Strings.Count - 1;
                 }
-            } else if (value.TryGetValueAsPath(out var refPath)) {
-                var treeEntry = ObjectTree.GetTreeEntry(refPath);
-
-                refType = RefType.DreamPath;
-                idx = treeEntry.Id;
+            } else if (value.TryGetValueAsType(out var type)) {
+                refType = RefType.DreamType;
+                idx = type.Id;
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 // Bit of a hack. This should use a resource's ID once they are refactored to have them.
                 return $"{(int) RefType.DreamResource}{refRsc.ResourcePath}";
@@ -247,12 +248,12 @@ namespace OpenDreamRuntime {
 
                         return DreamValue.Null;
                     case RefType.String:
-                        return ObjectTree.Strings.Count > refId
-                            ? new DreamValue(ObjectTree.Strings[refId])
+                        return _objectTree.Strings.Count > refId
+                            ? new DreamValue(_objectTree.Strings[refId])
                             : DreamValue.Null;
-                    case RefType.DreamPath:
-                        return ObjectTree.Types.Length > refId
-                            ? new DreamValue(ObjectTree.Types[refId].Path)
+                    case RefType.DreamType:
+                        return _objectTree.Types.Length > refId
+                            ? new DreamValue(_objectTree.Types[refId])
                             : DreamValue.Null;
                     default:
                         throw new Exception($"Invalid reference type for ref {refString}");

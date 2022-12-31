@@ -28,9 +28,10 @@ namespace OpenDreamClient.Resources {
 
         private ResourcePath _cacheDirectory;
 
-        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.res");
+        private ISawmill _sawmill;
 
         public void Initialize() {
+            _sawmill = Logger.GetSawmill("opendream.res");
             InitCacheDirectory();
 
             _netManager.RegisterNetMessage<MsgBrowseResource>(RxBrowseResource);

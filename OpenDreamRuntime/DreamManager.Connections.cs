@@ -87,7 +87,7 @@ namespace OpenDreamRuntime
                 case SessionStatus.InGame:
                 {
                     var connection = new DreamConnection(e.Session);
-                    var client = ObjectTree.CreateObject(DreamPath.Client);
+                    var client = _objectTree.CreateObject(_objectTree.Client);
                     connection.ClientDreamObject = client;
 
                     _clientToConnection.Add(client, connection);

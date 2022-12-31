@@ -4,7 +4,6 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
@@ -12,9 +11,9 @@ using Robust.Shared.Enums;
 
 namespace OpenDreamRuntime
 {
-    public sealed class DreamConnection
-    {
+    public sealed class DreamConnection {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
@@ -47,22 +46,18 @@ namespace OpenDreamRuntime
             get => _mobDreamObject;
             set
             {
-                if (_mobDreamObject != value)
-                {
+                if (_mobDreamObject != value) {
                     if (_mobDreamObject != null) _mobDreamObject.SpawnProc("Logout");
 
-                    if (value != null && value.IsSubtypeOf(DreamPath.Mob))
-                    {
+                    if (value != null && value.IsSubtypeOf(_objectTree.Mob)) {
                         DreamConnection oldMobConnection = _dreamManager.GetConnectionFromMob(value);
                         if (oldMobConnection != null) oldMobConnection.MobDreamObject = null;
 
                         _mobDreamObject = value;
                         ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
-                        _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject );
+                        _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject);
                         Session.AttachToEntity(_atomManager.GetMovableEntity(_mobDreamObject));
-                    }
-                    else
-                    {
+                    } else {
                         Session.DetachFromEntity();
                         _mobDreamObject = null;
                     }
@@ -79,39 +74,35 @@ namespace OpenDreamRuntime
             Session = session;
         }
 
-        public void UpdateAvailableVerbs()
-        {
+        public void UpdateAvailableVerbs() {
             _availableVerbs.Clear();
             List<(string, string, string)>? verbs = null;
 
-            if (MobDreamObject != null)
-            {
+            if (MobDreamObject != null) {
                 List<DreamValue> mobVerbPaths = MobDreamObject.GetVariable("verbs").MustGetValueAsDreamList().GetValues();
                 verbs = new List<(string, string, string)>(mobVerbPaths.Count);
-                foreach (DreamValue mobVerbPath in mobVerbPaths)
-                {
-                    DreamPath path = mobVerbPath.MustGetValueAsPath();
-                    if (path.LastElement is null) continue;
-                    var proc = MobDreamObject.GetProc(path.LastElement);
-                    _availableVerbs.Add(path.LastElement, proc);
+                foreach (DreamValue mobVerb in mobVerbPaths) {
+                    if (!mobVerb.TryGetValueAsProc(out var proc))
+                        continue;
+
+                    _availableVerbs.Add(proc.Name, proc);
 
                     // Don't send hidden verbs. Names starting with "." count as hidden.
                     if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||
-                        (proc.VerbName != null && proc.VerbName[0] == '.'))
-                    {
+                        (proc.VerbName != null && proc.VerbName[0] == '.')) {
                         continue;
                     }
 
                     string? category = proc.VerbCategory;
                     // Explicitly null category is hidden from verb panels, "" category becomes the default_verb_category
-                    if (category == string.Empty)
-                    {
+                    if (category == string.Empty) {
                         // But if default_verb_category is null, we hide it from the verb panel
                         category = ClientDreamObject.GetVariable("default_verb_category").TryGetValueAsString(out var value) ? value : null;
                     }
+
                     // No set name is serialized as an empty string and the last element will be used
                     // Null category is serialized as an empty string and treated as hidden
-                    verbs.Add((path.LastElement, proc.VerbName ?? string.Empty, category ?? string.Empty));
+                    verbs.Add((proc.Name, proc.VerbName ?? string.Empty, category ?? string.Empty));
                 }
             }
 
@@ -122,31 +113,25 @@ namespace OpenDreamRuntime
             Session.ConnectedClient.SendMessage(msg);
         }
 
-        public void UpdateStat()
-        {
+        public void UpdateStat() {
             if (_currentlyUpdatingStat)
                 return;
 
             _currentlyUpdatingStat = true;
             _statPanels.Clear();
 
-            DreamThread.Run("Stat", async (state) =>
-            {
-                try
-                {
+            DreamThread.Run("Stat", async (state) => {
+                try {
                     var statProc = ClientDreamObject.GetProc("Stat");
 
                     await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
-                    if (Session.Status == SessionStatus.InGame)
-                    {
+                    if (Session.Status == SessionStatus.InGame) {
                         var msg = new MsgUpdateStatPanels() { StatPanels = _statPanels };
                         Session.ConnectedClient.SendMessage(msg);
                     }
 
                     return DreamValue.Null;
-                }
-                finally
-                {
+                } finally {
                     _currentlyUpdatingStat = false;
                 }
             });
@@ -212,7 +197,7 @@ namespace OpenDreamRuntime
 
         public void OutputDreamValue(DreamValue value) {
             if (value.TryGetValueAsDreamObject(out DreamObject outputObject)) {
-                if (outputObject?.IsSubtypeOf(DreamPath.Sound) == true) {
+                if (outputObject?.IsSubtypeOf(_objectTree.Sound) == true) {
                     UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
                     DreamValue file = outputObject.GetVariable("file");
@@ -317,13 +302,13 @@ namespace OpenDreamRuntime
             for (int i = 0; i < listValues.Count; i++) {
                 DreamValue value = listValues[i];
 
-                if (types.HasFlag(DMValueType.Obj) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Movable, out _))
+                if (types.HasFlag(DMValueType.Obj) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out _))
                     continue;
-                if (types.HasFlag(DMValueType.Mob) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out _))
+                if (types.HasFlag(DMValueType.Mob) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Mob, out _))
                     continue;
-                if (types.HasFlag(DMValueType.Turf) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Turf, out _))
+                if (types.HasFlag(DMValueType.Turf) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out _))
                     continue;
-                if (types.HasFlag(DMValueType.Area) && !value.TryGetValueAsDreamObjectOfType(DreamPath.Area, out _))
+                if (types.HasFlag(DMValueType.Area) && !value.TryGetValueAsDreamObjectOfType(_objectTree.Area, out _))
                     continue;
 
                 promptValues.Add(value.Stringify());

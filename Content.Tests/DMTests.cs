@@ -4,6 +4,7 @@ using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using Robust.Shared.Asynchronous;
@@ -14,12 +15,12 @@ using Robust.Shared.Timing;
 namespace Content.Tests
 {
     [TestFixture]
-    public sealed partial class DMTests : ContentUnitTest
-    {
+    public sealed class DMTests : ContentUnitTest {
         public const string TestProject = "DMProject";
         public const string InitializeEnvironment = "./environment.dme";
 
         private IDreamManager _dreamMan;
+        private IDreamObjectTree _objectTree;
         private ITaskManager _taskManager;
 
         [Flags]
@@ -41,6 +42,7 @@ namespace Content.Tests
             componentFactory.RegisterClass<DMISpriteComponent>();
             componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
+            _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
             _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
         }
@@ -61,8 +63,7 @@ namespace Content.Tests
         }
 
         [Test, TestCaseSource(nameof(GetTests))]
-        public void TestFiles(string sourceFile, DMTestFlags testFlags)
-        {
+        public void TestFiles(string sourceFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
             try {
                 string compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
@@ -112,7 +113,7 @@ namespace Content.Tests
             Task<DreamValue> callTask = null;
 
             DreamThread.Run("RunTest", async (state) => {
-                if (_dreamMan.ObjectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
+                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
                     callTask = state.Call(proc, null, null, new DreamProcArguments(null));
                     result = await callTask;
                     return DreamValue.Null;

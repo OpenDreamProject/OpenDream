@@ -72,7 +72,13 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushPath(TargetPath);
+            if (!DMObjectTree.TryGetTypeId(TargetPath, out var typeId)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {TargetPath} does not exist");
+
+                return;
+            }
+
+            proc.PushType(typeId);
             Arguments.EmitPushArguments(dmObject, proc);
             proc.CreateObject();
         }
@@ -89,7 +95,13 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushPath(_path);
+            if (!DMObjectTree.TryGetTypeId(_path, out var typeId)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_path} does not exist");
+
+                return;
+            }
+
+            proc.PushType(typeId);
 
             if (_container != null) {
                 _container.EmitPushValue(dmObject, proc);
@@ -306,8 +318,14 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            if (!DMObjectTree.TryGetTypeId(_path, out var typeId)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_path} does not exist");
+
+                return;
+            }
+
             _expr.EmitPushValue(dmObject, proc);
-            proc.PushPath(_path);
+            proc.PushType(typeId);
             proc.IsType();
         }
     }
@@ -486,6 +504,17 @@ namespace DMCompiler.DM.Expressions {
             _a.EmitPushValue(dmObject, proc);
             _procArgs.EmitPushArguments(dmObject, proc);
             proc.CallStatement();
+        }
+    }
+
+    // opendream_procpath
+    class OpenDreamProcpath : DMExpression {
+        public OpenDreamProcpath(Location location)
+            : base(location)
+        {}
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.PushProc(proc.Id);
         }
     }
 }

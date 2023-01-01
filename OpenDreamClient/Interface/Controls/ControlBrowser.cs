@@ -1,8 +1,8 @@
 ﻿using System.IO;
 using System.Net;
 using System.Web;
+using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Resources;
-using OpenDreamShared.Interface;
 using OpenDreamShared.Network.Messages;
 using Robust.Client.UserInterface;
 using Robust.Client.WebView;

@@ -183,10 +183,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void Resize(int size) {
-            if (_values == null) {
-                _values = new List<DreamValue>(size);
-                return;
-            }
+            _values ??= new List<DreamValue>(size);
 
             if (size > _values.Count) {
                 _values.Capacity = size;

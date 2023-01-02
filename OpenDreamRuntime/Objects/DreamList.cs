@@ -153,7 +153,12 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual void Cut(int start = 1, int end = 0) {
-            if (_values == null) throw new IndexOutOfRangeException();
+            if (_values == null) {
+                if (start != 1 || end != 0) { // You can call Cut() with default args and never get an out-of-bounds runtime
+                    throw new IndexOutOfRangeException();
+                }
+                return;
+            }
             if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
             if (BeforeValueRemoved != null) {
@@ -178,10 +183,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void Resize(int size) {
-            if (_values == null) {
-                _values = new List<DreamValue>(size);
-                return;
-            }
+            _values ??= new List<DreamValue>(size);
 
             if (size > _values.Count) {
                 _values.Capacity = size;

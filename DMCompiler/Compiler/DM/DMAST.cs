@@ -148,21 +148,11 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatement(Location location)
             : base(location)
         {}
-        /// <summary>
-        /// Gets whether this statement is or contains some <see cref="DMASTProcStatementSet"/>s.<br/>
-        /// This is <see langword="fucked"/> but having the helper in general is actually quite convenient.
-        /// </summary>
-        public bool IsSetStatement {
-            get {
-                switch (this) {
-                    case (DMASTProcStatementSet):
-                        return true;
-                    case (DMASTAggregate<DMASTProcStatementSet>):
-                        return true;
-                    default:
-                        return false;
-                }
-            }
+        /// <returns>
+        /// Returns true if this statement is either T or an aggregation of T (stored by an <see cref="DMASTAggregate{T}"/> instance). False otherwise.
+        /// </returns>
+        public bool IsAggregateOr<T>() where T : DMASTProcStatement {
+            return (this is T or DMASTAggregate<T>);
         }
     }
 
@@ -231,7 +221,7 @@ namespace DMCompiler.Compiler.DM {
         /// <summary> Initializes a block with only one statement (which may be a <see cref="DMASTProcStatementSet"/> :o) </summary>
         public DMASTProcBlockInner(Location location, DMASTProcStatement statement) : base(location)
         {
-            if (statement.IsSetStatement) {
+            if (statement.IsAggregateOr<DMASTProcStatementSet>()) { // If this is a Set statement or a set of Set statements
                 Statements = Array.Empty<DMASTProcStatement>();
                 SetStatements = new DMASTProcStatement[] { statement };
             } else {
@@ -239,14 +229,14 @@ namespace DMCompiler.Compiler.DM {
                 SetStatements = Array.Empty<DMASTProcStatement>();
             }
         }
-        public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements, DMASTProcStatement[] set_statements)
+        public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements, DMASTProcStatement[] setStatements)
             : base(location)
         {
             Statements = statements;
-            if (set_statements == null)
+            if (setStatements is null)
                 SetStatements = Array.Empty<DMASTProcStatement>();
             else
-                SetStatements = set_statements;
+                SetStatements = setStatements;
         }
 
         public override void Visit(DMASTVisitor visitor) {

@@ -5,6 +5,7 @@ using OpenDreamShared.Dream;
 using System;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Dream.Procs;
+using System.Diagnostics;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
@@ -64,18 +65,8 @@ namespace DMCompiler.DM.Visitors {
             foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
                 Location loc = stmt.Location;
                 try {
-                    if (stmt is DMASTProcStatementSet set) {
-                        ProcessStatementSet(set);
-                    }
-                    else if (stmt is DMASTAggregate<DMASTProcStatementSet> greg) { // hi greg
-                        foreach (DMASTProcStatementSet gregSet in greg.Statements)
-                        {
-                            loc = gregSet.Location;
-                            ProcessStatementSet(gregSet);
-                        }
-                    }
-                    else // Shouldn't happen >:/
-                        throw new CompileAbortException(loc, "Non-set statements where located in the block's SetStatements array!");
+                    ProcessStatement(stmt);
+                    Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
                 } catch (CompileAbortException e) {
                     // The statement's location info isn't passed all the way down so change the error to make it more accurate
                     e.Error.Location = loc;
@@ -129,9 +120,15 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
-                //FIXME: Is there a more generic way of doing this, where Aggregate doesn't need every possible type state specified here?
-                case DMASTAggregate<DMASTProcStatementVarDeclaration> polyvar:
-                    foreach (var declare in polyvar.Statements)
+                case DMASTProcStatementSet statementSet: ProcessStatementSet(statementSet); break;
+                //NOTE: Is there a more generic way of doing this, where Aggregate doesn't need every possible type state specified here?
+                //      please write such generic thing if more than three aggregates show up in this switch.
+                case DMASTAggregate<DMASTProcStatementSet> gregSet: // Hi Greg
+                    foreach (var setStatement in gregSet.Statements)
+                        ProcessStatementSet(setStatement);
+                    break;
+                case DMASTAggregate<DMASTProcStatementVarDeclaration> gregVar:
+                    foreach (var declare in gregVar.Statements)
                         ProcessStatementVarDeclaration(declare);
                     break;
                 default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
@@ -187,7 +184,9 @@ namespace DMCompiler.DM.Visitors {
             } else {
                 previousSetStatementValue = constant;
             }
-            if (statementSet.WasInKeyword) { // check if it was 'set x in y' or whatever                               // (which is illegal for everything except setting src to something)
+            // Check if it was 'set x in y' or whatever
+            // (which is illegal for everything except setting src to something)
+            if (statementSet.WasInKeyword) {                              
                 DMCompiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
                 //fallthrough into normal behaviour because this error is kinda pedantic
             }

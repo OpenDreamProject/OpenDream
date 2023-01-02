@@ -496,9 +496,11 @@ namespace DMCompiler.Compiler.DM {
                 List<DMASTProcStatement> setStatements = new(); // set statements are weird and must be held separately.
 
                 do {
-                    (List<DMASTProcStatement> stmts, List<DMASTProcStatement> set_stmts) blockInner = ProcBlockInner();
-                    if (blockInner.stmts != null) statements.AddRange(blockInner.stmts);
-                    if (blockInner.set_stmts != null) setStatements.AddRange(blockInner.set_stmts);
+                    (List<DMASTProcStatement> statements, List<DMASTProcStatement> setStatements) blockInner = ProcBlockInner();
+                    if (blockInner.statements is not null)
+                        statements.AddRange(blockInner.statements);
+                    if (blockInner.setStatements is not null)
+                        setStatements.AddRange(blockInner.setStatements);
 
                     if (!Check(TokenType.DM_Dedent)) {
                         Error("Expected end of proc statement", throwException: false);
@@ -525,20 +527,12 @@ namespace DMCompiler.Compiler.DM {
 
                 try {
                     statement = ProcStatement();
-                    if (statement != null) {
+                    if (statement is not null) {
                         Whitespace();
-                        switch(statement)
-                        {
-                            case DMASTAggregate<DMASTProcStatementSet> greg:
-                                setStatements.AddRange(greg.Statements);
-                                break;
-                            case DMASTProcStatementSet set:
-                                setStatements.Add(set);
-                                break;
-                            default:
-                                procStatements.Add(statement);
-                                break;
-                        }
+                        if(statement.IsAggregateOr<DMASTProcStatementSet>())
+                            setStatements.Add(statement);
+                        else
+                            procStatements.Add(statement);
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
@@ -647,7 +641,7 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Var)) {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
-                Whitespace(); // NOTE: This might be a redundant whitespace check? Not... sure?
+                Whitespace(); // We have to consume whitespace here since "var foo = 1" (for example) is valid DM code.
                 DMASTProcStatementVarDeclaration[] vars = ProcVarEnd(allowMultiple);
                 if (vars == null) Error("Expected a var declaration");
                 if (vars.Length > 1)
@@ -927,9 +921,9 @@ namespace DMCompiler.Compiler.DM {
 
                 DMASTProcStatementSet[] sets = ProcSetEnd(true);
                 Token setBlockToken = Current();
-                if (sets == null)
+                if (sets is null || sets.Length == 0)
                 {
-                    //Error("Expected set declaration");
+                    Error("Expected set declaration");
                     return null;
                 }
                 if (sets.Length > 1)
@@ -990,21 +984,23 @@ namespace DMCompiler.Compiler.DM {
                 Check(TokenType.DM_Colon);
                 Whitespace();
 
-                Token ifbody = Current();
+                Token ifBody = Current();
                 DMASTProcStatement procStatement = ProcStatement();
                 DMASTProcBlockInner body;
                 DMASTProcBlockInner elseBody = null;
 
                 if (procStatement != null) {
-                    //if (procStatement.IsSetStatement)
-                        //Warning("Empty if block detected", ifbody);
+                    if (procStatement.IsAggregateOr<DMASTProcStatementSet>()) // Having just a set statement counts as being empty.
+                        Error(WarningCode.EmptyBlock, "Empty if-block detected");
                     body = new DMASTProcBlockInner(loc, procStatement);
                 } else {
                     body = ProcBlock();
                 }
 
-                if (body is null)
+                if (body is null) {
+                    Error(WarningCode.EmptyBlock, "Empty if-block detected");
                     body = new DMASTProcBlockInner(loc);
+                }
                 Token afterIfBody = Current();
                 bool newLineAfterIf = Delimiter();
                 if (newLineAfterIf) Whitespace();
@@ -1015,12 +1011,17 @@ namespace DMCompiler.Compiler.DM {
                     procStatement = ProcStatement();
 
                     if (procStatement != null) {
+                        if (procStatement.IsAggregateOr<DMASTProcStatementSet>())
+                            Error(WarningCode.EmptyBlock, "Empty else-block detected");
                         elseBody = new DMASTProcBlockInner(loc, procStatement);
                     } else {
                         elseBody = ProcBlock();
                     }
 
-                    if (elseBody == null) elseBody = new DMASTProcBlockInner(loc);
+                    if (elseBody is null) {
+                        Error(WarningCode.EmptyBlock, "Empty else-block detected");
+                        elseBody = new DMASTProcBlockInner(loc);
+                    }
                 } else if (newLineAfterIf) {
                     ReuseToken(afterIfBody);
                 }
@@ -1129,6 +1130,7 @@ namespace DMCompiler.Compiler.DM {
 
                     DMASTProcStatement statement;
                     if (Check(TokenType.DM_Semicolon)) {
+                        Error(WarningCode.EmptyBlock, "Empty for-block detected");
                         statement = new DMASTProcStatementExpression(loc, new DMASTConstantNull(loc));
                     } else {
                         statement = ProcStatement();
@@ -1155,14 +1157,15 @@ namespace DMCompiler.Compiler.DM {
                 DMASTProcBlockInner body = ProcBlock();
 
                 if (body == null) {
-                    Token statement_token = Current();
                     DMASTProcStatement statement = ProcStatement();
 
                     //Loops without a body are valid DM
-                    if (statement == null)
+                    if (statement is null)
                     {
-                        //Warning("Empty while block detected", statement_token);
+                        Error(WarningCode.EmptyBlock, "Empty while-block detected");
                         statement = new DMASTProcStatementContinue(loc);
+                    } else if (statement.IsAggregateOr<DMASTProcStatementSet>()) { // set statements don't count as real, imo
+                        Error(WarningCode.EmptyBlock, "Empty while-block detected");
                     }
                     
                     body = new DMASTProcBlockInner(loc, statement);
@@ -1187,9 +1190,11 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) {
                     DMASTProcStatement statement = ProcStatement();
-                    if (statement == null) Error("Expected statement");
-
-                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement }, new DMASTProcStatement[] { });
+                    if (statement is null) // This is consistently fatal in BYOND
+                        Error("Expected statement");
+                    else if (statement.IsAggregateOr<DMASTProcStatementSet>()) // This is not.
+                        Error(WarningCode.EmptyBlock, "Empty do-while block detected");
+                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement }, null);
                 }
 
                 Newline();

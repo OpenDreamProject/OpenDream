@@ -39,12 +39,12 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // TODO: moving & delay
 
-            var objectTree = IoCManager.Resolve<IDreamObjectTree>();
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
-            var (iconRsc, iconDescription) = DreamMetaObjectIcon.GetIconResourceAndDescription(objectTree, resourceManager, newIcon);
+            if (!resourceManager.TryLoadIcon(newIcon, out var iconRsc))
+                throw new Exception($"Cannot insert {newIcon}");
 
             DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
-            iconObj.InsertStates(iconRsc, iconDescription, iconState, dir, frame); // TODO: moving & delay
+            iconObj.InsertStates(iconRsc, iconState, dir, frame); // TODO: moving & delay
             return DreamValue.Null;
         }
 

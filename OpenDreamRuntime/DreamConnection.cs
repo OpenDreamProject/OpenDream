@@ -4,7 +4,6 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
@@ -12,8 +11,7 @@ using Robust.Shared.Enums;
 
 namespace OpenDreamRuntime
 {
-    public sealed class DreamConnection
-    {
+    public sealed class DreamConnection {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
@@ -122,23 +120,18 @@ namespace OpenDreamRuntime
             _currentlyUpdatingStat = true;
             _statPanels.Clear();
 
-            DreamThread.Run("Stat", async (state) =>
-            {
-                try
-                {
+            DreamThread.Run("Stat", async (state) => {
+                try {
                     var statProc = ClientDreamObject.GetProc("Stat");
 
                     await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
-                    if (Session.Status == SessionStatus.InGame)
-                    {
+                    if (Session.Status == SessionStatus.InGame) {
                         var msg = new MsgUpdateStatPanels() { StatPanels = _statPanels };
                         Session.ConnectedClient.SendMessage(msg);
                     }
 
                     return DreamValue.Null;
-                }
-                finally
-                {
+                } finally {
                     _currentlyUpdatingStat = false;
                 }
             });

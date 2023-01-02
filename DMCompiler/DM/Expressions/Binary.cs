@@ -331,6 +331,17 @@ namespace DMCompiler.DM.Expressions {
         public GreaterThan(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.GreaterThan(rhs);
+            return true;
+        }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             LHS.EmitPushValue(dmObject, proc);
             RHS.EmitPushValue(dmObject, proc);
@@ -348,6 +359,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.GreaterThanOrEqual();
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.GreaterThanOrEqual(rhs);
+            return true;
+        }
     }
 
 
@@ -361,6 +382,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.LessThan();
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.LessThan(rhs);
+            return true;
+        }
     }
 
     // x <= y
@@ -373,6 +404,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.LessThanOrEqual();
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.LessThanOrEqual(rhs);
+            return true;
+        }
     }
 
     // x || y
@@ -381,13 +422,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
+                constant = lhs;
+                return true;
             }
 
-            constant = lhs.Or(rhs);
-            return true;
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -406,13 +452,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {
+                constant = lhs;
+                return true;
             }
 
-            constant = lhs.And(rhs);
-            return true;
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

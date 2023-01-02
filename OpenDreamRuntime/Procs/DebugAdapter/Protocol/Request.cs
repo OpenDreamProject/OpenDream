@@ -32,6 +32,7 @@ public class Request : ProtocolMessage {
             "next" => json.Deserialize<RequestNext>(),
             "stepIn" => json.Deserialize<RequestStepIn>(),
             "stepOut" => json.Deserialize<RequestStepOut>(),
+            "disassemble" => json.Deserialize<RequestDisassemble>(),
             // Caller will fail to recognize it and can respond with `success: false`.
             _ => request,
         };

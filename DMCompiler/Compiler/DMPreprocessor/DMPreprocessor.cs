@@ -26,7 +26,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private bool _canUseDirective = true;
         private readonly HashSet<string> _includedFiles = new(5120); // Capacity Note: TG peaks at 4860 at time of writing
         private readonly Stack<Token> _unprocessedTokens = new(8192); // Capacity Note: TG peaks at 6802 at time of writing
-        private bool _currentLineWhitespaceOnly = true;
         private readonly bool _enableDirectives;
         private readonly Dictionary<string, DMMacro> _defines = new(12288) { // Capacity Note: TG peaks at 9827 at time of writing. Current value is arbitrarily 4096 * 3.
             { "__LINE__", new DMMacroLine() },
@@ -147,14 +146,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             break;
                         }
 
-                        while (_bufferedWhitespace.TryPop(out var whitespace)) {
-                            yield return whitespace;
-                        }
-                        _currentLineContainsNonWhitespace = true;
-                        _canUseDirective = false;
-
-                        yield return token;
-                        break;
+                        // Otherwise treat it like any other normal token
+                        goto case TokenType.DM_Preproc_Punctuator;
                     }
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:

@@ -5,7 +5,8 @@
 #define DEFINE_NESTED(NAME, VALUE) \
 	DEFINE NAME VALUE
 #define DEFINE_NESTED_WITH_STATEMENT(NAME, VALUE) \
-	var/test = 4\
+	var/test = 4;\
+	var/test2 = 2;\
 	DEFINE NAME VALUE
 
 DEFINE A 1

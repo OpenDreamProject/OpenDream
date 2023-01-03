@@ -165,7 +165,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             yield return whitespace;
                         }
                         _currentLineContainsNonWhitespace = true;
-                        _canUseDirective = false;
+                        _canUseDirective = true;
 
                         yield return token;
                         break;
@@ -374,7 +374,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                     }
 
-                    macroTokens.Add(macroToken);
                     macroToken = nextToken;
                 } else {
                     macroTokens.Add(macroToken);

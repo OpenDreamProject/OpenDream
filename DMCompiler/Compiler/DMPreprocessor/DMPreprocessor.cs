@@ -147,12 +147,19 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         // Otherwise treat it like any other normal token
-                        goto case TokenType.DM_Preproc_Punctuator;
+                        goto case TokenType.DM_Preproc_Number;
                     }
+                    case TokenType.DM_Preproc_Punctuator:
+                        if(token.Text == ";") {
+                            _canUseDirective = true;
+                            yield return token;
+                            break;
+                        }
+                        else
+                            goto case TokenType.DM_Preproc_Number;
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:
                     case TokenType.DM_Preproc_ConstantString:
-                    case TokenType.DM_Preproc_Punctuator:
                     case TokenType.DM_Preproc_Punctuator_Comma:
                     case TokenType.DM_Preproc_Punctuator_Period:
                     case TokenType.DM_Preproc_Punctuator_Colon:
@@ -165,7 +172,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             yield return whitespace;
                         }
                         _currentLineContainsNonWhitespace = true;
-                        _canUseDirective = true;
+                        _canUseDirective = false;
 
                         yield return token;
                         break;

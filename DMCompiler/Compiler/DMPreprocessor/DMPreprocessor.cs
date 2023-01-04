@@ -151,6 +151,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     }
                     case TokenType.DM_Preproc_Punctuator:
                         if(token.Text == ";") {
+                            while (_bufferedWhitespace.TryPop(out var whitespace)) {
+                                yield return whitespace;
+                            }
+                            _currentLineContainsNonWhitespace = true;
                             _canUseDirective = true;
                             yield return token;
                             break;

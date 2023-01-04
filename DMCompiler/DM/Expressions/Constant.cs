@@ -79,6 +79,22 @@ namespace DMCompiler.DM.Expressions {
         public virtual Constant BinaryOr(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
         }
+
+        public virtual Constant GreaterThan(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} > {rhs}\" is invalid");
+        }
+
+        public virtual Constant GreaterThanOrEqual(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} >= {rhs}\" is invalid");
+        }
+
+        public virtual Constant LessThan(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} < {rhs}\" is invalid");
+        }
+
+        public virtual Constant LessThanOrEqual(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
+        }
         #endregion
     }
 
@@ -95,6 +111,34 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
             return true;
+        }
+
+        public override Constant GreaterThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThan(rhs);
+            }
+            return new Number(Location, (0 > rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant GreaterThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThanOrEqual(rhs);
+            }
+            return new Number(Location, (0 >= rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThan(rhs);
+            }
+            return new Number(Location, (0 < rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThanOrEqual(rhs);
+            }
+            return new Number(Location, (0 <= rhsNum.Value) ? 1 : 0);
         }
     }
 
@@ -229,6 +273,34 @@ namespace DMCompiler.DM.Expressions {
             }
 
             return new Number(Location, ((int)Value) | ((int)rhsNum.Value));
+        }
+
+        public override Constant GreaterThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThan(rhs);
+            }
+            return new Number(Location, (Value > rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant GreaterThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThanOrEqual(rhs);
+            }
+            return new Number(Location, (Value >= rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThan(rhs);
+            }
+            return new Number(Location, (Value < rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThanOrEqual(rhs);
+            }
+            return new Number(Location, (Value <= rhsNum.Value) ? 1 : 0);
         }
     }
 

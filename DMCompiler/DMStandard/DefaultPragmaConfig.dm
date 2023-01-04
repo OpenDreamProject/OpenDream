@@ -5,7 +5,7 @@
 #pragma FileAlreadyIncluded warning
 #pragma MissingIncludedFile error
 #pragma MisplacedDirective error
-#pragma UndefineMissingDirective error
+#pragma UndefineMissingDirective warning
 #pragma DefinedMissingParen error
 #pragma ErrorDirective error
 #pragma WarningDirective warning

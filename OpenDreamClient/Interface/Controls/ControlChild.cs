@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Interface;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 

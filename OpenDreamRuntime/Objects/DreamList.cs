@@ -453,4 +453,43 @@ namespace OpenDreamRuntime.Objects {
             return appearance;
         }
     }
+
+    // world.contents list
+    // Operates on a list of all atoms
+    public sealed class WorldContentsList : DreamList {
+        private readonly IDreamMapManager _mapManager;
+
+        public WorldContentsList(IDreamMapManager mapManager) {
+            _mapManager = mapManager;
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var index))
+                throw new Exception($"Invalid index into world contents list: {key}");
+            if (index < 1 || index > _mapManager.AllAtoms.Count)
+                throw new Exception($"Out of bounds index on world contents list: {index}");
+
+            return new DreamValue(_mapManager.AllAtoms[index - 1]);
+        }
+
+        public override List<DreamValue> GetValues() {
+            throw new NotImplementedException("Getting all values of the world contents list is not implemented");
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot set the value of world contents list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            throw new Exception("Cannot append to world contents list");
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            throw new Exception("Cannot cut world contents list");
+        }
+
+        public override int GetLength() {
+            return _mapManager.AllAtoms.Count;
+        }
+    }
 }

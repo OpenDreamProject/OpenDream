@@ -4,7 +4,8 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectDefinition {
-        [Dependency] private readonly IDreamManager _dreamMan = default!;
+        public readonly IDreamManager DreamManager = default!;
+        public readonly IDreamObjectTree ObjectTree = default!;
 
         public readonly IDreamObjectTree.TreeEntry TreeEntry;
         public DreamPath Type => TreeEntry.Path;
@@ -20,11 +21,9 @@ namespace OpenDreamRuntime.Objects {
         // Maps /static variables from name to their index in the global variable table.
         public readonly Dictionary<string, int> GlobalVariables = new();
 
-        private readonly IDreamObjectTree _objectTree;
-
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
-            IoCManager.InjectDependencies(this);
-            _objectTree = copyFrom._objectTree;
+            DreamManager = copyFrom.DreamManager;
+            ObjectTree = copyFrom.ObjectTree;
             TreeEntry = copyFrom.TreeEntry;
             MetaObject = copyFrom.MetaObject;
             InitializationProc = copyFrom.InitializationProc;
@@ -37,9 +36,9 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(IDreamObjectTree objectTree, IDreamObjectTree.TreeEntry treeEntry) {
-            IoCManager.InjectDependencies(this);
-            _objectTree = objectTree;
+        public DreamObjectDefinition(IDreamManager dreamManager, IDreamObjectTree objectTree, IDreamObjectTree.TreeEntry treeEntry) {
+            DreamManager = dreamManager;
+            ObjectTree = objectTree;
             TreeEntry = treeEntry;
 
             if (Parent != null) {
@@ -56,9 +55,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void SetProcDefinition(string procName, int procId) {
-            if (HasProc(procName))
-            {
-                var proc = _objectTree.Procs[procId];
+            if (HasProc(procName)) {
+                var proc = ObjectTree.Procs[procId];
                 proc.SuperProc = GetProc(procName);
                 OverridingProcs[procName] = procId;
             } else {
@@ -76,10 +74,10 @@ namespace OpenDreamRuntime.Objects {
 
         public bool TryGetProc(string procName, [NotNullWhen(true)] out DreamProc? proc) {
             if (OverridingProcs.TryGetValue(procName, out var procId)) {
-                proc = _objectTree.Procs[procId];
+                proc = ObjectTree.Procs[procId];
                 return true;
             } else if (Procs.TryGetValue(procName, out procId)) {
-                proc = _objectTree.Procs[procId];
+                proc = ObjectTree.Procs[procId];
                 return true;
             } else if (Parent != null) {
                 return Parent.TryGetProc(procName, out proc);

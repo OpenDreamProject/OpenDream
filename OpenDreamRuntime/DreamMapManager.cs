@@ -51,13 +51,13 @@ namespace OpenDreamRuntime {
         };
 
         [Dependency] private readonly IMapManager _mapManager = default!;
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         private ServerAppearanceSystem _appearanceSystem = default!;  // set in Initialize
 
         public Vector2i Size { get; private set; }
         public int Levels => _levels.Count;
+        public List<DreamObject> AllAtoms { get; } = new();
 
         private readonly List<Level> _levels = new();
         private readonly Dictionary<DreamObject, (Vector2i Pos, Level Level)> _turfToTilePos = new();
@@ -66,6 +66,8 @@ namespace OpenDreamRuntime {
         private IDreamObjectTree.TreeEntry _defaultTurf;
 
         public void Initialize() {
+            AllAtoms.Clear();
+
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
 
             DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
@@ -79,8 +81,7 @@ namespace OpenDreamRuntime {
                      worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0) {
                 //TODO: Properly handle disabling default area
                 _defaultArea = new MapObjectJson(_objectTree.Area.Id);
-            }
-            else {
+            } else {
                 throw new Exception("bad area");
             }
 
@@ -142,12 +143,13 @@ namespace OpenDreamRuntime {
                     }
                 }
             }
+
             // Also call New() on all /area not in the grid.
             // This may call New() a SECOND TIME. This is intentional.
-            foreach (var thing in _dreamManager.WorldContentsList.GetValues()) {
-                if (thing.TryGetValueAsDreamObjectOfType(_objectTree.Area, out var area)) {
-                    if (seenAreas.Add(area)) {
-                        area.SpawnProc("New");
+            foreach (var thing in AllAtoms) {
+                if (thing.IsSubtypeOf(_objectTree.Area)) {
+                    if (seenAreas.Add(thing)) {
+                        thing.SpawnProc("New");
                     }
                 }
             }
@@ -179,7 +181,7 @@ namespace OpenDreamRuntime {
                 _turfToTilePos.Add(cell.Turf, (pos, level));
                 // Only add the /turf to .contents when it's created.
                 cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
-                _dreamManager.WorldContentsList.AddValue(new(cell.Turf));
+                AllAtoms.Add(cell.Turf);
             }
 
             cell.Turf.InitSpawn(creationArguments);
@@ -354,6 +356,7 @@ namespace OpenDreamRuntime {
     public interface IDreamMapManager {
         public Vector2i Size { get; }
         public int Levels { get; }
+        public List<DreamObject> AllAtoms { get; }
 
         public void Initialize();
         public void LoadAreasAndTurfs(List<DreamMapJson> maps);

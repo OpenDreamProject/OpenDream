@@ -5,11 +5,8 @@
 	var/name
 
 	proc/New(filename, timeout)
-
 	proc/Flush()
-
 	proc/ExportText(path = cd, file)
-		set opendream_unimplemented = TRUE
 
 	proc/ImportText(path = cd, source)
 		set opendream_unimplemented = TRUE

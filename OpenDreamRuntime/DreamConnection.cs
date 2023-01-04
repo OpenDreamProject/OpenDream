@@ -120,23 +120,18 @@ namespace OpenDreamRuntime
             _currentlyUpdatingStat = true;
             _statPanels.Clear();
 
-            DreamThread.Run("Stat", async (state) =>
-            {
-                try
-                {
+            DreamThread.Run("Stat", async (state) => {
+                try {
                     var statProc = ClientDreamObject.GetProc("Stat");
 
                     await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
-                    if (Session.Status == SessionStatus.InGame)
-                    {
+                    if (Session.Status == SessionStatus.InGame) {
                         var msg = new MsgUpdateStatPanels() { StatPanels = _statPanels };
                         Session.ConnectedClient.SendMessage(msg);
                     }
 
                     return DreamValue.Null;
-                }
-                finally
-                {
+                } finally {
                     _currentlyUpdatingStat = false;
                 }
             });

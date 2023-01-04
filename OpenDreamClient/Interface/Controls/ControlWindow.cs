@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Interface;
-using OpenDreamClient.Input;
+﻿using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -95,6 +95,7 @@ namespace OpenDreamClient.Interface.Controls
                 var element = control.UIElement;
                 var elementPos = control.Pos.GetValueOrDefault();
                 var elementSize = control.Size.GetValueOrDefault();
+
                 if(control.Size?.Y == 0)
                 {
                     elementSize.Y = (int) (windowSize.Y - elementPos.Y);
@@ -250,70 +251,75 @@ namespace OpenDreamClient.Interface.Controls
             UpdateAnchors();
         }
 
-        private void CreateMenu(MenuDescriptor menuDescriptor)
-        {
+        private class MenuNode {
+            public MenuElementDescriptor Data;
+            public List<MenuNode> Children = new();
+
+            public MenuNode(MenuElementDescriptor myData) {
+                this.Data = myData;
+            }
+
+            public MenuBar.MenuEntry GetMenuEntry() {
+                string name = Data.Name;
+                if (name.StartsWith("&"))
+                    name = name[1..]; //TODO: First character in name becomes a selection shortcut
+
+                if(Children.Count > 0) {
+                    MenuBar.SubMenu result = new MenuBar.SubMenu();
+                    result.Text = name;
+                    foreach(MenuNode child in Children)
+                        result.Entries.Add(child.GetMenuEntry());
+
+                    return result;
+                } else if(!String.IsNullOrEmpty(name)) {
+                    MenuBar.MenuButton result = new MenuBar.MenuButton();
+                    result.Text = name;
+                    //result.IsCheckable = data.CanCheck;
+                    if (!String.IsNullOrEmpty(Data.Command))
+                        result.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(Data.Command); };
+                    return result;
+                } else
+                    return new MenuBar.MenuSeparator();
+            }
+        }
+        private void CreateMenu(MenuDescriptor menuDescriptor) {
             _menu.Menus.Clear();
             if (menuDescriptor == null) return;
+            List<MenuNode> menuTree = new();
+            Dictionary<string, MenuNode> treeQuickLookup = new();
 
-            Dictionary<string, List<MenuElementDescriptor>> categories = new();
-
-            foreach (MenuElementDescriptor elementDescriptor in menuDescriptor.Elements)
-            {
-                if (elementDescriptor.Category == null)
-                {
-                    categories.Add(elementDescriptor.Name, new());
-                }
-                else
-                {
-                    if (!categories.ContainsKey(elementDescriptor.Category))
-                        categories.Add(elementDescriptor.Category, new());
-
-                    categories[elementDescriptor.Category].Add(elementDescriptor);
+            foreach (MenuElementDescriptor elementDescriptor in menuDescriptor.Elements) {
+                if (elementDescriptor.Category == null) {
+                    MenuNode topLevelMenuItem = new(elementDescriptor);
+                    treeQuickLookup.Add(elementDescriptor.Name, topLevelMenuItem);
+                    menuTree.Add(topLevelMenuItem);
+                } else {
+                    if (!treeQuickLookup.ContainsKey(elementDescriptor.Category)) {
+                        //if category is set but the parent element doesn't exist, create it
+                        MenuElementDescriptor parentMenuItem = new MenuElementDescriptor();
+                        parentMenuItem.Name = elementDescriptor.Category;
+                        MenuNode topLevelMenuItem = new(parentMenuItem);
+                        treeQuickLookup.Add(parentMenuItem.Name, topLevelMenuItem);
+                        menuTree.Add(topLevelMenuItem);
+                    }
+                    //now add this as a child
+                    MenuNode childMenuItem = new MenuNode(elementDescriptor);
+                    treeQuickLookup[elementDescriptor.Category].Children.Add(childMenuItem);
+                    treeQuickLookup.Add(elementDescriptor.Name, childMenuItem);
                 }
             }
 
-            foreach (KeyValuePair<string, List<MenuElementDescriptor>> categoryPair in categories)
-            {
-                var menu = new MenuBar.Menu();
-                menu.Title = categoryPair.Key;
+            foreach (MenuNode topLevelMenuItem in menuTree) {
+                MenuBar.Menu menu = new MenuBar.Menu();
+                menu.Title = topLevelMenuItem.Data.Name;
                 if (menu.Title?.StartsWith("&") ?? false)
                     menu.Title = menu.Title[1..]; //TODO: First character in name becomes a selection shortcut
 
                 _menu.Menus.Add(menu);
-                foreach (MenuElementDescriptor elementDescriptor in categoryPair.Value)
-                {
-                    if (String.IsNullOrEmpty(elementDescriptor.Name))
-                    {
-                        menu.Entries.Add(new MenuBar.MenuSeparator());
-                    }
-                    else
-                    {
-                        var item = CreateMenuItem(elementDescriptor.Name, elementDescriptor.Command,
-                            elementDescriptor.CanCheck);
-
-                        menu.Entries.Add(item);
-                    }
-                }
+                //visit each node in the tree, populating the menu from that
+                foreach (MenuNode child in topLevelMenuItem.Children)
+                    menu.Entries.Add(child.GetMenuEntry());
             }
-        }
-
-        private MenuBar.MenuEntry CreateMenuItem(string name, string command, bool isCheckable)
-        {
-            if (name.StartsWith("&"))
-                name = name[1..]; //TODO: First character in name becomes a selection shortcut
-
-            MenuBar.MenuButton item = new MenuBar.MenuButton()
-            {
-                Text = name,
-                //IsCheckable = isCheckable
-            };
-
-            if (!String.IsNullOrEmpty(command))
-            {
-                item.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(command); };
-            }
-
-            return item;
         }
     }
 }

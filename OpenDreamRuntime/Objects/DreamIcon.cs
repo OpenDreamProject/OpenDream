@@ -300,7 +300,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
         _xOffset = xOffset;
         _yOffset = yOffset;
 
-        if (_type is not BlendType.Overlay and not BlendType.Underlay and not BlendType.Add and not BlendType.Subtract)
+        if (_type is not BlendType.Overlay and not BlendType.Underlay and not BlendType.Multiply and not BlendType.Add and not BlendType.Subtract)
             throw new NotImplementedException($"\"{_type}\" blending is not implemented");
     }
 
@@ -328,6 +328,15 @@ public class DreamIconOperationBlend : IDreamIconOperation {
 
                 // BYOND uses the smaller of the two alphas
                 pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);
+                break;
+            }
+
+            case BlendType.Multiply: {
+                pixels[dstPixelPosition].R = (byte)Math.Round((double)dst.R * src.R / 0xFF); // It rounds!
+                pixels[dstPixelPosition].G = (byte)Math.Round((double)dst.G * src.G / 0xFF);
+                pixels[dstPixelPosition].B = (byte)Math.Round((double)dst.B * src.B / 0xFF);
+
+                pixels[dstPixelPosition].A = (byte)Math.Round((double)dst.A * src.A / 0xFF);
                 break;
             }
 

@@ -384,7 +384,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     if (nextToken.Type == TokenType.Newline) {
                         break;
                     }
-
+                    macroTokens.Add(macroToken);
                     macroToken = nextToken;
                 } else {
                     macroTokens.Add(macroToken);

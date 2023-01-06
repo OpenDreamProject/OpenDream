@@ -431,8 +431,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
-                objectDefinition = dreamObject.ObjectDefinition;
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject2)) {
+                objectDefinition = dreamObject2.ObjectDefinition;
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;
             } else {
@@ -2000,8 +2000,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
-                objectDefinition = dreamObject.ObjectDefinition;
+            if (owner.TryGetValueAsDreamObject(out var dreamObject2)) {
+                objectDefinition = dreamObject2.ObjectDefinition;
             } else if (owner.TryGetValueAsType(out var type)) {
                 objectDefinition = type.ObjectDefinition;
             } else {

@@ -523,7 +523,9 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (lValue != null) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
+                        string endLabel = _proc.NewLabelName();
+                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
+                        _proc.AddLabel(endLabel);
                         _proc.Enumerate(outputRef);
                     }
 

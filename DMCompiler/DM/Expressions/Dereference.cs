@@ -242,5 +242,40 @@ namespace DMCompiler.DM.Expressions {
 
             proc.AddLabel(endLabel);
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            DreamPath? prevPath = null;
+
+            if (_operations.Length == 1) {
+                prevPath = _expression.Path;
+            } else {
+                prevPath = _operations[^2].Path;
+            }
+
+            ref var operation = ref _operations[^1];
+
+            switch (operation.Kind) {
+                case DMASTDereference.OperationKind.Field:
+                case DMASTDereference.OperationKind.FieldSearch:
+                case DMASTDereference.OperationKind.FieldSafe:
+                case DMASTDereference.OperationKind.FieldSafeSearch:
+                    if (prevPath is not null) {
+                        var obj = DMObjectTree.GetDMObject(prevPath.GetValueOrDefault());
+                        var variable = obj.GetVariable(operation.Identifier);
+                        if (variable != null) {
+                            if (variable.IsConst)
+                                return variable.Value.TryAsConstant(out constant);
+                            if ((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
+                                variable.Value.TryAsConstant(out constant);
+                                return true; // MUST be true.
+                            }
+                        }
+                    }
+                    break;
+            }
+
+            constant = null;
+            return false;
+        }
     }
 }

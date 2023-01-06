@@ -65,7 +65,7 @@ namespace DMCompiler.DM {
 
         // Emits a reference that is to be used in an opcode that assigns/gets a value
         // May throw if this expression is unable to be referenced
-        public virtual DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public virtual DMRererence EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
@@ -111,7 +111,7 @@ namespace DMCompiler.DM {
 
                     default:
                         if (key != null) {
-                            DMCompiler.Error(new CompilerError(key.Location, "Invalid argument key"));
+                            DMCompiler.Emit(WarningCode.InvalidArgumentKey, key.Location, "Invalid argument key");
                         }
 
                         break;
@@ -129,7 +129,7 @@ namespace DMCompiler.DM {
 
             if (Expressions[0].Name == null && Expressions[0].Expr is Expressions.Arglist arglist) {
                 if (Expressions.Length != 1) {
-                    throw new CompileErrorException(Location, "arglist expression should be the only argument");
+                    DMCompiler.Emit(WarningCode.ArglistOnlyArgument, Location, "arglist expression should be the only argument");
                 }
 
                 arglist.EmitPushArglist(dmObject, proc);

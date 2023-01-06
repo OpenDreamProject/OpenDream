@@ -1,22 +1,36 @@
-﻿using System.IO;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
+using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Network.Messages;
+using OpenDreamShared.Resources;
 using Robust.Shared.Network;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.PixelFormats;
 
-namespace OpenDreamRuntime.Resources
-{
-    public sealed class DreamResourceManager
-    {
+namespace OpenDreamRuntime.Resources {
+    public sealed class DreamResourceManager {
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         public string RootPath { get; private set; }
 
-        private readonly Dictionary<string, DreamResource> _resourceCache = new();
+        private readonly List<DreamResource> _resourceCache = new();
+        private readonly Dictionary<string, int> _resourcePathToId = new();
 
-        // Terrible and temporary, see DreamManager
-        public void Initialize(string jsonPath)
-        {
+        private ISawmill _sawmill;
+
+        public void Initialize() {
+            _sawmill = Logger.GetSawmill("opendream.res");
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
+
+            _resourceCache.Clear();
+            _resourcePathToId.Clear();
+
+            // An empty resource path is the console
+            _resourceCache.Add(new ConsoleOutputResource());
+            _resourcePathToId.Add(String.Empty, 0);
         }
 
         public void SetDirectory(string directory) {
@@ -24,7 +38,7 @@ namespace OpenDreamRuntime.Resources
             // Used to ensure external DLL calls see a consistent current directory.
             Directory.SetCurrentDirectory(RootPath);
 
-            Logger.DebugS("opendream.res", $"Resource root path set to {RootPath}");
+            _sawmill.Debug($"Resource root path set to {RootPath}");
         }
 
         public bool DoesFileExist(string resourcePath) {
@@ -32,28 +46,110 @@ namespace OpenDreamRuntime.Resources
         }
 
         public DreamResource LoadResource(string resourcePath) {
-            if (resourcePath == "") return new ConsoleOutputResource(); //An empty resource path is the console
+            DreamResource resource;
 
-            if (!_resourceCache.TryGetValue(resourcePath, out DreamResource? resource)) {
-                resource = new DreamResource(Path.Combine(RootPath, resourcePath), resourcePath);
-                _resourceCache.Add(resourcePath, resource);
+            if (_resourcePathToId.TryGetValue(resourcePath, out int resourceId)) {
+                resource = _resourceCache[resourceId];
+            } else {
+                var filePath = Path.Combine(RootPath, resourcePath);
+                resourceId = _resourceCache.Count;
+
+                // Create a new type of resource based on its extension
+                switch (Path.GetExtension(resourcePath)) {
+                    case ".dmi":
+                        resource = new IconResource(resourceId, filePath, resourcePath);
+                        break;
+                    case ".png":
+                    case ".jpg":
+                    case ".rsi": // RT-specific, not in BYOND
+                    case ".gif":
+                    case ".bmp":
+                        // TODO implement other icon file types
+                        goto default;
+
+                    default:
+                        resource = new DreamResource(resourceId, filePath, resourcePath);
+                        break;
+                }
+
+                _resourceCache.Add(resource);
+                _resourcePathToId.Add(resourcePath, resourceId);
             }
 
             return resource;
         }
 
-        public void RxRequestResource(MsgRequestResource pRequestResource) {
-            DreamResource resource = LoadResource(pRequestResource.ResourcePath);
+        public bool TryLoadResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {
+            if (resourceId >= 0 && resourceId < _resourceCache.Count) {
+                resource = _resourceCache[resourceId];
+                return true;
+            }
 
-            if (resource.ResourceData != null) {
+            resource = null;
+            return false;
+        }
+
+        public bool TryLoadIcon(DreamValue value, [NotNullWhen(true)] out IconResource? icon) {
+            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var iconObj)) {
+                DreamIcon dreamIcon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
+
+                icon = dreamIcon.GenerateDMI();
+                return true;
+            }
+
+            DreamResource? resource;
+
+            if (value.TryGetValueAsString(out var resourcePath)) {
+                resource = LoadResource(resourcePath);
+            } else {
+                value.TryGetValueAsDreamResource(out resource);
+            }
+
+            if (resource is IconResource iconResource) {
+                icon = iconResource;
+                return true;
+            }
+
+            icon = null;
+            return false;
+        }
+
+        /// <summary>
+        /// Dynamically create a new icon resource that clients can use
+        /// </summary>
+        /// <param name="data">The resource's data</param>
+        /// <param name="texture">The image texture</param>
+        /// <param name="dmi">The image's DMI information</param>
+        public IconResource CreateIconResource(byte[] data, Image<Rgba32> texture, DMIParser.ParsedDMIDescription dmi) {
+            int resourceId = _resourceCache.Count;
+            IconResource resource = new IconResource(resourceId, data, texture, dmi);
+
+            _resourceCache.Add(resource);
+            return resource;
+        }
+
+        /// <summary>
+        /// Dynamically create a new icon resource that clients can use
+        /// </summary>
+        /// <param name="data">The resource's data</param>
+        public IconResource CreateIconResource(byte[] data) {
+            int resourceId = _resourceCache.Count;
+            IconResource resource = new IconResource(resourceId, data);
+
+            _resourceCache.Add(resource);
+            return resource;
+        }
+
+        public void RxRequestResource(MsgRequestResource pRequestResource) {
+            if (TryLoadResource(pRequestResource.ResourceId, out var resource)) {
                 var msg = new MsgResource() {
-                    ResourcePath = resource.ResourcePath,
-                    ResourceData = resource.ResourceData
+                    ResourceId = resource.Id, ResourceData = resource.ResourceData
                 };
 
                 pRequestResource.MsgChannel.SendMessage(msg);
             } else {
-                Logger.WarningS("opendream.res", $"User {pRequestResource.MsgChannel} requested resource '{pRequestResource.ResourcePath}', which doesn't exist");
+                _sawmill.Warning(
+                    $"User {pRequestResource.MsgChannel} requested resource with id '{pRequestResource.ResourceId}', which doesn't exist");
             }
         }
 
@@ -99,8 +195,7 @@ namespace OpenDreamRuntime.Resources
             return true;
         }
 
-        public string[] EnumerateListing(string path)
-        {
+        public string[] EnumerateListing(string path) {
             string directory = Path.Combine(RootPath, Path.GetDirectoryName(path));
             string searchPattern = Path.GetFileName(path);
 
@@ -110,6 +205,7 @@ namespace OpenDreamRuntime.Resources
                 if (Directory.Exists(entries[i])) relPath += "/";
                 entries[i] = relPath;
             }
+
             return entries;
         }
     }

@@ -37,7 +37,7 @@ namespace DMCompiler.DM.Visitors {
                     try {
                         DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                     } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                     }
                     _proc.Assign(parameterRef);
                     _proc.Pop();
@@ -59,11 +59,11 @@ namespace DMCompiler.DM.Visitors {
                     } catch (CompileAbortException e) {
                         // The statement's location info isn't passed all the way down so change the error to make it more accurate
                         e.Error.Location = set.Location;
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                         return; // Don't spam the error that will continue to exist
                     } catch (CompileErrorException e) {
                         //Retreat from the statement when there's an error
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                     }
                 }
             }
@@ -83,11 +83,11 @@ namespace DMCompiler.DM.Visitors {
                 } catch (CompileAbortException e) {
                     // The statement's location info isn't passed all the way down so change the error to make it more accurate
                     e.Error.Location = statement.Location;
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                     return; // Don't spam the error that will continue to exist
                 } catch (CompileErrorException e) {
                     //Retreat from the statement when there's an error
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                 }
             }
         }
@@ -123,7 +123,7 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 }
-                default: throw new ArgumentException("Invalid proc statement");
+                default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
             }
         }
 
@@ -296,7 +296,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
                 } catch (CompileErrorException e) {
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                     value = new Expressions.Null(varDeclaration.Location);
                 }
             } else {
@@ -306,7 +306,7 @@ namespace DMCompiler.DM.Visitors {
             bool successful;
             if (varDeclaration.IsConst) {
                 if (!value.TryAsConstant(out var constValue)) {
-                    DMCompiler.Error(new CompilerError(varDeclaration.Location, "Const var must be set to a constant"));
+                    DMCompiler.Emit(WarningCode.HardConstContext, varDeclaration.Location, "Const var must be set to a constant");
                     return;
                 }
 
@@ -316,7 +316,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (!successful) {
-                DMCompiler.Error(new CompilerError(varDeclaration.Location, $"Duplicate var {varDeclaration.Name}"));
+                DMCompiler.Emit(WarningCode.DuplicateVariable, varDeclaration.Location, $"Duplicate var {varDeclaration.Name}");
                 return;
             }
 
@@ -441,7 +441,7 @@ namespace DMCompiler.DM.Visitors {
                             break;
                         }
                         default:
-                            DMCompiler.Error(new CompilerError(statementFor.Location, "Invalid expression in for"));
+                            DMCompiler.Emit(WarningCode.BadExpression, statementFor.Location, "Invalid expression in for");
                             break;
                     }
                 }
@@ -478,7 +478,7 @@ namespace DMCompiler.DM.Visitors {
 
                     ProcessBlockInner(body);
 
-                    _proc.LoopContinue(loopLabel);
+                    _proc.MarkLoopContinue(loopLabel);
                     if (incrementor != null) {
                         incrementor.EmitPushValue(_dmObject, _proc);
                         _proc.Pop();
@@ -491,46 +491,43 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
+            if (outputVar is not LValue lValue) {
+                DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
+                lValue = null;
+            }
+
+            // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
+            DreamPath? implicitTypeCheck = null;
+            if (dmTypes == null) {
+                // No "as" means the var's type will be used
+                implicitTypeCheck = lValue?.Path;
+            } else if (dmTypes != DMValueType.Anything) {
+                // "as anything" performs no check. Other values are unimplemented.
+                DMCompiler.UnimplementedWarning(outputVar.Location,
+                    $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+            }
+
             list.EmitPushValue(_dmObject, _proc);
-            _proc.CreateListEnumerator();
+            if (implicitTypeCheck != null) {
+                // Create an enumerator that will do the implicit istype() for us
+                _proc.CreateFilteredListEnumerator(implicitTypeCheck.Value);
+            } else {
+                _proc.CreateListEnumerator();
+            }
 
             _proc.StartScope();
             {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    if (outputVar is Expressions.LValue lValue) {
-                        string endLabel = _proc.NewLabelName();
-                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
-                        _proc.AddLabel(endLabel);
+                    _proc.MarkLoopContinue(loopLabel);
+
+                    if (lValue != null) {
+                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
-
-                        // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
-                        DreamPath? implicitTypeCheck = null;
-                        if (dmTypes == null) {
-                            // No "as" means the var's type will be used
-                            implicitTypeCheck = lValue.Path;
-                        } else if (dmTypes != DMValueType.Anything) {
-                            // "as anything" performs no check. Other values are unimplemented.
-                            DMCompiler.UnimplementedWarning(outputVar.Location,
-                                $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
-                        }
-
-                        if (implicitTypeCheck != null) {
-                            outputVar.EmitPushValue(_dmObject, _proc);
-                            _proc.PushPath(implicitTypeCheck.Value);
-                            _proc.IsType();
-
-                            _proc.ContinueIfFalse();
-                        }
-                    } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -542,13 +539,17 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementForType(DMExpression initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
             if (type == null) {
                 // This shouldn't happen, just to be safe
-                DMCompiler.Error(new CompilerError(initializer.Location,
-                    "Attempted to create a type enumerator with a null type"));
+                DMCompiler.ForcedError(initializer.Location,
+                    "Attempted to create a type enumerator with a null type");
                 return;
             }
 
-            _proc.PushPath(type.Value);
-            _proc.CreateTypeEnumerator();
+            if (DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
+                _proc.PushType(typeId);
+                _proc.CreateTypeEnumerator();
+            } else {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, initializer.Location, $"Type {type.Value} does not exist");
+            }
 
             _proc.StartScope();
             {
@@ -560,19 +561,18 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         string endLabel = _proc.NewLabelName();
                         DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
                         _proc.AddLabel(endLabel);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -601,19 +601,18 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         string endLabel = _proc.NewLabelName();
                         DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
                         _proc.AddLabel(endLabel);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -629,8 +628,8 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
                     ProcessBlockInner(statementInfLoop.Body);
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -643,14 +642,13 @@ namespace DMCompiler.DM.Visitors {
 
             _proc.LoopStart(loopLabel);
             {
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementWhile.Conditional);
                 _proc.BreakIfFalse();
 
                 _proc.StartScope();
                 {
                     ProcessBlockInner(statementWhile.Body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.EndScope();
@@ -666,7 +664,7 @@ namespace DMCompiler.DM.Visitors {
             {
                 ProcessBlockInner(statementDoWhile.Body);
 
-                _proc.LoopContinue(loopLabel);
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementDoWhile.Conditional);
                 _proc.JumpIfFalse(loopEndLabel);
                 _proc.LoopJumpToStart(loopLabel);
@@ -693,9 +691,9 @@ namespace DMCompiler.DM.Visitors {
 
                             try {
                                 if (!DMExpression.TryConstant(_dmObject, _proc, expression, out constant))
-                                    DMCompiler.Error(expression.Location, "Expected a constant");
+                                    DMCompiler.Emit(WarningCode.HardConstContext, expression.Location, "Expected a constant");
                             } catch (CompileErrorException e) {
-                                DMCompiler.Error(e.Error);
+                                DMCompiler.Emit(e.Error);
                             }
 
                             // Return 0 if unsuccessful so that we can continue compiling
@@ -708,16 +706,17 @@ namespace DMCompiler.DM.Visitors {
 
                             Constant CoerceBound(Constant bound) {
                                 if (bound is Null) { // We do a little null coercion, as a treat
-                                    DMCompiler.Warning(range.RangeStart.Location,
+                                    DMCompiler.Emit(WarningCode.MalformedRange, range.RangeStart.Location,
                                         "Malformed range, lower bound is coerced from null to 0");
                                     return new Number(lower.Location, 0.0f);
                                 }
 
                                 //DM 514.1580 does NOT care if the constants within a range are strings, and does a strange conversion to 0 or something, without warning or notice.
-                                //We are deviating from parity here and just calling that a CompilerError.
+                                //We are (hopefully) deviating from parity here and just calling that a Compiler error.
                                 if (bound is not Number) {
-                                    DMCompiler.Error(range.RangeStart.Location,
+                                    DMCompiler.Emit(WarningCode.InvalidRange, range.RangeStart.Location,
                                         "Invalid range, lower bound is not a number");
+                                    bound = new Number(bound.Location, 0.0f);
                                 }
 
                                 return bound;
@@ -817,13 +816,13 @@ namespace DMCompiler.DM.Visitors {
             // The left-side value of an input operation must be an LValue
             // (I think? I haven't found an exception but there could be one)
             if (left is not LValue) {
-                DMCompiler.Error(left.Location, "Left side must be an l-value");
+                DMCompiler.Emit(WarningCode.BadExpression, left.Location, "Left side must be an l-value");
                 return;
             }
 
             // The right side must also be an LValue. Because where else would the value go?
             if (right is not LValue) {
-                DMCompiler.Error(left.Location, "Right side must be an l-value");
+                DMCompiler.Emit(WarningCode.BadExpression, right.Location, "Right side must be an l-value");
                 return;
             }
 
@@ -853,7 +852,7 @@ namespace DMCompiler.DM.Visitors {
                 //TODO set the value to what is thrown in try
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
                 if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
-                    DMCompiler.Error(new CompilerError(param.Location, $"Duplicate var {param.Name}"));
+                    DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
             }
 

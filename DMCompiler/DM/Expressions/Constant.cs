@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -30,15 +31,6 @@ namespace DMCompiler.DM.Expressions {
         #endregion
 
         #region Binary Operations
-        public Constant And(Constant rhs) {
-            var truthy = IsTruthy() && rhs.IsTruthy();
-            return new Number(Location, truthy ? 1 : 0);
-        }
-
-        public Constant Or(Constant rhs) {
-            var truthy = IsTruthy() || rhs.IsTruthy();
-            return new Number(Location, truthy ? 1 : 0);
-        }
 
         public virtual Constant Add(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} + {rhs}\" is invalid");
@@ -87,6 +79,22 @@ namespace DMCompiler.DM.Expressions {
         public virtual Constant BinaryOr(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
         }
+
+        public virtual Constant GreaterThan(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} > {rhs}\" is invalid");
+        }
+
+        public virtual Constant GreaterThanOrEqual(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} >= {rhs}\" is invalid");
+        }
+
+        public virtual Constant LessThan(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} < {rhs}\" is invalid");
+        }
+
+        public virtual Constant LessThanOrEqual(Constant rhs) {
+            throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
+        }
         #endregion
     }
 
@@ -103,6 +111,34 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
             return true;
+        }
+
+        public override Constant GreaterThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThan(rhs);
+            }
+            return new Number(Location, (0 > rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant GreaterThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThanOrEqual(rhs);
+            }
+            return new Number(Location, (0 >= rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThan(rhs);
+            }
+            return new Number(Location, (0 < rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThanOrEqual(rhs);
+            }
+            return new Number(Location, (0 <= rhsNum.Value) ? 1 : 0);
         }
     }
 
@@ -238,6 +274,34 @@ namespace DMCompiler.DM.Expressions {
 
             return new Number(Location, ((int)Value) | ((int)rhsNum.Value));
         }
+
+        public override Constant GreaterThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThan(rhs);
+            }
+            return new Number(Location, (Value > rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant GreaterThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.GreaterThanOrEqual(rhs);
+            }
+            return new Number(Location, (Value >= rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThan(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThan(rhs);
+            }
+            return new Number(Location, (Value < rhsNum.Value) ? 1 : 0);
+        }
+
+        public override Constant LessThanOrEqual(Constant rhs) {
+            if (rhs is not Number rhsNum) {
+                return base.LessThanOrEqual(rhs);
+            }
+            return new Number(Location, (Value <= rhsNum.Value) ? 1 : 0);
+        }
     }
 
     // "abc"
@@ -296,31 +360,145 @@ namespace DMCompiler.DM.Expressions {
     class Path : Constant {
         public DreamPath Value { get; }
 
-        public Path(Location location, DreamPath value) : base(location) {
+        /// <summary>
+        /// The DMObject this expression resides in. Used for path searches.
+        /// </summary>
+        private readonly DMObject _dmObject;
+
+        private enum PathType {
+            TypeReference,
+            ProcReference,
+            ProcStub,
+            VerbStub
+        }
+
+        public Path(Location location, DMObject dmObject, DreamPath value) : base(location) {
             Value = value;
+            _dmObject = dmObject;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushPath(Value);
+            if (!TryResolvePath(out var pathInfo)) {
+                proc.PushNull();
+                return;
+            }
+
+            switch (pathInfo.Value.Type) {
+                case PathType.TypeReference:
+                    proc.PushType(pathInfo.Value.Id);
+                    break;
+                case PathType.ProcReference:
+                    proc.PushProc(pathInfo.Value.Id);
+                    break;
+                case PathType.ProcStub:
+                    proc.PushProcStub(pathInfo.Value.Id);
+                    break;
+                case PathType.VerbStub:
+                    proc.PushVerbStub(pathInfo.Value.Id);
+                    break;
+                default:
+                    DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
+                    break;
+            }
         }
 
         public override bool IsTruthy() => true;
 
         public override bool TryAsJsonRepresentation(out object json) {
-            object value;
-
-            if (DMObjectTree.TryGetTypeId(Value, out int typeId)) {
-                value = typeId;
-            } else {
-                value = Value.PathString;
+            if (!TryResolvePath(out var pathInfo)) {
+                json = null;
+                return false;
             }
 
+            JsonVariableType jsonType = pathInfo.Value.Type switch {
+                PathType.TypeReference => JsonVariableType.Type,
+                PathType.ProcReference => JsonVariableType.Proc,
+                PathType.ProcStub => JsonVariableType.ProcStub,
+                PathType.VerbStub => JsonVariableType.VerbStub
+            };
+
             json = new Dictionary<string, object>() {
-                { "type", JsonVariableType.Path },
-                { "value", value }
+                { "type", jsonType },
+                { "value", pathInfo.Value.Id }
             };
 
             return true;
+        }
+
+        private bool TryResolvePath([NotNullWhen(true)] out (PathType Type, int Id)? pathInfo) {
+            DreamPath path = Value;
+
+            // An upward search with no left-hand side
+            if (Value.Type == DreamPath.PathType.UpwardSearch) {
+                DreamPath? foundPath = DMObjectTree.UpwardSearch(_dmObject.Path, path);
+                if (foundPath == null) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Could not find path {path}");
+
+                    pathInfo = null;
+                    return false;
+                }
+
+                path = foundPath.Value;
+            }
+
+            // /datum/proc and /datum/verb
+            if (Value.LastElement is "proc" or "verb") {
+                DreamPath typePath = Value.FromElements(0, -2);
+                if (!DMObjectTree.TryGetTypeId(typePath, out var ownerId)) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {typePath} does not exist");
+
+                    pathInfo = null;
+                    return false;
+                }
+
+                pathInfo = Value.LastElement switch {
+                    "proc" => (PathType.ProcStub, ownerId),
+                    "verb" => (PathType.VerbStub, ownerId),
+                    _ => throw new InvalidOperationException($"Last element of {Value} is not \"proc\" or \"verb\"")
+                };
+                return true;
+            }
+
+            // /datum/proc/foo
+            int procIndex = path.FindElement("proc");
+            if (procIndex == -1) procIndex = path.FindElement("verb");
+            if (procIndex != -1) {
+                DreamPath withoutProcElement = path.RemoveElement(procIndex);
+                DreamPath ownerPath = withoutProcElement.FromElements(0, -2);
+                DMObject owner = DMObjectTree.GetDMObject(ownerPath, createIfNonexistent: false);
+                string procName = path.LastElement;
+
+                int? procId;
+                if (owner == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(procName, out var globalProc)) {
+                    procId = globalProc.Id;
+                } else {
+                    var procs = owner.GetProcs(procName);
+
+                    procId = procs?[^1];
+                }
+
+                if (procId == null) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location,
+                        $"Type {ownerPath} does not have a proc named {procName}");
+
+                    pathInfo = null;
+                    return false;
+                }
+
+                pathInfo = (PathType.ProcReference, procId.Value);
+                return true;
+            }
+
+            // Any other path
+            if (DMObjectTree.TryGetTypeId(Value, out var typeId)) {
+                pathInfo = (PathType.TypeReference, typeId);
+                return true;
+            } else {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {Value} does not exist");
+
+                pathInfo = null;
+                return false;
+            }
         }
     }
 }

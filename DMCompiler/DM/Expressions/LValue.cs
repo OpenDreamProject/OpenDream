@@ -97,7 +97,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             // This happens silently in BYOND
-            DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a local variable returns the current value"));
+            DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a local variable returns the current value");
             EmitPushValue(dmObject, proc);
         }
     }
@@ -156,7 +156,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             // This happens silently in BYOND
-            DMCompiler.Warning(new CompilerWarning(Location, "calling initial() on a global returns the current value"));
+            DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a global returns the current value");
             EmitPushValue(dmObject, proc);
         }
 

@@ -1,4 +1,5 @@
-﻿using OpenDreamRuntime.Procs;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 
@@ -6,6 +7,7 @@ namespace OpenDreamRuntime {
     public static class ServerContentIoC {
         public static void Register(bool unitTests = false) {
             IoCManager.Register<IDreamManager, DreamManager>();
+            IoCManager.Register<IDreamObjectTree, DreamObjectTree>();
             IoCManager.Register<IAtomManager, AtomManager>();
             IoCManager.Register<IProcScheduler, ProcScheduler>();
             IoCManager.Register<DreamResourceManager, DreamResourceManager>();

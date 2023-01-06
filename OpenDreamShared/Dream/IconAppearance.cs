@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class IconAppearance : IEquatable<IconAppearance> {
-        [ViewVariables] public string Icon;
+        [ViewVariables] public int? Icon;
         [ViewVariables] public string IconState;
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;
@@ -18,6 +18,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
+        [ViewVariables] public List<DreamFilter> Filters = new();
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
         [ViewVariables] public float[] Transform = new float[6] {   1, 0,   // a d
                                                                     0, 1,   // b e
@@ -37,6 +38,7 @@ namespace OpenDreamShared.Dream {
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<uint>(appearance.Overlays);
             Underlays = new List<uint>(appearance.Underlays);
+            Filters = new List<DreamFilter>(appearance.Filters);
 
             for (int i = 0; i < 6; i++) {
                 Transform[i] = appearance.Transform[i];
@@ -58,6 +60,12 @@ namespace OpenDreamShared.Dream {
             if (appearance.Opacity != Opacity) return false;
             if (appearance.MouseOpacity != MouseOpacity) return false;
             if (appearance.Overlays.Count != Overlays.Count) return false;
+            if (appearance.Underlays.Count != Underlays.Count) return false;
+            if (appearance.Filters.Count != Filters.Count) return false;
+
+            for (int i = 0; i < Filters.Count; i++) {
+                if (appearance.Filters[i] != Filters[i]) return false;
+            }
 
             for (int i = 0; i < Overlays.Count; i++) {
                 if (appearance.Overlays[i] != Overlays[i]) return false;
@@ -90,6 +98,10 @@ namespace OpenDreamShared.Dream {
 
             foreach (int underlay in Underlays) {
                 hashCode += underlay;
+            }
+
+            foreach (DreamFilter filter in Filters) {
+                hashCode += filter.GetHashCode();
             }
 
             for (int i = 0; i < 6; i++) {

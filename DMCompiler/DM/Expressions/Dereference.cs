@@ -167,130 +167,37 @@ namespace DMCompiler.DM.Expressions {
                     proc.Initial();
                     break;
 
-                case DMASTDereference.OperationKind.Index:
-                    operation.Index.EmitPushValue(dmObject, proc);
-                    proc.Initial();
-                    break;
-
-                case DMASTDereference.OperationKind.IndexSafe:
-                    proc.JumpIfNullNoPop(endLabel);
-                    operation.Index.EmitPushValue(dmObject, proc);
-                    proc.Initial();
-                    break;
-
-                case DMASTDereference.OperationKind.Call:
-                case DMASTDereference.OperationKind.CallSearch:
-                case DMASTDereference.OperationKind.CallSafe:
-                case DMASTDereference.OperationKind.CallSafeSearch:
-                    throw new CompileErrorException(Location, $"attempt to get `initial` of a proc call");
-
-                case DMASTDereference.OperationKind.Invalid:
-                default:
-                    throw new NotImplementedException();
-            };
-
-            proc.AddLabel(endLabel);
-        }
-
-        public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
-            string endLabel = proc.NewLabelName();
-
-            _expression.EmitPushValue(dmObject, proc);
-
-            // Perform all except for our last operation
-            for (int i = 0; i < _operations.Length - 1; i++) {
-                EmitOperation(dmObject, proc, ref _operations[i], endLabel);
+        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
+            if (_expr is Dereference { Expr: var derefExpr, PropertyName: "vars" }) {
+                derefExpr.EmitPushValue(dmObject, proc);
+                _index.EmitPushValue(dmObject, proc);
+                proc.Initial();
+            } else if (_expr is Field { Variable: { Name: "vars" } }) {
+                proc.PushReferenceValue(DMReference.Src);
+                _index.EmitPushValue(dmObject, proc);
+                proc.Initial();
+            } else {
+                // This happens silently in BYOND
+                DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a list index returns the current value");
+                EmitPushValue(dmObject, proc);
             }
-
-            ref var operation = ref _operations[^1];
-
-            switch (operation.Kind) {
-                case DMASTDereference.OperationKind.Field:
-                case DMASTDereference.OperationKind.FieldSearch:
-                    proc.PushString(operation.Identifier);
-                    proc.IsSaved();
-                    break;
-
-                case DMASTDereference.OperationKind.FieldSafe:
-                case DMASTDereference.OperationKind.FieldSafeSearch:
-                    proc.JumpIfNullNoPop(endLabel);
-                    proc.PushString(operation.Identifier);
-                    proc.IsSaved();
-                    break;
-
-                case DMASTDereference.OperationKind.Index:
-                    operation.Index.EmitPushValue(dmObject, proc);
-                    proc.IsSaved();
-                    break;
-
-                case DMASTDereference.OperationKind.IndexSafe:
-                    proc.JumpIfNullNoPop(endLabel);
-                    operation.Index.EmitPushValue(dmObject, proc);
-                    proc.IsSaved();
-                    break;
-
-                case DMASTDereference.OperationKind.Call:
-                case DMASTDereference.OperationKind.CallSearch:
-                case DMASTDereference.OperationKind.CallSafe:
-                case DMASTDereference.OperationKind.CallSafeSearch:
-                    throw new CompileErrorException(Location, $"attempt to get `issaved` of a proc call");
-
-                case DMASTDereference.OperationKind.Invalid:
-                default:
-                    throw new NotImplementedException();
-            };
-
-            proc.AddLabel(endLabel);
         }
 
-        public override bool TryAsConstant(out Constant constant) {
-            ref var operation = ref _operations[^1];
-
-            switch (operation.Kind) {
-                case DMASTDereference.OperationKind.Field:
-                case DMASTDereference.OperationKind.FieldSearch:
-                    DreamPath? parentPath = (_operations.Length > 1) ? _operations[^2].Path : _expression.Path;
-
-                    if (parentPath != null) {
-                        var obj = DMObjectTree.GetDMObject(parentPath.Value);
-                        var variable = obj.GetVariable(operation.Identifier);
-                        if (variable != null) {
-                            if (variable.IsConst)
-                                return variable.Value.TryAsConstant(out constant);
-                            if ((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
-                                variable.Value.TryAsConstant(out constant);
-                                return true; // MUST be true.
-                            }
-                        }
-                    }
-
-                    constant = null;
-                    return false;
-
-                case DMASTDereference.OperationKind.FieldSafe:
-                case DMASTDereference.OperationKind.FieldSafeSearch:
-                    constant = null;
-                    return false;
-
-                case DMASTDereference.OperationKind.Index:
-                    constant = null;
-                    return false;
-
-                case DMASTDereference.OperationKind.IndexSafe:
-                    constant = null;
-                    return false;
-
-                case DMASTDereference.OperationKind.Call:
-                case DMASTDereference.OperationKind.CallSearch:
-                case DMASTDereference.OperationKind.CallSafe:
-                case DMASTDereference.OperationKind.CallSafeSearch:
-                    constant = null;
-                    return false;
-
-                case DMASTDereference.OperationKind.Invalid:
-                default:
-                    throw new NotImplementedException();
-            };
+        public void EmitPushIsSaved(DMObject dmObject, DMProc proc)
+        {
+            if (_expr is Dereference { Expr: var derefExpr, PropertyName: "vars" }) {
+                derefExpr.EmitPushValue(dmObject, proc);
+                _index.EmitPushValue(dmObject, proc);
+                proc.IsSaved();
+            } else if (_expr is Field { Variable: { Name: "vars" } }) {
+                proc.PushReferenceValue(DMReference.Src);
+                _index.EmitPushValue(dmObject, proc);
+                proc.IsSaved();
+            } else {
+                // Silent in BYOND
+                DMCompiler.Emit(WarningCode.PointlessBuiltinCall, _expr.Location, "calling issaved() on a list index is always false");
+                proc.PushFloat(0);
+            }
         }
     }
 }

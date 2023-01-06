@@ -4,10 +4,11 @@ using System.Text;
 namespace OpenDreamRuntime.Resources {
     [Virtual]
     public class DreamResource {
-        public string ResourcePath;
+        public readonly string? ResourcePath;
+        public readonly int Id;
         public byte[]? ResourceData {
             get {
-                if (_resourceData == null && Exists()) {
+                if (_resourceData == null && File.Exists(_filePath)) {
                     _resourceData = File.ReadAllBytes(_filePath);
                 }
 
@@ -15,16 +16,18 @@ namespace OpenDreamRuntime.Resources {
             }
         }
 
-        private string _filePath;
+        private readonly string? _filePath;
         private byte[]? _resourceData = null;
 
-        public DreamResource(string filePath, string resourcePath) {
-            _filePath = filePath;
+        public DreamResource(int id, string? filePath, string? resourcePath) {
+            Id = id;
             ResourcePath = resourcePath;
+            _filePath = filePath;
         }
 
-        public bool Exists() {
-            return File.Exists(_filePath);
+        public DreamResource(int id, byte[] data) {
+            Id = id;
+            _resourceData = data;
         }
 
         public virtual string? ReadAsString() {
@@ -36,7 +39,7 @@ namespace OpenDreamRuntime.Resources {
             return resourceString;
         }
 
-        public virtual void Clear() {
+        public void Clear() {
             CreateDirectory();
             File.WriteAllText(_filePath, String.Empty);
         }
@@ -57,7 +60,7 @@ namespace OpenDreamRuntime.Resources {
             Directory.CreateDirectory(Path.GetDirectoryName(_filePath));
         }
 
-        public override string? ToString() {
+        public override string ToString() {
             return $"'{ResourcePath}'";
         }
     }

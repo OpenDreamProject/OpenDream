@@ -94,7 +94,7 @@ namespace DMCompiler.Compiler.DM {
 
         private static readonly TokenType[] IdentifierTypes = {TokenType.DM_Identifier, TokenType.DM_Step};
 
-        private static readonly TokenType[]  ValidPathElementTokens = {
+        private static readonly TokenType[] ValidPathElementTokens = {
             TokenType.DM_Identifier,
             TokenType.DM_Var,
             TokenType.DM_Proc,
@@ -473,7 +473,9 @@ namespace DMCompiler.Compiler.DM {
                         if (blockInner != null) statements.AddRange(blockInner);
 
                         if (!Check(TokenType.DM_RightCurlyBracket)) {
-                            Error("Expected end of proc statement", throwException: false);
+                            Error(WarningCode.BadToken, "Expected end of braced block");
+                            Check(TokenType.DM_Dedent); // Have to do this ensure that the current token will ALWAYS move forward,
+                                                        // and not get stuck once we reach this branch!
                             LocateNextStatement();
                             Delimiter();
                         } else {
@@ -943,8 +945,6 @@ namespace DMCompiler.Compiler.DM {
                         DMASTExpression endRange = null, step = null;
                         ExpressionTo(ref endRange, ref step);
                         Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
-                        Whitespace();
-                        Newline();
                         return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.Expression, assign.Value, endRange, step), null, null, dmTypes, GetForBody());
                     } else {
                         Error("Expected = before to in for");
@@ -956,21 +956,15 @@ namespace DMCompiler.Compiler.DM {
                     DMASTExpression listExpr = Expression();
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody());
                 }
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
 
@@ -986,14 +980,10 @@ namespace DMCompiler.Compiler.DM {
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
 
@@ -1008,14 +998,15 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
-                Whitespace();
-                Newline();
                 return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
             }
 
             return null;
 
             DMASTProcBlockInner GetForBody() {
+                Whitespace();
+                Newline();
+
                 DMASTProcBlockInner body = ProcBlock();
                 if (body == null) {
                     var loc = Current().Location;
@@ -1452,12 +1443,13 @@ namespace DMCompiler.Compiler.DM {
                 }
                 if (Check(TokenType.DM_Null)){
                     // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
-                    Error($"error: 'null' is not a valid variable name", false);
-                    Advance();
-                    BracketWhitespace();
-                    Check(TokenType.DM_Comma);
-                    BracketWhitespace();
-                    parameters.AddRange(DefinitionParameters());
+                    if (Error(WarningCode.SoftReservedKeyword, "'null' is not a valid variable name")) { // If it's an error, skip over this var instantiation.
+                        Advance();
+                        BracketWhitespace();
+                        Check(TokenType.DM_Comma);
+                        BracketWhitespace();
+                        parameters.AddRange(DefinitionParameters());
+                    }
                 }
             }
 

@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Text;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs;
@@ -78,9 +79,6 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.PushString:
             case DreamProcOpcode.PushResource:
-            case DreamProcOpcode.Initial:
-            case DreamProcOpcode.IsSaved:
-            case DreamProcOpcode.PushPath:
             case DreamProcOpcode.DebugSource:
             case DreamProcOpcode.DereferenceField:
             case DreamProcOpcode.DereferenceCall:
@@ -104,7 +102,6 @@ public struct ProcDecoder {
             case DreamProcOpcode.DivideReference:
             case DreamProcOpcode.BitXorReference:
             case DreamProcOpcode.ModulusReference:
-            case DreamProcOpcode.Enumerate:
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
                 return (opcode, ReadReference());
@@ -114,6 +111,7 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
+            case DreamProcOpcode.CreateFilteredListEnumerator:
             case DreamProcOpcode.PickWeighted:
             case DreamProcOpcode.PickUnweighted:
             case DreamProcOpcode.Spawn:
@@ -125,6 +123,9 @@ public struct ProcDecoder {
             case DreamProcOpcode.JumpIfFalse:
             case DreamProcOpcode.JumpIfTrue:
             case DreamProcOpcode.PushType:
+            case DreamProcOpcode.PushProc:
+            case DreamProcOpcode.PushProcStub:
+            case DreamProcOpcode.PushVerbStub:
             case DreamProcOpcode.DebugLine:
             case DreamProcOpcode.MassConcatenation:
             case DreamProcOpcode.JumpIfNullNoPop:
@@ -132,6 +133,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.JumpIfFalseReference:
                 return (opcode, ReadInt());
 
+            case DreamProcOpcode.Enumerate:
             case DreamProcOpcode.JumpIfNullDereference:
                 return (opcode, ReadReference(), ReadInt());
 
@@ -157,6 +159,96 @@ public struct ProcDecoder {
     public IEnumerable<(int Offset, ITuple Instruction)> Disassemble() {
         while (Remaining) {
             yield return (Offset, DecodeInstruction());
+        }
+    }
+
+    public static string Format(ITuple instruction, Func<int, string> getTypePath) {
+        StringBuilder text = new StringBuilder();
+        text.Append(instruction[0]);
+        text.Append(' ');
+        switch (instruction) {
+            case (DreamProcOpcode.FormatString, string str, int numReplacements):
+                text.Append(numReplacements);
+                text.Append(' ');
+                text.Append('"');
+                text.Append(str);
+                text.Append('"');
+                break;
+
+            case (DreamProcOpcode.PushString, string str):
+                text.Append('"');
+                text.Append(str);
+                text.Append('"');
+                break;
+
+            case (DreamProcOpcode.PushResource, string str):
+                text.Append('\'');
+                text.Append(str);
+                text.Append('\'');
+                break;
+
+            case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
+                text.Append(reference);
+                text.AppendFormat(" 0x{0:x}", jumpPosition);
+                break;
+
+            case (DreamProcOpcode.Spawn
+                    or DreamProcOpcode.BooleanOr
+                    or DreamProcOpcode.BooleanAnd
+                    or DreamProcOpcode.SwitchCase
+                    or DreamProcOpcode.SwitchCaseRange
+                    or DreamProcOpcode.Jump
+                    or DreamProcOpcode.JumpIfFalse
+                    or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                text.AppendFormat("0x{0:x}", jumpPosition);
+                break;
+
+            case (DreamProcOpcode.Enumerate, DMReference reference, int jumpPosition):
+                text.Append(reference);
+                text.Append(' ');
+                text.Append(jumpPosition);
+                break;
+
+            case (DreamProcOpcode.PushType, int type):
+                text.Append(getTypePath(type));
+                break;
+
+            case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
+                text.Append(argCount);
+                for (int i = 0; i < argCount; i++) {
+                    text.Append(' ');
+                    text.Append(names[i] ?? "-");
+                }
+
+                break;
+
+            default:
+                for (int i = 1; i < instruction.Length; ++i) {
+                    text.Append(instruction[i]);
+                    text.Append(' ');
+                }
+                break;
+        }
+        return text.ToString();
+    }
+
+    public static int? GetJumpDestination(ITuple instruction) {
+        switch (instruction) {
+            case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
+                return jumpPosition;
+            case (DreamProcOpcode.Spawn
+                    or DreamProcOpcode.BooleanOr
+                    or DreamProcOpcode.BooleanAnd
+                    or DreamProcOpcode.SwitchCase
+                    or DreamProcOpcode.SwitchCaseRange
+                    or DreamProcOpcode.Jump
+                    or DreamProcOpcode.JumpIfFalse
+                    or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                return jumpPosition;
+            case (DreamProcOpcode.Enumerate, DMReference reference, int jumpPosition):
+                return jumpPosition;
+            default:
+                return null;
         }
     }
 }

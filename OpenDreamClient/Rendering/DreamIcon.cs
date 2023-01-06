@@ -195,7 +195,7 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void UpdateAnimation() {
-            DMIParser.ParsedDMIState dmiState = DMI.Description.GetState(Appearance.IconState);
+            DMIParser.ParsedDMIState dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
             DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
 
             if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;
@@ -253,8 +253,8 @@ namespace OpenDreamClient.Rendering {
                 return;
             }
 
-            IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon, dmi => {
-                if (dmi.ResourcePath != Appearance.Icon) return; //Icon changed while resource was loading
+            IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
+                if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
 
                 DMI = dmi;
                 _animationFrame = 0;

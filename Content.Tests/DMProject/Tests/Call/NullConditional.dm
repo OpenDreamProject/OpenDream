@@ -1,7 +1,7 @@
-﻿/datum/test1()
+﻿/datum/proc/test1()
 	return
 
-/datum/test2()
+/datum/proc/test2()
 	return
 
 /proc/RunTest()

@@ -13,10 +13,10 @@ using OpenDreamShared.Dream.Procs;
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
         #region Helpers
-        private static ProcStatus? PushListGet(DMProcState state, DreamValue obj, DreamValue index) {
+        private static void PushListGet(DMProcState state, DreamValue obj, DreamValue index) {
             if (obj.TryGetValueAsDreamList(out var listObj)) {
                 state.Push(listObj.GetValue(index));
-                return null;
+                return;
             }
 
             if (obj.TryGetValueAsString(out string? strValue)) {
@@ -25,14 +25,14 @@ namespace OpenDreamRuntime.Procs {
 
                 char c = strValue[strIndex - 1];
                 state.Push(new DreamValue(Convert.ToString(c)));
-                return null;
+                return;
             }
 
             if (obj.TryGetValueAsDreamObject(out var dreamObject)) {
                 IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                 if (metaObject != null) {
                     state.Push(metaObject.OperatorIndex(dreamObject!, index));
-                    return null;
+                    return;
                 }
             }
 
@@ -418,7 +418,8 @@ namespace OpenDreamRuntime.Procs {
 
             // number indices always perform a normal list access here
             if (key.TryGetValueAsInteger(out _)) {
-                return PushListGet(state, owner, key);
+                PushListGet(state, owner, key);
+                return null;
             }
 
             if (!key.TryGetValueAsString(out string property)) {
@@ -1984,7 +1985,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
 
-            // number indices always evalute to false here
+            // number indices always evaluate to false here
             if (key.TryGetValueAsFloat(out _)) {
                 state.Push(DreamValue.False);
                 return null;
@@ -2023,7 +2024,8 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? DereferenceIndex(DMProcState state) {
             DreamValue index = state.Pop();
             DreamValue obj = state.Pop();
-            return PushListGet(state, obj, index);
+            PushListGet(state, obj, index);
+            return null;
         }
 
         public static ProcStatus? DereferenceCall(DMProcState state) {

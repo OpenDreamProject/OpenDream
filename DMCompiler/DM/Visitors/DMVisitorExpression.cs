@@ -623,8 +623,6 @@ namespace DMCompiler.DM.Visitors {
                         operation.Index = DMExpression.Create(_dmObject, _proc, astOperation.Index, prevPath);
                         operation.Path = null;
 
-                        // This is cursed too
-                        // prevPath = prevPath;
                         pathIsFuzzy = true;
                         break;
 

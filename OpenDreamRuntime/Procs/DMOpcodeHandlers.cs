@@ -440,41 +440,6 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushArgumentList(DMProcState state) {
-            if (state.Pop().TryGetValueAsDreamList(out var argList)) {
-                List<DreamValue> ordered = new();
-                Dictionary<string, DreamValue> named = new();
-                foreach (DreamValue value in argList.GetValues()) {
-                    if (argList.ContainsKey(value)) { //Named argument
-                        if (value.TryGetValueAsString(out string name)) {
-                            named.Add(name, argList.GetValue(value));
-                        } else {
-                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
-                        }
-                    } else { //Ordered argument
-                        ordered.Add(value);
-                    }
-                }
-
-                foreach (var (name, val) in named) {
-                    state.Push(val);
-                    state.Push(new DreamValue(name));
-                }
-
-                foreach (var val in ordered) {
-                    state.Push(val);
-                }
-
-                state.Push(new DreamValue(named.Count));
-                state.Push(new DreamValue(ordered.Count));
-            } else {
-                state.Push(new DreamValue(0));
-                state.Push(new DreamValue(0));
-            }
-
-            return null;
-        }
-
         public static ProcStatus? PushFloat(DMProcState state) {
             float value = state.ReadFloat();
 

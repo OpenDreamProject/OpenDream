@@ -52,7 +52,7 @@ namespace OpenDreamShared.Dream.Procs {
         Combine = 0x2D,
         CreateObject = 0x2E,
         BooleanOr = 0x2F,
-        PushArgumentList = 0x30,
+        //0x30,
         CompareGreaterThanOrEqual = 0x31,
         SwitchCase = 0x32,
         Mask = 0x33,

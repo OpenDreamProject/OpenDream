@@ -126,7 +126,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Combine, DMOpcodeHandlers.Combine},
             {DreamProcOpcode.CreateObject, DMOpcodeHandlers.CreateObject},
             {DreamProcOpcode.BooleanOr, DMOpcodeHandlers.BooleanOr},
-            {DreamProcOpcode.PushArgumentList, DMOpcodeHandlers.PushArgumentList},
             {DreamProcOpcode.CompareGreaterThanOrEqual, DMOpcodeHandlers.CompareGreaterThanOrEqual},
             {DreamProcOpcode.SwitchCase, DMOpcodeHandlers.SwitchCase},
             {DreamProcOpcode.Mask, DMOpcodeHandlers.Mask},
@@ -388,16 +387,37 @@ namespace OpenDreamRuntime.Procs {
             int ordered = ReadInt();
             int named = ReadInt();
 
-            if (ordered == -2) { //we have an arglist on our hands, we have to get the counts from the stack
-                ordered = Pop().MustGetValueAsInteger();
-                named = Pop().MustGetValueAsInteger();
+            List<DreamValue>? orderedArgs = null;
+            Dictionary<string, DreamValue>? namedArgs = null;
+
+            if (ordered == -2) {
+                //we have an arglist on our hands
+                if (!Pop().TryGetValueAsDreamList(out var argList)) {
+                    return new DreamProcArguments();
+                }
+
+                orderedArgs = new();
+                namedArgs = new();
+                foreach (DreamValue value in argList.GetValues()) {
+                    if (argList.ContainsKey(value)) {
+                        //Named argument
+                        if (value.TryGetValueAsString(out string name)) {
+                            namedArgs.Add(name, argList.GetValue(value));
+                        } else {
+                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+                        }
+                    } else {
+                        //Ordered argument
+                        orderedArgs.Add(value);
+                    }
+                }
+
+                return new DreamProcArguments(orderedArgs.Count > 0 ? orderedArgs : null, namedArgs.Count > 0 ? namedArgs : null);
             }
 
             if (ordered + named == 0) {
                 return new DreamProcArguments();
             }
-            List<DreamValue>? orderedArgs = null;
-            Dictionary<string, DreamValue>? namedArgs = null;
 
             if (ordered > 0) {
                 orderedArgs = new List<DreamValue>();

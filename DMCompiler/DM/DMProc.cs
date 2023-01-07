@@ -506,11 +506,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Pop);
         }
 
-        public void PushArgumentList() {
-            GrowStack(2);
-            WriteOpcode(DreamProcOpcode.PushArgumentList);
-        }
-
         public (int ordered, int named) PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, Dictionary<string, DMExpression> namedArguments = null) {
             var stackGrow = (orderedArguments?.Length ?? 0) + (namedArguments?.Count ?? 0) * 2;
             GrowStack(stackGrow);

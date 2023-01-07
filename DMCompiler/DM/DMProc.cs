@@ -518,8 +518,8 @@ namespace DMCompiler.DM {
             return 2;
         }
 
-        public int PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, (string name, DMExpression expr)[] namedArguments = null) {
-            var stackGrow = (orderedArguments?.Length ?? 0) + (namedArguments?.Length ?? 0) * 2 + 2;
+        public int PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, Dictionary<string, DMExpression> namedArguments = null) {
+            var stackGrow = (orderedArguments?.Length ?? 0) + (namedArguments?.Count ?? 0) * 2 + 2;
             GrowStack(stackGrow);
 
             if(namedArguments != null) {
@@ -536,7 +536,7 @@ namespace DMCompiler.DM {
                 }
             }
 
-            PushFloat(namedArguments?.Length ?? 0);
+            PushFloat(namedArguments?.Count ?? 0);
             PushFloat(orderedArguments?.Length ?? 0);
 
             return stackGrow;

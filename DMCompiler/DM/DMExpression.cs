@@ -136,8 +136,14 @@ namespace DMCompiler.DM {
                 return arglist.EmitPushArglist(dmObject, proc);
             }
 
-            return proc.PushArguments(dmObject, proc, Expressions.Where(x => x.Name == null).Select(x => x.Expr).ToArray(),
-                Expressions.Where(x => x.Name != null).ToArray());
+            var named = new Dictionary<string, DMExpression>();
+            foreach (var (name, expr) in Expressions) {
+                if(name == null || named.ContainsKey(name)) continue;
+                named.Add(name, expr);
+            }
+
+            return proc.PushArguments(dmObject, proc,
+                Expressions.Where(x => x.Name == null).Select(x => x.Expr).ToArray(), named);
         }
     }
 }

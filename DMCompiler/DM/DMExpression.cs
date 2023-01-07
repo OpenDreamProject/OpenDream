@@ -122,10 +122,10 @@ namespace DMCompiler.DM {
             }
         }
 
-        /// <returns>stack used</returns>
-        public int EmitPushArguments(DMObject dmObject, DMProc proc) {
+        /// <returns>argcount</returns>
+        public (int ordered, int named) EmitPushArguments(DMObject dmObject, DMProc proc) {
             if (Expressions.Length == 0) {
-                return proc.PushNoArguments();
+                return (0, 0);
             }
 
             if (Expressions[0].Name == null && Expressions[0].Expr is Expressions.Arglist arglist) {

@@ -38,10 +38,10 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "invalid use of arglist");
         }
 
-        public int EmitPushArglist(DMObject dmObject, DMProc proc) {
+        public (int ordered, int named) EmitPushArglist(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
             proc.PushArgumentList();
-            return 2;
+            return (-2,2); //ends up as 2 (-2 + 2*2) (the two garantueed count values), the -2 indicates that the counts are on the stack
         }
     }
 
@@ -410,8 +410,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             foreach (DMExpression parameter in _parameters) {
                 parameter.EmitPushValue(dmObject, proc);
-                var argStackSize = proc.PushNoArguments();
-                proc.CreateObject(argStackSize);
+                proc.CreateObject((0,0));
             }
 
             proc.CreateList(_parameters.Length);

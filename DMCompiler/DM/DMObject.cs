@@ -177,8 +177,7 @@ namespace DMCompiler.DM {
             if (InitializationProcExpressions.Count > 0 && InitializationProc == null) {
                 var init = DMObjectTree.CreateDMProc(this, null);
                 InitializationProc = init.Id;
-                var argStackSize = init.PushNoArguments();
-                init.Call(DMReference.SuperProc, argStackSize);
+                init.Call(DMReference.SuperProc, (0,0));
 
                 string lastSource = null;
                 foreach (DMExpression expression in InitializationProcExpressions) {

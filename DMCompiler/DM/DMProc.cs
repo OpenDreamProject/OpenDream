@@ -511,15 +511,8 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.PushArgumentList);
         }
 
-        public int PushNoArguments() {
-            GrowStack(2);
-            PushFloat(0);
-            PushFloat(0);
-            return 2;
-        }
-
-        public int PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, Dictionary<string, DMExpression> namedArguments = null) {
-            var stackGrow = (orderedArguments?.Length ?? 0) + (namedArguments?.Count ?? 0) * 2 + 2;
+        public (int ordered, int named) PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, Dictionary<string, DMExpression> namedArguments = null) {
+            var stackGrow = (orderedArguments?.Length ?? 0) + (namedArguments?.Count ?? 0) * 2;
             GrowStack(stackGrow);
 
             if(namedArguments != null) {
@@ -536,10 +529,7 @@ namespace DMCompiler.DM {
                 }
             }
 
-            PushFloat(namedArguments?.Count ?? 0);
-            PushFloat(orderedArguments?.Length ?? 0);
-
-            return stackGrow;
+            return (orderedArguments?.Length ?? 0, namedArguments?.Count ?? 0);
         }
 
         public void BooleanOr(string endLabel) {
@@ -594,15 +584,19 @@ namespace DMCompiler.DM {
             WriteReference(reference);
         }
 
-        public void Call(DMReference reference, int argStackSize) {
-            ShrinkStack(argStackSize - 1);
+        public void Call(DMReference reference, (int ordered, int named) argStackSize) {
+            ShrinkStack(argStackSize.ordered + 2 * argStackSize.named - 1);
             WriteOpcode(DreamProcOpcode.Call);
             WriteReference(reference);
+            WriteInt(argStackSize.ordered);
+            WriteInt(argStackSize.named);
         }
 
-        public void CallStatement(int argStackSize) {
-            ShrinkStack(argStackSize);
+        public void CallStatement((int ordered, int named) argStackSize) {
+            ShrinkStack(argStackSize.ordered + 2*argStackSize.named);
             WriteOpcode(DreamProcOpcode.CallStatement);
+            WriteInt(argStackSize.ordered);
+            WriteInt(argStackSize.named);
         }
 
         public void Prompt(DMValueType types) {
@@ -630,9 +624,11 @@ namespace DMCompiler.DM {
             WriteReference(reference);
         }
 
-        public void CreateObject(int argStackSize) {
-            ShrinkStack(argStackSize);
+        public void CreateObject((int ordered, int named) argStackSize) {
+            ShrinkStack(argStackSize.ordered + 2 * argStackSize.named - 1);
             WriteOpcode(DreamProcOpcode.CreateObject);
+            WriteInt(argStackSize.ordered);
+            WriteInt(argStackSize.named);
         }
 
         public void DeleteObject() {

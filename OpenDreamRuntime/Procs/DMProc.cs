@@ -385,25 +385,30 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamProcArguments PopArguments() {
-            var orderedArgumentsCount = Pop().MustGetValueAsInteger();
-            var namedArgumentsCount = Pop().MustGetValueAsInteger();
+            int ordered = ReadInt();
+            int named = ReadInt();
 
-            if (orderedArgumentsCount + namedArgumentsCount == 0) {
+            if (ordered == -2) { //we have an arglist on our hands, we have to get the counts from the stack
+                ordered = Pop().MustGetValueAsInteger();
+                named = Pop().MustGetValueAsInteger();
+            }
+
+            if (ordered + named == 0) {
                 return new DreamProcArguments();
             }
             List<DreamValue>? orderedArgs = null;
             Dictionary<string, DreamValue>? namedArgs = null;
 
-            if (orderedArgumentsCount > 0) {
+            if (ordered > 0) {
                 orderedArgs = new List<DreamValue>();
-                for (int i = 0; i < orderedArgumentsCount; i++) {
+                for (int i = 0; i < ordered; i++) {
                     orderedArgs.Add(Pop());
                 }
             }
 
-            if (namedArgumentsCount > 0) {
+            if (named > 0) {
                 namedArgs = new Dictionary<string, DreamValue>();
-                for (int i = 0; i < namedArgumentsCount; i++) {
+                for (int i = 0; i < named; i++) {
                     namedArgs.Add(Pop().MustGetValueAsString(), Pop());
                 }
             }

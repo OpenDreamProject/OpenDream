@@ -40,7 +40,7 @@ namespace DMCompiler.DM.Expressions {
 
         public (int ordered, int named) EmitPushArglist(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            return (-2,2); //ends up as 2 (-2 + 2*2) (the two garantueed count values), the -2 indicates that the counts are on the stack
+            return (-1,2); //-1 indicates that the counts are on the stack
         }
     }
 

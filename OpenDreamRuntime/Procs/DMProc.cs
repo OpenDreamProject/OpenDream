@@ -390,7 +390,7 @@ namespace OpenDreamRuntime.Procs {
             List<DreamValue>? orderedArgs = null;
             Dictionary<string, DreamValue>? namedArgs = null;
 
-            if (ordered == -2) {
+            if (ordered == -1) {
                 //we have an arglist on our hands
                 if (!Pop().TryGetValueAsDreamList(out var argList)) {
                     return new DreamProcArguments();

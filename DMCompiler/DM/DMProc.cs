@@ -580,7 +580,13 @@ namespace DMCompiler.DM {
         }
 
         public void Call(DMReference reference, (int ordered, int named) argStackSize) {
-            ShrinkStack(argStackSize.ordered + 2 * argStackSize.named - 1);
+            var argStack = argStackSize.ordered + 2 * argStackSize.named;
+
+            if(argStack > 0) {
+                ShrinkStack(argStack - 1);
+            } else {
+                GrowStack(1);
+            }
             WriteOpcode(DreamProcOpcode.Call);
             WriteReference(reference);
             WriteInt(argStackSize.ordered);
@@ -588,7 +594,7 @@ namespace DMCompiler.DM {
         }
 
         public void CallStatement((int ordered, int named) argStackSize) {
-            ShrinkStack(argStackSize.ordered + 2*argStackSize.named);
+            ShrinkStack(argStackSize.ordered + 2 * argStackSize.named);
             WriteOpcode(DreamProcOpcode.CallStatement);
             WriteInt(argStackSize.ordered);
             WriteInt(argStackSize.named);
@@ -620,7 +626,7 @@ namespace DMCompiler.DM {
         }
 
         public void CreateObject((int ordered, int named) argStackSize) {
-            ShrinkStack(argStackSize.ordered + 2 * argStackSize.named - 1);
+            ShrinkStack(argStackSize.ordered + 2 * argStackSize.named);
             WriteOpcode(DreamProcOpcode.CreateObject);
             WriteInt(argStackSize.ordered);
             WriteInt(argStackSize.named);

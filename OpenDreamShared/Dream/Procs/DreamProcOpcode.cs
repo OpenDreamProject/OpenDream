@@ -11,7 +11,7 @@ namespace OpenDreamShared.Dream.Procs {
         FormatString = 0x4,
         SwitchCaseRange = 0x5,
         PushReferenceValue = 0x6,
-        //0x7
+        CallWithProcArgs = 0x7,
         Add = 0x8,
         Assign = 0x9,
         Call = 0xA,
@@ -59,7 +59,7 @@ namespace OpenDreamShared.Dream.Procs {
         //0x34
         Error = 0x35,
         IsInList = 0x36,
-        PushArguments = 0x37,
+        //0x37,
         PushFloat = 0x38,
         ModulusReference = 0x39,
         CreateListEnumerator = 0x3A,
@@ -74,7 +74,7 @@ namespace OpenDreamShared.Dream.Procs {
         DebugSource = 0x43,
         DebugLine = 0x44,
         Prompt = 0x45,
-        PushProcArguments = 0x46,
+        //0x46,
         Initial = 0x47,
         //0x48
         IsType = 0x49,

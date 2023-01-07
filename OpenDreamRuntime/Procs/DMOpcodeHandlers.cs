@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -454,40 +455,23 @@ namespace OpenDreamRuntime.Procs {
                         ordered.Add(value);
                     }
                 }
-                state.Push(new DreamProcArguments(ordered, named));
-            } else {
-                state.Push(new DreamProcArguments());
-            }
 
-            return null;
-        }
-
-        public static ProcStatus? PushArguments(DMProcState state) {
-            int argumentCount = state.ReadInt();
-            int namedCount = state.ReadInt();
-            int unnamedCount = argumentCount - namedCount;
-            DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(unnamedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
-            ReadOnlySpan<DreamValue> argumentValues = argumentCount > 0 ? state.PopCount(argumentCount) : null;
-
-            for (int i = 0; i < argumentCount; i++) {
-                DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)state.ReadByte();
-
-                switch (argumentType) {
-                    case DreamProcOpcodeParameterType.Named: {
-                        string argumentName = state.ReadString();
-
-                        arguments.NamedArguments![argumentName] = argumentValues[i];
-                        break;
-                    }
-                    case DreamProcOpcodeParameterType.Unnamed:
-                        arguments.OrderedArguments!.Add(argumentValues[i]);
-                        break;
-                    default:
-                        throw new Exception("Invalid argument type (" + argumentType + ")");
+                foreach (var (name, val) in named) {
+                    state.Push(val);
+                    state.Push(new DreamValue(name));
                 }
+
+                foreach (var val in ordered) {
+                    state.Push(val);
+                }
+
+                state.Push(new DreamValue(named.Count));
+                state.Push(new DreamValue(ordered.Count));
+            } else {
+                state.Push(new DreamValue(0));
+                state.Push(new DreamValue(0));
             }
 
-            state.Push(arguments);
             return null;
         }
 
@@ -531,13 +515,6 @@ namespace OpenDreamRuntime.Procs {
             var owner = state.Proc.ObjectTree.GetTreeEntry(ownerTypeId);
 
             state.Push(DreamValue.CreateVerbStub(owner));
-            return null;
-        }
-
-        public static ProcStatus? PushProcArguments(DMProcState state) {
-            List<DreamValue> args = new(state.GetArguments().ToArray());
-
-            state.Push(new DreamProcArguments(args));
             return null;
         }
 
@@ -1227,9 +1204,8 @@ namespace OpenDreamRuntime.Procs {
         #endregion Comparisons
 
         #region Flow
-        public static ProcStatus? Call(DMProcState state) {
-            DMReference procRef = state.ReadReference();
-            DreamProcArguments arguments = state.PopArguments();
+
+        private static ProcStatus? CallInternal(DMProcState state, DMReference procRef, DreamProcArguments arguments) {
 
             DreamObject instance;
             DreamProc proc;
@@ -1278,6 +1254,18 @@ namespace OpenDreamRuntime.Procs {
 
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
+        }
+
+        public static ProcStatus? Call(DMProcState state) {
+            DMReference procRef = state.ReadReference();
+            DreamProcArguments arguments = state.PopArguments();
+            return CallInternal(state, procRef, arguments);
+        }
+
+        public static ProcStatus? CallWithProcArgs(DMProcState state) {
+            var procRef = state.ReadReference();
+            var arguments = new DreamProcArguments(state.GetArguments().ToArray().ToList());
+            return CallInternal(state, procRef, arguments);
         }
 
         public static ProcStatus? CallStatement(DMProcState state) {

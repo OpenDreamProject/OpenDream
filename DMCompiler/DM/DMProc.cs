@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using DMCompiler.DM.Expressions;
 using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 
@@ -356,9 +357,7 @@ namespace DMCompiler.DM {
                     throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
                 }
 
-                PushFloat(-1);
-                DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
-                PushArguments(1, arr, null);
+                PushArguments(null, sleepProc, orderedArguments: new DMExpression[]{new Number(Location.Internal, -1)});
                 Call(DMReference.CreateGlobalProc(sleepProc.Id));
             }
         }
@@ -507,37 +506,35 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Pop);
         }
 
-        public void PushProcArguments() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushProcArguments);
-        }
-
         public void PushArgumentList() {
             WriteOpcode(DreamProcOpcode.PushArgumentList);
         }
 
-        public void PushArguments(int argumentCount, DreamProcOpcodeParameterType[] parameterTypes = null, string[] parameterNames = null) {
-            ShrinkStack(argumentCount - 1); //Pops argumentCount, pushes 1
-            WriteOpcode(DreamProcOpcode.PushArguments);
-            WriteInt(argumentCount);
-            WriteInt(parameterNames?.Length ?? 0);
+        public void PushNoArguments() {
+            //GrowStack(2);
+            PushFloat(0);
+            PushFloat(0);
+        }
 
-            if (argumentCount > 0) {
-                if (parameterTypes == null || parameterTypes.Length != argumentCount) {
-                    throw new CompileAbortException("Length of parameter types does not match the argument count");
-                }
+        public void PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, (string name, DMExpression expr)[] namedArguments = null) {
+            //GrowStack((orderedArguments?.Length ?? 0) + (namedArguments?.Length ?? 0)*2 + 2);
 
-                int namedParameterIndex = 0;
-                foreach (DreamProcOpcodeParameterType parameterType in parameterTypes) {
-                    _bytecodeWriter.Write((byte)parameterType);
-
-                    if (parameterType == DreamProcOpcodeParameterType.Named) {
-                        if (parameterNames == null)
-                            throw new CompileAbortException("parameterNames was null while parameterTypes was:" + parameterTypes);
-                        WriteString(parameterNames[namedParameterIndex++]);
-                    }
+            if(namedArguments != null) {
+                foreach (var (name, argument) in namedArguments) {
+                    argument.EmitPushValue(dmObject, dmProc);
+                    PushString(name);
                 }
             }
+
+            if(orderedArguments != null) {
+                for (var i = orderedArguments.Length - 1; i >= 0; i--) {
+                    var argument = orderedArguments[i];
+                    argument.EmitPushValue(dmObject, dmProc);
+                }
+            }
+
+            PushFloat(namedArguments?.Length ?? 0);
+            PushFloat(orderedArguments?.Length ?? 0);
         }
 
         public void BooleanOr(string endLabel) {
@@ -584,6 +581,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.JumpIfNullDereference);
             WriteReference(reference, affectStack: false);
             WriteLabel(label);
+        }
+
+        public void CallWithProcArgs(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.CallWithProcArgs);
+            WriteReference(reference);
         }
 
         public void Call(DMReference reference) {

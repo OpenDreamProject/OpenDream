@@ -132,7 +132,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Mask, DMOpcodeHandlers.Mask},
             {DreamProcOpcode.Error, DMOpcodeHandlers.Error},
             {DreamProcOpcode.IsInList, DMOpcodeHandlers.IsInList},
-            {DreamProcOpcode.PushArguments, DMOpcodeHandlers.PushArguments},
             {DreamProcOpcode.PushFloat, DMOpcodeHandlers.PushFloat},
             {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
             {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
@@ -147,7 +146,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DebugSource, DMOpcodeHandlers.DebugSource},
             {DreamProcOpcode.DebugLine, DMOpcodeHandlers.DebugLine},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
-            {DreamProcOpcode.PushProcArguments, DMOpcodeHandlers.PushProcArguments},
+            {DreamProcOpcode.CallWithProcArgs, DMOpcodeHandlers.CallWithProcArgs},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
             {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},
@@ -386,7 +385,30 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DreamProcArguments PopArguments() {
-            return Pop().MustGetValueAsProcArguments();
+            var orderedArgumentsCount = Pop().MustGetValueAsInteger();
+            var namedArgumentsCount = Pop().MustGetValueAsInteger();
+
+            if (orderedArgumentsCount + namedArgumentsCount == 0) {
+                return new DreamProcArguments();
+            }
+            List<DreamValue>? orderedArgs = null;
+            Dictionary<string, DreamValue>? namedArgs = null;
+
+            if (orderedArgumentsCount > 0) {
+                orderedArgs = new List<DreamValue>();
+                for (int i = 0; i < orderedArgumentsCount; i++) {
+                    orderedArgs.Add(Pop());
+                }
+            }
+
+            if (namedArgumentsCount > 0) {
+                namedArgs = new Dictionary<string, DreamValue>();
+                for (int i = 0; i < namedArgumentsCount; i++) {
+                    namedArgs.Add(Pop().MustGetValueAsString(), Pop());
+                }
+            }
+
+            return new DreamProcArguments(orderedArgs, namedArgs);
         }
         #endregion
 

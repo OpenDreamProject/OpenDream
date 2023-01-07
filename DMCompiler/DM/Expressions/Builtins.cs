@@ -409,7 +409,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             foreach (DMExpression parameter in _parameters) {
                 parameter.EmitPushValue(dmObject, proc);
-                proc.PushArguments(0);
+                proc.PushNoArguments();
                 proc.CreateObject();
             }
 

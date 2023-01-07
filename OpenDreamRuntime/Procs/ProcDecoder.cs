@@ -133,20 +133,6 @@ public struct ProcDecoder {
             case DreamProcOpcode.JumpIfNullDereference:
                 return (opcode, ReadReference(), ReadInt());
 
-            case DreamProcOpcode.PushArguments: {
-                int argCount = ReadInt();
-                int namedCount = ReadInt();
-                string[] names = new string[argCount];
-
-                for (int i = 0; i < argCount; i++) {
-                    if (ReadParameterType() == DreamProcOpcodeParameterType.Named) {
-                        names[i] = ReadString();
-                    }
-                }
-
-                return (opcode, argCount, namedCount, names);
-            }
-
             default:
                 return ValueTuple.Create(opcode);
         }
@@ -207,15 +193,6 @@ public struct ProcDecoder {
 
             case (DreamProcOpcode.PushType, int type):
                 text.Append(getTypePath(type));
-                break;
-
-            case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
-                text.Append(argCount);
-                for (int i = 0; i < argCount; i++) {
-                    text.Append(' ');
-                    text.Append(names[i] ?? "-");
-                }
-
                 break;
 
             default:

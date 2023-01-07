@@ -20,7 +20,7 @@ namespace DMCompiler.DM.Expressions {
             } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
                 return (DMReference.CreateGlobalProc(globalProc.Id), false);
             }
-            
+
             DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             //Just... pretend there is one for the sake of argument.
             return (DMReference.CreateSrcProc(_identifier), false);
@@ -126,19 +126,19 @@ namespace DMCompiler.DM.Expressions {
                 var skipLabel = proc.NewLabelName();
                 proc.JumpIfNullDereference(procRef, skipLabel);
                 if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
+                    proc.CallWithProcArgs(procRef);
                 } else {
                     _arguments.EmitPushArguments(dmObject, proc);
+                    proc.Call(procRef);
                 }
-                proc.Call(procRef);
                 proc.AddLabel(skipLabel);
             } else {
                 if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
+                    proc.CallWithProcArgs(procRef);
                 } else {
                     _arguments.EmitPushArguments(dmObject, proc);
+                    proc.Call(procRef);
                 }
-                proc.Call(procRef);
             }
         }
 

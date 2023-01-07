@@ -4,6 +4,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {
@@ -123,7 +124,7 @@ namespace DMCompiler.DM {
 
         public void EmitPushArguments(DMObject dmObject, DMProc proc) {
             if (Expressions.Length == 0) {
-                proc.PushArguments(0);
+                proc.PushNoArguments();
                 return;
             }
 
@@ -136,21 +137,8 @@ namespace DMCompiler.DM {
                 return;
             }
 
-            List<DreamProcOpcodeParameterType> parameterTypes = new List<DreamProcOpcodeParameterType>();
-            List<string> parameterNames = new List<string>();
-
-            foreach ((string name, DMExpression expr) in Expressions) {
-                expr.EmitPushValue(dmObject, proc);
-
-                if (name != null) {
-                    parameterTypes.Add(DreamProcOpcodeParameterType.Named);
-                    parameterNames.Add(name);
-                } else {
-                    parameterTypes.Add(DreamProcOpcodeParameterType.Unnamed);
-                }
-            }
-
-            proc.PushArguments(Expressions.Length, parameterTypes.ToArray(), parameterNames.ToArray());
+            proc.PushArguments(dmObject, proc, Expressions.Where(x => x.Name == null).Select(x => x.Expr).ToArray(),
+                Expressions.Where(x => x.Name != null).ToArray());
         }
     }
 }

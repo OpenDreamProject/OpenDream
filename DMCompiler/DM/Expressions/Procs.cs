@@ -1,3 +1,4 @@
+using System;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 
@@ -128,16 +129,16 @@ namespace DMCompiler.DM.Expressions {
                 if (_arguments.Length == 0 && _target is ProcSuper) {
                     proc.CallWithProcArgs(procRef);
                 } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                    proc.Call(procRef);
+                    var argStackSize = _arguments.EmitPushArguments(dmObject, proc);
+                    proc.Call(procRef, argStackSize);
                 }
                 proc.AddLabel(skipLabel);
             } else {
                 if (_arguments.Length == 0 && _target is ProcSuper) {
                     proc.CallWithProcArgs(procRef);
                 } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                    proc.Call(procRef);
+                    var argStackSize = _arguments.EmitPushArguments(dmObject, proc);
+                    proc.Call(procRef, argStackSize);
                 }
             }
         }

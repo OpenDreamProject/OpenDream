@@ -357,8 +357,8 @@ namespace DMCompiler.DM {
                     throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
                 }
 
-                PushArguments(null, sleepProc, orderedArguments: new DMExpression[]{new Number(Location.Internal, -1)});
-                Call(DMReference.CreateGlobalProc(sleepProc.Id));
+                var argStackSize = PushArguments(null, sleepProc, orderedArguments: new DMExpression[]{new Number(Location.Internal, -1)});
+                Call(DMReference.CreateGlobalProc(sleepProc.Id), argStackSize);
             }
         }
 
@@ -507,17 +507,20 @@ namespace DMCompiler.DM {
         }
 
         public void PushArgumentList() {
+            GrowStack(2);
             WriteOpcode(DreamProcOpcode.PushArgumentList);
         }
 
-        public void PushNoArguments() {
-            //GrowStack(2);
+        public int PushNoArguments() {
+            GrowStack(2);
             PushFloat(0);
             PushFloat(0);
+            return 2;
         }
 
-        public void PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, (string name, DMExpression expr)[] namedArguments = null) {
-            //GrowStack((orderedArguments?.Length ?? 0) + (namedArguments?.Length ?? 0)*2 + 2);
+        public int PushArguments(DMObject dmObject, DMProc dmProc, DMExpression[] orderedArguments = null, (string name, DMExpression expr)[] namedArguments = null) {
+            var stackGrow = (orderedArguments?.Length ?? 0) + (namedArguments?.Length ?? 0) * 2 + 2;
+            GrowStack(stackGrow);
 
             if(namedArguments != null) {
                 foreach (var (name, argument) in namedArguments) {
@@ -535,6 +538,8 @@ namespace DMCompiler.DM {
 
             PushFloat(namedArguments?.Length ?? 0);
             PushFloat(orderedArguments?.Length ?? 0);
+
+            return stackGrow;
         }
 
         public void BooleanOr(string endLabel) {
@@ -584,17 +589,19 @@ namespace DMCompiler.DM {
         }
 
         public void CallWithProcArgs(DMReference reference) {
+            GrowStack(1);
             WriteOpcode(DreamProcOpcode.CallWithProcArgs);
             WriteReference(reference);
         }
 
-        public void Call(DMReference reference) {
+        public void Call(DMReference reference, int argStackSize) {
+            ShrinkStack(argStackSize - 1);
             WriteOpcode(DreamProcOpcode.Call);
             WriteReference(reference);
         }
 
-        public void CallStatement() {
-            ShrinkStack(1); //Either shrinks the stack by 1 or 2. Assume 1.
+        public void CallStatement(int argStackSize) {
+            ShrinkStack(argStackSize);
             WriteOpcode(DreamProcOpcode.CallStatement);
         }
 
@@ -623,8 +630,8 @@ namespace DMCompiler.DM {
             WriteReference(reference);
         }
 
-        public void CreateObject() {
-            ShrinkStack(1);
+        public void CreateObject(int argStackSize) {
+            ShrinkStack(argStackSize);
             WriteOpcode(DreamProcOpcode.CreateObject);
         }
 

@@ -38,9 +38,10 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "invalid use of arglist");
         }
 
-        public void EmitPushArglist(DMObject dmObject, DMProc proc) {
+        public int EmitPushArglist(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
             proc.PushArgumentList();
+            return 2;
         }
     }
 
@@ -56,8 +57,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             Expr.EmitPushValue(dmObject, proc);
-            Arguments.EmitPushArguments(dmObject, proc);
-            proc.CreateObject();
+            var argStackSize = Arguments.EmitPushArguments(dmObject, proc);
+            proc.CreateObject(argStackSize);
         }
     }
 
@@ -79,8 +80,8 @@ namespace DMCompiler.DM.Expressions {
             }
 
             proc.PushType(typeId);
-            Arguments.EmitPushArguments(dmObject, proc);
-            proc.CreateObject();
+            var argStackSize = Arguments.EmitPushArguments(dmObject, proc);
+            proc.CreateObject(argStackSize);
         }
     }
 
@@ -409,8 +410,8 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             foreach (DMExpression parameter in _parameters) {
                 parameter.EmitPushValue(dmObject, proc);
-                proc.PushNoArguments();
-                proc.CreateObject();
+                var argStackSize = proc.PushNoArguments();
+                proc.CreateObject(argStackSize);
             }
 
             proc.CreateList(_parameters.Length);
@@ -502,8 +503,8 @@ namespace DMCompiler.DM.Expressions {
             }
 
             _a.EmitPushValue(dmObject, proc);
-            _procArgs.EmitPushArguments(dmObject, proc);
-            proc.CallStatement();
+            var argStackSize = _procArgs.EmitPushArguments(dmObject, proc);
+            proc.CallStatement(argStackSize);
         }
     }
 

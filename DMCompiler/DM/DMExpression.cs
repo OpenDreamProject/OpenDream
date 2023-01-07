@@ -122,10 +122,10 @@ namespace DMCompiler.DM {
             }
         }
 
-        public void EmitPushArguments(DMObject dmObject, DMProc proc) {
+        /// <returns>stack used</returns>
+        public int EmitPushArguments(DMObject dmObject, DMProc proc) {
             if (Expressions.Length == 0) {
-                proc.PushNoArguments();
-                return;
+                return proc.PushNoArguments();
             }
 
             if (Expressions[0].Name == null && Expressions[0].Expr is Expressions.Arglist arglist) {
@@ -133,11 +133,10 @@ namespace DMCompiler.DM {
                     DMCompiler.Emit(WarningCode.ArglistOnlyArgument, Location, "arglist expression should be the only argument");
                 }
 
-                arglist.EmitPushArglist(dmObject, proc);
-                return;
+                return arglist.EmitPushArglist(dmObject, proc);
             }
 
-            proc.PushArguments(dmObject, proc, Expressions.Where(x => x.Name == null).Select(x => x.Expr).ToArray(),
+            return proc.PushArguments(dmObject, proc, Expressions.Where(x => x.Name == null).Select(x => x.Expr).ToArray(),
                 Expressions.Where(x => x.Name != null).ToArray());
         }
     }

@@ -1,16 +1,13 @@
 /datum
 	var/a
-	var/b
 	var/_f
 
 /datum/New(is_root)
 	if (is_root)
 		a = new /datum(FALSE)
-		a = new /datum(FALSE)
 		_f = new /datum(FALSE)
 	else
 		a = list()
-		b = list()
 		_f = list()
 
 /datum/proc/f()

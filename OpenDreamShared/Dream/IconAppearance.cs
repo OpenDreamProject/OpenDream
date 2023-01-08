@@ -13,6 +13,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
         [ViewVariables] public float Layer;
+        [ViewVariables] public float Plane;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;

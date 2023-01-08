@@ -64,26 +64,48 @@ sealed class DreamViewOverlay : Overlay {
             sprites.Add(sprite);
         }
 
+        //early return if there's nothing to do
+        if(sprites.Count == 0)
+            return;
+
         sprites.Sort(_renderOrderComparer);
+        //After sort, group by plane and render together
+        float lastPlane = sprites[0].Icon.Appearance.Plane;
+        IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         foreach (DMISpriteComponent sprite in sprites) {
             if (!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
                 continue;
 
-            DrawIcon(args.WorldHandle, sprite.Icon,
+            if(lastPlane != sprite.Icon.Appearance.Plane){
+                args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2i.Zero);
+                ReturnPingPongRenderTarget(planeTarget);
+                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size);
+                lastPlane = sprite.Icon.Appearance.Plane;
+            }
+            DrawIcon(args.WorldHandle, planeTarget, sprite.Icon,
                 _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f);
         }
+        //final draw
+        args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2i.Zero);
+        ReturnPingPongRenderTarget(planeTarget);
     }
 
     private void DrawTiles(OverlayDrawArgs args, TransformComponent eyeTransform) {
         if (!_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
             return;
-
+        IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        //args.WorldHandle.SetTransform(eyeTransform.LocalMatrix);
         foreach (TileRef tileRef in grid.GetTilesIntersecting(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)))) {
             MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
             DreamIcon icon = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId);
 
-            DrawIcon(args.WorldHandle, icon, pos.Position - 1);
+            DrawIcon(args.WorldHandle, planeTarget, icon, pos.Position - 1);
         }
+        //args.WorldHandle.SetTransform(eyeTransform.WorldMatrix);
+        args.WorldHandle.DrawTexture(planeTarget.Texture, eyeTransform.WorldPosition, Color.Transparent);
+        //args.WorldHandle.DrawTextureRect(planeTarget.Texture, new Box2Rotated(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)), Angle.FromDegrees(180)), Color.Transparent);
+        //args.WorldHandle.DrawTextureRect(planeTarget.Texture, Box2.CenteredAround(Vector2i.Zero, (17, 17)));
+        ReturnPingPongRenderTarget(planeTarget);
     }
 
     private IRenderTexture RentPingPongRenderTarget(Vector2i size) {
@@ -101,7 +123,6 @@ sealed class DreamViewOverlay : Overlay {
 
             _renderTargetCache[size] = listResult; //put the shorter list back
         }
-
         return result;
     }
 
@@ -114,20 +135,34 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     // TODO: Move this to DreamIcon.Draw() so screen objects can have filters
-    private void DrawIcon(DrawingHandleWorld handle, DreamIcon icon, Vector2 position) {
+    private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, DreamIcon icon, Vector2 position) {
         if (icon.Appearance == null)
             return;
 
         position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
+        //TODO appearance_flags - notably KEEP_TOGETHER and KEEP_APART
+        //keep together can probably just be a subcall to DrawIcon()?
+
+        //TODO check for images with override here
+
+        //TODO vis_contents
+
+        //underlays - inherit colour and transform ?
         foreach (DreamIcon underlay in icon.Underlays) {
-            DrawIcon(handle, underlay, position);
+            DrawIcon(handle, renderTarget, underlay, position);
         }
 
+        //main icon - TODO transform
         AtlasTexture frame = icon.CurrentFrame;
         if(frame != null && icon.Appearance.Filters.Count == 0) {
-            //faster path for rendering unshaded sprites
-            handle.DrawTexture(frame, position, icon.Appearance.Color);
+            //faster path for rendering unfiltered sprites
+            handle.RenderInRenderTarget(renderTarget, () => {
+                    handle.SetTransform(Vector2.Zero, Angle.Zero, Vector2.One);
+                    handle.DrawTextureRect(frame,
+                        new Box2(position*EyeManager.PixelsPerMeter, position*EyeManager.PixelsPerMeter+frame.Size),
+                        icon.Appearance.Color);
+                }, null);
         } else if (frame != null) {
             IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentPingPongRenderTarget(frame.Size * 2);
@@ -135,6 +170,7 @@ sealed class DreamViewOverlay : Overlay {
 
             handle.RenderInRenderTarget(pong,
                 () => {
+
                     handle.DrawTextureRect(frame,
                         new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)),
                         icon.Appearance.Color);
@@ -169,15 +205,24 @@ sealed class DreamViewOverlay : Overlay {
                 pong = tmpHolder;
             }
 
-            handle.DrawTexture(pong.Texture, position - ((frame.Size / 2) / (float) EyeManager.PixelsPerMeter),
-                icon.Appearance.Color);
+            handle.RenderInRenderTarget(renderTarget, () => {
+                    handle.DrawTextureRect(pong.Texture,
+                        new Box2((position*EyeManager.PixelsPerMeter) + (frame.Size / 2), frame.Size + (frame.Size / 2)),
+                        icon.Appearance.Color);
+                }, null);
             ReturnPingPongRenderTarget(ping);
             ReturnPingPongRenderTarget(pong);
         }
 
+        //TODO maptext - note colour + transform apply
+
+        //TODO particles - colour and transform don't apply?
+
+        //overlays - colour and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
-            DrawIcon(handle, overlay, position);
+            DrawIcon(handle, renderTarget, overlay, position);
         }
+
     }
 }
 

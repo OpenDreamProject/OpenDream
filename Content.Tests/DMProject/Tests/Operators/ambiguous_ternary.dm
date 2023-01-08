@@ -34,13 +34,11 @@ var/_f = new /datum(TRUE)
 	ASSERT( (TRUE?D.f().f():f()) == (D.f().f()) )
 	ASSERT( (FALSE?D.f().f():f()) == (f()) )
 
-
 	ASSERT( (TRUE?D.a:f():f():f()) == (D.a:f()) )
 	ASSERT( (FALSE?D.a:f():f()) == (f()) )
 
 	ASSERT( (TRUE?D.a:f():f()) == (D.a:f()) )
 	ASSERT( (FALSE?D.a:f():f()) == (f()) )
-
 
 	ASSERT( (TRUE?(a):f()) == (a) )
 	ASSERT( (FALSE?(a):f()) == (f()) )
@@ -48,3 +46,5 @@ var/_f = new /datum(TRUE)
 	ASSERT( (TRUE?f():f()) == (f()) )
 	ASSERT( (FALSE?f():f()) == (f()) )
 
+	var/list/L = list(D)
+	ASSERT( (TRUE?(TRUE?L[1]:L[2]):()) == (L[1]) )

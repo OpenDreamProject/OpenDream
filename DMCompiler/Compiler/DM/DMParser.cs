@@ -2082,6 +2082,8 @@ namespace DMCompiler.Compiler.DM {
                         
                         case TokenType.DM_LeftBracket:
                         case TokenType.DM_QuestionLeftBracket: {
+                                ternaryBHasPriority = true;
+
                                 Whitespace();
                                 DMASTExpression index = Expression();
                                 ConsumeRightBracket();

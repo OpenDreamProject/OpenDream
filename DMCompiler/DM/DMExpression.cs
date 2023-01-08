@@ -39,7 +39,8 @@ namespace DMCompiler.DM {
 
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var expr = Create(dmObject, proc, expression, inferredPath);
-            expr.EmitPushValue(dmObject, proc);
+            // expr can be null if we error elsewhere
+            expr?.EmitPushValue(dmObject, proc);
         }
 
         public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant constant) {

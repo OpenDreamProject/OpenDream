@@ -1,9 +1,10 @@
+using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class UnaryOp : DMExpression {
-        protected DMExpression Expr { get; }
+        [CanBeNull] protected DMExpression Expr { get; }
 
         public UnaryOp(Location location, DMExpression expr) : base(location) {
             Expr = expr;
@@ -43,7 +44,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            Expr.EmitPushValue(dmObject, proc);
+            Expr?.EmitPushValue(dmObject, proc);
             proc.Not();
         }
     }

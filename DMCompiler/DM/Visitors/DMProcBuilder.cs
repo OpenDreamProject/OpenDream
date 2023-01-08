@@ -332,6 +332,9 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
+            // We errored somewhere else and value ended up null
+            value ??= new Null(varDeclaration.Location);
+
             value.EmitPushValue(_dmObject, _proc);
             _proc.Assign(_proc.GetLocalVariableReference(varDeclaration.Name));
             _proc.Pop();

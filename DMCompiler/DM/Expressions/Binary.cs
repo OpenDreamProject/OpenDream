@@ -1,11 +1,12 @@
+using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class BinaryOp : DMExpression {
-        protected DMExpression LHS { get; }
-        protected DMExpression RHS { get; }
+        [CanBeNull] protected DMExpression LHS { get; }
+        [CanBeNull] protected DMExpression RHS { get; }
 
         public BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : base(location) {
             LHS = lhs;
@@ -284,8 +285,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            LHS.EmitPushValue(dmObject, proc);
-            RHS.EmitPushValue(dmObject, proc);
+            LHS?.EmitPushValue(dmObject, proc);
+            RHS?.EmitPushValue(dmObject, proc);
             proc.Equal();
         }
     }
@@ -296,8 +297,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            LHS.EmitPushValue(dmObject, proc);
-            RHS.EmitPushValue(dmObject, proc);
+            LHS?.EmitPushValue(dmObject, proc);
+            RHS?.EmitPushValue(dmObject, proc);
             proc.NotEqual();
         }
     }
@@ -308,8 +309,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            LHS.EmitPushValue(dmObject, proc);
-            RHS.EmitPushValue(dmObject, proc);
+            LHS?.EmitPushValue(dmObject, proc);
+            RHS?.EmitPushValue(dmObject, proc);
             proc.Equivalent();
         }
     }
@@ -320,8 +321,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            LHS.EmitPushValue(dmObject, proc);
-            RHS.EmitPushValue(dmObject, proc);
+            LHS?.EmitPushValue(dmObject, proc);
+            RHS?.EmitPushValue(dmObject, proc);
             proc.NotEquivalent();
         }
     }
@@ -497,6 +498,8 @@ namespace DMCompiler.DM.Expressions {
         public abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference);
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            if (LHS is null) return; // We errored elsewhere
+
             (DMReference reference, bool conditional) = LHS.EmitReference(dmObject, proc);
 
             if (conditional) {

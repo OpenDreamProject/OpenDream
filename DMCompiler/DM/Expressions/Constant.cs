@@ -436,7 +436,7 @@ namespace DMCompiler.DM.Expressions {
                 _ => throw new ArgumentOutOfRangeException()
             };
 
-            json = new Dictionary<string, object>(2) {
+            json = new Dictionary<string, object> {
                 { "type", jsonType },
                 { "value", pathInfo.Value.Id }
             };

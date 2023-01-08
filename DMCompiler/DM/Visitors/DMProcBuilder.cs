@@ -262,7 +262,7 @@ namespace DMCompiler.DM.Visitors {
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs
                     // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
-                    if (constant is not Expressions.Number invisNum) {
+                    if (constant is not Number invisNum) {
                         DMCompiler.Emit(WarningCode.BadType, statementSet.Location, "invisibility attribute must be an int");
                         return;
                     }
@@ -309,10 +309,10 @@ namespace DMCompiler.DM.Visitors {
                     value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
                 } catch (CompileErrorException e) {
                     DMCompiler.Emit(e.Error);
-                    value = new Expressions.Null(varDeclaration.Location);
+                    value = new Null(varDeclaration.Location);
                 }
             } else {
-                value = new Expressions.Null(varDeclaration.Location);
+                value = new Null(varDeclaration.Location);
             }
 
             bool successful;
@@ -413,11 +413,7 @@ namespace DMCompiler.DM.Visitors {
                                 : null;
 
                             DMASTExpression outputExpr;
-                            if (decl != null) {
-                                outputExpr = new DMASTIdentifier(exprRange.Value.Location, decl.DeclPath.Path.LastElement);
-                            } else {
-                                outputExpr = exprRange.Value;
-                            }
+                            outputExpr = decl != null ? new DMASTIdentifier(exprRange.Value.Location, decl.DeclPath.Path.LastElement) : exprRange.Value;
 
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
 
@@ -575,7 +571,7 @@ namespace DMCompiler.DM.Visitors {
                 {
                     _proc.MarkLoopContinue(loopLabel);
 
-                    if (outputVar is Expressions.LValue lValue) {
+                    if (outputVar is LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
                     } else {
@@ -613,7 +609,7 @@ namespace DMCompiler.DM.Visitors {
                 {
                     _proc.MarkLoopContinue(loopLabel);
 
-                    if (outputVar is Expressions.LValue lValue) {
+                    if (outputVar is LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
                     } else {

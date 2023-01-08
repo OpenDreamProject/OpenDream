@@ -78,8 +78,7 @@ sealed class DreamViewOverlay : Overlay {
 
             if(lastPlane != sprite.Icon.Appearance.Plane){
                 args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2i.Zero);
-                ReturnPingPongRenderTarget(planeTarget);
-                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size);
+                args.WorldHandle.DrawRect(new Box2(Vector2.Zero, planeTarget.Size), new Color());
                 lastPlane = sprite.Icon.Appearance.Plane;
             }
             DrawIcon(args.WorldHandle, planeTarget, sprite.Icon,
@@ -102,7 +101,7 @@ sealed class DreamViewOverlay : Overlay {
             DrawIcon(args.WorldHandle, planeTarget, icon, pos.Position - 1);
         }
         //args.WorldHandle.SetTransform(eyeTransform.WorldMatrix);
-        args.WorldHandle.DrawTexture(planeTarget.Texture, eyeTransform.WorldPosition, Color.Transparent);
+        args.WorldHandle.DrawTexture(planeTarget.Texture, eyeTransform.WorldPosition-planeTarget.Size, Color.Transparent);
         //args.WorldHandle.DrawTextureRect(planeTarget.Texture, new Box2Rotated(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)), Angle.FromDegrees(180)), Color.Transparent);
         //args.WorldHandle.DrawTextureRect(planeTarget.Texture, Box2.CenteredAround(Vector2i.Zero, (17, 17)));
         ReturnPingPongRenderTarget(planeTarget);
@@ -170,7 +169,6 @@ sealed class DreamViewOverlay : Overlay {
 
             handle.RenderInRenderTarget(pong,
                 () => {
-
                     handle.DrawTextureRect(frame,
                         new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)),
                         icon.Appearance.Color);

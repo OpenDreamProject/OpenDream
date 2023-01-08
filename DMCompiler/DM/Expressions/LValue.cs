@@ -26,7 +26,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, $"Can't get initial value of {this}");
+            DMCompiler.Emit(WarningCode.BadExpression, Location, $"can't get initial value of {this}");
         }
     }
 

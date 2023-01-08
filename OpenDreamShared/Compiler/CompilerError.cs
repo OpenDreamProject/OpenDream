@@ -13,19 +13,26 @@ namespace OpenDreamShared.Compiler {
         BadToken = 1,
         BadDirective = 10,
         BadExpression = 11,
+        BadType = 12, // For things that actually enforce typing
+        InferredWithoutType = 13, // An inferred new/locate/etc. requires a type
+
         BadLabel = 19,
         InvalidReference = 50,
+        InvalidProperty = 51,
         BadArgument = 100,
         InvalidArgumentKey = 101,
         ArglistOnlyArgument = 102,
         HardReservedKeyword = 200, // For keywords that CANNOT be un-reserved.
+        DuplicateProc = 403,
         ItemDoesntExist = 404,
         DanglingOverride = 405,
         StaticOverride = 406,
         IAmATeaPot = 418, // TODO: Implement the HTCPC protocol for OD
-        HardConstContext = 500,
+        HardConstContext = 500, // For things that MUST be constant
         WriteToConstant = 501,
+        InvalidConstOperation = 502,
         InvalidInclusion = 900,
+
         // 1000 - 1999 are reserved for preprocessor configuration.
         FileAlreadyIncluded = 1000,
         MissingIncludedFile = 1001,
@@ -113,7 +120,9 @@ namespace OpenDreamShared.Compiler {
     /// This should be ideally used for exceptions that are the fault of the compiler itself, <br/>
     /// like an abnormal state being reached or something.
     /// </summary>
+#pragma warning disable CS0618
     public sealed class CompileAbortException : CompileErrorException
+#pragma warning restore CS0618
     {
         public CompileAbortException(CompilerEmission error) : base(error) {}
         public CompileAbortException(Location location, string message) : base(location, message) {}

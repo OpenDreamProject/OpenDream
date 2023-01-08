@@ -11,7 +11,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use proc as value");
+            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_identifier}\" as value");
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
@@ -20,7 +20,7 @@ namespace DMCompiler.DM.Expressions {
             } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
                 return (DMReference.CreateGlobalProc(globalProc.Id), false);
             }
-            
+
             DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             //Just... pretend there is one for the sake of argument.
             return (DMReference.CreateSrcProc(_identifier), false);

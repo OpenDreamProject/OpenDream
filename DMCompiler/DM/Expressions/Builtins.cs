@@ -35,7 +35,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "invalid use of arglist");
+            DMCompiler.Emit(WarningCode.BadExpression, Location, "invalid use of arglist");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {
@@ -107,7 +107,8 @@ namespace DMCompiler.DM.Expressions {
                 _container.EmitPushValue(dmObject, proc);
             } else {
                 if (DMCompiler.Settings.NoStandard) {
-                    throw new CompileErrorException(Location, "Implicit locate() container is not available with --no-standard");
+                    DMCompiler.ForcedError(Location, "Implicit locate() container is not available with --no-standard");
+                    return;
                 }
 
                 DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
@@ -135,7 +136,8 @@ namespace DMCompiler.DM.Expressions {
                 _container.EmitPushValue(dmObject, proc);
             } else {
                 if (DMCompiler.Settings.NoStandard) {
-                    throw new CompileErrorException(Location, "Implicit locate() container is not available with --no-standard");
+                    DMCompiler.ForcedError(Location, "Implicit locate() container is not available with --no-standard");
+                    return;
                 }
 
                 DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
@@ -285,7 +287,9 @@ namespace DMCompiler.DM.Expressions {
                     idx.EmitPushIsSaved(dmObject, proc);
                     return;
                 default:
-                    throw new CompileErrorException(Location, $"can't get saved value of {_expr}");
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, $"can't get saved value of {_expr}");
+                    return;
+
             }
         }
     }
@@ -432,7 +436,7 @@ namespace DMCompiler.DM.Expressions {
         public Input(Location location, DMExpression[] arguments, DMValueType types,
             [CanBeNull] DMExpression list) : base(location) {
             if (arguments.Length is 0 or > 4) {
-                throw new CompileErrorException(location, "input() must have 1 to 4 arguments");
+                DMCompiler.Emit(WarningCode.BadArgument, location, "input() must have 1 to 4 arguments");
             }
 
             _arguments = arguments;
@@ -475,7 +479,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new CompileErrorException(Location, $"can't get initial value of {_expr}");
+            DMCompiler.Emit(WarningCode.BadExpression, Location, $"can't get initial value of {_expr}");
         }
     }
 

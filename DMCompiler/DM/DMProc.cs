@@ -353,7 +353,7 @@ namespace DMCompiler.DM {
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
                 if (!DMObjectTree.TryGetGlobalProc("sleep", out DMProc sleepProc)) {
-                    throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
+                    DMCompiler.ForcedError(Location, "Cannot do a background sleep without a sleep proc");
                 }
 
                 PushFloat(-1);

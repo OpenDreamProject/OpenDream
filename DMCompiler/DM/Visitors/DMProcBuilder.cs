@@ -162,7 +162,8 @@ namespace DMCompiler.DM.Visitors {
             var attribute = statementSet.Attribute.ToLower();
             // TODO deal with "src"
             if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant) && attribute != "src") {
-                throw new CompileErrorException(statementSet.Location, $"{attribute} attribute should be a constant");
+                DMCompiler.Emit(WarningCode.HardConstContext, statementSet.Location, $"{attribute} attribute must be a constant");
+                return;
             }
 
             switch (statementSet.Attribute.ToLower()) {
@@ -227,22 +228,32 @@ namespace DMCompiler.DM.Visitors {
                     break;
                 case "name":
                     if (constant is not Expressions.String nameStr) {
-                        throw new CompileErrorException(statementSet.Location, "name attribute must be a string");
+                        DMCompiler.Emit(WarningCode.BadType, statementSet.Location, "name attribute must be a string");
+                        return;
                     }
 
                     _proc.VerbName = nameStr.Value;
                     break;
                 case "category":
-                    _proc.VerbCategory = constant switch {
-                        Expressions.String str => str.Value,
-                        Expressions.Null => null,
-                        _ => throw new CompileErrorException(statementSet.Location, "category attribute must be a string or null")
-                    };
+                    switch (constant)
+                    {
+                        case Expressions.String str:
+                            _proc.VerbCategory = str.Value;
+                            break;
+                        case Null:
+                            _proc.VerbCategory = null;
+                            break;
+                        default:
+                            _proc.VerbCategory = null;
+                            DMCompiler.Emit(WarningCode.BadType, statementSet.Location, "category attribute must be a string or null");
+                            break;
+                    }
 
                     break;
                 case "desc":
                     if (constant is not Expressions.String descStr) {
-                        throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
+                        DMCompiler.Emit(WarningCode.BadType, statementSet.Location, "desc attribute must be a string");
+                        return;
                     }
 
                     _proc.VerbDesc = descStr.Value;
@@ -252,7 +263,8 @@ namespace DMCompiler.DM.Visitors {
                     // The ref says 0-101 for atoms and 0-100 for verbs
                     // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
                     if (constant is not Expressions.Number invisNum) {
-                        throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
+                        DMCompiler.Emit(WarningCode.BadType, statementSet.Location, "invisibility attribute must be an int");
+                        return;
                     }
 
                     _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));

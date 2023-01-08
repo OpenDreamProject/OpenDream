@@ -147,7 +147,10 @@ namespace DMCompiler.DM.Visitors {
                     {
                         DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
 
-                        if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
+                        if (parentType == null) {
+                            DMCompiler.Emit(WarningCode.HardConstContext, varOverride.Location, "Expected a constant path");
+                            return;
+                        }
                         varObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                         return;
                     }
@@ -155,7 +158,7 @@ namespace DMCompiler.DM.Visitors {
                     {
                         if(varObject.IsSubtypeOf(DreamPath.Datum))
                         {
-                            throw new CompileErrorException(varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");
+                            DMCompiler.Emit(WarningCode.WriteToConstant, varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");
                         }
                         break;
                     }
@@ -195,14 +198,16 @@ namespace DMCompiler.DM.Visitors {
                 DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
 
                 if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                    throw new CompileErrorException(procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
+                    DMCompiler.Emit(WarningCode.DuplicateProc, procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
+                    return;
                 }
 
                 DMProc proc;
 
                 if (procDefinition.ObjectPath == DreamPath.Root) {
                     if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
-                        throw new CompileErrorException(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope");
+                        DMCompiler.Emit(WarningCode.DuplicateProc, procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope");
+                        return;
                     }
 
                     proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
@@ -331,11 +336,13 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (variable.IsConst) {
-                throw new CompileErrorException(value.Location, "Value of const var must be a constant");
+                DMCompiler.Emit(WarningCode.HardConstContext, value.Location, "Value of const var must be a constant");
+                return;
             }
 
             if (!IsValidRighthandSide(currentObject, variable, expression)) {
-                throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
+                DMCompiler.Emit(WarningCode.BadExpression, value.Location, $"Invalid initial value for \"{variable.Name}\"");
+                return;
             }
 
             variable = variable.WriteToValue(new Expressions.Null(Location.Internal));

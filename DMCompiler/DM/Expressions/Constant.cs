@@ -22,78 +22,96 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual Constant Negate() {
-            throw new CompileErrorException(Location, $"const operation \"-{this}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"-{this}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant BinaryNot() {
-            throw new CompileErrorException(Location, $"const operation \"~{this}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"~{this}\" is invalid");
+            return new Null(Location);
         }
         #endregion
 
         #region Binary Operations
 
         public virtual Constant Add(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} + {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} + {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant Subtract(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} - {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} - {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant Multiply(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} * {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} * {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant Divide(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} / {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} / {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant Modulo(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} % {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant ModuloModulo(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} %% {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant Power(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} ** {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} ** {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant LeftShift(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} << {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} << {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant RightShift(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} >> {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} >> {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant BinaryAnd(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} & {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} & {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant BinaryXor(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} ^ {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} ^ {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant BinaryOr(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} | {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant GreaterThan(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} > {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} > {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant GreaterThanOrEqual(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} >= {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} >= {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant LessThan(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} < {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} < {rhs}\" is invalid");
+            return new Null(Location);
         }
 
         public virtual Constant LessThanOrEqual(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
+            DMCompiler.Emit(WarningCode.InvalidConstOperation, Location, $"const operation \"{this} <= {rhs}\" is invalid");
+            return new Null(Location);
         }
         #endregion
     }

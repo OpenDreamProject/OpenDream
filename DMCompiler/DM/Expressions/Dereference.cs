@@ -99,17 +99,24 @@ namespace DMCompiler.DM.Expressions {
                     return;
                 }
                 else if (expr.Path == null) {
-                    throw new CompileErrorException(astNode.Location,$"Invalid property \"{_field}\"");
+                    DMCompiler.Emit(WarningCode.InvalidProperty, astNode.Location,$"Invalid property \"{_field}\"");
+                    return;
                 }
 
                 DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);
-                if (dmObject == null) throw new CompileErrorException(Location, $"Type {expr.Path.Value} does not exist");
-                if (!dmObject.HasProc(_field)) throw new CompileErrorException(Location, $"Type {_expr.Path.Value} does not have a proc named \"{_field}\"");
+                if (dmObject == null) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {expr.Path.Value} does not exist");
+                    return;
+                }
+
+                if (!dmObject.HasProc(_field)) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_expr.Path.Value} does not have a proc named \"{_field}\"");
+                }
             }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use proc as value");
+            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_field}\" as value");
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {

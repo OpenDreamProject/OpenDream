@@ -243,21 +243,21 @@ namespace DMCompiler.DM.Visitors {
                 yield return stmt;
                 List<DMASTProcBlockInner> recurse;
                 switch (stmt) {
-                    case DMASTProcStatementSpawn ps: recurse = new() { ps.Body }; break;
-                    case DMASTProcStatementIf ps: recurse = new() { ps.Body, ps.ElseBody }; break;
-                    case DMASTProcStatementFor ps: recurse = new() { ps.Body }; break;
-                    case DMASTProcStatementWhile ps: recurse = new() { ps.Body }; break;
-                    case DMASTProcStatementDoWhile ps: recurse = new() { ps.Body }; break;
-                    case DMASTProcStatementInfLoop ps: recurse = new() { ps.Body }; break;
+                    case DMASTProcStatementSpawn ps: recurse = new(1) { ps.Body }; break;
+                    case DMASTProcStatementIf ps: recurse = new(2) { ps.Body, ps.ElseBody }; break;
+                    case DMASTProcStatementFor ps: recurse = new(1) { ps.Body }; break;
+                    case DMASTProcStatementWhile ps: recurse = new(1) { ps.Body }; break;
+                    case DMASTProcStatementDoWhile ps: recurse = new(1) { ps.Body }; break;
+                    case DMASTProcStatementInfLoop ps: recurse = new(1) { ps.Body }; break;
                     // TODO Good luck if you declare a static var inside a switch
                     case DMASTProcStatementSwitch ps: {
-                        recurse = new();
+                        recurse = new(ps.Cases.Length);
                         foreach (var swcase in ps.Cases) {
                             recurse.Add(swcase.Body);
                         }
                         break;
                     }
-                    case DMASTProcStatementTryCatch ps: recurse = new() { ps.TryBody, ps.CatchBody }; break;
+                    case DMASTProcStatementTryCatch ps: recurse = new(2) { ps.TryBody, ps.CatchBody }; break;
                     default: recurse = new(); break;
                 }
                 foreach (var subblock in recurse) {

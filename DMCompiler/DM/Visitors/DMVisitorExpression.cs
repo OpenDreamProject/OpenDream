@@ -79,6 +79,10 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.StringFormat(stringFormat.Location, stringFormat.Value, expressions);
         }
 
+        public void VisitVoid(DMASTVoid voidNode) {
+            DMCompiler.Emit(WarningCode.BadExpression, voidNode.Location, "Attempt to use a void expression");
+            Result = new Expressions.Null(voidNode.Location);
+        }
         public void VisitIdentifier(DMASTIdentifier identifier)
         {
             var name = identifier.Identifier;

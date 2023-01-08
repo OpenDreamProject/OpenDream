@@ -39,6 +39,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch statementTryCatch) { throw new NotImplementedException(); }
         public void VisitProcStatementThrow(DMASTProcStatementThrow statementThrow) { throw new NotImplementedException(); }
         public void VisitProcDefinition(DMASTProcDefinition procDefinition) { throw new NotImplementedException(); }
+        public void VisitVoid(DMASTVoid voidNode) { throw new NotImplementedException(); }
         public void VisitIdentifier(DMASTIdentifier identifier) { throw new NotImplementedException(); }
         public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) { throw new NotImplementedException(); }
         public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) { throw new NotImplementedException(); }
@@ -684,6 +685,16 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementThrow(this);
+        }
+    }
+
+    public class DMASTVoid : DMASTExpression {
+        public DMASTVoid(Location location) : base(location) {
+
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitVoid(this);
         }
     }
 

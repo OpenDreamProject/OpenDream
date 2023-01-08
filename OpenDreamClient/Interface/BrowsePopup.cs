@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Interface;
-using OpenDreamClient.Interface.Controls;
+﻿using OpenDreamClient.Interface.Controls;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 
@@ -53,4 +53,5 @@ namespace OpenDreamClient.Interface
         private void OnWindowClosed() {
             Closed?.Invoke();
         }
-    }}
+    }
+}

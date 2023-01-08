@@ -14,7 +14,7 @@ namespace DMCompiler.DM.Visitors {
         internal DMExpression Result { get; private set; }
 
         // NOTE This needs to be turned into a Stack of modes if more complicated scope changes are added in the future
-        public static string _scopeMode;
+        public static string _scopeMode = "normal";
 
         internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
             _dmObject = dmObject;
@@ -93,6 +93,9 @@ namespace DMCompiler.DM.Visitors {
                     break;
                 case "args":
                     Result = new Expressions.Args(identifier.Location);
+                    break;
+                case "opendream_procpath": // Our saner alternative to .....
+                    Result = new Expressions.OpenDreamProcpath(identifier.Location);
                     break;
                 default:
                 {

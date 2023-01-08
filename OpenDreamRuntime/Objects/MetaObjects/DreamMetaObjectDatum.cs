@@ -38,11 +38,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
-            return varName switch
-            {
-                "type" => new DreamValue(dreamObject.ObjectDefinition.Type),
-                "parent_type" => new DreamValue(_objectTree.GetTreeEntry(dreamObject.ObjectDefinition.Type)
-                    .ParentEntry.ObjectDefinition.Type),
+            return varName switch {
+                "type" => new DreamValue(dreamObject.ObjectDefinition.TreeEntry),
+                "parent_type" => new DreamValue(dreamObject.ObjectDefinition.TreeEntry.ParentEntry),
                 "vars" => new DreamValue(DreamListVars.Create(dreamObject)),
                 _ => ParentType?.OnVariableGet(dreamObject, varName, value) ?? value
             };

@@ -4,10 +4,12 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectDefinition {
-        [Dependency] private readonly IDreamManager _dreamMan = default!;
+        public readonly IDreamManager DreamManager = default!;
+        public readonly IDreamObjectTree ObjectTree = default!;
 
-        public DreamPath Type => _treeNode.Path;
-        public DreamObjectDefinition? Parent => _treeNode.ParentEntry?.ObjectDefinition;
+        public readonly IDreamObjectTree.TreeEntry TreeEntry;
+        public DreamPath Type => TreeEntry.Path;
+        public DreamObjectDefinition? Parent => TreeEntry.ParentEntry?.ObjectDefinition;
         public IDreamMetaObject? MetaObject = null;
         public int? InitializationProc;
         public readonly Dictionary<string, int> Procs = new();
@@ -19,13 +21,10 @@ namespace OpenDreamRuntime.Objects {
         // Maps /static variables from name to their index in the global variable table.
         public readonly Dictionary<string, int> GlobalVariables = new();
 
-        private readonly IDreamObjectTree _objectTree;
-        private readonly IDreamObjectTree.TreeEntry _treeNode;
-
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
-            IoCManager.InjectDependencies(this);
-            _objectTree = copyFrom._objectTree;
-            _treeNode = copyFrom._treeNode;
+            DreamManager = copyFrom.DreamManager;
+            ObjectTree = copyFrom.ObjectTree;
+            TreeEntry = copyFrom.TreeEntry;
             MetaObject = copyFrom.MetaObject;
             InitializationProc = copyFrom.InitializationProc;
 
@@ -37,15 +36,17 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(IDreamObjectTree objectTree, IDreamObjectTree.TreeEntry treeNode) {
-            IoCManager.InjectDependencies(this);
-            _objectTree = objectTree;
-            _treeNode = treeNode;
+        public DreamObjectDefinition(IDreamManager dreamManager, IDreamObjectTree objectTree, IDreamObjectTree.TreeEntry treeEntry) {
+            DreamManager = dreamManager;
+            ObjectTree = objectTree;
+            TreeEntry = treeEntry;
 
             if (Parent != null) {
                 InitializationProc = Parent.InitializationProc;
                 Variables = new Dictionary<string, DreamValue>(Parent.Variables);
                 GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
+                if (Parent.Verbs != null)
+                    Verbs = new List<int>(Parent.Verbs);
             }
         }
 
@@ -54,9 +55,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void SetProcDefinition(string procName, int procId) {
-            if (HasProc(procName))
-            {
-                var proc = _objectTree.Procs[procId];
+            if (HasProc(procName)) {
+                var proc = ObjectTree.Procs[procId];
                 proc.SuperProc = GetProc(procName);
                 OverridingProcs[procName] = procId;
             } else {
@@ -74,10 +74,10 @@ namespace OpenDreamRuntime.Objects {
 
         public bool TryGetProc(string procName, [NotNullWhen(true)] out DreamProc? proc) {
             if (OverridingProcs.TryGetValue(procName, out var procId)) {
-                proc = _objectTree.Procs[procId];
+                proc = ObjectTree.Procs[procId];
                 return true;
             } else if (Procs.TryGetValue(procName, out procId)) {
-                proc = _objectTree.Procs[procId];
+                proc = ObjectTree.Procs[procId];
                 return true;
             } else if (Parent != null) {
                 return Parent.TryGetProc(procName, out proc);
@@ -113,7 +113,7 @@ namespace OpenDreamRuntime.Objects {
 
         public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
             // Unsigned underflow is desirable here
-            return (_treeNode.TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;
+            return (TreeEntry.TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;
         }
     }
 }

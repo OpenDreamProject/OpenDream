@@ -19,7 +19,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         public DMIResource(int id, byte[] data) : base(id, data) {
             if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
 
-            Stream dmiStream = new MemoryStream(data);
+            using Stream dmiStream = new MemoryStream(data);
             DMIParser.ParsedDMIDescription description = DMIParser.ParseDMI(dmiStream);
 
             dmiStream.Seek(0, SeekOrigin.Begin);

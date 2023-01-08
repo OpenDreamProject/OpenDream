@@ -10,6 +10,7 @@ namespace Content.Tests {
     public sealed class DummyDreamMapManager : IDreamMapManager {
         public Vector2i Size => Vector2i.Zero;
         public int Levels => 0;
+        public List<DreamObject> AllAtoms { get; } = new();
 
         public void Initialize() { }
 

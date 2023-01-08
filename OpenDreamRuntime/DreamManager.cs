@@ -112,7 +112,7 @@ namespace OpenDreamRuntime {
 
             _dreamMapManager.Initialize();
             WorldContentsList = DreamList.Create();
-            WorldInstance = _objectTree.CreateObject(DreamPath.World);
+            WorldInstance = _objectTree.CreateObject(_objectTree.World);
 
             // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.
             WorldInstance.InitSpawn(new DreamProcArguments());
@@ -139,22 +139,22 @@ namespace OpenDreamRuntime {
 
         private void SetMetaObjects() {
             // Datum needs to be set first
-            _objectTree.SetMetaObject(DreamPath.Datum, new DreamMetaObjectDatum());
+            _objectTree.SetMetaObject(_objectTree.Datum, new DreamMetaObjectDatum());
 
             //TODO Investigate what types BYOND can reparent without exploding and only allow reparenting those
-            _objectTree.SetMetaObject(DreamPath.List, new DreamMetaObjectList());
-            _objectTree.SetMetaObject(DreamPath.Client, new DreamMetaObjectClient());
-            _objectTree.SetMetaObject(DreamPath.World, new DreamMetaObjectWorld());
-            _objectTree.SetMetaObject(DreamPath.Matrix, new DreamMetaObjectMatrix());
-            _objectTree.SetMetaObject(DreamPath.Regex, new DreamMetaObjectRegex());
-            _objectTree.SetMetaObject(DreamPath.Atom, new DreamMetaObjectAtom());
-            _objectTree.SetMetaObject(DreamPath.Area, new DreamMetaObjectArea());
-            _objectTree.SetMetaObject(DreamPath.Turf, new DreamMetaObjectTurf());
-            _objectTree.SetMetaObject(DreamPath.Movable, new DreamMetaObjectMovable());
-            _objectTree.SetMetaObject(DreamPath.Mob, new DreamMetaObjectMob());
-            _objectTree.SetMetaObject(DreamPath.Icon, new DreamMetaObjectIcon());
-            _objectTree.SetMetaObject(DreamPath.Filter, new DreamMetaObjectFilter());
-            _objectTree.SetMetaObject(DreamPath.Savefile, new DreamMetaObjectSavefile());
+            _objectTree.SetMetaObject(_objectTree.List, new DreamMetaObjectList());
+            _objectTree.SetMetaObject(_objectTree.Client, new DreamMetaObjectClient());
+            _objectTree.SetMetaObject(_objectTree.World, new DreamMetaObjectWorld());
+            _objectTree.SetMetaObject(_objectTree.Matrix, new DreamMetaObjectMatrix());
+            _objectTree.SetMetaObject(_objectTree.Regex, new DreamMetaObjectRegex());
+            _objectTree.SetMetaObject(_objectTree.Atom, new DreamMetaObjectAtom());
+            _objectTree.SetMetaObject(_objectTree.Area, new DreamMetaObjectArea());
+            _objectTree.SetMetaObject(_objectTree.Turf, new DreamMetaObjectTurf());
+            _objectTree.SetMetaObject(_objectTree.Movable, new DreamMetaObjectMovable());
+            _objectTree.SetMetaObject(_objectTree.Mob, new DreamMetaObjectMob());
+            _objectTree.SetMetaObject(_objectTree.Icon, new DreamMetaObjectIcon());
+            _objectTree.SetMetaObject(_objectTree.Filter, new DreamMetaObjectFilter());
+            _objectTree.SetMetaObject(_objectTree.Savefile, new DreamMetaObjectSavefile());
         }
 
         public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log") {
@@ -206,11 +206,9 @@ namespace OpenDreamRuntime {
                     _objectTree.Strings.Add(refStr);
                     idx = _objectTree.Strings.Count - 1;
                 }
-            } else if (value.TryGetValueAsPath(out var refPath)) {
-                var treeEntry = _objectTree.GetTreeEntry(refPath);
-
-                refType = RefType.DreamPath;
-                idx = treeEntry.Id;
+            } else if (value.TryGetValueAsType(out var type)) {
+                refType = RefType.DreamType;
+                idx = type.Id;
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 // Bit of a hack. This should use a resource's ID once they are refactored to have them.
                 return $"{(int) RefType.DreamResource}{refRsc.ResourcePath}";
@@ -255,9 +253,9 @@ namespace OpenDreamRuntime {
                         return _objectTree.Strings.Count > refId
                             ? new DreamValue(_objectTree.Strings[refId])
                             : DreamValue.Null;
-                    case RefType.DreamPath:
+                    case RefType.DreamType:
                         return _objectTree.Types.Length > refId
-                            ? new DreamValue(_objectTree.Types[refId].Path)
+                            ? new DreamValue(_objectTree.Types[refId])
                             : DreamValue.Null;
                     default:
                         throw new Exception($"Invalid reference type for ref {refString}");

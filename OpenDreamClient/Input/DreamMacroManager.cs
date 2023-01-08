@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Interface;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Input;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;

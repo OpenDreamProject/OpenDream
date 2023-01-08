@@ -432,10 +432,11 @@ namespace DMCompiler.DM.Expressions {
                 PathType.TypeReference => JsonVariableType.Type,
                 PathType.ProcReference => JsonVariableType.Proc,
                 PathType.ProcStub => JsonVariableType.ProcStub,
-                PathType.VerbStub => JsonVariableType.VerbStub
+                PathType.VerbStub => JsonVariableType.VerbStub,
+                _ => throw new ArgumentOutOfRangeException()
             };
 
-            json = new Dictionary<string, object>() {
+            json = new Dictionary<string, object>(2) {
                 { "type", jsonType },
                 { "value", pathInfo.Value.Id }
             };

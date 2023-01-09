@@ -65,7 +65,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
 
-            if (fps.TryGetValueAsInteger(out var fpsValue) && !_netManager.IsClient) {
+            if (fps.TryGetValueAsInteger(out var fpsValue) && _netManager.IsServer) {
                 _cfg.SetCVar(CVars.NetTickrate, fpsValue);
             }
 

@@ -1,0 +1,2 @@
+﻿/proc/RunTest()
+	return

@@ -195,37 +195,6 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public void Reset() {
-            Types = Array.Empty<TreeEntry>();
-            Procs?.Clear();
-            Strings?.Clear();
-            GlobalInitProc = null;
-
-            Root = default!;
-            List = default!;
-            World = default!;
-            Client = default!;
-            Datum = default!;
-            Sound = default!;
-            Matrix = default!;
-            Exception = default!;
-            Savefile = default!;
-            Regex = default!;
-            Filter = default!;
-            Icon = default!;
-            Image = default!;
-            MutableAppearance = default!;
-            Atom = default!;
-            Area = default!;
-            Turf = default!;
-            Movable = default!;
-            Obj = default!;
-            Mob = default!;
-
-            _pathToType?.Clear();
-            _globalProcIds?.Clear();
-        }
-
         private void LoadTypesFromJson(DreamTypeJson[] types) {
             Dictionary<DreamPath, int> pathToTypeId = new();
             Types = new TreeEntry[types.Length];
@@ -495,6 +464,5 @@ namespace OpenDreamRuntime.Objects {
         public DreamObjectDefinition GetObjectDefinition(int typeId);
         public IEnumerable<TreeEntry> GetAllDescendants(TreeEntry treeEntry);
         public DreamValue GetDreamValueFromJsonElement(object value);
-        public void Reset();
     }
 }

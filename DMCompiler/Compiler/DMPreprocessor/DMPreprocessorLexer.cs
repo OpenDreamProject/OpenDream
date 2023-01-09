@@ -39,7 +39,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                         token = CreateToken(TokenType.DM_Preproc_Whitespace, new string(c, whitespaceLength));
                         break;
-                    case '}':
+                    case '}': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
                     case ':': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c); break;

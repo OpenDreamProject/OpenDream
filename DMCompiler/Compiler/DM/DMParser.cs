@@ -940,8 +940,6 @@ namespace DMCompiler.Compiler.DM {
                         DMASTExpression endRange = null, step = null;
                         ExpressionTo(ref endRange, ref step);
                         Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
-                        Whitespace();
-                        Newline();
                         return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.Expression, assign.Value, endRange, step), null, null, dmTypes, GetForBody());
                     } else {
                         Error("Expected = before to in for");
@@ -953,21 +951,15 @@ namespace DMCompiler.Compiler.DM {
                     DMASTExpression listExpr = Expression();
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody());
                 }
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
 
@@ -983,14 +975,10 @@ namespace DMCompiler.Compiler.DM {
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
 
@@ -1005,14 +993,15 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
-                Whitespace();
-                Newline();
                 return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
             }
 
             return null;
 
             DMASTProcBlockInner GetForBody() {
+                Whitespace();
+                Newline();
+
                 DMASTProcBlockInner body = ProcBlock();
                 if (body == null) {
                     var loc = Current().Location;

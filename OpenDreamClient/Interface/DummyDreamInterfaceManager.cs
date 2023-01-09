@@ -1,5 +1,5 @@
 using OpenDreamClient.Interface.Controls;
-using OpenDreamShared.Interface;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Interface

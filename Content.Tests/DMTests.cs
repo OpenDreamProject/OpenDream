@@ -44,7 +44,7 @@ namespace Content.Tests
             _dreamMan = IoCManager.Resolve<IDreamManager>();
             _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
-            _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.PreInitialize(null);
             _dreamMan.OnException += OnException;
         }
 

@@ -20,6 +20,7 @@ namespace Content.Tests
         public const string InitializeEnvironment = "./environment.dme";
 
         private IDreamManager _dreamMan;
+        private IDreamObjectTree _objectTree;
         private ITaskManager _taskManager;
 
         [Flags]
@@ -41,6 +42,7 @@ namespace Content.Tests
             componentFactory.RegisterClass<DMISpriteComponent>();
             componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
+            _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
             _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
             _dreamMan.OnException += OnException;
@@ -116,7 +118,7 @@ namespace Content.Tests
             Task<DreamValue> callTask = null;
 
             DreamThread.Run("RunTest", async (state) => {
-                if (_dreamMan.GetObjectTree().TryGetGlobalProc("RunTest", out DreamProc proc)) {
+                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
                     callTask = state.Call(proc, null, null, new DreamProcArguments(null));
                     retValue = await callTask;
                     return DreamValue.Null;

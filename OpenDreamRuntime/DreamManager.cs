@@ -75,10 +75,6 @@ namespace OpenDreamRuntime {
             Initialized = false;
         }
 
-        public IDreamObjectTree GetObjectTree() {
-            return _objectTree;
-        }
-
         public void Update() {
             if (!Initialized)
                 return;

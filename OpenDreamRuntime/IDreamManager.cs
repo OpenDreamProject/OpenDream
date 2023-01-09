@@ -33,7 +33,6 @@ namespace OpenDreamRuntime {
         public DreamObject GetClientFromMob(DreamObject mob);
         DreamConnection GetConnectionFromMob(DreamObject mob);
         DreamConnection GetConnectionBySession(IPlayerSession session);
-        public IDreamObjectTree GetObjectTree();
         public void Update();
 
         public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");

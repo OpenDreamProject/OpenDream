@@ -54,9 +54,9 @@ namespace OpenDreamRuntime {
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 
-            //if (!LoadJson(jsonPath)) {
-            //   _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
-            //}
+            if (!LoadJson(jsonPath)) {
+               _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
+            }
         }
 
         public void StartWorld() {

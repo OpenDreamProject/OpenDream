@@ -29,6 +29,7 @@
         DM_Preproc_Pragma,
         DM_Preproc_Punctuator,
         DM_Preproc_Punctuator_Colon,
+        DM_Preproc_Punctuator_Semicolon,
         DM_Preproc_Punctuator_Comma,
         DM_Preproc_Punctuator_LeftBracket,
         DM_Preproc_Punctuator_LeftParenthesis,

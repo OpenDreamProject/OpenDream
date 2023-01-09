@@ -150,17 +150,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         goto case TokenType.DM_Preproc_Number;
                     }
                     case TokenType.DM_Preproc_Punctuator:
-                        if(token.Text == ";") {
-                            while (_bufferedWhitespace.TryPop(out var whitespace)) {
-                                yield return whitespace;
-                            }
-                            _currentLineContainsNonWhitespace = true;
-                            _canUseDirective = true;
-                            yield return token;
-                            break;
-                        }
-                        else
-                            goto case TokenType.DM_Preproc_Number;
                     case TokenType.DM_Preproc_Number:
                     case TokenType.DM_Preproc_String:
                     case TokenType.DM_Preproc_ConstantString:
@@ -171,12 +160,13 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Punctuator_LeftParenthesis:
                     case TokenType.DM_Preproc_Punctuator_LeftBracket:
                     case TokenType.DM_Preproc_Punctuator_RightBracket:
+                    case TokenType.DM_Preproc_Punctuator_Semicolon:
                     case TokenType.DM_Preproc_Punctuator_RightParenthesis: {
                         while (_bufferedWhitespace.TryPop(out var whitespace)) {
                             yield return whitespace;
                         }
                         _currentLineContainsNonWhitespace = true;
-                        _canUseDirective = false;
+                        _canUseDirective = (token.Type == TokenType.DM_Preproc_Punctuator_Semicolon);
 
                         yield return token;
                         break;

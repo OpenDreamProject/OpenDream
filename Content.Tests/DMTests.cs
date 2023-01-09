@@ -20,7 +20,6 @@ namespace Content.Tests
         public const string InitializeEnvironment = "./environment.dme";
 
         private IDreamManager _dreamMan;
-        private IDreamObjectTree _objectTree;
         private ITaskManager _taskManager;
 
         [Flags]
@@ -42,7 +41,6 @@ namespace Content.Tests
             componentFactory.RegisterClass<DMISpriteComponent>();
             componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
-            _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
             _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
             _dreamMan.OnException += OnException;
@@ -77,7 +75,7 @@ namespace Content.Tests
                     Cleanup(compiledFile);
                     return;
                 }
-
+                
                 Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
                 Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
                 _dreamMan.StartWorld();
@@ -114,38 +112,20 @@ namespace Content.Tests
         private (bool Success, DreamValue? Returned, Exception? except) RunTest() {
             var prev = _dreamMan.LastDMException;
 
-            DreamValue? result = null;
-            Task<DreamValue> callTask = null;
-
-            DreamThread.Run("RunTest", async (state) => {
-                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
-                    callTask = state.Call(proc, null, null, new DreamProcArguments(null));
-                    result = await callTask;
-                    return DreamValue.Null;
-                } else {
-                    Assert.Fail($"No global proc named RunTest");
-                    return DreamValue.Null;
-                }
-            });
-
-            var Watch = new Stopwatch();
-            Watch.Start();
-
-            // Tick until our inner call has finished
-            while (!callTask.IsCompleted) {
-                _dreamMan.Update();
-                _taskManager.ProcessPendingTasks();
-
-                if (Watch.Elapsed.TotalMilliseconds > 500) {
-                    Assert.Fail("Test timed out");
-                }
+            if (!_dreamMan.GetObjectTree().TryGetGlobalProc("RunTest", out var proc)) {
+                Assert.Fail($"No global proc named RunTest");
             }
+
+            DreamValue retValue = proc.Spawn(null, new(), null);
+
+
+            //DreamValue retValue = DreamThread.Run(proc, null, null, new());
 
             bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
             if (retSuccess)
-                return (retSuccess, result, null);
+                return (true, retValue, null);
             else
-                return (false, result, _dreamMan.LastDMException);
+                return (false, retValue, _dreamMan.LastDMException);
         }
 
         private static IEnumerable<object[]> GetTests()

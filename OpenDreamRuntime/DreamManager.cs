@@ -54,9 +54,9 @@ namespace OpenDreamRuntime {
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 
-            if (!LoadJson(jsonPath)) {
-                _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
-            }
+            //if (!LoadJson(jsonPath)) {
+            //   _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
+            //}
         }
 
         public void StartWorld() {
@@ -77,6 +77,10 @@ namespace OpenDreamRuntime {
 
         public void Shutdown() {
             Initialized = false;
+        }
+
+        public IDreamObjectTree GetObjectTree() {
+            return _objectTree;
         }
 
         public void Update() {
@@ -104,6 +108,7 @@ namespace OpenDreamRuntime {
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
             //TODO: Empty or invalid _compiledJson.Interface should return default interface - see issue #851
+            _objectTree.Reset();
             _objectTree.LoadJson(json);
 
             SetMetaObjects();

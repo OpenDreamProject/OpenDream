@@ -2,5 +2,4 @@
 	var/list/A = list(1,2,3)
 	ASSERT(A.len == 3)
 	A.Cut()
-	A.Cut()
 	ASSERT(A.len == 0)

@@ -36,6 +36,7 @@
         DM_Preproc_Punctuator_Question,
         DM_Preproc_Punctuator_RightBracket,
         DM_Preproc_Punctuator_RightParenthesis,
+        DM_Preproc_Punctuator_Semicolon,
         DM_Preproc_String,
         DM_Preproc_TokenConcat,
         DM_Preproc_Undefine,

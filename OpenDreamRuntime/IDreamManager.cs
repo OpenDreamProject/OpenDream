@@ -12,6 +12,7 @@ namespace OpenDreamRuntime {
         /// A black box (as in, on an airplane) variable currently only used by the test suite to help harvest runtime error info.
         /// </summary>
         public Exception? LastDMException { get; set; }
+        public event EventHandler<Exception> OnException;
 
         public List<DreamValue> Globals { get; }
         public IReadOnlyList<string> GlobalNames { get; }
@@ -40,6 +41,8 @@ namespace OpenDreamRuntime {
         public DreamValue LocateRef(string refString);
 
         IEnumerable<DreamConnection> Connections { get; }
+
+        public void HandleException(Exception e);
     }
 
     // TODO: Could probably use DreamValueType instead

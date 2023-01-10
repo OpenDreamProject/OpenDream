@@ -164,12 +164,16 @@ namespace DMCompiler.Compiler.DM {
                                     break;
                             }
                             break;
+                        case TokenType.DM_Preproc_Punctuator_Semicolon: {
+                            Advance();
+                            token = CreateToken(TokenType.DM_Semicolon, ";");
+                            break;
+                        }
                         case TokenType.DM_Preproc_Punctuator: {
                             Advance();
 
                             string c = preprocToken.Text;
                             switch (c) {
-                                case ";": token = CreateToken(TokenType.DM_Semicolon, c); break;
                                 case "{": token = CreateToken(TokenType.DM_LeftCurlyBracket, c); break;
                                 case "}": {
                                     _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_RightCurlyBracket, c));

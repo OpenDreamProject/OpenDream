@@ -94,6 +94,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 } else if (_overflowParameter != null && parameterName == _overflowParameter) {
                     for (int i = _overflowParameterIndex; i < parameters.Count; i++) {
                         expandedTokens.AddRange(parameters[i]);
+
+                        if(i < parameters.Count-1)
+                            expandedTokens.Add(new Token(TokenType.DM_Preproc_Punctuator_Comma, ",", Location.Unknown, null));
                     }
                 } else {
                     if (token.Type == TokenType.DM_Preproc_ParameterStringify) {

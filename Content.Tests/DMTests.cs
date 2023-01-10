@@ -19,9 +19,9 @@ namespace Content.Tests
         public const string TestProject = "DMProject";
         public const string InitializeEnvironment = "./environment.dme";
 
-        private IDreamManager _dreamMan;
-        private IDreamObjectTree _objectTree;
-        private ITaskManager _taskManager;
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly ITaskManager _taskManager = default!;
 
         [Flags]
         public enum DMTestFlags {
@@ -34,25 +34,22 @@ namespace Content.Tests
         }
 
         [OneTimeSetUp]
-        public void OneTimeSetup()
-        {
-            _taskManager = IoCManager.Resolve<ITaskManager>();
+        public void OneTimeSetup() {
+            IoCManager.InjectDependencies(this);
             _taskManager.Initialize();
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.RegisterClass<DMISpriteComponent>();
             componentFactory.GenerateNetIds();
-            _dreamMan = IoCManager.Resolve<IDreamManager>();
-            _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
-            _dreamMan.PreInitialize(null);
+            _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
             _dreamMan.OnException += OnException;
         }
 
-        private void OnException(object sender, Exception e) {
+        private void OnException(object? sender, Exception e) {
             TestContext.WriteLine(e.ToString());
         }
 
-        public string Compile(string sourceFile) {
+        public string? Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
                 Files = new() { sourceFile }
             });
@@ -143,10 +140,7 @@ namespace Content.Tests
             }
 
             bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
-            if (retSuccess)
-                return (true, retValue, null);
-            else
-                return (false, retValue, _dreamMan.LastDMException);
+            return (retSuccess, retValue, _dreamMan.LastDMException);
         }
 
         private static IEnumerable<object[]> GetTests()

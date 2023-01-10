@@ -8,4 +8,5 @@
 // BEGIN_INCLUDE
 #include "interface.dmf"
 #include "map.dmm"
+#include "code.dm"
 // END_INCLUDE

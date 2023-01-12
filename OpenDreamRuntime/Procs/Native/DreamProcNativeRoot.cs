@@ -2,7 +2,6 @@
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Resources;
 using Robust.Shared.Utility;
 using System.Collections.Specialized;
 using System.Globalization;
@@ -19,7 +18,6 @@ using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
-using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
@@ -1150,7 +1148,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (value.TryGetValueAsFloat(out float floatValue))
                 writer.WriteNumberValue(floatValue);
             else if (value.TryGetValueAsString(out var text))
-                writer.WriteStringValue(text);
+                writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(text));
             else if (value.TryGetValueAsType(out var type))
                 writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(type.Path.PathString));
             else if (value.TryGetValueAsDreamList(out var list)) {

@@ -30,7 +30,7 @@ namespace OpenDreamClient.Input {
 
                     context.AddFunction(function);
                     _inputManager.RegisterBinding(in binding);
-                    _inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(_ => OnMacroPress(macro), _ => OnMacroRelease(macro)));
+                    _inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(_ => OnMacroPress(macro), _ => OnMacroRelease(macro), outsidePrediction: false));
                 }
             }
         }

@@ -9,7 +9,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
-        private readonly ServerScreenOverlaySystem _screenOverlaySystem;
+        private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
         private readonly Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
@@ -19,7 +19,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamMetaObjectClient() {
             IoCManager.InjectDependencies(this);
 
-            _screenOverlaySystem = _entitySystemManager.GetEntitySystem<ServerScreenOverlaySystem>();
+            _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -161,7 +161,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (connection == null)
                 return;
 
-            _screenOverlaySystem.AddScreenObject(connection, movable);
+            _screenOverlaySystem?.AddScreenObject(connection, movable);
         }
 
         private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
@@ -172,7 +172,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (connection == null)
                 return;
 
-            _screenOverlaySystem.RemoveScreenObject(connection, movable);
+            _screenOverlaySystem?.RemoveScreenObject(connection, movable);
         }
     }
 }

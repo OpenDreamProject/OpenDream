@@ -66,7 +66,7 @@ namespace DMCompiler.DM.Visitors {
             //And now all the proc definitions we were promised
             if(AwaitedProcDefinitions.Count != 0) {
                 foreach (var pair in AwaitedProcDefinitions) {
-                    if (pair.Value.IAmRoot) { // Have to do this since DMObjectTree is what holds global procs, not the root DMObject, interestingly enough
+                    if (pair.Value.IsRoot) { // Have to do this since DMObjectTree is what holds global procs, not the root DMObject, interestingly enough
                         if(!DMObjectTree.SeenGlobalProcDefinition.Contains(pair.Key)) { // If we didn't see a definition for it :(
                             int ID = DMObjectTree.GlobalProcs[pair.Key];
                             DMProc proc = DMObjectTree.AllProcs[ID];

@@ -39,8 +39,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                         token = CreateToken(TokenType.DM_Preproc_Whitespace, new string(c, whitespaceLength));
                         break;
-                    case '}':
-                    case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
+                    case '}': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
+                    case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
                     case ':':
                         if(Advance() == '=')
@@ -352,7 +352,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         StringBuilder textBuilder = new StringBuilder();
-                        while (IsAlphabetic(GetCurrent()) || GetCurrent() == '_') {
+                        while (char.IsAsciiLetter(GetCurrent()) || GetCurrent() == '_') {
                             textBuilder.Append(GetCurrent());
                             Advance();
                         }
@@ -375,12 +375,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                     }
                     default: {
-                        if (IsAlphabetic(c) || c == '_') {
+                        if (char.IsAsciiLetter(c) || c == '_') {
                             StringBuilder textBuilder = new StringBuilder(char.ToString(c));
-                            while ((IsAlphanumeric(Advance()) || GetCurrent() == '_') && !AtEndOfSource) textBuilder.Append(GetCurrent());
+                            while ((char.IsAsciiLetterOrDigit(Advance()) || GetCurrent() == '_') && !AtEndOfSource) textBuilder.Append(GetCurrent());
 
                             token = CreateToken(TokenType.DM_Preproc_Identifier, textBuilder.ToString());
-                        } else if (IsNumeric(c)) {
+                        } else if (char.IsAsciiDigit(c)) {
                             StringBuilder textBuilder = new StringBuilder(char.ToString(c));
                             bool error = false;
 
@@ -402,7 +402,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 }
 
                                 c = next;
-                                if (IsHex(c) || c == '.' || c == 'x' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
+                                if (char.IsAsciiHexDigit(c) || c == '.' || c == 'x' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
                                     textBuilder.Append(c);
                                 } else {
                                     break;

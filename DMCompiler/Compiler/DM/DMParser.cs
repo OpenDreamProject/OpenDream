@@ -465,9 +465,9 @@ namespace DMCompiler.Compiler.DM {
                     List<DMASTProcStatement> setStatements = new(); // set statements are weird and must be held separately.
 
                     do {
-                        (List<DMASTProcStatement> stmts, List<DMASTProcStatement> set_stmts) = ProcBlockInner(); // Hope you understand tuples
-                        if (stmts != null) statements.AddRange(stmts);
-                        if (set_stmts != null) setStatements.AddRange(set_stmts);
+                        (List<DMASTProcStatement> stmts, List<DMASTProcStatement> setStmts) = ProcBlockInner(); // Hope you understand tuples
+                        if (stmts is not null) statements.AddRange(stmts);
+                        if (setStmts is not null) setStatements.AddRange(setStmts);
 
                         if (!Check(TokenType.DM_RightCurlyBracket)) {
                             Error(WarningCode.BadToken, "Expected end of braced block");
@@ -982,21 +982,17 @@ namespace DMCompiler.Compiler.DM {
                 Check(TokenType.DM_Colon);
                 Whitespace();
 
-                Token ifBody = Current();
                 DMASTProcStatement procStatement = ProcStatement();
                 DMASTProcBlockInner body;
                 DMASTProcBlockInner elseBody = null;
 
                 if (procStatement != null) {
-                    if (procStatement.IsAggregateOr<DMASTProcStatementSet>()) // Having just a set statement counts as being empty.
-                        Error(WarningCode.EmptyBlock, "Empty if-block detected");
                     body = new DMASTProcBlockInner(loc, procStatement);
                 } else {
                     body = ProcBlock();
                 }
 
                 if (body is null) {
-                    Error(WarningCode.EmptyBlock, "Empty if-block detected");
                     body = new DMASTProcBlockInner(loc);
                 }
                 Token afterIfBody = Current();
@@ -1009,15 +1005,12 @@ namespace DMCompiler.Compiler.DM {
                     procStatement = ProcStatement();
 
                     if (procStatement != null) {
-                        if (procStatement.IsAggregateOr<DMASTProcStatementSet>())
-                            Error(WarningCode.EmptyBlock, "Empty else-block detected");
                         elseBody = new DMASTProcBlockInner(loc, procStatement);
                     } else {
                         elseBody = ProcBlock();
                     }
 
                     if (elseBody is null) {
-                        Error(WarningCode.EmptyBlock, "Empty else-block detected");
                         elseBody = new DMASTProcBlockInner(loc);
                     }
                 } else if (newLineAfterIf) {
@@ -1128,7 +1121,6 @@ namespace DMCompiler.Compiler.DM {
 
                     DMASTProcStatement statement;
                     if (Check(TokenType.DM_Semicolon)) {
-                        Error(WarningCode.EmptyBlock, "Empty for-block detected");
                         statement = new DMASTProcStatementExpression(loc, new DMASTConstantNull(loc));
                     } else {
                         statement = ProcStatement();
@@ -1159,10 +1151,7 @@ namespace DMCompiler.Compiler.DM {
 
                     //Loops without a body are valid DM
                     if (statement is null) {
-                        Error(WarningCode.EmptyBlock, "Empty while-block detected");
                         statement = new DMASTProcStatementContinue(loc);
-                    } else if (statement.IsAggregateOr<DMASTProcStatementSet>()) { // set statements don't count as real, imo
-                        Error(WarningCode.EmptyBlock, "Empty while-block detected");
                     }
 
                     body = new DMASTProcBlockInner(loc, statement);
@@ -1187,10 +1176,11 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) {
                     DMASTProcStatement statement = ProcStatement();
-                    if (statement is null) // This is consistently fatal in BYOND
-                        Error("Expected statement");
-                    else if (statement.IsAggregateOr<DMASTProcStatementSet>()) // This is not.
-                        Error(WarningCode.EmptyBlock, "Empty do-while block detected");
+                    if (statement is null) {// This is consistently fatal in BYOND
+                        Error("Expected statement - do-while requires a non-empty block");
+                        //For the sake of argument, add a statement (avoids repetitive warning emissions down the line :^) )
+                        statement = new DMASTProcStatementContinue(loc);
+                    }
                     body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement }, null);
                 }
 

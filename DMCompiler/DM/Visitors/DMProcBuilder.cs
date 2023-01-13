@@ -57,11 +57,16 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            ProcessBlockInner(procDefinition.Body);
+            ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             _proc.ResolveLabels();
         }
 
-        public void ProcessBlockInner(DMASTProcBlockInner block) {
+        /// <param name="silenceEmptyBlockWarning">Used to avoid emitting noisy warnings about procs with nothing in them. <br/>
+        /// FIXME: Eventually we should try to be smart enough to emit the error anyways for procs that <br/>
+        /// A.) are not marked opendream_unimplemented and <br/>
+        /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
+        /// </param>
+        public void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
             foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
                 Location loc = stmt.Location;
                 try {
@@ -77,7 +82,15 @@ namespace DMCompiler.DM.Visitors {
                     DMCompiler.Emit(e.Error);
                 }
             }
-
+            if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
+                // Not an error in BYOND, but we do have an emission for this!
+                if(block.SetStatements.Length != 0) { // Give a more articulate message about this, since it's kinda weird
+                    DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected - set statements are executed outside of, before, and unconditional to, this block");
+                } else {
+                    DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected");
+                }
+                return;
+            }
             foreach (DMASTProcStatement statement in block.Statements) {
                 if (statement.Location.Line != null) {
                     _proc.DebugLine(statement.Location.Line.Value);
@@ -186,7 +199,7 @@ namespace DMCompiler.DM.Visitors {
             }
             // Check if it was 'set x in y' or whatever
             // (which is illegal for everything except setting src to something)
-            if (statementSet.WasInKeyword) {                              
+            if (statementSet.WasInKeyword) {
                 DMCompiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
                 //fallthrough into normal behaviour because this error is kinda pedantic
             }

@@ -1148,7 +1148,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (value.TryGetValueAsFloat(out float floatValue))
                 writer.WriteNumberValue(floatValue);
             else if (value.TryGetValueAsString(out var text))
-                writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(text));
+                writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
                 writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(type.Path.PathString));
             else if (value.TryGetValueAsDreamList(out var list)) {

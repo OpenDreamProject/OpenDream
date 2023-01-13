@@ -410,7 +410,7 @@ namespace DMCompiler.Compiler.DM {
                 while (true)
                 {
                     if(Check(TokenType.DM_DoubleSquareBracket))
-                        continue;
+                        Whitespace();
                     else if(Check(TokenType.DM_LeftBracket))
                     {
                         Whitespace();

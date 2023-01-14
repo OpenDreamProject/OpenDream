@@ -45,6 +45,11 @@ namespace Content.Tests
             _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
             _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.OnException += OnException;
+        }
+
+        private void OnException(object sender, Exception e) {
+            TestContext.WriteLine(e.ToString());
         }
 
         public string Compile(string sourceFile) {

@@ -128,6 +128,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushVerbStub:
             case DreamProcOpcode.DebugLine:
             case DreamProcOpcode.MassConcatenation:
+            case DreamProcOpcode.JumpIfNull:
             case DreamProcOpcode.JumpIfNullNoPop:
                 return (opcode, ReadInt());
 

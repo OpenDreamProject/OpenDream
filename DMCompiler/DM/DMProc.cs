@@ -306,10 +306,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
 
-        public void Enumerate(DMReference output) {
+        public void Enumerate() {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
+                // Conditionally pushes one value
+                GrowStack(1);
                 WriteOpcode(DreamProcOpcode.Enumerate);
-                WriteReference(output);
                 WriteLabel($"{peek}_end");
             } else {
                 DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
@@ -586,10 +587,17 @@ namespace DMCompiler.DM {
             WriteLabel(label);
         }
 
+        public void JumpIfNull(string label) {
+            // Conditionally pops one value
+            WriteOpcode(DreamProcOpcode.JumpIfNull);
+            WriteLabel(label);
+        }
+
         public void JumpIfNullNoPop(string label) {
             WriteOpcode(DreamProcOpcode.JumpIfNullNoPop);
             WriteLabel(label);
         }
+
         public void JumpIfTrueReference(DMReference reference, string label) {
             WriteOpcode(DreamProcOpcode.JumpIfTrueReference);
             WriteReference(reference, affectStack: false);

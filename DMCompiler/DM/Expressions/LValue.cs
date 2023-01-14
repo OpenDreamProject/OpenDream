@@ -30,7 +30,7 @@ namespace DMCompiler.DM.Expressions {
         public Global(Location location)
             : base(location, null) { }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             throw new CompileErrorException(Location, $"attempt to use `global` as a reference");
         }
     }
@@ -41,7 +41,7 @@ namespace DMCompiler.DM.Expressions {
             : base(location, path)
         {}
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Src;
         }
     }
@@ -52,7 +52,7 @@ namespace DMCompiler.DM.Expressions {
             : base(location, DreamPath.Mob)
         {}
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Usr;
         }
     }
@@ -63,7 +63,7 @@ namespace DMCompiler.DM.Expressions {
             : base(location, DreamPath.List)
         {}
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Args;
         }
     }
@@ -77,7 +77,7 @@ namespace DMCompiler.DM.Expressions {
             LocalVar = localVar;
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             if (LocalVar.IsParameter) {
                 return DMReference.CreateArgument(LocalVar.Id);
             } else {
@@ -123,7 +123,7 @@ namespace DMCompiler.DM.Expressions {
             proc.IsSaved();
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.CreateSrcField(Variable.Name);
         }
 
@@ -150,7 +150,7 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "issaved() on globals is unimplemented");
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.CreateGlobal(Id);
         }
 

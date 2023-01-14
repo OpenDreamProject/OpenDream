@@ -45,7 +45,20 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        private void EmitOperation(DMObject dmObject, DMProc proc, ref Operation operation, string endLabel) {
+        private void ShortCircuitHandler(DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            switch (shortCircuitMode) {
+                case ShortCircuitMode.PopNull:
+                    proc.JumpIfNull(endLabel);
+                    break;
+                case ShortCircuitMode.KeepNull:
+                    proc.JumpIfNullNoPop(endLabel);
+                    break;
+                default:
+                    throw new InvalidOperationException();
+            }
+        }
+
+        private void EmitOperation(DMObject dmObject, DMProc proc, ref Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
             switch (operation.Kind) {
                 case DMASTDereference.OperationKind.Field:
                 case DMASTDereference.OperationKind.FieldSearch:
@@ -54,7 +67,7 @@ namespace DMCompiler.DM.Expressions {
 
                 case DMASTDereference.OperationKind.FieldSafe:
                 case DMASTDereference.OperationKind.FieldSafeSearch:
-                    proc.JumpIfNullNoPop(endLabel);
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     proc.DereferenceField(operation.Identifier);
                     break;
 
@@ -64,7 +77,7 @@ namespace DMCompiler.DM.Expressions {
                     break;
 
                 case DMASTDereference.OperationKind.IndexSafe:
-                    proc.JumpIfNullNoPop(endLabel);
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     operation.Index.EmitPushValue(dmObject, proc);
                     proc.DereferenceIndex();
                     break;
@@ -77,7 +90,7 @@ namespace DMCompiler.DM.Expressions {
 
                 case DMASTDereference.OperationKind.CallSafe:
                 case DMASTDereference.OperationKind.CallSafeSearch:
-                    proc.JumpIfNullNoPop(endLabel);
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     operation.Parameters.EmitPushArguments(dmObject, proc);
                     proc.DereferenceCall(operation.Identifier);
                     break;
@@ -94,18 +107,18 @@ namespace DMCompiler.DM.Expressions {
             _expression.EmitPushValue(dmObject, proc);
 
             foreach (ref var operation in _operations.AsSpan()) {
-                EmitOperation(dmObject, proc, ref operation, endLabel);
+                EmitOperation(dmObject, proc, ref operation, endLabel, ShortCircuitMode.KeepNull);
             }
 
             proc.AddLabel(endLabel);
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             _expression.EmitPushValue(dmObject, proc);
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
-                EmitOperation(dmObject, proc, ref _operations[i], endLabel);
+                EmitOperation(dmObject, proc, ref _operations[i], endLabel, shortCircuitMode);
             }
 
             ref var operation = ref _operations[^1];
@@ -117,7 +130,7 @@ namespace DMCompiler.DM.Expressions {
 
                 case DMASTDereference.OperationKind.FieldSafe:
                 case DMASTDereference.OperationKind.FieldSafeSearch:
-                    proc.JumpIfNullNoPop(endLabel);
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     return DMReference.CreateField(operation.Identifier);
 
                 case DMASTDereference.OperationKind.Index:
@@ -125,7 +138,7 @@ namespace DMCompiler.DM.Expressions {
                     return DMReference.ListIndex;
 
                 case DMASTDereference.OperationKind.IndexSafe:
-                    proc.JumpIfNullNoPop(endLabel);
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     operation.Index.EmitPushValue(dmObject, proc);
                     return DMReference.ListIndex;
 
@@ -148,7 +161,7 @@ namespace DMCompiler.DM.Expressions {
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
-                EmitOperation(dmObject, proc, ref _operations[i], endLabel);
+                EmitOperation(dmObject, proc, ref _operations[i], endLabel, ShortCircuitMode.KeepNull);
             }
 
             ref var operation = ref _operations[^1];
@@ -199,7 +212,7 @@ namespace DMCompiler.DM.Expressions {
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
-                EmitOperation(dmObject, proc, ref _operations[i], endLabel);
+                EmitOperation(dmObject, proc, ref _operations[i], endLabel, ShortCircuitMode.KeepNull);
             }
 
             ref var operation = ref _operations[^1];

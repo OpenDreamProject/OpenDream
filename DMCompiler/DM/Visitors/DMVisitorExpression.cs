@@ -626,7 +626,7 @@ namespace DMCompiler.DM.Visitors {
                         // Passing the path here is cursed, but one of the tests seems to suggest we want that?
                         operation.Index = DMExpression.Create(_dmObject, _proc, astOperation.Index, prevPath);
                         operation.Path = null;
-
+                        prevPath = null;
                         pathIsFuzzy = true;
                         break;
 

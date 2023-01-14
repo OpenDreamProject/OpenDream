@@ -14,7 +14,7 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "attempt to use proc as value");
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             if (dmObject.HasProc(_identifier)) {
                 return DMReference.CreateSrcProc(_identifier);
             } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
@@ -48,7 +48,7 @@ namespace DMCompiler.DM.Expressions {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_name}\" as value");
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             DMProc globalProc = GetProc();
             return DMReference.CreateGlobalProc(globalProc.Id);
         }
@@ -72,7 +72,7 @@ namespace DMCompiler.DM.Expressions {
             : base(location, null)
         {}
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Self;
         }
     }
@@ -85,7 +85,7 @@ namespace DMCompiler.DM.Expressions {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride)
             {
                 DMCompiler.Emit(WarningCode.PointlessParentCall, Location, "Calling parents via ..() in a proc definition does nothing");

@@ -524,9 +524,19 @@ namespace DMCompiler.DM.Visitors {
 
                     if (lValue != null) {
                         string endLabel = _proc.NewLabelName();
-                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
+                        string endLabel2 = _proc.NewLabelName();
+
+                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.KeepNull);
+
+                        _proc.Enumerate();
+                        _proc.Assign(outputRef);
+                        _proc.Jump(endLabel2);
+
                         _proc.AddLabel(endLabel);
-                        _proc.Enumerate(outputRef);
+                        _proc.Pop();
+                        _proc.Enumerate();
+                        _proc.AddLabel(endLabel2);
+                        _proc.Pop();
                     }
 
                     ProcessBlockInner(body);
@@ -567,9 +577,19 @@ namespace DMCompiler.DM.Visitors {
 
                     if (outputVar is Expressions.LValue lValue) {
                         string endLabel = _proc.NewLabelName();
-                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
+                        string endLabel2 = _proc.NewLabelName();
+
+                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.KeepNull);
+
+                        _proc.Enumerate();
+                        _proc.Assign(outputRef);
+                        _proc.Jump(endLabel2);
+
                         _proc.AddLabel(endLabel);
-                        _proc.Enumerate(outputRef);
+                        _proc.Pop();
+                        _proc.Enumerate();
+                        _proc.AddLabel(endLabel2);
+                        _proc.Pop();
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -607,9 +627,19 @@ namespace DMCompiler.DM.Visitors {
 
                     if (outputVar is Expressions.LValue lValue) {
                         string endLabel = _proc.NewLabelName();
-                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel);
+                        string endLabel2 = _proc.NewLabelName();
+
+                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.KeepNull);
+
+                        _proc.Enumerate();
+                        _proc.Assign(outputRef);
+                        _proc.Jump(endLabel2);
+
                         _proc.AddLabel(endLabel);
-                        _proc.Enumerate(outputRef);
+                        _proc.Pop();
+                        _proc.Enumerate();
+                        _proc.AddLabel(endLabel2);
+                        _proc.Pop();
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }

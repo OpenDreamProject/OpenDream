@@ -510,7 +510,7 @@ namespace DMCompiler.DM {
 
         public void PopReference(DMReference reference) {
             WriteOpcode(DreamProcOpcode.PopReference);
-            WriteReference(reference);
+            WriteReference(reference, false);
         }
 
         public void PushProcArguments() {

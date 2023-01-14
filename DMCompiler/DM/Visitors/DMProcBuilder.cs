@@ -827,13 +827,10 @@ namespace DMCompiler.DM.Visitors {
                 // This allows for special operations like "savefile[...] << ..."
 
                 string endLabel = _proc.NewLabelName();
-                DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel);
+                DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
                 right.EmitPushValue(_dmObject, _proc);
                 _proc.OutputReference(leftRef);
                 _proc.AddLabel(endLabel);
-
-                // OutputReference pushes null to the stack since it acts like an expression for null-conditional support
-                _proc.Pop();
             } else {
                 left.EmitPushValue(_dmObject, _proc);
                 right.EmitPushValue(_dmObject, _proc);
@@ -858,16 +855,16 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            string endLabel = _proc.NewLabelName();
-
-            DMReference rightRef = right.EmitReference(_dmObject, _proc, endLabel);
-            DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel);
+            string rightEndLabel = _proc.NewLabelName();
+            string leftEndLabel = _proc.NewLabelName();
+            DMReference rightRef = right.EmitReference(_dmObject, _proc, rightEndLabel, DMExpression.ShortCircuitMode.PopNull);
+            DMReference leftRef = left.EmitReference(_dmObject, _proc, leftEndLabel, DMExpression.ShortCircuitMode.PopNull);
 
             _proc.Input(leftRef, rightRef);
-            _proc.AddLabel(endLabel);
 
-            // ProcessStatementInput pushes null to the stack since it acts like an expression for null-conditional support
-            _proc.Pop();
+            _proc.AddLabel(leftEndLabel);
+            _proc.PopReference(rightRef);
+            _proc.AddLabel(rightEndLabel);
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

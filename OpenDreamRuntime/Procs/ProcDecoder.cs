@@ -104,6 +104,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.ModulusReference:
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
+            case DreamProcOpcode.PopReference:
                 return (opcode, ReadReference());
 
             case DreamProcOpcode.Input:

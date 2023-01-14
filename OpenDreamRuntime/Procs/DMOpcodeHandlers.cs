@@ -480,6 +480,13 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? PopReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            state.PopReference(reference);
+            return null;
+        }
+
+
         public static ProcStatus? PushArgumentList(DMProcState state) {
             if (state.Pop().TryGetValueAsDreamList(out var argList)) {
                 List<DreamValue> ordered = new();
@@ -1652,13 +1659,11 @@ namespace OpenDreamRuntime.Procs {
                     // "savefile[A] >> B" is the same as "B = savefile[A]"
 
                     state.AssignReference(rightRef, state.GetReferenceValue(leftRef));
-                    state.Push(DreamValue.Null);
                     return null;
                 } else {
                     // Pop the reference's stack values
                     state.GetReferenceValue(leftRef);
                     state.GetReferenceValue(rightRef);
-                    state.Push(DreamValue.Null);
                 }
             }
 

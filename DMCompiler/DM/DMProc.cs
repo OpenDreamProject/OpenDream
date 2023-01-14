@@ -406,6 +406,7 @@ namespace DMCompiler.DM {
         }
 
         public void OutputReference(DMReference leftRef) {
+            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.OutputReference);
             WriteReference(leftRef);
         }
@@ -416,7 +417,6 @@ namespace DMCompiler.DM {
         }
 
         public void Input(DMReference leftRef, DMReference rightRef) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Input);
             WriteReference(leftRef);
             WriteReference(rightRef);
@@ -506,6 +506,11 @@ namespace DMCompiler.DM {
         {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Pop);
+        }
+
+        public void PopReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.PopReference);
+            WriteReference(reference);
         }
 
         public void PushProcArguments() {

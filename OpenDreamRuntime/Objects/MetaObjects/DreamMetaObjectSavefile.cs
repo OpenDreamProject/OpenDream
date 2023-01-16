@@ -5,7 +5,8 @@ using System.Text.Json;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectSavefile : IDreamMetaObject {
-        private readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
         public IDreamMetaObject? ParentType { get; set; }
         public bool ShouldCallNew => false;
@@ -18,7 +19,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             public Savefile(DreamResource resource) {
                 Resource = resource;
 
-                string data = resource.ReadAsString();
+                string? data = resource.ReadAsString();
                 if (!String.IsNullOrEmpty(data)) {
                     Directories = JsonSerializer.Deserialize<Dictionary<string, SavefileDirectory>>(data);
                 } else {
@@ -45,6 +46,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public sealed class SavefileDirectory : Dictionary<string, DreamValue> { }
 
         public static readonly Dictionary<DreamObject, Savefile> ObjectToSavefile = new();
+
+        public DreamMetaObjectSavefile() {
+            IoCManager.InjectDependencies(this);
+        }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             string filename = creationArguments.GetArgument(0, "filename").GetValueAsString();
@@ -82,7 +87,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "eof": return new DreamValue(0); //TODO: What's a savefile buffer?
                 case "name": return new DreamValue(savefile.Resource.ResourcePath);
                 case "dir": {
-                    DreamList dirList = DreamList.Create();
+                    DreamList dirList = _objectTree.CreateList();
 
                     foreach (string dirPath in savefile.Directories.Keys) {
                         if (dirPath.StartsWith(savefile.CurrentDirPath)) {

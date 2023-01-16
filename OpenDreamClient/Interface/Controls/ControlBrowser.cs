@@ -56,17 +56,19 @@ namespace OpenDreamClient.Interface.Controls
         public override void Output(string value, string jsFunction) {
             if (jsFunction == null) return;
 
+            // Prepare the argument to be used in JS
             value = HttpUtility.UrlDecode(value);
-            value = value.Replace("\"", "\\\"");
-            _webView.ExecuteJavaScript(jsFunction + "(\"" + value + "\")");
+            value = HttpUtility.JavaScriptStringEncode(value);
+
+            // Insert the values directly into JS and execute it (what could go wrong??)
+            _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
         }
 
         public void SetFileSource(ResourcePath filepath, bool userData) {
             _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
         }
 
-        private void BeforeBrowseHandler(IBeforeBrowseContext context)
-        {
+        private void BeforeBrowseHandler(IBeforeBrowseContext context) {
             if (string.IsNullOrEmpty(_webView.Url))
                 return;
 
@@ -81,27 +83,20 @@ namespace OpenDreamClient.Interface.Controls
             }
         }
 
-        private void RequestHandler(IRequestHandlerContext context)
-        {
+        private void RequestHandler(IRequestHandlerContext context) {
             Uri newUri = new Uri(context.Url);
 
-            if (newUri.Scheme == "usr")
-            {
+            if (newUri.Scheme == "usr") {
                 Stream stream;
                 HttpStatusCode status;
                 var path = new ResourcePath(newUri.AbsolutePath);
-                try
-                {
+                try {
                     stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
                     status = HttpStatusCode.OK;
-                }
-                catch (FileNotFoundException)
-                {
+                } catch (FileNotFoundException) {
                     stream = Stream.Null;
                     status = HttpStatusCode.NotFound;
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     _sawmill.Error($"Exception while loading file from usr://:\n{e}");
                     stream = Stream.Null;
                     status = HttpStatusCode.InternalServerError;

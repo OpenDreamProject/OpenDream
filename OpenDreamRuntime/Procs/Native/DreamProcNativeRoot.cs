@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Encodings.Web;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
@@ -1130,17 +1131,8 @@ namespace OpenDreamRuntime.Procs.Native {
         /// <param name="writer">The json writer to encode into</param>
         /// <param name="value">The DreamValue to encode</param>
         private static void JsonEncode(Utf8JsonWriter writer, DreamValue value) {
-            JsonEncodeRecursive(writer, value, 0);
-            writer.Flush();
-        }
-
-        /// <remarks>
-        /// This exists to allow for some control over the recursion.<br/>
-        /// DM is actually not very smart about deep recursion or lists referencing their parents; it just goes to ~19 depth and gives up.
-        /// </remarks>
-        private static void JsonEncodeRecursive(Utf8JsonWriter writer, DreamValue value, int recursionLevel) {
-            const int maximumRecursions = 20; // In parity with DM, we give up and just print a 'null' at the maximum recursion.
-            if (recursionLevel == maximumRecursions) {
+            // In parity with DM, we give up and just print a 'null' at the maximum recursion.
+            if (writer.CurrentDepth >= 20) {
                 writer.WriteNullValue();
                 return;
             }
@@ -1160,7 +1152,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         if (list.ContainsKey(listValue)) {
                             writer.WritePropertyName(key);
-                            JsonEncodeRecursive(writer, list.GetValue(listValue), recursionLevel + 1);
+                            JsonEncode(writer, list.GetValue(listValue));
                         } else {
                             writer.WriteNull(key);
                         }
@@ -1171,7 +1163,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     writer.WriteStartArray();
 
                     foreach (DreamValue listValue in list.GetValues()) {
-                        JsonEncodeRecursive(writer, listValue, recursionLevel + 1);
+                        JsonEncode(writer, listValue);
                     }
 
                     writer.WriteEndArray();
@@ -1214,9 +1206,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Value")]
         public static DreamValue NativeProc_json_encode(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             using MemoryStream stream = new MemoryStream();
-            using Utf8JsonWriter jsonWriter = new(stream);
+            using Utf8JsonWriter jsonWriter = new(stream, new JsonWriterOptions {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // "\"" instead of "\u0022"
+            });
 
             JsonEncode(jsonWriter, arguments.GetArgument(0, "Value"));
+            jsonWriter.Flush();
+
             return new DreamValue(Encoding.UTF8.GetString(stream.AsSpan()));
         }
 

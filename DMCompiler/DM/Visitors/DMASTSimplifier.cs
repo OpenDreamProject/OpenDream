@@ -164,12 +164,6 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref varDeclaration.Value);
         }
 
-        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
-            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
-                varDeclaration.Visit(this);
-            }
-        }
-
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
             tryCatch.TryBody.Visit(this);
             tryCatch.CatchBody?.Visit(this);

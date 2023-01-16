@@ -2,7 +2,6 @@
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Resources;
 using Robust.Shared.Utility;
 using System.Collections.Specialized;
 using System.Globalization;
@@ -19,7 +18,6 @@ using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
-using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {

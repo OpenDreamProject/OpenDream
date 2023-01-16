@@ -64,7 +64,7 @@ public sealed class InterfaceMacro : InterfaceElement {
 
         inputContext.AddFunction(function);
         inputManager.RegisterBinding(in binding);
-        inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease));
+        inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease, outsidePrediction: false));
     }
 
     private void OnMacroPress([CanBeNull] ICommonSession session) {

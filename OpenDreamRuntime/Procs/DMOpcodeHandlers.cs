@@ -57,6 +57,14 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? AssignPop(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue value = state.Pop();
+
+            state.AssignReference(reference, value);
+            return null;
+        }
+
         public static ProcStatus? CreateList(DMProcState state) {
             int size = state.ReadInt();
             var list = DreamList.Create(size);

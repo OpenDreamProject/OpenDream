@@ -183,6 +183,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DereferenceIndex, DMOpcodeHandlers.DereferenceIndex},
             {DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall},
             {DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference},
+            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
         };
 
         private static readonly OpcodeHandler?[] _opcodeHandlers;

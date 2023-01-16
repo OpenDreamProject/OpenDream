@@ -434,7 +434,7 @@ namespace DMCompiler.DM.Visitors {
                                 ? DMExpression.Create(_dmObject, _proc, exprRange.Step)
                                 : new Number(exprRange.Location, 1);
 
-                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            ProcessStatementForRange(null, outputVar, start, end, step, statementFor.Body);
                             break;
                         }
                         case DMASTVarDeclExpression vd: {
@@ -509,6 +509,26 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
+        public void ProcessLoopAssignment(LValue lValue) {
+            if (lValue.CanReferenceShortCircuit()) {
+                string endLabel = _proc.NewLabelName();
+                string endLabel2 = _proc.NewLabelName();
+
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
+                _proc.Enumerate();
+                _proc.AssignPop(outputRef);
+                _proc.Jump(endLabel2);
+
+                _proc.AddLabel(endLabel);
+                _proc.Enumerate();
+                _proc.AddLabel(endLabel2);
+            } else {
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, null);
+                _proc.Enumerate();
+                _proc.AssignPop(outputRef);
+            }
+        }
+
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
@@ -542,20 +562,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (lValue != null) {
-                        string endLabel = _proc.NewLabelName();
-                        string endLabel2 = _proc.NewLabelName();
-
-                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.KeepNull);
-
-                        _proc.Enumerate();
-                        _proc.Assign(outputRef);
-                        _proc.Jump(endLabel2);
-
-                        _proc.AddLabel(endLabel);
-                        _proc.Pop();
-                        _proc.Enumerate();
-                        _proc.AddLabel(endLabel2);
-                        _proc.Pop();
+                        ProcessLoopAssignment(lValue);
                     }
 
                     ProcessBlockInner(body);
@@ -595,20 +602,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        string endLabel = _proc.NewLabelName();
-                        string endLabel2 = _proc.NewLabelName();
-
-                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.KeepNull);
-
-                        _proc.Enumerate();
-                        _proc.Assign(outputRef);
-                        _proc.Jump(endLabel2);
-
-                        _proc.AddLabel(endLabel);
-                        _proc.Pop();
-                        _proc.Enumerate();
-                        _proc.AddLabel(endLabel2);
-                        _proc.Pop();
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -645,20 +639,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        string endLabel = _proc.NewLabelName();
-                        string endLabel2 = _proc.NewLabelName();
-
-                        DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.KeepNull);
-
-                        _proc.Enumerate();
-                        _proc.Assign(outputRef);
-                        _proc.Jump(endLabel2);
-
-                        _proc.AddLabel(endLabel);
-                        _proc.Pop();
-                        _proc.Enumerate();
-                        _proc.AddLabel(endLabel2);
-                        _proc.Pop();
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }

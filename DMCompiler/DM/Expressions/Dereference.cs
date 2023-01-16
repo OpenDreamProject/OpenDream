@@ -113,6 +113,32 @@ namespace DMCompiler.DM.Expressions {
             proc.AddLabel(endLabel);
         }
 
+        public override bool CanReferenceShortCircuit() {
+            foreach (var operation in _operations) {
+                switch (operation.Kind) {
+                    case DMASTDereference.OperationKind.FieldSafe:
+                    case DMASTDereference.OperationKind.FieldSafeSearch:
+                    case DMASTDereference.OperationKind.IndexSafe:
+                    case DMASTDereference.OperationKind.CallSafe:
+                    case DMASTDereference.OperationKind.CallSafeSearch:
+                        return true;
+
+                    case DMASTDereference.OperationKind.Field:
+                    case DMASTDereference.OperationKind.FieldSearch:
+                    case DMASTDereference.OperationKind.Index:
+                    case DMASTDereference.OperationKind.Call:
+                    case DMASTDereference.OperationKind.CallSearch:
+                        break;
+
+                    case DMASTDereference.OperationKind.Invalid:
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+
+            return base.CanReferenceShortCircuit();
+        }
+
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             _expression.EmitPushValue(dmObject, proc);
 

@@ -112,6 +112,7 @@ namespace OpenDreamShared.Dream.Procs {
         DereferenceIndex = 0x69,
         DereferenceCall = 0x6A,
         PopReference = 0x6B,
+        AssignPop = 0x6C,
     }
 
     public enum DreamProcOpcodeParameterType {

@@ -71,6 +71,8 @@ namespace DMCompiler.DM {
             KeepNull,
         }
 
+        public virtual bool CanReferenceShortCircuit() => false;
+
         // Emits a reference that is to be used in an opcode that assigns/gets a value
         // May throw if this expression is unable to be referenced
         // The emitted code will jump to endLabel after pushing `null` to the stack in the event of a short-circuit

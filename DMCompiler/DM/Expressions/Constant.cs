@@ -96,6 +96,7 @@ namespace DMCompiler.DM.Expressions {
 
         public virtual Constant LessThanOrEqual(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
+        }
         // Not a virtual because it'd be very annoying to write this for every Constant subtype
         public Constant Equal(Constant rhs) {
             switch (this) {
@@ -418,7 +419,7 @@ namespace DMCompiler.DM.Expressions {
         public override Constant Add(Constant rhs) {
             if (rhs is not String rhsString) {
                 if(rhs is Expressions.Null) {
-                    DMCompiler.Warning(rhs.Location, "Null value is ignored in addition with string");
+                    DMCompiler.ForcedWarning(rhs.Location, "Null value is ignored in addition with string");
                     return this;
                 }
                 return base.Add(rhs);
@@ -507,7 +508,7 @@ namespace DMCompiler.DM.Expressions {
         /// even as they get folded about the place, into various locations in the source code.
         /// </summary>
         public override Constant CopyWithNewLocation(Location loc) {
-            return new Path(loc, Value);
+            return new Path(loc, _dmObject, Value);
         }
 
         public override bool IsTruthy() => true;

@@ -470,7 +470,7 @@ namespace DMCompiler.DM.Expressions {
             if (_expr is not LValue) {
                 // We do this check here on-construction,
                 // because our expression may poof into a non-LValue later on, after const folding.
-                DMCompiler.Error(Location, $"Cannot get initial value of {_expr}");
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot get initial value of {_expr}");
             }
         }
 

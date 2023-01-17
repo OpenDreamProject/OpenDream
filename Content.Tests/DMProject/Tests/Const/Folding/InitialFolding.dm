@@ -3,16 +3,13 @@
 
 /datum/a
 	var/const/explicitly_const = 10
-	var/static/not_as_const = "apples"
 
 /datum/a/field_test()
-	var/const/x = initial(not_as_const)
-	ASSERT(x == "apples")
+	var/const/x = initial(explicitly_const)
+	ASSERT(x == 10)
 
 /proc/RunTest()
 	var/datum/a/A = new
 	var/const/x = initial(A.explicitly_const)
 	ASSERT(x == 10)
-	var/const/y = initial(A.not_as_const)
-	ASSERT(y == "apples")
 	A.field_test()

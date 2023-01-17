@@ -44,7 +44,8 @@ namespace DMCompiler.DM {
         /// Check the wording of the ref and read it very carefully: https://www.byond.com/docs/ref/#/operator/%2e
         /// </remarks>
         public bool SafeToTakeAsConstant() {
-            return Value != null && (IsConst || IsGlobal); // with statics and consts, the type is "dominant" over the value can can just be taken as constant sometimes.
+            //TODO: Support optional optimizations here whenever ducktyping is disabled.
+            return Value != null && IsConst;
         }
 
         public bool TryAsJsonRepresentation(out object valueJson) {

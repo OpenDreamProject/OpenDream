@@ -1,5 +1,4 @@
 ﻿using OpenDreamShared.Dream;
-using Robust.Client.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
@@ -19,6 +18,7 @@ namespace OpenDreamClient.Rendering {
         private readonly Dictionary<(MapGridComponent, Vector2i), EntityUid> _opaqueTurfEntities = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly OccluderSystem _occluderSystem = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -161,9 +161,9 @@ namespace OpenDreamClient.Rendering {
                     // TODO: Maybe use a prototype?
                     opaqueEntity = _entityManager.SpawnEntity(null, entityPosition);
                     _entityManager.GetComponent<TransformComponent>(opaqueEntity).Anchored = true;
-                    var occluder = _entityManager.AddComponent<ClientOccluderComponent>(opaqueEntity);
-                    occluder.BoundingBox = Box2.FromDimensions(-1.0f, -1.0f, 1.0f, 1.0f);
-                    occluder.Enabled = true;
+                    var occluder = _entityManager.AddComponent<OccluderComponent>(opaqueEntity);
+                    _occluderSystem.SetBoundingBox(opaqueEntity, Box2.FromDimensions(-1.0f, -1.0f, 1.0f, 1.0f), occluder);
+                    _occluderSystem.SetEnabled(opaqueEntity, true, occluder);
 
                     _opaqueTurfEntities.Add((grid, position), opaqueEntity);
                 } else if (hasOpaqueEntity) {

@@ -21,7 +21,6 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-        [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
         [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
@@ -50,7 +49,7 @@ namespace OpenDreamRuntime {
         public GameTick InitializedTick { get; private set; }
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
-        public void PreInitialize(string jsonPath) {
+        public void PreInitialize(string? jsonPath) {
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 

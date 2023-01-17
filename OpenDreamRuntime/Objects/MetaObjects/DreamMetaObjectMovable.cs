@@ -1,6 +1,7 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
@@ -14,9 +15,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
+        private readonly TransformSystem _transformSystem;
 
         public DreamMetaObjectMovable() {
             IoCManager.InjectDependencies(this);
+
+            _transformSystem = _entitySystemManager.GetEntitySystem<TransformSystem>();
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -52,19 +58,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "loc": {
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
-                    if (!_entityManager.TryGetComponent<TransformComponent>(entity, out var transform))
-                        return;
 
                     if (value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turfLoc)) {
                         (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
-                        transform.AttachParent(level.Grid.Owner);
-                        transform.WorldPosition = pos;
+                        _transformSystem.SetParent(entity, level.Grid.Owner);
+                        _transformSystem.SetWorldPosition(entity, pos);
                     } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movableLoc)) {
                         EntityUid locEntity = _atomManager.GetMovableEntity(movableLoc);
-                        transform.AttachParent(locEntity);
-                        transform.LocalPosition = Vector2.Zero;
+                        _transformSystem.SetParent(entity, locEntity);
+                        _transformSystem.SetLocalPosition(entity, Vector2.Zero);
                     } else if (value == DreamValue.Null) {
-                        transform.AttachParent(_mapManager.GetMapEntityId(MapId.Nullspace));
+                        _transformSystem.SetParent(entity, _mapManager.GetMapEntityId(MapId.Nullspace));
                     } else {
                         throw new Exception($"Invalid loc {value}");
                     }
@@ -72,7 +76,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "name": {
-                    value.TryGetValueAsString(out string name);
+                    value.TryGetValueAsString(out string? name);
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
                     if (!_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData))
                         break;

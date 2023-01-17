@@ -1,21 +1,8 @@
-﻿namespace OpenDreamClient.Interface.Descriptors;
+﻿using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Serialization.Markdown.Value;
 
-public sealed class WindowDescriptor {
-    public string Name;
-    public List<ControlDescriptor> ControlDescriptors;
-    public ControlDescriptorMain MainControlDescriptor { get; private set; } = null;
-
-    public WindowDescriptor(string name, List<ControlDescriptor> controlDescriptors) {
-        Name = name;
-        ControlDescriptors = controlDescriptors;
-
-        foreach (ControlDescriptor controlDescriptor in ControlDescriptors) {
-            if (controlDescriptor is ControlDescriptorMain mainControlDescriptor) {
-                MainControlDescriptor = mainControlDescriptor;
-            }
-        }
-    }
-}
+namespace OpenDreamClient.Interface.Descriptors;
 
 [Virtual]
 public class ControlDescriptor : ElementDescriptor {
@@ -37,7 +24,7 @@ public class ControlDescriptor : ElementDescriptor {
     public bool IsDisabled = false;
 }
 
-public sealed class ControlDescriptorMain : ControlDescriptor {
+public sealed class WindowDescriptor : ControlDescriptor {
     [DataField("is-pane")]
     public bool IsPane = false;
     [DataField("icon")]
@@ -46,6 +33,53 @@ public sealed class ControlDescriptorMain : ControlDescriptor {
     public string Menu = null;
     [DataField("title")]
     public string Title = null;
+
+    public readonly List<ControlDescriptor> ControlDescriptors;
+
+    public WindowDescriptor(string name, List<ControlDescriptor> controlDescriptors = null) {
+        ControlDescriptors = controlDescriptors ?? new();
+        Name = name;
+    }
+
+    public WindowDescriptor() {
+
+    }
+
+    public override ControlDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
+        if (!attributes.TryGet("type", out var elementType) || elementType is not ValueDataNode elementTypeValue)
+            return null;
+
+        if (elementTypeValue.Value == "MAIN") {
+            attributes.Remove("name");
+            attributes["name"] = new ValueDataNode(Name);
+
+            // Read the attributes into this descriptor
+            serializationManager.Read(attributes, instanceProvider: () => this);
+            return this;
+        }
+
+
+        Type descriptorType = elementTypeValue.Value switch {
+            "MAP" => typeof(ControlDescriptorMap),
+            "CHILD" => typeof(ControlDescriptorChild),
+            "OUTPUT" => typeof(ControlDescriptorOutput),
+            "INFO" => typeof(ControlDescriptorInfo),
+            "INPUT" => typeof(ControlDescriptorInput),
+            "BUTTON" => typeof(ControlDescriptorButton),
+            "BROWSER" => typeof(ControlDescriptorBrowser),
+            "LABEL" => typeof(ControlDescriptorLabel),
+            "GRID" => typeof(ControlDescriptorGrid),
+            "TAB" => typeof(ControlDescriptorTab),
+            _ => null
+        };
+
+        if (descriptorType == null)
+            return null;
+
+        ControlDescriptor child = (ControlDescriptor) serializationManager.Read(descriptorType, attributes);
+        ControlDescriptors.Add(child);
+        return child;
+    }
 }
 
 public sealed class ControlDescriptorChild : ControlDescriptor {

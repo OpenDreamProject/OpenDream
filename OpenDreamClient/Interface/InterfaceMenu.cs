@@ -11,7 +11,7 @@ public sealed class InterfaceMenu : InterfaceElement {
     private readonly bool _pauseMenuCreation;
 
     public InterfaceMenu(MenuDescriptor descriptor) : base(descriptor) {
-        MenuBar = new MenuBar {Margin = new Thickness(4, 0)};
+        MenuBar = new MenuBar();
 
         _pauseMenuCreation = true;
         foreach (MenuElementDescriptor menuElement in descriptor.Elements) {

@@ -27,7 +27,7 @@
 		else
 			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
 
-	proc/operator[](index)
+/*	proc/operator[](index) 
 		switch(index)
 			if(1)
 				return src.a
@@ -35,9 +35,10 @@
 				return src.b
 			else
 				throw EXCEPTION("Invalid index on complex number")
+*/
 
 	proc/operator&(datum/complex/C)
-		return 3.14
+		return new /datum/complex(src.a & C.a, src.b & C.b)
 
 	proc/operator&=(datum/complex/C)
 		src.a = 3.14
@@ -49,16 +50,9 @@
 
 /proc/RunTest()
 	var/datum/complex/A = new /datum/complex(5,-1)
-	var/datum/complex/B = new /datum/complex(0,-9.5)
-	ASSERT((A & B) == 3.14)
+	var/datum/complex/B = new /datum/complex(3,-9.5)
+	ASSERT((A & B).a == 1)
 	A &= B
 	ASSERT((A.a == 3.14) && (A.b == 6.28))
-	world.log << json_encode(A)
-	world.log << json_encode(B)
-	world.log << "assign into"
 	A := B
-	world.log << json_encode(A)
-
-
-/proc/main()
-	RunTest()
+	ASSERT((A.a == 3.14) && (A.b == 8888))

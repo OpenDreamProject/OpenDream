@@ -175,6 +175,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
             {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
+            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
         };
 
         private static readonly OpcodeHandler?[] _opcodeHandlers;

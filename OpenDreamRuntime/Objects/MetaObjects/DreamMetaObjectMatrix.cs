@@ -91,11 +91,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 state.Push(new DreamValue(output));
                 return null;
             }
-
-            if (ParentType == null)
-                throw new InvalidOperationException($"Multiplication cannot be done between {a} and {b}");
-
-            return ParentType.OperatorMultiply(a, b, state);
+            DreamObject zeromatrix = new DreamObject(_objectTree.Matrix.ObjectDefinition);
+            zeromatrix.SetVariable("a", new DreamValue(0.0f));
+            zeromatrix.SetVariable("e", new DreamValue(0.0f));
+            state.Push(new DreamValue(zeromatrix)); //if multiplication failed, return a 0 matrix, because byond does
+            return null;
         }
 
         public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {

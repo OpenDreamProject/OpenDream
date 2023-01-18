@@ -167,40 +167,81 @@ namespace DMCompiler.DM.Expressions {
             return true;
         }
 
+/*
+    Null has some extremely cursed behaviour with how it compares with strings. See below:
+    ASSERT( (null > "") == 0 )
+    ASSERT( (null >= "") == 1 )
+    ASSERT( (null == "") == 0 )
+    ASSERT( (null <= "") == 1 )
+    ASSERT( (null < "") == 0 )
+    ASSERT( (null != "") == 1 )
+    Further, the opposite comparisons (like "" > null) just runtime. This is a quirky edgecase.
+    The following is HOPEFULLY comparison/equality ops that abide to this ridiculous behaviour.
+*/
+
         public override Constant GreaterThan(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.GreaterThan(rhs);
+            if(rhs is Number rhsNum) {
+                return new Number(Location, (0 > rhsNum.Value) ? 1 : 0);
             }
-            return new Number(Location, (0 > rhsNum.Value) ? 1 : 0);
+            if(rhs is String rhsString) {
+                //null > "" is 0
+                //null > "foo" is 0
+                return Number.False(Location);
+            }
+            return base.GreaterThan(rhs);
         }
 
         public override Constant GreaterThanOrEqual(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.GreaterThanOrEqual(rhs);
+            if (rhs is Number rhsNum) {
+                return new Number(Location, (0 >= rhsNum.Value) ? 1 : 0);
             }
-            return new Number(Location, (0 >= rhsNum.Value) ? 1 : 0);
+            if(rhs is String rhsString) {
+                if(rhsString.IsEmpty) { //(null >= "") == 1
+                    DMCompiler.Emit(WarningCode.StupidNullOperation, Location, $"'null >= \"{rhsString.Value}\"' has the unexpected value of TRUE");
+                    return Number.True(Location);
+                }
+                return Number.False(Location);
+            }
+            return base.GreaterThanOrEqual(rhs);
+
         }
 
         public override Constant LessThan(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.LessThan(rhs);
+            if (rhs is Number rhsNum) {
+                return new Number(Location, (0 < rhsNum.Value) ? 1 : 0);
             }
-            return new Number(Location, (0 < rhsNum.Value) ? 1 : 0);
+            if(rhs is String rhsString) {
+                //null < "" is 0
+                //null < "foo" is 1
+                if(rhsString.IsEmpty)
+                    return Number.False(Location);
+                else
+                    return Number.True(Location);
+            }
+            return base.LessThan(rhs);
+
         }
 
         public override Constant LessThanOrEqual(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.LessThanOrEqual(rhs);
+            if (rhs is Number rhsNum) {
+                return new Number(Location, (0 <= rhsNum.Value) ? 1 : 0);
             }
-            return new Number(Location, (0 <= rhsNum.Value) ? 1 : 0);
+            if(rhs is String rhsString) {
+                if(rhsString.IsEmpty) { //null <= "" is 1!
+                    DMCompiler.Emit(WarningCode.StupidNullOperation,Location, $"'null <= \"{rhsString.Value}\"' has the unexpected value of TRUE");
+                }
+                //null <= "foo" is 1, too
+                return Number.True(Location);
+            }
+            return base.LessThanOrEqual(rhs);
         }
         void EmitNullWarning() {
-            DMCompiler.ForcedWarning(Location, "Null value is coerced to 0 by this operation");
+            DMCompiler.Emit(WarningCode.StupidNullOperation, Location, "Null value is coerced to 0 by this operation");
         }
 
         public override Constant Add(Constant rhs) {
             if (rhs is String rhsString) {
-                DMCompiler.ForcedWarning(Location, "Null value is ignored in addition with string");
+                DMCompiler.Emit(WarningCode.StupidNullOperation, Location, "Null value is ignored in addition with string");
                 return rhsString;
             }
             return base.Add(rhs);
@@ -410,6 +451,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool IsTruthy() => Value.Length != 0;
+        public bool IsEmpty => Value.Length == 0;
 
         public override bool TryAsJsonRepresentation(out object json) {
             json = Value;

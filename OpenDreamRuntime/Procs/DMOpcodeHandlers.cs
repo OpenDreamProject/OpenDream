@@ -1842,11 +1842,27 @@ namespace OpenDreamRuntime.Procs {
             state.Push(new DreamValue(IsEqual(first, second) ? 1 : 0));
             return null;
         }
+        public static ProcStatus? CompareNotEquivalent(DMProcState state) {
+            DreamValue second = state.Pop();
+            DreamValue first = state.Pop();
+            if(first.TryGetValueAsDreamObject(out var firstObject)) {
+                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorNotEquivalent(first, second, state);
+                }
+            }
+            // Behaviour is otherwise equivalent (pun intended) to !=
+            state.Push(new DreamValue(IsEqual(first, second) ? 0 : 1));
+            return null;
+        }
 
         public static ProcStatus? CompareGreaterThan(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-
+            if(first.TryGetValueAsDreamObject(out var firstObject)) {
+                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorGreaterThan(first, second, state);
+                }
+            }
             state.Push(new DreamValue(IsGreaterThan(first, second) ? 1 : 0));
             return null;
         }
@@ -1859,6 +1875,9 @@ namespace OpenDreamRuntime.Procs {
             if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second == DreamValue.Null) result = new DreamValue(1);
             else if (first == DreamValue.Null && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
             else if (first == DreamValue.Null && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
+            else if (first.TryGetValueAsDreamObject(out var firstObject) && firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorGreaterThanOrEquals(first, second, state);
+            }
             else result = new DreamValue((IsEqual(first, second) || IsGreaterThan(first, second)) ? 1 : 0);
 
             state.Push(result);
@@ -1868,7 +1887,11 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? CompareLessThan(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-
+            if(first.TryGetValueAsDreamObject(out var firstObject)) {
+                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorLessThan(first, second, state);
+                }
+            }
             state.Push(new DreamValue(IsLessThan(first, second) ? 1 : 0));
             return null;
         }
@@ -1881,6 +1904,9 @@ namespace OpenDreamRuntime.Procs {
             if (first.TryGetValueAsFloat(out float lhs) && lhs == 0.0 && second == DreamValue.Null) result = new DreamValue(1);
             else if (first == DreamValue.Null && second.TryGetValueAsFloat(out float rhs) && rhs == 0.0) result = new DreamValue(1);
             else if (first == DreamValue.Null && second.TryGetValueAsString(out var s) && s == "") result = new DreamValue(1);
+            else if (first.TryGetValueAsDreamObject(out var firstObject) && firstObject?.ObjectDefinition?.MetaObject is not null) {
+                    return firstObject.ObjectDefinition.MetaObject.OperatorLessThanOrEquals(first, second, state);
+            }
             else result = new DreamValue((IsEqual(first, second) || IsLessThan(first, second)) ? 1 : 0);
 
             state.Push(result);
@@ -1895,13 +1921,7 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? CompareNotEquivalent(DMProcState state) {
-            DreamValue second = state.Pop();
-            DreamValue first = state.Pop();
 
-            state.Push(new DreamValue(IsEquivalent(first, second) ? 0 : 1));
-            return null;
-        }
 
         public static ProcStatus? IsInRange(DMProcState state)
         {
@@ -2707,16 +2727,6 @@ namespace OpenDreamRuntime.Procs {
             }
 
             throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
-        }
-
-        private static bool IsEquivalent(DreamValue first, DreamValue second) {
-            if(first.TryGetValueAsDreamObject(out var firstObject)) {
-                if(firstObject?.ObjectDefinition?.MetaObject is not null) {
-                    return true; //firstObject.ObjectDefinition.MetaObject.OperatorEquivalent(first, second, state).IsTruthy();
-                }
-            }
-            // Behaviour is otherwise equivalent (pun intended) to ==
-            return IsEqual(first, second);
         }
 
         private static bool IsGreaterThan(DreamValue first, DreamValue second) {

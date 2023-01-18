@@ -531,23 +531,11 @@ namespace OpenDreamRuntime.Procs {
                         {
                             DMProcState substate = new DMProcState(this, new DreamThread("operator[]="));
                             ProcStatus? opStatus = metaObject.OperatorIndexAssign(indexing, index, value, substate);
-                            while(true){
-                                switch(opStatus){
-                                    case(null):
-                                        this.Push(substate.Pop());
-                                        return;
-                                    case(ProcStatus.Returned):
-                                        this.Push(substate.Result);
-                                        return;
-                                    case(ProcStatus.Called):
-                                        opStatus = substate.Resume();
-                                        break;
-                                    case(ProcStatus.Deferred):
-                                        throw new Exception("Using sleep() in an operator overload is not supported.");
-                                    case(ProcStatus.Cancelled):
-                                        throw new Exception("Runtime occurred in operator");
-                                }
-                            }
+
+                            if(opStatus != null)
+                                throw new Exception("Runtime occurred in operator");
+                            else
+                                return;
                         }
                     }
                     throw new Exception($"Cannot assign to index {index} of {indexing}");
@@ -622,23 +610,11 @@ namespace OpenDreamRuntime.Procs {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
                         if (metaObject != null)
                         {
-                            DMProcState substate = new DMProcState(this, new DreamThread("operator[]"));
-                            ProcStatus? opStatus = metaObject.OperatorIndex(indexing, index, substate);
-                            while(true){
-                                switch(opStatus){
-                                    case(null):
-                                        return substate.Pop();
-                                    case(ProcStatus.Returned):
-                                        return substate.Result;
-                                    case(ProcStatus.Called):
-                                        opStatus = substate.Resume();
-                                        break;
-                                    case(ProcStatus.Deferred):
-                                        throw new Exception("Using sleep() in an operator overload is not supported.");
-                                    case(ProcStatus.Cancelled):
-                                        throw new Exception("Runtime occurred in operator");
-                                }
-                            }
+                            ProcStatus? opStatus = metaObject.OperatorIndex(indexing, index, this);
+                            if(opStatus == null)
+                                return this.Pop();
+                            else
+                                throw new Exception("Runtime occurred in operator");
                         }
                     }
 

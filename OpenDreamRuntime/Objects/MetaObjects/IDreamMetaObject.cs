@@ -193,8 +193,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator[]", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){index}));
-                    return ProcStatus.Called;
+                    throw new NotImplementedException("Index operator overloads are not yet implemented.");
+                    //state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){index}));
+                    //return ProcStatus.Called;
                 }
                 else
                     throw new InvalidOperationException($"Cannot index {a}");
@@ -206,8 +207,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator[]=", out DreamProc overload))
                 {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){index,value}));
-                    return ProcStatus.Called;
+                    throw new NotImplementedException("Index operator overloads are not yet implemented.");
+                    //state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){index,value}));
+                    //return ProcStatus.Called;
                 }
                 else
                     throw new InvalidOperationException($"Cannot assign {value} to index {index} of {a}");

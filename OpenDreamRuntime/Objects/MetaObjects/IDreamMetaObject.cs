@@ -393,7 +393,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 else
                 {
-                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
+                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
                     return null;
                 }
 
@@ -409,7 +409,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 else
                 {
-                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
+                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
                     return null;
                 }
 
@@ -426,7 +426,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 else
                 {
-                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
+                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
                     return null;
                 }
 
@@ -442,7 +442,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 else
                 {
-                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
+                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
                     return null;
                 }
 

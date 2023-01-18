@@ -7,15 +7,12 @@
 		src.y = y
 
 	proc/operator[](var/index)
-		file("/home/amy/list.txt") << "operator\[\] with index [index]"
 		if(index == 1)
 			return src.x
 		else
 			return src.y
 
 	proc/operator[]=(var/index, var/value)
-		file("/home/amy/list.txt") << "operator\[\]= with index [index] and value [value]"
-		//sleep(50)
 		if(index == 1)
 			src.x = value
 		else
@@ -26,10 +23,7 @@
 	A["key"] = 0
 	A["key"]++
 	ASSERT(A["key"] == 1)
-	file("/home/amy/list.txt") << "new"
 	var/datum/fuck/G = new(3,10)
-	file("/home/amy/list.txt") << "index 1 assign = 5"
 	G[1] = 5
-	file("/home/amy/list.txt") << "index 1 ++"
 	G[1]++
 	ASSERT(G.x == 6)

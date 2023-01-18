@@ -20,6 +20,9 @@ namespace OpenDreamShared.Compiler {
             Advance();
         }
 
+        /// <summary>
+        /// Does not consume; this is simply a friendly getter.
+        /// </summary>
         protected Token Current() {
             return _currentToken;
         }
@@ -80,12 +83,14 @@ namespace OpenDreamShared.Compiler {
             }
         }
 
-        protected void Consume(TokenType[] types, string errorMessage) {
+        /// <returns>The <see cref="TokenType"/> that was found.</returns>
+        protected TokenType Consume(TokenType[] types, string errorMessage) {
             foreach (TokenType type in types) {
-                if (Check(type)) return;
+                if (Check(type)) return type;
             }
 
             Error(errorMessage);
+            return TokenType.Unknown;
         }
 
         /// <summary>

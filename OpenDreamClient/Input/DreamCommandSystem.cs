@@ -3,7 +3,7 @@ using OpenDreamClient.Interface;
 using Robust.Shared.Network;
 
 namespace OpenDreamClient.Input {
-    sealed class DreamCommandSystem : SharedDreamCommandSystem {
+    public sealed class DreamCommandSystem : SharedDreamCommandSystem {
         [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
 
         public void RunCommand(string command) {

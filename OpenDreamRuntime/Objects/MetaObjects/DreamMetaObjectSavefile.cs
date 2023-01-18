@@ -42,9 +42,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public class SavefileDirectory : Dictionary<string, DreamValue> { }
+        public sealed class SavefileDirectory : Dictionary<string, DreamValue> { }
 
-        public static Dictionary<DreamObject, Savefile> ObjectToSavefile = new();
+        public static readonly Dictionary<DreamObject, Savefile> ObjectToSavefile = new();
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             string filename = creationArguments.GetArgument(0, "filename").GetValueAsString();

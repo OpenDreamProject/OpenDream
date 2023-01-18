@@ -2757,52 +2757,6 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static DreamValue MultiplyValues(DreamValue first, DreamValue second) {
-            if (first == DreamValue.Null || second == DreamValue.Null) {
-                return new(0);
-            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
-                if (firstObject.ObjectDefinition.MetaObject == null)
-                    throw new Exception("Invalid multiply operation on " + first + " and " + second);
-
-                return DreamValue.Null; //firstObject.ObjectDefinition.MetaObject.OperatorMultiply(first, second, state);
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new(first.GetValueAsFloat() * second.GetValueAsFloat());
-            } else {
-                throw new Exception("Invalid multiply operation on " + first + " and " + second);
-            }
-        }
-
-        private static DreamValue DivideValues(DreamValue first, DreamValue second) {
-            if (first == DreamValue.Null) {
-                return new(0);
-            } else if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
-                if (secondFloat == 0) {
-                    throw new Exception("Division by zero");
-                }
-                return new(firstFloat / secondFloat);
-            } else {
-                throw new Exception("Invalid divide operation on " + first + " and " + second);
-            }
-        }
-
-        private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new DreamValue(first.MustGetValueAsInteger() % second.MustGetValueAsInteger());
-            } else {
-                throw new Exception("Invalid modulus operation on " + first + " and " + second);
-            }
-        }
-
-        private static DreamValue ModulusModulusValues(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
-                // BYOND docs say that A %% B is equivalent to B * fract(A/B)
-                // BREAKING CHANGE: The floating point precision is slightly different between OD and BYOND, giving slightly different values
-                var fraction = firstFloat / secondFloat;
-                fraction -= MathF.Truncate(fraction);
-                return new DreamValue(fraction * secondFloat);
-            }
-            throw new Exception("Invalid modulusmodulus operation on " + first + " and " + second);
-        }
         #endregion Helpers
     }
 }

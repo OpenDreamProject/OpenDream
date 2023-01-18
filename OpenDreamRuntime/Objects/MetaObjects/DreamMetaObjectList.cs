@@ -177,7 +177,28 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             state.Push(DreamValue.False);
             return null;// This will never be true, because reaching this line means b is not a list, while a will always be.
         }
-
+        public ProcStatus? OperatorNotEquivalent(DreamValue a, DreamValue b, DMProcState state) {
+            if (a.TryGetValueAsDreamList(out var firstList) && b.TryGetValueAsDreamList(out var secondList)) {
+                if (firstList.GetLength() != secondList.GetLength())
+                {
+                    state.Push(DreamValue.True);
+                    return null;
+                }
+                var firstValues = firstList.GetValues();
+                var secondValues = secondList.GetValues();
+                for (var i = 0; i < firstValues.Count; i++) {
+                    if (!firstValues[i].Equals(secondValues[i]))
+                    {
+                        state.Push(DreamValue.True);
+                        return null;
+                    }
+                }
+                state.Push(DreamValue.False);
+                return null;
+            }
+            state.Push(DreamValue.True);
+            return null;// This will never be true, because reaching this line means b is not a list, while a will always be.
+        }
         public ProcStatus? OperatorCombine(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
 

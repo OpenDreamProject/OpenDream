@@ -113,7 +113,25 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 state.Push(DreamValue.True);
                 return null;
             }
-            state.Push(DreamValue.False); // This will never be true, because reaching this line means b is not a matrix, while a will always be.
+            state.Push(DreamValue.False);
+            return null;
+        }
+        public ProcStatus? OperatorNotEquivalent(DreamValue a, DreamValue b, DMProcState state) {
+            if (a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? right)) {
+                const string elements = "abcdef";
+                for (int i = 0; i < elements.Length; i++) {
+                    left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
+                    right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
+                    if (leftValue != rightValue)
+                    {
+                        state.Push(DreamValue.True);
+                        return null;
+                    }
+                }
+                state.Push(DreamValue.False);
+                return null;
+            }
+            state.Push(DreamValue.True);
             return null;
         }
 

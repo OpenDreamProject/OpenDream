@@ -351,9 +351,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
         //comparators
         public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator~=", out DreamProc overload))
+            if (ParentType == null){
+                DreamObject obj;
+                DreamProc overload;
+                if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator~=", out overload))
                 {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                } else if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator~!", out overload)) {
+                    state.SetSubOpcode(OpenDreamShared.Dream.Procs.DreamProcOpcode.Negate, null);
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
@@ -362,90 +368,120 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
                     return null;
                 }
-
+            }
 
             return ParentType.OperatorEquivalent(a, b, state);
         }
 
         public ProcStatus? OperatorNotEquivalent(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator~!", out DreamProc overload))
+            if (ParentType == null){
+                DreamObject obj;
+                DreamProc overload;
+                if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator~!", out overload))
                 {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                } else if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator~=", out overload)) {
+                    state.SetSubOpcode(OpenDreamShared.Dream.Procs.DreamProcOpcode.Negate, null);
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
                 {
-                    state.Push(a.Equals(b) ? new DreamValue(0f) : new DreamValue(1f));
+                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
                     return null;
                 }
-
+            }
 
             return ParentType.OperatorNotEquivalent(a, b, state);
         }
 
         public ProcStatus? OperatorLessThan(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator<", out DreamProc overload))
+            if (ParentType == null){
+                DreamObject obj;
+                DreamProc overload;
+                if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator<", out overload))
                 {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                } else if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator>=", out overload)) {
+                    state.SetSubOpcode(OpenDreamShared.Dream.Procs.DreamProcOpcode.Negate, null);
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
                 {
-                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
+                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
                     return null;
                 }
-
+            }
 
             return ParentType.OperatorLessThan(a, b, state);
         }
         public ProcStatus? OperatorLessThanOrEquals(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator<=", out DreamProc overload))
+            if (ParentType == null){
+                DreamObject obj;
+                DreamProc overload;
+                if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator<=", out overload))
                 {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                } else if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator>", out overload)) {
+                    state.SetSubOpcode(OpenDreamShared.Dream.Procs.DreamProcOpcode.Negate, null);
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
                 {
-                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
+                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
                     return null;
                 }
-
+            }
 
             return ParentType.OperatorLessThanOrEquals(a, b, state);
         }
 
         public ProcStatus? OperatorGreaterThan(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator>", out DreamProc overload))
+            if (ParentType == null){
+                DreamObject obj;
+                DreamProc overload;
+                if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator>", out overload))
                 {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                } else if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator<=", out overload)) {
+                    state.SetSubOpcode(OpenDreamShared.Dream.Procs.DreamProcOpcode.Negate, null);
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
                 {
-                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
+                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
                     return null;
                 }
-
+            }
 
             return ParentType.OperatorGreaterThan(a, b, state);
         }
         public ProcStatus? OperatorGreaterThanOrEquals(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator>=", out DreamProc overload))
+            if (ParentType == null){
+                DreamObject obj;
+                DreamProc overload;
+                if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator>=", out overload))
                 {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                } else if(a.TryGetValueAsDreamObject(out obj) && obj.TryGetProc("operator<", out overload)) {
+                    state.SetSubOpcode(OpenDreamShared.Dream.Procs.DreamProcOpcode.Negate, null);
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
                 {
-                    state.Push(a); //byond behaviour replication - undefined comparison returns the object
+                    state.Push(a.Equals(b) ? new DreamValue(1f) : new DreamValue(0f));
                     return null;
                 }
-
+            }
 
             return ParentType.OperatorGreaterThanOrEquals(a, b, state);
         }

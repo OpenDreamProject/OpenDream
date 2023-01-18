@@ -43,30 +43,24 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
                     case ':':
-                        if(Advance() == '=')
-                        {
+                        if(Advance() == '=') {
                             Advance();
                             token = CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
-                        }
-                        else
+                        } else
                             token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
                         break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
                     case '(': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c); break;
                     case '[': {
-                        if(Advance() == ']')
-                            if(Advance() == '=')
-                            {
-                                Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "[]=");
-                            }
-                            else
-                            {
+                        if(Advance() == ']'){
+                            if(Advance() == '=') {
+                                Advance();
+                                token = CreateToken(TokenType.DM_Preproc_Punctuator, "[]=");
+                            } else
                                 token = CreateToken(TokenType.DM_Preproc_Punctuator, "[]");
-                            }
-                        else
-                        {
-                            token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
+                        } else {
+                            token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c);
                         }
                         break;
                     }

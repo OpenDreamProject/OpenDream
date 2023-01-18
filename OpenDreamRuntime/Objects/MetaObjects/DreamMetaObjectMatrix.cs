@@ -104,8 +104,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 for (int i = 0; i < elements.Length; i++) {
                     left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
                     right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
-                    if (leftValue != rightValue)
-                    {
+                    if (leftValue != rightValue) {
                         state.Push(DreamValue.False);
                         return null;
                     }
@@ -122,8 +121,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 for (int i = 0; i < elements.Length; i++) {
                     left.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var leftValue); // sets leftValue to 0 if this isn't a float
                     right.GetVariable(elements[i].ToString()).TryGetValueAsFloat(out var rightValue); // ditto
-                    if (leftValue != rightValue)
-                    {
+                    if (leftValue != rightValue) {
                         state.Push(DreamValue.True);
                         return null;
                     }

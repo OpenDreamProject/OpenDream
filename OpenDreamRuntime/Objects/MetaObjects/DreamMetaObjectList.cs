@@ -157,16 +157,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamList(out var firstList) && b.TryGetValueAsDreamList(out var secondList)) {
-                if (firstList.GetLength() != secondList.GetLength())
-                {
+                if (firstList.GetLength() != secondList.GetLength()) {
                     state.Push(DreamValue.False);
                     return null;
                 }
                 var firstValues = firstList.GetValues();
                 var secondValues = secondList.GetValues();
                 for (var i = 0; i < firstValues.Count; i++) {
-                    if (!firstValues[i].Equals(secondValues[i]))
-                    {
+                    if (!firstValues[i].Equals(secondValues[i])) {
                         state.Push(DreamValue.False);
                         return null;
                     }
@@ -179,16 +177,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
         public ProcStatus? OperatorNotEquivalent(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamList(out var firstList) && b.TryGetValueAsDreamList(out var secondList)) {
-                if (firstList.GetLength() != secondList.GetLength())
-                {
+                if (firstList.GetLength() != secondList.GetLength()) {
                     state.Push(DreamValue.True);
                     return null;
                 }
                 var firstValues = firstList.GetValues();
                 var secondValues = secondList.GetValues();
                 for (var i = 0; i < firstValues.Count; i++) {
-                    if (!firstValues[i].Equals(secondValues[i]))
-                    {
+                    if (!firstValues[i].Equals(secondValues[i])) {
                         state.Push(DreamValue.True);
                         return null;
                     }
@@ -239,8 +235,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return null;
         }
 
-        public ProcStatus? OperatorBitAnd(DreamValue a, DreamValue b, DMProcState state)
-        {
+        public ProcStatus? OperatorBitAnd(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamList(out DreamList list)) {
                 DreamList newList = DreamList.Create();
                 if (b.TryGetValueAsDreamList(out DreamList secondList)) {
@@ -279,8 +274,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return null;
         }
 
-        public ProcStatus? OperatorBitXor(DreamValue a, DreamValue b, DMProcState state)
-        {
+        public ProcStatus? OperatorBitXor(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
             DreamList newList = DreamList.Create();
             List<DreamValue> values;

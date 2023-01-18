@@ -32,14 +32,11 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.Pop();
             DreamValue first = state.GetReferenceValue(reference);
-            if(first.TryGetValueAsDreamObject(out DreamObject firstObject))
-            {
+            if(first.TryGetValueAsDreamObject(out DreamObject firstObject)) {
                 IDreamMetaObject? metaObject = firstObject!.ObjectDefinition?.MetaObject;
                 state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                 return metaObject?.OperatorAssignInto(first, value, state);
-            }
-            else
-            {
+            } else {
                 state.AssignReference(reference, value);
                 state.Push(value);
             }
@@ -582,45 +579,34 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(second);
                 return null; //early return for null + anything = anything
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(second == DreamValue.Null)
-                    {
+                    if(second == DreamValue.Null) {
                         state.Push(first);
                         return null;
-                    }
-                    else if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
-                    {
+                    } else if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat)) {
                         state.Push(new DreamValue(firstFloat + secondFloat));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
-                    if(second == null)
-                    {
+                case DreamValue.DreamValueType.String: {
+                    if(second == null) {
                         state.Push(first);
                         return null;
-                    }
-                    else if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
-                    {
+                    } else if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString)) {
                         state.Push(new DreamValue(firstString + secondString));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorAdd(first, second, state);
                     }
@@ -641,8 +627,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.AssignReference(reference, second);
                 state.Push(second);
                 return null; //early return for null += anything = anything
@@ -650,17 +635,13 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(second == DreamValue.Null)
-                    {
+                    if(second == DreamValue.Null) {
                         state.AssignReference(reference, first);
                         state.Push(first);
                         return null;
-                    }
-                    else if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat))
-                    {
+                    } else if(first.TryGetValueAsFloat(out float firstFloat) && second.TryGetValueAsFloat(out float secondFloat)) {
                         output = new DreamValue(firstFloat + secondFloat);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -668,16 +649,12 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
-                    if(second == DreamValue.Null)
-                    {
+                case DreamValue.DreamValueType.String: {
+                    if(second == DreamValue.Null) {
                         state.AssignReference(reference, first);
                         state.Push(first);
                         return null;
-                    }
-                    else if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString))
-                    {
+                    } else if(first.TryGetValueAsString(out string? firstString) && second.TryGetValueAsString(out string? secondString)) {
                         output = new DreamValue(firstString + secondString);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -685,10 +662,8 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorAppend(first, second, state);
@@ -697,9 +672,7 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 case DreamValue.DreamValueType.DreamProc:
-                case DreamValue.DreamValueType.DreamResource: // when (first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)):
-                {
-                    //if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)) {
+                case DreamValue.DreamValueType.DreamResource: {
                     // Implicitly create a new /icon and ICON_ADD blend it
                     // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
                     DreamObject iconObj = state.Proc.ObjectTree.CreateObject(state.Proc.ObjectTree.Icon);
@@ -725,39 +698,32 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.AssignReference(reference, new DreamValue(1.0f));
                 state.Push(first);
                 return null;
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsFloat(out float firstFloat))
-                    {
+                    if(first.TryGetValueAsFloat(out float firstFloat)) {
                         state.AssignReference(reference, new DreamValue(firstFloat + 1.0f));
                         state.Push(new DreamValue(firstFloat));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorIncrement(first, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -771,32 +737,26 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.AssignReference(reference, new DreamValue(-1.0f));
                 state.Push(first);
                 return null;
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsFloat(out float firstFloat))
-                    {
+                    if(first.TryGetValueAsFloat(out float firstFloat)) {
                         state.AssignReference(reference, new DreamValue(firstFloat - 1.0f));
                         state.Push(new DreamValue(firstFloat));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorIncrement(first, state);
@@ -817,40 +777,31 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null & anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         state.Push(new DreamValue(firstInt & secondInt));
                         return null;
-                    }
-                    else
-                    {
+                    } else {
                         state.Push(new DreamValue(0.0f));
                         return null;
                     }
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorBitAnd(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -863,40 +814,31 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? BitNot(DMProcState state){
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(1.0f));
                 return null; //null == 0 --> !null = 1
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int valueInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int valueInt)) {
                         state.Push(new DreamValue((~valueInt) & 0xFFFFFF));
                         return null;
-                    }
-                    else
-                    {
+                    } else {
                         state.Push(new DreamValue(0));
                         return null;
                     }
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorBitNot(first, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -910,36 +852,29 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null | anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         state.Push(new DreamValue(firstInt | secondInt));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorBitOr(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -953,36 +888,29 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null << anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         state.Push(new DreamValue(firstInt << secondInt));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorBitShiftLeft(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -996,36 +924,29 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null >> anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         state.Push(new DreamValue(firstInt >> secondInt));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorBitShiftLeft(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1039,36 +960,29 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(second);
                 return null; //early return for null ^ anything = anything
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         state.Push(new DreamValue(firstInt ^ secondInt));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorBitXor(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1083,8 +997,7 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.AssignReference(reference, second);
                 state.Push(second);
                 return null; //early return for null ^ anything = anything
@@ -1092,11 +1005,9 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         output = new DreamValue(firstInt ^ secondInt);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -1104,21 +1015,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorBitXorRef(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1164,19 +1071,16 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue output;
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null | anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         output = new DreamValue(firstInt | secondInt);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -1184,21 +1088,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorCombine(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1212,14 +1112,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null / anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         if (secondFloat == 0)
@@ -1230,20 +1128,16 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorDivide(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1260,16 +1154,14 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null / anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                      if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         if (secondFloat == 0)
@@ -1281,21 +1173,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorCombine(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1312,19 +1200,16 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null / anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         output = new DreamValue(firstInt & secondInt);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -1332,21 +1217,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorMask(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1360,36 +1241,29 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null % anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         state.Push(new DreamValue(firstInt % secondInt));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorModulus(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1403,14 +1277,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null %% anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         // BYOND docs say that A %% B is equivalent to B * fract(A/B)
@@ -1422,20 +1294,16 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorModulusModulus(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1452,19 +1320,16 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null / anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt))
-                    {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
                         output = new DreamValue(firstInt % secondInt);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -1472,21 +1337,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorModulus(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1503,16 +1364,14 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null / anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         // BYOND docs say that A %% B is equivalent to B * fract(A/B)
@@ -1526,21 +1385,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorModulusModulus(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1554,14 +1409,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null * anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         state.Push(new DreamValue(firstFloat * secondFloat));
@@ -1569,20 +1422,16 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorMultiply(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1599,19 +1448,16 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null / anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat))
-                    {
+                    if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         output = new DreamValue(firstFloat * secondFloat);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -1619,21 +1465,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorMultiply(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1646,36 +1488,29 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Negate(DMProcState state) {
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //null == 0 --> -null = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if(first.TryGetValueAsFloat(out float firstFloat))
-                    {
+                    if(first.TryGetValueAsFloat(out float firstFloat)) {
                         state.Push(new DreamValue(-firstFloat));
                         return null;
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorNegate(first, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1689,14 +1524,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null * anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         state.Push(new DreamValue(MathF.Pow(firstFloat, secondFloat)));
@@ -1704,20 +1537,16 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorPower(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1734,19 +1563,16 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null - anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat))
-                    {
+                    if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         output = new DreamValue(firstFloat - secondFloat);
                         state.AssignReference(reference, output);
                         state.Push(output);
@@ -1754,21 +1580,17 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
                         return metaObject?.OperatorSubtract(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:
@@ -1782,14 +1604,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null)
-            {
+            if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null - anything = 0
             }
 
-            switch(first.Type)
-            {
+            switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         state.Push(new DreamValue(firstFloat - secondFloat));
@@ -1797,20 +1617,16 @@ namespace OpenDreamRuntime.Procs {
                     }
                     break;
                 }
-                case DreamValue.DreamValueType.String:
-                {
+                case DreamValue.DreamValueType.String: {
                     break;
                 }
-                case DreamValue.DreamValueType.DreamObject:
-                {
-                    if(first.TryGetValueAsDreamObject(out DreamObject? obj))
-                    {
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         return metaObject?.OperatorSubtract(first, second, state);
                     }
                     break;
                 }
-
                 case DreamValue.DreamValueType.DreamProc:
                 case DreamValue.DreamValueType.DreamResource:
                 default:

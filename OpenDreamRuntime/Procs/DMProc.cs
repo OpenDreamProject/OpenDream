@@ -280,8 +280,7 @@ namespace OpenDreamRuntime.Procs {
                 int opcode = -1;
                 if(_subOpcode == null)
                     opcode = _proc.Bytecode[_pc++];
-                else
-                {
+                else {
                     opcode = _subOpcode.Value;
                     _subOpcode = null;
                 }
@@ -433,8 +432,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public DMReference ReadReference() {
-            if(_subOpcodeRef != null)
-            {
+            if(_subOpcodeRef != null) {
                 DMReference result = _subOpcodeRef.Value;
                 _subOpcodeRef = null;
                 return result;
@@ -528,11 +526,8 @@ namespace OpenDreamRuntime.Procs {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                        {
-                            DMProcState substate = new DMProcState(this, new DreamThread("operator[]="));
-                            ProcStatus? opStatus = metaObject.OperatorIndexAssign(indexing, index, value, substate);
-
+                        if (metaObject != null) {
+                            ProcStatus? opStatus = metaObject.OperatorIndexAssign(indexing, index, value, this);
                             if(opStatus != null)
                                 throw new Exception("Runtime occurred in operator");
                             else
@@ -609,8 +604,7 @@ namespace OpenDreamRuntime.Procs {
 
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
                         IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                        {
+                        if (metaObject != null) {
                             ProcStatus? opStatus = metaObject.OperatorIndex(indexing, index, this);
                             if(opStatus == null)
                                 return this.Pop();

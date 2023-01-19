@@ -1,5 +1,5 @@
 /obj/thing_1/dodaa
-	name = @#underscore 1 test#
+	name = "underscore 1 test"
 
 #define NUMPATH_OBJDEF(num) /obj/thing_##num/name = #num
 

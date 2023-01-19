@@ -741,14 +741,18 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             List<Token> currentParameter = new();
 
             Token parameterToken = GetNextToken(true);
-
+            while (parameterToken.Type == TokenType.Newline) { // Skip newlines after the left parenthesis
+                parameterToken = GetNextToken(true);
+            }
 
             int parenthesisNesting = 1;
             while(true) {
-                while (parameterToken.Type == TokenType.Newline) { // Skip newlines after the left parenthesis
-                    parameterToken = GetNextToken(true);
-                }
+
                 switch (parameterToken.Type) {
+                    case TokenType.Newline:
+                        currentParameter.Add(new Token(TokenType.DM_Preproc_LineSplice, "", parameterToken.Location, null));
+                        parameterToken = GetNextToken(true);
+                        continue;
                     case TokenType.DM_Preproc_Punctuator_Comma when parenthesisNesting == 1:
                         parameters.Add(currentParameter);
                         currentParameter = new List<Token>();

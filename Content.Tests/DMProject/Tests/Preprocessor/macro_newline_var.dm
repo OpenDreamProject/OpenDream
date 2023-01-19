@@ -16,12 +16,10 @@ var/list/gvars_datum_init_order = list()
 
 DEFINE_FLOORS(carpet/regalcarpet,
 	name = "regal carpet";\
-	icon = 'icons/obj/floors.dmi';\
 	icon_state = "regal_carpet";)
 
 DEFINE_FLOORS(carpet/regalcarpet/border,
 	name = "regal carpet border";\
-	icon = 'icons/obj/floors.dmi';\
 	icon_state = "regal_carpet";)
 
 GLOBAL_LIST_INIT(test, list(

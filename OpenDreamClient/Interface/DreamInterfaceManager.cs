@@ -363,28 +363,30 @@ namespace OpenDreamClient.Interface {
         }
 
         public void WinClone(string controlId, string cloneId) {
+            var control = FindElementWithName(controlId);
             ElementDescriptor elementDescriptor;
-            switch (controlId) {
-                case "window" :
-                    elementDescriptor = new WindowDescriptor(cloneId);
-                    break;
-                //case "pane": todo pane
-                //    break;
-                case "menu":
-                    elementDescriptor = new MenuDescriptor(cloneId);
-                    break;
-                case "macro":
-                    elementDescriptor = new MacroSetDescriptor(cloneId);
-                    break;
-                default:
-                    //window, pane, menu, or macro set
-                    elementDescriptor = FindElementWithName(controlId)?.ElementDescriptor.WithName(_serializationManager, cloneId);
-                    if(elementDescriptor == null) {
+            if (control == null) {
+                switch (controlId) {
+                    case "window" :
+                        elementDescriptor = new WindowDescriptor(cloneId);
+                        break;
+                    //case "pane": todo pane
+                    //    break;
+                    case "menu":
+                        elementDescriptor = new MenuDescriptor(cloneId);
+                        break;
+                    case "macro":
+                        elementDescriptor = new MacroSetDescriptor(cloneId);
+                        break;
+                    default:
                         Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
                         return;
-                    }
-                    break;
+                }
+            } else {
+                //window, pane, menu, or macro set
+                elementDescriptor = control.ElementDescriptor.WithName(_serializationManager, cloneId);
             }
+
 
             if (elementDescriptor is WindowDescriptor windowDescriptor)
                 windowDescriptor.IsVisible = false; // per byond spec

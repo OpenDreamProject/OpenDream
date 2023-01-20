@@ -363,15 +363,45 @@ namespace OpenDreamClient.Interface {
         }
 
         public void WinClone(string controlId, string cloneId) {
-            var control = FindElementWithName(controlId);
-            ElementDescriptor elementDescriptor;
-            if (control == null) {
+            ElementDescriptor elementDescriptor = null;
+            // window/pane
+            foreach (var windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
+                if (windowDescriptor.Name == controlId) {
+                    elementDescriptor = windowDescriptor.WithName(_serializationManager, cloneId);
+                    ((WindowDescriptor)elementDescriptor).IsVisible = false; // per byond spec
+                    break;
+                }
+            }
+
+            // menu
+            if (elementDescriptor == null) {
+                foreach (var menuDescriptor in InterfaceDescriptor.MenuDescriptors) {
+                    if (menuDescriptor.Name == controlId) {
+                        elementDescriptor = _serializationManager.CreateCopy(menuDescriptor);
+                        break;
+                    }
+                }
+            }
+
+            // macro set
+            if (elementDescriptor == null) {
+                foreach (var macroSetDescriptor in InterfaceDescriptor.MacroSetDescriptors) {
+                    if (macroSetDescriptor.Name == controlId) {
+                        elementDescriptor = _serializationManager.CreateCopy(macroSetDescriptor);
+                        break;
+                    }
+                }
+            }
+
+            // If window_name is "window", "pane", "menu", or "macro", and the skin file does not have a control of
+            // that name already, we will create a new control of that type from scratch.
+            if (elementDescriptor == null) {
                 switch (controlId) {
                     case "window" :
-                        elementDescriptor = new WindowDescriptor(cloneId);
+                        elementDescriptor = new WindowDescriptor(cloneId) {
+                            IsVisible = false // per byond spec
+                        };
                         break;
-                    //case "pane": todo pane
-                    //    break;
                     case "menu":
                         elementDescriptor = new MenuDescriptor(cloneId);
                         break;
@@ -382,13 +412,7 @@ namespace OpenDreamClient.Interface {
                         Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
                         return;
                 }
-            } else {
-                //window, pane, menu, or macro set
-                elementDescriptor = control.ElementDescriptor.WithName(_serializationManager, cloneId);
             }
-
-            if (elementDescriptor is WindowDescriptor windowDescriptor)
-                windowDescriptor.IsVisible = false; // per byond spec
 
             switch (elementDescriptor) {
                 case WindowDescriptor:
@@ -398,16 +422,11 @@ namespace OpenDreamClient.Interface {
                 case MacroSetDescriptor interfaceMacroSet:
                     _macroManager.LoadMacroSet(interfaceMacroSet);
                     break;
-                // todo pane
-                default:
-                    Logger.ErrorS("opendream.interface.winclone",
-                        $"Invalid element descriptor \"{elementDescriptor.GetType()}\" (id=\"{controlId}\")");
-                    return;
             }
         }
 
         private void LoadInterface(InterfaceDescriptor descriptor) {
-            InterfaceDescriptor = descriptor;
+            InterfaceDescriptor = descriptor.Copy(_serializationManager);
 
             _macroManager.LoadMacroSets(InterfaceDescriptor.MacroSetDescriptors);
             _macroManager.SetActiveMacroSet(InterfaceDescriptor.MacroSetDescriptors[0].Name);

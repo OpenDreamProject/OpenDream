@@ -13,6 +13,11 @@ public sealed class InterfaceDescriptor {
         MacroSetDescriptors = macroSetDescriptors;
         MenuDescriptors = menuDescriptors;
     }
+
+    public InterfaceDescriptor Copy(ISerializationManager serializationManager) {
+        return new InterfaceDescriptor(serializationManager.CreateCopy(WindowDescriptors),
+            serializationManager.CreateCopy(MacroSetDescriptors), serializationManager.CreateCopy(MenuDescriptors));
+    }
 }
 
 [Virtual, ImplicitDataDefinitionForInheritors]

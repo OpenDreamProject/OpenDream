@@ -13,8 +13,12 @@ namespace OpenDreamClient.Input {
             InterfaceMacroSets.Clear();
 
             foreach (MacroSetDescriptor macroSet in macroSets) {
-                InterfaceMacroSets.Add(macroSet.Name, new(macroSet, _entitySystemManager, _inputManager));
+                LoadMacroSet(macroSet);
             }
+        }
+
+        public void LoadMacroSet(MacroSetDescriptor macroSetDescriptor) {
+            InterfaceMacroSets.Add(macroSetDescriptor.Name, new(macroSetDescriptor, _entitySystemManager, _inputManager));
         }
 
         public void SetActiveMacroSet(string macroSetName) {
@@ -31,6 +35,7 @@ namespace OpenDreamClient.Input {
         public Dictionary<string, InterfaceMacroSet> InterfaceMacroSets { get; }
 
         public void LoadMacroSets(List<MacroSetDescriptor> macroSets);
+        public void LoadMacroSet(MacroSetDescriptor macroSetDescriptor);
         public void SetActiveMacroSet(string macroSetName);
     }
 }

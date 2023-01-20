@@ -2495,5 +2495,27 @@ namespace OpenDreamRuntime.Procs.Native {
             connection.WinSet(winsetControlId, winsetParams);
             return DreamValue.Null;
         }
+
+        [DreamProc("winclone")]
+        [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("window_name", Type = DreamValueType.String)]
+        [DreamProcParameter("clone_name", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_winclone(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue player = arguments.GetArgument(0, "player");
+            var windowName = arguments.GetArgument(1, "window_name").MustGetValueAsString();
+            var cloneName = arguments.GetArgument(2, "clone_name").MustGetValueAsString();
+            DreamConnection connection;
+
+            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
+                connection = DreamManager.GetConnectionFromMob(mob);
+            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
+                connection = DreamManager.GetConnectionFromClient(client);
+            } else {
+                throw new ArgumentException($"Invalid \"player\" argument {player}");
+            }
+
+            connection.WinClone(windowName, cloneName);
+            return DreamValue.Null;
+        }
     }
 }

@@ -84,6 +84,7 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
             _netManager.RegisterNetMessage<MsgTopic>();
             _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
+            _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
             _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
             _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
             _netManager.RegisterNetMessage<MsgAckLoadInterface>();
@@ -217,6 +218,10 @@ namespace OpenDreamClient.Interface {
 
         private void RxWinSet(MsgWinSet message) {
             WinSet(message.ControlId, message.Params);
+        }
+
+        private void RxWinClone(MsgWinClone message) {
+            WinClone(message.ControlId, message.CloneId);
         }
 
         private void RxWinExists(MsgWinExists message) {
@@ -357,6 +362,26 @@ namespace OpenDreamClient.Interface {
             }
         }
 
+        public void WinClone(string controlId, string cloneId) {
+            //window, pane, menu, or macro set
+            var elementDescriptor = FindElementWithName(controlId)?.ElementDescriptor;
+            if(elementDescriptor == null) return;
+            switch (elementDescriptor) {
+                case ControlDescriptor:
+                case InterfaceMenu:
+                    LoadDescriptor(elementDescriptor.ElementDescriptor);
+                    break;
+                case InterfaceMacroSet interfaceMacroSet:
+                    _macroManager.LoadMacroSet(interfaceMacroSet.MacroSetDescriptor);
+                    break;
+                // todo pane?
+                default:
+                    Logger.ErrorS("opendream.interface.winclone",
+                        $"Invalid element type \"{elementDescriptor.GetType()}\" (id=\"{controlId}\")");
+                    return;
+            }
+        }
+
         private void LoadInterface(InterfaceDescriptor descriptor) {
             InterfaceDescriptor = descriptor;
 
@@ -364,18 +389,11 @@ namespace OpenDreamClient.Interface {
             _macroManager.SetActiveMacroSet(InterfaceDescriptor.MacroSetDescriptors[0].Name);
 
             foreach (MenuDescriptor menuDescriptor in InterfaceDescriptor.MenuDescriptors) {
-                InterfaceMenu menu = new(menuDescriptor);
-
-                Menus.Add(menu.Name, menu);
+                LoadDescriptor(menuDescriptor);
             }
 
             foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
-                ControlWindow window = new ControlWindow(windowDescriptor);
-
-                Windows.Add(windowDescriptor.Name, window);
-                if (window.IsDefault) {
-                    DefaultWindow = window;
-                }
+                LoadDescriptor(windowDescriptor);
             }
 
             foreach (ControlWindow window in Windows.Values) {
@@ -399,6 +417,24 @@ namespace OpenDreamClient.Interface {
             LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
             _userInterfaceManager.StateRoot.AddChild(DefaultWindow.UIElement);
+        }
+
+        private void LoadDescriptor(ElementDescriptor descriptor) {
+            switch (descriptor) {
+                case MenuDescriptor menuDescriptor:
+                    InterfaceMenu menu = new(menuDescriptor);
+
+                    Menus.Add(menu.Name, menu);
+                    break;
+                case WindowDescriptor windowDescriptor:
+                    ControlWindow window = new ControlWindow(windowDescriptor);
+
+                    Windows.Add(windowDescriptor.Name, window);
+                    if (window.IsDefault) {
+                        DefaultWindow = window;
+                    }
+                    break;
+            }
         }
     }
 

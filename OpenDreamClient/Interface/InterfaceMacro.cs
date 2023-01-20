@@ -18,9 +18,12 @@ public sealed class InterfaceMacroSet : InterfaceElement {
     private readonly IEntitySystemManager _entitySystemManager;
     private readonly IInputCmdContext _inputContext;
 
+    public readonly MacroSetDescriptor MacroSetDescriptor;
+
     public InterfaceMacroSet(MacroSetDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager) : base(descriptor) {
         _inputManager = inputManager;
         _entitySystemManager = entitySystemManager;
+        MacroSetDescriptor = descriptor;
 
         var inputContextName = $"{InputContextPrefix}{Name}";
         if (inputManager.Contexts.Exists(inputContextName)) {

@@ -363,21 +363,44 @@ namespace OpenDreamClient.Interface {
         }
 
         public void WinClone(string controlId, string cloneId) {
-            //window, pane, menu, or macro set
-            var elementDescriptor = FindElementWithName(controlId)?.ElementDescriptor;
-            if(elementDescriptor == null) return;
+            ElementDescriptor elementDescriptor;
+            switch (controlId) {
+                case "window" :
+                    elementDescriptor = new WindowDescriptor(cloneId);
+                    break;
+                //case "pane": todo pane
+                //    break;
+                case "menu":
+                    elementDescriptor = new MenuDescriptor(cloneId);
+                    break;
+                case "macro":
+                    elementDescriptor = new MacroSetDescriptor(cloneId);
+                    break;
+                default:
+                    //window, pane, menu, or macro set
+                    elementDescriptor = FindElementWithName(controlId)?.ElementDescriptor.WithName(_serializationManager, cloneId);
+                    if(elementDescriptor == null) {
+                        Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
+                        return;
+                    }
+                    break;
+            }
+
+            if (elementDescriptor is WindowDescriptor windowDescriptor)
+                windowDescriptor.IsVisible = false; // per byond spec
+
             switch (elementDescriptor) {
-                case ControlDescriptor:
-                case InterfaceMenu:
-                    LoadDescriptor(elementDescriptor.ElementDescriptor);
+                case WindowDescriptor:
+                case MenuDescriptor:
+                    LoadDescriptor(elementDescriptor);
                     break;
-                case InterfaceMacroSet interfaceMacroSet:
-                    _macroManager.LoadMacroSet(interfaceMacroSet.MacroSetDescriptor);
+                case MacroSetDescriptor interfaceMacroSet:
+                    _macroManager.LoadMacroSet(interfaceMacroSet);
                     break;
-                // todo pane?
+                // todo pane
                 default:
                     Logger.ErrorS("opendream.interface.winclone",
-                        $"Invalid element type \"{elementDescriptor.GetType()}\" (id=\"{controlId}\")");
+                        $"Invalid element descriptor \"{elementDescriptor.GetType()}\" (id=\"{controlId}\")");
                     return;
             }
         }

@@ -29,4 +29,10 @@ public class ElementDescriptor {
     public override string ToString() {
         return $"{GetType().Name}(Type={Type},Name={Name})";
     }
+
+    public ElementDescriptor WithName(ISerializationManager serializationManager, string name) {
+        var copy = serializationManager.CreateCopy(this);
+        copy.Name = name;
+        return copy;
+    }
 }

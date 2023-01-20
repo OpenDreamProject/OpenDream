@@ -387,7 +387,6 @@ namespace OpenDreamClient.Interface {
                 elementDescriptor = control.ElementDescriptor.WithName(_serializationManager, cloneId);
             }
 
-
             if (elementDescriptor is WindowDescriptor windowDescriptor)
                 windowDescriptor.IsVisible = false; // per byond spec
 

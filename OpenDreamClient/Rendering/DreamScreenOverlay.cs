@@ -43,28 +43,26 @@ public sealed class DreamScreenOverlay : Overlay {
 
         Vector2 viewOffset = eyeTransform.WorldPosition - (args.WorldAABB.Size / 2f);
 
-        List<DMISpriteComponent> sprites = new();
+        List<(DreamIcon, Vector2, EntityUid)> sprites = new();
         foreach (DMISpriteComponent sprite in screenOverlaySystem.EnumerateScreenObjects()) {
             if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager))
                 continue;
             if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                 continue;
-
-            sprites.Add(sprite);
+            Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
+            Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
+            for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
+                for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
+                    sprites.Add((sprite.Icon, position + iconSize * (x, y), sprite.Owner));
+                }
+            }
         }
 
         DrawingHandleWorld worldHandle = args.WorldHandle;
 
         sprites.Sort(_renderOrderComparer);
-        foreach (DMISpriteComponent sprite in sprites) {
-            Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
-            Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
-
-            for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
-                for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                    sprite.Icon.Draw(worldHandle, position + iconSize * (x, y));
-                }
-            }
+        foreach ((DreamIcon, Vector2, EntityUid) sprite in sprites) {
+            sprite.Item1.Draw(worldHandle, sprite.Item2);
         }
     }
 }

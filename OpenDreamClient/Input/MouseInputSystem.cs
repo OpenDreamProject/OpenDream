@@ -91,12 +91,12 @@ namespace OpenDreamClient.Input {
             Vector2 viewOffset = eyeTransform.WorldPosition - 7.5f; //TODO: Don't hardcode a 15x15 view
             MapCoordinates coords = viewport.ScreenToMap(mousePos);
 
-            var foundSprites = new List<DMISpriteComponent>();
+            var foundSprites = new List<(DreamIcon, Vector2, EntityUid)>();
             foreach (DMISpriteComponent sprite in screenOverlay.EnumerateScreenObjects()) {
                 Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
 
                 if (sprite.CheckClickScreen(position, coords.Position)) {
-                    foundSprites.Add(sprite);
+                    foundSprites.Add((sprite.Icon, position, sprite.Owner));
                 }
             }
 
@@ -104,17 +104,17 @@ namespace OpenDreamClient.Input {
                 return null;
 
             foundSprites.Sort(new RenderOrderComparer());
-            return foundSprites[^1].Owner;
+            return foundSprites[^1].Item3;
         }
 
         private EntityUid? GetEntityOnMap(MapCoordinates coords) {
             IEnumerable<EntityUid> entities = _lookupSystem.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
 
-            var foundSprites = new List<DMISpriteComponent>();
+            var foundSprites = new List<(DreamIcon, Vector2, EntityUid)>();
             foreach (EntityUid entity in entities) {
                 if (_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite)
                     && sprite.CheckClickWorld(coords.Position)) {
-                    foundSprites.Add(sprite);
+                    foundSprites.Add((sprite.Icon, coords.Position, sprite.Owner));
                 }
             }
 
@@ -122,7 +122,7 @@ namespace OpenDreamClient.Input {
                 return null;
 
             foundSprites.Sort(new RenderOrderComparer());
-            return foundSprites[^1].Owner;
+            return foundSprites[^1].Item3;
         }
     }
 }

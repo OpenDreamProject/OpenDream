@@ -1,8 +1,8 @@
 ﻿namespace OpenDreamClient.Rendering {
-    sealed class RenderOrderComparer : IComparer<DMISpriteComponent> {
-        public int Compare(DMISpriteComponent x, DMISpriteComponent y) {
-            var xAppearance = x.Icon.Appearance;
-            var yAppearance = y.Icon.Appearance;
+    sealed class RenderOrderComparer : IComparer<(DreamIcon, Vector2, EntityUid)> {
+        public int Compare((DreamIcon, Vector2, EntityUid) x, (DreamIcon, Vector2, EntityUid) y) {
+            var xAppearance = x.Item1.Appearance;
+            var yAppearance = y.Item1.Appearance;
             int val = 0;
             //Plane
             val = xAppearance.Plane.CompareTo(yAppearance.Plane);
@@ -20,8 +20,8 @@
             }
 
             //Finally, tie-breaker - in BYOND, this is order of creation of the sprites
-            //If sorting by layer fails, sort by entity UID
-            return x.Owner.CompareTo(y.Owner);
+
+            return x.Item3.CompareTo(y.Item3);
         }
     }
 }

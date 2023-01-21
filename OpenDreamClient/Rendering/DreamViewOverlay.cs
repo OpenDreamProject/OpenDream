@@ -52,22 +52,27 @@ sealed class DreamViewOverlay : Overlay {
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
 
-        DrawTiles(args, eyeTransform);
-
         var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB);
-        List<DMISpriteComponent> sprites = new(entities.Count + 1);
+        List<(DreamIcon, Vector2, EntityUid)> sprites = new(entities.Count + 1);
 
-        if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager))
-            sprites.Add(player);
+        if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform))
+            sprites.Add((player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner));
 
         foreach (EntityUid entity in entities) {
             if (!spriteQuery.TryGetComponent(entity, out var sprite))
                 continue;
             if (!sprite.IsVisible(mapManager: _mapManager))
                 continue;
-
-            sprites.Add(sprite);
+            if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
+                continue;
+            sprites.Add((sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner));
         }
+
+        if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
+            foreach (TileRef tileRef in grid.GetTilesIntersecting(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)))) {
+                MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
+                sprites.Add((_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid));
+            }
 
         //early return if there's nothing to do
         if(sprites.Count == 0)
@@ -75,20 +80,18 @@ sealed class DreamViewOverlay : Overlay {
 
         sprites.Sort(_renderOrderComparer);
         //After sort, group by plane and render together
-        float lastPlane = sprites[0].Icon.Appearance.Plane;
+        float lastPlane = sprites[0].Item1.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-        foreach (DMISpriteComponent sprite in sprites) {
-            if (!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
-                continue;
+        foreach ((DreamIcon, Vector2, EntityUid) sprite in sprites) {
 
-            if(lastPlane != sprite.Icon.Appearance.Plane){
+
+            if(lastPlane != sprite.Item1.Appearance.Plane){
                 args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
-                lastPlane = sprite.Icon.Appearance.Plane;
+                lastPlane = sprite.Item1.Appearance.Plane;
                 usedRenderTargets.Add(planeTarget);
                 planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
             }
-            DrawIcon(args.WorldHandle, planeTarget, sprite.Icon,
-                _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f);
+            DrawIcon(args.WorldHandle, planeTarget, sprite.Item1, sprite.Item2);
         }
         //final draw
         args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
@@ -97,21 +100,6 @@ sealed class DreamViewOverlay : Overlay {
             ReturnPingPongRenderTarget(used);
         }
         usedRenderTargets.Clear();
-    }
-
-    private void DrawTiles(OverlayDrawArgs args, TransformComponent eyeTransform) {
-        if (!_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
-            return;
-        IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-        //args.WorldHandle.SetTransform(eyeTransform.LocalMatrix);
-        foreach (TileRef tileRef in grid.GetTilesIntersecting(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)))) {
-            MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-            DreamIcon icon = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId);
-
-            DrawIcon(args.WorldHandle, planeTarget, icon, pos.Position - 1);
-        }
-        args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
-        usedRenderTargets.Add(planeTarget);
     }
 
     private IRenderTexture RentPingPongRenderTarget(Vector2i size) {

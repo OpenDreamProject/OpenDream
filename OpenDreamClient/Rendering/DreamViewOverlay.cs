@@ -82,13 +82,14 @@ sealed class DreamViewOverlay : Overlay {
         //After sort, group by plane and render together
         float lastPlane = sprites[0].Item1.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        usedRenderTargets.Add(planeTarget);
         ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach ((DreamIcon, Vector2, EntityUid) sprite in sprites) {
             if(lastPlane != sprite.Item1.Appearance.Plane){
                 args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
                 lastPlane = sprite.Item1.Appearance.Plane;
-                usedRenderTargets.Add(planeTarget);
-                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                //usedRenderTargets.Add(planeTarget);
+                //planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                 ClearRenderTarget(planeTarget, args.WorldHandle);
             }
             DrawIcon(args.WorldHandle, planeTarget, sprite.Item1, sprite.Item2);
@@ -203,9 +204,6 @@ sealed class DreamViewOverlay : Overlay {
             }
 
             handle.RenderInRenderTarget(renderTarget, () => {
-                  //  handle.DrawTextureRect(pong.Texture,
-                   //     new Box2((inverter*position*EyeManager.PixelsPerMeter) + (inverter*frame.Size / 2), inverter*frame.Size + (inverter*frame.Size / 2)),
-                    //    icon.Appearance.Color);
                     handle.DrawTextureRect(pong.Texture,
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                         icon.Appearance.Color);

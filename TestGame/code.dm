@@ -1,13 +1,38 @@
 /turf
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
+	layer = TURF_LAYER
 
 /turf/blue
 	icon_state = "turf_blue"
 
+/obj/table
+	name = "table"
+	desc = "It's a table. You can hide under it."
+	icon = 'icons/objects.dmi'
+	icon_state = "table"
+	density = 0
+	layer = OBJ_LAYER
+	plane = 10000 //top possible plane
+
+/obj/gun
+	name = "gun"
+	desc = "It doesn't shoot, but it sure looks cool."
+	icon = 'icons/objects.dmi'
+	icon_state = "gun"
+	density = 0
+	layer = OBJ_LAYER
+
+	Crossed(var/atom/movable/AM)
+		src.loc = AM
+		usr << "You picked up [src]"
+		AM.overlays += image(src.icon, AM.loc, src.icon_state)
+
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
+	layer = MOB_LAYER
 
 	New()
 		..()

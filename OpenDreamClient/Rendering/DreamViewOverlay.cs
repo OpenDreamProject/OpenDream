@@ -21,9 +21,7 @@ sealed class DreamViewOverlay : Overlay {
     private EntityLookupSystem _lookupSystem;
     private ClientAppearanceSystem _appearanceSystem;
     private SharedTransformSystem _transformSystem;
-
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
-    private List<IRenderTarget> usedRenderTargets = new();
 
 
     public DreamViewOverlay() {
@@ -82,25 +80,18 @@ sealed class DreamViewOverlay : Overlay {
         //After sort, group by plane and render together
         float lastPlane = sprites[0].Item1.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-        usedRenderTargets.Add(planeTarget);
         ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach ((DreamIcon, Vector2, EntityUid) sprite in sprites) {
             if(lastPlane != sprite.Item1.Appearance.Plane){
                 args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
                 lastPlane = sprite.Item1.Appearance.Plane;
-                //usedRenderTargets.Add(planeTarget);
-                //planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                 ClearRenderTarget(planeTarget, args.WorldHandle);
             }
             DrawIcon(args.WorldHandle, planeTarget, sprite.Item1, sprite.Item2);
         }
         //final draw
         args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
-
-        foreach(IRenderTexture used in usedRenderTargets){
-            ReturnPingPongRenderTarget(used);
-        }
-        usedRenderTargets.Clear();
+        ReturnPingPongRenderTarget(planeTarget);
     }
 
     private IRenderTexture RentPingPongRenderTarget(Vector2i size) {
@@ -189,18 +180,6 @@ sealed class DreamViewOverlay : Overlay {
                 ping = pong;
                 pong = tmpHolder;
                 rotate = !rotate;
-            }
-
-            //this is so dumb
-            if (rotate) {
-                handle.RenderInRenderTarget(ping, () => {
-                    handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());
-                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size * 2));
-                }, Color.Transparent);
-
-                tmpHolder = ping;
-                ping = pong;
-                pong = tmpHolder;
             }
 
             handle.RenderInRenderTarget(renderTarget, () => {

@@ -23,7 +23,7 @@
 	var/icon = null
 	var/icon_state = ""
 	var/layer = 2.0
-	var/plane = FLOAT_PLANE as opendream_unimplemented
+	var/plane = 0
 	var/alpha = 255
 	var/color = "#FFFFFF"
 	var/invisibility = 0

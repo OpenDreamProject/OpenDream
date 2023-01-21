@@ -39,6 +39,7 @@
 	New()
 		..()
 		loc = locate(5, 5, 1)
+		color = rgb(rand(0,255), rand(0,255), rand(0,255))
 
 	verb/shake()
 		animate(src, pixel_x = -4, time = 2)

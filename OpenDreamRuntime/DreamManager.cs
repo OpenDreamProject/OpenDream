@@ -21,7 +21,6 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-        [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
         [Dependency] private readonly IProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
@@ -30,6 +29,8 @@ namespace OpenDreamRuntime {
 
         public DreamObject WorldInstance { get; private set; }
         public Exception? LastDMException { get; set; }
+
+        public event EventHandler<Exception>? OnException;
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
@@ -48,7 +49,7 @@ namespace OpenDreamRuntime {
         public GameTick InitializedTick { get; private set; }
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
-        public void PreInitialize(string jsonPath) {
+        public void PreInitialize(string? jsonPath) {
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 
@@ -259,6 +260,11 @@ namespace OpenDreamRuntime {
                         throw new Exception($"Invalid reference type for ref {refString}");
                 }
             }
+        }
+
+        public void HandleException(Exception e) {
+            LastDMException = e;
+            OnException?.Invoke(this, e);
         }
     }
 }

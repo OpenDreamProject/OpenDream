@@ -3,37 +3,39 @@ using OpenDreamClient.Interface.Descriptors;
 using OpenDreamShared.Compiler;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
-using Robust.Shared.Serialization.Markdown.Value;
 
 namespace OpenDreamClient.Interface.DMF;
 
 public sealed class DMFParser : Parser<char> {
-    public DMFParser(DMFLexer lexer) : base(lexer) { }
+    private readonly ISerializationManager _serializationManager;
+
+    public DMFParser(DMFLexer lexer, ISerializationManager serializationManager) : base(lexer) {
+        _serializationManager = serializationManager;
+    }
 
     public InterfaceDescriptor Interface() {
         List<WindowDescriptor> windowDescriptors = new();
         List<MacroSetDescriptor> macroSetDescriptors = new();
-        Dictionary<string, MenuDescriptor> menuDescriptors = new();
+        List<MenuDescriptor> menuDescriptors = new();
 
-        var serializationManager = IoCManager.Resolve<ISerializationManager>();
         bool parsing = true;
         while (parsing) {
             try {
-                WindowDescriptor windowDescriptor = Window(serializationManager);
+                WindowDescriptor windowDescriptor = Window();
                 if (windowDescriptor != null) {
                     windowDescriptors.Add(windowDescriptor);
                     Newline();
                 }
 
-                MacroSetDescriptor macroSet = MacroSet(serializationManager);
+                MacroSetDescriptor macroSet = MacroSet();
                 if (macroSet != null) {
                     macroSetDescriptors.Add(macroSet);
                     Newline();
                 }
 
-                MenuDescriptor menu = Menu(serializationManager);
+                MenuDescriptor menu = Menu();
                 if (menu != null) {
-                    menuDescriptors.Add(menu.Name, menu);
+                    menuDescriptors.Add(menu);
                     Newline();
                 }
 
@@ -58,28 +60,23 @@ public sealed class DMFParser : Parser<char> {
         return new InterfaceDescriptor(windowDescriptors, macroSetDescriptors, menuDescriptors);
     }
 
-    public WindowDescriptor Window(ISerializationManager serializationManager) {
+    public WindowDescriptor Window() {
         if (Check(TokenType.DMF_Window)) {
             Token windowNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a window name");
             string windowName = windowNameToken.Text;
             Newline();
 
-            List<ControlDescriptor> elementDescriptors = new();
-            ControlDescriptor elementDescriptor;
-            do {
-                elementDescriptor = Element(serializationManager);
+            WindowDescriptor window = new(windowName);
+            while (Element(window)) {}
 
-                if (elementDescriptor != null) elementDescriptors.Add(elementDescriptor);
-            } while (elementDescriptor != null);
-
-            return new WindowDescriptor(windowName, elementDescriptors);
+            return window;
         }
 
         return null;
     }
 
-    public ControlDescriptor Element(ISerializationManager serializationManager) {
+    public bool Element(WindowDescriptor window) {
         if (Check(TokenType.DMF_Elem)) {
             Token elementNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected an element name");
@@ -89,56 +86,32 @@ public sealed class DMFParser : Parser<char> {
             var attributes = Attributes();
             attributes.Add("name", elementName);
 
-            if (!attributes.TryGet("type", out var elementType) ||
-                elementType is not ValueDataNode elementTypeValue) {
+            var control = window.CreateChildDescriptor(_serializationManager, attributes);
+            if (control == null)
                 Error($"Element '{elementName}' does not have a valid 'type' attribute");
-                return null;
-            }
 
-            Type descriptorType = elementTypeValue.Value switch {
-                "MAIN" => typeof(ControlDescriptorMain),
-                "MAP" => typeof(ControlDescriptorMap),
-                "CHILD" => typeof(ControlDescriptorChild),
-                "OUTPUT" => typeof(ControlDescriptorOutput),
-                "INFO" => typeof(ControlDescriptorInfo),
-                "INPUT" => typeof(ControlDescriptorInput),
-                "BUTTON" => typeof(ControlDescriptorButton),
-                "BROWSER" => typeof(ControlDescriptorBrowser),
-                "LABEL" => typeof(ControlDescriptorLabel),
-                "GRID" => typeof(ControlDescriptorGrid),
-                "TAB" => typeof(ControlDescriptorTab),
-                _ => null
-            };
-
-            if (descriptorType == null) {
-                Error($"Invalid descriptor type '{elementTypeValue.Value}'");
-                return null;
-            }
-
-            return (ControlDescriptor) serializationManager.Read(descriptorType, attributes);
+            return true;
         }
 
-        return null;
+        return false;
     }
 
-    public MacroSetDescriptor MacroSet(ISerializationManager serializationManager) {
+    public MacroSetDescriptor MacroSet() {
         if (Check(TokenType.DMF_Macro)) {
             Token macroSetNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a macro set name");
             Newline();
 
-            List<MacroDescriptor> macros = new();
-            while (Macro(serializationManager) is { } macro) {
-                macros.Add(macro);
-            }
+            MacroSetDescriptor macroSet = new(macroSetNameToken.Text);
+            while (Macro(macroSet)) { }
 
-            return new MacroSetDescriptor(macroSetNameToken.Text, macros);
+            return macroSet;
         } else {
             return null;
         }
     }
 
-    public MacroDescriptor Macro(ISerializationManager serializationManager) {
+    public bool Macro(MacroSetDescriptor macroSet) {
         if (Check(TokenType.DMF_Elem)) {
             Token macroIdToken = Current();
             bool hasId = Check(TokenType.DMF_Value);
@@ -147,30 +120,29 @@ public sealed class DMFParser : Parser<char> {
             var attributes = Attributes();
             if (hasId) attributes.Add("id", macroIdToken.Text);
 
-            return serializationManager.Read<MacroDescriptor>(attributes);
+            macroSet.CreateChildDescriptor(_serializationManager, attributes);
+            return true;
         }
 
-        return null;
+        return false;
     }
 
-    public MenuDescriptor Menu(ISerializationManager serializationManager) {
+    public MenuDescriptor Menu() {
         if (Check(TokenType.DMF_Menu)) {
             Token menuNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a menu name");
             Newline();
 
-            List<MenuElementDescriptor> menuElements = new();
-            while (MenuElement(serializationManager) is { } menuElement) {
-                menuElements.Add(menuElement);
-            }
+            var menu = new MenuDescriptor(menuNameToken.Text);
+            while (MenuElement(menu)) { }
 
-            return new MenuDescriptor(menuNameToken.Text, menuElements);
+            return menu;
         }
 
         return null;
     }
 
-    public MenuElementDescriptor MenuElement(ISerializationManager serializationManager) {
+    public bool MenuElement(MenuDescriptor menu) {
         if (Check(TokenType.DMF_Elem)) {
             Token elementNameToken = Current();
             bool hasId = Check(TokenType.DMF_Value);
@@ -180,10 +152,11 @@ public sealed class DMFParser : Parser<char> {
             //TODO: Name and Id are separate
             if (hasId && !attributes.Has("name")) attributes.Add("name", elementNameToken.Text);
 
-            return serializationManager.Read<MenuElementDescriptor>(attributes);
+            menu.CreateChildDescriptor(_serializationManager, attributes);
+            return true;
         }
 
-        return null;
+        return false;
     }
 
     public bool TryGetAttribute([NotNullWhen(true)] out string key, [NotNullWhen(true)] out string token) {

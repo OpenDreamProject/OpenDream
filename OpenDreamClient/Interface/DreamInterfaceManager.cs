@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Compiler;
+﻿using JetBrains.Annotations;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
@@ -38,11 +39,12 @@ namespace OpenDreamClient.Interface {
         public (string, string, string)[] AvailableVerbs { get; private set; } = Array.Empty<(string, string, string)>();
 
         public Dictionary<string, ControlWindow> Windows { get; } = new();
+        public Dictionary<string, InterfaceMenu> Menus { get; } = new();
         public readonly Dictionary<string, BrowsePopup> PopupWindows = new();
 
         public void LoadInterfaceFromSource(string source) {
             DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
-            DMFParser dmfParser = new DMFParser(dmfLexer);
+            DMFParser dmfParser = new DMFParser(dmfLexer, _serializationManager);
 
             InterfaceDescriptor interfaceDescriptor = null;
             try {
@@ -244,6 +246,7 @@ namespace OpenDreamClient.Interface {
                 DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
         }
 
+        [CanBeNull]
         public InterfaceElement FindElementWithName(string name) {
             string[] split = name.Split(".");
 
@@ -267,12 +270,23 @@ namespace OpenDreamClient.Interface {
                 string elementName = split[0];
 
                 foreach (ControlWindow window in Windows.Values) {
+                    if (window.Name == elementName)
+                        return window;
+
                     foreach (InterfaceControl element in window.ChildControls) {
                         if (element.Name == elementName) return element;
                     }
                 }
 
-                if (Windows.TryGetValue(elementName, out ControlWindow windowElement)) return windowElement;
+                foreach (InterfaceMenu menu in Menus.Values) {
+                    if (menu.Name == elementName)
+                        return menu;
+
+                    if (menu.MenuElements.TryGetValue(elementName, out var menuElement))
+                        return menuElement;
+                }
+
+                if (_macroManager.InterfaceMacroSets.TryGetValue(elementName, out var macroSet)) return macroSet;
             }
 
             return null;
@@ -280,8 +294,7 @@ namespace OpenDreamClient.Interface {
 
         public void SaveScreenshot(bool openDialog) {
             // ReSharper disable once AsyncVoidLambda
-            DefaultMap?.Viewport.Screenshot(async img =>
-            {
+            DefaultMap?.Viewport.Screenshot(async img => {
                 //TODO: Support automatically choosing a location if openDialog == false
                 var filters = new FileDialogFilters(new FileDialogFilters.Group("png"));
                 var tuple = await _fileDialogManager.SaveFile(filters);
@@ -295,7 +308,7 @@ namespace OpenDreamClient.Interface {
 
         public void WinSet(string controlId, string winsetParams) {
             DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
-            DMFParser parser = new DMFParser(lexer);
+            DMFParser parser = new DMFParser(lexer, _serializationManager);
             MappingDataNode node = parser.Attributes();
 
             if (parser.Emissions.Count > 0) {
@@ -308,12 +321,20 @@ namespace OpenDreamClient.Interface {
                         Logger.WarningS("opendream.interface.winset", emission.ToString());
                     }
                 }
+
                 if (hadError)
                     return;
             }
 
-            if (node.TryGet("parent", out _)) {
-                Logger.ErrorS("opendream.interface.winset", "Element creation or re-parenting is not implemented");
+            if (node.TryGet("parent", out ValueDataNode parentNode)) {
+                var parent = FindElementWithName(parentNode.Value);
+                if (parent == null) {
+                    Logger.ErrorS("opendream.interface.winset", $"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
+                    return;
+                }
+
+                var childDescriptor = parent.ElementDescriptor.CreateChildDescriptor(_serializationManager, node);
+                parent.AddChild(childDescriptor);
                 return;
             }
 
@@ -340,7 +361,13 @@ namespace OpenDreamClient.Interface {
             InterfaceDescriptor = descriptor;
 
             _macroManager.LoadMacroSets(InterfaceDescriptor.MacroSetDescriptors);
-            _macroManager.SetActiveMacroSet(InterfaceDescriptor.MacroSetDescriptors[0]);
+            _macroManager.SetActiveMacroSet(InterfaceDescriptor.MacroSetDescriptors[0].Name);
+
+            foreach (MenuDescriptor menuDescriptor in InterfaceDescriptor.MenuDescriptors) {
+                InterfaceMenu menu = new(menuDescriptor);
+
+                Menus.Add(menu.Name, menu);
+            }
 
             foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
                 ControlWindow window = new ControlWindow(windowDescriptor);
@@ -352,7 +379,7 @@ namespace OpenDreamClient.Interface {
             }
 
             foreach (ControlWindow window in Windows.Values) {
-                window.CreateChildControls(this);
+                window.CreateChildControls();
 
                 foreach (InterfaceControl control in window.ChildControls) {
                     if (control.IsDefault) {
@@ -378,6 +405,7 @@ namespace OpenDreamClient.Interface {
     public interface IDreamInterfaceManager {
         (string, string, string)[] AvailableVerbs { get; }
         Dictionary<string, ControlWindow> Windows { get; }
+        Dictionary<string, InterfaceMenu> Menus { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 
         void Initialize();

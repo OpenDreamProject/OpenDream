@@ -9,13 +9,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
+        private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
         private readonly Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
         public DreamMetaObjectClient() {
             IoCManager.InjectDependencies(this);
+
+            _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -153,16 +157,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (!screenValue.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
                 return;
 
-            DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            EntitySystem.Get<ServerScreenOverlaySystem>().AddScreenObject(connection, movable);
+            var connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
+            if (connection == null)
+                return;
+
+            _screenOverlaySystem?.AddScreenObject(connection, movable);
         }
 
         private void ScreenBeforeValueRemoved(DreamList screenList, DreamValue screenKey, DreamValue screenValue) {
             if (!screenValue.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
                 return;
 
-            DreamConnection connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            EntitySystem.Get<ServerScreenOverlaySystem>().RemoveScreenObject(connection, movable);
+            var connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
+            if (connection == null)
+                return;
+
+            _screenOverlaySystem?.RemoveScreenObject(connection, movable);
         }
     }
 }

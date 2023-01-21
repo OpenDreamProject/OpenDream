@@ -459,7 +459,7 @@ namespace OpenDreamRuntime.Objects {
         public bool HasTreeEntry(DreamPath path);
         public TreeEntry GetTreeEntry(DreamPath path);
         public TreeEntry GetTreeEntry(int typeId);
-        public bool TryGetTreeEntry(DreamPath path, out TreeEntry treeEntry);
+        public bool TryGetTreeEntry(DreamPath path, out TreeEntry? treeEntry);
         public DreamObjectDefinition GetObjectDefinition(DreamPath path);
         public DreamObjectDefinition GetObjectDefinition(int typeId);
         public IEnumerable<TreeEntry> GetAllDescendants(TreeEntry treeEntry);

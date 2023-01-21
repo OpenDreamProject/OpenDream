@@ -6,6 +6,7 @@ using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamRuntime.Procs;
+using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Validation;
@@ -571,10 +572,12 @@ namespace OpenDreamRuntime {
 
     [TypeSerializer]
     public sealed class DreamValueStringSerializer : ITypeReader<string, DreamValueDataNode> {
-        public string Read(ISerializationManager serializationManager, DreamValueDataNode node,
+        public string Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
             IDependencyCollection dependencies,
-            bool skipHook,
-            ISerializationContext? context, ISerializationManager.InstantiationDelegate<string>? instantiationDelegate) {
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<string>? instanceProvider = null) {
             if (!node.Value.TryGetValueAsString(out var strValue))
                 throw new Exception($"Value {node.Value} was not a string");
 
@@ -593,17 +596,20 @@ namespace OpenDreamRuntime {
 
     [TypeSerializer]
     public sealed class DreamValueFloatSerializer : ITypeReader<float, DreamValueDataNode> {
-        public float Read(ISerializationManager serializationManager, DreamValueDataNode node,
+        public float Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
             IDependencyCollection dependencies,
-            bool skipHook,
-            ISerializationContext? context, ISerializationManager.InstantiationDelegate<float>? instantiationDelegate) {
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<float>? instanceProvider = null) {
             if (!node.Value.TryGetValueAsFloat(out var floatValue))
                 throw new Exception($"Value {node.Value} was not a float");
 
             return floatValue;
         }
 
-        public ValidationNode Validate(ISerializationManager serializationManager, DreamValueDataNode node,
+        public ValidationNode Validate(ISerializationManager serializationManager,
+            DreamValueDataNode node,
             IDependencyCollection dependencies,
             ISerializationContext? context = null) {
             if (node.Value.TryGetValueAsFloat(out _))
@@ -615,17 +621,20 @@ namespace OpenDreamRuntime {
 
     [TypeSerializer]
     public sealed class DreamValueColorSerializer : ITypeReader<Color, DreamValueDataNode> {
-        public Color Read(ISerializationManager serializationManager, DreamValueDataNode node,
+        public Color Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
             IDependencyCollection dependencies,
-            bool skipHook,
-            ISerializationContext? context, ISerializationManager.InstantiationDelegate<Color>? instantiationDelegate) {
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<Color>? instanceProvider = null) {
             if (!node.Value.TryGetValueAsString(out var strValue) || !ColorHelpers.TryParseColor(strValue, out var color))
                 throw new Exception($"Value {node.Value} was not a color");
 
             return color;
         }
 
-        public ValidationNode Validate(ISerializationManager serializationManager, DreamValueDataNode node,
+        public ValidationNode Validate(ISerializationManager serializationManager,
+            DreamValueDataNode node,
             IDependencyCollection dependencies,
             ISerializationContext? context = null) {
             if (node.Value.TryGetValueAsString(out var strValue) && ColorHelpers.TryParseColor(strValue, out _))
@@ -639,10 +648,12 @@ namespace OpenDreamRuntime {
     public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3, DreamValueDataNode> {
         private readonly IDreamObjectTree _objectTree = IoCManager.Resolve<IDreamObjectTree>();
 
-        public Matrix3 Read(ISerializationManager serializationManager, DreamValueDataNode node,
+        public Matrix3 Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
             IDependencyCollection dependencies,
-            bool skipHook,
-            ISerializationContext? context, ISerializationManager.InstantiationDelegate<Matrix3>? instantiationDelegate) {
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<Matrix3>? instanceProvider = null) {
             if (!node.Value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var matrixObject))
                 throw new Exception($"Value {node.Value} was not a matrix");
 
@@ -656,7 +667,8 @@ namespace OpenDreamRuntime {
             return new Matrix3(a, d, 0f, b, e, 0f, c, f, 1f);
         }
 
-        public ValidationNode Validate(ISerializationManager serializationManager, DreamValueDataNode node,
+        public ValidationNode Validate(ISerializationManager serializationManager,
+            DreamValueDataNode node,
             IDependencyCollection dependencies,
             ISerializationContext? context = null) {
             if (node.Value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out _))

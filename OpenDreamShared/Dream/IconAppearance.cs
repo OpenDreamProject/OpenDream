@@ -34,6 +34,7 @@ namespace OpenDreamShared.Dream {
             PixelOffset = appearance.PixelOffset;
             Color = appearance.Color;
             Layer = appearance.Layer;
+            Plane = appearance.Plane;
             Invisibility = appearance.Invisibility;
             Opacity = appearance.Opacity;
             MouseOpacity = appearance.MouseOpacity;
@@ -57,6 +58,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.PixelOffset != PixelOffset) return false;
             if (appearance.Color != Color) return false;
             if (appearance.Layer != Layer) return false;
+            if (appearance.Plane != Plane) return false;
             if (appearance.Invisibility != Invisibility) return false;
             if (appearance.Opacity != Opacity) return false;
             if (appearance.MouseOpacity != MouseOpacity) return false;
@@ -89,6 +91,7 @@ namespace OpenDreamShared.Dream {
             hashCode += PixelOffset.GetHashCode();
             hashCode += Color.GetHashCode();
             hashCode += Layer.GetHashCode();
+            hashCode += Plane.GetHashCode();
             hashCode += Invisibility;
             hashCode += Opacity.GetHashCode();
             hashCode += MouseOpacity.GetHashCode();

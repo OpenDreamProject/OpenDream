@@ -82,14 +82,14 @@ sealed class DreamViewOverlay : Overlay {
         //After sort, group by plane and render together
         float lastPlane = sprites[0].Item1.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach ((DreamIcon, Vector2, EntityUid) sprite in sprites) {
-
-
             if(lastPlane != sprite.Item1.Appearance.Plane){
                 args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
                 lastPlane = sprite.Item1.Appearance.Plane;
                 usedRenderTargets.Add(planeTarget);
                 planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                ClearRenderTarget(planeTarget, args.WorldHandle);
             }
             DrawIcon(args.WorldHandle, planeTarget, sprite.Item1, sprite.Item2);
         }
@@ -128,6 +128,11 @@ sealed class DreamViewOverlay : Overlay {
         _renderTargetCache[rental.Size] = storeList;
     }
 
+    private void ClearRenderTarget(IRenderTexture target, DrawingHandleWorld handle)
+    {
+        handle.RenderInRenderTarget(target, () => {}, Color.Transparent);
+    }
+
     // TODO: Move this to DreamIcon.Draw() so screen objects can have filters
     private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, DreamIcon icon, Vector2 position) {
         if (icon.Appearance == null)
@@ -152,7 +157,6 @@ sealed class DreamViewOverlay : Overlay {
         if(frame != null && icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             handle.RenderInRenderTarget(renderTarget, () => {
-                    //handle.SetTransform(Vector2.Zero, Angle.Zero, Vector2.One);
                     handle.DrawTextureRect(frame,
                         new Box2(pixelPosition, pixelPosition+frame.Size),
                         icon.Appearance.Color);

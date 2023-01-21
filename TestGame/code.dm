@@ -2,6 +2,7 @@
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
 	layer = TURF_LAYER
+	plane = -1
 
 /turf/blue
 	icon_state = "turf_blue"
@@ -33,6 +34,7 @@
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
 	layer = MOB_LAYER
+	plane = 5
 
 	New()
 		..()

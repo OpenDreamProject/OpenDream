@@ -131,6 +131,9 @@ namespace OpenDreamRuntime {
             if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
                 appearance.Layer = layer;
             }
+            if (atom.GetVariable("plane").TryGetValueAsFloat(out float plane)) {
+                appearance.Plane = plane;
+            }
 
             return appearance;
         }
@@ -170,6 +173,9 @@ namespace OpenDreamRuntime {
 
             if (def.TryGetVariable("layer", out var layerVar) && layerVar.TryGetValueAsFloat(out float layer)) {
                 appearance.Layer = layer;
+            }
+            if (def.TryGetVariable("plane", out var planeVar) && layerVar.TryGetValueAsFloat(out float plane)) {
+                appearance.Plane = plane;
             }
 
             return appearance;

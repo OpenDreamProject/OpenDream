@@ -23,6 +23,8 @@ sealed class DreamViewOverlay : Overlay {
     private SharedTransformSystem _transformSystem;
 
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+    private List<IRenderTarget> usedRenderTargets = new();
+
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
@@ -32,6 +34,9 @@ sealed class DreamViewOverlay : Overlay {
         EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
         if (eye == null) return;
 
+        //because we render everything in render targets, and then render those to the world, we've got to apply some transformations to all world draws
+        //in order to correct for different coordinate systems and general weirdness
+        args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
         DrawMap(args, eye.Value);
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
@@ -77,16 +82,21 @@ sealed class DreamViewOverlay : Overlay {
                 continue;
 
             if(lastPlane != sprite.Icon.Appearance.Plane){
-                args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2i.Zero);
-                args.WorldHandle.DrawRect(new Box2(Vector2.Zero, planeTarget.Size), new Color());
+                args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
                 lastPlane = sprite.Icon.Appearance.Plane;
+                usedRenderTargets.Add(planeTarget);
+                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
             }
             DrawIcon(args.WorldHandle, planeTarget, sprite.Icon,
                 _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f);
         }
         //final draw
-        args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2i.Zero);
-        ReturnPingPongRenderTarget(planeTarget);
+        args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
+
+        foreach(IRenderTexture used in usedRenderTargets){
+            ReturnPingPongRenderTarget(used);
+        }
+        usedRenderTargets.Clear();
     }
 
     private void DrawTiles(OverlayDrawArgs args, TransformComponent eyeTransform) {
@@ -100,11 +110,8 @@ sealed class DreamViewOverlay : Overlay {
 
             DrawIcon(args.WorldHandle, planeTarget, icon, pos.Position - 1);
         }
-        //args.WorldHandle.SetTransform(eyeTransform.WorldMatrix);
-        args.WorldHandle.DrawTexture(planeTarget.Texture, eyeTransform.WorldPosition-planeTarget.Size, Color.Transparent);
-        //args.WorldHandle.DrawTextureRect(planeTarget.Texture, new Box2Rotated(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)), Angle.FromDegrees(180)), Color.Transparent);
-        //args.WorldHandle.DrawTextureRect(planeTarget.Texture, Box2.CenteredAround(Vector2i.Zero, (17, 17)));
-        ReturnPingPongRenderTarget(planeTarget);
+        args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
+        usedRenderTargets.Add(planeTarget);
     }
 
     private IRenderTexture RentPingPongRenderTarget(Vector2i size) {
@@ -139,7 +146,7 @@ sealed class DreamViewOverlay : Overlay {
             return;
 
         position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
-
+        Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
         //TODO appearance_flags - notably KEEP_TOGETHER and KEEP_APART
         //keep together can probably just be a subcall to DrawIcon()?
 
@@ -157,9 +164,9 @@ sealed class DreamViewOverlay : Overlay {
         if(frame != null && icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             handle.RenderInRenderTarget(renderTarget, () => {
-                    handle.SetTransform(Vector2.Zero, Angle.Zero, Vector2.One);
+                    //handle.SetTransform(Vector2.Zero, Angle.Zero, Vector2.One);
                     handle.DrawTextureRect(frame,
-                        new Box2(position*EyeManager.PixelsPerMeter, position*EyeManager.PixelsPerMeter+frame.Size),
+                        new Box2(pixelPosition, pixelPosition+frame.Size),
                         icon.Appearance.Color);
                 }, null);
         } else if (frame != null) {
@@ -204,8 +211,11 @@ sealed class DreamViewOverlay : Overlay {
             }
 
             handle.RenderInRenderTarget(renderTarget, () => {
+                  //  handle.DrawTextureRect(pong.Texture,
+                   //     new Box2((inverter*position*EyeManager.PixelsPerMeter) + (inverter*frame.Size / 2), inverter*frame.Size + (inverter*frame.Size / 2)),
+                    //    icon.Appearance.Color);
                     handle.DrawTextureRect(pong.Texture,
-                        new Box2((position*EyeManager.PixelsPerMeter) + (frame.Size / 2), frame.Size + (frame.Size / 2)),
+                        new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                         icon.Appearance.Color);
                 }, null);
             ReturnPingPongRenderTarget(ping);

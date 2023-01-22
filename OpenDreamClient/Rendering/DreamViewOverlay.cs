@@ -53,8 +53,9 @@ sealed class DreamViewOverlay : Overlay {
 
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
+        Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
 
-        var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB);
+        var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, screenArea.Scale(1.2f)); //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
         List<(DreamIcon, Vector2, EntityUid, Boolean)> sprites = new(entities.Count + 1);
 
         //self icon
@@ -74,19 +75,18 @@ sealed class DreamViewOverlay : Overlay {
 
         //visible turfs
         if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
-            foreach (TileRef tileRef in grid.GetTilesIntersecting(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)))) {
+            foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
                 MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
                 sprites.Add((_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid, false));
             }
 
         //screen objects
-        Vector2 viewOffset = eyeTransform.WorldPosition - (args.WorldAABB.Size / 2f);
         foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
             if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager))
                 continue;
             if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                 continue;
-            Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
+            Vector2 position = sprite.ScreenLocation.GetViewPosition(screenArea.BottomLeft, EyeManager.PixelsPerMeter);
             Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
             for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                 for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
@@ -106,14 +106,15 @@ sealed class DreamViewOverlay : Overlay {
         ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach ((DreamIcon, Vector2, EntityUid, Boolean) sprite in sprites) {
             if(lastPlane != sprite.Item1.Appearance.Plane){
-                args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
+                args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1));
                 lastPlane = sprite.Item1.Appearance.Plane;
                 ClearRenderTarget(planeTarget, args.WorldHandle);
             }
-            DrawIcon(args.WorldHandle, planeTarget, sprite.Item1, sprite.Item2);
+            //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning
+            DrawIcon(args.WorldHandle, planeTarget, sprite.Item1, sprite.Item2 - screenArea.BottomLeft);
         }
         //final draw
-        args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
+        args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1));
         ReturnPingPongRenderTarget(planeTarget);
     }
 

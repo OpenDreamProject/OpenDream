@@ -56,7 +56,6 @@ namespace OpenDreamClient {
 
             IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
             overlayManager.AddOverlay(new DreamViewOverlay());
-            overlayManager.AddOverlay(new DreamScreenOverlay());
 
             _dreamInterface.Initialize();
             IoCManager.Resolve<IDreamSoundEngine>().Initialize();

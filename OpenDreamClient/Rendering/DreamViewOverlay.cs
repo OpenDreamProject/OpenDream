@@ -3,6 +3,7 @@ using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using OpenDreamShared.Dream;
+using Robust.Shared.Console;
 
 namespace OpenDreamClient.Rendering;
 
@@ -20,8 +21,10 @@ sealed class DreamViewOverlay : Overlay {
     private readonly RenderOrderComparer _renderOrderComparer = new();
     private EntityLookupSystem _lookupSystem;
     private ClientAppearanceSystem _appearanceSystem;
+    private ClientScreenOverlaySystem _screenOverlaySystem;
     private SharedTransformSystem _transformSystem;
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+    public bool ScreenOverlayEnabled = true;
 
 
     public DreamViewOverlay() {
@@ -44,6 +47,7 @@ sealed class DreamViewOverlay : Overlay {
         _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
         _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
         _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
+        _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
         var spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
 
@@ -53,9 +57,11 @@ sealed class DreamViewOverlay : Overlay {
         var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB);
         List<(DreamIcon, Vector2, EntityUid)> sprites = new(entities.Count + 1);
 
+        //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform))
             sprites.Add((player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner));
 
+        //visible entities
         foreach (EntityUid entity in entities) {
             if (!spriteQuery.TryGetComponent(entity, out var sprite))
                 continue;
@@ -66,11 +72,28 @@ sealed class DreamViewOverlay : Overlay {
             sprites.Add((sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner));
         }
 
+        //visible turfs
         if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
             foreach (TileRef tileRef in grid.GetTilesIntersecting(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)))) {
                 MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
                 sprites.Add((_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid));
             }
+
+        //screen objects
+        Vector2 viewOffset = eyeTransform.WorldPosition - (args.WorldAABB.Size / 2f);
+        foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
+            if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager))
+                continue;
+            if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
+                continue;
+            Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
+            Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
+            for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
+                for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
+                    sprites.Add((sprite.Icon, position + iconSize * (x, y), sprite.Owner));
+                }
+            }
+        }
 
         //early return if there's nothing to do
         if(sprites.Count == 0)
@@ -203,3 +226,21 @@ sealed class DreamViewOverlay : Overlay {
     }
 }
 
+public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
+    public string Command => "togglescreenoverlay";
+    public string Description => "Toggle rendering of screen objects";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.ScreenOverlayEnabled = !screenOverlay.ScreenOverlayEnabled;
+        }
+    }
+}

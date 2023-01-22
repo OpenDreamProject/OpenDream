@@ -55,11 +55,11 @@ sealed class DreamViewOverlay : Overlay {
             return;
 
         var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB);
-        List<(DreamIcon, Vector2, EntityUid)> sprites = new(entities.Count + 1);
+        List<(DreamIcon, Vector2, EntityUid, Boolean)> sprites = new(entities.Count + 1);
 
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform))
-            sprites.Add((player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner));
+            sprites.Add((player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
 
         //visible entities
         foreach (EntityUid entity in entities) {
@@ -69,14 +69,14 @@ sealed class DreamViewOverlay : Overlay {
                 continue;
             if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
                 continue;
-            sprites.Add((sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner));
+            sprites.Add((sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
         }
 
         //visible turfs
         if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
             foreach (TileRef tileRef in grid.GetTilesIntersecting(Box2.CenteredAround(eyeTransform.WorldPosition, (17, 17)))) {
                 MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-                sprites.Add((_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid));
+                sprites.Add((_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid, false));
             }
 
         //screen objects
@@ -90,7 +90,7 @@ sealed class DreamViewOverlay : Overlay {
             Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
             for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                 for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                    sprites.Add((sprite.Icon, position + iconSize * (x, y), sprite.Owner));
+                    sprites.Add((sprite.Icon, position + iconSize * (x, y), sprite.Owner, true));
                 }
             }
         }
@@ -104,7 +104,7 @@ sealed class DreamViewOverlay : Overlay {
         float lastPlane = sprites[0].Item1.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         ClearRenderTarget(planeTarget, args.WorldHandle);
-        foreach ((DreamIcon, Vector2, EntityUid) sprite in sprites) {
+        foreach ((DreamIcon, Vector2, EntityUid, Boolean) sprite in sprites) {
             if(lastPlane != sprite.Item1.Appearance.Plane){
                 args.WorldHandle.DrawTexture(planeTarget.Texture, Vector2.Zero);
                 lastPlane = sprite.Item1.Appearance.Plane;
@@ -163,6 +163,7 @@ sealed class DreamViewOverlay : Overlay {
         //TODO vis_contents
 
         //underlays - inherit colour and transform ?
+        //FUCK - this only makes sense if each underlay has FLOAT_PLANE as its layer TODO - move them to the sort I guess
         foreach (DreamIcon underlay in icon.Underlays) {
             DrawIcon(handle, renderTarget, underlay, position);
         }

@@ -981,6 +981,8 @@ namespace OpenDreamRuntime.Procs.Native {
             while (argEnumerator.MoveNext()) {
                 if (!argEnumerator.Current.TryGetValueAsDreamObject(out var loc))
                     return DreamValue.False;
+                if (loc is null)
+                    return DreamValue.False;
 
                 bool isLoc = loc.IsSubtypeOf(ObjectTree.Mob) || loc.IsSubtypeOf(ObjectTree.Obj) ||
                              loc.IsSubtypeOf(ObjectTree.Turf) || loc.IsSubtypeOf(ObjectTree.Area);

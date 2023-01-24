@@ -10,30 +10,30 @@ namespace OpenDreamClient.Interface {
         public (string, string, string)[] AvailableVerbs { get; }
         public Dictionary<string, ControlWindow> Windows { get; }
         public Dictionary<string, InterfaceMenu> Menus { get; }
+        public Dictionary<string, InterfaceMacroSet> MacroSets { get; }
+        public ControlWindow DefaultWindow { get; }
+        public ControlOutput DefaultOutput { get; }
+        public ControlInfo DefaultInfo { get; }
+        public ControlMap DefaultMap { get; }
         public InterfaceDescriptor InterfaceDescriptor { get; }
 
-        public void Initialize()
-        {
+        public void Initialize() {
 
         }
 
-        public void FrameUpdate(FrameEventArgs frameEventArgs)
-        {
+        public void FrameUpdate(FrameEventArgs frameEventArgs) {
 
         }
 
-        public InterfaceElement FindElementWithName(string name)
-        {
+        public InterfaceElement FindElementWithName(string name) {
             return null;
         }
 
-        public void SaveScreenshot(bool openDialog)
-        {
+        public void SaveScreenshot(bool openDialog) {
 
         }
 
-        public void LoadInterfaceFromSource(string source)
-        {
+        public void LoadInterfaceFromSource(string source) {
 
         }
 

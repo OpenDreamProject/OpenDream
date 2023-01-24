@@ -1834,14 +1834,15 @@ namespace OpenDreamRuntime.Procs {
                 List<DreamValue> values;
                 if (value.TryGetValueAsDreamList(out DreamList list)) {
                     values = list.GetValues();
-                    if (values.Count == 0)
-                        throw new Exception("pick() from empty list");
                 } else if (value.TryGetValueAsProcArguments(out var args)) {
                     values = args.GetAllArguments();
                 } else {
                     state.Push(value);
                     return null;
                 }
+
+                if (values.Count == 0)
+                    throw new Exception("pick() from empty list");
 
                 picked = values[state.DreamManager.Random.Next(0, values.Count)];
             } else {

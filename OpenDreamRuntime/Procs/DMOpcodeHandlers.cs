@@ -1841,6 +1841,9 @@ namespace OpenDreamRuntime.Procs {
                     return null;
                 }
 
+                if (values.Count == 0)
+                    throw new Exception("pick() from empty list");
+
                 picked = values[state.DreamManager.Random.Next(0, values.Count)];
             } else {
                 int pickedIndex = state.DreamManager.Random.Next(0, count);

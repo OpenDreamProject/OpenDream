@@ -128,7 +128,10 @@ sealed class DreamViewOverlay : Overlay {
         current.UID = uid;
         current.IsScreen = isScreen;
 
+//TODO Plane master
 //#define PLANE_MASTER 	(1<<7)
+
+//TODO render source and target (jesus christ)
 
         if(parentIcon != null){
             if((icon.Appearance.AppearanceFlags & 1) != 0) //RESET_COLOR
@@ -233,6 +236,8 @@ sealed class DreamViewOverlay : Overlay {
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
         //main icon - TODO transform
+        //TODO flatten the keeptogether group tree and draw it here
+        //TODO fix color application
         AtlasTexture frame = icon.CurrentFrame;
         if(frame != null && icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites

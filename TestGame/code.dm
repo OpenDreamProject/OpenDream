@@ -137,6 +137,10 @@
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
 			usr << "Applied [selected] filter"
 
+	verb/test_para()
+		set category = "Test"
+		src.create_parallax()			
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

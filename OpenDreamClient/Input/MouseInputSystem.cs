@@ -103,7 +103,7 @@ namespace OpenDreamClient.Input {
             if (foundSprites.Count == 0)
                 return null;
 
-            foundSprites.Sort(new RenderOrderComparer());
+            //foundSprites.Sort(new RenderOrderComparer());
             return foundSprites[^1].Item3;
         }
 
@@ -121,7 +121,7 @@ namespace OpenDreamClient.Input {
             if (foundSprites.Count == 0)
                 return null;
 
-            foundSprites.Sort(new RenderOrderComparer());
+            //foundSprites.Sort(new RenderOrderComparer());
             return foundSprites[^1].Item3;
         }
     }

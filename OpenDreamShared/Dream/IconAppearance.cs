@@ -12,8 +12,10 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
+        [ViewVariables] public float Alpha;
         [ViewVariables] public float Layer;
         [ViewVariables] public float Plane;
+        [ViewVariables] public int AppearanceFlags = 0;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
@@ -33,8 +35,10 @@ namespace OpenDreamShared.Dream {
             Direction = appearance.Direction;
             PixelOffset = appearance.PixelOffset;
             Color = appearance.Color;
+            Alpha = appearance.Alpha;
             Layer = appearance.Layer;
             Plane = appearance.Plane;
+            AppearanceFlags = appearance.AppearanceFlags;
             Invisibility = appearance.Invisibility;
             Opacity = appearance.Opacity;
             MouseOpacity = appearance.MouseOpacity;
@@ -57,8 +61,10 @@ namespace OpenDreamShared.Dream {
             if (appearance.Direction != Direction) return false;
             if (appearance.PixelOffset != PixelOffset) return false;
             if (appearance.Color != Color) return false;
+            if (appearance.Alpha != Alpha) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Plane != Plane) return false;
+            if (appearance.AppearanceFlags != AppearanceFlags) return false;
             if (appearance.Invisibility != Invisibility) return false;
             if (appearance.Opacity != Opacity) return false;
             if (appearance.MouseOpacity != MouseOpacity) return false;
@@ -90,8 +96,10 @@ namespace OpenDreamShared.Dream {
             hashCode += Direction.GetHashCode();
             hashCode += PixelOffset.GetHashCode();
             hashCode += Color.GetHashCode();
+            hashCode += Alpha.GetHashCode();
             hashCode += Layer.GetHashCode();
             hashCode += Plane.GetHashCode();
+            hashCode += AppearanceFlags.GetHashCode();
             hashCode += Invisibility;
             hashCode += Opacity.GetHashCode();
             hashCode += MouseOpacity.GetHashCode();

@@ -38,12 +38,12 @@ sealed class DreamViewOverlay : Overlay {
         //because we render everything in render targets, and then render those to the world, we've got to apply some transformations to all world draws
         //in order to correct for different coordinate systems and general weirdness
         args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
-        DrawMap(args, eye.Value);
+        DrawAll(args, eye.Value);
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
     }
 
-    private void DrawMap(OverlayDrawArgs args, EntityUid eye) {
+    private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
         _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
         _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
         _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
@@ -56,11 +56,11 @@ sealed class DreamViewOverlay : Overlay {
         Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
 
         var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, screenArea.Scale(1.2f)); //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
-        List<(DreamIcon, Vector2, EntityUid, Boolean)> sprites = new(entities.Count + 1);
+        List<RendererMetaData> sprites = new(entities.Count + 1);
 
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform))
-            sprites.Add((player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
+            sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
 
         //visible entities
         foreach (EntityUid entity in entities) {
@@ -70,14 +70,14 @@ sealed class DreamViewOverlay : Overlay {
                 continue;
             if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
                 continue;
-            sprites.Add((sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
+            sprites.AddRange(ProcessIconComponents(sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
         }
 
         //visible turfs
         if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
             foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
                 MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-                sprites.Add((_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid, false));
+                sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid, false));
             }
 
         //screen objects
@@ -90,7 +90,7 @@ sealed class DreamViewOverlay : Overlay {
             Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
             for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                 for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                    sprites.Add((sprite.Icon, position + iconSize * (x, y), sprite.Owner, true));
+                    sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true));
                 }
             }
         }
@@ -101,21 +101,95 @@ sealed class DreamViewOverlay : Overlay {
 
         sprites.Sort(_renderOrderComparer);
         //After sort, group by plane and render together
-        float lastPlane = sprites[0].Item1.Appearance.Plane;
+        float lastPlane = sprites[0].MainIcon.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         ClearRenderTarget(planeTarget, args.WorldHandle);
-        foreach ((DreamIcon, Vector2, EntityUid, Boolean) sprite in sprites) {
-            if(lastPlane != sprite.Item1.Appearance.Plane){
+        foreach (RendererMetaData sprite in sprites) {
+            if(lastPlane != sprite.MainIcon.Appearance.Plane){
                 args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1));
-                lastPlane = sprite.Item1.Appearance.Plane;
+                lastPlane = sprite.MainIcon.Appearance.Plane;
                 ClearRenderTarget(planeTarget, args.WorldHandle);
             }
-            //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning
-            DrawIcon(args.WorldHandle, planeTarget, sprite.Item1, sprite.Item2 - screenArea.BottomLeft);
+            //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
+            DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
         }
         //final draw
         args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1));
         ReturnPingPongRenderTarget(planeTarget);
+    }
+
+    //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false)
+    {
+        List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
+        RendererMetaData current = new();
+        current.MainIcon = icon;
+        current.Position = position;
+        current.UID = uid;
+        current.IsScreen = isScreen;
+
+//#define PLANE_MASTER 	(1<<7)
+
+        if(parentIcon != null){
+            if((icon.Appearance.AppearanceFlags & 1) != 0) //RESET_COLOR
+                current.ColorToApply = icon.Appearance.Color;
+            else
+                current.ColorToApply = parentIcon.ColorToApply;
+
+            if((icon.Appearance.AppearanceFlags & 2) != 0) //RESET_ALPHA
+                current.AlphaToApply = icon.Appearance.Alpha;
+            else
+                current.AlphaToApply = parentIcon.AlphaToApply;
+
+            if((icon.Appearance.AppearanceFlags & 3) != 0) //RESET_TRANSFORM
+                current.TransformToApply = icon.Appearance.Transform;
+            else
+                current.TransformToApply = parentIcon.TransformToApply;
+
+            if(((int)icon.Appearance.Plane & -32767) != 0) //FLOAT_PLANE
+                current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
+            else
+                current.Plane = icon.Appearance.Plane;
+        } else {
+            current.ColorToApply = icon.Appearance.Color;
+            current.AlphaToApply = icon.Appearance.Alpha;
+            current.TransformToApply = icon.Appearance.Transform;
+            current.Plane = icon.Appearance.Plane;
+        }
+
+        keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 5) != 0); //KEEP_TOGETHER
+
+        //TODO check for images with override here
+        /*foreach(image in icon.images){
+            if(image.override)
+                current.MainIcon = image
+            else
+                add like overlays?
+        }*/
+
+        //TODO vis_contents
+
+        //underlays - colour, alpha, and transform are inherited, but filters aren't
+        foreach (DreamIcon underlay in icon.Underlays) {
+            if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
+                result.AddRange(ProcessIconComponents(underlay, position, uid, isScreen, current, false));
+            else
+                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, position, uid, isScreen, current, keepTogether));
+        }
+
+        //overlays - colour, alpha, and transform are inherited, but filters aren't
+        foreach (DreamIcon overlay in icon.Overlays) {
+            if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
+                result.AddRange(ProcessIconComponents(overlay, position, uid, isScreen, current, false));
+            else
+                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, position, uid, isScreen, current, keepTogether));
+        }
+
+        //TODO maptext - note colour + transform apply
+
+        //TODO particles - colour and transform don't apply?
+        result.Add(current);
+        return result;
     }
 
     private IRenderTexture RentPingPongRenderTarget(Vector2i size) {
@@ -149,25 +223,14 @@ sealed class DreamViewOverlay : Overlay {
         handle.RenderInRenderTarget(target, () => {}, Color.Transparent);
     }
 
-    // TODO: Move this to DreamIcon.Draw() so screen objects can have filters
-    private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, DreamIcon icon, Vector2 position) {
+    private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset) {
+        DreamIcon icon = iconMetaData.MainIcon;
+        Vector2 position = iconMetaData.Position + positionOffset;
         if (icon.Appearance == null)
             return;
 
         position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
-        //TODO appearance_flags - notably KEEP_TOGETHER and KEEP_APART
-        //keep together can probably just be a subcall to DrawIcon()?
-
-        //TODO check for images with override here
-
-        //TODO vis_contents
-
-        //underlays - inherit colour and transform ?
-        //FUCK - this only makes sense if each underlay has FLOAT_PLANE as its layer TODO - move them to the sort I guess
-        foreach (DreamIcon underlay in icon.Underlays) {
-            DrawIcon(handle, renderTarget, underlay, position);
-        }
 
         //main icon - TODO transform
         AtlasTexture frame = icon.CurrentFrame;
@@ -215,16 +278,6 @@ sealed class DreamViewOverlay : Overlay {
             ReturnPingPongRenderTarget(ping);
             ReturnPingPongRenderTarget(pong);
         }
-
-        //TODO maptext - note colour + transform apply
-
-        //TODO particles - colour and transform don't apply?
-
-        //overlays - colour and transform are inherited, but filters aren't
-        foreach (DreamIcon overlay in icon.Overlays) {
-            DrawIcon(handle, renderTarget, overlay, position);
-        }
-
     }
 }
 
@@ -246,3 +299,51 @@ public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
         }
     }
 }
+
+internal sealed class RendererMetaData : IComparable<RendererMetaData> {
+    public DreamIcon MainIcon;
+    public Vector2 Position;
+    public float Plane; //true plane value may be different from appearance plane value, due to special flags
+    public float Layer; //ditto for layer
+    public EntityUid UID;
+    public Boolean IsScreen;
+    public int TieBreaker = 0;
+    public Color ColorToApply = Color.White;
+    public float AlphaToApply = 255;
+    public float[] TransformToApply;
+    public List<RendererMetaData> KeepTogetherGroup = new();
+
+    public int CompareTo(RendererMetaData other) {
+        int val = 0;
+        //Plane
+        val =  this.Plane.CompareTo(other.Plane);
+        if (val != 0) {
+            return val;
+        }
+        //subplane (ie, HUD vs not HUD)
+        val = this.IsScreen.CompareTo(other.IsScreen);
+        if (val != 0) {
+            return val;
+        }
+        //depending on world.map_format, either layer or physical position
+        //TODO
+        val = this.Layer.CompareTo(other.Layer);
+        if (val != 0) {
+            return val;
+        }
+
+        //Finally, tie-breaker - in BYOND, this is order of creation of the sprites
+        //for us, we use EntityUID, with a tie-breaker (for underlays/overlays)
+        val = this.UID.CompareTo(other.UID);
+        if (val != 0) {
+            return val;
+        }
+        val = this.TieBreaker.CompareTo(other.TieBreaker);
+        if (val != 0) {
+            return val;
+        }
+
+        return 0;
+    }
+}
+

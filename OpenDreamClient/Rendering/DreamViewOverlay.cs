@@ -4,6 +4,7 @@ using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using OpenDreamShared.Dream;
 using Robust.Shared.Console;
+using Robust.Shared.Prototypes;
 
 namespace OpenDreamClient.Rendering;
 
@@ -16,6 +17,7 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
+    private ShaderInstance _blockColorInstance;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
     private readonly RenderOrderComparer _renderOrderComparer = new();
@@ -25,10 +27,15 @@ sealed class DreamViewOverlay : Overlay {
     private SharedTransformSystem _transformSystem;
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
     public bool ScreenOverlayEnabled = true;
+    private IRenderTexture mouseMapRenderTarget;
+    public Texture MouseMap;
+    public Dictionary<Color, EntityUid> MouseMapLookup = new();
 
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
+        var protoManager = IoCManager.Resolve<IPrototypeManager>();
+        _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
     }
 
     protected override void Draw(in OverlayDrawArgs args) {
@@ -38,7 +45,11 @@ sealed class DreamViewOverlay : Overlay {
         //because we render everything in render targets, and then render those to the world, we've got to apply some transformations to all world draws
         //in order to correct for different coordinate systems and general weirdness
         args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
+        mouseMapRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        ClearRenderTarget(mouseMapRenderTarget, args.WorldHandle);
         DrawAll(args, eye.Value);
+        MouseMap = mouseMapRenderTarget.Texture;
+        ReturnPingPongRenderTarget(mouseMapRenderTarget);
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
     }
@@ -124,11 +135,13 @@ sealed class DreamViewOverlay : Overlay {
                 PlaneMasterTransform = sprite.TransformToApply;
                 PlaneMasterBlendmode = 0; //TODO
             } else {
+                _blockColorInstance.SetParameter("targetColor", Color.Aqua); //Set shader instance's block colour for the mouse map
                 //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                 DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
             }
         }
         //final draw
+        //planeTarget
         args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
     }
@@ -284,6 +297,14 @@ sealed class DreamViewOverlay : Overlay {
                         new Box2(pixelPosition, pixelPosition+frame.Size),
                         iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
                 }, null);
+            handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
+                    handle.UseShader(_blockColorInstance);
+                    handle.DrawTextureRect(frame,
+                        new Box2(pixelPosition, pixelPosition+frame.Size),
+                        iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
+                    handle.UseShader(null);
+                }, null);
+
         } else if (frame != null) {
             IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentPingPongRenderTarget(frame.Size * 2);
@@ -317,6 +338,13 @@ sealed class DreamViewOverlay : Overlay {
                     handle.DrawTextureRect(pong.Texture,
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                         null);
+                }, null);
+            handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
+                    handle.UseShader(_blockColorInstance);
+                    handle.DrawTextureRect(pong.Texture,
+                        new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
+                        null);
+                    handle.UseShader(null);
                 }, null);
             ReturnPingPongRenderTarget(ping);
             ReturnPingPongRenderTarget(pong);

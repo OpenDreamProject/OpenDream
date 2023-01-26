@@ -82,6 +82,7 @@ namespace OpenDreamClient.Input {
         }
 
         private EntityUid? GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
+
             ClientScreenOverlaySystem screenOverlay = EntitySystem.Get<ClientScreenOverlaySystem>();
             EntityUid? eye = _playerManager.LocalPlayer.Session.AttachedEntity;
             if (eye == null || !_entityManager.TryGetComponent<TransformComponent>(eye.Value, out var eyeTransform)) {

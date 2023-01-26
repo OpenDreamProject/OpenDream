@@ -124,7 +124,7 @@ sealed class DreamViewOverlay : Overlay {
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = new();
         current.MainIcon = icon;
-        current.Position = position;
+        current.Position = position + (icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter);
         current.UID = uid;
         current.IsScreen = isScreen;
 
@@ -175,22 +175,32 @@ sealed class DreamViewOverlay : Overlay {
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
             if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, position, uid, isScreen, current, false));
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false));
             else
-                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, position, uid, isScreen, current, keepTogether));
+                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether));
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
             if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, position, uid, isScreen, current, false));
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false));
             else
-                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, position, uid, isScreen, current, keepTogether));
+                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether));
         }
 
         //TODO maptext - note colour + transform apply
 
         //TODO particles - colour and transform don't apply?
+
+        //flatten keeptogethergroup. Done here so we get implicit recursive iteration down the tree.
+        if(current.KeepTogetherGroup.Count > 0){
+            List<RendererMetaData> flatKTGroup = current.KeepTogetherGroup;
+            foreach(RendererMetaData KTItem in current.KeepTogetherGroup){
+                flatKTGroup.AddRange(KTItem.KeepTogetherGroup);
+                KTItem.KeepTogetherGroup.Clear();
+            }
+            current.KeepTogetherGroup = flatKTGroup;
+        }
         result.Add(current);
         return result;
     }
@@ -232,13 +242,22 @@ sealed class DreamViewOverlay : Overlay {
         if (icon.Appearance == null)
             return;
 
-        position += icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
         //main icon - TODO transform
-        //TODO flatten the keeptogether group tree and draw it here
         //TODO fix color application
-        AtlasTexture frame = icon.CurrentFrame;
+
+        Texture frame = icon.CurrentFrame;
+        if(iconMetaData.KeepTogetherGroup.Count > 0)
+        {
+            iconMetaData.KeepTogetherGroup.Add(iconMetaData);
+            iconMetaData.KeepTogetherGroup.Sort(_renderOrderComparer);
+            IRenderTexture KTTexture = RentPingPongRenderTarget(frame.Size * 2);
+            foreach(RendererMetaData KTItem in iconMetaData.KeepTogetherGroup){
+                DrawIcon(handle, KTTexture, KTItem, (frame.Size / 2)/EyeManager.PixelsPerMeter);
+            }
+            frame = KTTexture.Texture;
+        }
         if(frame != null && icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             handle.RenderInRenderTarget(renderTarget, () => {
@@ -334,6 +353,13 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         //TODO
         val = this.Layer.CompareTo(other.Layer);
         if (val != 0) {
+            //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
+            int effects_layer = ((int)this.Layer & 20000).CompareTo((int)other.Layer & 20000);
+            if(effects_layer != 0)
+                return effects_layer;
+            int background_layer = ((int)this.Layer & 20000).CompareTo((int)other.Layer & 20000);
+            if(background_layer != 0)
+                return -background_layer; //flipped because background_layer flag forces it to the back
             return val;
         }
 

@@ -24,7 +24,7 @@
   kind: source
   path: "/Shaders/blockcolor.swsl"
   params:
-    color: "#FF000000"
+    targetColor: "#FF000000"
 
 #unimplemented shaders point to empty.swsl and do nothing
 

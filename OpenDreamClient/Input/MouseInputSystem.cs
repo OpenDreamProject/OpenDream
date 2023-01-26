@@ -18,8 +18,10 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
+        [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
 
+        private DreamViewOverlay _dreamViewOverlay;
         private ContextMenuPopup _contextMenu;
 
         public override void Initialize() {
@@ -82,9 +84,9 @@ namespace OpenDreamClient.Input {
         }
 
         private EntityUid? GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
-            IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
-            overlayManager.TryGetOverlay<DreamViewOverlay>(out DreamViewOverlay dvo);
-            dvo.MouseMapLookup.TryGetValue(dvo.MouseMap.GetPixel((int)mousePos.X, (int)mousePos.Y), out EntityUid result);
+            _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
+            Color lookupColor = _dreamViewOverlay.MouseMap.GetPixel((int)mousePos.X, (int)mousePos.Y);
+            _dreamViewOverlay.MouseMapLookup.TryGetValue(lookupColor, out EntityUid result);
             return result;
         }
 

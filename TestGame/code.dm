@@ -1,3 +1,7 @@
+/atom
+	Click()
+		usr << "You clicked [src.type]"
+
 /turf
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"

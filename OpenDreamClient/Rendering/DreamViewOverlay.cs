@@ -49,7 +49,7 @@ sealed class DreamViewOverlay : Overlay {
         ClearRenderTarget(mouseMapRenderTarget, args.WorldHandle);
         DrawAll(args, eye.Value);
         MouseMap = mouseMapRenderTarget.Texture;
-        ReturnPingPongRenderTarget(mouseMapRenderTarget);
+        //ReturnPingPongRenderTarget(mouseMapRenderTarget);
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
     }
@@ -144,8 +144,7 @@ sealed class DreamViewOverlay : Overlay {
             }
         }
         //final draw
-        //planeTarget
-        args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+        args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
     }
 
@@ -300,13 +299,14 @@ sealed class DreamViewOverlay : Overlay {
                         new Box2(pixelPosition, pixelPosition+frame.Size),
                         iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
                 }, null);
-            handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
-                    handle.UseShader(_blockColorInstance);
-                    handle.DrawTextureRect(frame,
-                        new Box2(pixelPosition, pixelPosition+frame.Size),
-                        iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
-                    handle.UseShader(null);
-                }, null);
+            if(icon.Appearance.MouseOpacity != MouseOpacity.Transparent)
+                handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
+                        handle.UseShader(_blockColorInstance);
+                        handle.DrawTextureRect(frame,
+                            new Box2(pixelPosition, pixelPosition+frame.Size),
+                            iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
+                        handle.UseShader(null);
+                    }, null);
 
         } else if (frame != null) {
             IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
@@ -342,13 +342,14 @@ sealed class DreamViewOverlay : Overlay {
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                         null);
                 }, null);
-            handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
-                    handle.UseShader(_blockColorInstance);
-                    handle.DrawTextureRect(pong.Texture,
-                        new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
-                        null);
-                    handle.UseShader(null);
-                }, null);
+            if(icon.Appearance.MouseOpacity != MouseOpacity.Transparent)
+                handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
+                        handle.UseShader(_blockColorInstance);
+                        handle.DrawTextureRect(pong.Texture,
+                            new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
+                            null);
+                        handle.UseShader(null);
+                    }, null);
             ReturnPingPongRenderTarget(ping);
             ReturnPingPongRenderTarget(pong);
         }

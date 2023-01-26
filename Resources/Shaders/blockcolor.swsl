@@ -1,7 +1,7 @@
-﻿uniform highp vec3 targetColor;
+﻿uniform highp vec4 targetColor;
 
 void fragment() {
     highp vec4 color = zTexture(UV);
 
-    COLOR = vec4(targetColor, ceil(color.a));
+    COLOR = vec4(targetColor.rgb, ceil(color.a));
 }

@@ -135,14 +135,17 @@ sealed class DreamViewOverlay : Overlay {
                 PlaneMasterTransform = sprite.TransformToApply;
                 PlaneMasterBlendmode = 0; //TODO
             } else {
-                _blockColorInstance.SetParameter("targetColor", Color.Aqua); //Set shader instance's block colour for the mouse map
+                byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode());
+                Color targetColor = new Color(rgba[0], rgba[1], rgba[2], 255);
+                MouseMapLookup.Add(targetColor, sprite.UID);
+                _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
                 //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                 DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
             }
         }
         //final draw
         //planeTarget
-        args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+        args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
     }
 

@@ -82,30 +82,10 @@ namespace OpenDreamClient.Input {
         }
 
         private EntityUid? GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
-
-            ClientScreenOverlaySystem screenOverlay = EntitySystem.Get<ClientScreenOverlaySystem>();
-            EntityUid? eye = _playerManager.LocalPlayer.Session.AttachedEntity;
-            if (eye == null || !_entityManager.TryGetComponent<TransformComponent>(eye.Value, out var eyeTransform)) {
-                return null;
-            }
-
-            Vector2 viewOffset = eyeTransform.WorldPosition - 7.5f; //TODO: Don't hardcode a 15x15 view
-            MapCoordinates coords = viewport.ScreenToMap(mousePos);
-
-            var foundSprites = new List<(DreamIcon, Vector2, EntityUid, Boolean)>();
-            foreach (DMISpriteComponent sprite in screenOverlay.EnumerateScreenObjects()) {
-                Vector2 position = sprite.ScreenLocation.GetViewPosition(viewOffset, EyeManager.PixelsPerMeter);
-
-                if (sprite.CheckClickScreen(position, coords.Position)) {
-                    foundSprites.Add((sprite.Icon, position, sprite.Owner, true));
-                }
-            }
-
-            if (foundSprites.Count == 0)
-                return null;
-
-            //foundSprites.Sort(new RenderOrderComparer());
-            return foundSprites[^1].Item3;
+            IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+            overlayManager.TryGetOverlay<DreamViewOverlay>(out DreamViewOverlay dvo);
+            dvo.MouseMapLookup.TryGetValue(dvo.MouseMap.GetPixel((int)mousePos.X, (int)mousePos.Y), out EntityUid result);
+            return result;
         }
 
         private EntityUid? GetEntityOnMap(MapCoordinates coords) {

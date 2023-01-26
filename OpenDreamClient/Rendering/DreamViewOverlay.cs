@@ -163,7 +163,7 @@ sealed class DreamViewOverlay : Overlay {
                 current.TransformToApply = parentIcon.TransformToApply;
 
             if(((int)icon.Appearance.Plane & -32767) != 0) //FLOAT_PLANE
-                current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
+                current.Plane = parentIcon.Plane + ((int)icon.Appearance.Plane ^ -32767);
             else
                 current.Plane = icon.Appearance.Plane;
 

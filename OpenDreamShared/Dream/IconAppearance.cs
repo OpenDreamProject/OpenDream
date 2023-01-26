@@ -12,7 +12,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
-        [ViewVariables] public float Alpha;
+        [ViewVariables] public byte Alpha;
         [ViewVariables] public float Layer;
         [ViewVariables] public float Plane;
         [ViewVariables] public int AppearanceFlags = 0;

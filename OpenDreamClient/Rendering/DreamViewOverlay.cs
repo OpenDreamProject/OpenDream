@@ -119,7 +119,7 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
-    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false)
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0)
     {
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = new();
@@ -127,6 +127,7 @@ sealed class DreamViewOverlay : Overlay {
         current.Position = position + (icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter);
         current.UID = uid;
         current.IsScreen = isScreen;
+        current.TieBreaker = tieBreaker;
 
 //TODO Plane master
 //#define PLANE_MASTER 	(1<<7)
@@ -140,7 +141,7 @@ sealed class DreamViewOverlay : Overlay {
                 current.ColorToApply = parentIcon.ColorToApply;
 
             if((icon.Appearance.AppearanceFlags & 2) != 0) //RESET_ALPHA
-                current.AlphaToApply = icon.Appearance.Alpha;
+                current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             else
                 current.AlphaToApply = parentIcon.AlphaToApply;
 
@@ -155,7 +156,7 @@ sealed class DreamViewOverlay : Overlay {
                 current.Plane = icon.Appearance.Plane;
         } else {
             current.ColorToApply = icon.Appearance.Color;
-            current.AlphaToApply = icon.Appearance.Alpha;
+            current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             current.TransformToApply = icon.Appearance.Transform;
             current.Plane = icon.Appearance.Plane;
         }
@@ -177,7 +178,7 @@ sealed class DreamViewOverlay : Overlay {
             if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false));
             else
-                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether));
+                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
@@ -185,7 +186,7 @@ sealed class DreamViewOverlay : Overlay {
             if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
                 result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false));
             else
-                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether));
+                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
         }
 
         //TODO maptext - note colour + transform apply
@@ -257,13 +258,14 @@ sealed class DreamViewOverlay : Overlay {
                 DrawIcon(handle, KTTexture, KTItem, (frame.Size / 2)/EyeManager.PixelsPerMeter);
             }
             frame = KTTexture.Texture;
+            ReturnPingPongRenderTarget(KTTexture);
         }
         if(frame != null && icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             handle.RenderInRenderTarget(renderTarget, () => {
                     handle.DrawTextureRect(frame,
                         new Box2(pixelPosition, pixelPosition+frame.Size),
-                        icon.Appearance.Color);
+                        iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
                 }, null);
         } else if (frame != null) {
             IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
@@ -274,7 +276,7 @@ sealed class DreamViewOverlay : Overlay {
                 () => {
                     handle.DrawTextureRect(frame,
                         new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)),
-                        icon.Appearance.Color);
+                        iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
                 }, Color.Transparent);
 
             bool rotate = true;
@@ -297,7 +299,7 @@ sealed class DreamViewOverlay : Overlay {
             handle.RenderInRenderTarget(renderTarget, () => {
                     handle.DrawTextureRect(pong.Texture,
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
-                        icon.Appearance.Color);
+                        null);
                 }, null);
             ReturnPingPongRenderTarget(ping);
             ReturnPingPongRenderTarget(pong);
@@ -330,10 +332,10 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public float Plane; //true plane value may be different from appearance plane value, due to special flags
     public float Layer; //ditto for layer
     public EntityUid UID;
-    public Boolean IsScreen;
+    public Boolean IsScreen = false;
     public int TieBreaker = 0;
     public Color ColorToApply = Color.White;
-    public float AlphaToApply = 255;
+    public float AlphaToApply = 1.0f;
     public float[] TransformToApply;
     public List<RendererMetaData> KeepTogetherGroup = new();
 

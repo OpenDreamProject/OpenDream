@@ -108,6 +108,10 @@ namespace OpenDreamRuntime {
                 appearance.SetColor(color);
             }
 
+            if (atom.GetVariable("alpha").TryGetValueAsFloat(out float alpha)) {
+                appearance.Alpha = (byte)alpha;
+            }
+
             if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
                 appearance.Direction = (AtomDirection)dir;
             }
@@ -135,6 +139,10 @@ namespace OpenDreamRuntime {
                 appearance.Plane = plane;
             }
 
+            if (atom.GetVariable("appearance_flags").TryGetValueAsFloat(out float appearance_flags)) {
+                appearance.AppearanceFlags = (int)appearance_flags;
+            }
+
             return appearance;
         }
 
@@ -151,6 +159,10 @@ namespace OpenDreamRuntime {
 
             if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out var color)) {
                 appearance.SetColor(color);
+            }
+
+            if (def.TryGetVariable("alpha", out var alphaVar) && alphaVar.TryGetValueAsFloat(out float alpha)) {
+                appearance.Alpha = (byte)alpha;
             }
 
             if (def.TryGetVariable("dir", out var dirVar) && dirVar.TryGetValueAsInteger(out int dir)) {
@@ -174,8 +186,11 @@ namespace OpenDreamRuntime {
             if (def.TryGetVariable("layer", out var layerVar) && layerVar.TryGetValueAsFloat(out float layer)) {
                 appearance.Layer = layer;
             }
-            if (def.TryGetVariable("plane", out var planeVar) && layerVar.TryGetValueAsFloat(out float plane)) {
+            if (def.TryGetVariable("plane", out var planeVar) && planeVar.TryGetValueAsFloat(out float plane)) {
                 appearance.Plane = plane;
+            }
+            if (def.TryGetVariable("appearance_flags", out var appearanceFlagsVar) && appearanceFlagsVar.TryGetValueAsFloat(out float appearance_flags)) {
+                appearance.AppearanceFlags = (int) appearance_flags;
             }
 
             return appearance;

@@ -100,6 +100,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         value.TryGetValueAsFloat(out appearance.Plane);
                     });
                     break;
+                case "appearance_flags":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsInteger(out appearance.AppearanceFlags);
+                    });
+                    break;
+                case "alpha":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsFloat(out float floatAlpha);
+                        appearance.Alpha = (byte) floatAlpha;
+                    });
+                    break;
                 case "invisibility":
                     value.TryGetValueAsInteger(out int vis);
                     vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
@@ -245,6 +256,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").TryGetValueAsString(out var iconState) ? iconState : null;
                 mutableAppearance.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 mutableAppearance.GetVariable("plane").TryGetValueAsFloat(out appearance.Plane);
+                mutableAppearance.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
+                appearance.Alpha = (byte) floatAlpha;
+                mutableAppearance.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
                 mutableAppearance.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 mutableAppearance.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var image)) {
@@ -263,6 +277,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.Direction = (AtomDirection) image.GetVariable("dir").GetValueAsInteger();
                 image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 image.GetVariable("plane").TryGetValueAsFloat(out appearance.Plane);
+                image.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
+                appearance.Alpha = (byte) floatAlpha;
+                image.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var icon)) {

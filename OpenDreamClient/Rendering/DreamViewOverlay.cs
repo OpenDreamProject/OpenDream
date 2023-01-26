@@ -103,18 +103,33 @@ sealed class DreamViewOverlay : Overlay {
         //After sort, group by plane and render together
         float lastPlane = sprites[0].MainIcon.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        Color? PlaneMasterColor = null;
+        float[]? PlaneMasterTransform = null;
+        float? PlaneMasterBlendmode = null;
+
         ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach (RendererMetaData sprite in sprites) {
             if(lastPlane != sprite.MainIcon.Appearance.Plane){
-                args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1));
+                args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
                 lastPlane = sprite.MainIcon.Appearance.Plane;
+                //refresh planemaster values
+                PlaneMasterColor = null;
+                PlaneMasterTransform = null;
+                PlaneMasterBlendmode = null;
                 ClearRenderTarget(planeTarget, args.WorldHandle);
             }
-            //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
-            DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
+            //plane masters don't get rendered, but their properties get applied to the overall rendertarget
+            if(((int)sprite.MainIcon.Appearance.AppearanceFlags & 128) != 0){ //appearance_flags & PLANE_MASTER
+                PlaneMasterColor = sprite.ColorToApply;
+                PlaneMasterTransform = sprite.TransformToApply;
+                PlaneMasterBlendmode = 0; //TODO
+            } else {
+                //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
+                DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
+            }
         }
         //final draw
-        args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1));
+        args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
     }
 
@@ -129,9 +144,6 @@ sealed class DreamViewOverlay : Overlay {
         current.IsScreen = isScreen;
         current.TieBreaker = tieBreaker;
 
-//TODO Plane master
-//#define PLANE_MASTER 	(1<<7)
-
 //TODO render source and target (jesus christ)
 
         if(parentIcon != null){
@@ -145,7 +157,7 @@ sealed class DreamViewOverlay : Overlay {
             else
                 current.AlphaToApply = parentIcon.AlphaToApply;
 
-            if((icon.Appearance.AppearanceFlags & 3) != 0) //RESET_TRANSFORM
+            if((icon.Appearance.AppearanceFlags & 4) != 0) //RESET_TRANSFORM
                 current.TransformToApply = icon.Appearance.Transform;
             else
                 current.TransformToApply = parentIcon.TransformToApply;
@@ -154,11 +166,17 @@ sealed class DreamViewOverlay : Overlay {
                 current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
             else
                 current.Plane = icon.Appearance.Plane;
+
+            if(icon.Appearance.Layer == -1) //FLOAT_LAYER
+                current.Layer = parentIcon.Layer;
+            else
+                current.Layer = icon.Appearance.Plane;
         } else {
             current.ColorToApply = icon.Appearance.Color;
             current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             current.TransformToApply = icon.Appearance.Transform;
             current.Plane = icon.Appearance.Plane;
+            current.Layer = icon.Appearance.Layer;
         }
 
         keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 5) != 0); //KEEP_TOGETHER
@@ -176,7 +194,7 @@ sealed class DreamViewOverlay : Overlay {
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
             if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false));
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, -1));
             else
                 parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
         }
@@ -184,7 +202,7 @@ sealed class DreamViewOverlay : Overlay {
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
             if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false));
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, 1));
             else
                 parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
         }
@@ -246,7 +264,6 @@ sealed class DreamViewOverlay : Overlay {
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
         //main icon - TODO transform
-        //TODO fix color application
 
         Texture frame = icon.CurrentFrame;
         if(iconMetaData.KeepTogetherGroup.Count > 0)

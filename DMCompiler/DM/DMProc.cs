@@ -734,9 +734,19 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.BitShiftLeft);
         }
 
+        public void BitShiftLeftReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.BitShiftLeftReference);
+            WriteReference(reference);
+        }
+
         public void BitShiftRight() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitShiftRight);
+        }
+
+        public void BitShiftRightReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.BitShiftRightReference);
+            WriteReference(reference);
         }
 
         public void BinaryNot() {

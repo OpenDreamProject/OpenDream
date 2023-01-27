@@ -45,7 +45,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateList(DMProcState state) {
             int size = state.ReadInt();
-            var list = DreamList.Create(size);
+            var list = state.Proc.ObjectTree.CreateList(size);
 
             foreach (DreamValue value in state.PopCount(size)) {
                 list.AddValue(value);
@@ -57,7 +57,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateAssociativeList(DMProcState state) {
             int size = state.ReadInt();
-            var list = DreamList.Create(size);
+            var list = state.Proc.ObjectTree.CreateList(size);
 
             ReadOnlySpan<DreamValue> popped = state.PopCount(size * 2);
             for (int i = 0; i < popped.Length; i += 2) {
@@ -567,9 +567,8 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushGlobalVars(DMProcState state)
-        {
-            state.Push(new DreamValue(DreamGlobalVars.Create()));
+        public static ProcStatus? PushGlobalVars(DMProcState state) {
+            state.Push(new DreamValue(new DreamGlobalVars(state.Proc.ObjectTree.List.ObjectDefinition)));
             return null;
         }
         #endregion Values
@@ -920,6 +919,27 @@ namespace OpenDreamRuntime.Procs {
             throw new InvalidOperationException($"Bit-shift-left cannot be done between {first} and {second}");
         }
 
+
+        public static ProcStatus? BitShiftLeftReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift left operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
+            return null;
+        }
+
         public static ProcStatus? BitShiftRight(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
@@ -954,6 +974,26 @@ namespace OpenDreamRuntime.Procs {
             }
             //no condition exists to handle the inputs, so error
             throw new InvalidOperationException($"Bit-shift-right cannot be done between {first} and {second}");
+        }
+
+        public static ProcStatus? BitShiftRightReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift right operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
+            return null;
         }
 
         public static ProcStatus? BitXor(DMProcState state) {
@@ -2394,6 +2434,9 @@ namespace OpenDreamRuntime.Procs {
                     state.Push(value);
                     return null;
                 }
+
+                if (values.Count == 0)
+                    throw new Exception("pick() from empty list");
 
                 picked = values[state.DreamManager.Random.Next(0, values.Count)];
             } else {

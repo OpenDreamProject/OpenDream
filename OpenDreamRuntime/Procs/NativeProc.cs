@@ -49,8 +49,7 @@ namespace OpenDreamRuntime.Procs {
                 Arguments = arguments;
             }
 
-            public override ProcStatus Resume()
-            {
+            public override ProcStatus Resume() {
                 Result = _proc.Handler.Invoke(Src, Usr, Arguments);
 
                 return ProcStatus.Returned;

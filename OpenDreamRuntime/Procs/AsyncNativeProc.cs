@@ -102,8 +102,7 @@ namespace OpenDreamRuntime.Procs {
                 Result = await _taskFunc(this);
             }
 
-            public override ProcStatus Resume()
-            {
+            public override ProcStatus Resume() {
                 _inResume = true;
 
                 // We've just been created, start our task

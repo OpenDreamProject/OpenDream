@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList screenList;
                     if (!value.TryGetValueAsDreamList(out screenList)) {
-                        screenList = DreamList.Create();
+                        screenList = _objectTree.CreateList();
                     }
 
                     screenList.ValueAssigned += ScreenValueAssigned;
@@ -88,7 +88,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList imageList;
                     if (!value.TryGetValueAsDreamList(out imageList)) {
-                        imageList = DreamList.Create();
+                        imageList = _objectTree.CreateList();
                     }
 
                     dreamObject.SetVariableValue(varName, new DreamValue(imageList));
@@ -139,7 +139,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "connection":
                     return new DreamValue("seeker");
                 case "vars": // /client has this too!
-                    return new DreamValue(DreamListVars.Create(dreamObject));
+                    return new DreamValue(new DreamListVars(_objectTree.List.ObjectDefinition, dreamObject));
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }

@@ -117,7 +117,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new(coordinate);
                 }
                 case "contents": {
-                    DreamList contents = DreamList.Create();
+                    DreamList contents = _objectTree.CreateList();
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
 
                     if (_entityManager.TryGetComponent<TransformComponent>(entity, out var transform)) {
@@ -135,7 +135,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "locs": {
                     // Unimplemented; just return a list containing src.loc
-                    DreamList locs = DreamList.Create();
+                    DreamList locs = _objectTree.CreateList();
                     locs.AddValue(dreamObject.GetVariable("loc"));
 
                     return new DreamValue(locs);
@@ -150,7 +150,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return;
 
             ScreenLocation screenLocation;
-            if (screenLocationValue.TryGetValueAsString(out string screenLocationString)) {
+            if (screenLocationValue.TryGetValueAsString(out string? screenLocationString)) {
                 screenLocation = new ScreenLocation(screenLocationString);
             } else {
                 screenLocation = new ScreenLocation(0, 0, 0, 0);

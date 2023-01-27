@@ -20,7 +20,6 @@ sealed class DreamViewOverlay : Overlay {
     private ShaderInstance _blockColorInstance;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
-    private readonly RenderOrderComparer _renderOrderComparer = new();
     private EntityLookupSystem _lookupSystem;
     private ClientAppearanceSystem _appearanceSystem;
     private ClientScreenOverlaySystem _screenOverlaySystem;
@@ -111,7 +110,7 @@ sealed class DreamViewOverlay : Overlay {
         if(sprites.Count == 0)
             return;
 
-        sprites.Sort(_renderOrderComparer);
+        sprites.Sort();
         //After sort, group by plane and render together
         float lastPlane = sprites[0].MainIcon.Appearance.Plane;
         IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
@@ -136,16 +135,16 @@ sealed class DreamViewOverlay : Overlay {
                 PlaneMasterTransform = sprite.TransformToApply;
                 PlaneMasterBlendmode = 0; //TODO
             } else {
-                byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode());
-                Color targetColor = new Color(rgba[0], rgba[1], rgba[2], 255);
-                MouseMapLookup.Add(targetColor, sprite.UID);
+                byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode()); //.ClickUID
+                Color targetColor = new Color(225,255,0,255);
+                MouseMapLookup[targetColor] = sprite.ClickUID;
                 _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
                 //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                 DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
             }
         }
         //final draw
-        args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+        args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
     }
 
@@ -157,12 +156,14 @@ sealed class DreamViewOverlay : Overlay {
         current.MainIcon = icon;
         current.Position = position + (icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter);
         current.UID = uid;
+        current.ClickUID = uid;
         current.IsScreen = isScreen;
         current.TieBreaker = tieBreaker;
 
 //TODO render source and target (jesus christ)
 
         if(parentIcon != null){
+            current.ClickUID = parentIcon.ClickUID;
             if((icon.Appearance.AppearanceFlags & 1) != 0) //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
             else
@@ -206,6 +207,7 @@ sealed class DreamViewOverlay : Overlay {
         }*/
 
         //TODO vis_contents
+        //click uid should be set to current.uid again
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
@@ -285,7 +287,7 @@ sealed class DreamViewOverlay : Overlay {
         if(iconMetaData.KeepTogetherGroup.Count > 0)
         {
             iconMetaData.KeepTogetherGroup.Add(iconMetaData);
-            iconMetaData.KeepTogetherGroup.Sort(_renderOrderComparer);
+            iconMetaData.KeepTogetherGroup.Sort();
             IRenderTexture KTTexture = RentPingPongRenderTarget(frame.Size * 2);
             foreach(RendererMetaData KTItem in iconMetaData.KeepTogetherGroup){
                 DrawIcon(handle, KTTexture, KTItem, (frame.Size / 2)/EyeManager.PixelsPerMeter);
@@ -305,7 +307,7 @@ sealed class DreamViewOverlay : Overlay {
                         handle.UseShader(_blockColorInstance);
                         handle.DrawTextureRect(frame,
                             new Box2(pixelPosition, pixelPosition+frame.Size),
-                            iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
+                            Color.White);
                         handle.UseShader(null);
                     }, null);
 
@@ -348,7 +350,7 @@ sealed class DreamViewOverlay : Overlay {
                         handle.UseShader(_blockColorInstance);
                         handle.DrawTextureRect(pong.Texture,
                             new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
-                            null);
+                            Color.White);
                         handle.UseShader(null);
                     }, null);
             ReturnPingPongRenderTarget(ping);
@@ -382,6 +384,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public float Plane; //true plane value may be different from appearance plane value, due to special flags
     public float Layer; //ditto for layer
     public EntityUid UID;
+    public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public Boolean IsScreen = false;
     public int TieBreaker = 0;
     public Color ColorToApply = Color.White;

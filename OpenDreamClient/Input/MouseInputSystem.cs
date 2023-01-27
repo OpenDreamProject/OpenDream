@@ -42,8 +42,13 @@ namespace OpenDreamClient.Input {
             bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
             bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
 
+            Vector2 screenLocPos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size;
+            screenLocPos *= viewport.ViewportSize;
+            screenLocPos.Y = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
+            ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocPos.Y, 32); // TODO: icon_size other than 32
+
             MapCoordinates mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
-            EntityUid entity = GetEntityUnderMouse(viewport, args.PointerLocation.Position, mapCoords);
+            EntityUid entity = GetEntityUnderMouse(viewport, screenLocPos, mapCoords);
 
             if (args.Function == EngineKeyFunctions.UIRightClick) {
                 if (entity == EntityUid.Invalid)
@@ -56,11 +61,6 @@ namespace OpenDreamClient.Input {
 
                 return true;
             }
-
-            Vector2 screenLocPos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size;
-            screenLocPos *= viewport.ViewportSize;
-            screenLocPos.Y = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
-            ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocPos.Y, 32); // TODO: icon_size other than 32
 
             if (entity == EntityUid.Invalid) { // Turf was clicked
                 if (!_mapManager.TryFindGridAt(mapCoords, out var grid))
@@ -78,7 +78,7 @@ namespace OpenDreamClient.Input {
 
         private EntityUid GetEntityUnderMouse(ScalingViewport viewport, Vector2 mousePos, MapCoordinates coords) {
             EntityUid? entity = GetEntityOnScreen(mousePos, viewport);
-            entity ??= GetEntityOnMap(coords);
+            //entity ??= GetEntityOnMap(coords);
 
             return entity ?? EntityUid.Invalid;
         }
@@ -86,7 +86,8 @@ namespace OpenDreamClient.Input {
         private EntityUid? GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
             _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
             Color lookupColor = _dreamViewOverlay.MouseMap.GetPixel((int)mousePos.X, (int)mousePos.Y);
-            _dreamViewOverlay.MouseMapLookup.TryGetValue(lookupColor, out EntityUid result);
+            if(!_dreamViewOverlay.MouseMapLookup.TryGetValue(lookupColor, out EntityUid result))
+                return null;
             return result;
         }
 

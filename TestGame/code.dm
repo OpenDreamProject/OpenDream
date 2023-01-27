@@ -1,6 +1,6 @@
 /atom
 	Click()
-		usr << "You clicked [src.type]"
+		usr << "You clicked [src.type] at ([src.x], [src.y], [src.z])"
 
 /turf
 	icon = 'icons/turf.dmi'

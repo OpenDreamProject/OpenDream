@@ -47,9 +47,10 @@ sealed class DreamViewOverlay : Overlay {
         args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
         mouseMapRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         ClearRenderTarget(mouseMapRenderTarget, args.WorldHandle);
+        MouseMapLookup.Clear();
         DrawAll(args, eye.Value);
         MouseMap = mouseMapRenderTarget.Texture;
-        //ReturnPingPongRenderTarget(mouseMapRenderTarget);
+        ReturnPingPongRenderTarget(mouseMapRenderTarget);
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
     }

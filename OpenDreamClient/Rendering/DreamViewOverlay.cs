@@ -93,16 +93,18 @@ sealed class DreamViewOverlay : Overlay {
             }
 
         //screen objects
-        foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
-            if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager))
-                continue;
-            if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
-                continue;
-            Vector2 position = sprite.ScreenLocation.GetViewPosition(screenArea.BottomLeft, EyeManager.PixelsPerMeter);
-            Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
-            for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
-                for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                    sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true));
+        if(ScreenOverlayEnabled){
+            foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
+                if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager))
+                    continue;
+                if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
+                    continue;
+                Vector2 position = sprite.ScreenLocation.GetViewPosition(screenArea.BottomLeft, EyeManager.PixelsPerMeter);
+                Vector2 iconSize = sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
+                for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
+                    for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
+                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true));
+                    }
                 }
             }
         }

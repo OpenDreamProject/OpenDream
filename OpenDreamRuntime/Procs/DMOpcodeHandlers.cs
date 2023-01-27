@@ -780,6 +780,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    state.Push(new DreamValue(0));
+                    break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger()));
                     break;
@@ -787,6 +790,27 @@ namespace OpenDreamRuntime.Procs {
                     throw new Exception($"Invalid bit shift left operation on {first} and {second}");
             }
 
+            return null;
+        }
+
+
+        public static ProcStatus? BitShiftLeftReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift left operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
@@ -802,6 +826,26 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception($"Invalid bit shift right operation on {first} and {second}");
             }
 
+            return null;
+        }
+
+        public static ProcStatus? BitShiftRightReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift right operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 

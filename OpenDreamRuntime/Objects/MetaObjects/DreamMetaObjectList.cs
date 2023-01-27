@@ -237,7 +237,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public ProcStatus? OperatorBitAnd(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
+                DreamList newList = _objectTree.CreateList();
                 if (b.TryGetValueAsDreamList(out DreamList secondList)) {
                     int len = list.GetLength();
                     for (int i = 1; i <= len; i++) {
@@ -276,7 +276,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public ProcStatus? OperatorBitXor(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
-            DreamList newList = DreamList.Create();
+            DreamList newList = _objectTree.CreateList();
             List<DreamValue> values;
 
             if (b.TryGetValueAsDreamList(out DreamList secondList)) {

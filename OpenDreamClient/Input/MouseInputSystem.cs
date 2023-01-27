@@ -50,11 +50,20 @@ namespace OpenDreamClient.Input {
             MapCoordinates mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
             EntityUid entity = GetEntityUnderMouse(viewport, screenLocPos, mapCoords);
 
-            if (args.Function == EngineKeyFunctions.UIRightClick) {
-                if (entity == EntityUid.Invalid)
-                    return false;
+            if (entity == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
+                if (_mapManager.TryFindGridAt(mapCoords, out var grid)){
+                    Vector2i position = grid.CoordinatesToTile(mapCoords);
+                    MapCoordinates worldPosition = grid.GridTileToWorld(position);
+                    RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc,  shift, ctrl, alt));
+                }
+                return true;
+            }
 
-                _contextMenu.RepopulateEntities(_lookupSystem.GetEntitiesInRange(mapCoords, 0.01f));
+            if (args.Function == EngineKeyFunctions.UIRightClick) { //either turf or atom was clicked, and it was a right-click
+                var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f);
+                if(entities.Count == 0)
+                    return true; //don't open a 1x1 empty context menu
+                _contextMenu.RepopulateEntities(entities);
                 _contextMenu.Measure(_userInterfaceManager.ModalRoot.Size);
                 Vector2 contextMenuLocation = args.PointerLocation.Position / _userInterfaceManager.ModalRoot.UIScale; // Take scaling into account
                 _contextMenu.Open(UIBox2.FromDimensions(contextMenuLocation, _contextMenu.DesiredSize));
@@ -62,23 +71,13 @@ namespace OpenDreamClient.Input {
                 return true;
             }
 
-            if (entity == EntityUid.Invalid) { // Turf was clicked
-                if (!_mapManager.TryFindGridAt(mapCoords, out var grid))
-                    return false;
-
-                Vector2i position = grid.CoordinatesToTile(mapCoords);
-                MapCoordinates worldPosition = grid.GridTileToWorld(position);
-                RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc,  shift, ctrl, alt));
-                return true;
-            }
-
-            RaiseNetworkEvent(new EntityClickedEvent(entity, screenLoc, shift, ctrl, alt));
+            if (entity != EntityUid.Invalid) //atom was clicked, and it wasn't a right click
+                RaiseNetworkEvent(new EntityClickedEvent(entity, screenLoc, shift, ctrl, alt));
             return true;
         }
 
         private EntityUid GetEntityUnderMouse(ScalingViewport viewport, Vector2 mousePos, MapCoordinates coords) {
             EntityUid? entity = GetEntityOnScreen(mousePos, viewport);
-            //entity ??= GetEntityOnMap(coords);
 
             return entity ?? EntityUid.Invalid;
         }
@@ -91,22 +90,5 @@ namespace OpenDreamClient.Input {
             return result;
         }
 
-        private EntityUid? GetEntityOnMap(MapCoordinates coords) {
-            IEnumerable<EntityUid> entities = _lookupSystem.GetEntitiesIntersecting(coords.MapId, Box2.CenteredAround(coords.Position, (0.1f, 0.1f)));
-
-            var foundSprites = new List<(DreamIcon, Vector2, EntityUid, Boolean)>();
-            foreach (EntityUid entity in entities) {
-                if (_entityManager.TryGetComponent<DMISpriteComponent>(entity, out var sprite)
-                    && sprite.CheckClickWorld(coords.Position)) {
-                    foundSprites.Add((sprite.Icon, coords.Position, sprite.Owner, false));
-                }
-            }
-
-            if (foundSprites.Count == 0)
-                return null;
-
-            //foundSprites.Sort(new RenderOrderComparer());
-            return foundSprites[^1].Item3;
-        }
     }
 }

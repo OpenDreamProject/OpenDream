@@ -26,6 +26,7 @@ sealed class DreamViewOverlay : Overlay {
     private SharedTransformSystem _transformSystem;
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
     public bool ScreenOverlayEnabled = true;
+    public bool MouseMapRenderEnabled = false;
     private IRenderTexture mouseMapRenderTarget;
     public Texture MouseMap;
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
@@ -88,7 +89,7 @@ sealed class DreamViewOverlay : Overlay {
         if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
             foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
                 MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-                sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, tileRef.GridUid, false));
+                sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
             }
 
         //screen objects
@@ -121,7 +122,8 @@ sealed class DreamViewOverlay : Overlay {
         ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach (RendererMetaData sprite in sprites) {
             if(lastPlane != sprite.MainIcon.Appearance.Plane){
-                args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+                if(!MouseMapRenderEnabled)
+                    args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
                 lastPlane = sprite.MainIcon.Appearance.Plane;
                 //refresh planemaster values
                 PlaneMasterColor = null;
@@ -144,7 +146,10 @@ sealed class DreamViewOverlay : Overlay {
             }
         }
         //final draw
-        args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+        if(MouseMapRenderEnabled)
+            args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
+        else
+            args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
     }
 
@@ -374,6 +379,25 @@ public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
         if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
             overlay is DreamViewOverlay screenOverlay) {
             screenOverlay.ScreenOverlayEnabled = !screenOverlay.ScreenOverlayEnabled;
+        }
+    }
+}
+
+public sealed class ToggleMouseOverlayCommand : IConsoleCommand {
+    public string Command => "togglemouseoverlay";
+    public string Description => "Toggle rendering of mouse click area for screen objects";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.MouseMapRenderEnabled = !screenOverlay.MouseMapRenderEnabled;
         }
     }
 }

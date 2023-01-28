@@ -41,6 +41,29 @@
 	plane = 5
 	blend_mode = BLEND_MULTIPLY
 
+	Click()
+		..()
+		switch(src.blend_mode)
+			if(BLEND_DEFAULT)
+				src.blend_mode = BLEND_OVERLAY
+				usr << "BLEND_OVERLAY"
+			if(BLEND_OVERLAY)
+				src.blend_mode = BLEND_ADD
+				usr << "BLEND_ADD"
+			if(BLEND_ADD)
+				src.blend_mode = BLEND_SUBTRACT
+				usr << "BLEND_SUBTRACT"	
+			if(BLEND_SUBTRACT)
+				src.blend_mode = BLEND_MULTIPLY
+				usr << "BLEND_MULTIPLY"
+			if(BLEND_MULTIPLY)
+				src.blend_mode = BLEND_INSET_OVERLAY
+				usr << "BLEND_INSET_OVERLAY"
+			if(BLEND_INSET_OVERLAY)
+				src.blend_mode = BLEND_DEFAULT
+				usr << "BLEND_DEFAULT"																
+
+
 	New()
 		..()
 		loc = locate(5, 5, 1)

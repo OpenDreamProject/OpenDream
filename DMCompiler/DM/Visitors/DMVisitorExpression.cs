@@ -124,7 +124,7 @@ namespace DMCompiler.DM.Visitors {
                         return;
                     }
 
-                    throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
+                    throw new UnknownIdentifierException(identifier.Location, name);
                 }
             }
         }

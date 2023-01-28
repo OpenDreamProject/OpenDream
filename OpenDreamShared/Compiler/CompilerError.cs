@@ -122,4 +122,14 @@ namespace OpenDreamShared.Compiler {
 
         public CompileAbortException(string message) : base(message) {}
     }
+
+    public sealed class UnknownIdentifierException : CompileErrorException
+    {
+        public string IdentifierName;
+
+        public UnknownIdentifierException(Location location, string identifierName) : base(location, $"Unknown identifier \"{identifierName}\"")
+        {
+            IdentifierName = identifierName;
+        }
+    }
 }

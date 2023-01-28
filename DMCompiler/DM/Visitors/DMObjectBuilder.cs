@@ -31,12 +31,17 @@ namespace DMCompiler.DM.Visitors {
                 {
                     object? obj = method.Target;
                     DMObject? realObj = (DMObject?)obj;
-                    if(realObj != null)
+                    if (realObj == null)
+                        continue;
+
+                    foreach (var (undefinedName, danglingStatements) in realObj.danglingStatementsByUndefinedNames)
                     {
-                        Robust.Shared.Utility.DebugTools.Assert(realObj.danglingOverrides is not null);
-                        foreach(DMASTObjectVarOverride varOverride in realObj.danglingOverrides)
+                        foreach (var danglingStatement in danglingStatements)
                         {
-                            DMCompiler.Emit(WarningCode.DanglingOverride, varOverride.Location, $"Cannot override undefined var {varOverride.VarName}");
+                            if (danglingStatement is DMASTObjectVarOverride)
+                                DMCompiler.Emit(WarningCode.DanglingOverride, danglingStatement.Location, $"Cannot override undefined var \"{undefinedName}\"");
+                            else
+                                DMCompiler.Emit(new CompilerEmission(ErrorLevel.Error, danglingStatement.Location, $"Unknown identifier \"{undefinedName}\""));
                         }
                     }
                 }
@@ -68,7 +73,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private static void ProcessStatement(DMASTStatement statement, DMObject currentObject) {
+        public static void ProcessStatement(DMASTStatement statement, DMObject currentObject = null) {
             switch (statement) {
                 case DMASTObjectDefinition objectDefinition: ProcessObjectDefinition(objectDefinition); break;
 
@@ -96,7 +101,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private static void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
-            DMVariable variable;
+            DMVariable variable = null;
             DMObject varObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
             //Lets check if we're duplicating a definition, first.
@@ -111,25 +116,38 @@ namespace DMCompiler.DM.Visitors {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\"");
                 variable = varObject.GetVariable(varDefinition.Name);
             }
-            //TODO: Fix this else-if chaining once _currentObject is refactored out of DMObjectBuilder.
-            else if (varDefinition.IsStatic) { // static
+            else if (varDefinition.IsStatic && DoesOverrideGlobalVars(varDefinition))
+            {
+                DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, "Duplicate definition of global.vars");
+                //We can't salvage any part of this definition, since global.vars doesn't technically even exist, so lets just return
+                return;
+            }
 
-                //make sure this static doesn't already exist first
-                if(DoesOverrideGlobalVars(varDefinition)) // Some snowflake behaviour for global.vars
-                {
-                    DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, "Duplicate definition of global.vars");
-                    //We can't salvage any part of this definition, since global.vars doesn't technically even exist, so lets just return
-                    return;
+            DMExpression expression;
+            try {
+                DMVisitorExpression._scopeMode = varDefinition.IsGlobal ? "static" : "normal";
+                expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null, varDefinition.Value, varDefinition.Type);
+                DMVisitorExpression._scopeMode = "normal";
+            } catch (UnknownIdentifierException e) {
+                varObject.WaitForLateVarDefinition(e.IdentifierName, varDefinition);
+                return;
+            } catch (CompileErrorException e) {
+                DMCompiler.Emit(e.Error);
+                return;
+            }
+
+            if (variable is null)
+            {
+                if (varDefinition.IsStatic) {
+                    variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
+                } else {
+                    variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst,varDefinition.ValType);
+                    varObject.Variables[variable.Name] = variable;
                 }
-                //otherwise create
-                variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
-            } else { // not static
-                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst,varDefinition.ValType);
-                varObject.Variables[variable.Name] = variable;
             }
 
             try {
-                SetVariableValue(varObject, ref variable, varDefinition.Value);
+                SetVariableValue(varObject, ref variable, varDefinition.Location, expression);
                 VarDefined?.Invoke(varObject, variable); // FIXME: God there HAS to be a better way of doing this
             } catch (CompileErrorException e) {
                 DMCompiler.Emit(e.Error);
@@ -165,8 +183,7 @@ namespace DMCompiler.DM.Visitors {
                 {
                     variable = varObject.GetVariable(varOverride.VarName);
                 }
-                else if (varObject.HasGlobalVariable(varOverride.VarName))
-                {
+                else if (varObject.HasGlobalVariable(varOverride.VarName)) {
                     variable = varObject.GetGlobalVariable(varOverride.VarName);
                     DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
                 }
@@ -179,11 +196,14 @@ namespace DMCompiler.DM.Visitors {
                         DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location, $"var \"{varOverride.VarName}\" is not declared");
                         return; // don't do the fancy event stuff if we're root
                     }
-                    varObject.WaitForLateVarDefinition(varOverride);
+                    varObject.WaitForLateVarDefinition(varOverride.VarName, varOverride);
                     return;
                 }
                 OverrideVariableValue(varObject, ref variable, varOverride.Value);
                 varObject.VariableOverrides[variable.Name] = variable;
+            } catch (UnknownIdentifierException e) {
+                varObject.WaitForLateVarDefinition(e.IdentifierName, varOverride);
+                return;
             } catch (CompileErrorException e) {
                 DMCompiler.Emit(e.Error);
             }
@@ -298,10 +318,7 @@ namespace DMCompiler.DM.Visitors {
         /// A filter proc above <see cref="SetVariableValue"/> <br/>
         /// which checks first to see if overriding this thing's value is valid (as in the case of const and <see cref="DMValueType.CompiletimeReadonly"/>)
         /// </summary>
-        /// <remarks>
-        /// This is bizarrely public instead of private because DMObject ends up calling it to handle late var definitions, and there's no 'friend' keyword in C#.
-        /// </remarks>
-        public static void OverrideVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value)
+        private static void OverrideVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value)
         {
             if(variable.IsConst)
             {
@@ -325,17 +342,21 @@ namespace DMCompiler.DM.Visitors {
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
             DMVisitorExpression._scopeMode = "normal";
 
+            SetVariableValue(currentObject, ref variable, value.Location, expression);
+        }
+
+        private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression) {
             if (expression.TryAsConstant(out var constant)) {
                 variable = variable.WriteToValue(constant);
                 return;
             }
 
             if (variable.IsConst) {
-                throw new CompileErrorException(value.Location, "Value of const var must be a constant");
+                throw new CompileErrorException(location, "Value of const var must be a constant");
             }
 
             if (!IsValidRighthandSide(currentObject, variable, expression)) {
-                throw new CompileErrorException(value.Location, $"Invalid initial value for \"{variable.Name}\"");
+                throw new CompileErrorException(location, $"Invalid initial value for \"{variable.Name}\"");
             }
 
             variable = variable.WriteToValue(new Expressions.Null(Location.Internal));

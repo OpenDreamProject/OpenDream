@@ -125,28 +125,42 @@ sealed class DreamViewOverlay : Overlay {
         sprites.Sort();
         //After sort, group by plane and render together
         float lastPlane = sprites[0].MainIcon.Appearance.Plane;
-        IRenderTexture planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        IRenderTexture planeTarget = baseTarget;
+        bool PlaneMasterActive = false;
         Color? PlaneMasterColor = null;
         float[]? PlaneMasterTransform = null;
         float? PlaneMasterBlendmode = null;
 
         ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach (RendererMetaData sprite in sprites) {
-            if(lastPlane != sprite.MainIcon.Appearance.Plane){
-                if(!MouseMapRenderEnabled)
-                    args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+            if(lastPlane != sprite.MainIcon.Appearance.Plane && PlaneMasterActive){ //if we were drawing on a plane_master group, and plane changed
+                var handle = args.WorldHandle;
+                handle.RenderInRenderTarget(baseTarget, () => {
+                    handle.UseShader(_blendmodeInstances.TryGetValue((int) PlaneMasterBlendmode, out var value) ? value : null);
+                    handle.DrawTextureRect(planeTarget.Texture,
+                        new Box2(Vector2.Zero, planeTarget.Size),
+                        PlaneMasterColor);
+                    handle.UseShader(null);
+                }, null);
+                //args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
                 lastPlane = sprite.MainIcon.Appearance.Plane;
                 //refresh planemaster values
                 PlaneMasterColor = null;
                 PlaneMasterTransform = null;
                 PlaneMasterBlendmode = null;
-                ClearRenderTarget(planeTarget, args.WorldHandle);
+                PlaneMasterActive = false;
+                ReturnPingPongRenderTarget(planeTarget);
+                planeTarget = baseTarget;
             }
             //plane masters don't get rendered, but their properties get applied to the overall rendertarget
             if(((int)sprite.MainIcon.Appearance.AppearanceFlags & 128) != 0){ //appearance_flags & PLANE_MASTER
+                PlaneMasterActive = true;
                 PlaneMasterColor = sprite.ColorToApply;
                 PlaneMasterTransform = sprite.TransformToApply;
-                PlaneMasterBlendmode = 0; //TODO
+                PlaneMasterBlendmode = sprite.MainIcon.Appearance.BlendMode;
+                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                ClearRenderTarget(planeTarget, args.WorldHandle);
             } else {
                 byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode()); //.ClickUID
                 Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255);
@@ -161,7 +175,7 @@ sealed class DreamViewOverlay : Overlay {
         if(MouseMapRenderEnabled)
             args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
         else
-            args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+            args.WorldHandle.DrawTexture(baseTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
     }
 
@@ -439,6 +453,11 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         val =  this.Plane.CompareTo(other.Plane);
         if (val != 0) {
             return val;
+        }
+        val = ((int)this.MainIcon.Appearance.AppearanceFlags & 128).CompareTo((int)other.MainIcon.Appearance.AppearanceFlags & 128); //appearance_flags & PLANE_MASTER
+        //PLANE_MASTER objects go first for any given plane
+        if (val != 0) {
+            return -val; //sign flip because we want 1 < -1
         }
         //subplane (ie, HUD vs not HUD)
         val = this.IsScreen.CompareTo(other.IsScreen);

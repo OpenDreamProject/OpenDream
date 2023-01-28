@@ -1,1 +1,5 @@
 blend_mode multiply;
+
+void fragment() {
+    COLOR = zTexture(UV);
+}

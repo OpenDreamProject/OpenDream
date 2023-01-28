@@ -16,3 +16,7 @@ uniform highp float radius;
 uniform highp float falloff;
 uniform highp float alpha;
 uniform highp float space;
+
+void fragment() {
+    COLOR = zTexture(UV);
+}

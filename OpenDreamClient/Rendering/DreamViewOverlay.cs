@@ -139,7 +139,7 @@ sealed class DreamViewOverlay : Overlay {
                 handle.RenderInRenderTarget(baseTarget, () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue((int) PlaneMasterBlendmode, out var value) ? value : null);
                     handle.DrawTextureRect(planeTarget.Texture,
-                        new Box2(Vector2.Zero, planeTarget.Size),
+                        new Box2(new Vector2(screenArea.Left, screenArea.Bottom*-1)*EyeManager.PixelsPerMeter, planeTarget.Size),
                         PlaneMasterColor);
                     handle.UseShader(null);
                 }, null);

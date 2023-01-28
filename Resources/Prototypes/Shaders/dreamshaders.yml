@@ -26,7 +26,27 @@
   params:
     targetColor: "#FF000000"
 
+- type: shader
+  id: blend_add
+  kind: source
+  path: "/Shaders/blendadd.swsl"
+
+- type: shader
+  id: blend_subtract
+  kind: source
+  path: "/Shaders/blendsubtract.swsl"
+
+- type: shader
+  id: blend_multiply
+  kind: source
+  path: "/Shaders/blendmultiply.swsl"
+
 #unimplemented shaders point to empty.swsl and do nothing
+
+- type: shader
+  id: blend_inset_overlay
+  kind: source
+  path: "/Shaders/empty.swsl"
 
 - type: shader
   id: alpha

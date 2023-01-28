@@ -100,6 +100,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         value.TryGetValueAsFloat(out appearance.Plane);
                     });
                     break;
+                case "blend_mode":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsFloat(out appearance.BlendMode);
+                    });
+                    break;
                 case "appearance_flags":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         value.TryGetValueAsInteger(out appearance.AppearanceFlags);
@@ -256,6 +261,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").TryGetValueAsString(out var iconState) ? iconState : null;
                 mutableAppearance.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 mutableAppearance.GetVariable("plane").TryGetValueAsFloat(out appearance.Plane);
+                mutableAppearance.GetVariable("blend_mode").TryGetValueAsFloat(out appearance.BlendMode);
                 mutableAppearance.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
                 mutableAppearance.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
@@ -277,6 +283,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.Direction = (AtomDirection) image.GetVariable("dir").GetValueAsInteger();
                 image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
                 image.GetVariable("plane").TryGetValueAsFloat(out appearance.Plane);
+                image.GetVariable("blend_mode").TryGetValueAsFloat(out appearance.BlendMode);
                 image.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
                 image.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);

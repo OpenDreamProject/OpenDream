@@ -39,6 +39,7 @@
 	icon_state = "mob"
 	layer = MOB_LAYER
 	plane = 5
+	blend_mode = BLEND_MULTIPLY
 
 	New()
 		..()

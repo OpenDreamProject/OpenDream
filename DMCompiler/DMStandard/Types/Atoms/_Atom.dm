@@ -32,7 +32,7 @@
 	var/luminosity = 0 as opendream_unimplemented
 	var/opacity = 0 as opendream_unimplemented
 	var/matrix/transform
-	var/blend_mode = 0 as opendream_unimplemented
+	var/blend_mode = 0 
 
 	var/gender = NEUTER
 	var/density = FALSE

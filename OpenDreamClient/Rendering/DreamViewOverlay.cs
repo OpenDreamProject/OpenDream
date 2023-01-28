@@ -18,6 +18,7 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     private ShaderInstance _blockColorInstance;
+    private Dictionary<int, ShaderInstance> _blendmodeInstances;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
     private EntityLookupSystem _lookupSystem;
@@ -34,8 +35,16 @@ sealed class DreamViewOverlay : Overlay {
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
+        Logger.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
+
+        _blendmodeInstances = new(4);
+        //_blendmodeInstances.Add(0, protoManager.Index<ShaderPrototype>("empty").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY - null shaders, because overlay is default behaviour
+        _blendmodeInstances.Add(2, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
+        _blendmodeInstances.Add(3, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
+        _blendmodeInstances.Add(4, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
+        _blendmodeInstances.Add(5, protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()); //BLEND_INSET_OVERLAY //TODO
     }
 
     protected override void Draw(in OverlayDrawArgs args) {
@@ -143,6 +152,7 @@ sealed class DreamViewOverlay : Overlay {
                 Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255);
                 MouseMapLookup[targetColor] = sprite.ClickUID;
                 _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
+
                 //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                 DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
             }
@@ -302,12 +312,15 @@ sealed class DreamViewOverlay : Overlay {
             frame = KTTexture.Texture;
             ReturnPingPongRenderTarget(KTTexture);
         }
+
         if(frame != null && icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             handle.RenderInRenderTarget(renderTarget, () => {
+                    handle.UseShader(_blendmodeInstances.TryGetValue((int) icon.Appearance.BlendMode, out var value) ? value : null);
                     handle.DrawTextureRect(frame,
                         new Box2(pixelPosition, pixelPosition+frame.Size),
                         iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
+                    handle.UseShader(null);
                 }, null);
             if(icon.Appearance.MouseOpacity != MouseOpacity.Transparent)
                 handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
@@ -348,9 +361,11 @@ sealed class DreamViewOverlay : Overlay {
             }
 
             handle.RenderInRenderTarget(renderTarget, () => {
+                    handle.UseShader(_blendmodeInstances.TryGetValue((int) icon.Appearance.BlendMode, out var value) ? value : null);
                     handle.DrawTextureRect(pong.Texture,
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                         null);
+                    handle.UseShader(null);
                 }, null);
             if(icon.Appearance.MouseOpacity != MouseOpacity.Transparent)
                 handle.RenderInRenderTarget(mouseMapRenderTarget, () => {

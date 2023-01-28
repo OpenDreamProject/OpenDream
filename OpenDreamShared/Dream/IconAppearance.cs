@@ -15,6 +15,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public byte Alpha;
         [ViewVariables] public float Layer;
         [ViewVariables] public float Plane;
+        [ViewVariables] public float BlendMode;
         [ViewVariables] public int AppearanceFlags = 0;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
@@ -38,6 +39,7 @@ namespace OpenDreamShared.Dream {
             Alpha = appearance.Alpha;
             Layer = appearance.Layer;
             Plane = appearance.Plane;
+            BlendMode = appearance.BlendMode;
             AppearanceFlags = appearance.AppearanceFlags;
             Invisibility = appearance.Invisibility;
             Opacity = appearance.Opacity;
@@ -64,6 +66,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Alpha != Alpha) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Plane != Plane) return false;
+            if (appearance.BlendMode != BlendMode) return false;
             if (appearance.AppearanceFlags != AppearanceFlags) return false;
             if (appearance.Invisibility != Invisibility) return false;
             if (appearance.Opacity != Opacity) return false;
@@ -99,6 +102,7 @@ namespace OpenDreamShared.Dream {
             hashCode += Alpha.GetHashCode();
             hashCode += Layer.GetHashCode();
             hashCode += Plane.GetHashCode();
+            hashCode += BlendMode.GetHashCode();
             hashCode += AppearanceFlags.GetHashCode();
             hashCode += Invisibility;
             hashCode += Opacity.GetHashCode();

@@ -33,6 +33,8 @@ public sealed class WindowDescriptor : ControlDescriptor {
     public string Menu = null;
     [DataField("title")]
     public string Title = null;
+    [DataField("macro")]
+    public string Macro = null;
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 

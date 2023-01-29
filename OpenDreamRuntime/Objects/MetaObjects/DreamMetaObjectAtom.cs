@@ -30,7 +30,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             // TODO: Create a special list to prevent this needless list creation
             List<int>? objectVerbs = dreamObject.ObjectDefinition.Verbs;
             if (objectVerbs != null) {
-                DreamList verbsList = DreamList.Create(objectVerbs.Count);
+                DreamList verbsList = _objectTree.CreateList(objectVerbs.Count);
 
                 foreach (int verbId in objectVerbs) {
                     DreamProc verb = _objectTree.Procs[verbId];
@@ -41,7 +41,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 dreamObject.SetVariableValue("verbs", new DreamValue(verbsList));
             }
 
-            _filterLists[dreamObject] = new DreamFilterList(dreamObject);
+            _filterLists[dreamObject] = new DreamFilterList(_objectTree.List.ObjectDefinition, dreamObject);
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
@@ -175,7 +175,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList overlayList;
                     if (!value.TryGetValueAsDreamList(out overlayList)) {
-                        overlayList = DreamList.Create();
+                        overlayList = _objectTree.CreateList();
                     }
 
                     overlayList.ValueAssigned += OverlayValueAssigned;
@@ -194,7 +194,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList underlayList;
                     if (!value.TryGetValueAsDreamList(out underlayList)) {
-                        underlayList = DreamList.Create();
+                        underlayList = _objectTree.CreateList();
                     }
 
                     underlayList.ValueAssigned += UnderlayValueAssigned;

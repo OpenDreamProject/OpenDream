@@ -14,6 +14,8 @@ namespace OpenDreamClient.Interface.Controls {
 
         public readonly List<InterfaceControl> ChildControls = new();
 
+        public InterfaceMacroSet Macro => _dreamInterface.MacroSets[WindowDescriptor.Macro];
+
         private WindowDescriptor WindowDescriptor => (ElementDescriptor as WindowDescriptor);
 
         private Control _menuContainer = default!;
@@ -40,6 +42,10 @@ namespace OpenDreamClient.Interface.Controls {
 
             foreach (var window in _openWindows) {
                 UpdateWindowAttributes(window);
+            }
+
+            if (WindowDescriptor.IsDefault) {
+                Macro.SetActive();
             }
         }
 

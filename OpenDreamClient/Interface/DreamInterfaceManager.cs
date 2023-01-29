@@ -9,6 +9,7 @@ using OpenDreamClient.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using Robust.Client.Graphics;
+using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Network;
@@ -22,25 +23,28 @@ namespace OpenDreamClient.Interface {
     sealed class DreamInterfaceManager : IDreamInterfaceManager {
         [Dependency] private readonly IClyde _clyde = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
-        [Dependency] private readonly IDreamMacroManager _macroManager = default!;
         [Dependency] private readonly IEyeManager _eyeManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
         [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private readonly IInputManager _inputManager = default!;
+
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
-        public ControlWindow DefaultWindow;
-        public ControlOutput DefaultOutput;
-        public ControlInfo DefaultInfo;
-        public ControlMap DefaultMap;
+        public ControlWindow DefaultWindow { get; private set; }
+        public ControlOutput DefaultOutput { get; private set; }
+        public ControlInfo DefaultInfo { get; private set; }
+        public ControlMap DefaultMap { get; private set; }
 
-        public (string, string, string)[] AvailableVerbs { get; private set; } = Array.Empty<(string, string, string)>();
+        public (string, string, string)[] AvailableVerbs { get; private set; }
 
         public Dictionary<string, ControlWindow> Windows { get; } = new();
         public Dictionary<string, InterfaceMenu> Menus { get; } = new();
-        public readonly Dictionary<string, BrowsePopup> PopupWindows = new();
+        public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
+
+        private readonly Dictionary<string, BrowsePopup> _popupWindows = new();
 
         public void LoadInterfaceFromSource(string source) {
             DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
@@ -72,6 +76,12 @@ namespace OpenDreamClient.Interface {
 
         public void Initialize() {
             _userInterfaceManager.MainViewport.Visible = false;
+
+            AvailableVerbs = Array.Empty<(string, string, string)>();
+            Windows.Clear();
+            Menus.Clear();
+            MacroSets.Clear();
+            _popupWindows.Clear();
 
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
@@ -109,7 +119,7 @@ namespace OpenDreamClient.Interface {
             DefaultInfo?.RefreshVerbs();
         }
 
-        public void RxOutput(MsgOutput pOutput) {
+        private void RxOutput(MsgOutput pOutput) {
             InterfaceControl interfaceElement;
             string data = null;
 
@@ -178,7 +188,7 @@ namespace OpenDreamClient.Interface {
         private void RxBrowse(MsgBrowse pBrowse) {
             if (pBrowse.HtmlSource == null && pBrowse.Window != null) {
                 //Closing a popup
-                if (PopupWindows.TryGetValue(pBrowse.Window, out BrowsePopup popup)) {
+                if (_popupWindows.TryGetValue(pBrowse.Window, out BrowsePopup popup)) {
                     popup.Close();
                 }
             } else if (pBrowse.HtmlSource != null) {
@@ -193,11 +203,11 @@ namespace OpenDreamClient.Interface {
 
                     if (outputBrowser == null) {
 
-                        if (!PopupWindows.TryGetValue(pBrowse.Window, out popup)) {
+                        if (!_popupWindows.TryGetValue(pBrowse.Window, out popup)) {
                             popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
-                            popup.Closed += () => { PopupWindows.Remove(pBrowse.Window); };
+                            popup.Closed += () => { _popupWindows.Remove(pBrowse.Window); };
 
-                            PopupWindows.Add(pBrowse.Window, popup);
+                            _popupWindows.Add(pBrowse.Window, popup);
                         }
 
                         outputBrowser = popup.Browser;
@@ -257,7 +267,7 @@ namespace OpenDreamClient.Interface {
 
                 if (Windows.ContainsKey(windowName)) {
                     window = Windows[windowName];
-                } else if (PopupWindows.TryGetValue(windowName, out BrowsePopup popup)) {
+                } else if (_popupWindows.TryGetValue(windowName, out BrowsePopup popup)) {
                     window = popup.WindowElement;
                 }
 
@@ -286,7 +296,7 @@ namespace OpenDreamClient.Interface {
                         return menuElement;
                 }
 
-                if (_macroManager.InterfaceMacroSets.TryGetValue(elementName, out var macroSet)) return macroSet;
+                if (MacroSets.TryGetValue(elementName, out var macroSet)) return macroSet;
             }
 
             return null;
@@ -309,47 +319,70 @@ namespace OpenDreamClient.Interface {
         public void WinSet(string controlId, string winsetParams) {
             DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
             DMFParser parser = new DMFParser(lexer, _serializationManager);
-            MappingDataNode node = parser.Attributes();
 
-            if (parser.Emissions.Count > 0) {
-                bool hadError = false;
-                foreach (CompilerEmission emission in parser.Emissions) {
-                    if (emission.Level == ErrorLevel.Error) {
-                        Logger.ErrorS("opendream.interface.winset", emission.ToString());
-                        hadError = true;
-                    } else {
-                        Logger.WarningS("opendream.interface.winset", emission.ToString());
+            bool CheckParserErrors() {
+                if (parser.Emissions.Count > 0) {
+                    bool hadError = false;
+                    foreach (CompilerEmission emission in parser.Emissions) {
+                        if (emission.Level == ErrorLevel.Error) {
+                            Logger.ErrorS("opendream.interface.winset", emission.ToString());
+                            hadError = true;
+                        } else {
+                            Logger.WarningS("opendream.interface.winset", emission.ToString());
+                        }
                     }
+
+                    return hadError;
                 }
 
-                if (hadError)
-                    return;
-            }
-
-            if (node.TryGet("parent", out ValueDataNode parentNode)) {
-                var parent = FindElementWithName(parentNode.Value);
-                if (parent == null) {
-                    Logger.ErrorS("opendream.interface.winset", $"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
-                    return;
-                }
-
-                var childDescriptor = parent.ElementDescriptor.CreateChildDescriptor(_serializationManager, node);
-                parent.AddChild(childDescriptor);
-                return;
+                return false;
             }
 
             if (String.IsNullOrEmpty(controlId)) {
-                if (node.TryGet("command", out ValueDataNode command)) {
-                    DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
+                List<DMFWinSet> winSets = parser.GlobalWinSet();
 
-                    commandSystem.RunCommand(command.Value);
-                } else {
-                    Logger.ErrorS("opendream.interface.winset", $"Invalid global winset \"{winsetParams}\"");
+                if (CheckParserErrors())
+                    return;
+
+                foreach (DMFWinSet winSet in winSets) {
+                    if (winSet.Element == null) {
+                        if (winSet.Attribute == "command") {
+                            DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
+
+                            commandSystem.RunCommand(winSet.Value);
+                        } else {
+                            Logger.ErrorS("opendream.interface.winset", $"Invalid global winset \"{winsetParams}\"");
+                        }
+                    } else {
+                        InterfaceElement element = FindElementWithName(winSet.Element);
+                        MappingDataNode node = new() {
+                            {winSet.Attribute, winSet.Value}
+                        };
+
+                        if (element != null) {
+                            element.PopulateElementDescriptor(node, _serializationManager);
+                        } else {
+                            Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                        }
+                    }
                 }
             } else {
                 InterfaceElement element = FindElementWithName(controlId);
+                MappingDataNode node = parser.Attributes();
 
-                if (element != null) {
+                if (CheckParserErrors())
+                    return;
+
+                if (element == null && node.TryGet("parent", out ValueDataNode parentNode)) {
+                    var parent = FindElementWithName(parentNode.Value);
+                    if (parent == null) {
+                        Logger.ErrorS("opendream.interface.winset", $"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
+                        return;
+                    }
+
+                    var childDescriptor = parent.ElementDescriptor.CreateChildDescriptor(_serializationManager, node);
+                    parent.AddChild(childDescriptor);
+                } else if (element != null) {
                     element.PopulateElementDescriptor(node, _serializationManager);
                 } else {
                     Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
@@ -360,8 +393,9 @@ namespace OpenDreamClient.Interface {
         private void LoadInterface(InterfaceDescriptor descriptor) {
             InterfaceDescriptor = descriptor;
 
-            _macroManager.LoadMacroSets(InterfaceDescriptor.MacroSetDescriptors);
-            _macroManager.SetActiveMacroSet(InterfaceDescriptor.MacroSetDescriptors[0].Name);
+            foreach (MacroSetDescriptor macroSet in descriptor.MacroSetDescriptors) {
+                MacroSets.Add(macroSet.Name, new(macroSet, _entitySystemManager, _inputManager));
+            }
 
             foreach (MenuDescriptor menuDescriptor in InterfaceDescriptor.MenuDescriptors) {
                 InterfaceMenu menu = new(menuDescriptor);
@@ -406,7 +440,11 @@ namespace OpenDreamClient.Interface {
         (string, string, string)[] AvailableVerbs { get; }
         Dictionary<string, ControlWindow> Windows { get; }
         Dictionary<string, InterfaceMenu> Menus { get; }
-        public InterfaceDescriptor InterfaceDescriptor { get; }
+        Dictionary<string, InterfaceMacroSet> MacroSets { get; }
+        public ControlWindow DefaultWindow { get; }
+        public ControlOutput DefaultOutput { get; }
+        public ControlInfo DefaultInfo { get; }
+        public ControlMap DefaultMap { get; }
 
         void Initialize();
         void FrameUpdate(FrameEventArgs frameEventArgs);

@@ -129,7 +129,7 @@ sealed class DreamViewOverlay : Overlay {
         IRenderTexture planeTarget = baseTarget;
         bool PlaneMasterActive = false;
         Color? PlaneMasterColor = null;
-        float[]? PlaneMasterTransform = null;
+        Matrix3? PlaneMasterTransform = null;
         float? PlaneMasterBlendmode = null;
 
         ClearRenderTarget(planeTarget, args.WorldHandle);
@@ -138,6 +138,7 @@ sealed class DreamViewOverlay : Overlay {
                 var handle = args.WorldHandle;
                 handle.RenderInRenderTarget(baseTarget, () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue((int) PlaneMasterBlendmode, out var value) ? value : null);
+                    handle.SetTransform(PlaneMasterTransform.Value);
                     handle.DrawTextureRect(planeTarget.Texture,
                         new Box2(new Vector2(0, planeTarget.Size.Y), new Vector2(planeTarget.Size.X, 0)),
                         PlaneMasterColor);
@@ -193,6 +194,12 @@ sealed class DreamViewOverlay : Overlay {
 
 //TODO render source and target (jesus christ)
 
+        Matrix3 iconAppearanceTransformMatrix = new(new float[] {
+                icon.Appearance.Transform[0], icon.Appearance.Transform[1], 0,
+                icon.Appearance.Transform[2], icon.Appearance.Transform[3], 0,
+                icon.Appearance.Transform[4], icon.Appearance.Transform[5], 1
+            });
+
         if(parentIcon != null){
             current.ClickUID = parentIcon.ClickUID;
             if((icon.Appearance.AppearanceFlags & 1) != 0) //RESET_COLOR
@@ -206,7 +213,7 @@ sealed class DreamViewOverlay : Overlay {
                 current.AlphaToApply = parentIcon.AlphaToApply;
 
             if((icon.Appearance.AppearanceFlags & 4) != 0) //RESET_TRANSFORM
-                current.TransformToApply = icon.Appearance.Transform;
+                current.TransformToApply = iconAppearanceTransformMatrix;
             else
                 current.TransformToApply = parentIcon.TransformToApply;
 
@@ -222,7 +229,7 @@ sealed class DreamViewOverlay : Overlay {
         } else {
             current.ColorToApply = icon.Appearance.Color;
             current.AlphaToApply = icon.Appearance.Alpha/255.0f;
-            current.TransformToApply = icon.Appearance.Transform;
+            current.TransformToApply = iconAppearanceTransformMatrix;
             current.Plane = icon.Appearance.Plane;
             current.Layer = icon.Appearance.Layer;
         }
@@ -312,7 +319,8 @@ sealed class DreamViewOverlay : Overlay {
 
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
-        //main icon - TODO transform
+
+
 
         Texture frame = icon.CurrentFrame;
         if(iconMetaData.KeepTogetherGroup.Count > 0)
@@ -331,6 +339,9 @@ sealed class DreamViewOverlay : Overlay {
             //faster path for rendering unfiltered sprites
             handle.RenderInRenderTarget(renderTarget, () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue((int) icon.Appearance.BlendMode, out var value) ? value : null);
+                    handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
+                                        iconMetaData.TransformToApply *
+                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
                     handle.DrawTextureRect(frame,
                         new Box2(pixelPosition, pixelPosition+frame.Size),
                         iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
@@ -339,6 +350,9 @@ sealed class DreamViewOverlay : Overlay {
             if(icon.Appearance.MouseOpacity != MouseOpacity.Transparent)
                 handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
                         handle.UseShader(_blockColorInstance);
+                        handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
+                                        iconMetaData.TransformToApply *
+                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
                         handle.DrawTextureRect(frame,
                             new Box2(pixelPosition, pixelPosition+frame.Size),
                             Color.White);
@@ -376,6 +390,9 @@ sealed class DreamViewOverlay : Overlay {
 
             handle.RenderInRenderTarget(renderTarget, () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue((int) icon.Appearance.BlendMode, out var value) ? value : null);
+                    handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
+                                        iconMetaData.TransformToApply *
+                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
                     handle.DrawTextureRect(pong.Texture,
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                         null);
@@ -384,6 +401,9 @@ sealed class DreamViewOverlay : Overlay {
             if(icon.Appearance.MouseOpacity != MouseOpacity.Transparent)
                 handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
                         handle.UseShader(_blockColorInstance);
+                        handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
+                                        iconMetaData.TransformToApply *
+                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
                         handle.DrawTextureRect(pong.Texture,
                             new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                             Color.White);
@@ -444,7 +464,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public int TieBreaker = 0;
     public Color ColorToApply = Color.White;
     public float AlphaToApply = 1.0f;
-    public float[] TransformToApply;
+    public Matrix3 TransformToApply;
     public List<RendererMetaData> KeepTogetherGroup = new();
 
     public int CompareTo(RendererMetaData other) {

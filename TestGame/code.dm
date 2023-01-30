@@ -39,7 +39,7 @@
 	icon_state = "mob"
 	layer = MOB_LAYER
 	plane = 5
-	blend_mode = BLEND_MULTIPLY
+	blend_mode = BLEND_OVERLAY
 
 	Click()
 		..()
@@ -68,6 +68,11 @@
 		..()
 		loc = locate(5, 5, 1)
 		color = rgb(rand(0,255), rand(0,255), rand(0,255))
+
+	verb/rotate()
+		for(var/i in 1 to 8)
+			src.transform = src.transform.Turn(45)
+			sleep(2)
 
 	verb/shake()
 		animate(src, pixel_x = -4, time = 2)

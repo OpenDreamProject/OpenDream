@@ -48,11 +48,11 @@
 	var/maptext_y = 32 as opendream_unimplemented
 	var/step_x as opendream_unimplemented
 	var/step_y as opendream_unimplemented
-	var/render_source as opendream_unimplemented
+	var/render_source
 	var/mouse_drag_pointer as opendream_unimplemented
 	var/mouse_drop_pointer as opendream_unimplemented
 	var/mouse_over_pointer as opendream_unimplemented
-	var/render_target as opendream_unimplemented
+	var/render_target
 	var/vis_flags as opendream_unimplemented
 	var/list/vis_locs = list() as opendream_unimplemented
 	var/list/vis_contents = list() as opendream_unimplemented

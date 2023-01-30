@@ -19,6 +19,8 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public int AppearanceFlags = 0;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
+        [ViewVariables] public string RenderSource = "";
+        [ViewVariables] public string RenderTarget = "";
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();

@@ -27,6 +27,7 @@
 	icon_state = "gun"
 	density = 0
 	layer = OBJ_LAYER
+	render_source = "test"
 
 	Crossed(var/atom/movable/AM)
 		src.loc = AM
@@ -40,6 +41,7 @@
 	layer = MOB_LAYER
 	plane = 5
 	blend_mode = BLEND_OVERLAY
+	render_target = "test"
 
 	Click()
 		..()

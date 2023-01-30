@@ -31,6 +31,7 @@ sealed class DreamViewOverlay : Overlay {
     private IRenderTexture mouseMapRenderTarget;
     public Texture MouseMap;
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
+    private Dictionary<String, IRenderTexture> RenderSourceLookup = new();
 
 
     public DreamViewOverlay() {
@@ -123,10 +124,12 @@ sealed class DreamViewOverlay : Overlay {
             return;
 
         sprites.Sort();
+
         //After sort, group by plane and render together
         float lastPlane = sprites[0].MainIcon.Appearance.Plane;
         IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         IRenderTexture planeTarget = baseTarget;
+
         bool PlaneMasterActive = false;
         Color? PlaneMasterColor = null;
         Matrix3? PlaneMasterTransform = null;
@@ -134,6 +137,8 @@ sealed class DreamViewOverlay : Overlay {
 
         ClearRenderTarget(planeTarget, args.WorldHandle);
         foreach (RendererMetaData sprite in sprites) {
+            //first, is this a render source? if so, grab or create a render target and keep a handle to it in the lookup
+
             if(lastPlane != sprite.MainIcon.Appearance.Plane && PlaneMasterActive){ //if we were drawing on a plane_master group, and plane changed
                 var handle = args.WorldHandle;
                 handle.RenderInRenderTarget(baseTarget, () => {
@@ -146,7 +151,6 @@ sealed class DreamViewOverlay : Overlay {
                         PlaneMasterColor);
                     handle.UseShader(null);
                 }, null);
-                //args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
                 lastPlane = sprite.MainIcon.Appearance.Plane;
                 //refresh planemaster values
                 PlaneMasterColor = null;
@@ -170,6 +174,15 @@ sealed class DreamViewOverlay : Overlay {
                 MouseMapLookup[targetColor] = sprite.ClickUID;
                 _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
 
+                if(sprite.RenderTarget.Length > 0)
+                {
+                    IRenderTexture renderTarget;
+                    if(!RenderSourceLookup.TryGetValue(sprite.RenderTarget, out renderTarget)){
+                        renderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                        ClearRenderTarget(renderTarget, args.WorldHandle);
+                    }
+                    DrawIcon(args.WorldHandle, renderTarget, sprite, -screenArea.BottomLeft);
+                }
                 //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                 DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
             }
@@ -180,6 +193,10 @@ sealed class DreamViewOverlay : Overlay {
         else
             args.WorldHandle.DrawTexture(baseTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
+        foreach(String renderSourceString in RenderSourceLookup.Keys){
+            ReturnPingPongRenderTarget(RenderSourceLookup[renderSourceString]);
+        }
+        RenderSourceLookup.Clear();
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
@@ -193,8 +210,13 @@ sealed class DreamViewOverlay : Overlay {
         current.ClickUID = uid;
         current.IsScreen = isScreen;
         current.TieBreaker = tieBreaker;
+        //render target basically spawns a named plane
+        //render source takes that plane's texture and uses it instead of the icon
+        //render targets that don't have * at the beginning will get rendered onto the map normally though
+        //so basically render targets need creating, drawing to, and adding to the normal rendering queue if they should be rendered
+        current.RenderSource = icon.Appearance.RenderSource;
+        current.RenderTarget = icon.Appearance.RenderTarget;
 
-//TODO render source and target (jesus christ)
 
         Matrix3 iconAppearanceTransformMatrix = new(new float[] {
                 icon.Appearance.Transform[0], icon.Appearance.Transform[1], 0,
@@ -237,6 +259,23 @@ sealed class DreamViewOverlay : Overlay {
         }
 
         keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 5) != 0); //KEEP_TOGETHER
+
+        if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
+            RendererMetaData renderTargetPlaceholder = new();
+            //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
+            renderTargetPlaceholder.MainIcon = current.MainIcon; //placeholder
+            renderTargetPlaceholder.Position = current.Position;
+            renderTargetPlaceholder.UID = current.UID;
+            renderTargetPlaceholder.ClickUID = current.UID;
+            renderTargetPlaceholder.IsScreen = current.IsScreen;
+            renderTargetPlaceholder.TieBreaker = current.TieBreaker;
+            renderTargetPlaceholder.Plane = current.Plane;
+            renderTargetPlaceholder.Layer = current.Layer;
+            renderTargetPlaceholder.RenderSource = current.RenderTarget;
+            result.Add(renderTargetPlaceholder);
+        } else if(current.RenderTarget.Length > 0) {
+            current.RenderTarget = current.RenderTarget.Substring(1); //cut the * off, we're done with it
+        }
 
         //TODO check for images with override here
         /*foreach(image in client.images){
@@ -315,16 +354,22 @@ sealed class DreamViewOverlay : Overlay {
 
     private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset) {
         DreamIcon icon = iconMetaData.MainIcon;
-        Vector2 position = iconMetaData.Position + positionOffset;
-        if (icon.Appearance == null)
+        if(icon.Appearance == null && iconMetaData.RenderSource == "")
             return;
 
+        Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
 
+        Texture frame;
+        if(iconMetaData.RenderSource == "")
+            frame = icon.CurrentFrame;
+        else if(RenderSourceLookup.TryGetValue(iconMetaData.RenderSource, out var renderSourceTexture))
+            frame = renderSourceTexture.Texture;
+        else
+            return;
 
 
-        Texture frame = icon.CurrentFrame;
         if(iconMetaData.KeepTogetherGroup.Count > 0)
         {
             iconMetaData.KeepTogetherGroup.Add(iconMetaData);
@@ -457,20 +502,28 @@ public sealed class ToggleMouseOverlayCommand : IConsoleCommand {
 
 internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public DreamIcon MainIcon;
-    public Vector2 Position;
-    public float Plane; //true plane value may be different from appearance plane value, due to special flags
-    public float Layer; //ditto for layer
-    public EntityUid UID;
-    public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
+    public Vector2 Position = Vector2.Zero;
+    public float Plane = 0; //true plane value may be different from appearance plane value, due to special flags
+    public float Layer = 0; //ditto for layer
+    public EntityUid UID = EntityUid.Invalid;
+    public EntityUid ClickUID = EntityUid.Invalid; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public Boolean IsScreen = false;
     public int TieBreaker = 0;
     public Color ColorToApply = Color.White;
     public float AlphaToApply = 1.0f;
-    public Matrix3 TransformToApply;
+    public Matrix3 TransformToApply = Matrix3.Identity;
+    public String RenderSource = "";
+    public String RenderTarget = "";
     public List<RendererMetaData> KeepTogetherGroup = new();
 
     public int CompareTo(RendererMetaData other) {
         int val = 0;
+        //render targets get processed first
+        val =  String.IsNullOrEmpty(this.RenderTarget).CompareTo(String.IsNullOrEmpty(other.RenderTarget));
+        if (val != 0) {
+            return -1*val;
+        }
+
         //Plane
         val =  this.Plane.CompareTo(other.Plane);
         if (val != 0) {

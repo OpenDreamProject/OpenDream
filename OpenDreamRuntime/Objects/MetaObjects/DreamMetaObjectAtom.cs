@@ -116,6 +116,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         appearance.Alpha = (byte) floatAlpha;
                     });
                     break;
+                case "render_source":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsString(out appearance.RenderSource);
+                    });
+                    break;
+                case "render_target":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsString(out appearance.RenderTarget);
+                    });
+                    break;
                 case "invisibility":
                     value.TryGetValueAsInteger(out int vis);
                     vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
@@ -265,6 +275,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 mutableAppearance.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
                 mutableAppearance.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
+                appearance.IconState = mutableAppearance.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
+                appearance.IconState = mutableAppearance.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 mutableAppearance.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 mutableAppearance.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var image)) {
@@ -287,6 +299,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 image.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
                 image.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
+                appearance.IconState = image.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
+                appearance.IconState = image.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var icon)) {

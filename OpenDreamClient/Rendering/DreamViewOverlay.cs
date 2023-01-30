@@ -138,7 +138,9 @@ sealed class DreamViewOverlay : Overlay {
                 var handle = args.WorldHandle;
                 handle.RenderInRenderTarget(baseTarget, () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue((int) PlaneMasterBlendmode, out var value) ? value : null);
-                    handle.SetTransform(PlaneMasterTransform.Value);
+                    handle.SetTransform(Matrix3.CreateTranslation(-(planeTarget.Size.X/2), -(planeTarget.Size.Y/2)) * //translate, apply transformation, untranslate
+                                        PlaneMasterTransform.Value *
+                                        Matrix3.CreateTranslation((planeTarget.Size.X/2), (planeTarget.Size.Y/2)));
                     handle.DrawTextureRect(planeTarget.Texture,
                         new Box2(new Vector2(0, planeTarget.Size.Y), new Vector2(planeTarget.Size.X, 0)),
                         PlaneMasterColor);
@@ -237,8 +239,8 @@ sealed class DreamViewOverlay : Overlay {
         keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 5) != 0); //KEEP_TOGETHER
 
         //TODO check for images with override here
-        /*foreach(image in icon.images){
-            if(image.override)
+        /*foreach(image in client.images){
+            if(image.override && image.location == icon.owner)
                 current.MainIcon = image
             else
                 add like overlays?

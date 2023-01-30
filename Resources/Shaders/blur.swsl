@@ -1,3 +1,4 @@
+light_mode unshaded;
 preset raw;
 
 uniform highp float size;

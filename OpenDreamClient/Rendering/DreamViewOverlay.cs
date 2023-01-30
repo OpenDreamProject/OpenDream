@@ -180,6 +180,7 @@ sealed class DreamViewOverlay : Overlay {
                     if(!RenderSourceLookup.TryGetValue(sprite.RenderTarget, out renderTarget)){
                         renderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                         ClearRenderTarget(renderTarget, args.WorldHandle);
+                        RenderSourceLookup.Add(sprite.RenderTarget, renderTarget);
                     }
                     DrawIcon(args.WorldHandle, renderTarget, sprite, -screenArea.BottomLeft);
                 }
@@ -264,7 +265,7 @@ sealed class DreamViewOverlay : Overlay {
             RendererMetaData renderTargetPlaceholder = new();
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
             renderTargetPlaceholder.MainIcon = current.MainIcon; //placeholder
-            renderTargetPlaceholder.Position = current.Position;
+            renderTargetPlaceholder.Position = Vector2.Zero;
             renderTargetPlaceholder.UID = current.UID;
             renderTargetPlaceholder.ClickUID = current.UID;
             renderTargetPlaceholder.IsScreen = current.IsScreen;
@@ -519,7 +520,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public int CompareTo(RendererMetaData other) {
         int val = 0;
         //render targets get processed first
-        val =  String.IsNullOrEmpty(this.RenderTarget).CompareTo(String.IsNullOrEmpty(other.RenderTarget));
+        val = this.RenderTarget.Length.CompareTo(other.RenderTarget.Length);
         if (val != 0) {
             return -1*val;
         }

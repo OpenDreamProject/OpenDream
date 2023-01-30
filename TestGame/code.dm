@@ -31,7 +31,7 @@
 
 	Crossed(var/atom/movable/AM)
 		src.loc = AM
-		usr << "You picked up [src]"
+		AM << "You picked up [src]"
 		AM.overlays += image(src.icon, AM.loc, src.icon_state)
 
 

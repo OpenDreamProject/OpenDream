@@ -197,6 +197,12 @@ namespace OpenDreamRuntime {
             if (def.TryGetVariable("plane", out var planeVar) && planeVar.TryGetValueAsFloat(out float plane)) {
                 appearance.Plane = plane;
             }
+            if (def.TryGetVariable("render_source", out var renderSourceVar) && renderSourceVar.TryGetValueAsString(out String renderSource)) {
+                appearance.RenderSource = renderSource;
+            }
+            if (def.TryGetVariable("render_target", out var renderTargetVar) && renderSourceVar.TryGetValueAsString(out String renderTarget)) {
+                appearance.RenderTarget = renderTarget;
+            }
             if (def.TryGetVariable("blend_mode", out var blendmodeVar) && blendmodeVar.TryGetValueAsFloat(out float blend_mode)) {
                 appearance.BlendMode = blend_mode;
             }

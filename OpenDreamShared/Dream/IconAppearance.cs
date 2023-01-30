@@ -41,6 +41,8 @@ namespace OpenDreamShared.Dream {
             Alpha = appearance.Alpha;
             Layer = appearance.Layer;
             Plane = appearance.Plane;
+            RenderSource = appearance.RenderSource;
+            RenderTarget = appearance.RenderTarget;
             BlendMode = appearance.BlendMode;
             AppearanceFlags = appearance.AppearanceFlags;
             Invisibility = appearance.Invisibility;
@@ -68,6 +70,8 @@ namespace OpenDreamShared.Dream {
             if (appearance.Alpha != Alpha) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Plane != Plane) return false;
+            if (appearance.RenderSource != RenderSource) return false;
+            if (appearance.RenderTarget != RenderTarget) return false;
             if (appearance.BlendMode != BlendMode) return false;
             if (appearance.AppearanceFlags != AppearanceFlags) return false;
             if (appearance.Invisibility != Invisibility) return false;
@@ -104,6 +108,8 @@ namespace OpenDreamShared.Dream {
             hashCode += Alpha.GetHashCode();
             hashCode += Layer.GetHashCode();
             hashCode += Plane.GetHashCode();
+            hashCode += RenderSource.GetHashCode();
+            hashCode += RenderTarget.GetHashCode();
             hashCode += BlendMode.GetHashCode();
             hashCode += AppearanceFlags.GetHashCode();
             hashCode += Invisibility;

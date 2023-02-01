@@ -84,6 +84,8 @@ namespace OpenDreamClient.Input {
 
         private EntityUid? GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
             _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
+            if(_dreamViewOverlay.MouseMap == null)
+                return null;
             Color lookupColor = _dreamViewOverlay.MouseMap.GetPixel((int)mousePos.X, (int)mousePos.Y);
             if(!_dreamViewOverlay.MouseMapLookup.TryGetValue(lookupColor, out EntityUid result))
                 return null;

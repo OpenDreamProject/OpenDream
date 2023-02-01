@@ -311,7 +311,10 @@ namespace DMCompiler {
                 var outputFileHandle = File.Create(outputFile);
 
                 JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+                    new JsonSerializerOptions() {
+                        DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault,
+                        NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals
+                    });
                 outputFileHandle.Close();
                 return $"Saved to {outputFile}";
             }

@@ -1,7 +1,3 @@
-/atom
-	Click()
-		usr << "You clicked [src.type] at ([src.x], [src.y], [src.z])"
-
 /turf
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
@@ -11,60 +7,12 @@
 /turf/blue
 	icon_state = "turf_blue"
 
-/obj/table
-	name = "table"
-	desc = "It's a table. You can hide under it."
-	icon = 'icons/objects.dmi'
-	icon_state = "table"
-	density = 0
-	layer = OBJ_LAYER
-	plane = 10000 //top possible plane
-
-/obj/gun
-	name = "gun"
-	desc = "It doesn't shoot, but it sure looks cool."
-	icon = 'icons/objects.dmi'
-	icon_state = "gun"
-	density = 0
-	layer = OBJ_LAYER
-	render_source = "test"
-
-	Crossed(var/atom/movable/AM)
-		src.loc = AM
-		AM << "You picked up [src]"
-		AM.overlays += image(src.icon, AM.loc, src.icon_state)
-
-
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
 	layer = MOB_LAYER
 	plane = 5
 	blend_mode = BLEND_OVERLAY
-	render_target = "test"
-
-	Click()
-		..()
-		switch(src.blend_mode)
-			if(BLEND_DEFAULT)
-				src.blend_mode = BLEND_OVERLAY
-				usr << "BLEND_OVERLAY"
-			if(BLEND_OVERLAY)
-				src.blend_mode = BLEND_ADD
-				usr << "BLEND_ADD"
-			if(BLEND_ADD)
-				src.blend_mode = BLEND_SUBTRACT
-				usr << "BLEND_SUBTRACT"	
-			if(BLEND_SUBTRACT)
-				src.blend_mode = BLEND_MULTIPLY
-				usr << "BLEND_MULTIPLY"
-			if(BLEND_MULTIPLY)
-				src.blend_mode = BLEND_INSET_OVERLAY
-				usr << "BLEND_INSET_OVERLAY"
-			if(BLEND_INSET_OVERLAY)
-				src.blend_mode = BLEND_DEFAULT
-				usr << "BLEND_DEFAULT"																
-
 
 	New()
 		..()
@@ -170,11 +118,7 @@
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
 				if("all")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
-			usr << "Applied [selected] filter"
-
-	verb/test_para()
-		set category = "Test"
-		src.create_parallax()			
+			usr << "Applied [selected] filter"		
 
 /mob/Stat()
 	if (statpanel("Status"))

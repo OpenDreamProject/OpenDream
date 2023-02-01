@@ -12,11 +12,17 @@
 "l" = (/obj/button/transform_scale_test,/turf,/area)
 "m" = (/obj/plaque/transform_scale_small_test,/turf,/area)
 "n" = (/obj/plaque/transform_scale_test,/turf,/area)
+"o" = (/obj/button/keep_together_test,/turf,/area)
+"p" = (/obj/button/keep_apart_test,/turf,/area)
+"q" = (/obj/plaque/keep_together_test,/turf,/area)
+"r" = (/obj/plaque/keep_apart_test,/turf,/area)
+"s" = (/obj/bandoleer,/turf,/area)
+"t" = (/obj/plaque/simple_underlay_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbb
-bedciklaaaaaaaaaaaab
-bfghjmnaaaaaaaaaaaab
+bedciklopsaaaaaaaaab
+bfghjmnqrtaaaaaaaaab
 baaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaab

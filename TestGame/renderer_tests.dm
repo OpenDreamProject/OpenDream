@@ -65,6 +65,21 @@
 		AM << "You picked up [src]"
 		AM.overlays += image(src.icon, AM.loc, src.icon_state)	
 
+//simple underlay
+/obj/plaque/simple_underlay_test 
+	data = "<h3>Simple Underlay Test</h3><p>Pick up the bandoleer to apply it as an underlay to your mob</p>"
+/obj/bandoleer
+	name = "bandoleer"
+	desc = "For holding all the bullets your gun doesn't shoot"
+	icon = 'icons/objects.dmi'
+	icon_state = "bandoleer"
+	density = 0
+	layer = OBJ_LAYER
+
+	Crossed(var/atom/movable/AM)
+		src.loc = AM
+		AM << "You picked up [src]"
+		AM.underlays += image(src.icon, AM.loc, src.icon_state)	
 
 // Blend modes
 /obj/plaque/blend_mode_test 
@@ -125,3 +140,31 @@
 
 	push()
 		usr.transform *= 0.5	
+	
+//keep together groups
+/obj/plaque/keep_together_test 
+	data = "<h3>KEEP_TOGETHER Test</h3><p>Click the button to toggle KEEP_TOGETHER as an appearance flag on your mob</p>"
+
+/obj/button/keep_together_test
+	name = "KEEP_TOGETHER Test"
+	desc = "Click me to toggle keep together!"
+
+	push()
+		usr.appearance_flags ^= KEEP_TOGETHER
+		usr << "KEEP_TOGETHER IS [usr.appearance_flags & KEEP_TOGETHER ? "TRUE" : "FALSE"]"
+
+/obj/plaque/keep_apart_test 
+	data = "<h3>KEEP_APART Test</h3><p>Click the button to add an overlay with KEEP_APART to your mob</p>"
+
+/obj/keep_apart_obj
+	name = "keep apart obj"
+	appearance_flags = KEEP_APART | RESET_ALPHA | RESET_COLOR | RESET_TRANSFORM
+	icon = 'icons/objects.dmi'
+	icon_state = "keepapart"
+
+/obj/button/keep_apart_test
+	name = "KEEP_APART Test"
+	desc = "Click me to get a KEEP_APART overlay!"
+
+	push()
+		usr.overlays += new /obj/keep_apart_obj()

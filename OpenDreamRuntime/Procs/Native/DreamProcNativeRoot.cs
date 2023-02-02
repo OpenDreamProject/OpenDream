@@ -1454,55 +1454,50 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
-        [DreamProc("oview")]
+        [DreamProc("orange")]
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_oview(DreamObject instance, DreamObject usr, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
-            int distance = 5;
-            DreamObject center = usr;
-
-            //Arguments are optional and can be passed in any order
-            if (arguments.ArgumentCount > 0) {
-                DreamValue firstArgument = arguments.GetArgument(0, "Dist");
-
-                if (firstArgument.TryGetValueAsDreamObject(out var firstObj)) {
-                    center = firstObj;
-
-                    if (arguments.ArgumentCount > 1) {
-                        distance = arguments.GetArgument(1, "Center").GetValueAsInteger();
-                    }
-                } else {
-                    if(!firstArgument.TryGetValueAsInteger(out distance)) {
-                         throw new Exception("distance is not a number");
-                     }
-
-                    if (arguments.ArgumentCount > 1) {
-                        center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();
+        public static DreamValue NativeProc_orange(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr, arguments);
+            if (center is null)
+                return DreamValue.Null; // NOTE: Not sure if parity
+            DreamList rangeList = ObjectTree.CreateList(range.Height * range.Width);
+            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+                rangeList.AddValue(new DreamValue(turf));
+                if (turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
+                    foreach (DreamValue content in contentsList.GetValues()) {
+                        rangeList.AddValue(content);
                     }
                 }
             }
+            return new DreamValue(rangeList);
+        }
 
-            DreamList view = ObjectTree.CreateList();
-            int centerX = center.GetVariable("x").GetValueAsInteger();
-            int centerY = center.GetVariable("y").GetValueAsInteger();
-            int centerZ = center.GetVariable("z").GetValueAsInteger();
+        [DreamProc("oview")]
+        [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
+        [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_oview(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr, arguments);
+            if (center is null)
+                return DreamValue.Null; // NOTE: Not sure if parity
 
-            var mapMgr = IoCManager.Resolve<IDreamMapManager>();
-
-            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
-                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
-                    if (x == centerX && y == centerY)
-                        continue;
-                    if (!mapMgr.TryGetTurfAt((x, y), centerZ, out var turf))
-                        continue;
-
-                    view.AddValue(new DreamValue(turf));
-                    foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
+            DreamList view = ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
+            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+                if(!DreamProcNativeHelpers.IsObjectVisible(turf,center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+                    continue;
+                }
+                view.AddValue(new DreamValue(turf));
+                if(turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
+                    foreach (DreamValue content in contentsList.GetValues()) {
+                        if (content.TryGetValueAsDreamObject(out DreamObject contentObject)) {
+                            if (!DreamProcNativeHelpers.IsObjectVisible(contentObject, center)) {
+                                continue;
+                            }
+                        }
                         view.AddValue(content);
                     }
                 }
             }
-
             return new DreamValue(view);
         }
 
@@ -1610,6 +1605,33 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamManager.Random = new Random(seed);
             return DreamValue.Null;
+        }
+
+        [DreamProc("range")]
+        [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
+        [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_range(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr, arguments);
+            if (center is null)
+                return DreamValue.Null; // NOTE: Not sure if parity
+            DreamList rangeList = ObjectTree.CreateList(range.Height * range.Width);
+            //Have to include centre
+            rangeList.AddValue(new DreamValue(center));
+            if(center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
+                foreach(DreamValue content in centerContentsList.GetValues()) {
+                    rangeList.AddValue(content);
+                }
+            }
+            //And then everything else
+            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+                rangeList.AddValue(new DreamValue(turf));
+                if (turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
+                    foreach (DreamValue content in contentsList.GetValues()) {
+                        rangeList.AddValue(content);
+                    }
+                }
+            }
+            return new DreamValue(rangeList);
         }
 
         [DreamProc("ref")]
@@ -2336,47 +2358,40 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_view(DreamObject instance, DreamObject usr, DreamProcArguments arguments) { //TODO: View obstruction (dense turfs)
-            int distance = 5;
-            DreamObject center = usr;
-
-            //Arguments are optional and can be passed in any order
-            if (arguments.ArgumentCount > 0) {
-                DreamValue firstArgument = arguments.GetArgument(0, "Dist");
-
-                if (firstArgument.Type == DreamValueType.DreamObject) {
-                    center = firstArgument.GetValueAsDreamObject();
-
-                    if (arguments.ArgumentCount > 1) {
-                        distance = arguments.GetArgument(1, "Center").GetValueAsInteger();
+            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr, arguments);
+            if (center is null)
+                return DreamValue.Null; // NOTE: Not sure if parity
+            DreamList view = ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
+            //Have to include centre
+            if(DreamProcNativeHelpers.IsObjectVisible(center,center)) // NOTE: I think this is always true, but I'm not 100% sure.
+                view.AddValue(new DreamValue(center));
+            if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
+                foreach (DreamValue content in centerContentsList.GetValues()) {
+                    if (content.TryGetValueAsDreamObject(out DreamObject contentObject)) {
+                        if (!DreamProcNativeHelpers.IsObjectVisible(contentObject, center)) {
+                            continue;
+                        }
                     }
-                } else {
-                    distance = firstArgument.GetValueAsInteger();
-
-                    if (arguments.ArgumentCount > 1) {
-                        center = arguments.GetArgument(1, "Center").GetValueAsDreamObject();
-                    }
+                    view.AddValue(content);
                 }
             }
-
-            DreamList view = ObjectTree.CreateList();
-            int centerX = center.GetVariable("x").GetValueAsInteger();
-            int centerY = center.GetVariable("y").GetValueAsInteger();
-            int centerZ = center.GetVariable("z").GetValueAsInteger();
-
-            var mapMgr = IoCManager.Resolve<IDreamMapManager>();
-
-            for (int x = Math.Max(centerX - distance, 1); x < Math.Min(centerX + distance, mapMgr.Size.X); x++) {
-                for (int y = Math.Max(centerY - distance, 1); y < Math.Min(centerY + distance, mapMgr.Size.Y); y++) {
-                    if (!mapMgr.TryGetTurfAt((x, y), centerZ, out var turf))
-                        continue;
-
-                    view.AddValue(new DreamValue(turf));
-                    foreach (DreamValue content in turf.GetVariable("contents").GetValueAsDreamList().GetValues()) {
+            //and then everything else
+            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+                if (!DreamProcNativeHelpers.IsObjectVisible(turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+                    continue;
+                }
+                view.AddValue(new DreamValue(turf));
+                if (turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
+                    foreach (DreamValue content in contentsList.GetValues()) {
+                        if (content.TryGetValueAsDreamObject(out DreamObject contentObject)) {
+                            if (!DreamProcNativeHelpers.IsObjectVisible(contentObject, center)) {
+                                continue;
+                            }
+                        }
                         view.AddValue(content);
                     }
                 }
             }
-
             return new DreamValue(view);
         }
 

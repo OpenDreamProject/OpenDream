@@ -348,10 +348,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             });
         }
 
-        private void UnderlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
+        private void UnderlayValueAssigned(DreamList underList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
+            DreamObject atom = _atomManager.UnderlaysListToAtom[underList];
 
             _atomManager.UpdateAppearance(atom, appearance => {
                 IconAppearance underlay = CreateOverlayAppearance(atom, value);
@@ -361,10 +361,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             });
         }
 
-        private void UnderlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
+        private void UnderlayBeforeValueRemoved(DreamList underlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
+            DreamObject atom = _atomManager.UnderlaysListToAtom[underlayList];
             IconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);
             uint? underlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(underlayAppearance);
             if (underlayAppearanceId == null) return;

@@ -227,17 +227,17 @@ sealed class DreamViewOverlay : Overlay {
 
         if(parentIcon != null){
             current.ClickUID = parentIcon.ClickUID;
-            if((icon.Appearance.AppearanceFlags & 1) != 0) //RESET_COLOR
+            if((icon.Appearance.AppearanceFlags & 2) != 0) //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
             else
                 current.ColorToApply = parentIcon.ColorToApply;
 
-            if((icon.Appearance.AppearanceFlags & 2) != 0) //RESET_ALPHA
+            if((icon.Appearance.AppearanceFlags & 4) != 0) //RESET_ALPHA
                 current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             else
                 current.AlphaToApply = parentIcon.AlphaToApply;
 
-            if((icon.Appearance.AppearanceFlags & 4) != 0) //RESET_TRANSFORM
+            if((icon.Appearance.AppearanceFlags & 8) != 0) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
             else
                 current.TransformToApply = parentIcon.TransformToApply;
@@ -259,7 +259,7 @@ sealed class DreamViewOverlay : Overlay {
             current.Layer = icon.Appearance.Layer;
         }
 
-        keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 5) != 0); //KEEP_TOGETHER
+        keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 32) != 0); //KEEP_TOGETHER
 
         if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
             RendererMetaData renderTargetPlaceholder = new();
@@ -291,7 +291,7 @@ sealed class DreamViewOverlay : Overlay {
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
-            if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
+            if(parentIcon == null || !keepTogether || (icon.Appearance.AppearanceFlags & 64) != 0) //either we're the parent of a KEEP_TOGETHER group, KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, -1));
             else
                 parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
@@ -299,7 +299,7 @@ sealed class DreamViewOverlay : Overlay {
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
-            if(!keepTogether || (icon.Appearance.AppearanceFlags & 5) != 0) //KEEP_APART
+            if(parentIcon == null || !keepTogether || (icon.Appearance.AppearanceFlags & 64) != 0) //either we're the parent of a KEEP_TOGETHER group, KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, 1));
             else
                 parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));

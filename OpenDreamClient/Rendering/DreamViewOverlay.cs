@@ -161,7 +161,7 @@ sealed class DreamViewOverlay : Overlay {
                 planeTarget = baseTarget;
             }
             //plane masters don't get rendered, but their properties get applied to the overall rendertarget
-            if(((int)sprite.MainIcon.Appearance.AppearanceFlags & 128) != 0){ //appearance_flags & PLANE_MASTER
+            if(((int)sprite.MainIcon.Appearance.AppearanceFlags & 128) == 128){ //appearance_flags & PLANE_MASTER
                 PlaneMasterActive = true;
                 PlaneMasterColor = sprite.ColorToApply;
                 PlaneMasterTransform = sprite.TransformToApply;
@@ -227,22 +227,22 @@ sealed class DreamViewOverlay : Overlay {
 
         if(parentIcon != null){
             current.ClickUID = parentIcon.ClickUID;
-            if((icon.Appearance.AppearanceFlags & 2) != 0) //RESET_COLOR
+            if((icon.Appearance.AppearanceFlags & 2) == 2 || keepTogether) //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
             else
                 current.ColorToApply = parentIcon.ColorToApply;
 
-            if((icon.Appearance.AppearanceFlags & 4) != 0) //RESET_ALPHA
+            if((icon.Appearance.AppearanceFlags & 4) == 4 || keepTogether) //RESET_ALPHA
                 current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             else
                 current.AlphaToApply = parentIcon.AlphaToApply;
 
-            if((icon.Appearance.AppearanceFlags & 8) != 0) //RESET_TRANSFORM
+            if((icon.Appearance.AppearanceFlags & 8) == 8 || keepTogether) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
             else
                 current.TransformToApply = parentIcon.TransformToApply;
 
-            if(((int)icon.Appearance.Plane & -32767) != 0) //FLOAT_PLANE
+            if(((int)icon.Appearance.Plane & -32767) == -32767) //FLOAT_PLANE
                 current.Plane = parentIcon.Plane + ((int)icon.Appearance.Plane ^ -32767);
             else
                 current.Plane = icon.Appearance.Plane;
@@ -259,7 +259,7 @@ sealed class DreamViewOverlay : Overlay {
             current.Layer = icon.Appearance.Layer;
         }
 
-        keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 32) != 0); //KEEP_TOGETHER
+        keepTogether = keepTogether || ((icon.Appearance.AppearanceFlags & 32) == 32); //KEEP_TOGETHER
 
         if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
             RendererMetaData renderTargetPlaceholder = new();
@@ -291,18 +291,18 @@ sealed class DreamViewOverlay : Overlay {
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
-            if(parentIcon == null || !keepTogether || (icon.Appearance.AppearanceFlags & 64) != 0) //either we're the parent of a KEEP_TOGETHER group, KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+            if(!keepTogether || (icon.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
             else
-                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
-            if(parentIcon == null || !keepTogether || (icon.Appearance.AppearanceFlags & 64) != 0) //either we're the parent of a KEEP_TOGETHER group, KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+            if(!keepTogether || (icon.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
             else
-                parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
         }
 
         //TODO maptext - note colour + transform apply
@@ -311,9 +311,10 @@ sealed class DreamViewOverlay : Overlay {
 
         //flatten keeptogethergroup. Done here so we get implicit recursive iteration down the tree.
         if(current.KeepTogetherGroup.Count > 0){
-            List<RendererMetaData> flatKTGroup = current.KeepTogetherGroup;
+            List<RendererMetaData> flatKTGroup = new List<RendererMetaData>(current.KeepTogetherGroup.Count);
             foreach(RendererMetaData KTItem in current.KeepTogetherGroup){
                 flatKTGroup.AddRange(KTItem.KeepTogetherGroup);
+                flatKTGroup.Add(KTItem);
                 KTItem.KeepTogetherGroup.Clear();
             }
             current.KeepTogetherGroup = flatKTGroup;
@@ -373,13 +374,33 @@ sealed class DreamViewOverlay : Overlay {
 
         if(iconMetaData.KeepTogetherGroup.Count > 0)
         {
-            iconMetaData.KeepTogetherGroup.Add(iconMetaData);
-            iconMetaData.KeepTogetherGroup.Sort();
+            //store the parent's transform, color, and alpha - then clear them for drawing to the render target
+            Matrix3 KTParentTransform = iconMetaData.TransformToApply;
+            iconMetaData.TransformToApply = Matrix3.Identity;
+            Color KTParentColor = iconMetaData.ColorToApply;
+            iconMetaData.ColorToApply = Color.White;
+            float KTParentAlpha = iconMetaData.AlphaToApply;
+            iconMetaData.AlphaToApply = 1f;
+
+            List<RendererMetaData> KTItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup.Count);
+            KTItems.Add(iconMetaData);
+            KTItems.AddRange(iconMetaData.KeepTogetherGroup);
+            iconMetaData.KeepTogetherGroup.Clear();
+
+            KTItems.Sort();
             IRenderTexture KTTexture = RentPingPongRenderTarget(frame.Size * 2);
-            foreach(RendererMetaData KTItem in iconMetaData.KeepTogetherGroup){
-                DrawIcon(handle, KTTexture, KTItem, (frame.Size / 2)/EyeManager.PixelsPerMeter);
+
+            foreach(RendererMetaData KTItem in KTItems){
+                Vector2 positionOverride = ((frame.Size / 2)/EyeManager.PixelsPerMeter)-KTItem.Position;
+                DrawIcon(handle, KTTexture, KTItem, positionOverride); //draw it at 0,0
             }
             frame = KTTexture.Texture;
+            //now restore the original color, alpha, and transform so they can be applied to the render target as a whole
+            iconMetaData.TransformToApply = KTParentTransform;
+            iconMetaData.ColorToApply = KTParentColor;
+            iconMetaData.AlphaToApply = KTParentAlpha;
+            //apply correction to pixelposition for increased framesize
+            pixelPosition.Y -= frame.Size.Y/2;
             ReturnPingPongRenderTarget(KTTexture);
         }
 

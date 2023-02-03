@@ -41,7 +41,7 @@
 
 	var/list/filters = null
 	var/appearance as opendream_unimplemented
-	var/appearance_flags
+	var/appearance_flags = 0
 	var/maptext_width as opendream_unimplemented
 	var/maptext_height as opendream_unimplemented
 	var/maptext_x = 32 as opendream_unimplemented

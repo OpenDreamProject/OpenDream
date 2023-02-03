@@ -18,19 +18,18 @@ public sealed class InterfaceMacroSet : InterfaceElement {
     private readonly IEntitySystemManager _entitySystemManager;
     private readonly IInputCmdContext _inputContext;
 
-    public readonly MacroSetDescriptor MacroSetDescriptor;
+    private readonly string _inputContextName;
 
     public InterfaceMacroSet(MacroSetDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager) : base(descriptor) {
         _inputManager = inputManager;
         _entitySystemManager = entitySystemManager;
-        MacroSetDescriptor = descriptor;
 
-        var inputContextName = $"{InputContextPrefix}{Name}";
-        if (inputManager.Contexts.Exists(inputContextName)) {
-            inputManager.Contexts.Remove(inputContextName);
+        _inputContextName = $"{InputContextPrefix}{Name}";
+        if (inputManager.Contexts.Exists(_inputContextName)) {
+            inputManager.Contexts.Remove(_inputContextName);
         }
 
-        _inputContext = inputManager.Contexts.New(inputContextName, "common");
+        _inputContext = inputManager.Contexts.New(_inputContextName, "common");
         foreach (MacroDescriptor macro in descriptor.Macros) {
             AddChild(macro);
         }
@@ -40,7 +39,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
         if (descriptor is not MacroDescriptor macroDescriptor)
             throw new ArgumentException($"Attempted to add a {descriptor} to a macro set", nameof(descriptor));
 
-        Macros.Add(macroDescriptor.Name, new InterfaceMacro(macroDescriptor, _entitySystemManager, _inputManager, _inputContext));
+        Macros.Add(macroDescriptor.Name, new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext));
     }
 
     public void SetActive() {
@@ -56,10 +55,10 @@ public sealed class InterfaceMacro : InterfaceElement {
 
     private readonly IEntitySystemManager _entitySystemManager;
 
-    public InterfaceMacro(MacroDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager, IInputCmdContext inputContext) : base(descriptor) {
+    public InterfaceMacro(string contextName, MacroDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager, IInputCmdContext inputContext) : base(descriptor) {
         _entitySystemManager = entitySystemManager;
 
-        BoundKeyFunction function = new BoundKeyFunction(Id);
+        BoundKeyFunction function = new BoundKeyFunction($"{contextName}_{Id}");
         KeyBindingRegistration binding = CreateMacroBinding(function, Name);
 
         if (binding == null)

@@ -40,16 +40,16 @@ namespace OpenDreamRuntime.Objects {
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
         private Dictionary<string, int> _globalProcIds;
 
-        [Dependency] internal readonly IDreamManager DreamManager = default!;
-        [Dependency] internal readonly IDreamMapManager DreamMapManager = default!;
-        [Dependency] internal readonly IDreamDebugManager DreamDebugManager = default!;
-        [Dependency] internal readonly DreamResourceManager DreamResourceManager = default!;
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
+        [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
 
         public void LoadJson(DreamCompiledJson json) {
             Strings = json.Strings;
 
             if (json.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", DreamManager, DreamMapManager, DreamDebugManager, DreamResourceManager, this);
+                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", _dreamManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
             } else {
                 GlobalInitProc = null;
             }
@@ -57,10 +57,6 @@ namespace OpenDreamRuntime.Objects {
             // Load procs first so types can set their init proc's super proc
             LoadProcsFromJson(json.Types, json.Procs, json.GlobalProcs);
             LoadTypesFromJson(json.Types);
-        }
-
-        public bool HasTreeEntry(DreamPath path) {
-            return _pathToType.ContainsKey(path);
         }
 
         public TreeEntry GetTreeEntry(DreamPath path) {
@@ -77,10 +73,6 @@ namespace OpenDreamRuntime.Objects {
 
         public bool TryGetTreeEntry(DreamPath path, [NotNullWhen(true)] out TreeEntry? treeEntry) {
             return _pathToType.TryGetValue(path, out treeEntry);
-        }
-
-        public DreamObjectDefinition GetObjectDefinition(DreamPath path) {
-            return GetTreeEntry(path).ObjectDefinition;
         }
 
         public DreamObjectDefinition GetObjectDefinition(int typeId) {
@@ -108,10 +100,25 @@ namespace OpenDreamRuntime.Objects {
         // by calling the result of DreamObject.InitProc or DreamObject.InitSpawn
         public DreamObject CreateObject(TreeEntry type) {
             if (type == List) {
-                return DreamList.CreateUninitialized();
+                return CreateList();
             } else {
                 return new DreamObject(type.ObjectDefinition);
             }
+        }
+
+        // TODO: Maybe in the future, DreamList could be made not a DreamObject so this doesn't have to be done through the object tree?
+        public DreamList CreateList(int size = 0) {
+            return new DreamList(List.ObjectDefinition, size);
+        }
+
+        public DreamList CreateList(string[] elements) {
+            DreamList list = CreateList(elements.Length);
+
+            foreach (String value in elements) {
+                list.AddValue(new DreamValue(value));
+            }
+
+            return list;
         }
 
         public void SetMetaObject(TreeEntry type, IDreamMetaObject metaObject) {
@@ -169,7 +176,7 @@ namespace OpenDreamRuntime.Objects {
                             return DreamValue.CreateVerbStub(type);
                         }
                         case JsonVariableType.List:
-                            DreamList list = DreamList.Create();
+                            DreamList list = CreateList();
 
                             if (jsonElement.TryGetProperty("values", out JsonElement values)) {
                                 foreach (JsonElement listValue in values.EnumerateArray()) {
@@ -250,7 +257,7 @@ namespace OpenDreamRuntime.Objects {
             foreach (TreeEntry type in GetAllDescendants(Root)) {
                 int typeId = pathToTypeId[type.Path];
                 DreamTypeJson jsonType = types[typeId];
-                var definition = new DreamObjectDefinition(DreamManager, this, type);
+                var definition = new DreamObjectDefinition(_dreamManager, this, type);
 
                 type.ObjectDefinition = definition;
                 type.TreeIndex = treeIndex++;
@@ -312,8 +319,8 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamProc LoadProcJson(DreamTypeJson[] types, ProcDefinitionJson procDefinition) {
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
-            return new DMProc(owningType, procDefinition, null, DreamManager,
-                DreamMapManager, DreamDebugManager, DreamResourceManager, this);
+            return new DMProc(owningType, procDefinition, null, _dreamManager,
+                _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
         }
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs) {
@@ -397,7 +404,7 @@ namespace OpenDreamRuntime.Objects {
             public readonly int Id;
             public DreamObjectDefinition ObjectDefinition;
             public TreeEntry ParentEntry;
-            public List<int> InheritingTypes = new();
+            public readonly List<int> InheritingTypes = new();
 
             /// <summary>
             /// This node's index in the inheritance tree based on a depth-first search<br/>
@@ -455,12 +462,12 @@ namespace OpenDreamRuntime.Objects {
         public void SetNativeProc(TreeEntry type, Func<AsyncNativeProc.State, Task<DreamValue>> func);
 
         public DreamObject CreateObject(TreeEntry type);
+        public DreamList CreateList(int size = 0);
+        public DreamList CreateList(string[] elements);
         public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc);
-        public bool HasTreeEntry(DreamPath path);
         public TreeEntry GetTreeEntry(DreamPath path);
         public TreeEntry GetTreeEntry(int typeId);
         public bool TryGetTreeEntry(DreamPath path, out TreeEntry? treeEntry);
-        public DreamObjectDefinition GetObjectDefinition(DreamPath path);
         public DreamObjectDefinition GetObjectDefinition(int typeId);
         public IEnumerable<TreeEntry> GetAllDescendants(TreeEntry treeEntry);
         public DreamValue GetDreamValueFromJsonElement(object value);

@@ -23,6 +23,7 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
         // I don't want to edit 100 procs to have the DreamManager passed to them
+        // TODO: Pass NativeProc.State to every native proc
         public static IDreamManager DreamManager;
         public static DreamResourceManager ResourceManager;
         public static IDreamObjectTree ObjectTree;
@@ -112,7 +113,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         /* NOTE ABOUT THE TRIG FUNCTIONS:
-         * If you have a sharp eye, you may notice that our trignometry functions make use of the *double*-precision versions of those functions,
+         * If you have a sharp eye, you may notice that our trigonometry functions make use of the *double*-precision versions of those functions,
          * even though this is a single-precision language.
          *
          * DO NOT replace them with the single-precision ones in MathF!!!
@@ -196,8 +197,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Value", Type = DreamValueType.Float | DreamValueType.DreamObject)]
         [DreamProcParameter("Low", Type = DreamValueType.Float)]
         [DreamProcParameter("High", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_clamp(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_clamp(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue value = arguments.GetArgument(0, "Value");
 
             if (!arguments.GetArgument(1, "Low").TryGetValueAsFloat(out float lVal))
@@ -206,29 +206,23 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception("Upper bound is not a number");
 
             // BYOND supports switching low/high args around
-            if (lVal > hVal)
-            {
+            if (lVal > hVal) {
                 (hVal, lVal) = (lVal, hVal);
             }
 
-            if (value.TryGetValueAsDreamList(out DreamList list))
-            {
-                DreamList tmp = DreamList.Create();
-                foreach (DreamValue val in list.GetValues())
-                {
+            if (value.TryGetValueAsDreamList(out var list)) {
+                DreamList tmp = ObjectTree.CreateList();
+                foreach (DreamValue val in list.GetValues()) {
                     if (!val.TryGetValueAsFloat(out float floatVal))
                         continue;
 
                     tmp.AddValue(new DreamValue(Math.Clamp(floatVal, lVal, hVal)));
                 }
+
                 return new DreamValue(tmp);
-            }
-            else if (value.TryGetValueAsFloat(out float floatVal))
-            {
+            } else if (value.TryGetValueAsFloat(out float floatVal)) {
                 return new DreamValue(Math.Clamp(floatVal, lVal, hVal));
-            }
-            else
-            {
+            } else {
                 throw new Exception("Clamp expects a number or list");
             }
         }
@@ -261,7 +255,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_copytext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
-            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out string text))
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out string? text))
                 return (end == 0) ? DreamValue.Null : new DreamValue("");
             if (!arguments.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
                 return new DreamValue("");
@@ -282,7 +276,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_copytext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
-            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out string text))
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out string? text))
                 return (end == 0) ? DreamValue.Null : new DreamValue("");
             if (!arguments.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
                 return new DreamValue("");
@@ -325,7 +319,7 @@ namespace OpenDreamRuntime.Procs.Native {
             var arg1 = arguments.GetArgument(0, "Src");
 
             string? src;
-            if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
+            if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
                 src = arg1Rsc.ResourcePath;
             } else if (arg1.TryGetValueAsDreamObjectOfType(ObjectTree.Savefile, out var savefile)) {
                 src = DreamMetaObjectSavefile.ObjectToSavefile[savefile].Resource.ResourcePath;
@@ -644,13 +638,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("flist")]
         [DreamProcParameter("Path", Type = DreamValueType.String)]
         public static DreamValue NativeProc_flist(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if(!arguments.GetArgument(0, "Path").TryGetValueAsString(out var path))
-            {
+            if (!arguments.GetArgument(0, "Path").TryGetValueAsString(out var path)) {
                 path = IoCManager.Resolve<DreamResourceManager>().RootPath + Path.DirectorySeparatorChar;
             }
+
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
             var listing = resourceManager.EnumerateListing(path);
-            DreamList list = DreamList.Create(listing);
+            DreamList list = ObjectTree.CreateList(listing);
             return new DreamValue(list);
         }
 
@@ -892,9 +886,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (arg.TryGetValueAsDreamObjectOfType(ObjectTree.Icon, out var iconObj)) {
                 // Fast path for /icon, we don't need to generate the entire DMI
-                return new DreamValue(DreamList.Create(DreamMetaObjectIcon.ObjectToDreamIcon[iconObj].States.Keys.ToArray()));
+                return new DreamValue(ObjectTree.CreateList(DreamMetaObjectIcon.ObjectToDreamIcon[iconObj].States.Keys.ToArray()));
             } else if (ResourceManager.TryLoadIcon(arg, out var iconRsc)) {
-                return new DreamValue(DreamList.Create(iconRsc.DMI.States.Keys.ToArray()));
+                return new DreamValue(ObjectTree.CreateList(iconRsc.DMI.States.Keys.ToArray()));
             } else if (arg == DreamValue.Null) {
                 return DreamValue.Null;
             } else {
@@ -980,6 +974,8 @@ namespace OpenDreamRuntime.Procs.Native {
 
             while (argEnumerator.MoveNext()) {
                 if (!argEnumerator.Current.TryGetValueAsDreamObject(out var loc))
+                    return DreamValue.False;
+                if (loc is null)
                     return DreamValue.False;
 
                 bool isLoc = loc.IsSubtypeOf(ObjectTree.Mob) || loc.IsSubtypeOf(ObjectTree.Obj) ||
@@ -1085,7 +1081,7 @@ namespace OpenDreamRuntime.Procs.Native {
         private static DreamValue CreateValueFromJsonElement(JsonElement jsonElement) {
             switch (jsonElement.ValueKind) {
                 case JsonValueKind.Array: {
-                    DreamList list = DreamList.Create(jsonElement.GetArrayLength());
+                    DreamList list = ObjectTree.CreateList(jsonElement.GetArrayLength());
 
                     foreach (JsonElement childElement in jsonElement.EnumerateArray()) {
                         DreamValue value = CreateValueFromJsonElement(childElement);
@@ -1096,7 +1092,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(list);
                 }
                 case JsonValueKind.Object: {
-                    DreamList list = DreamList.Create();
+                    DreamList list = ObjectTree.CreateList();
 
                     foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
                         DreamValue value = CreateValueFromJsonElement(childProperty.Value);
@@ -1486,7 +1482,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = DreamList.Create();
+            DreamList view = ObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
@@ -1536,7 +1532,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = DreamList.Create();
+            DreamList view = ObjectTree.CreateList();
             int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
@@ -1558,7 +1554,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamList params2list(string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
-            DreamList list = DreamList.Create();
+            DreamList list = ObjectTree.CreateList();
 
             foreach (string queryKey in query.AllKeys) {
                 string[] queryValues = query.GetValues(queryKey);
@@ -1583,7 +1579,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (paramsValue.TryGetValueAsString(out string paramsString)) {
                 result = params2list(paramsString);
             } else {
-                result = DreamList.Create();
+                result = ObjectTree.CreateList();
             }
 
             return new DreamValue(result);
@@ -1751,7 +1747,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception("bad color");
             }
 
-            DreamList list = DreamList.Create();
+            DreamList list = ObjectTree.CreateList();
 
             switch(space) {
                 case 0: //rgb
@@ -2022,22 +2018,20 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("splittext")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("Delimiter", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_splittext(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
-            if (!arguments.GetArgument(0, "Text").TryGetValueAsString(out var text))
-            {
-                return new DreamValue(DreamList.Create());
+        public static DreamValue NativeProc_splittext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
+                return new DreamValue(ObjectTree.CreateList());
             }
+
             var arg2 = arguments.GetArgument(1, "Delimiter");
-            if(!arg2.TryGetValueAsString(out var delimiter))
-            {
-                if (!arg2.Equals(DreamValue.Null))
-                {
-                    return new DreamValue(DreamList.Create());
+            if (!arg2.TryGetValueAsString(out var delimiter)) {
+                if (!arg2.Equals(DreamValue.Null)) {
+                    return new DreamValue(ObjectTree.CreateList());
                 }
             }
+
             string[] splitText = text.Split(delimiter);
-            DreamList list = DreamList.Create(splitText);
+            DreamList list = ObjectTree.CreateList(splitText);
 
             return new DreamValue(list);
         }
@@ -2253,7 +2247,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("typesof")]
         [DreamProcParameter("Item1", Type = DreamValueType.DreamType | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamList list = DreamList.Create(arguments.ArgumentCount); // Assume every arg will add at least one type
+            DreamList list = ObjectTree.CreateList(arguments.ArgumentCount); // Assume every arg will add at least one type
             var argEnumerator = arguments.AllArgumentsEnumerator();
 
             while (argEnumerator.MoveNext()) {
@@ -2364,7 +2358,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = DreamList.Create();
+            DreamList view = ObjectTree.CreateList();
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
             int centerZ = center.GetVariable("z").GetValueAsInteger();
@@ -2412,7 +2406,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            DreamList view = DreamList.Create();
+            DreamList view = ObjectTree.CreateList();
             int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.MustGetValueAsInteger() : 5; //TODO: Default to world.view
             int centerX = center.GetVariable("x").MustGetValueAsInteger();
             int centerY = center.GetVariable("y").MustGetValueAsInteger();

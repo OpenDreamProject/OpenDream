@@ -192,7 +192,7 @@ sealed class DreamViewOverlay : Overlay {
         if(MouseMapRenderEnabled)
             args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
         else
-            args.WorldHandle.DrawTexture(baseTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
+            args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
         foreach(String renderSourceString in RenderSourceLookup.Keys){
             ReturnPingPongRenderTarget(RenderSourceLookup[renderSourceString]);
@@ -292,7 +292,7 @@ sealed class DreamViewOverlay : Overlay {
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
             if(parentIcon == null || !keepTogether || (icon.Appearance.AppearanceFlags & 64) != 0) //either we're the parent of a KEEP_TOGETHER group, KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, -1));
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
             else
                 parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
         }
@@ -300,7 +300,7 @@ sealed class DreamViewOverlay : Overlay {
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
             if(parentIcon == null || !keepTogether || (icon.Appearance.AppearanceFlags & 64) != 0) //either we're the parent of a KEEP_TOGETHER group, KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, 1));
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
             else
                 parentIcon.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
         }

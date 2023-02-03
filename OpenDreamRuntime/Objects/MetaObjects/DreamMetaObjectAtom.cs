@@ -275,8 +275,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 mutableAppearance.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
                 mutableAppearance.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
-                appearance.IconState = mutableAppearance.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
-                appearance.IconState = mutableAppearance.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
+                appearance.RenderTarget = mutableAppearance.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
+                appearance.RenderSource = mutableAppearance.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 mutableAppearance.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 mutableAppearance.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var image)) {
@@ -299,8 +299,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 image.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
                 image.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
-                appearance.IconState = image.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
-                appearance.IconState = image.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
+                appearance.RenderTarget = image.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
+                appearance.RenderSource = image.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var icon)) {

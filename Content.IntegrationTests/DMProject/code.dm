@@ -1,9 +1,7 @@
-//Some setup code stuff
+//Setup code - put whatever you need for testing here.
 /turf
-	var/isBlue = FALSE
-
-/turf/blue
-	isBlue = TRUE
+/turf/border
+/mob/test
 
 //The actual tests
 //NOTE: Tests placed in the IntegrationTests suite
@@ -12,7 +10,19 @@
 // should be done within Content.Tests.
 // ALSO NOTE: You do need to rebuild even if you just edit this document. Don't ask me why.
 
-//Tests that range is iterating along the correct, wonky path
+//Basic sanity check that the map actually loads correctly.
+/proc/test_world_init()
+	var/a = 0
+	var/b = 0
+	for(var/turf/t in world)
+		if(istype(t,/turf/border))
+			b += 1
+		else
+			a += 1
+	if(a + b != 25)
+		CRASH("Map probably failed to load; expected 25 tiles in the map, instead found [a + b].")
+
+//Tests that /proc/range() is iterating along the correct, wonky path
 /proc/test_range()
 	//Test that it goes in the right order
 	var/list/correctCoordinates = list(
@@ -36,15 +46,24 @@
 		ASSERT(coords[2] == T.y)
 		i += 1
 	if(i != 10)
-		CRASH("range(1,centre) iterated over [i - 1] tiles, expected 10")
+		CRASH("range(1,centre) iterated over [i - 1] tiles, expected 9")
 	//Test that arguments are parsed correctly
 	var/std = range(1,centre)
 	if(std ~! range(centre,1))
 		CRASH("range(1,centre) and range(centre,1) do not return the same result.")
 	if(std ~! range("3x3",centre))
 		CRASH("ViewRange argument parsing for range() isn't working correctly.")
+	//Test that getting the range from a mob includes the mob's loc.
+	var/list/mob_seen_turfs = list()
+	var/mob/test/timmy = new(centre)
+	for(var/turf/x in range(1,timmy))
+		mob_seen_turfs += list(x)
+	if(std ~! mob_seen_turfs)
+		CRASH("Using a non-/turf Center for range() did not work correctly.")
+	del(timmy)
 
 /world/New()
 	..()
+	test_world_init()
 	test_range()
-	world.log << "Tests finished!"
+	world.log << "IntegrationTests successful, /world/New() exiting..."

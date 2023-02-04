@@ -2,7 +2,7 @@
 //So keep this at the top
 /var/world/world = null
 
-//These procs should be in about the same order that they are in DreamProcNativeRoot.cs
+//These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
 proc/abs(A)
 proc/addtext(...)
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)

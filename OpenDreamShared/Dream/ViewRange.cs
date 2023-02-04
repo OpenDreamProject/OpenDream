@@ -23,6 +23,7 @@ namespace OpenDreamShared.Dream {
             Width = range * 2 + 1;
             Height = range * 2 + 1;
         }
+
         public ViewRange(int x, int y) {
             Width = x; Height = y;
         }

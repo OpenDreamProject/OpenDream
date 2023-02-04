@@ -1,5 +1,5 @@
 "a" = (/area,/turf)
-"b" = (/area,/turf/blue)
+"b" = (/area,/turf/border)
 
 (1, 1, 1) = {"
 bbbbb

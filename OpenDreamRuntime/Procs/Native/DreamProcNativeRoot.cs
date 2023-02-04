@@ -1622,6 +1622,16 @@ namespace OpenDreamRuntime.Procs.Native {
                     rangeList.AddValue(content);
                 }
             }
+            if(!center.IsSubtypeOf(ObjectTree.Turf)) { // If it's not a /turf, we have to include its loc and the loc's contents
+                if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out DreamObject centerLocObject)) {
+                    rangeList.AddValue(centerLoc);
+                    if(centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
+                        foreach (DreamValue content in locContentsList.GetValues()) {
+                            rangeList.AddValue(content);
+                        }
+                    }
+                }
+            }
             //And then everything else
             foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 rangeList.AddValue(new DreamValue(turf));
@@ -2373,6 +2383,16 @@ namespace OpenDreamRuntime.Procs.Native {
                         }
                     }
                     view.AddValue(content);
+                }
+            }
+            if (!center.IsSubtypeOf(ObjectTree.Turf)) { // If it's not a /turf, we have to include its loc and the loc's contents
+                if (center.TryGetVariable("loc", out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out DreamObject centerLocObject)) {
+                    view.AddValue(centerLoc);
+                    if (centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
+                        foreach (DreamValue content in locContentsList.GetValues()) {
+                            view.AddValue(content);
+                        }
+                    }
                 }
             }
             //and then everything else

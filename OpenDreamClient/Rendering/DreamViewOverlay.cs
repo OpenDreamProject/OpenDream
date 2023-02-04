@@ -219,7 +219,7 @@ sealed class DreamViewOverlay : Overlay {
         current.RenderTarget = icon.Appearance.RenderTarget;
 
 
-        Matrix3 iconAppearanceTransformMatrix = new(new float[] {
+        Matrix3 iconAppearanceTransformMatrix = new(new float[] { //reverse rotation transforms because of 180 flip from rendertarget->world transform
                 icon.Appearance.Transform[0], -icon.Appearance.Transform[1], 0,
                 -icon.Appearance.Transform[2], icon.Appearance.Transform[3], 0,
                 icon.Appearance.Transform[4], icon.Appearance.Transform[5], 1

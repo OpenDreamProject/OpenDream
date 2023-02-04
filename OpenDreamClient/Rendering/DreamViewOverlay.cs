@@ -220,8 +220,8 @@ sealed class DreamViewOverlay : Overlay {
 
 
         Matrix3 iconAppearanceTransformMatrix = new(new float[] {
-                icon.Appearance.Transform[0], icon.Appearance.Transform[1], 0,
-                icon.Appearance.Transform[2], icon.Appearance.Transform[3], 0,
+                icon.Appearance.Transform[0], -icon.Appearance.Transform[1], 0,
+                -icon.Appearance.Transform[2], icon.Appearance.Transform[3], 0,
                 icon.Appearance.Transform[4], icon.Appearance.Transform[5], 1
             });
 

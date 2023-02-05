@@ -1,6 +1,5 @@
 using System.Linq;
 using OpenDreamRuntime.Objects.MetaObjects;
-using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using Robust.Shared.Serialization.Manager;
 
@@ -292,6 +291,63 @@ namespace OpenDreamRuntime.Objects {
             } else {
                 throw new Exception($"Invalid var index {key}");
             }
+        }
+    }
+
+    // verbs list
+    // Keeps track of an atom's or client's verbs
+    public sealed class VerbsList : DreamList {
+        private readonly List<DreamProc> _verbs = new();
+
+        public VerbsList(IDreamObjectTree objectTree, DreamObject dreamObject) : base(objectTree.List.ObjectDefinition, 0) {
+            List<int>? verbs = dreamObject.ObjectDefinition.Verbs;
+            if (verbs == null)
+                return;
+
+            _verbs.EnsureCapacity(verbs.Count);
+            foreach (int verbId in verbs) {
+                _verbs.Add(objectTree.Procs[verbId]);
+            }
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var index))
+                throw new Exception($"Invalid index into verbs list: {key}");
+            if (index < 1 || index > _verbs.Count)
+                throw new Exception($"Out of bounds index on verbs list: {index}");
+
+            return new DreamValue(_verbs[index - 1]);
+        }
+
+        public override List<DreamValue> GetValues() {
+            List<DreamValue> values = new(_verbs.Count);
+
+            foreach (DreamProc verb in _verbs)
+                values.Add(new(verb));
+
+            return values;
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot set the values of a verbs list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            if (!value.TryGetValueAsProc(out var verb))
+                throw new Exception($"Cannot add {value} to verbs list");
+
+            _verbs.Add(verb);
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            int verbCount = _verbs.Count + 1;
+            if (end == 0 || end > verbCount) end = verbCount;
+
+            _verbs.RemoveRange(start - 1, end - start);
+        }
+
+        public override int GetLength() {
+            return _verbs.Count;
         }
     }
 

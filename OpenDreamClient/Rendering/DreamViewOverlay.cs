@@ -32,6 +32,7 @@ sealed class DreamViewOverlay : Overlay {
     public Texture MouseMap;
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
     private Dictionary<String, IRenderTexture> RenderSourceLookup = new();
+    private List<IRenderTexture> _RenderTargetsToReturn = new();
 
 
     public DreamViewOverlay() {
@@ -63,6 +64,10 @@ sealed class DreamViewOverlay : Overlay {
         ReturnPingPongRenderTarget(mouseMapRenderTarget);
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
+        //some render targets need to be kept until the end of the render cycle, so return them here.
+        foreach(IRenderTexture RT in _RenderTargetsToReturn)
+            ReturnPingPongRenderTarget(RT);
+        _RenderTargetsToReturn.Clear();
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
@@ -181,6 +186,7 @@ sealed class DreamViewOverlay : Overlay {
                         renderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                         ClearRenderTarget(renderTarget, args.WorldHandle);
                         RenderSourceLookup.Add(sprite.RenderTarget, renderTarget);
+                        _RenderTargetsToReturn.Add(renderTarget);
                     }
                     DrawIcon(args.WorldHandle, renderTarget, sprite, -screenArea.BottomLeft);
                 }
@@ -194,10 +200,6 @@ sealed class DreamViewOverlay : Overlay {
         else
             args.WorldHandle.DrawTexture(planeTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), PlaneMasterColor);
         ReturnPingPongRenderTarget(planeTarget);
-        foreach(String renderSourceString in RenderSourceLookup.Keys){
-            ReturnPingPongRenderTarget(RenderSourceLookup[renderSourceString]);
-        }
-        RenderSourceLookup.Clear();
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
@@ -374,13 +376,15 @@ sealed class DreamViewOverlay : Overlay {
 
         if(iconMetaData.KeepTogetherGroup.Count > 0)
         {
-            //store the parent's transform, color, and alpha - then clear them for drawing to the render target
+            //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
             Matrix3 KTParentTransform = iconMetaData.TransformToApply;
             iconMetaData.TransformToApply = Matrix3.Identity;
             Color KTParentColor = iconMetaData.ColorToApply;
             iconMetaData.ColorToApply = Color.White;
             float KTParentAlpha = iconMetaData.AlphaToApply;
             iconMetaData.AlphaToApply = 1f;
+            float KTParentBlendMode = iconMetaData.MainIcon.Appearance.BlendMode;
+            iconMetaData.MainIcon.Appearance.BlendMode = 0; //BLEND_DEFAULT
 
             List<RendererMetaData> KTItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup.Count);
             KTItems.Add(iconMetaData);
@@ -388,20 +392,29 @@ sealed class DreamViewOverlay : Overlay {
             iconMetaData.KeepTogetherGroup.Clear();
 
             KTItems.Sort();
-            IRenderTexture KTTexture = RentPingPongRenderTarget(frame.Size * 2);
+            //draw it onto an additional render target that we can return immediately for correction of transform
+            IRenderTexture TempTexture = RentPingPongRenderTarget(renderTarget.Size);
+            ClearRenderTarget(TempTexture, handle);
 
             foreach(RendererMetaData KTItem in KTItems){
-                Vector2 positionOverride = ((frame.Size / 2)/EyeManager.PixelsPerMeter)-KTItem.Position;
-                DrawIcon(handle, KTTexture, KTItem, positionOverride); //draw it at 0,0
+                DrawIcon(handle, TempTexture, KTItem, positionOffset);
             }
+            //but keep the handle to the final KT group's render target so we don't override it later in the render cycle
+            IRenderTexture KTTexture = RentPingPongRenderTarget(renderTarget.Size);
+            handle.RenderInRenderTarget(KTTexture , () => {
+                    handle.DrawRect(new Box2(Vector2.Zero, renderTarget.Size), new Color());
+                    handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, renderTarget.Size));
+                }, Color.Transparent);
             frame = KTTexture.Texture;
-            //now restore the original color, alpha, and transform so they can be applied to the render target as a whole
+            ReturnPingPongRenderTarget(TempTexture);
+            //now restore the original color, alpha, blend, and transform so they can be applied to the render target as a whole
             iconMetaData.TransformToApply = KTParentTransform;
             iconMetaData.ColorToApply = KTParentColor;
             iconMetaData.AlphaToApply = KTParentAlpha;
-            //apply correction to pixelposition for increased framesize
-            pixelPosition.Y -= frame.Size.Y/2;
-            ReturnPingPongRenderTarget(KTTexture);
+            iconMetaData.MainIcon.Appearance.BlendMode = KTParentBlendMode;
+            //apply correction to pixelposition for increased framesize, with half-step offset
+            pixelPosition -= (frame.Size/2)-new Vector2(0.5f*EyeManager.PixelsPerMeter,0.5f*EyeManager.PixelsPerMeter);
+            _RenderTargetsToReturn.Add(KTTexture);
         }
 
         if(frame != null && icon.Appearance.Filters.Count == 0) {

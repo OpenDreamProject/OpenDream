@@ -451,7 +451,7 @@ sealed class DreamViewOverlay : Overlay {
                     handle.DrawTextureRect(frame,
                         new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)),
                         iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
-                }, Color.Transparent);
+                }, Color.Black.WithAlpha(0));
 
             foreach (DreamFilter filterId in icon.Appearance.Filters) {
                 ShaderInstance s = _appearanceSystem.GetFilterShader(filterId);
@@ -461,7 +461,7 @@ sealed class DreamViewOverlay : Overlay {
                     handle.UseShader(s);
                     handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size * 2));
                     handle.UseShader(null);
-                }, Color.Transparent);
+                }, Color.Black.WithAlpha(0));
 
                 tmpHolder = ping;
                 ping = pong;

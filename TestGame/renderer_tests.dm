@@ -168,3 +168,14 @@
 
 	push()
 		usr.overlays += new /obj/keep_apart_obj()
+
+/obj/plaque/render_source_test 
+	data = "<h3>Render source Test</h3><p>Click the button to toggle set the render_source to the render_target of your mob</p>"
+
+/obj/button/render_source_test
+	name = "Render Source Test"
+	desc = "Click me to set the render_source of the button to your mob's render_target!"
+
+	push()
+		src.render_source = usr.render_target
+		usr << "Render target set to your mob's render source"	

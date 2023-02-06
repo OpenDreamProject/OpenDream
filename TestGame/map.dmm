@@ -18,11 +18,13 @@
 "r" = (/obj/plaque/keep_apart_test,/turf,/area)
 "s" = (/obj/bandoleer,/turf,/area)
 "t" = (/obj/plaque/simple_underlay_test,/turf,/area)
+"u" = (/obj/button/render_source_test,/turf,/area)
+"v" = (/obj/plaque/render_source_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbb
-bedciklopsaaaaaaaaab
-bfghjmnqrtaaaaaaaaab
+bedciklopsuaaaaaaaab
+bfghjmnqrtvaaaaaaaab
 baaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaab

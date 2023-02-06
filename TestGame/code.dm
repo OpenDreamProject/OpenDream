@@ -18,6 +18,7 @@
 		..()
 		loc = locate(5, 5, 1)
 		color = rgb(rand(0,255), rand(0,255), rand(0,255))
+		render_target = "\ref[src]"
 
 	verb/rotate()
 		for(var/i in 1 to 8)

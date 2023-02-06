@@ -393,17 +393,17 @@ sealed class DreamViewOverlay : Overlay {
 
             KTItems.Sort();
             //draw it onto an additional render target that we can return immediately for correction of transform
-            IRenderTexture TempTexture = RentPingPongRenderTarget(renderTarget.Size);
+            IRenderTexture TempTexture = RentPingPongRenderTarget(frame.Size);
             ClearRenderTarget(TempTexture, handle);
 
             foreach(RendererMetaData KTItem in KTItems){
-                DrawIcon(handle, TempTexture, KTItem, positionOffset);
+                DrawIcon(handle, TempTexture, KTItem, -KTItem.Position);
             }
             //but keep the handle to the final KT group's render target so we don't override it later in the render cycle
-            IRenderTexture KTTexture = RentPingPongRenderTarget(renderTarget.Size);
+            IRenderTexture KTTexture = RentPingPongRenderTarget(TempTexture.Size);
             handle.RenderInRenderTarget(KTTexture , () => {
-                    handle.DrawRect(new Box2(Vector2.Zero, renderTarget.Size), new Color());
-                    handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, renderTarget.Size));
+                    handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
+                    handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, TempTexture.Size));
                 }, Color.Transparent);
             frame = KTTexture.Texture;
             ReturnPingPongRenderTarget(TempTexture);
@@ -413,7 +413,7 @@ sealed class DreamViewOverlay : Overlay {
             iconMetaData.AlphaToApply = KTParentAlpha;
             iconMetaData.MainIcon.Appearance.BlendMode = KTParentBlendMode;
             //apply correction to pixelposition for increased framesize, with half-step offset
-            pixelPosition -= (frame.Size/2)-new Vector2(0.5f*EyeManager.PixelsPerMeter,0.5f*EyeManager.PixelsPerMeter);
+            //pixelPosition -= ((frame.Size/2) + new Vector2(0.5f*EyeManager.PixelsPerMeter,0.5f*EyeManager.PixelsPerMeter));
             _RenderTargetsToReturn.Add(KTTexture);
         }
 
@@ -453,7 +453,6 @@ sealed class DreamViewOverlay : Overlay {
                         iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
                 }, Color.Transparent);
 
-            bool rotate = true;
             foreach (DreamFilter filterId in icon.Appearance.Filters) {
                 ShaderInstance s = _appearanceSystem.GetFilterShader(filterId);
 
@@ -467,7 +466,6 @@ sealed class DreamViewOverlay : Overlay {
                 tmpHolder = ping;
                 ping = pong;
                 pong = tmpHolder;
-                rotate = !rotate;
             }
 
             handle.RenderInRenderTarget(renderTarget, () => {

@@ -31,8 +31,8 @@ sealed class DreamViewOverlay : Overlay {
     private IRenderTexture mouseMapRenderTarget;
     public Texture MouseMap;
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
-    private Dictionary<String, IRenderTexture> RenderSourceLookup = new();
-    private List<IRenderTexture> _RenderTargetsToReturn = new();
+    private Dictionary<String, IRenderTexture> _renderSourceLookup = new();
+    private List<IRenderTexture> _renderTargetsToReturn = new();
 
 
     public DreamViewOverlay() {
@@ -65,9 +65,9 @@ sealed class DreamViewOverlay : Overlay {
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
         //some render targets need to be kept until the end of the render cycle, so return them here.
-        foreach(IRenderTexture RT in _RenderTargetsToReturn)
+        foreach(IRenderTexture RT in _renderTargetsToReturn)
             ReturnPingPongRenderTarget(RT);
-        _RenderTargetsToReturn.Clear();
+        _renderTargetsToReturn.Clear();
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
@@ -179,17 +179,6 @@ sealed class DreamViewOverlay : Overlay {
                 MouseMapLookup[targetColor] = sprite.ClickUID;
                 _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
 
-                if(sprite.RenderTarget.Length > 0)
-                {
-                    IRenderTexture renderTarget;
-                    if(!RenderSourceLookup.TryGetValue(sprite.RenderTarget, out renderTarget)){
-                        renderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-                        ClearRenderTarget(renderTarget, args.WorldHandle);
-                        RenderSourceLookup.Add(sprite.RenderTarget, renderTarget);
-                        _RenderTargetsToReturn.Add(renderTarget);
-                    }
-                    DrawIcon(args.WorldHandle, renderTarget, sprite, -screenArea.BottomLeft);
-                }
                 //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                 DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
             }
@@ -368,10 +357,21 @@ sealed class DreamViewOverlay : Overlay {
         Texture frame;
         if(iconMetaData.RenderSource == "")
             frame = icon.CurrentFrame;
-        else if(RenderSourceLookup.TryGetValue(iconMetaData.RenderSource, out var renderSourceTexture))
+        else if(_renderSourceLookup.TryGetValue(iconMetaData.RenderSource, out var renderSourceTexture))
             frame = renderSourceTexture.Texture;
         else
             return;
+
+        IRenderTexture tmpRenderTarget = null;
+        if(iconMetaData.RenderTarget.Length > 0)
+        {
+            if(!_renderSourceLookup.TryGetValue(iconMetaData.RenderTarget, out tmpRenderTarget)){
+                tmpRenderTarget = RentPingPongRenderTarget(frame.Size);
+                ClearRenderTarget(tmpRenderTarget, handle);
+                _renderSourceLookup.Add(iconMetaData.RenderTarget, tmpRenderTarget);
+                _renderTargetsToReturn.Add(tmpRenderTarget);
+            }
+        }
 
 
         if(iconMetaData.KeepTogetherGroup.Count > 0)
@@ -412,9 +412,8 @@ sealed class DreamViewOverlay : Overlay {
             iconMetaData.ColorToApply = KTParentColor;
             iconMetaData.AlphaToApply = KTParentAlpha;
             iconMetaData.MainIcon.Appearance.BlendMode = KTParentBlendMode;
-            //apply correction to pixelposition for increased framesize, with half-step offset
-            //pixelPosition -= ((frame.Size/2) + new Vector2(0.5f*EyeManager.PixelsPerMeter,0.5f*EyeManager.PixelsPerMeter));
-            _RenderTargetsToReturn.Add(KTTexture);
+
+            _renderTargetsToReturn.Add(KTTexture);
         }
 
         if(frame != null && icon.Appearance.Filters.Count == 0) {

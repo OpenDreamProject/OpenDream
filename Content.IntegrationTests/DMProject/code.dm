@@ -8,7 +8,7 @@
 // should actually require a normal server in order to work.
 // Tests that only check generic DM behaviour that is not icon nor map-facing
 // should be done within Content.Tests.
-// ALSO NOTE: You do need to rebuild even if you just edit this document. Don't ask me why.
+// ALSO NOTE: If you're getting strange results, try rebuilding to make sure this DM file is copied correctly.
 
 //Basic sanity check that the map actually loads correctly.
 /proc/test_world_init()

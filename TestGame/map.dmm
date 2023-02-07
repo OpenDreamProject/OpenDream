@@ -20,11 +20,13 @@
 "t" = (/obj/plaque/simple_underlay_test,/turf,/area)
 "u" = (/obj/button/render_source_test,/turf,/area)
 "v" = (/obj/plaque/render_source_test,/turf,/area)
+"w" = (/obj/button/transform_translate_test,/turf,/area)
+"x" = (/obj/plaque/transform_translate_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbb
-bedciklopsuaaaaaaaab
-bfghjmnqrtvaaaaaaaab
+bedciklwopsuaaaaaaab
+bfghjmnxqrtvaaaaaaab
 baaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaab

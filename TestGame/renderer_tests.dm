@@ -140,6 +140,16 @@
 
 	push()
 		usr.transform *= 0.5	
+
+/obj/plaque/transform_translate_test 
+	data = "<h3>Transform Translate Test</h3><p>Click the button to shift or shift back</p>"
+
+/obj/button/transform_translate_test
+	name = "Transform Translate Test"
+	desc = "Click me to be translated"
+
+	push()
+		usr.transform = matrix(32, 6, MATRIX_TRANSLATE)			
 	
 //keep together groups
 /obj/plaque/keep_together_test 

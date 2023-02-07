@@ -68,6 +68,7 @@ sealed class DreamViewOverlay : Overlay {
         foreach(IRenderTexture RT in _renderTargetsToReturn)
             ReturnPingPongRenderTarget(RT);
         _renderTargetsToReturn.Clear();
+        _renderSourceLookup.Clear();
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
@@ -179,8 +180,23 @@ sealed class DreamViewOverlay : Overlay {
                 MouseMapLookup[targetColor] = sprite.ClickUID;
                 _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
 
-                //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
-                DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
+
+                if(sprite.RenderTarget.Length > 0) //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
+                {
+                    IRenderTexture tmpRenderTarget;
+                    if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
+
+                        tmpRenderTarget = RentPingPongRenderTarget(sprite.MainIcon.CurrentFrame.Size);
+                        ClearRenderTarget(tmpRenderTarget, args.WorldHandle);
+                        _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
+                        _renderTargetsToReturn.Add(tmpRenderTarget);
+                    }
+                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, -sprite.Position); //draw it at 0
+                }
+                else {
+                    //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
+                    DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
+                }
             }
         }
         //final draw
@@ -202,10 +218,6 @@ sealed class DreamViewOverlay : Overlay {
         current.ClickUID = uid;
         current.IsScreen = isScreen;
         current.TieBreaker = tieBreaker;
-        //render target basically spawns a named plane
-        //render source takes that plane's texture and uses it instead of the icon
-        //render targets that don't have * at the beginning will get rendered onto the map normally though
-        //so basically render targets need creating, drawing to, and adding to the normal rendering queue if they should be rendered
         current.RenderSource = icon.Appearance.RenderSource;
         current.RenderTarget = icon.Appearance.RenderTarget;
 
@@ -255,8 +267,8 @@ sealed class DreamViewOverlay : Overlay {
         if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
             RendererMetaData renderTargetPlaceholder = new();
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
-            renderTargetPlaceholder.MainIcon = current.MainIcon; //placeholder
-            renderTargetPlaceholder.Position = Vector2.Zero;
+            renderTargetPlaceholder.MainIcon = current.MainIcon; //placeholder - TODO this might have unintended effects
+            renderTargetPlaceholder.Position = current.Position;
             renderTargetPlaceholder.UID = current.UID;
             renderTargetPlaceholder.ClickUID = current.UID;
             renderTargetPlaceholder.IsScreen = current.IsScreen;
@@ -357,22 +369,19 @@ sealed class DreamViewOverlay : Overlay {
         Texture frame;
         if(iconMetaData.RenderSource == "")
             frame = icon.CurrentFrame;
-        else if(_renderSourceLookup.TryGetValue(iconMetaData.RenderSource, out var renderSourceTexture))
-            frame = renderSourceTexture.Texture;
+        else if(_renderSourceLookup.TryGetValue(iconMetaData.RenderSource, out var renderSourceTexture)){
+            frame = renderSourceTexture.Texture; //draw it again to preserve correct transformations (this is dumb and I hate it)
+            IRenderTexture TempTexture = RentPingPongRenderTarget(frame.Size);
+            ClearRenderTarget(TempTexture, handle);
+            handle.RenderInRenderTarget(TempTexture , () => {
+                    handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
+                    handle.DrawTextureRect(frame, new Box2(Vector2.Zero, TempTexture.Size));
+                }, Color.Transparent);
+            frame = TempTexture.Texture;
+            ReturnPingPongRenderTarget(TempTexture);
+        }
         else
             return;
-
-        IRenderTexture tmpRenderTarget = null;
-        if(iconMetaData.RenderTarget.Length > 0)
-        {
-            if(!_renderSourceLookup.TryGetValue(iconMetaData.RenderTarget, out tmpRenderTarget)){
-                tmpRenderTarget = RentPingPongRenderTarget(frame.Size);
-                ClearRenderTarget(tmpRenderTarget, handle);
-                _renderSourceLookup.Add(iconMetaData.RenderTarget, tmpRenderTarget);
-                _renderTargetsToReturn.Add(tmpRenderTarget);
-            }
-        }
-
 
         if(iconMetaData.KeepTogetherGroup.Count > 0)
         {

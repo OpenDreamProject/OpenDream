@@ -187,5 +187,7 @@
 	desc = "Click me to set the render_source of the button to your mob's render_target!"
 
 	push()
+		usr.render_target = "\ref[usr]"
 		src.render_source = usr.render_target
+
 		usr << "Render target set to your mob's render source"	

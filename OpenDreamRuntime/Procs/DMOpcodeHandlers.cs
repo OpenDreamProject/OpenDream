@@ -924,20 +924,43 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue result;
-            switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
-                    result = new DreamValue(0);
-                    break;
-                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
-                    break;
-                default:
-                    throw new Exception($"Invalid bit shift left operation on {first} and {second}");
+
+            if(first == DreamValue.Null) {
+                state.AssignReference(reference, DreamValue.False);
+                state.Push(DreamValue.False);
+                return null; //early return for null <<= anything = 0
             }
-            state.AssignReference(reference, result);
-            state.Push(result);
-            return null;
+
+            DreamValue output;
+
+            switch(first.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
+                        output = new DreamValue(firstInt << secondInt);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.String: {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return metaObject?.OperatorBitShiftLeftRef(first, second, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
+                default:
+                    break;
+            }
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-xor-ref cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitShiftRight(DMProcState state) {
@@ -980,20 +1003,43 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue result;
-            switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
-                    result = new DreamValue(0);
-                    break;
-                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger());
-                    break;
-                default:
-                    throw new Exception($"Invalid bit shift right operation on {first} and {second}");
+
+            if(first == DreamValue.Null) {
+                state.AssignReference(reference, DreamValue.False);
+                state.Push(DreamValue.False);
+                return null; //early return for null >>= anything = 0
             }
-            state.AssignReference(reference, result);
-            state.Push(result);
-            return null;
+
+            DreamValue output;
+
+            switch(first.Type) {
+                case DreamValue.DreamValueType.Float: {
+                    if(first.TryGetValueAsInteger(out int firstInt) && second.TryGetValueAsInteger(out int secondInt)) {
+                        output = new DreamValue(firstInt >> secondInt);
+                        state.AssignReference(reference, output);
+                        state.Push(output);
+                        return null;
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.String: {
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
+                        IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
+                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return metaObject?.OperatorBitShiftRightRef(first, second, state);
+                    }
+                    break;
+                }
+                case DreamValue.DreamValueType.DreamProc:
+                case DreamValue.DreamValueType.DreamResource:
+                default:
+                    break;
+            }
+            //no condition exists to handle the inputs, so error
+            throw new InvalidOperationException($"Bit-xor-ref cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitXor(DMProcState state) {

@@ -68,7 +68,6 @@ namespace Content.Tests
             File.Delete(compiledFile);
         }
 
-        // Timeout doesn't work here due to it multithreading
         [Test, TestCaseSource(nameof(GetTests))]
         public void TestFiles(string sourceFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
@@ -169,7 +168,7 @@ namespace Content.Tests
             DMTestFlags testFlags = DMTestFlags.NoError;
 
             using (StreamReader reader = new StreamReader(sourceFile)) {
-                string firstLine = reader.ReadLine() ?? throw new System.Diagnostics.UnreachableException("reader.ReadLine() returned null");
+                string firstLine = reader.ReadLine() ?? throw new IOException($"{sourceFile} is empty");
                 if (firstLine.Contains("IGNORE", StringComparison.InvariantCulture))
                     testFlags |= DMTestFlags.Ignore;
                 if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))

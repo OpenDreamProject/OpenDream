@@ -7,4 +7,4 @@
 			. = 1
 		if(/datum, /mob)
 			. = 300
-	ASSERT(a == 137)
+	ASSERT(. == 1)

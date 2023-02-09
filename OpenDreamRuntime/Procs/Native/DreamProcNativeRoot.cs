@@ -2035,6 +2035,81 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(clamped);
         }
 
+        [DreamProc("spantext")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needles", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        public static DreamValue NativeProc_spantext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            //if any arguments are bad, return 0
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
+                !arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
+                !arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
+                start == 0) { // Start=0 is not valid
+                return new DreamValue(0);
+            }
+
+            if(start < 0) {
+                start = Math.Max(start + text.Length + 1, 1);
+            }
+
+            int result = 0;
+            while(start <= text.Length) {
+                if(text.AsSpan(start - 1, 1).IndexOfAny(needles) > -1) {
+                    result++;
+                } else {
+                    break;
+                }
+                start++;
+            }
+            return new DreamValue(result);
+        }
+
+        [DreamProc("spantext_char")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needles", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        public static DreamValue NativeProc_spantext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            //if any arguments are bad, return 0
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
+                !arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
+                !arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
+                start == 0) { // Start=0 is not valid
+                return new DreamValue(0);
+            }
+            if(start > text.Length) {
+                return new DreamValue(0);
+            }
+            StringInfo textStringInfo = new StringInfo(text);
+            
+            if(start < 0) {
+                start = Math.Max(start + textStringInfo.LengthInTextElements + 1, 1);
+            }
+
+            int result = 0;
+            
+            TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
+            TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
+
+            while(textElementEnumerator.MoveNext()) {
+                bool found = false;
+                needlesElementEnumerator.Reset();
+                
+                //lol O(N*M)
+                while (needlesElementEnumerator.MoveNext()) {
+                    if (textElementEnumerator.Current.Equals(needlesElementEnumerator.Current)) {
+                        result++;
+                        found = true;
+                        break;
+                    }
+                }
+
+                if (!found) {
+                    break;
+                }
+            }
+            return new DreamValue(result);
+        }
+
         [DreamProc("sound")]
         [DreamProcParameter("file", Type = DreamValueType.DreamResource)]
         [DreamProcParameter("repeat", Type = DreamValueType.Float, DefaultValue = 0)]

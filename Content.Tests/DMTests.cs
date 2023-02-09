@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -70,7 +69,7 @@ namespace Content.Tests
         }
 
         // Timeout doesn't work here due to it multithreading
-        [Test, TestCaseSource(nameof(GetTests)), MaxTime(500)]
+        [Test, TestCaseSource(nameof(GetTests))]
         public void TestFiles(string sourceFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
             try {
@@ -132,10 +131,17 @@ namespace Content.Tests
                 }
             });
 
+            var Watch = new Stopwatch();
+            Watch.Start();
+
             // Tick until our inner call has finished
             while (!callTask.IsCompleted) {
                 _dreamMan.Update();
                 _taskManager.ProcessPendingTasks();
+
+                if (Watch.Elapsed.TotalMilliseconds > 500) {
+                    Assert.Fail("Test timed out");
+                }
             }
 
             bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
@@ -163,7 +169,7 @@ namespace Content.Tests
             DMTestFlags testFlags = DMTestFlags.NoError;
 
             using (StreamReader reader = new StreamReader(sourceFile)) {
-                string firstLine = reader.ReadLine() ?? throw new UnreachableException("reader.ReadLine() returned null");
+                string firstLine = reader.ReadLine() ?? throw new System.Diagnostics.UnreachableException("reader.ReadLine() returned null");
                 if (firstLine.Contains("IGNORE", StringComparison.InvariantCulture))
                     testFlags |= DMTestFlags.Ignore;
                 if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))

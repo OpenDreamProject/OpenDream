@@ -10,8 +10,6 @@ namespace OpenDreamRuntime.Objects {
 
     [Virtual]
     public class DreamList : DreamObject {
-        private static DreamObjectDefinition? _listDef;
-
         internal event DreamListValueAssignedEventHandler? ValueAssigned;
         internal event DreamListBeforeValueRemovedEventHandler? BeforeValueRemoved;
 
@@ -20,26 +18,15 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
 
-        protected DreamList(int size = 0) : base(_listDef ??= IoCManager.Resolve<IDreamObjectTree>().List.ObjectDefinition) {
+        public DreamList(DreamObjectDefinition listDef, int size) : base(listDef) {
             _values = new List<DreamValue>(size);
         }
 
-        public static DreamList CreateUninitialized(int size = 0) {
-            return new DreamList(size);
-        }
-
-        public static DreamList Create(int size = 0) {
-            return new DreamList(size);
-        }
-
-        public static DreamList Create(string[] collection) {
-            var list = new DreamList(collection.Length);
-
-            foreach (string value in collection) {
-                list._values.Add(new DreamValue(value));
-            }
-
-            return list;
+        /// <summary>
+        /// Create a new DreamList using an existing list of values (does not copy them)
+        /// </summary>
+        protected DreamList(DreamObjectDefinition listDef, List<DreamValue> values) : base(listDef) {
+            _values = values;
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
@@ -47,7 +34,7 @@ namespace OpenDreamRuntime.Objects {
             if (end > _values.Count + 1) throw new Exception("list index out of bounds");
             if (end == 0) end = _values.Count + 1;
 
-            DreamList copy = Create(end);
+            DreamList copy = new(ObjectDefinition, end);
 
             for (int i = start; i < end; i++) {
                 DreamValue value = _values[i - 1];
@@ -174,8 +161,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamList Union(DreamList other) {
-            DreamList newList = new DreamList();
-            newList._values = _values.Union(other.GetValues()).ToList();
+            DreamList newList = new DreamList(ObjectDefinition, _values.Union(other.GetValues()).ToList());
             foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
                 newList.SetValue(key, value);
             }
@@ -191,19 +177,13 @@ namespace OpenDreamRuntime.Objects {
 
     // /datum.vars list
     sealed class DreamListVars : DreamList {
-        private DreamObject _dreamObject;
+        private readonly DreamObject _dreamObject;
 
         public override bool IsAssociative =>
             true; // We don't use the associative array but, yes, we behave like an associative list
 
-        private DreamListVars(DreamObject dreamObject) : base() {
+        public DreamListVars(DreamObjectDefinition listDef, DreamObject dreamObject) : base(listDef, 0) {
             _dreamObject = dreamObject;
-        }
-
-        public static DreamListVars Create(DreamObject dreamObject) {
-            var list = new DreamListVars(dreamObject);
-            list.InitSpawn(new DreamProcArguments(null));
-            return list;
         }
 
         public override int GetLength() {
@@ -261,13 +241,8 @@ namespace OpenDreamRuntime.Objects {
         public override bool IsAssociative =>
             true; // We don't use the associative array but, yes, we behave like an associative list
 
-        private DreamGlobalVars() {
+        public DreamGlobalVars(DreamObjectDefinition listDef) : base(listDef, 0) {
             IoCManager.InjectDependencies(this);
-        }
-
-        public static DreamGlobalVars Create() {
-            var list = new DreamGlobalVars();
-            return list;
         }
 
         public override List<DreamValue> GetValues() {
@@ -323,14 +298,13 @@ namespace OpenDreamRuntime.Objects {
     // atom.filters list
     // Operates on an atom's appearance
     public sealed class DreamFilterList : DreamList {
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
         private readonly DreamObject _atom;
 
-        public DreamFilterList(DreamObject atom) {
+        public DreamFilterList(DreamObjectDefinition listDef, DreamObject atom) : base(listDef, 0) {
             IoCManager.InjectDependencies(this);
             _atom = atom;
         }
@@ -420,7 +394,7 @@ namespace OpenDreamRuntime.Objects {
     public sealed class WorldContentsList : DreamList {
         private readonly IDreamMapManager _mapManager;
 
-        public WorldContentsList(IDreamMapManager mapManager) {
+        public WorldContentsList(DreamObjectDefinition listDef, IDreamMapManager mapManager) : base(listDef, 0) {
             _mapManager = mapManager;
         }
 

@@ -148,7 +148,7 @@ namespace OpenDreamRuntime {
             try {
                 return (string)_refValue;
             } catch (InvalidCastException) {
-                throw new Exception("Value " + this + " was not the expected type of string");
+                throw new InvalidCastException("Value " + this + " was not the expected type of string");
             }
         }
 
@@ -172,7 +172,7 @@ namespace OpenDreamRuntime {
             try {
                 return (int)_floatValue;
             } catch (InvalidCastException) {
-                throw new Exception($"Value {this} was not the expected type of integer");
+                throw new InvalidCastException($"Value {this} was not the expected type of integer");
             }
         }
 
@@ -193,7 +193,7 @@ namespace OpenDreamRuntime {
 
         public float MustGetValueAsFloat() {
             if (Type != DreamValueType.Float)
-                throw new Exception($"Value {this} was not the expected type of float");
+                throw new InvalidCastException($"Value {this} was not the expected type of float");
 
             return _floatValue;
         }
@@ -212,7 +212,7 @@ namespace OpenDreamRuntime {
             try {
                 return (DreamResource)_refValue;
             } catch (InvalidCastException) {
-                throw new Exception("Value " + this + " was not the expected type of DreamResource");
+                throw new InvalidCastException("Value " + this + " was not the expected type of DreamResource");
             }
         }
 
@@ -249,7 +249,7 @@ namespace OpenDreamRuntime {
 
                 return dreamObject;
             } catch (InvalidCastException) {
-                throw new Exception($"Value {this} was not the expected type of DreamObject");
+                throw new InvalidCastException($"Value {this} was not the expected type of DreamObject");
             }
         }
 
@@ -278,7 +278,7 @@ namespace OpenDreamRuntime {
             try {
                 return (DreamList)_refValue;
             } catch (InvalidCastException) {
-                throw new Exception("Value " + this + " was not the expected type of DreamList");
+                throw new InvalidCastException("Value " + this + " was not the expected type of DreamList");
             }
         }
 
@@ -296,7 +296,7 @@ namespace OpenDreamRuntime {
 
         public IDreamObjectTree.TreeEntry MustGetValueAsType() {
             if (Type != DreamValueType.DreamType) // Could be a proc or verb stub, they hold they same value
-                throw new Exception($"Value {this} was not the expected type of DreamPath");
+                throw new InvalidCastException($"Value {this} was not the expected type of DreamPath");
 
             return (IDreamObjectTree.TreeEntry)_refValue;
         }
@@ -317,7 +317,7 @@ namespace OpenDreamRuntime {
             try {
                 return (DreamProc)_refValue;
             } catch (InvalidCastException) {
-                throw new Exception("Value " + this + " was not the expected type of DreamProc");
+                throw new InvalidCastException("Value " + this + " was not the expected type of DreamProc");
             }
         }
 
@@ -360,7 +360,7 @@ namespace OpenDreamRuntime {
             try {
                 return (DreamProcArguments) _refValue;
             } catch (InvalidCastException) {
-                throw new Exception($"Value {this} was not the expected type of ProcArguments");
+                throw new InvalidCastException($"Value {this} was not the expected type of ProcArguments");
             }
         }
 

@@ -35,7 +35,6 @@ namespace OpenDreamRuntime {
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
         public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
-        public DreamList WorldContentsList { get; private set; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public List<DreamObject> Mobs { get; set; } = new();
@@ -111,7 +110,6 @@ namespace OpenDreamRuntime {
             DreamProcNative.SetupNativeProcs(_objectTree);
 
             _dreamMapManager.Initialize();
-            WorldContentsList = DreamList.Create();
             WorldInstance = _objectTree.CreateObject(_objectTree.World);
 
             // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.

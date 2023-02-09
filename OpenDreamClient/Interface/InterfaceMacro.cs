@@ -1,71 +1,101 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using JetBrains.Annotations;
+using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Input;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
+using Robust.Shared.Players;
 using Key = Robust.Client.Input.Keyboard.Key;
 
-namespace OpenDreamClient.Input {
-    sealed class DreamMacroManager : IDreamMacroManager {
-        [Dependency] private readonly IInputManager _inputManager = default!;
-        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+namespace OpenDreamClient.Interface;
 
-        private const string InputContextPrefix = "macroSet_";
+public sealed class InterfaceMacroSet : InterfaceElement {
+    public readonly Dictionary<string, InterfaceMacro> Macros = new();
 
-        public void LoadMacroSets(List<MacroSetDescriptor> macroSets) {
-            IInputContextContainer contexts = _inputManager.Contexts;
+    private const string InputContextPrefix = "macroSet_";
 
-            foreach (MacroSetDescriptor macroSet in macroSets) {
-                string name = InputContextPrefix + macroSet.Name;
-                if (contexts.Exists(name)) {
-                    contexts.Remove(name);
-                }
-                IInputCmdContext context = contexts.New(name, "common");
+    private readonly IInputManager _inputManager;
+    private readonly IEntitySystemManager _entitySystemManager;
+    private readonly IInputCmdContext _inputContext;
 
-                foreach (MacroDescriptor macro in macroSet.Macros) {
-                    BoundKeyFunction function = new BoundKeyFunction(macro.Id);
-                    KeyBindingRegistration binding = CreateMacroBinding(function, macro.Name);
+    private readonly string _inputContextName;
 
-                    if (binding == null)
-                        continue;
+    public InterfaceMacroSet(MacroSetDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager) : base(descriptor) {
+        _inputManager = inputManager;
+        _entitySystemManager = entitySystemManager;
 
-                    context.AddFunction(function);
-                    _inputManager.RegisterBinding(in binding);
-                    _inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(_ => OnMacroPress(macro), _ => OnMacroRelease(macro), outsidePrediction: false));
-                }
+        _inputContextName = $"{InputContextPrefix}{Name}";
+        if (inputManager.Contexts.Exists(_inputContextName)) {
+            inputManager.Contexts.Remove(_inputContextName);
+        }
+
+        _inputContext = inputManager.Contexts.New(_inputContextName, "common");
+        foreach (MacroDescriptor macro in descriptor.Macros) {
+            AddChild(macro);
+        }
+    }
+
+    public override void AddChild(ElementDescriptor descriptor) {
+        if (descriptor is not MacroDescriptor macroDescriptor)
+            throw new ArgumentException($"Attempted to add a {descriptor} to a macro set", nameof(descriptor));
+
+        Macros.Add(macroDescriptor.Name, new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext));
+    }
+
+    public void SetActive() {
+        _inputManager.Contexts.SetActiveContext($"{InputContextPrefix}{Name}");
+    }
+}
+
+public sealed class InterfaceMacro : InterfaceElement {
+    public string Id => MacroDescriptor.Id;
+    public string Command => MacroDescriptor.Id;
+
+    private MacroDescriptor MacroDescriptor => (ElementDescriptor as MacroDescriptor);
+
+    private readonly IEntitySystemManager _entitySystemManager;
+
+    public InterfaceMacro(string contextName, MacroDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager, IInputCmdContext inputContext) : base(descriptor) {
+        _entitySystemManager = entitySystemManager;
+
+        BoundKeyFunction function = new BoundKeyFunction($"{contextName}_{Id}");
+        KeyBindingRegistration binding = CreateMacroBinding(function, Name);
+
+        if (binding == null)
+            return;
+
+        inputContext.AddFunction(function);
+        inputManager.RegisterBinding(in binding);
+        inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease, outsidePrediction: false));
+    }
+
+    private void OnMacroPress([CanBeNull] ICommonSession session) {
+        if (String.IsNullOrEmpty(Command))
+            return;
+
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+            if (Name.EndsWith("+REP")) {
+                commandSystem.StartRepeatingCommand(Command);
+            } else {
+                commandSystem.RunCommand(Command);
             }
         }
+    }
 
-        public void SetActiveMacroSet(MacroSetDescriptor macroSet) {
-            _inputManager.Contexts.SetActiveContext(InputContextPrefix + macroSet.Name);
-        }
+    private void OnMacroRelease([CanBeNull] ICommonSession session) {
+        if (String.IsNullOrEmpty(Command))
+            return;
 
-        private void OnMacroPress(MacroDescriptor macro) {
-            if (String.IsNullOrEmpty(macro.Command))
-                return;
-
-            if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
-                if (macro.Name.EndsWith("+REP")) {
-                    commandSystem.StartRepeatingCommand(macro.Command);
-                } else {
-                    commandSystem.RunCommand(macro.Command);
-                }
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+            if (Name.EndsWith("+REP")) {
+                commandSystem.StopRepeatingCommand(Command);
+            } else if (Name.EndsWith("+UP")) {
+                commandSystem.RunCommand(Command);
             }
         }
+    }
 
-        private void OnMacroRelease(MacroDescriptor macro) {
-            if (String.IsNullOrEmpty(macro.Command))
-                return;
-
-            if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
-                if (macro.Name.EndsWith("+REP")) {
-                    commandSystem.StopRepeatingCommand(macro.Command);
-                } else if (macro.Name.EndsWith("+UP")) {
-                    commandSystem.RunCommand(macro.Command);
-                }
-            }
-        }
-
-            private KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, string macroName) {
+    private static KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, string macroName) {
             macroName = macroName.Replace("SHIFT+", String.Empty);
             macroName = macroName.Replace("CTRL+", String.Empty);
             macroName = macroName.Replace("ALT+", String.Empty);
@@ -74,11 +104,11 @@ namespace OpenDreamClient.Input {
 
             //TODO: modifiers
             var key = KeyNameToKey(macroName);
-            if (key == Key.Unknown)
-            {
+            if (key == Key.Unknown) {
                 Logger.Warning($"Unknown key: {macroName}");
                 return null;
             }
+
             return new KeyBindingRegistration() {
                 BaseKey = key,
                 Function = function
@@ -180,10 +210,4 @@ namespace OpenDreamClient.Input {
                 _ => Key.Unknown
             };
         }
-    }
-
-    interface IDreamMacroManager {
-        public void LoadMacroSets(List<MacroSetDescriptor> macroSets);
-        public void SetActiveMacroSet(MacroSetDescriptor macroSet);
-    }
 }

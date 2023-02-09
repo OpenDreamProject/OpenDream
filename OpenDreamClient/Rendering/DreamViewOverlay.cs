@@ -294,16 +294,16 @@ sealed class DreamViewOverlay : Overlay {
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
-            if(!keepTogether || (icon.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
+            if(!keepTogether || (underlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, -1));
             else
                 current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
-            if(!keepTogether || (icon.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
+            if(!keepTogether || (overlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, 1));
             else
                 current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
         }
@@ -395,7 +395,7 @@ sealed class DreamViewOverlay : Overlay {
             float KTParentBlendMode = iconMetaData.MainIcon.Appearance.BlendMode;
             iconMetaData.MainIcon.Appearance.BlendMode = 0; //BLEND_DEFAULT
 
-            List<RendererMetaData> KTItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup.Count);
+            List<RendererMetaData> KTItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup.Count+1);
             KTItems.Add(iconMetaData);
             KTItems.AddRange(iconMetaData.KeepTogetherGroup);
             iconMetaData.KeepTogetherGroup.Clear();

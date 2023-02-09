@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Threading.Tasks;
 using NUnit.Framework;
@@ -11,6 +12,12 @@ using Robust.Shared.Asynchronous;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Timing;
+
+// Disables warnings about using the constraint model; May need to be updated.
+#pragma warning disable NUnit2002 // We use Assert.IsFalse
+#pragma warning disable NUnit2003 // We use Assert.IsTrue
+#pragma warning disable NUnit2010 // We do not use the constraint model
+#pragma warning disable NUnit2017 // We use Assert.IsNull
 
 namespace Content.Tests
 {
@@ -33,6 +40,8 @@ namespace Content.Tests
             NoReturn = 16,      // Shouldn't return (aka stopped by a stack-overflow or runtimes)
         }
 
+        private void OnException(object? sender, Exception exception) => TestContext.WriteLine(exception);
+
         [OneTimeSetUp]
         public void OneTimeSetup() {
             IoCManager.InjectDependencies(this);
@@ -45,11 +54,7 @@ namespace Content.Tests
             _dreamMan.OnException += OnException;
         }
 
-        private void OnException(object? sender, Exception e) {
-            TestContext.WriteLine(e.ToString());
-        }
-
-        public string? Compile(string sourceFile) {
+        private static string? Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
                 Files = new() { sourceFile }
             });
@@ -57,18 +62,19 @@ namespace Content.Tests
             return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;
         }
 
-        public void Cleanup(string compiledFile) {
+        private static void Cleanup(string? compiledFile) {
             if (!File.Exists(compiledFile))
                 return;
 
             File.Delete(compiledFile);
         }
 
-        [Test, TestCaseSource(nameof(GetTests))]
+        // Timeout doesn't work here due to it multithreading
+        [Test, TestCaseSource(nameof(GetTests)), MaxTime(500)]
         public void TestFiles(string sourceFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
             try {
-                string compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
+                string? compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
                 if (testFlags.HasFlag(DMTestFlags.CompileError)) {
                     Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
                     Cleanup(compiledFile);
@@ -97,8 +103,9 @@ namespace Content.Tests
                 }
 
                 if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
-                    returned.Value.TryGetValueAsInteger(out int returnInt);
-                    Assert.IsTrue(returnInt != 0, "Test was expected to return TRUE");
+                    Assert.That(returned.HasValue, Is.True);
+                    int returnInt = returned.Value.MustGetValueAsInteger();
+                    Assert.IsTrue(returnInt == 1, "Test was expected to return TRUE");
                 }
 
                 Cleanup(compiledFile);
@@ -112,10 +119,10 @@ namespace Content.Tests
             var prev = _dreamMan.LastDMException;
 
             DreamValue? retValue = null;
-            Task<DreamValue> callTask = null;
+            Task<DreamValue> callTask = null!;
 
             DreamThread.Run("RunTest", async (state) => {
-                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
+                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc? proc)) {
                     callTask = state.Call(proc, null, null, new DreamProcArguments(null));
                     retValue = await callTask;
                     return DreamValue.Null;
@@ -125,18 +132,10 @@ namespace Content.Tests
                 }
             });
 
-
-            var Watch = new Stopwatch();
-            Watch.Start();
-
-             // Tick until our inner call has finished
+            // Tick until our inner call has finished
             while (!callTask.IsCompleted) {
                 _dreamMan.Update();
                 _taskManager.ProcessPendingTasks();
-
-                if (Watch.Elapsed.TotalMilliseconds > 500) {
-                    Assert.Fail("Test timed out");
-                }
             }
 
             bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
@@ -148,7 +147,7 @@ namespace Content.Tests
             Directory.SetCurrentDirectory(TestProject);
 
             foreach (string sourceFile in Directory.GetFiles("Tests", "*.dm", SearchOption.AllDirectories)) {
-                string sourceFile2 = sourceFile.Substring("Tests/".Length);
+                string sourceFile2 = sourceFile["Tests/".Length..];
                 DMTestFlags testFlags = GetDMTestFlags(sourceFile);
                 if (testFlags.HasFlag(DMTestFlags.Ignore))
                     continue;
@@ -164,8 +163,7 @@ namespace Content.Tests
             DMTestFlags testFlags = DMTestFlags.NoError;
 
             using (StreamReader reader = new StreamReader(sourceFile)) {
-                string firstLine = reader.ReadLine();
-
+                string firstLine = reader.ReadLine() ?? throw new UnreachableException("reader.ReadLine() returned null");
                 if (firstLine.Contains("IGNORE", StringComparison.InvariantCulture))
                     testFlags |= DMTestFlags.Ignore;
                 if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))

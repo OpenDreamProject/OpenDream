@@ -1678,37 +1678,22 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_spantext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //if any arguments are bad, return 0
-            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
-                return new DreamValue(0);
-            }
-            if (!arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles))
-            {
-                return new DreamValue(0);
-            }
-            if (!arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start)) //0 is not valid, 
-            {
-                return new DreamValue(0);
-            }
-            if(start > text.Length)
-            {
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
+                !arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
+                !arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
+                start == 0) { // Start=0 is not valid
                 return new DreamValue(0);
             }
 
-            if(start < 0)
-            {
+            if(start < 0) {
                 start = Math.Max(start + text.Length + 1, 1);
             }
 
             int result = 0;
-            while(start <= text.Length)
-            {
-                if(text.AsSpan(start - 1, 1).IndexOfAny(needles) > -1)
-                {
+            while(start <= text.Length) {
+                if(text.AsSpan(start - 1, 1).IndexOfAny(needles) > -1) {
                     result++;
-                }
-                else
-                {
+                } else {
                     break;
                 }
                 start++;
@@ -1722,26 +1707,18 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_spantext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //if any arguments are bad, return 0
-            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
+            if (!arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
+                !arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
+                !arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
+                start == 0) { // Start=0 is not valid
                 return new DreamValue(0);
             }
-            if (!arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles))
-            {
-                return new DreamValue(0);
-            }
-            if (!arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start)) //0 is not valid, 
-            {
-                return new DreamValue(0);
-            }
-            if(start > text.Length)
-            {
+            if(start > text.Length) {
                 return new DreamValue(0);
             }
             StringInfo textStringInfo = new StringInfo(text);
             
-            if(start < 0)
-            {
+            if(start < 0) {
                 start = Math.Max(start + textStringInfo.LengthInTextElements + 1, 1);
             }
 
@@ -1750,8 +1727,7 @@ namespace OpenDreamRuntime.Procs.Native {
             TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
             TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
 
-            while(textElementEnumerator.MoveNext()) 
-            {
+            while(textElementEnumerator.MoveNext()) {
                 bool found = false;
                 needlesElementEnumerator.Reset();
                 

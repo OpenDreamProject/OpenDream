@@ -168,7 +168,9 @@ namespace Content.Tests
             DMTestFlags testFlags = DMTestFlags.NoError;
 
             using (StreamReader reader = new StreamReader(sourceFile)) {
-                string firstLine = reader.ReadLine() ?? throw new IOException($"{sourceFile} is empty");
+                string? firstLine = reader.ReadLine();
+                if (firstLine == null)
+                    return testFlags;
                 if (firstLine.Contains("IGNORE", StringComparison.InvariantCulture))
                     testFlags |= DMTestFlags.Ignore;
                 if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))

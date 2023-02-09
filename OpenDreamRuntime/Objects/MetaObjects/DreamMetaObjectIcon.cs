@@ -3,136 +3,73 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
+using ParsedDMIDescription = OpenDreamShared.Resources.DMIParser.ParsedDMIDescription;
 
-namespace OpenDreamRuntime.Objects.MetaObjects {
-    sealed class DreamMetaObjectIcon : IDreamMetaObject
-    {
-        public bool ShouldCallNew => true;
-        public IDreamMetaObject? ParentType { get; set; }
+namespace OpenDreamRuntime.Objects.MetaObjects;
 
-        [Dependency] private readonly DreamResourceManager _rscMan = default!;
+sealed class DreamMetaObjectIcon : IDreamMetaObject {
+    public bool ShouldCallNew => true;
+    public IDreamMetaObject? ParentType { get; set; }
 
-        public DreamMetaObjectIcon() {
-            IoCManager.InjectDependencies(this);
+    [Dependency] private readonly DreamResourceManager _rscMan = default!;
+    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+
+    public DreamMetaObjectIcon() {
+        IoCManager.InjectDependencies(this);
+    }
+
+    public static readonly Dictionary<DreamObject, DreamIcon> ObjectToDreamIcon = new();
+
+    public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+        ParentType?.OnObjectCreated(dreamObject, creationArguments);
+
+        // TODO confirm BYOND behavior of invalid args for icon, dir, and frame
+        DreamValue icon = creationArguments.GetArgument(0, "icon");
+        DreamValue state = creationArguments.GetArgument(1, "icon_state");
+        DreamValue dir = creationArguments.GetArgument(2, "dir");
+        DreamValue frame = creationArguments.GetArgument(3, "frame");
+        DreamValue moving = creationArguments.GetArgument(4, "moving");
+
+        var dreamIcon = InitializeIcon(_rscMan, dreamObject);
+
+        if (icon != DreamValue.Null) {
+            // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
+            if (!_rscMan.TryLoadIcon(icon, out var iconRsc))
+                throw new Exception($"Cannot create an icon from {icon}");
+
+            dreamIcon.InsertStates(iconRsc, state, dir, frame, useStateName: false);
         }
+    }
 
-        public enum DreamIconMovingMode : byte
-        {
-            Both = 0,
-            Movement = 1,
-            NonMovement = 2,
+    public void OnObjectDeleted(DreamObject dreamObject) {
+        ObjectToDreamIcon.Remove(dreamObject);
 
+        ParentType?.OnObjectDeleted(dreamObject);
+    }
+
+    public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
+        ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
+
+        switch (varName) {
+            case "icon":
+                // Setting the icon to anything other than a DreamResource will actually set it to null
+                if (value.Type != DreamValue.DreamValueType.DreamResource) {
+                    dreamObject.SetVariableValue("icon", DreamValue.Null);
+                }
+
+                break;
         }
+    }
 
-        public static readonly Dictionary<DreamObject, DreamIconObject> ObjectToDreamIcon = new();
+    /// <summary>
+    /// A fast path for initializing an /icon object
+    /// </summary>
+    /// <remarks>Doesn't call any DM code</remarks>
+    /// <returns>The /icon's DreamIcon</returns>
+    public static DreamIcon InitializeIcon(DreamResourceManager rscMan, DreamObject icon) {
+        DreamIcon dreamIcon = new(rscMan);
 
-        public struct DreamIconObject {
-            // Actual DMI data
-            public DMIParser.ParsedDMIDescription Description; // TODO Eventually this should probably be removed in favor of just directly storing the data for the subset of the DMI that we actually care about
-
-            // These vars correspond to the args in icon/new() and the resulting /icon obj, not the actual DMI data
-            public string Icon;
-            public string? State; // Specific icon_state. Null is all states.
-            public AtomDirection? Direction; // Specific dir. Null is all dirs.
-            public byte? Frame; //1-indexed. Specific frame. Null is all frames.
-            public DreamIconMovingMode Moving;
-
-            public DreamIconObject(DreamResource rsc, DreamValue state, DreamValue dir, DreamValue frame, DreamValue moving)
-            {
-                if (Path.GetExtension(rsc.ResourcePath) != ".dmi")
-                {
-                    throw new Exception("Invalid icon file");
-                }
-
-                Description = DMIParser.ParseDMI(new MemoryStream(rsc.ResourceData));
-                Icon = rsc.ResourcePath;
-
-                // TODO confirm BYOND behavior of invalid args for icon, dir, and frame
-
-                state.TryGetValueAsString(out State);
-
-                if (dir.TryGetValueAsInteger(out var dirVal) && (AtomDirection)dirVal != AtomDirection.None)
-                {
-                    Direction = (AtomDirection)dirVal;
-                }
-                else
-                {
-                    Direction = null;
-                }
-
-                if (frame.TryGetValueAsInteger(out var frameVal))
-                {
-                    //TODO: Figure out how many frames an icon can have and see if this needs to be bigger than a byte
-                    Frame = Convert.ToByte(frameVal - 1); //1-indexed
-                }
-                else
-                {
-                    Frame = null;
-                }
-
-                if (moving != DreamValue.Null)
-                {
-                    if (moving.TryGetValueAsInteger(out var movingVal) && movingVal == 0)
-                    {
-                        Moving = DreamIconMovingMode.NonMovement;
-                    }
-                    else
-                    {
-                        Moving = DreamIconMovingMode.Movement;
-                    }
-                }
-                else
-                {
-                    Moving = DreamIconMovingMode.Both;
-                }
-            }
-        }
-
-        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            ParentType?.OnObjectCreated(dreamObject, creationArguments);
-
-            DreamValue icon = creationArguments.GetArgument(0, "icon");
-            DreamValue state = creationArguments.GetArgument(1, "icon_state");
-            DreamValue dir = creationArguments.GetArgument(2, "dir");
-            DreamValue frame = creationArguments.GetArgument(3, "frame");
-            DreamValue moving = creationArguments.GetArgument(4, "moving");
-
-            DreamIconObject dreamIconObject;
-
-            if (icon.TryGetValueAsDreamObjectOfType(DreamPath.Icon, out DreamObject copyFrom)) {
-                dreamIconObject = ObjectToDreamIcon[copyFrom];
-            } else if (icon.TryGetValueAsString(out string fileString))
-            {
-                var ext = Path.GetExtension(fileString);
-                switch (ext) // TODO implement other icon file types
-                {
-                    case ".dmi":
-                        dreamIconObject = new DreamIconObject(_rscMan.LoadResource(fileString), state, dir, frame, moving);
-                        break;
-                    case ".png":
-                    case ".jpg":
-                    case ".rsi": // RT-specific, not in BYOND
-                    case ".gif":
-                    case ".bmp":
-                        throw new NotImplementedException($"Unimplemented icon type '{ext}'");
-                    default:
-                        throw new Exception($"Invalid icon file {fileString}");
-                }
-
-            } else if (icon.TryGetValueAsDreamResource(out var rsc))
-            {
-                dreamIconObject = new DreamIconObject(rsc, state, dir, frame, moving);
-            } else {
-                throw new Exception("Invalid icon file " + icon);
-            }
-
-            ObjectToDreamIcon.Add(dreamObject, dreamIconObject);
-        }
-
-        public void OnObjectDeleted(DreamObject dreamObject) {
-            ObjectToDreamIcon.Remove(dreamObject);
-
-            ParentType?.OnObjectDeleted(dreamObject);
-        }
+        ObjectToDreamIcon.Add(icon, dreamIcon);
+        return dreamIcon;
     }
 }

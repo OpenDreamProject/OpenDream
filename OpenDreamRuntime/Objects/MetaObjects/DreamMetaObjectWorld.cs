@@ -14,6 +14,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly DreamResourceManager _dreamRscMan = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -60,13 +61,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            _dreamManager.WorldContentsList = dreamObject.GetVariable("contents").GetValueAsDreamList();
-
             DreamValue log = dreamObject.ObjectDefinition.Variables["log"];
             dreamObject.SetVariable("log", log);
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
-            if (fps.TryGetValueAsInteger(out var fpsValue)) {
+
+            if (fps.TryGetValueAsInteger(out var fpsValue) && _netManager.IsServer) {
                 _cfg.SetCVar(CVars.NetTickrate, fpsValue);
             }
 
@@ -75,8 +75,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 _viewRange = new ViewRange(viewString);
             } else {
                 if (!view.TryGetValueAsInteger(out var viewInt)) {
-                    Logger.Warning("world.view did not contain a valid value. A default of 5 is being used.");
-                    viewInt = 5;
+                    Logger.Warning("world.view did not contain a valid value. A default of 7 is being used.");
+                    viewInt = 7;
                 }
 
                 _viewRange = new ViewRange(viewInt);
@@ -113,6 +113,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
+                case "contents":
+                    return new DreamValue(new WorldContentsList(_objectTree.List.ObjectDefinition, _dreamMapManager));
+                case "process":
+                    return new DreamValue(Environment.ProcessId);
                 case "tick_lag":
                     return new DreamValue(TickLag);
                 case "fps":
@@ -120,7 +124,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "timeofday":
                     return new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 case "time":
-                    return new DreamValue(_gameTiming.CurTick.Value * TickLag);
+                    return new DreamValue((_gameTiming.CurTick.Value - _dreamManager.InitializedTick.Value) * TickLag);
                 case "realtime":
                     return new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 case "tick_usage": {
@@ -168,24 +172,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "view": {
                     //Number if square & centerable, string representation otherwise
                     if (_viewRange.IsSquare && _viewRange.IsCenterable) {
-                        return new DreamValue(_viewRange.Width);
+                        return new DreamValue(_viewRange.Range);
                     } else {
                         return new DreamValue(_viewRange.ToString());
                     }
                 }
                 case "vars":
-                    return new DreamValue(DreamListVars.Create(dreamObject));
+                    return new DreamValue(new DreamListVars(_objectTree.List.ObjectDefinition, dreamObject));
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
-        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
+        public void OperatorOutput(DreamValue a, DreamValue b) {
             foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }
-
-            return new DreamValue(0);
         }
     }
 }

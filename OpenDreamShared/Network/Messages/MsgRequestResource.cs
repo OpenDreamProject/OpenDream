@@ -1,22 +1,19 @@
 ﻿using Lidgren.Network;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
-namespace OpenDreamShared.Network.Messages
-{
-    public sealed class MsgRequestResource : NetMessage
-    {
-        public override NetDeliveryMethod DeliveryMethod => NetDeliveryMethod.ReliableUnordered;
+namespace OpenDreamShared.Network.Messages;
 
-        public string ResourcePath;
+public sealed class MsgRequestResource : NetMessage {
+    public override NetDeliveryMethod DeliveryMethod => NetDeliveryMethod.ReliableUnordered;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
-        {
-            ResourcePath = buffer.ReadString();
-        }
+    public int ResourceId;
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
-        {
-            buffer.Write(ResourcePath);
-        }
+    public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
+        ResourceId = buffer.ReadInt32();
+    }
+
+    public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
+        buffer.Write(ResourceId);
     }
 }

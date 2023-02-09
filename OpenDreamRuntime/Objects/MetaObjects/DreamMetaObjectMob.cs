@@ -8,6 +8,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
 
         public DreamMetaObjectMob() {
@@ -49,7 +50,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             if (varName == "key" || varName == "ckey") {
-                if (dreamObject.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client)) {
+                if (dreamObject.GetVariable("client").TryGetValueAsDreamObjectOfType(_objectTree.Client, out var client)) {
                     return client.GetVariable(varName);
                 } else {
                     return DreamValue.Null;
@@ -61,15 +62,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public DreamValue OperatorOutput(DreamValue a, DreamValue b) {
-            if (!a.TryGetValueAsDreamObjectOfType(DreamPath.Mob, out var mob))
-                throw new ArgumentException($"Left-hand value was not the expected type {DreamPath.Mob}");
-            if (!mob.GetVariable("client").TryGetValueAsDreamObjectOfType(DreamPath.Client, out var client))
+        public void OperatorOutput(DreamValue a, DreamValue b) {
+            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Mob, out var mob))
+                throw new ArgumentException($"Left-hand value was not the expected type {_objectTree.Mob}");
+            if (!mob.GetVariable("client").TryGetValueAsDreamObjectOfType(_objectTree.Client, out var client))
                 throw new Exception($"Failed to get client from {mob}");
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
-            return new DreamValue(0);
         }
     }
 }

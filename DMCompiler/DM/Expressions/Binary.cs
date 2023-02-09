@@ -124,6 +124,28 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // x %% y
+    class ModuloModulo : BinaryOp {
+        public ModuloModulo(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs) { }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.ModuloModulo(rhs);
+            return true;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            LHS.EmitPushValue(dmObject, proc);
+            RHS.EmitPushValue(dmObject, proc);
+            proc.ModulusModulus();
+        }
+    }
+
     // x ** y
     class Power : BinaryOp {
         public Power(Location location, DMExpression lhs, DMExpression rhs)
@@ -309,6 +331,17 @@ namespace DMCompiler.DM.Expressions {
         public GreaterThan(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.GreaterThan(rhs);
+            return true;
+        }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             LHS.EmitPushValue(dmObject, proc);
             RHS.EmitPushValue(dmObject, proc);
@@ -326,6 +359,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.GreaterThanOrEqual();
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.GreaterThanOrEqual(rhs);
+            return true;
+        }
     }
 
 
@@ -339,6 +382,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.LessThan();
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.LessThan(rhs);
+            return true;
+        }
     }
 
     // x <= y
@@ -351,6 +404,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.LessThanOrEqual();
         }
+
+        public override bool TryAsConstant(out Constant constant) {
+            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+                constant = null;
+                return false;
+            }
+
+            constant = lhs.LessThanOrEqual(rhs);
+            return true;
+        }
     }
 
     // x || y
@@ -359,13 +422,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
+                constant = lhs;
+                return true;
             }
 
-            constant = lhs.Or(rhs);
-            return true;
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -384,13 +452,18 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
-                constant = null;
-                return false;
+            if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {
+                constant = lhs;
+                return true;
             }
 
-            constant = lhs.And(rhs);
-            return true;
+            if (RHS.TryAsConstant(out var rhs)) {
+                constant = rhs;
+                return true;
+            }
+
+            constant = null;
+            return false;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -421,6 +494,11 @@ namespace DMCompiler.DM.Expressions {
         public AssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
+        /// <summary>
+        /// Generic interface for emitting the assignment operation. Has its conditionality and reference generation already handled.
+        /// </summary>
+        /// <remarks>You should always make use of the reference argument, unless you totally override AssignmentBinaryOp's EmitPushValue method.</remarks>
+        /// <param name="reference">A reference to the LHS emitted via <see cref="DMExpression.EmitReference(DMObject, DMProc)"/></param>
         public abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference);
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -569,10 +647,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            proc.PushReferenceValue(reference);
             RHS.EmitPushValue(dmObject, proc);
-            proc.BitShiftLeft();
-            proc.Assign(reference);
+            proc.BitShiftLeftReference(reference);
         }
     }
 
@@ -582,10 +658,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            proc.PushReferenceValue(reference);
             RHS.EmitPushValue(dmObject, proc);
-            proc.BitShiftRight();
-            proc.Assign(reference);
+            proc.BitShiftRightReference(reference);
         }
     }
 
@@ -608,6 +682,17 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
             RHS.EmitPushValue(dmObject, proc);
             proc.ModulusReference(reference);
+        }
+    }
+
+    // x %%= y
+    class ModulusModulusAssign : AssignmentBinaryOp {
+        public ModulusModulusAssign(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs) { }
+
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+            RHS.EmitPushValue(dmObject, proc);
+            proc.ModulusModulusReference(reference);
         }
     }
     #endregion

@@ -1,7 +1,9 @@
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -18,7 +20,7 @@ namespace OpenDreamRuntime {
         public string Name { get; }
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
-        public DreamProc SuperProc { set; get; }
+        public DreamProc? SuperProc { set; get; }
 
         public ProcAttributes Attributes { get; }
 
@@ -30,7 +32,7 @@ namespace OpenDreamRuntime {
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
 
-        protected DreamProc(DreamPath owningType, string name, DreamProc superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
+        protected DreamProc(DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
             OwningType = owningType;
             Name = name;
             SuperProc = superProc;
@@ -50,14 +52,37 @@ namespace OpenDreamRuntime {
             Invisibility = invisibility;
         }
 
-        public abstract ProcState CreateState(DreamThread thread, DreamObject src, DreamObject? usr, DreamProcArguments arguments);
+        public abstract ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments);
 
         // Execute this proc. This will behave as if the proc has `set waitfor = 0`
         public DreamValue Spawn(DreamObject src, DreamProcArguments arguments, DreamObject? usr = null) {
-            var context = new DreamThread();
+            var context = new DreamThread(this.ToString());
             var state = CreateState(context, src, usr, arguments);
             context.PushProcState(state);
             return context.Resume();
+        }
+
+        public DreamValue GetField(string field) {
+            // TODO: Figure out what byond does when these are null
+            switch (field) {
+                case "name":
+                    return new DreamValue(VerbName);
+                case "category":
+                    return new DreamValue(VerbCategory);
+                case "description":
+                    return new DreamValue(VerbDesc);
+                case "invisibility":
+                    return new DreamValue(Invisibility);
+                default:
+                    throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
+            }
+        }
+
+        public override string ToString() {
+            var procElement = (SuperProc == null) ? "proc/" : String.Empty; // Has "proc/" only if it's not an override
+            // TODO: "verb/" proc element
+
+            return OwningType == DreamPath.Root ? $"/{procElement}{Name}" : $"{OwningType}/{procElement}{Name}";
         }
     }
 
@@ -73,20 +98,20 @@ namespace OpenDreamRuntime {
         {}
     }
 
-    public abstract class ProcState {
+    public abstract class ProcState : IDisposable {
+        private static int _idCounter = 0;
+        public int Id { get; } = ++_idCounter;
+
         public DreamThread Thread { get; set; }
-        public DreamValue Result { set; get; } = DreamValue.Null;
+        public DreamValue Result { protected set; get; } = DreamValue.Null;
 
-        public bool WaitFor => Proc != null ? (Proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor : true;
-
-        public ProcState(DreamThread thread) {
-            Thread = thread;
-        }
+        public bool WaitFor { get; set; } = true;
 
         public ProcStatus Resume() {
             try {
                 return InternalResume();
             } catch (CancellingRuntime exception) {
+                Thread.CancelAll();
                 Thread.HandleException(exception);
                 return ProcStatus.Cancelled;
             } catch (PropagatingRuntime exception) {
@@ -99,8 +124,14 @@ namespace OpenDreamRuntime {
             }
         }
 
-        // May be null
-        public abstract DreamProc Proc { get; }
+        public virtual (string?, int?) SourceLine => (null, null);
+
+        public abstract DreamProc? Proc { get; }
+
+        protected void Initialize(DreamThread thread, bool waitFor) {
+            Thread = thread;
+            WaitFor = waitFor;
+        }
 
         protected abstract ProcStatus InternalResume();
 
@@ -108,9 +139,31 @@ namespace OpenDreamRuntime {
 
         // Most implementations won't require this, so give it a default
         public virtual void ReturnedInto(DreamValue value) {}
+
+        public virtual void Cancel() {}
+
+        public virtual void Dispose() {
+            Thread = null;
+            Result = DreamValue.Null;
+            WaitFor = true;
+        }
+
+        public override string ToString() {
+            var sb = new StringBuilder();
+            AppendStackFrame(sb);
+            return sb.ToString();
+        }
     }
 
     public sealed class DreamThread {
+        private static System.Threading.ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
+        public static IEnumerable<DreamThread> InspectExecutingThreads() {
+            return CurrentlyExecuting.Value!.Concat(CurrentlyExecuting.Values.SelectMany(x => x));
+        }
+
+        private static int _idCounter = 0;
+        public int Id { get; } = ++_idCounter;
+
         private const int MaxStackDepth = 256;
 
         private ProcState? _current;
@@ -119,56 +172,71 @@ namespace OpenDreamRuntime {
         // The amount of stack frames containing `WaitFor = false`
         private int _syncCount = 0;
 
-        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments? arguments) {
-            var context = new DreamThread();
+        public string Name { get; }
+
+        internal DreamDebugManager.ThreadStepMode? StepMode { get; set; }
+
+        public DreamThread(string name) {
+            Name = name;
+        }
+
+        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, DreamProcArguments? arguments) {
+            var context = new DreamThread(proc.ToString());
             var state = proc.CreateState(context, src, usr, arguments ?? new DreamProcArguments(null));
             context.PushProcState(state);
             return context.Resume();
         }
 
-        public static DreamValue Run(Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
-            var context = new DreamThread();
+        public static DreamValue Run(string name, Func<AsyncNativeProc.State, Task<DreamValue>> anonymousFunc) {
+            var context = new DreamThread(name);
             var state = AsyncNativeProc.CreateAnonymousState(context, anonymousFunc);
             context.PushProcState(state);
             return context.Resume();
         }
 
         public DreamValue Resume() {
-            while (_current != null) {
-                // _current.Resume may mutate our state!!!
-                switch (_current.Resume()) {
-                    // The entire Thread is stopping
-                    case ProcStatus.Cancelled:
-                        var current = _current;
-                        _current = null;
-                        _stack.Clear();
-                        return current.Result;
+            try {
+                CurrentlyExecuting.Value!.Push(this);
+                while (_current != null) {
+                    // _current.Resume may mutate our state!!!
+                    switch (_current.Resume()) {
+                        // The entire Thread is stopping
+                        case ProcStatus.Cancelled:
+                            var current = _current;
+                            _current = null;
+                            _stack.Clear();
+                            return current.Result;
 
-                    // Our top-most proc just returned a value
-                    case ProcStatus.Returned:
-                        var returned = _current.Result;
-                        PopProcState();
+                        // Our top-most proc just returned a value
+                        case ProcStatus.Returned:
+                            var returned = _current.Result;
+                            PopProcState();
 
-                        // If our stack is empty, the context has finished execution
-                        // so we can return the result to our native caller
-                        if (_current == null) {
-                            return returned;
-                        }
+                            // If our stack is empty, the context has finished execution
+                            // so we can return the result to our native caller
+                            if (_current == null) {
+                                return returned;
+                            }
 
-                        // ... otherwise we just push the return value onto the dm caller's stack
-                        _current.ReturnedInto(returned);
-                        break;
+                            // ... otherwise we just push the return value onto the dm caller's stack
+                            _current.ReturnedInto(returned);
+                            break;
 
-                    // The context is done executing for now
-                    case ProcStatus.Deferred:
-                        // We return the current return value here even though it may not be the final result
-                        return _current.Result;
+                        // The context is done executing for now
+                        case ProcStatus.Deferred:
+                            // We return the current return value here even though it may not be the final result
+                            return _current.Result;
 
-                    // Our top-most proc just called a function
-                    // This means _current has changed!
-                    case ProcStatus.Called:
-                        // Nothing to do. The loop will call into _current.Resume for us.
-                        break;
+                        // Our top-most proc just called a function
+                        // This means _current has changed!
+                        case ProcStatus.Called:
+                            // Nothing to do. The loop will call into _current.Resume for us.
+                            break;
+                    }
+                }
+            } finally {
+                if (CurrentlyExecuting.Value!.Pop() != this) {
+                    throw new InvalidOperationException("DreamThread stack corrupted");
                 }
             }
 
@@ -190,9 +258,14 @@ namespace OpenDreamRuntime {
             _current = state;
         }
 
-        public void PopProcState() {
+        public void PopProcState(bool dispose = true) {
             if (_current?.WaitFor == false) {
                 _syncCount--;
+            }
+
+            // Maybe a bit of a hack? If the state got deferred to another thread it shouldn't be disposed.
+            if (dispose && _current.Thread == this) {
+                _current.Dispose();
             }
 
             if (!_stack.TryPop(out _current)) {
@@ -213,17 +286,17 @@ namespace OpenDreamRuntime {
 
             // `WaitFor = true` frames
             while (_current is not null && _current.WaitFor) {
-                var frame = _current;
-                PopProcState();
-                newStackReversed.Push(frame);
+                newStackReversed.Push(_current);
+                PopProcState(dispose: false); // Dont dispose; this proc state is just being moved to another thread.
             }
 
             // `WaitFor = false` frame
             if(_current == null) throw new InvalidOperationException();
+            var threadName = _current.ToString();
             newStackReversed.Push(_current);
-            PopProcState();
+            PopProcState(dispose: false);
 
-            DreamThread newThread = new DreamThread();
+            DreamThread newThread = new DreamThread(threadName);
             foreach (var frame in newStackReversed) {
                 frame.Thread = newThread;
                 newThread.PushProcState(frame);
@@ -232,11 +305,6 @@ namespace OpenDreamRuntime {
             // Our returning proc state is expected to be on the stack at this point, so put it back
             // For this small moment, the proc state will be on both threads.
             PushProcState(newStackReversed.Peek());
-
-            // The old thread was emptied?
-            if (_current == null) {
-                throw new InvalidOperationException();
-            }
 
             return ProcStatus.Returned;
         }
@@ -260,17 +328,22 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void HandleException(Exception exception)
-        {
-            if(_current is DMProcState state)
-            {
-                state.ReturnPools();
+        public void CancelAll() {
+            _current?.Cancel();
+
+            foreach (var state in _stack) {
+                state.Cancel();
             }
+        }
+
+        public void HandleException(Exception exception) {
+            _current?.Cancel();
+
             var dreamMan = IoCManager.Resolve<IDreamManager>();
-            dreamMan.LastDMException = exception;
+            dreamMan.HandleException(exception);
 
             StringBuilder builder = new();
-            builder.AppendLine($"Exception Occured: {exception.Message}");
+            builder.AppendLine($"Exception occurred: {exception.Message}");
 
             builder.AppendLine("=DM StackTrace=");
             AppendStackTrace(builder);
@@ -280,7 +353,18 @@ namespace OpenDreamRuntime {
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
 
-           dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
+            dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
+
+            IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
+        }
+
+        public IEnumerable<ProcState> InspectStack() {
+            if (_current is not null) {
+                yield return _current;
+            }
+            foreach (var entry in _stack) {
+                yield return entry;
+            }
         }
     }
 }

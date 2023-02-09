@@ -1,20 +1,24 @@
 ﻿using OpenDreamShared.Dream;
-using Robust.Client.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
+using Robust.Client.Graphics;
+using Robust.Shared.Prototypes;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
         private readonly Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
         private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
+        private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
         /// <summary>
         /// Holds the entities used by opaque turfs to block vision
         /// </summary>
-        private readonly Dictionary<(IMapGrid, Vector2i), EntityUid> _opaqueTurfEntities = new();
+        private readonly Dictionary<(MapGridComponent, Vector2i), EntityUid> _opaqueTurfEntities = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly OccluderSystem _occluderSystem = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -79,13 +83,75 @@ namespace OpenDreamClient.Rendering {
             });
         }
 
+        public void ResetFilterUsageFlags() {
+            foreach (DreamFilter key in _filterShaders.Keys) {
+                key.Used = false;
+            }
+        }
+
+        public void CleanUpUnusedFilters() {
+            foreach (DreamFilter key in _filterShaders.Keys) {
+                if (!key.Used)
+                    _filterShaders.Remove(key);
+            }
+        }
+
+        public ShaderInstance GetFilterShader(DreamFilter filter) {
+            if (!_filterShaders.TryGetValue(filter, out var instance)) {
+                var protoManager = IoCManager.Resolve<IPrototypeManager>();
+
+                instance = protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
+
+                switch (filter) {
+                    case DreamFilterAlpha alpha:
+                        break;
+                    case DreamFilterAngularBlur angularBlur:
+                        break;
+                    case DreamFilterBloom bloom:
+                        break;
+                    case DreamFilterBlur blur:
+                        instance.SetParameter("size", blur.Size);
+                        break;
+                    case DreamFilterColor color:
+                        break;
+                    case DreamFilterDisplace displace:
+                        break;
+                    case DreamFilterDropShadow dropShadow:
+                        break;
+                    case DreamFilterLayer layer:
+                        break;
+                    case DreamFilterMotionBlur motionBlur:
+                        break;
+                    case DreamFilterOutline outline:
+                        instance.SetParameter("size", outline.Size);
+                        instance.SetParameter("color", outline.Color);
+                        instance.SetParameter("flags", outline.Flags);
+                        break;
+                    case DreamFilterRadialBlur radialBlur:
+                        break;
+                    case DreamFilterRays rays:
+                        break;
+                    case DreamFilterRipple ripple:
+                        break;
+                    case DreamFilterWave wave:
+                        break;
+                    case DreamFilterGreyscale greyscale:
+                        break;
+                }
+            }
+
+            filter.Used = true;
+            _filterShaders[filter] = instance;
+            return instance;
+        }
+
         private void OnGridModified(GridModifiedEvent e) {
             foreach (var modified in e.Modified) {
                 UpdateTurfOpacity(e.Grid, modified.position, modified.tile);
             }
         }
 
-        private void UpdateTurfOpacity(IMapGrid grid, Vector2i position, Tile newTile) {
+        private void UpdateTurfOpacity(MapGridComponent grid, Vector2i position, Tile newTile) {
             LoadAppearance((uint)newTile.TypeId - 1, appearance => {
                 bool hasOpaqueEntity = _opaqueTurfEntities.TryGetValue((grid, position), out var opaqueEntity);
 
@@ -95,9 +161,9 @@ namespace OpenDreamClient.Rendering {
                     // TODO: Maybe use a prototype?
                     opaqueEntity = _entityManager.SpawnEntity(null, entityPosition);
                     _entityManager.GetComponent<TransformComponent>(opaqueEntity).Anchored = true;
-                    var occluder = _entityManager.AddComponent<ClientOccluderComponent>(opaqueEntity);
-                    occluder.BoundingBox = Box2.FromDimensions(-1.0f, -1.0f, 1.0f, 1.0f);
-                    occluder.Enabled = true;
+                    var occluder = _entityManager.AddComponent<OccluderComponent>(opaqueEntity);
+                    _occluderSystem.SetBoundingBox(opaqueEntity, Box2.FromDimensions(-1.0f, -1.0f, 1.0f, 1.0f), occluder);
+                    _occluderSystem.SetEnabled(opaqueEntity, true, occluder);
 
                     _opaqueTurfEntities.Add((grid, position), opaqueEntity);
                 } else if (hasOpaqueEntity) {
@@ -108,3 +174,4 @@ namespace OpenDreamClient.Rendering {
         }
     }
 }
+

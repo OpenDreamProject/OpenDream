@@ -14,7 +14,7 @@
 	var/realtime
 	var/tick_lag = 1
 	var/cpu = 0 as opendream_unimplemented
-	var/fps = null
+	var/fps = 10
 	var/tick_usage
 	var/loop_checks = 0 as opendream_unimplemented
 
@@ -22,7 +22,7 @@
 	var/maxy = 0
 	var/maxz = 0
 	var/icon_size = 32
-	var/view = 5
+	var/view = 7 // The default is actually 5, but we hardcode a 15x15 view for now
 	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
 
 	var/byond_version = DM_VERSION
@@ -36,6 +36,7 @@
 	var/url as opendream_unimplemented
 	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
+	var/process
 	var/list/params = list() as opendream_unimplemented
 
 	var/sleep_offline = 0 as opendream_unimplemented
@@ -66,6 +67,9 @@
 		set opendream_unimplemented = TRUE
 		return FALSE;
 
+	proc/Error(exception)
+		set opendream_unimplemented = TRUE
+
 	proc/Reboot()
 		set opendream_unimplemented = TRUE
 
@@ -74,6 +78,8 @@
 
 	proc/Export(Addr, File, Persist, Clients)
 	proc/Import()
+		set opendream_unimplemented = TRUE
+	proc/Topic(T,Addr,Master,Keys)
 		set opendream_unimplemented = TRUE
 
 	proc/SetScores()

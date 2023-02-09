@@ -4,6 +4,7 @@ using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Utility;
 
 namespace DMCompiler.DM.Visitors {
     sealed class DMVisitorExpression : DMASTVisitor {
@@ -13,10 +14,9 @@ namespace DMCompiler.DM.Visitors {
         internal DMExpression Result { get; private set; }
 
         // NOTE This needs to be turned into a Stack of modes if more complicated scope changes are added in the future
-        public static string _scopeMode;
+        public static string _scopeMode = "normal";
 
-        internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath)
-        {
+        internal DMVisitorExpression(DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
             _dmObject = dmObject;
             _proc = proc;
             _inferredPath = inferredPath;
@@ -25,7 +25,6 @@ namespace DMCompiler.DM.Visitors {
         public void VisitProcStatementExpression(DMASTProcStatementExpression statement) {
             statement.Expression.Visit(this);
         }
-
 
         public void VisitConstantNull(DMASTConstantNull constant) {
             Result = new Expressions.Null(constant.Location);
@@ -48,12 +47,13 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
-            Result = new Expressions.Path(constant.Location, constant.Value.Path);
+            Result = new Expressions.Path(constant.Location, _dmObject, constant.Value.Path);
         }
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
             DMExpression.TryConstant(_dmObject, _proc, constant.Path, out var pathExpr);
-            if (pathExpr is not Expressions.Path expr) throw new CompileErrorException(constant.Location, "Cannot do an upward path search on " + pathExpr);
+            if (pathExpr is not Expressions.Path expr)
+                throw new CompileErrorException(constant.Location, $"Cannot do an upward path search on {pathExpr}");
 
             DreamPath path = expr.Value;
             DreamPath? foundPath = DMObjectTree.UpwardSearch(path, constant.Search.Path);
@@ -62,7 +62,7 @@ namespace DMCompiler.DM.Visitors {
                 throw new CompileErrorException(constant.Location,$"Invalid path {path}.{constant.Search.Path}");
             }
 
-            Result = new Expressions.Path(constant.Location, foundPath.Value);
+            Result = new Expressions.Path(constant.Location, _dmObject, foundPath.Value);
         }
 
         public void VisitStringFormat(DMASTStringFormat stringFormat) {
@@ -94,6 +94,9 @@ namespace DMCompiler.DM.Visitors {
                 case "args":
                     Result = new Expressions.Args(identifier.Location);
                     break;
+                case "opendream_procpath": // Our saner alternative to .....
+                    Result = new Expressions.OpenDreamProcpath(identifier.Location);
+                    break;
                 default:
                 {
                     DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
@@ -124,6 +127,10 @@ namespace DMCompiler.DM.Visitors {
                     throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
                 }
             }
+        }
+
+        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
+            VisitIdentifier(identifier.Identifier);
         }
 
         public void VisitVarDeclExpression(DMASTVarDeclExpression declExpr) {
@@ -194,7 +201,7 @@ namespace DMCompiler.DM.Visitors {
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
             if(lhs.TryAsConstant(out var _))
             {
-                DMCompiler.Error(new CompilerError(assign.Expression.Location, "Cannot write to const var"));
+                DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
             }
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
         }
@@ -242,6 +249,12 @@ namespace DMCompiler.DM.Visitors {
             var lhs = DMExpression.Create(_dmObject, _proc, modulus.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, modulus.B, _inferredPath);
             Result = new Expressions.Modulo(modulus.Location, lhs, rhs);
+        }
+
+        public void VisitModulusModulus(DMASTModulusModulus modulusModulus) {
+            var lhs = DMExpression.Create(_dmObject, _proc, modulusModulus.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulus.B, _inferredPath);
+            Result = new Expressions.ModuloModulo(modulusModulus.Location, lhs, rhs);
         }
 
         public void VisitPower(DMASTPower power) {
@@ -319,6 +332,12 @@ namespace DMCompiler.DM.Visitors {
             var lhs = DMExpression.Create(_dmObject, _proc, modulusAssign.A);
             var rhs = DMExpression.Create(_dmObject, _proc, modulusAssign.B);
             Result = new Expressions.ModulusAssign(modulusAssign.Location, lhs, rhs);
+        }
+
+        public void VisitModulusModulusAssign(DMASTModulusModulusAssign modulusModulusAssign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.A, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.B, lhs.Path);
+            Result = new Expressions.ModulusModulusAssign(modulusModulusAssign.Location, lhs, rhs);
         }
 
         public void VisitLeftShift(DMASTLeftShift leftShift) {
@@ -596,7 +615,7 @@ namespace DMCompiler.DM.Visitors {
             {
                 DMASTCallParameter parameter = addText.Parameters[i];
                 if(parameter.Key != null)
-                    throw new CompileErrorException(parameter.Location, "addtext() does not take named arguments");
+                    DMCompiler.Emit(WarningCode.TooManyArguments, parameter.Location, "addtext() does not take named arguments");
                 exp_arr[i] = DMExpression.Create(_dmObject,_proc, parameter.Value, _inferredPath);
             }
             Result = new Expressions.AddText(addText.Location, exp_arr);
@@ -614,7 +633,7 @@ namespace DMCompiler.DM.Visitors {
                 DMASTCallParameter parameter = input.Parameters[i];
 
                 if (parameter.Key != null) {
-                    DMCompiler.Error(parameter.Location, "input() does not take named arguments");
+                    DMCompiler.Emit(WarningCode.BadArgument, parameter.Location, "input() does not take named arguments");
                 }
 
                 arguments[i] = DMExpression.Create(_dmObject, _proc, parameter.Value);
@@ -630,7 +649,7 @@ namespace DMCompiler.DM.Visitors {
                 // Default filter is "as anything" when there's a list
                 input.Types ??= DMValueType.Anything;
                 if (input.Types != DMValueType.Anything && (input.Types & objectTypes) == 0x0) {
-                    DMCompiler.Error(input.Location,
+                    DMCompiler.Emit(WarningCode.BadArgument, input.Location,
                         $"Invalid input() filter \"{input.Types}\". Filter must be \"{DMValueType.Anything}\" or at least one of \"{objectTypes}\"");
                 }
             } else {
@@ -679,23 +698,24 @@ namespace DMCompiler.DM.Visitors {
             var procArgs = new ArgumentList(call.Location, _dmObject, _proc, call.ProcParameters, _inferredPath);
 
             switch (call.CallParameters.Length) {
-                case 1:
-                    {
-                        var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
-                        Result = new Expressions.CallStatement(call.Location, a, procArgs);
-                    }
-                    break;
-
-                case 2:
-                    {
-                        var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
-                        var b = DMExpression.Create(_dmObject, _proc, call.CallParameters[1].Value, _inferredPath);
-                        Result = new Expressions.CallStatement(call.Location, a, b, procArgs);
-                    }
-                    break;
-
                 default:
-                    throw new CompileErrorException(call.Location,"invalid argument count for call()");
+                    DMCompiler.Emit(WarningCode.TooManyArguments, call.Location, "Too many arguments for call()");
+                    DebugTools.Assert(call.CallParameters.Length > 2); // This feels paranoid but, whatever
+                    goto case 2; // Fallthrough!
+                case 2: {
+                    var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
+                    var b = DMExpression.Create(_dmObject, _proc, call.CallParameters[1].Value, _inferredPath);
+                    Result = new Expressions.CallStatement(call.Location, a, b, procArgs);
+                    break;
+                }
+                case 1: {
+                    var a = DMExpression.Create(_dmObject, _proc, call.CallParameters[0].Value, _inferredPath);
+                    Result = new Expressions.CallStatement(call.Location, a, procArgs);
+                    break;
+                }
+                case 0:
+                    DMCompiler.Emit(WarningCode.BadArgument, call.Location, "Not enough arguments for call()");
+                    break;
             }
         }
     }

@@ -5,7 +5,6 @@
 	New(icon, icon_state, dir, frame, moving)
 
 	proc/Blend(icon, function = ICON_ADD, x = 1, y = 1)
-		set opendream_unimplemented = TRUE
 
 	proc/Crop(x1, y1, x2, y2)
 		set opendream_unimplemented = TRUE
@@ -25,13 +24,11 @@
 		return icon_states(src, mode)
 
 	proc/Insert(new_icon, icon_state, dir, frame, moving, delay)
-		set opendream_unimplemented = TRUE
 
 	proc/MapColors(...)
 		set opendream_unimplemented = TRUE
 
 	proc/Scale(width, height)
-		set opendream_unimplemented = TRUE
 
 	proc/SetIntensity(r, g = r, b = r)
 		set opendream_unimplemented = TRUE

@@ -5,8 +5,9 @@ using System.Text;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DM {
-    public partial class DMLexer : TokenLexer {
-        public static List<string> ValidEscapeSequences = new() {
+    public sealed class DMLexer : TokenLexer {
+        // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
+        public static readonly List<string> ValidEscapeSequences = new(41) {
             "icon",
             "Roman", "roman",
             "The", "the",
@@ -29,7 +30,13 @@ namespace DMCompiler.Compiler.DM {
             "..."
         };
 
-        public static Dictionary<string, TokenType> Keywords = new() {
+        private static readonly List<TokenType> ValidIdentifierComponents = new(2) {
+            TokenType.DM_Preproc_Identifier,
+            TokenType.DM_Preproc_Number
+        };
+
+        // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
+        private static readonly Dictionary<string, TokenType> Keywords = new(25) {
             { "null", TokenType.DM_Null },
             { "break", TokenType.DM_Break },
             { "continue", TokenType.DM_Continue },
@@ -59,7 +66,7 @@ namespace DMCompiler.Compiler.DM {
 
         public int BracketNesting = 0;
 
-        private Stack<int> _indentationStack = new(new int[] { 0 });
+        private readonly Stack<int> _indentationStack = new(new int[] { 0 });
 
         /// <param name="source">The enumerable list of tokens output by <see cref="DMPreprocessor.DMPreprocessorLexer"/>.</param>
         public DMLexer(string sourceName, IEnumerable<Token> source) : base(sourceName, source) { }
@@ -157,12 +164,16 @@ namespace DMCompiler.Compiler.DM {
                                     break;
                             }
                             break;
+                        case TokenType.DM_Preproc_Punctuator_Semicolon: {
+                            Advance();
+                            token = CreateToken(TokenType.DM_Semicolon, ";");
+                            break;
+                        }
                         case TokenType.DM_Preproc_Punctuator: {
                             Advance();
 
                             string c = preprocToken.Text;
                             switch (c) {
-                                case ";": token = CreateToken(TokenType.DM_Semicolon, c); break;
                                 case "{": token = CreateToken(TokenType.DM_LeftCurlyBracket, c); break;
                                 case "}": {
                                     _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_RightCurlyBracket, c));
@@ -181,6 +192,8 @@ namespace DMCompiler.Compiler.DM {
                                 case "^=": token = CreateToken(TokenType.DM_XorEquals, c); break;
                                 case "%": token = CreateToken(TokenType.DM_Modulus, c); break;
                                 case "%=": token = CreateToken(TokenType.DM_ModulusEquals, c); break;
+                                case "%%": token = CreateToken(TokenType.DM_ModulusModulus, c); break;
+                                case "%%=": token = CreateToken(TokenType.DM_ModulusModulusEquals, c); break;
                                 case "~": token = CreateToken(TokenType.DM_Tilde, c); break;
                                 case "~=": token = CreateToken(TokenType.DM_TildeEquals, c); break;
                                 case "~!": token = CreateToken(TokenType.DM_TildeExclamation, c); break;
@@ -272,7 +285,7 @@ namespace DMCompiler.Compiler.DM {
                             //This is caused by preprocessor macros and escaped identifiers
                             do {
                                 identifierTextBuilder.Append(GetCurrent().Text);
-                            } while (Advance().Type == TokenType.DM_Preproc_Identifier && !AtEndOfSource);
+                            } while (ValidIdentifierComponents.Contains(Advance().Type) && !AtEndOfSource);
 
                             string identifierText = identifierTextBuilder.ToString();
                             if (Keywords.TryGetValue(identifierText, out TokenType keywordType)) {

@@ -1,35 +1,38 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System.Globalization;
+using System.Linq;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        public DreamObjectDefinition? ObjectDefinition { get; protected set; }
-        public bool Deleted = false;
+        public DreamObjectDefinition ObjectDefinition { get; private set; }
+        public bool Deleted { get; private set; } = false;
 
-        private Dictionary<string, DreamValue> _variables = new();
+        private Dictionary<string, DreamValue>? _variables;
 
-        public DreamObject(DreamObjectDefinition? objectDefinition) {
+        public DreamObject(DreamObjectDefinition objectDefinition) {
             ObjectDefinition = objectDefinition;
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
-            var thread = new DreamThread();
+            var thread = new DreamThread("new " + ObjectDefinition.Type);
             var procState = InitProc(thread, null, creationArguments);
             thread.PushProcState(procState);
-
-            if (thread.Resume() == DreamValue.Null) {
-                thread.HandleException(new InvalidOperationException("DreamObject.InitSpawn called a yielding proc!"));
-            }
+            thread.Resume();
         }
 
-        public ProcState InitProc(DreamThread thread, DreamObject usr, DreamProcArguments arguments) {
-            if(Deleted){
+        public ProcState InitProc(DreamThread thread, DreamObject? usr, DreamProcArguments arguments) {
+            if (Deleted) {
                 throw new Exception("Cannot init proc on a deleted object");
             }
-            return new InitDreamObjectState(thread, this, usr, arguments);
+
+            if (!InitDreamObjectState.Pool.TryPop(out var state)) {
+                state = new InitDreamObjectState(ObjectDefinition.DreamManager, ObjectDefinition.ObjectTree);
+            }
+
+            state.Initialize(thread, this, usr, arguments);
+            return state;
         }
 
         public void Delete(IDreamManager manager) {
@@ -38,18 +41,18 @@ namespace OpenDreamRuntime.Objects {
             Deleted = true;
             //we release all relevant information, making this a very tiny object
             _variables = null;
-            ObjectDefinition = null;
+            ObjectDefinition = null!;
 
             manager.ReferenceIDs.Remove(this);
         }
 
         public void SetObjectDefinition(DreamObjectDefinition objectDefinition) {
             ObjectDefinition = objectDefinition;
-            _variables.Clear();
+            _variables?.Clear();
         }
 
-        public bool IsSubtypeOf(DreamPath path) {
-            return ObjectDefinition.IsSubtypeOf(path);
+        public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
+            return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 
         public bool HasVariable(string name) {
@@ -70,23 +73,24 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public List<DreamValue> GetVariableNames() {
-            if(Deleted){
+        public IEnumerable<KeyValuePair<string, DreamValue>> GetAllVariables() {
+            return (_variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
+                .Concat(ObjectDefinition.Variables ?? Enumerable.Empty<KeyValuePair<string, DreamValue>>())
+                .DistinctBy(kvp => kvp.Key);
+        }
+
+        public IEnumerable<string> GetVariableNames() {
+            if (Deleted) {
                 throw new Exception("Cannot get variable names of a deleted object");
             }
-            List<DreamValue> list = new(_variables.Count);
-            // This is only ever called on a few specific types, none of them /list, so ObjectDefinition must be non-null.
-            foreach (String key in ObjectDefinition!.Variables.Keys) {
-                list.Add(new(key));
-            }
-            return list;
+            return ObjectDefinition.Variables.Keys;
         }
 
         public bool TryGetVariable(string name, out DreamValue variableValue) {
             if(Deleted){
                 throw new Exception("Cannot try to get variable on a deleted object");
             }
-            if (_variables.TryGetValue(name, out variableValue) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
+            if ((_variables?.TryGetValue(name, out variableValue) is true) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
                 if (ObjectDefinition.MetaObject != null) variableValue = ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);
 
                 return true;
@@ -114,7 +118,9 @@ namespace OpenDreamRuntime.Objects {
             if(Deleted){
                 throw new Exception("Cannot set variable on a deleted object");
             }
-            DreamValue oldValue = _variables.ContainsKey(name) ? _variables[name] : ObjectDefinition.Variables[name];
+            if (_variables?.TryGetValue(name, out DreamValue oldValue) is not true)
+                oldValue = ObjectDefinition.Variables[name];
+            _variables ??= new();
             _variables[name] = value;
             return oldValue;
         }
@@ -189,7 +195,7 @@ namespace OpenDreamRuntime.Objects {
         /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
         /// </summary>
         public string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
+            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
             bool isProper = StringIsProper(name);
             name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
@@ -213,17 +219,21 @@ namespace OpenDreamRuntime.Objects {
         /// </summary>
         public string GetNameUnformatted()
         {
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string name))
+            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
             return StringFormatEncoder.RemoveFormatting(name);
         }
 
         public override string ToString() {
-            if(Deleted) {
-                return "DreamObject(DELETED)";
+            if (Deleted) {
+                return "<deleted>";
             }
 
-            return "DreamObject(" + ObjectDefinition.Type + ")";
+            string name = GetNameUnformatted();
+            if (!string.IsNullOrEmpty(name)) {
+                return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
+            }
+            return ObjectDefinition.Type.ToString();
         }
     }
 }

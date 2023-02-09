@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Interface;
-using OpenDreamClient.Interface.Controls;
+﻿using OpenDreamClient.Interface.Controls;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 
@@ -17,21 +17,20 @@ namespace OpenDreamClient.Interface
             string name,
             Vector2i size,
             IClydeWindow ownerWindow) {
-            WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name, new() {
-                new ControlDescriptorMain() {
-                    Name = "main",
+            WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name,
+                new() {
+                    new ControlDescriptorBrowser {
+                        Name = "browser",
+                        Size = size,
+                        Anchor1 = new Vector2i(0, 0),
+                        Anchor2 = new Vector2i(100, 100)
+                    }
+                }) {
                     Size = size
-                },
-                new ControlDescriptorBrowser() {
-                    Name = "browser",
-                    Size = size,
-                    Anchor1 = new Vector2i(0, 0),
-                    Anchor2 = new Vector2i(100, 100)
-                }
-            });
+                };
 
             WindowElement = new ControlWindow(popupWindowDescriptor);
-            WindowElement.CreateChildControls(IoCManager.Resolve<IDreamInterfaceManager>());
+            WindowElement.CreateChildControls();
 
             _window = WindowElement.CreateWindow();
             _window.StartupLocation = WindowStartupLocation.CenterOwner;
@@ -53,4 +52,5 @@ namespace OpenDreamClient.Interface
         private void OnWindowClosed() {
             Closed?.Invoke();
         }
-    }}
+    }
+}

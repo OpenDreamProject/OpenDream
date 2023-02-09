@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -11,7 +11,7 @@ namespace OpenDreamShared.Dream.Procs {
         FormatString = 0x4,
         SwitchCaseRange = 0x5,
         PushReferenceValue = 0x6,
-        PushPath = 0x7,
+        //0x7
         Add = 0x8,
         Assign = 0x9,
         Call = 0xA,
@@ -32,7 +32,7 @@ namespace OpenDreamShared.Dream.Procs {
         Modulus = 0x19,
         Append = 0x1A,
         CreateRangeEnumerator = 0x1B,
-        //0x1C
+        Input = 0x1C,
         CompareLessThanOrEqual = 0x1D,
         CreateAssociativeList = 0x1E,
         Remove = 0x1F,
@@ -42,7 +42,7 @@ namespace OpenDreamShared.Dream.Procs {
         CallStatement = 0x23,
         BitAnd = 0x24,
         CompareNotEquals = 0x25,
-        //0x26
+        PushProc = 0x26,
         Divide = 0x27,
         Multiply = 0x28,
         BitXorReference = 0x29,
@@ -69,10 +69,10 @@ namespace OpenDreamShared.Dream.Procs {
         BrowseResource = 0x3E,
         OutputControl = 0x3F,
         BitShiftRight = 0x40,
-        //0x41
+        CreateFilteredListEnumerator = 0x41,
         Power = 0x42,
-        //0x43
-        //0x44
+        DebugSource = 0x43,
+        DebugLine = 0x44,
         Prompt = 0x45,
         PushProcArguments = 0x46,
         Initial = 0x47,
@@ -82,8 +82,8 @@ namespace OpenDreamShared.Dream.Procs {
         Locate = 0x4B,
         IsNull = 0x4C,
         Spawn = 0x4D,
-        //0x4E
-        //0x4F,
+        OutputReference = 0x4E,
+        Output = 0x4F,
         JumpIfNullDereference = 0x50,
         Pop = 0x51,
         Prob = 0x52,
@@ -99,7 +99,13 @@ namespace OpenDreamShared.Dream.Procs {
         MassConcatenation = 0x5C,
         CreateTypeEnumerator = 0x5D,
         //0x5E
-        PushGlobalVars = 0x5F
+        PushGlobalVars = 0x5F,
+        ModulusModulus = 0x60,
+        ModulusModulusReference = 0x61,
+        PushProcStub = 0x62,
+        PushVerbStub = 0x63,
+        BitShiftLeftReference = 0x64,
+        BitShiftRightReference = 0x65,
     }
 
     public enum DreamProcOpcodeParameterType {
@@ -134,7 +140,7 @@ namespace OpenDreamShared.Dream.Procs {
         public enum FormatSuffix : UInt16
         {
             //States that Interpolated values can have (the [] thingies)
-            StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary            
+            StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary
             StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
             ReferenceOfValue = 0x2,        //\ref[]
 

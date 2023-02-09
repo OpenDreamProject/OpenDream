@@ -10,12 +10,15 @@ namespace Content.Tests {
     public sealed class DummyDreamMapManager : IDreamMapManager {
         public Vector2i Size => Vector2i.Zero;
         public int Levels => 0;
+        public List<DreamObject> AllAtoms { get; } = new();
 
         public void Initialize() { }
 
         public void UpdateTiles() { }
 
-        public void LoadMaps(List<DreamMapJson> maps) { }
+        public void LoadAreasAndTurfs(List<DreamMapJson> maps) { }
+
+        public void InitializeAtoms(List<DreamMapJson> maps) { }
 
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments) { }
 

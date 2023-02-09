@@ -150,14 +150,18 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementOutputControl.Control);
         }
 
-        public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
-            SimplifyExpression(ref varDeclaration.Value);
+        public void VisitProcStatementOutput(DMASTProcStatementOutput statementOutput) {
+            SimplifyExpression(ref statementOutput.A);
+            SimplifyExpression(ref statementOutput.B);
         }
 
-        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) {
-            foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
-                varDeclaration.Visit(this);
-            }
+        public void VisitProcStatementInput(DMASTProcStatementInput statementInput) {
+            SimplifyExpression(ref statementInput.A);
+            SimplifyExpression(ref statementInput.B);
+        }
+
+        public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {
+            SimplifyExpression(ref varDeclaration.Value);
         }
 
         public void VisitProcStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

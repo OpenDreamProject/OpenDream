@@ -39,8 +39,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                         token = CreateToken(TokenType.DM_Preproc_Whitespace, new string(c, whitespaceLength));
                         break;
-                    case '}':
-                    case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
+                    case '}': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
+                    case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
                     case ':': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c); break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
@@ -57,7 +57,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             //The next character turns into an identifier.
                             token = CreateToken(TokenType.DM_Preproc_Identifier, GetCurrent());
                         }
-                        
+
                         Advance();
                         break;
                     }
@@ -160,6 +160,15 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case '%': {
                         switch (Advance()) {
                             case '=': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, "%="); break;
+                            case '%': {
+                                if (Advance() == '=') {
+                                    Advance();
+                                    token = CreateToken(TokenType.DM_Preproc_Punctuator, "%%=");
+                                    break;
+                                }
+                                token = CreateToken(TokenType.DM_Preproc_Punctuator, "%%");
+                                break;
+                            }
                             default: token = CreateToken(TokenType.DM_Preproc_Punctuator, '%'); break;
                         }
 
@@ -241,7 +250,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                         Advance();
                                     }
                                 }
-                                
+
                                 while (GetCurrent() == ' ' || GetCurrent() == '\t') {
                                     Advance();
                                 }
@@ -320,7 +329,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         StringBuilder textBuilder = new StringBuilder();
-                        while (IsAlphabetic(GetCurrent()) || GetCurrent() == '_') {
+                        while (char.IsAsciiLetter(GetCurrent()) || GetCurrent() == '_') {
                             textBuilder.Append(GetCurrent());
                             Advance();
                         }
@@ -335,7 +344,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 token = CreateToken(TokenType.DM_Preproc_ParameterStringify, $"#{text}", text);
                                 string macroAttempt = text.ToLower();
                                 if (TryMacroKeyword(macroAttempt, out _)) { // if they miscapitalized the keyword
-                                    DMCompiler.Warning(token.Location, $"#{text} is not a valid macro keyword. Did you mean '#{text.ToLower()}'?");
+                                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, token.Location, $"#{text} is not a valid macro keyword. Did you mean '#{macroAttempt}'?");
                                 }
                             }
                         }
@@ -343,12 +352,12 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
                     }
                     default: {
-                        if (IsAlphabetic(c) || c == '_') {
+                        if (char.IsAsciiLetter(c) || c == '_') {
                             StringBuilder textBuilder = new StringBuilder(char.ToString(c));
-                            while ((IsAlphanumeric(Advance()) || GetCurrent() == '_') && !AtEndOfSource) textBuilder.Append(GetCurrent());
+                            while ((char.IsAsciiLetterOrDigit(Advance()) || GetCurrent() == '_') && !AtEndOfSource) textBuilder.Append(GetCurrent());
 
                             token = CreateToken(TokenType.DM_Preproc_Identifier, textBuilder.ToString());
-                        } else if (IsNumeric(c)) {
+                        } else if (char.IsAsciiDigit(c)) {
                             StringBuilder textBuilder = new StringBuilder(char.ToString(c));
                             bool error = false;
 
@@ -370,7 +379,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 }
 
                                 c = next;
-                                if (IsHex(c) || c == '.' || c == 'x' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
+                                if (char.IsAsciiHexDigit(c) || c == '.' || c == 'x' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
                                     textBuilder.Append(c);
                                 } else {
                                     break;
@@ -407,6 +416,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 case "else": token = CreateToken(TokenType.DM_Preproc_Else, "#else"); break;
                 case "endif": token = CreateToken(TokenType.DM_Preproc_EndIf, "#endif"); break;
                 case "error": token = CreateToken(TokenType.DM_Preproc_Error, "#error"); break;
+                //OD-specific directives
+                case "pragma": token = CreateToken(TokenType.DM_Preproc_Pragma, "#pragma"); break;
                 default:
                     token = null; // maybe should use ref instead of out?
                     return false;

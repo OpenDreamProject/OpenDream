@@ -5,19 +5,32 @@ using OpenDreamShared.Dream;
 using System;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Dream.Procs;
+using System.Diagnostics;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
+        /// <summary>
+        /// BYOND currently has a ridiculous behaviour, where, <br/>
+        /// sometimes when a set statement has a right-hand side that is non-constant, <br/>
+        /// no error is emitted and instead its value is just, whatever the last well-evaluated set statement's value was. <br/>
+        /// This behaviour is nonsense but for harsh parity we sometimes may need to carry it out to hold up a codebase; <br/>
+        /// Yogstation (at time of writing) actually errors on OD if we don't implement this.
+        /// </summary>
+        private Constant? previousSetStatementValue;
+
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
             _proc = proc;
+            previousSetStatementValue = null; // Intentional; marks that we've never seen one before and should just error like normal people.
         }
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
             if (procDefinition.Body == null) return;
+
+            _proc.DebugSource(procDefinition.Location.SourceFile);
 
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
@@ -35,7 +48,7 @@ namespace DMCompiler.DM.Visitors {
                     try {
                         DMExpression.Emit(_dmObject, _proc, parameter.Value, parameter.ObjectType);
                     } catch (CompileErrorException e) {
-                        DMCompiler.Error(e.Error);
+                        DMCompiler.Emit(e.Error);
                     }
                     _proc.Assign(parameterRef);
                     _proc.Pop();
@@ -44,44 +57,54 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            ProcessBlockInner(procDefinition.Body);
+            ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             _proc.ResolveLabels();
         }
 
-        public void ProcessBlockInner(DMASTProcBlockInner block) {
-            // TODO ProcessStatementSet() needs to be before any loops but this is nasty
-            foreach (var stmt in block.Statements) {
-                if (stmt is DMASTProcStatementSet set) {
-                    try {
-                        ProcessStatementSet(set);
-                    } catch (CompileAbortException e) {
-                        // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                        e.Error.Location = set.Location;
-                        DMCompiler.Error(e.Error);
-                        return; // Don't spam the error that will continue to exist
-                    } catch (CompileErrorException e) {
-                        //Retreat from the statement when there's an error
-                        DMCompiler.Error(e.Error);
-                    }
+        /// <param name="silenceEmptyBlockWarning">Used to avoid emitting noisy warnings about procs with nothing in them. <br/>
+        /// FIXME: Eventually we should try to be smart enough to emit the error anyways for procs that <br/>
+        /// A.) are not marked opendream_unimplemented and <br/>
+        /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
+        /// </param>
+        public void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
+            foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
+                Location loc = stmt.Location;
+                try {
+                    ProcessStatement(stmt);
+                    Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
+                } catch (CompileAbortException e) {
+                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
+                    e.Error.Location = loc;
+                    DMCompiler.Emit(e.Error);
+                    return; // Don't spam the error that will continue to exist
+                } catch (CompileErrorException e) {
+                    //Retreat from the statement when there's an error
+                    DMCompiler.Emit(e.Error);
                 }
             }
-
-            foreach (DMASTProcStatement statement in block.Statements) {
-                // see above
-                if (statement is DMASTProcStatementSet) {
-                    continue;
+            if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
+                // Not an error in BYOND, but we do have an emission for this!
+                if(block.SetStatements.Length != 0) { // Give a more articulate message about this, since it's kinda weird
+                    DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected - set statements are executed outside of, before, and unconditional to, this block");
+                } else {
+                    DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected");
                 }
-
+                return;
+            }
+            foreach (DMASTProcStatement statement in block.Statements) {
+                if (statement.Location.Line != null) {
+                    _proc.DebugLine(statement.Location.Line.Value);
+                }
                 try {
                     ProcessStatement(statement);
                 } catch (CompileAbortException e) {
                     // The statement's location info isn't passed all the way down so change the error to make it more accurate
                     e.Error.Location = statement.Location;
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                     return; // Don't spam the error that will continue to exist
                 } catch (CompileErrorException e) {
                     //Retreat from the statement when there's an error
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                 }
             }
         }
@@ -105,17 +128,23 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
+                case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
-                case DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations: {
-                    foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
-                        ProcessStatementVarDeclaration(varDeclaration);
-                    }
-
+                case DMASTProcStatementSet statementSet: ProcessStatementSet(statementSet); break;
+                //NOTE: Is there a more generic way of doing this, where Aggregate doesn't need every possible type state specified here?
+                //      please write such generic thing if more than three aggregates show up in this switch.
+                case DMASTAggregate<DMASTProcStatementSet> gregSet: // Hi Greg
+                    foreach (var setStatement in gregSet.Statements)
+                        ProcessStatementSet(setStatement);
                     break;
-                }
-                default: throw new ArgumentException("Invalid proc statement");
+                case DMASTAggregate<DMASTProcStatementVarDeclaration> gregVar:
+                    foreach (var declare in gregVar.Statements)
+                        ProcessStatementVarDeclaration(declare);
+                    break;
+                default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
             }
         }
 
@@ -153,8 +182,26 @@ namespace DMCompiler.DM.Visitors {
         {
             var attribute = statementSet.Attribute.ToLower();
             // TODO deal with "src"
-            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant) && attribute != "src") {
-                throw new CompileErrorException(statementSet.Location, $"{attribute} attribute should be a constant");
+            if(attribute == "src") {
+                DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
+                return;
+            }
+            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
+                bool didError = DMCompiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
+                if (didError) // if this is an error
+                    return; // don't do the cursed thing
+                // oh no.
+                if (previousSetStatementValue is null)
+                    throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
+                constant = previousSetStatementValue;
+            } else {
+                previousSetStatementValue = constant;
+            }
+            // Check if it was 'set x in y' or whatever
+            // (which is illegal for everything except setting src to something)
+            if (statementSet.WasInKeyword) {
+                DMCompiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
+                //fallthrough into normal behaviour because this error is kinda pedantic
             }
 
             switch (statementSet.Attribute.ToLower()) {
@@ -164,58 +211,38 @@ namespace DMCompiler.DM.Visitors {
                 }
                 case "opendream_unimplemented": {
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Unimplemented;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Unimplemented;
-                    }
                     break;
                 }
                 case "hidden":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Hidden;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Hidden;
-                    }
                     break;
                 case "popup_menu":
                     if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
-                    {
                         _proc.Attributes &= ~ProcAttributes.HidePopupMenu;
-                    }
                     else
-                    {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
-                    }
 
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Instant;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Instant;
-                    }
 
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
                     break;
                 case "background":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Background;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Background;
-                    }
                     break;
                 case "name":
                     if (constant is not Expressions.String nameStr) {
@@ -288,7 +315,7 @@ namespace DMCompiler.DM.Visitors {
                 try {
                     value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
                 } catch (CompileErrorException e) {
-                    DMCompiler.Error(e.Error);
+                    DMCompiler.Emit(e.Error);
                     value = new Expressions.Null(varDeclaration.Location);
                 }
             } else {
@@ -298,7 +325,7 @@ namespace DMCompiler.DM.Visitors {
             bool successful;
             if (varDeclaration.IsConst) {
                 if (!value.TryAsConstant(out var constValue)) {
-                    DMCompiler.Error(new CompilerError(varDeclaration.Location, "Const var must be set to a constant"));
+                    DMCompiler.Emit(WarningCode.HardConstContext, varDeclaration.Location, "Const var must be set to a constant");
                     return;
                 }
 
@@ -308,7 +335,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (!successful) {
-                DMCompiler.Error(new CompilerError(varDeclaration.Location, $"Duplicate var {varDeclaration.Name}"));
+                DMCompiler.Emit(WarningCode.DuplicateVariable, varDeclaration.Location, $"Duplicate var {varDeclaration.Name}");
                 return;
             }
 
@@ -433,7 +460,7 @@ namespace DMCompiler.DM.Visitors {
                             break;
                         }
                         default:
-                            DMCompiler.Error(new CompilerError(statementFor.Location, "Invalid expression in for"));
+                            DMCompiler.Emit(WarningCode.BadExpression, statementFor.Location, "Invalid expression in for");
                             break;
                     }
                 }
@@ -470,7 +497,7 @@ namespace DMCompiler.DM.Visitors {
 
                     ProcessBlockInner(body);
 
-                    _proc.LoopContinue(loopLabel);
+                    _proc.MarkLoopContinue(loopLabel);
                     if (incrementor != null) {
                         incrementor.EmitPushValue(_dmObject, _proc);
                         _proc.Pop();
@@ -483,44 +510,43 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
+            if (outputVar is not LValue lValue) {
+                DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
+                lValue = null;
+            }
+
+            // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
+            DreamPath? implicitTypeCheck = null;
+            if (dmTypes == null) {
+                // No "as" means the var's type will be used
+                implicitTypeCheck = lValue?.Path;
+            } else if (dmTypes != DMValueType.Anything) {
+                // "as anything" performs no check. Other values are unimplemented.
+                DMCompiler.UnimplementedWarning(outputVar.Location,
+                    $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+            }
+
             list.EmitPushValue(_dmObject, _proc);
-            _proc.CreateListEnumerator();
+            if (implicitTypeCheck != null) {
+                // Create an enumerator that will do the implicit istype() for us
+                _proc.CreateFilteredListEnumerator(implicitTypeCheck.Value);
+            } else {
+                _proc.CreateListEnumerator();
+            }
 
             _proc.StartScope();
             {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
-                    if (outputVar is Expressions.LValue lValue) {
+                    _proc.MarkLoopContinue(loopLabel);
+
+                    if (lValue != null) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
-
-                        // Depending on the var's type and possibly a given "as [types]", an implicit istype() check is performed
-                        DreamPath? implicitTypeCheck = null;
-                        if (dmTypes == null) {
-                            // No "as" means the var's type will be used
-                            implicitTypeCheck = lValue.Path;
-                        } else if (dmTypes != DMValueType.Anything) {
-                            // "as anything" performs no check. Other values are unimplemented.
-                            DMCompiler.UnimplementedWarning(outputVar.Location,
-                                $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
-                        }
-
-                        if (implicitTypeCheck != null) {
-                            outputVar.EmitPushValue(_dmObject, _proc);
-                            _proc.PushPath(implicitTypeCheck.Value);
-                            _proc.IsType();
-
-                            _proc.ContinueIfFalse();
-                        }
-                    } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -532,13 +558,17 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementForType(DMExpression initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
             if (type == null) {
                 // This shouldn't happen, just to be safe
-                DMCompiler.Error(new CompilerError(initializer.Location,
-                    "Attempted to create a type enumerator with a null type"));
+                DMCompiler.ForcedError(initializer.Location,
+                    "Attempted to create a type enumerator with a null type");
                 return;
             }
 
-            _proc.PushPath(type.Value);
-            _proc.CreateTypeEnumerator();
+            if (DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
+                _proc.PushType(typeId);
+                _proc.CreateTypeEnumerator();
+            } else {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, initializer.Location, $"Type {type.Value} does not exist");
+            }
 
             _proc.StartScope();
             {
@@ -550,17 +580,16 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -589,17 +618,16 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
+
                     if (outputVar is Expressions.LValue lValue) {
                         (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
                         _proc.Enumerate(outputRef);
-                        _proc.BreakIfFalse();
                     } else {
-                        DMCompiler.Error(new CompilerError(outputVar.Location, "Invalid output var"));
+                        DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
 
                     ProcessBlockInner(body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -615,8 +643,8 @@ namespace DMCompiler.DM.Visitors {
                 string loopLabel = _proc.NewLabelName();
                 _proc.LoopStart(loopLabel);
                 {
+                    _proc.MarkLoopContinue(loopLabel);
                     ProcessBlockInner(statementInfLoop.Body);
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.LoopEnd();
@@ -629,14 +657,13 @@ namespace DMCompiler.DM.Visitors {
 
             _proc.LoopStart(loopLabel);
             {
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementWhile.Conditional);
                 _proc.BreakIfFalse();
 
                 _proc.StartScope();
                 {
                     ProcessBlockInner(statementWhile.Body);
-
-                    _proc.LoopContinue(loopLabel);
                     _proc.LoopJumpToStart(loopLabel);
                 }
                 _proc.EndScope();
@@ -652,7 +679,7 @@ namespace DMCompiler.DM.Visitors {
             {
                 ProcessBlockInner(statementDoWhile.Body);
 
-                _proc.LoopContinue(loopLabel);
+                _proc.MarkLoopContinue(loopLabel);
                 DMExpression.Emit(_dmObject, _proc, statementDoWhile.Conditional);
                 _proc.JumpIfFalse(loopEndLabel);
                 _proc.LoopJumpToStart(loopLabel);
@@ -679,9 +706,9 @@ namespace DMCompiler.DM.Visitors {
 
                             try {
                                 if (!DMExpression.TryConstant(_dmObject, _proc, expression, out constant))
-                                    DMCompiler.Error(expression.Location, "Expected a constant");
+                                    DMCompiler.Emit(WarningCode.HardConstContext, expression.Location, "Expected a constant");
                             } catch (CompileErrorException e) {
-                                DMCompiler.Error(e.Error);
+                                DMCompiler.Emit(e.Error);
                             }
 
                             // Return 0 if unsuccessful so that we can continue compiling
@@ -694,16 +721,17 @@ namespace DMCompiler.DM.Visitors {
 
                             Constant CoerceBound(Constant bound) {
                                 if (bound is Null) { // We do a little null coercion, as a treat
-                                    DMCompiler.Warning(range.RangeStart.Location,
+                                    DMCompiler.Emit(WarningCode.MalformedRange, range.RangeStart.Location,
                                         "Malformed range, lower bound is coerced from null to 0");
                                     return new Number(lower.Location, 0.0f);
                                 }
 
                                 //DM 514.1580 does NOT care if the constants within a range are strings, and does a strange conversion to 0 or something, without warning or notice.
-                                //We are deviating from parity here and just calling that a CompilerError.
+                                //We are (hopefully) deviating from parity here and just calling that a Compiler error.
                                 if (bound is not Number) {
-                                    DMCompiler.Error(range.RangeStart.Location,
+                                    DMCompiler.Emit(WarningCode.InvalidRange, range.RangeStart.Location,
                                         "Invalid range, lower bound is not a number");
+                                    bound = new Number(bound.Location, 0.0f);
                                 }
 
                                 return bound;
@@ -773,6 +801,48 @@ namespace DMCompiler.DM.Visitors {
             _proc.OutputControl();
         }
 
+        public void ProcessStatementOutput(DMASTProcStatementOutput statementOutput) {
+            DMExpression left = DMExpression.Create(_dmObject, _proc, statementOutput.A);
+            DMExpression right = DMExpression.Create(_dmObject, _proc, statementOutput.B);
+
+            if (left is LValue) {
+                // An LValue on the left needs a special opcode so that its reference can be used
+                // This allows for special operations like "savefile[...] << ..."
+
+                (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+                right.EmitPushValue(_dmObject, _proc);
+
+                _proc.OutputReference(leftRef);
+            } else {
+                left.EmitPushValue(_dmObject, _proc);
+                right.EmitPushValue(_dmObject, _proc);
+                _proc.Output();
+            }
+        }
+
+        public void ProcessStatementInput(DMASTProcStatementInput statementInput) {
+            DMExpression left = DMExpression.Create(_dmObject, _proc, statementInput.A);
+            DMExpression right = DMExpression.Create(_dmObject, _proc, statementInput.B);
+
+            // The left-side value of an input operation must be an LValue
+            // (I think? I haven't found an exception but there could be one)
+            if (left is not LValue) {
+                DMCompiler.Emit(WarningCode.BadExpression, left.Location, "Left side must be an l-value");
+                return;
+            }
+
+            // The right side must also be an LValue. Because where else would the value go?
+            if (right is not LValue) {
+                DMCompiler.Emit(WarningCode.BadExpression, right.Location, "Right side must be an l-value");
+                return;
+            }
+
+            (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
+            (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+
+            _proc.Input(leftRef, rightRef);
+        }
+
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
             string catchLabel = _proc.NewLabelName();
             string endLabel = _proc.NewLabelName();
@@ -787,7 +857,7 @@ namespace DMCompiler.DM.Visitors {
                 //TODO set the value to what is thrown in try
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
                 if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
-                    DMCompiler.Error(new CompilerError(param.Location, $"Duplicate var {param.Name}"));
+                    DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
             }
 

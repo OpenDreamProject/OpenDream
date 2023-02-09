@@ -7,7 +7,7 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class IconAppearance : IEquatable<IconAppearance> {
-        [ViewVariables] public string Icon;
+        [ViewVariables] public int? Icon;
         [ViewVariables] public string IconState;
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;
@@ -18,6 +18,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
+        [ViewVariables] public List<DreamFilter> Filters = new();
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
         [ViewVariables] public float[] Transform = new float[6] {   1, 0,   // a d
                                                                     0, 1,   // b e
@@ -37,6 +38,7 @@ namespace OpenDreamShared.Dream {
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<uint>(appearance.Overlays);
             Underlays = new List<uint>(appearance.Underlays);
+            Filters = new List<DreamFilter>(appearance.Filters);
 
             for (int i = 0; i < 6; i++) {
                 Transform[i] = appearance.Transform[i];
@@ -58,6 +60,12 @@ namespace OpenDreamShared.Dream {
             if (appearance.Opacity != Opacity) return false;
             if (appearance.MouseOpacity != MouseOpacity) return false;
             if (appearance.Overlays.Count != Overlays.Count) return false;
+            if (appearance.Underlays.Count != Underlays.Count) return false;
+            if (appearance.Filters.Count != Filters.Count) return false;
+
+            for (int i = 0; i < Filters.Count; i++) {
+                if (appearance.Filters[i] != Filters[i]) return false;
+            }
 
             for (int i = 0; i < Overlays.Count; i++) {
                 if (appearance.Overlays[i] != Overlays[i]) return false;
@@ -75,32 +83,38 @@ namespace OpenDreamShared.Dream {
         }
 
         public override int GetHashCode() {
-            int hashCode = (Icon + IconState).GetHashCode();
-            hashCode += Direction.GetHashCode();
-            hashCode += PixelOffset.GetHashCode();
-            hashCode += Color.GetHashCode();
-            hashCode += Layer.GetHashCode();
-            hashCode += Invisibility;
-            hashCode += Opacity.GetHashCode();
-            hashCode += MouseOpacity.GetHashCode();
+            HashCode hashCode = new HashCode();
+
+            hashCode.Add(Icon);
+            hashCode.Add(IconState);
+            hashCode.Add(Direction);
+            hashCode.Add(PixelOffset);
+            hashCode.Add(Color);
+            hashCode.Add(Layer);
+            hashCode.Add(Invisibility);
+            hashCode.Add(Opacity);
+            hashCode.Add(MouseOpacity);
 
             foreach (int overlay in Overlays) {
-                hashCode += overlay;
+                hashCode.Add(overlay);
             }
 
             foreach (int underlay in Underlays) {
-                hashCode += underlay;
+                hashCode.Add(underlay);
+            }
+
+            foreach (DreamFilter filter in Filters) {
+                hashCode.Add(filter);
             }
 
             for (int i = 0; i < 6; i++) {
-                hashCode += Transform[i].GetHashCode();
+                hashCode.Add(Transform[i]);
             }
 
-            return hashCode;
+            return hashCode.ToHashCode();
         }
 
-        public void SetColor(string color)
-        {
+        public void SetColor(string color) {
             // TODO the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
             if (color == string.Empty) color = "#ffffff";
             if (!ColorHelpers.TryParseColor(color, out Color)) {

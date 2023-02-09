@@ -8,7 +8,6 @@ namespace OpenDreamClient {
     public static class ClientContentIoC {
         public static void Register() {
             IoCManager.Register<IDreamInterfaceManager, DreamInterfaceManager>();
-            IoCManager.Register<IDreamMacroManager, DreamMacroManager>();
             IoCManager.Register<IClickMapManager, ClickMapManager>();
             IoCManager.Register<IDreamResourceManager, DreamResourceManager>();
             IoCManager.Register<DreamUserInterfaceStateManager>();

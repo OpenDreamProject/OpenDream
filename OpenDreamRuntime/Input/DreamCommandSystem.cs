@@ -2,11 +2,10 @@
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime.Input {
-    sealed class DreamCommandSystem : SharedDreamCommandSystem
-    {
-        [Dependency] private readonly IDreamManager _dreamManager;
+    sealed class DreamCommandSystem : SharedDreamCommandSystem {
+        [Dependency] private readonly IDreamManager _dreamManager = default!;
 
-        private List<(string Command, IPlayerSession session)> _repeatingCommands = new();
+        private readonly List<(string Command, IPlayerSession session)> _repeatingCommands = new();
 
         public override void Initialize() {
             SubscribeNetworkEvent<CommandEvent>(OnCommandEvent);

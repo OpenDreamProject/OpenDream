@@ -38,6 +38,10 @@ namespace DMDisassembler {
                 Console.Write("> ");
 
                 string input = Console.ReadLine();
+                if (input == null) {
+                    // EOF
+                    break;
+                }
                 string[] split = input.Split(" ");
                 string command = split[0].ToLower();
 
@@ -49,6 +53,7 @@ namespace DMDisassembler {
                     case "list": List(split); break;
                     case "d":
                     case "decompile": Decompile(split); break;
+                    case "test-all": TestAll(); break;
                     default: Console.WriteLine("Invalid command \"" + command + "\""); break;
                 }
             }
@@ -128,7 +133,7 @@ namespace DMDisassembler {
             }
 
             string name = args[1];
-            if (name == "__global_init__") {
+            if (name == "<global_init>" || (name == "<init>" && (_selectedType == null || _selectedType.Path == DreamPath.Root))) {
                 if (GlobalInitProc != null) {
                     Console.WriteLine(GlobalInitProc.Decompile());
                 } else {
@@ -143,14 +148,14 @@ namespace DMDisassembler {
                 return;
             }
 
-            if (name == "__init__") {
+            if (name == "<init>") {
                 if (_selectedType.InitProc != null) {
-                    Console.WriteLine(_selectedType.InitProc.Decompile() + "\n");
+                    Console.WriteLine(_selectedType.InitProc.Decompile());
                 } else {
                     Console.WriteLine("Selected type does not have an init proc");
                 }
             } else if (_selectedType.Procs.TryGetValue(name, out DMProc proc)) {
-                Console.WriteLine(proc.Decompile() + "\n");
+                Console.WriteLine(proc.Decompile());
             } else {
                 Console.WriteLine("No procs named \"" + name + "\"");
             }
@@ -178,6 +183,20 @@ namespace DMDisassembler {
 
                 globalType.Procs.Add(proc.Name, proc);
             }
+        }
+
+        private static void TestAll() {
+            int errored = 0, all = 0;
+            foreach (DMProc proc in Procs) {
+                string value = proc.Decompile();
+                if (proc.exception != null) {
+                    Console.WriteLine("Error disassembling " + proc.Name);
+                    Console.WriteLine(value);
+                    ++errored;
+                }
+                ++all;
+            }
+            Console.WriteLine($"Errors in {errored}/{all} procs");
         }
     }
 }

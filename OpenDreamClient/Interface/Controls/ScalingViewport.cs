@@ -162,7 +162,7 @@ namespace OpenDreamClient.Interface.Controls
         }
 
         // Draw box in pixel coords to draw the viewport at.
-        private UIBox2i GetDrawBox()
+        public UIBox2i GetDrawBox()
         {
             DebugTools.AssertNotNull(_viewport);
 
@@ -291,6 +291,26 @@ namespace OpenDreamClient.Interface.Controls
             }
 
             DebugTools.AssertNotNull(_viewport);
+        }
+
+        public Matrix3 GetWorldToScreenMatrix()
+        {
+            EnsureViewportCreated();
+            return _viewport!.GetWorldToLocalMatrix() * GetLocalToScreenMatrix();
+        }
+
+        public Matrix3 GetLocalToScreenMatrix()
+        {
+            EnsureViewportCreated();
+
+            var drawBox = GetDrawBox();
+            var scaleFactor = drawBox.Size / (Vector2) _viewport!.Size;
+
+            if (scaleFactor.X == 0 || scaleFactor.Y == 0)
+                // Basically a nonsense scenario, at least make sure to return something that can be inverted.
+                return Matrix3.Identity;
+
+            return Matrix3.CreateTransform(GlobalPixelPosition + drawBox.TopLeft, 0, scaleFactor);
         }
     }
 

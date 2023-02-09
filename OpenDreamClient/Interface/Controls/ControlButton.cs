@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Interface;
-using OpenDreamClient.Input;
+﻿using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -29,7 +29,7 @@ namespace OpenDreamClient.Interface.Controls {
             return _button;
         }
 
-        public override void UpdateElementDescriptor() {
+        protected override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
             ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;

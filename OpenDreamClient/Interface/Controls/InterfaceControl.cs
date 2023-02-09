@@ -1,26 +1,24 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamShared.Interface;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls
-{
-    public abstract class InterfaceControl : InterfaceElement
-    {
-        public Control UIElement { get; private set; }
-        public bool IsDefault { get => _controlDescriptor.IsDefault; }
-        public Vector2i? Size { get => _controlDescriptor.Size; }
-        public Vector2i? Pos { get => _controlDescriptor.Pos; }
-        public Vector2i? Anchor1 { get => _controlDescriptor.Anchor1; }
-        public Vector2i? Anchor2 { get => _controlDescriptor.Anchor2; }
+namespace OpenDreamClient.Interface.Controls {
+    public abstract class InterfaceControl : InterfaceElement {
+        public readonly Control UIElement;
+        public bool IsDefault => ControlDescriptor.IsDefault;
+        public Vector2i? Size => ControlDescriptor.Size;
+        public Vector2i? Pos => ControlDescriptor.Pos;
+        public Vector2i? Anchor1 => ControlDescriptor.Anchor1;
+        public Vector2i? Anchor2 => ControlDescriptor.Anchor2;
 
-        protected ControlDescriptor _controlDescriptor { get => ElementDescriptor as ControlDescriptor; }
-        protected ControlWindow _window;
+        protected ControlDescriptor ControlDescriptor => ElementDescriptor as ControlDescriptor;
+
+        private readonly ControlWindow _window;
 
         [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
-        public InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor)
-        {
+        protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor) {
             IoCManager.InjectDependencies(this);
 
             _window = window;
@@ -31,21 +29,19 @@ namespace OpenDreamClient.Interface.Controls
 
         protected abstract Control CreateUIElement();
 
+        protected override void UpdateElementDescriptor() {
+            UIElement.Name = ControlDescriptor.Name;
 
-        public override void UpdateElementDescriptor()
-        {
-            UIElement.Name = _controlDescriptor.Name;
-
-            var pos = _controlDescriptor.Pos.GetValueOrDefault();
+            var pos = ControlDescriptor.Pos.GetValueOrDefault();
             LayoutContainer.SetMarginLeft(UIElement, pos.X);
             LayoutContainer.SetMarginTop(UIElement, pos.Y);
 
-            if (_controlDescriptor.Size is { } size)
+            if (ControlDescriptor.Size is { } size)
                 UIElement.SetSize = size;
 
             _window?.UpdateAnchors();
 
-            if (_controlDescriptor.BackgroundColor is { } bgColor)
+            if (ControlDescriptor.BackgroundColor is { } bgColor)
             {
                 var styleBox = new StyleBoxFlat { BackgroundColor = bgColor };
 
@@ -57,7 +53,7 @@ namespace OpenDreamClient.Interface.Controls
                 }
             }
 
-            UIElement.Visible = _controlDescriptor.IsVisible;
+            UIElement.Visible = ControlDescriptor.IsVisible;
             // TODO: enablement
             //UIControl.IsEnabled = !_controlDescriptor.IsDisabled;
         }

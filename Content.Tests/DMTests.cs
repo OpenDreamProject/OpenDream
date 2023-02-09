@@ -1,23 +1,26 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
+using Robust.Shared.Timing;
 
 namespace Content.Tests
 {
     [TestFixture]
-    public sealed partial class DMTests : ContentUnitTest
-    {
+    public sealed class DMTests : ContentUnitTest {
         public const string TestProject = "DMProject";
         public const string InitializeEnvironment = "./environment.dme";
 
         private IDreamManager _dreamMan;
+        private IDreamObjectTree _objectTree;
         private ITaskManager _taskManager;
 
         [Flags]
@@ -26,7 +29,8 @@ namespace Content.Tests
             Ignore = 1,         // Ignore entirely
             CompileError = 2,   // Should fail to compile
             RuntimeError = 4,   // Should throw an exception at runtime
-            ReturnTrue = 8      // Should return TRUE
+            ReturnTrue = 8,     // Should return TRUE
+            NoReturn = 16,      // Shouldn't return (aka stopped by a stack-overflow or runtimes)
         }
 
         [OneTimeSetUp]
@@ -38,8 +42,14 @@ namespace Content.Tests
             componentFactory.RegisterClass<DMISpriteComponent>();
             componentFactory.GenerateNetIds();
             _dreamMan = IoCManager.Resolve<IDreamManager>();
+            _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
-            _dreamMan.Initialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.OnException += OnException;
+        }
+
+        private void OnException(object sender, Exception e) {
+            TestContext.WriteLine(e.ToString());
         }
 
         public string Compile(string sourceFile) {
@@ -58,8 +68,7 @@ namespace Content.Tests
         }
 
         [Test, TestCaseSource(nameof(GetTests))]
-        public void TestFiles(string sourceFile, DMTestFlags testFlags)
-        {
+        public void TestFiles(string sourceFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
             try {
                 string compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
@@ -71,8 +80,16 @@ namespace Content.Tests
 
                 Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
                 Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
+                _dreamMan.StartWorld();
 
-                (bool successfulRun, DreamValue returned, Exception? exception) = RunTest();
+                (bool successfulRun, DreamValue? returned, Exception? exception) = RunTest();
+
+                if (testFlags.HasFlag(DMTestFlags.NoReturn)) {
+                    Assert.IsFalse(returned.HasValue, "proc returned unexpectedly");
+                } else {
+                    Assert.IsTrue(returned.HasValue, "proc did not return (did it hit an exception?)");
+                }
+
                 if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
                     Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
                 } else {
@@ -83,7 +100,7 @@ namespace Content.Tests
                 }
 
                 if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
-                    returned.TryGetValueAsInteger(out int returnInt);
+                    returned.Value.TryGetValueAsInteger(out int returnInt);
                     Assert.IsTrue(returnInt != 0, "Test was expected to return TRUE");
                 }
 
@@ -94,17 +111,36 @@ namespace Content.Tests
             }
         }
 
-        private (bool Success, DreamValue Returned, Exception? except) RunTest() {
+        private (bool Success, DreamValue? Returned, Exception? except) RunTest() {
             var prev = _dreamMan.LastDMException;
 
-            var result = DreamThread.Run(async (state) => {
-                if (_dreamMan.ObjectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
-                    return await state.Call(proc, null, null, new DreamProcArguments(null));
+            DreamValue? result = null;
+            Task<DreamValue> callTask = null;
+
+            DreamThread.Run("RunTest", async (state) => {
+                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
+                    callTask = state.Call(proc, null, null, new DreamProcArguments(null));
+                    result = await callTask;
+                    return DreamValue.Null;
                 } else {
                     Assert.Fail($"No global proc named RunTest");
                     return DreamValue.Null;
                 }
             });
+
+            var Watch = new Stopwatch();
+            Watch.Start();
+
+            // Tick until our inner call has finished
+            while (!callTask.IsCompleted) {
+                _dreamMan.Update();
+                _taskManager.ProcessPendingTasks();
+
+                if (Watch.Elapsed.TotalMilliseconds > 500) {
+                    Assert.Fail("Test timed out");
+                }
+            }
+
             bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
             if (retSuccess)
                 return (retSuccess, result, null);
@@ -143,6 +179,8 @@ namespace Content.Tests
                     testFlags |= DMTestFlags.RuntimeError;
                 if (firstLine.Contains("RETURN TRUE", StringComparison.InvariantCulture))
                     testFlags |= DMTestFlags.ReturnTrue;
+                if (firstLine.Contains("NO RETURN", StringComparison.InvariantCulture))
+                    testFlags |= DMTestFlags.NoReturn;
             }
 
             return testFlags;

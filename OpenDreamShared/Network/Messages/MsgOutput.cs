@@ -1,25 +1,22 @@
 ﻿using Lidgren.Network;
 using Robust.Shared.Network;
+using Robust.Shared.Serialization;
 
-namespace OpenDreamShared.Network.Messages
-{
-    public sealed class MsgOutput : NetMessage
-    {
+namespace OpenDreamShared.Network.Messages {
+    public sealed class MsgOutput : NetMessage {
         public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
         public string Control;
         public string Value;
 
-        public override void ReadFromBuffer(NetIncomingMessage buffer)
-        {
+        public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
             Value = buffer.ReadString();
             Control = buffer.ReadString();
             if (Control == string.Empty)
                 Control = null;
         }
 
-        public override void WriteToBuffer(NetOutgoingMessage buffer)
-        {
+        public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
             buffer.Write(Value);
             buffer.Write(Control ?? string.Empty);
         }

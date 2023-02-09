@@ -27,19 +27,25 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 6.0.100
+        dotnet-version: 7.0.101
     - name: Install dependencies
       run: dotnet restore main/OpenDream.sln
     - name: Build
       run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: main\DMCompiler\bin\Release\net6.0\DMCompiler.exe main\TestGame\environment.dme
-    - name: Run Unit Tests
-      run: dotnet test --no-build main\Content.Tests\Content.Tests.csproj --configuration Release
+      run: main\DMCompiler\bin\Release\net7.0\DMCompiler.exe main\TestGame\environment.dme
     - name: Checkout Modified /tg/station
       uses: actions/checkout@v2
       with:
         repository: wixoaGit/tgstation
         path: tg
     - name: Compile Modified /tg/station
-      run: main\DMCompiler\bin\Release\net6.0\DMCompiler.exe tg\tgstation.dme 
+      run: main\DMCompiler\bin\Release\net7.0\DMCompiler.exe tg\tgstation.dme 
+    - name: Checkout 64-bit Paradise
+      uses: actions/checkout@v2
+      with:
+        repository: ike709/Paradise
+        ref: rustg_64
+        path: para
+    - name: Compile 64-bit Paradise
+      run: main\DMCompiler\bin\Release\net7.0\DMCompiler.exe para\paradise.dme

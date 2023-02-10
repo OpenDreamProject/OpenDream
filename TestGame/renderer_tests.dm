@@ -191,3 +191,19 @@
 		src.render_source = usr.render_target
 
 		usr << "Render target set to your mob's render source"	
+
+/obj/background_image
+	icon = 'icons/background.dmi'
+	icon_state = "opendream"
+	plane = -90
+	screen_loc = "CENTER-7:7,CENTER-7:7"
+
+/obj/plaque/screen_background_test 
+	data = "<h3>Screen Backgroun Test</h3><p>Click the button to toggle the appearance a background image</p>"
+
+/obj/button/screen_background_test
+	name = "Screen Background Test"
+	desc = "Click me to toggle the appearance a background image"
+
+	push()
+		usr.client.screen |= new /obj/background_image()

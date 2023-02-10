@@ -24,13 +24,15 @@
 "x" = (/obj/plaque/transform_translate_test,/turf,/area)
 "y" = (/obj/button/screen_background_test,/turf,/area)
 "z" = (/obj/plaque/screen_background_test,/turf,/area)
+"A" = (/obj/button/plane_master_test,/turf,/area)
+"B" = (/obj/plaque/plane_master_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
 bedciklwopsuaaaaaaaaab
 bfghjmnxqrtvaaaaaaaaab
-byaaaaaaaaaaaaaaaaaaab
-bzaaaaaaaaaaaaaaaaaaab
+byAaaaaaaaaaaaaaaaaaab
+bzBaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab

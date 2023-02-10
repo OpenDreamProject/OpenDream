@@ -199,11 +199,11 @@
 	screen_loc = "CENTER-7:7,CENTER-7:7"
 
 /obj/plaque/screen_background_test 
-	data = "<h3>Screen Background Test</h3><p>Click the button to toggle the appearance a background image</p>"
+	data = "<h3>Screen Background Test</h3><p>Click the button to activate the background image</p>"
 
 /obj/button/screen_background_test
 	name = "Screen Background Test"
-	desc = "Click me to toggle the appearance a background image"
+	desc = "Click me to activate a background image"
 
 	push()
 		usr.client.screen |= new /obj/background_image()
@@ -213,7 +213,7 @@
 	plane = PLANE_LIGHTING
 	blend_mode = BLEND_MULTIPLY
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
-	color = list(null, null, null, "#0000", "#333f")
+	color = "#333f" //should be color = list(null, null, null, "#0000", "#333f") when color matrix is done
 	mouse_opacity = 0 
 
 /image/spotlight
@@ -226,11 +226,11 @@
 	pixel_y = -32		
 
 /obj/plaque/plane_master_test 
-	data = "<h3>Plane Master Test</h3><p>Click the button to toggle the lighting plane master</p>"
+	data = "<h3>Plane Master Test</h3><p>Click the button to activate the lighting plane master</p>"
 
 /obj/button/plane_master_test
 	name = "Plane Master Test"
-	desc = "Click me to toggle the lighting plane master"
+	desc = "Click me to activate the lighting plane master"
 
 	push()
 		usr.client.screen |= new /obj/lighting_plane()	

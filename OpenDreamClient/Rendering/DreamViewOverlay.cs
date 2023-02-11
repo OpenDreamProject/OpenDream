@@ -148,41 +148,51 @@ sealed class DreamViewOverlay : Overlay {
                 PlaneMaster = sprite;
                 planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                 ClearRenderTarget(planeTarget, args.WorldHandle, Color.White.WithAlpha(0));
-                lastPlane = sprite.Plane;
             } else {
                 byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode()); //.ClickUID
                 Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255);
                 MouseMapLookup[targetColor] = sprite.ClickUID;
                 _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
+                //if we were drawing on a plane_master group, and plane changed, draw the plane master, then draw the sprite normally
+                if(lastPlane != sprite.Plane && PlaneMasterActive){
+                    DrawIcon(args.WorldHandle, baseTarget, PlaneMaster, -screenArea.BottomLeft, planeTarget.Texture);
+                    PlaneMaster = null;
+                    PlaneMasterActive = false;
+                    ReturnPingPongRenderTarget(planeTarget);
+                    planeTarget = baseTarget;
+                }
 
-                if(sprite.RenderTarget.Length > 0) //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
-                {
+                if(sprite.RenderTarget.Length > 0){
+                    //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
                     IRenderTexture tmpRenderTarget;
                     if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
 
-                        tmpRenderTarget = RentPingPongRenderTarget(sprite.MainIcon.CurrentFrame.Size);
-                        ClearRenderTarget(tmpRenderTarget, args.WorldHandle, Color.Transparent);
+                        tmpRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                        ClearRenderTarget(tmpRenderTarget, args.WorldHandle, Color.White.WithAlpha(0));
                         _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                         _renderTargetsToReturn.Add(tmpRenderTarget);
                     }
-                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, -sprite.Position); //draw it at 0
+                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, -screenArea.BottomLeft);
                 }
                 else {
                     //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
-                    DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
+                    //if it's a render source though, we draw with a texture override with a center screen offset instead
+                    if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
+                        DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.Center+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
+                    }
+                    else{
+                        DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
+                    }
                 }
-            }
-
-            //if we were drawing on a plane_master group, and plane changed or this is the last sprite
-            if((i == sprites.Count-1 || lastPlane != sprite.Plane) && PlaneMasterActive){
-                DrawIcon(args.WorldHandle, baseTarget, PlaneMaster, -screenArea.BottomLeft, planeTarget.Texture);
-                PlaneMaster = null;
-                PlaneMasterActive = false;
-                ReturnPingPongRenderTarget(planeTarget);
-                planeTarget = baseTarget;
             }
             lastPlane = sprite.Plane;
         }
+        //if a plane_master was active on the final draw, draw that first
+         if(PlaneMasterActive){
+            DrawIcon(args.WorldHandle, baseTarget, PlaneMaster, -screenArea.BottomLeft, planeTarget.Texture);
+            ReturnPingPongRenderTarget(planeTarget);
+         }
+
         //final draw
         if(MouseMapRenderEnabled)
             args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
@@ -350,24 +360,11 @@ sealed class DreamViewOverlay : Overlay {
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
         Texture frame;
-        bool hackyRedrawNeeded = false;
         if(textureOverride != null) {
             frame = textureOverride;
-            hackyRedrawNeeded = true;
-        }
-        else if(iconMetaData.RenderSource == ""){
-            frame = icon.CurrentFrame;
-        }
-        else if(_renderSourceLookup.TryGetValue(iconMetaData.RenderSource, out var renderSourceTexture)){
-            frame = renderSourceTexture.Texture;
-            hackyRedrawNeeded = true;
-        }
-        else
-            return;
-
-        if(hackyRedrawNeeded){ //TODO figure out why this is necessary and delete it from existence.
+            //TODO figure out why this is necessary and delete it from existence.
             IRenderTexture TempTexture = RentPingPongRenderTarget(frame.Size);
-            ClearRenderTarget(TempTexture, handle, Color.Transparent);
+            ClearRenderTarget(TempTexture, handle, Color.White.WithAlpha(0));
             handle.RenderInRenderTarget(TempTexture , () => {
                     handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
                     handle.DrawTextureRect(frame, new Box2(Vector2.Zero, TempTexture.Size));
@@ -375,6 +372,10 @@ sealed class DreamViewOverlay : Overlay {
             frame = TempTexture.Texture;
             ReturnPingPongRenderTarget(TempTexture);
         }
+        else
+            frame = icon.CurrentFrame;
+
+
 
         if(iconMetaData.KeepTogetherGroup.Count > 0)
         {

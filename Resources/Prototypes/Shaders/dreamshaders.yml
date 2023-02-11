@@ -41,6 +41,17 @@
   kind: source
   path: "/Shaders/blendmultiply.swsl"
 
+- type: shader
+  id: alpha
+  kind: source
+  path: "/Shaders/alpha.swsl"
+  params:
+    x: 0
+    y: 0
+    icon: 0
+    render_source: 0
+    flags: 0  
+
 #unimplemented shaders point to empty.swsl and do nothing
 
 - type: shader
@@ -48,16 +59,7 @@
   kind: source
   path: "/Shaders/empty.swsl"
 
-- type: shader
-  id: alpha
-  kind: source
-  path: "/Shaders/empty.swsl"
-  params:
-    x: 0
-    y: 0
-    icon: 0
-    render_source: 0
-    flags: 0
+
 
 - type: shader
   id: angular_blur

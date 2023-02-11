@@ -151,7 +151,7 @@ sealed class DreamViewOverlay : Overlay {
                 PlaneMasterTransform = sprite.TransformToApply;
                 PlaneMasterBlendmode = sprite.MainIcon.Appearance.BlendMode;
                 planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-                ClearRenderTarget(planeTarget, args.WorldHandle, PlaneMasterColor.Value);
+                ClearRenderTarget(planeTarget, args.WorldHandle, Color.White.WithAlpha(0));
                 lastPlane = sprite.Plane;
             } else {
                 byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode()); //.ClickUID
@@ -183,7 +183,6 @@ sealed class DreamViewOverlay : Overlay {
                 IRenderTexture TempTexture = RentPingPongRenderTarget(planeTarget.Size);
                 ClearRenderTarget(TempTexture, handle, Color.Transparent);
                 handle.RenderInRenderTarget(TempTexture , () => {
-                        handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
                         handle.DrawTextureRect(planeTarget.Texture, new Box2(Vector2.Zero, TempTexture.Size));
                     }, Color.Transparent);
                 ReturnPingPongRenderTarget(TempTexture);
@@ -192,7 +191,7 @@ sealed class DreamViewOverlay : Overlay {
                     handle.SetTransform(Matrix3.CreateTranslation(-(planeTarget.Size.X/2), -(planeTarget.Size.Y/2)) * //translate, apply transformation, untranslate
                                         PlaneMasterTransform.Value *
                                         Matrix3.CreateTranslation((planeTarget.Size.X/2), (planeTarget.Size.Y/2)));
-                    handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, planeTarget.Size));
+                    handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, planeTarget.Size), PlaneMasterColor.Value);
                     handle.UseShader(null);
                 }, null);
                 //refresh planemaster values

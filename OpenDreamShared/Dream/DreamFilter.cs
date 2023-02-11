@@ -41,36 +41,14 @@ public record DreamFilter {
             _ => null
         };
     }
-
-    public static DreamFilter CastToType(DreamFilter filter)
-    {
-        return filter.FilterType switch {
-            "alpha" => (DreamFilterAlpha) filter,
-            "angular_blur" => (DreamFilterAngularBlur) filter,
-            "bloom" => (DreamFilterBloom) filter,
-            "blur" => (DreamFilterBlur) filter,
-            "color" => (DreamFilterColor) filter,
-            "displace" => (DreamFilterDisplace) filter,
-            "drop_shadow" => (DreamFilterDropShadow) filter,
-            "layer" => (DreamFilterLayer) filter,
-            "motion_blur" => (DreamFilterMotionBlur) filter,
-            "outline" => (DreamFilterOutline) filter,
-            "radial_blur" => (DreamFilterRadialBlur) filter,
-            "rays" => (DreamFilterRays) filter,
-            "ripple" => (DreamFilterRipple) filter,
-            "wave" => (DreamFilterWave) filter,
-            "greyscale" => (DreamFilterGreyscale) filter,
-            _ => filter
-        };
-    }
 }
 
 [Serializable, NetSerializable]
 public sealed record DreamFilterAlpha : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
-    [ViewVariables, DataField("icon")] public int Icon; //Icon resource ID
-    [ViewVariables, DataField("render_source")] public string RenderSource; // String that will require special processing
+    [ViewVariables, DataField("icon")] public int Icon; // Icon resource ID
+    [ViewVariables, DataField("render_source")] public string RenderSource; // String that gets special processing in the render loop
     [ViewVariables, DataField("flags")] public float Flags;
 }
 

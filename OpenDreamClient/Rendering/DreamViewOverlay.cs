@@ -180,12 +180,19 @@ sealed class DreamViewOverlay : Overlay {
             //if we were drawing on a plane_master group, and plane changed or this is the last sprite
             if((i == sprites.Count-1 || lastPlane != sprite.Plane) && PlaneMasterActive){
                 var handle = args.WorldHandle;
+                IRenderTexture TempTexture = RentPingPongRenderTarget(planeTarget.Size);
+                ClearRenderTarget(TempTexture, handle, Color.Transparent);
+                handle.RenderInRenderTarget(TempTexture , () => {
+                        handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
+                        handle.DrawTextureRect(planeTarget.Texture, new Box2(Vector2.Zero, TempTexture.Size));
+                    }, Color.Transparent);
+                ReturnPingPongRenderTarget(TempTexture);
                 handle.RenderInRenderTarget(baseTarget, () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue((int) PlaneMasterBlendmode, out var value) ? value : null);
                     handle.SetTransform(Matrix3.CreateTranslation(-(planeTarget.Size.X/2), -(planeTarget.Size.Y/2)) * //translate, apply transformation, untranslate
                                         PlaneMasterTransform.Value *
                                         Matrix3.CreateTranslation((planeTarget.Size.X/2), (planeTarget.Size.Y/2)));
-                    handle.DrawTextureRect(planeTarget.Texture, new Box2(Vector2.Zero, planeTarget.Size));
+                    handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, planeTarget.Size));
                     handle.UseShader(null);
                 }, null);
                 //refresh planemaster values

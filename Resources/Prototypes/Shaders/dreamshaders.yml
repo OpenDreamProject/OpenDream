@@ -48,7 +48,6 @@
   params:
     x: 0
     y: 0
-    mask_texture: 0
     flags: 0  
 
 #unimplemented shaders point to empty.swsl and do nothing

@@ -137,9 +137,7 @@ sealed class DreamViewOverlay : Overlay {
         IRenderTexture planeTarget = baseTarget;
 
         bool PlaneMasterActive = false;
-        Color? PlaneMasterColor = null;
-        Matrix3? PlaneMasterTransform = null;
-        float? PlaneMasterBlendmode = null;
+        RendererMetaData PlaneMaster = null;
 
         ClearRenderTarget(planeTarget, args.WorldHandle, Color.Transparent);
         for(var i = 0; i < sprites.Count; i++){
@@ -147,9 +145,7 @@ sealed class DreamViewOverlay : Overlay {
             //plane masters don't get rendered, but their properties get applied to the overall rendertarget
             if(((int)sprite.MainIcon.Appearance.AppearanceFlags & 128) == 128){ //appearance_flags & PLANE_MASTER
                 PlaneMasterActive = true;
-                PlaneMasterColor = sprite.ColorToApply;
-                PlaneMasterTransform = sprite.TransformToApply;
-                PlaneMasterBlendmode = sprite.MainIcon.Appearance.BlendMode;
+                PlaneMaster = sprite;
                 planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                 ClearRenderTarget(planeTarget, args.WorldHandle, Color.White.WithAlpha(0));
                 lastPlane = sprite.Plane;
@@ -179,25 +175,8 @@ sealed class DreamViewOverlay : Overlay {
 
             //if we were drawing on a plane_master group, and plane changed or this is the last sprite
             if((i == sprites.Count-1 || lastPlane != sprite.Plane) && PlaneMasterActive){
-                var handle = args.WorldHandle;
-                IRenderTexture TempTexture = RentPingPongRenderTarget(planeTarget.Size);
-                ClearRenderTarget(TempTexture, handle, Color.Transparent);
-                handle.RenderInRenderTarget(TempTexture , () => {
-                        handle.DrawTextureRect(planeTarget.Texture, new Box2(Vector2.Zero, TempTexture.Size));
-                    }, Color.Transparent);
-                ReturnPingPongRenderTarget(TempTexture);
-                handle.RenderInRenderTarget(baseTarget, () => {
-                    handle.UseShader(_blendmodeInstances.TryGetValue((int) PlaneMasterBlendmode, out var value) ? value : null);
-                    handle.SetTransform(Matrix3.CreateTranslation(-(planeTarget.Size.X/2), -(planeTarget.Size.Y/2)) * //translate, apply transformation, untranslate
-                                        PlaneMasterTransform.Value *
-                                        Matrix3.CreateTranslation((planeTarget.Size.X/2), (planeTarget.Size.Y/2)));
-                    handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, planeTarget.Size), PlaneMasterColor.Value);
-                    handle.UseShader(null);
-                }, null);
-                //refresh planemaster values
-                PlaneMasterColor = null;
-                PlaneMasterTransform = null;
-                PlaneMasterBlendmode = null;
+                DrawIcon(args.WorldHandle, baseTarget, PlaneMaster, -screenArea.BottomLeft, planeTarget.Texture);
+                PlaneMaster = null;
                 PlaneMasterActive = false;
                 ReturnPingPongRenderTarget(planeTarget);
                 planeTarget = baseTarget;
@@ -362,7 +341,7 @@ sealed class DreamViewOverlay : Overlay {
         handle.RenderInRenderTarget(target, () => {}, clearColor);
     }
 
-    private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset) {
+    private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
         DreamIcon icon = iconMetaData.MainIcon;
         if(icon.Appearance == null && iconMetaData.RenderSource == "")
             return;
@@ -371,10 +350,22 @@ sealed class DreamViewOverlay : Overlay {
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
         Texture frame;
-        if(iconMetaData.RenderSource == "")
+        bool hackyRedrawNeeded = false;
+        if(textureOverride != null) {
+            frame = textureOverride;
+            hackyRedrawNeeded = true;
+        }
+        else if(iconMetaData.RenderSource == ""){
             frame = icon.CurrentFrame;
+        }
         else if(_renderSourceLookup.TryGetValue(iconMetaData.RenderSource, out var renderSourceTexture)){
-            frame = renderSourceTexture.Texture; //draw it again to preserve correct transformations (this is dumb and I hate it)
+            frame = renderSourceTexture.Texture;
+            hackyRedrawNeeded = true;
+        }
+        else
+            return;
+
+        if(hackyRedrawNeeded){ //TODO figure out why this is necessary and delete it from existence.
             IRenderTexture TempTexture = RentPingPongRenderTarget(frame.Size);
             ClearRenderTarget(TempTexture, handle, Color.Transparent);
             handle.RenderInRenderTarget(TempTexture , () => {
@@ -384,8 +375,6 @@ sealed class DreamViewOverlay : Overlay {
             frame = TempTexture.Texture;
             ReturnPingPongRenderTarget(TempTexture);
         }
-        else
-            return;
 
         if(iconMetaData.KeepTogetherGroup.Count > 0)
         {

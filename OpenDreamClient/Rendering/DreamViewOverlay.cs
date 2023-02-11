@@ -251,7 +251,7 @@ sealed class DreamViewOverlay : Overlay {
                 current.TransformToApply = parentIcon.TransformToApply;
 
             if(((int)icon.Appearance.Plane & -32767) == -32767) //FLOAT_PLANE
-                current.Plane = parentIcon.Plane + ((int)icon.Appearance.Plane ^ -32767);
+                current.Plane = parentIcon.Plane + ((int)icon.Appearance.Plane & ~(-32767));
             else
                 current.Plane = icon.Appearance.Plane;
 
@@ -564,17 +564,21 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public int CompareTo(RendererMetaData other) {
         int val = 0;
         //render targets get processed first
-        val = this.RenderTarget.Length.CompareTo(other.RenderTarget.Length);
-        if (val != 0) {
-            return -1*val;
-        }
+        if(this.RenderTarget.Length > 0){
+            //render targets can be chained, so try to make sure they're in order
+            if(other.RenderTarget.Length > 0 && this.RenderSource == other.RenderTarget)
+                val = 1;
+            else
+                val = -1;
 
+            return val;
+        }
         //Plane
         val =  this.Plane.CompareTo(other.Plane);
         if (val != 0) {
             return val;
         }
-        val = ((int)this.MainIcon.Appearance.AppearanceFlags & 128).CompareTo((int)other.MainIcon.Appearance.AppearanceFlags & 128); //appearance_flags & PLANE_MASTER
+        val = (((int)this.MainIcon.Appearance.AppearanceFlags & 128) == 128).CompareTo(((int)other.MainIcon.Appearance.AppearanceFlags & 128) == 128); //appearance_flags & PLANE_MASTER
         //PLANE_MASTER objects go first for any given plane
         if (val != 0) {
             return -val; //sign flip because we want 1 < -1
@@ -589,10 +593,10 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         val = this.Layer.CompareTo(other.Layer);
         if (val != 0) {
             //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
-            int effects_layer = ((int)this.Layer & 20000).CompareTo((int)other.Layer & 20000);
+            int effects_layer = (((int)this.Layer & 20000) == 20000).CompareTo(((int)other.Layer & 20000) == 20000);
             if(effects_layer != 0)
                 return effects_layer;
-            int background_layer = ((int)this.Layer & 20000).CompareTo((int)other.Layer & 20000);
+            int background_layer = (((int)this.Layer & 5000) == 5000).CompareTo(((int)other.Layer & 5000) == 5000);
             if(background_layer != 0)
                 return -background_layer; //flipped because background_layer flag forces it to the back
             return val;

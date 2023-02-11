@@ -367,7 +367,7 @@ namespace OpenDreamRuntime.Objects {
             if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Filter, out var filterObject))
                 throw new Exception($"Cannot add {value} to filter list");
 
-            DreamFilter filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];
+            dynamic filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];
             DreamFilter copy = _serializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
 
             DreamMetaObjectFilter.FilterAttachedTo[copy] = this;

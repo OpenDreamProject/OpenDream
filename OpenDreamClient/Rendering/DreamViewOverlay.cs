@@ -456,7 +456,7 @@ sealed class DreamViewOverlay : Overlay {
                 }, Color.Black.WithAlpha(0));
 
             foreach (DreamFilter filterId in icon.Appearance.Filters) {
-                ShaderInstance s = _appearanceSystem.GetFilterShader(filterId);
+                ShaderInstance s = _appearanceSystem.GetFilterShader(filterId, _renderSourceLookup);
 
                 handle.RenderInRenderTarget(ping, () => {
                     handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());

@@ -11,6 +11,7 @@ using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Validation;
 using Robust.Shared.Serialization.TypeSerializers.Interfaces;
+using OpenDreamRuntime.Rendering;
 
 namespace OpenDreamRuntime {
     [JsonConverter(typeof(DreamValueJsonConverter))]
@@ -675,6 +676,34 @@ namespace OpenDreamRuntime {
                 return new ValidatedValueNode(node);
 
             return new ErrorNode(node, $"Value {node.Value} is not a matrix");
+        }
+    }
+
+
+    [TypeSerializer]
+    public sealed class DreamValueIconSerializer : ITypeReader<int, DreamValueDataNode> {
+        private readonly DreamResourceManager _dreamResourceManager = IoCManager.Resolve<DreamResourceManager>();
+
+        public int Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<int>? instanceProvider = null) {
+            if (!_dreamResourceManager.TryLoadIcon(node.Value, out IconResource icon))
+                throw new Exception($"Value {node.Value} was not a valid IconResource type");
+
+            return icon.Id;
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+            if (_dreamResourceManager.TryLoadIcon(node.Value, out IconResource icon))
+                return new ValidatedValueNode(node);
+
+            return new ErrorNode(node, $"Value {node.Value} is not an Icon");
         }
     }
     #endregion Serialization

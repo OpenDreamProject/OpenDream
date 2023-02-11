@@ -4,6 +4,8 @@ using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
+using OpenDreamClient.Resources;
+using OpenDreamClient.Resources.ResourceTypes;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
@@ -19,6 +21,7 @@ namespace OpenDreamClient.Rendering {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly OccluderSystem _occluderSystem = default!;
+        [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -96,7 +99,7 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        public ShaderInstance GetFilterShader(DreamFilter filter) {
+        public ShaderInstance GetFilterShader(DreamFilter filter, Dictionary<string, IRenderTexture> renderSourceLookup) {
             if (!_filterShaders.TryGetValue(filter, out var instance)) {
                 var protoManager = IoCManager.Resolve<IPrototypeManager>();
 
@@ -104,6 +107,16 @@ namespace OpenDreamClient.Rendering {
 
                 switch (filter) {
                     case DreamFilterAlpha alpha:
+                        if(!String.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out var renderSourceTexture))
+                            instance.SetParameter("mask_texture", renderSourceTexture.Texture);
+                        else if(alpha.Icon != 0){
+                            _dreamResourceManager.LoadResourceAsync<DMIResource>(alpha.Icon, (DMIResource rsc) => {
+                                    instance.SetParameter("mask_texture", rsc.Texture);
+                                });
+                        }
+                        instance.SetParameter("x",alpha.X);
+                        instance.SetParameter("y",alpha.Y);
+                        instance.SetParameter("flags",alpha.Flags);
                         break;
                     case DreamFilterAngularBlur angularBlur:
                         break;

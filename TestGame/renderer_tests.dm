@@ -245,6 +245,18 @@
 		usr.overlays += new /obj/spotlight()
 		//usr.overlays += new /obj/background_image/lighting()
 
+
+/obj/plaque/alpha_rendersource_test 
+	data = "<h3>Alpha Filter RenderSource Test</h3><p>Click the button to add an alpha filter with this button as the render source</p>"
+
+/obj/button/alpha_rendersource_test
+	name = "Alpha Filter RenderSource Test"
+	desc = "Click me to add alpha filter"
+	render_target = "button"
+
+	push()
+		usr.filters = filter(type="alpha", render_source="button")
+
 /obj/order_test
 	icon = 'icons/hanoy.dmi'
 	icon_state = "0"

@@ -27,13 +27,15 @@
 "A" = (/obj/button/plane_master_test,/turf,/area)
 "B" = (/obj/plaque/plane_master_test,/turf,/area)
 "C" = (/obj/order_test,/turf,/area)
+"D" = (/obj/button/alpha_rendersource_test,/turf,/area)
+"E" = (/obj/plaque/alpha_rendersource_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
 bedciklwopsuaaaaaaaaab
 bfghjmnxqrtvaaaaaaaaab
-byAaaaaaaaaaaaaaaaaaab
-bzBaaaaaaaaaaaaaaaaaab
+byADaaaaaaaaaaaaaaaaab
+bzBEaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab

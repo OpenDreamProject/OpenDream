@@ -1,9 +1,4 @@
-/atom
-	New()
-		.=..()
-		verbs += /atom/verb/examine
-
-/atom/verb/examine(atom/thing as obj|mob in world)
+/mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
 

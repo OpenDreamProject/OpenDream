@@ -92,6 +92,8 @@ sealed class DreamViewOverlay : Overlay {
 
         //visible entities
         foreach (EntityUid entity in entities) {
+            if(entity == eye)
+                continue; //don't render the player twice
             if (!spriteQuery.TryGetComponent(entity, out var sprite))
                 continue;
             if (!sprite.IsVisible(mapManager: _mapManager))
@@ -102,12 +104,12 @@ sealed class DreamViewOverlay : Overlay {
         }
 
         //visible turfs
-        if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
+      /*  if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
             foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
                 MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
                 sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
             }
-
+*/
         //screen objects
         if(ScreenOverlayEnabled){
             foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
@@ -172,13 +174,13 @@ sealed class DreamViewOverlay : Overlay {
                         _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                         _renderTargetsToReturn.Add(tmpRenderTarget);
                     }
-                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, -screenArea.BottomLeft);
+                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, (args.WorldAABB.Size/2)-sprite.Position); //draw the sprite centered on the RenderTarget
                 }
                 else {
                     //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                     //if it's a render source though, we draw with a texture override with a center screen offset instead
                     if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
-                        DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.Center+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
+                        DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2), renderSourceTexture.Texture);
                     }
                     else{
                         DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
@@ -554,7 +556,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public int CompareTo(RendererMetaData other) {
         int val = 0;
         //render targets get processed first
-        /*if(this.RenderTarget.Length > 0){
+        if(this.RenderTarget.Length > 0){
             //render targets can be chained, so try to make sure they're in order
             if(other.RenderTarget.Length > 0 && this.RenderSource == other.RenderTarget)
                 val = 1;
@@ -562,7 +564,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
                 val = -1;
 
             return val;
-        }*/
+        }
         //Plane
         val =  this.Plane.CompareTo(other.Plane);
         if (val != 0) {

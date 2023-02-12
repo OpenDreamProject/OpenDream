@@ -104,12 +104,12 @@ sealed class DreamViewOverlay : Overlay {
         }
 
         //visible turfs
-      /*  if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
+        if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
             foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
                 MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
                 sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
             }
-*/
+
         //screen objects
         if(ScreenOverlayEnabled){
             foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
@@ -287,6 +287,7 @@ sealed class DreamViewOverlay : Overlay {
 
         //TODO vis_contents
         //click uid should be set to current.uid again
+        //dont forget the vis_flags
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
@@ -555,15 +556,10 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
     public int CompareTo(RendererMetaData other) {
         int val = 0;
-        //render targets get processed first
-        if(this.RenderTarget.Length > 0){
-            //render targets can be chained, so try to make sure they're in order
-            if(other.RenderTarget.Length > 0 && this.RenderSource == other.RenderTarget)
-                val = 1;
-            else
-                val = -1;
 
-            return val;
+        val = (this.RenderTarget.Length > 0).CompareTo(other.RenderTarget.Length > 0);
+        if (val != 0) {
+            return -val;
         }
         //Plane
         val =  this.Plane.CompareTo(other.Plane);

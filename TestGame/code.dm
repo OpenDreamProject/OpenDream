@@ -22,6 +22,7 @@
 		..()
 		loc = locate(5, 5, 1)
 		color = rgb(rand(0,255), rand(0,255), rand(0,255))
+		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
 
 	verb/rotate()
 		for(var/i in 1 to 8)

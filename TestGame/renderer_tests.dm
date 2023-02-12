@@ -4,6 +4,9 @@
 
 #define PLANE_HANOY_0 20
 #define PLANE_HANOY_1 21
+#define PLANE_HANOY_3 23
+#define PLANE_HANOY_4 24
+
 
 /obj/plaque
 	var/data = "Empty plaque"
@@ -252,15 +255,44 @@
 	New()
 		src.overlays += new /obj/order_test_item/one()
 		src.overlays += new /obj/order_test_item/two()
+		new /obj/order_test_item/three(src.loc)
+		new /obj/order_test_item/four(src.loc)
+		new /obj/order_test_item/five(src.loc)
+		new /obj/order_test_item/six(src.loc)
+
+
 
 /obj/order_test_item
 	icon = 'icons/hanoy.dmi'
 	
-/obj/order_test_item/one
+/obj/order_test_item/one //make sure planes apply properly
 	icon_state = "1"
 	plane = PLANE_HANOY_1
 
-/obj/order_test_item/two
+/obj/order_test_item/two //test FLOAT_PLANE
 	icon_state = "2"
 	plane = FLOAT_PLANE+2	
 
+/obj/order_test_item/plane_master //plane master test
+	screen_loc = "1,1"
+	appearance_flags = PLANE_MASTER
+	plane = PLANE_HANOY_3
+
+/obj/order_test_item/three //plane master test
+	icon_state = "3"
+	plane = PLANE_HANOY_3
+
+/obj/order_test_item/four //layer test
+	icon_state = "4"
+	plane = PLANE_HANOY_4
+	layer = BACKGROUND_LAYER
+
+/obj/order_test_item/five //layer test
+	icon_state = "5"
+	plane = PLANE_HANOY_4	
+	layer = 1
+
+/obj/order_test_item/six //layer test
+	icon_state = "6"
+	plane = PLANE_HANOY_4	
+	layer = EFFECTS_LAYER

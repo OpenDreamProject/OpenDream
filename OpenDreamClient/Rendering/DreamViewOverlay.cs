@@ -247,7 +247,7 @@ sealed class DreamViewOverlay : Overlay {
             if(icon.Appearance.Layer == -1) //FLOAT_LAYER
                 current.Layer = parentIcon.Layer;
             else
-                current.Layer = icon.Appearance.Plane;
+                current.Layer = icon.Appearance.Layer;
         } else {
             current.ColorToApply = icon.Appearance.Color;
             current.AlphaToApply = icon.Appearance.Alpha/255.0f;
@@ -554,7 +554,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public int CompareTo(RendererMetaData other) {
         int val = 0;
         //render targets get processed first
-        if(this.RenderTarget.Length > 0){
+        /*if(this.RenderTarget.Length > 0){
             //render targets can be chained, so try to make sure they're in order
             if(other.RenderTarget.Length > 0 && this.RenderSource == other.RenderTarget)
                 val = 1;
@@ -562,7 +562,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
                 val = -1;
 
             return val;
-        }
+        }*/
         //Plane
         val =  this.Plane.CompareTo(other.Plane);
         if (val != 0) {
@@ -583,10 +583,10 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         val = this.Layer.CompareTo(other.Layer);
         if (val != 0) {
             //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
-            int effects_layer = (((int)this.Layer & 20000) == 20000).CompareTo(((int)other.Layer & 20000) == 20000);
+            int effects_layer = (((int)this.Layer & 5000) == 5000).CompareTo(((int)other.Layer & 5000) == 5000);
             if(effects_layer != 0)
                 return effects_layer;
-            int background_layer = (((int)this.Layer & 5000) == 5000).CompareTo(((int)other.Layer & 5000) == 5000);
+            int background_layer = (((int)this.Layer & 20000) == 20000).CompareTo(((int)other.Layer & 20000) == 20000);
             if(background_layer != 0)
                 return -background_layer; //flipped because background_layer flag forces it to the back
             return val;

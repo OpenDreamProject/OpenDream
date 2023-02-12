@@ -6,6 +6,7 @@
 #define PLANE_HANOY_1 21
 #define PLANE_HANOY_3 23
 #define PLANE_HANOY_4 24
+#define PLANE_HANOY_7 27
 
 
 /obj/plaque
@@ -259,6 +260,8 @@
 		new /obj/order_test_item/four(src.loc)
 		new /obj/order_test_item/five(src.loc)
 		new /obj/order_test_item/six(src.loc)
+		new /obj/order_test_item/seven(src.loc)
+		new /obj/order_test_item/render_seven(locate(1,1,1))
 
 
 
@@ -296,3 +299,13 @@
 	icon_state = "6"
 	plane = PLANE_HANOY_4	
 	layer = EFFECTS_LAYER
+
+/obj/order_test_item/seven //render source/target test
+	render_source = "hanoy7"
+	plane = PLANE_HANOY_7	
+
+/obj/order_test_item/render_seven //render source/target test
+	render_target = "hanoy7"
+	icon_state = "7"
+	plane = -100	//render below everything
+

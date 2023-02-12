@@ -26,6 +26,7 @@
 "z" = (/obj/plaque/screen_background_test,/turf,/area)
 "A" = (/obj/button/plane_master_test,/turf,/area)
 "B" = (/obj/plaque/plane_master_test,/turf,/area)
+"C" = (/obj/order_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
@@ -48,7 +49,7 @@ baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
-baaaaaaaaaaaaaaaaaaaab
+bCaaaaaaaaaaaaaaaaaaab
 bbbbbbbbbbbbbbbbbbbbbb
 "}
 

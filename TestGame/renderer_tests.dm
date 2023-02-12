@@ -1,6 +1,10 @@
 //test object base classes
 #define TALL_OBJECT_PLANE 10
 #define PLANE_LIGHTING 50
+
+#define PLANE_HANOY_0 20
+#define PLANE_HANOY_1 21
+
 /obj/plaque
 	var/data = "Empty plaque"
 	icon = 'icons/objects.dmi'
@@ -236,3 +240,27 @@
 		usr.client.screen |= new /obj/lighting_plane()	
 		usr.overlays += new /obj/spotlight()
 		//usr.overlays += new /obj/background_image/lighting()
+
+/obj/order_test
+	icon = 'icons/hanoy.dmi'
+	icon_state = "0"
+	name = "Render order test"
+	desc = "If this isn't a nice set of 10 squares stacked on top of eachother, something has gone wrong"
+	layer = OBJ_LAYER
+	plane = PLANE_HANOY_0
+
+	New()
+		src.overlays += new /obj/order_test_item/one()
+		src.overlays += new /obj/order_test_item/two()
+
+/obj/order_test_item
+	icon = 'icons/hanoy.dmi'
+	
+/obj/order_test_item/one
+	icon_state = "1"
+	plane = PLANE_HANOY_1
+
+/obj/order_test_item/two
+	icon_state = "2"
+	plane = FLOAT_PLANE+2	
+

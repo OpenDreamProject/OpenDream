@@ -11,8 +11,8 @@ void fragment() {
     highp vec2 mask_size = vec2(textureSize(mask_texture, 0));
     highp vec2 ratio = crop_size/mask_size;
 
-    highp vec4 mask_crop = texture(mask_texture, (ratio/2.0)+UV*ratio);
-    new_color.a *= mask_crop.a; // D
+    highp vec4 mask_crop = texture(mask_texture, (-ratio/2.0+0.5)+UV*ratio);
+    new_color.a *= mask_crop.a;
 
     COLOR = new_color;
 }

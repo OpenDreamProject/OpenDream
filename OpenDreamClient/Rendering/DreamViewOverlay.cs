@@ -174,13 +174,13 @@ sealed class DreamViewOverlay : Overlay {
                         _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                         _renderTargetsToReturn.Add(tmpRenderTarget);
                     }
-                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, (args.WorldAABB.Size/2)-sprite.Position); //draw the sprite centered on the RenderTarget
+                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f)); //draw the sprite centered on the RenderTarget
                 }
                 else {
                     //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
                     //if it's a render source though, we draw with a texture override with a center screen offset instead
                     if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
-                        DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2), renderSourceTexture.Texture);
+                        DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
                     }
                     else{
                         DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);

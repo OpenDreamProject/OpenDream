@@ -367,7 +367,9 @@ namespace OpenDreamRuntime.Objects {
             if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Filter, out var filterObject))
                 throw new Exception($"Cannot add {value} to filter list");
 
-            DreamFilter filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];
+            //This is dynamic to prevent the compiler from optimising the SerializationManager.CreateCopy() call to the DreamFilter type
+            //so we can preserve the subclass information. Setting it to DreamFilter instead will cause filter parameters to stop working.
+            dynamic filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];
             DreamFilter copy = _serializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
 
             DreamMetaObjectFilter.FilterAttachedTo[copy] = this;

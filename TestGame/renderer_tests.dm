@@ -7,6 +7,7 @@
 #define PLANE_HANOY_3 23
 #define PLANE_HANOY_4 24
 #define PLANE_HANOY_7 27
+#define PLANE_HANOY_8 28
 
 
 /obj/plaque
@@ -274,6 +275,7 @@
 		new /obj/order_test_item/six(src.loc)
 		new /obj/order_test_item/seven(src.loc)
 		new /obj/order_test_item/render_seven(locate(1,1,1))
+		new /obj/order_test_item/eight(src.loc)
 
 
 
@@ -321,3 +323,9 @@
 	icon_state = "7"
 	plane = -100	//render below everything
 
+/obj/order_test_item/eight //image test
+	icon_state = ""
+	plane = PLANE_HANOY_8
+
+	New()
+		src.overlays += image(icon = 'icons/hanoy.dmi', icon_state="8")

@@ -6,7 +6,13 @@ uniform sampler2D mask_texture;
 
 void fragment() {
     highp vec4 new_color = texture(TEXTURE, UV);
-    new_color.a *= texture(mask_texture, UV).a; // D
+
+    highp vec2 crop_size = vec2(textureSize(TEXTURE, 0));
+    highp vec2 mask_size = vec2(textureSize(mask_texture, 0));
+    highp vec2 ratio = crop_size/mask_size;
+
+    highp vec4 mask_crop = texture(mask_texture, (ratio/2.0)+UV*ratio);
+    new_color.a *= mask_crop.a; // D
 
     COLOR = new_color;
 }

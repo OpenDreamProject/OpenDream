@@ -225,7 +225,7 @@
 	color = "#333f" //should be color = list(null, null, null, "#0000", "#333f") when color matrix is done
 	mouse_opacity = 0 
 
-/obj/spotlight
+/image/spotlight
 	plane = PLANE_LIGHTING
 	blend_mode = BLEND_ADD
 	appearance_flags = RESET_COLOR | RESET_ALPHA | RESET_TRANSFORM
@@ -243,7 +243,7 @@
 
 	push()
 		usr.client.screen |= new /obj/lighting_plane()	
-		usr.overlays += new /obj/spotlight()
+		usr.overlays += new /image/spotlight()
 		//usr.overlays += new /obj/background_image/lighting()
 
 

@@ -3,8 +3,8 @@
 
 	var/alpha = 255
 	var/appearance as opendream_unimplemented
-	var/appearance_flags = 0 as opendream_unimplemented
-	var/blend_mode = 0 as opendream_unimplemented
+	var/appearance_flags = 0
+	var/blend_mode = 0
 	var/color = "#FFFFFF"
 	var/desc = null
 	var/gender = "neuter" as opendream_unimplemented
@@ -31,9 +31,9 @@
 	var/pixel_y = 0
 	var/pixel_w = 0 as opendream_unimplemented
 	var/pixel_z = 0 as opendream_unimplemented
-	var/plane = FLOAT_PLANE as opendream_unimplemented
-	var/render_source as opendream_unimplemented
-	var/render_target as opendream_unimplemented
+	var/plane = FLOAT_PLANE
+	var/render_source
+	var/render_target
 	var/suffix as opendream_unimplemented
 	var/text = "i" as opendream_unimplemented
 	var/matrix/transform

@@ -43,6 +43,10 @@ namespace OpenDreamRuntime {
             return _atomToEntity.ContainsKey(movable) ? _atomToEntity[movable] : CreateMovableEntity(movable);
         }
 
+        public bool TryGetMovableEntity(DreamObject movable, out EntityUid entity) {
+            return _atomToEntity.TryGetValue(movable, out entity);
+        }
+
         public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable) {
             return _entityToAtom.TryGetValue(entity, out movable);
         }
@@ -55,15 +59,33 @@ namespace OpenDreamRuntime {
             _entityManager.DeleteEntity(entity);
         }
 
-        public IconAppearance? GetAppearance(DreamObject atom) {
+        /// <summary>
+        /// Looks for an appearance and, if one does not exist, usually creates a new one. <br/>
+        /// If used with a turf, this will fail and throw some kinda KeyNotFoundException down the line.
+        /// </summary>
+        /// <param name="atom">The atom to find the appearance of.</param>
+        public IconAppearance? MustGetAppearance(DreamObject atom) {
             return atom.IsSubtypeOf(_objectTree.Turf)
-                ? _dreamMapManager.GetTurfAppearance(atom)
+                ? _dreamMapManager.MustGetTurfAppearance(atom)
                 : _entityManager.GetComponent<DMISpriteComponent>(GetMovableEntity(atom)).Appearance;
+        }
+
+        /// <summary>
+        /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
+        /// </summary>
+        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance) {
+            if (atom.IsSubtypeOf(_objectTree.Turf))
+                _dreamMapManager.TryGetTurfAppearance(atom, out appearance);
+            else if (TryGetMovableEntity(atom, out var entity)) // If a movable is already on the map
+                appearance = _entityManager.GetComponent<DMISpriteComponent>(entity).Appearance;
+            else
+                appearance = null;
+            return appearance is not null;
         }
 
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
             if (atom.IsSubtypeOf(_objectTree.Turf)) {
-                IconAppearance appearance = new IconAppearance(_dreamMapManager.GetTurfAppearance(atom));
+                IconAppearance appearance = new IconAppearance(_dreamMapManager.MustGetTurfAppearance(atom));
                 update(appearance);
                 _dreamMapManager.SetTurfAppearance(atom, appearance);
             } else if (atom.IsSubtypeOf(_objectTree.Movable)) {
@@ -181,10 +203,14 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 
         public EntityUid GetMovableEntity(DreamObject movable);
+
+        public bool TryGetMovableEntity(DreamObject movable, out EntityUid entity);
         public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);
         public void DeleteMovableEntity(DreamObject movable);
 
-        public IconAppearance? GetAppearance(DreamObject atom);
+        public IconAppearance? MustGetAppearance(DreamObject atom);
+
+        public bool TryGetAppearance(DreamObject atom, out IconAppearance? appearance);
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);

@@ -439,7 +439,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         private IconAppearance GetAppearance() {
-            IconAppearance? appearance = _atomManager.GetAppearance(_atom);
+            IconAppearance? appearance = _atomManager.MustGetAppearance(_atom);
             if (appearance == null)
                 throw new Exception("Atom has no appearance");
 

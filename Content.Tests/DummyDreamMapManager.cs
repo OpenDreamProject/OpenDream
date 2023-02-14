@@ -31,7 +31,7 @@ namespace Content.Tests {
 
         public void SetTurfAppearance(DreamObject turf, IconAppearance appearance) { }
 
-        public IconAppearance GetTurfAppearance(DreamObject turf) {
+        public IconAppearance MustGetTurfAppearance(DreamObject turf) {
             return new IconAppearance();
         }
 
@@ -42,6 +42,11 @@ namespace Content.Tests {
 
         public IDreamMapManager.Cell GetCellFromTurf(DreamObject turf) {
             throw null;
+        }
+
+        public bool TryGetTurfAppearance(DreamObject turf, out IconAppearance appearance) {
+            appearance = MustGetTurfAppearance(turf);
+            return true;
         }
 
         public bool TryGetTurfAt(Vector2i pos, int z, out DreamObject turf) {

@@ -3,6 +3,7 @@ using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
@@ -12,6 +13,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
+        [ViewVariables] public ColorMatrix? Matrix;
         [ViewVariables] public float Layer;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
@@ -82,6 +84,40 @@ namespace OpenDreamShared.Dream {
             return true;
         }
 
+        /// <summary>
+        /// This is a helper used for both optimization and parity. <br/>
+        /// In BYOND, if a color matrix is representable as an RGBA color string, <br/>
+        /// then it is coerced into one internally before being saved onto some appearance. <br/>
+        /// This does the linear algebra madness necessary to determine whether this is the case or not.
+        /// </summary>
+        private static bool TryRepresentMatrixAsRGBAColor(in ColorMatrix matrix, [NotNullWhen(true)] out Color? maybeColor) {
+            maybeColor = null;
+            // The R G B A values need to be bounded [0,1] for a color conversion to work;
+            // anything higher implies trying to render "superblue" or something.
+            float diagonalSum = 0f;
+            foreach(float diagonalValue in matrix.GetDiagonal()) {
+                if (diagonalValue < 0 || diagonalValue > 1)
+                    return false;
+                diagonalSum += diagonalValue;
+            }
+            // and then all of the other values need to be zero, including the offset vector.
+            float sum = 0f;
+            foreach(float value in matrix.GetValues())
+                sum += value;
+            if (sum - diagonalSum == 0) // PREEETTY sure I can trust the floating-point math here. Not 100% though
+                maybeColor = new Color(matrix.c11, matrix.c22, matrix.c33, matrix.c44);
+            return maybeColor is not null;
+        }
+
+        private void RemoveColorFilter() {
+            for (int i = 0; i < Filters.Count; i++) {
+                if (Filters[i] is DreamFilterColor) {
+                    Filters.RemoveAt(i);
+                    return;
+                }
+            }
+        }
+
         public override int GetHashCode() {
             HashCode hashCode = new HashCode();
 
@@ -114,12 +150,37 @@ namespace OpenDreamShared.Dream {
             return hashCode.ToHashCode();
         }
 
+        /// <summary>
+        /// Parses the given colour string and sets this appearance to use it.
+        /// </summary>
+        /// <exception cref="ArgumentException">Thrown if color is not valid.</exception>
         public void SetColor(string color) {
             // TODO the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
             if (color == string.Empty) color = "#ffffff";
+            if (Matrix is not null) {
+                Matrix = null; // reset our color matrix if we had one
+                RemoveColorFilter();
+            }
             if (!ColorHelpers.TryParseColor(color, out Color)) {
                 throw new ArgumentException($"Invalid color '{color}'");
             }
+        }
+        /// <summary>
+        /// Sets the 'color' attribute to a color matrix, which will be used on the icon later on by a shader.
+        /// </summary>
+        public void SetColor(ColorMatrix matrix) {
+            if(TryRepresentMatrixAsRGBAColor(matrix, out var matrixColor)) {
+                Color = matrixColor.Value;
+                Matrix = null;
+                RemoveColorFilter();
+                return;
+            }
+            Color = Color.White;
+            Matrix = matrix;
+            var newFilter = new DreamFilterColor(); // Am I like... doing this right?
+            newFilter.Color = matrix;
+            newFilter.Space = 0; // TODO: Support color mappings that aren't RGB.
+            Filters.Add(newFilter);
         }
     }
 }

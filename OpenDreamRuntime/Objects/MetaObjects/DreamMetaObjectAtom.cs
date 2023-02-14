@@ -112,10 +112,47 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 case "color":
+                    if(value.TryGetValueAsDreamList(out var list)) {
+                        /*
+                            This is being used to define a ColorMatrix.
+                            Possible correct arguments include:
+                            list(rr,rg,rb, gr,gg,gb, br,bg,bb)
+                            list(rr,rg,rb, gr,gg,gb, br,bg,bb, cr,cg,cb)
+                            list(rr,rg,rb,ra, gr,gg,gb,ga, br,bg,bb,ba, ar,ag,ab,aa)
+                            list(rr,rg,rb,ra, gr,gg,gb,ga, br,bg,bb,ba, ar,ag,ab,aa, cr,cg,cb,ca)
+                            list(rgb() or null, rgb() or null, rgb() or null, rgb() or null, rgb() or null) // In this case any of the null ones are just their identity row
+                        */
+                        switch(list.GetLength()) {
+                            case 0:
+                                break; // Back off into the "reset the color var" behaviour that the string|null stuff has, below
+                            case 1: // 1 to 5 is the rgb() string spam
+                            case 2:
+                            case 3:
+                            case 4: 
+                            case 5: 
+                                var newMatrix = ColorMatrix.Identity;
+                                var listArray = list.GetValues();
+                                for (var i = 0; i < listArray.Count && i < 5; ++i) {
+                                    var listValue = listArray[i];
+                                    if(listValue.TryGetValueAsString(out var RGBString)) {
+                                        if(ColorHelpers.TryParseColor(RGBString, out var color)) {
+                                            newMatrix.SetRow(i, color);
+                                        }
+                                    }
+                                }
+                                _atomManager.UpdateAppearance(dreamObject, appearance => {
+                                    appearance.SetColor(newMatrix);
+                                });
+                                return;
+                            default:
+                                throw new ArgumentException("Incorrect /list provided for /atom.color");
+                        }
+                    }
+
+                    value.TryGetValueAsString(out var colorString);
+                    colorString ??= "white";
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsString(out string color);
-                        color ??= "white";
-                        appearance.SetColor(color);
+                        appearance.SetColor(colorString);
                     });
                     break;
                 case "dir":
@@ -220,6 +257,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new DreamValue(VerbLists[dreamObject]);
                 case "filters":
                     return new DreamValue(_filterLists[dreamObject]);
+                case "color":
+                    if(!_atomManager.TryGetAppearance(dreamObject, out IconAppearance? appearance))
+                        return DreamValue.Null;
+                    if(appearance.Matrix is not null) {
+                        var matrixList = _objectTree.CreateList(20);
+                        foreach (float entry in appearance.Matrix.Value.GetValues())
+                            matrixList.AddValue(new DreamValue(entry));
+                        return new DreamValue(matrixList);
+                    }
+                    if (appearance.Color == Color.White)
+                        return DreamValue.Null;
+                    return new DreamValue(appearance.Color.ToHexNoAlpha().ToLower()); // BYOND quirk, does not return the alpha channel for some reason.
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
@@ -229,14 +278,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IconAppearance appearance = new IconAppearance();
 
             if (value.TryGetValueAsString(out string valueString)) {
-                appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
+                appearance.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
                 appearance.IconState = valueString;
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.MutableAppearance, out var mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
                 if (icon.TryGetValueAsDreamResource(out var iconResource)) {
                     appearance.Icon = iconResource.Id;
                 } else if (icon == DreamValue.Null) {
-                    appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
+                    appearance.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
                 }
 
                 DreamValue colorValue = mutableAppearance.GetVariable("color");

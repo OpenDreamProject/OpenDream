@@ -74,7 +74,7 @@ public sealed record DreamFilterBlur : DreamFilter {
 
 [Serializable, NetSerializable]
 public sealed record DreamFilterColor : DreamFilter {
-    //[ViewVariables, DataField("color", required: true)] public object Color; // Color matrix TODO
+    [ViewVariables, DataField("color", required: true)] public ColorMatrix Color;
     [ViewVariables, DataField("space")] public float Space; // Default is FILTER_COLOR_RGB = 0
 }
 

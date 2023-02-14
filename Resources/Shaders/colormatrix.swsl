@@ -1,0 +1,27 @@
+//This is for handling transformations
+//caused by DM colour matrices: https://secure.byond.com/docs/ref/#/{notes}/color-matrix
+//In general, our code should try to avoid using this shader, in favour of the 'modulate' Color parameter available in some RT/Clyde drawing routines.
+//This should only be used for color transformations that can only be expressed as the linear algebra nonsense featured below.
+
+uniform lowp mat4 colorMatrix;
+uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is
+void fragment() {
+    lowp vec3 oldColor = COLOR.rgb; // Dorky micro-optimization, since the math lets us skip on saving one of them
+    COLOR.r =   oldColor.r * colorMatrix[0].x + 
+                oldColor.g * colorMatrix[0].y + 
+                oldColor.b * colorMatrix[0].z + 
+                COLOR.a * colorMatrix[0].w;
+    COLOR.g =   oldColor.r * colorMatrix[1].x + 
+                oldColor.g * colorMatrix[1].y + 
+                oldColor.b * colorMatrix[1].z + 
+                COLOR.a * colorMatrix[1].w;
+    COLOR.b =   oldColor.r * colorMatrix[2].x + 
+                oldColor.g * colorMatrix[2].y + 
+                oldColor.b * colorMatrix[2].z + 
+                COLOR.a * colorMatrix[2].w;
+    COLOR.a =   oldColor.r * colorMatrix[3].x + 
+                oldColor.g * colorMatrix[3].y + 
+                oldColor.b * colorMatrix[3].z + 
+                COLOR.a * colorMatrix[3].w;
+    COLOR = COLOR + offsetVector;
+}

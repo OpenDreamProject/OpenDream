@@ -186,7 +186,7 @@ namespace OpenDreamClient.Rendering {
 
             AtlasTexture frame = CurrentFrame;
             if (frame != null) {
-                handle.DrawTexture(frame, position, Appearance.Color);
+                handle.DrawTexture(frame, position, Appearance.Color); // TODO: Does not consider ColorMatrix
             }
 
             foreach (DreamIcon overlay in Overlays) {

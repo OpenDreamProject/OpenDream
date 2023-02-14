@@ -1,3 +1,8 @@
+# NOTE:
+# Due to how this data is later serialized and accessed by the filter() native proc,
+# the ID of the shader must be the exact same as the BYOND string literal of the filter it correlates to.
+# i.e. filter(type="color"...) must correlate to a shader with id: color
+# This may later change (comment written Feb 13 '23) but, uh, watch out for that.
 
 - type: shader
   id: outline
@@ -18,6 +23,14 @@
   path: "/Shaders/blur.swsl"
   params:
     size: 1
+
+- type: shader
+  id: color
+  kind: source
+  path: "/Shaders/colormatrix.swsl"
+  params:
+    colorMatrix: 0 #FIXME: actually reasonable default arguments
+    offsetVector: 0,0,0,0
 
 #unimplemented shaders point to empty.swsl and do nothing
 
@@ -50,14 +63,6 @@
     size: 1    
     offset: 0
     alpha: 0
-
-- type: shader
-  id: color
-  kind: source
-  path: "/Shaders/empty.swsl"
-  params:
-    color: 0
-    space: 1    
 
 - type: shader
   id: displace

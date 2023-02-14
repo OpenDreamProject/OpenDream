@@ -36,7 +36,7 @@ namespace OpenDreamShared.Dream
 
                     color = new string('#', 1) + new string(color[1], 2) + new string(color[2], 2) + new string(color[3], 2) + alphaComponent;
                 } else if (color.Length == 7) { //Missing alpha
-                    color += "ff";
+                    color += defaultAlpha;
                 }
 
                 colorOut = Color.FromHex(color, Color.White);

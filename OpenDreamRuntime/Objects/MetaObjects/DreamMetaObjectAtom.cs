@@ -135,7 +135,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                                 for (var i = 0; i < listArray.Count && i < 5; ++i) {
                                     var listValue = listArray[i];
                                     if(listValue.TryGetValueAsString(out var RGBString)) {
-                                        if(ColorHelpers.TryParseColor(RGBString, out var color)) {
+                                        if(ColorHelpers.TryParseColor(RGBString, out var color, defaultAlpha: "00")) {
                                             newMatrix.SetRow(i, color);
                                         }
                                     }

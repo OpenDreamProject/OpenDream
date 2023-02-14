@@ -6,22 +6,28 @@
 uniform lowp mat4 colorMatrix;
 uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is
 void fragment() {
-    lowp vec3 oldColor = COLOR.rgb; // Dorky micro-optimization, since the math lets us skip on saving one of them
-    COLOR.r =   oldColor.r * colorMatrix[0].x + 
-                oldColor.g * colorMatrix[0].y + 
-                oldColor.b * colorMatrix[0].z + 
-                COLOR.a * colorMatrix[0].w;
-    COLOR.g =   oldColor.r * colorMatrix[1].x + 
-                oldColor.g * colorMatrix[1].y + 
-                oldColor.b * colorMatrix[1].z + 
-                COLOR.a * colorMatrix[1].w;
-    COLOR.b =   oldColor.r * colorMatrix[2].x + 
-                oldColor.g * colorMatrix[2].y + 
-                oldColor.b * colorMatrix[2].z + 
-                COLOR.a * colorMatrix[2].w;
-    COLOR.a =   oldColor.r * colorMatrix[3].x + 
-                oldColor.g * colorMatrix[3].y + 
-                oldColor.b * colorMatrix[3].z + 
-                COLOR.a * colorMatrix[3].w;
+    highp vec4 oldColor = zTexture(UV);
+	//Even though mat4s are supposed to be COLUMN first,
+	//Clyde has done something devilish, and swapped it back via a transpose
+	//so this is actually row-first.
+    COLOR[0] =  oldColor[0] * colorMatrix[0][0] + 
+                oldColor[1] * colorMatrix[1][0] + 
+                oldColor[2] * colorMatrix[2][0] + 
+                oldColor[3] * colorMatrix[3][0];
+				
+    COLOR[1] =  oldColor[0] * colorMatrix[0][1] + 
+                oldColor[1] * colorMatrix[1][1] + 
+                oldColor[2] * colorMatrix[2][1] + 
+                oldColor[3] * colorMatrix[3][1];
+				
+    COLOR[2] =  oldColor[0] * colorMatrix[0][2] + 
+                oldColor[1] * colorMatrix[1][2] + 
+                oldColor[2] * colorMatrix[2][2] + 
+                oldColor[3] * colorMatrix[3][2];
+				
+    COLOR[3] =  oldColor[0] * colorMatrix[0][3] + 
+                oldColor[1] * colorMatrix[1][3] + 
+                oldColor[2] * colorMatrix[2][3] + 
+                oldColor[3] * colorMatrix[3][3];
     COLOR = COLOR + offsetVector;
 }

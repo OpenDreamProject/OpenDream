@@ -62,8 +62,19 @@
 		CRASH("Using a non-/turf Center for range() did not work correctly.")
 	del(timmy)
 
+/proc/test_color_matrix()
+	var/r = "#de000000"
+	var/g = "#00ad0000"
+	var/b = "#0000be00"
+	var/a = "#000000ef" // deadbeef my beloved
+	var/mob/M = new
+	M.color = list(r,g,b,a)
+	if(M.color != "#deadbe")
+		CRASH("Color matrix transformation in rgba() value didn't work correctly, color is '[json_encode(M.color)]' instead.")
+
 /world/New()
 	..()
 	test_world_init()
 	test_range()
+	test_color_matrix()
 	world.log << "IntegrationTests successful, /world/New() exiting..."

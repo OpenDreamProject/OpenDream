@@ -108,6 +108,17 @@
 				if("all")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
 			usr << "Applied [selected] filter"
+	
+	verb/test_color()
+		set category = "Test"
+		//unit matrix: list(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1, 0,0,0,0)
+		var/list/noRed = list(0,0,0,0, 0,2,0,0, 0,0,2,0, 0,0,0,1, 0,0,0,0)
+		var/list/noBlue = list(2,0,0,0, 0,2,0,0, 0,0,0,0, 0,0,0,1, 0,0,0,0)
+		src.color = noRed
+		src.filters = filter(type="color",noBlue)
+		usr << "Applied silly colours:"
+		usr << json_encode(src.color)
+		usr << json_encode(src.filters)
 
 /mob/Stat()
 	if (statpanel("Status"))

@@ -47,6 +47,7 @@ namespace OpenDreamShared.Compiler {
         InvalidSetStatement = 2302,
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,
+        AlternativeLineEnding = 3200,
 
         // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     }

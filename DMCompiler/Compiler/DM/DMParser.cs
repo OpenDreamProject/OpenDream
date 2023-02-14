@@ -105,6 +105,17 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Comma
         };
 
+        /// <summary>
+        /// In some situations, an alternative line ending is accepted instead of the typical semicolon or newline. <br/>
+        /// Seems cursed and relegated to only a few grammar contexts, but it does appear often enough to deserve a dedicated token list. <br/>
+        /// All instances of this should emit a <see cref="WarningCode.AlternativeLineEnding"/> notice.
+        /// </summary>
+        private static readonly TokenType[] AlternativeLineEndings = {
+            TokenType.DM_Semicolon,
+            TokenType.DM_Colon,
+            TokenType.DM_Period,
+        };
+
         public DMASTFile File() {
             var loc = Current().Location;
             List<DMASTStatement> statements = new();
@@ -936,10 +947,9 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Spawn)) {
                 var loc = Current().Location;
                 Whitespace();
-                bool hasArg = Check(TokenType.DM_LeftParenthesis);
                 DMASTExpression delay = null;
 
-                if (hasArg) {
+                if (Check(TokenType.DM_LeftParenthesis)) {
                     Whitespace();
 
                     if (!Check(TokenType.DM_RightParenthesis)) {
@@ -979,7 +989,9 @@ namespace DMCompiler.Compiler.DM {
                 BracketWhitespace();
                 ConsumeRightParenthesis();
                 Whitespace();
-                Check(TokenType.DM_Colon);
+                //Optionally consumes some weird character, like period
+                if (Check(AlternativeLineEndings))
+                    DMCompiler.Emit(WarningCode.AlternativeLineEnding, Current().Location, "Unnecessary character after if() expression");
                 Whitespace();
 
                 DMASTProcStatement procStatement = ProcStatement();
@@ -1142,7 +1154,8 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression conditional = Expression();
                 if (conditional == null) Error("Expected conditional");
                 ConsumeRightParenthesis();
-                Check(TokenType.DM_Semicolon);
+                if (Check(AlternativeLineEndings))
+                    DMCompiler.Emit(WarningCode.AlternativeLineEnding, Current().Location, "Unnecessary character after while() expression");
                 Whitespace();
                 DMASTProcBlockInner body = ProcBlock();
 
@@ -1172,6 +1185,10 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Do)) {
                 var loc = Current().Location;
                 Whitespace();
+                if (Check(AlternativeLineEndings)) {
+                    DMCompiler.Emit(WarningCode.AlternativeLineEnding, Current().Location, "Unnecessary character after 'do' keyword");
+                    Whitespace();
+                }
                 DMASTProcBlockInner body = ProcBlock();
 
                 if (body == null) {

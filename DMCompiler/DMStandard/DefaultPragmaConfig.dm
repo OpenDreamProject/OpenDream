@@ -23,3 +23,4 @@
 
 //3000-3999
 #pragma EmptyBlock warning
+#pragma AlternativeLineEnding notice

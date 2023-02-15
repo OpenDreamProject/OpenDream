@@ -244,7 +244,6 @@
 	push()
 		usr.client.screen |= new /obj/lighting_plane()	
 		usr.overlays += new /image/spotlight()
-		//usr.overlays += new /obj/background_image/lighting()
 
 
 /obj/plaque/alpha_rendersource_test 

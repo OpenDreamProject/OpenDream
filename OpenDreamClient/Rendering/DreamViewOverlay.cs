@@ -160,33 +160,28 @@ sealed class DreamViewOverlay : Overlay {
                 }
 
                 if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is also a PLANE_MASTER
-                    if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData?) planeEntry)){
+                    if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData) planeEntry)){
                         PlanesList[sprite.Plane] = (tmpRenderTarget, sprite); //if the plane hasn't already been created, use the rendertarget as the plane, and store this sprite as the plane_master
-                    }
-                    else
-                    {
+                    } else {
                         //the plane has already been created, so return the one we just created and use the existing plane as the rendertarget
                         _renderTargetsToReturn.Remove(tmpRenderTarget);
                         ReturnPingPongRenderTarget(tmpRenderTarget);
                         _renderSourceLookup[sprite.RenderTarget] = planeEntry.Item1;
                         PlanesList[sprite.Plane] = (planeEntry.Item1, sprite); //replace the planeslist entry with this sprite as its plane master
                     }
-                }
-                else //if not a PLANE_MASTER, draw the spirte to the render target
+                } else {//if not a PLANE_MASTER, draw the spirte to the render target
                     DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f)); //draw the sprite centered on the RenderTarget
-            }
-            else //We are no longer dealing with RenderTargets, just regular old planes
-            {
+                }
+            } else { //We are no longer dealing with RenderTargets, just regular old planes
                 IRenderTexture planeTarget;
-                if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData?) planeEntry)){
+                if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData) planeEntry)){
                     //this plane doesn't exist yet, it's probably the first reference to it.
                     //Lets create it
                     planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                     _renderTargetsToReturn.Add(planeTarget);
                     ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
                     PlanesList[sprite.Plane] = (planeTarget, new RendererMetaData());
-                }
-                else {
+                } else {
                     //the plane exists, lets set planeTarget to it's rendertexture
                     planeTarget = planeEntry.Item1;
                 }
@@ -206,8 +201,7 @@ sealed class DreamViewOverlay : Overlay {
                 //if it's a render source though, we draw with a texture override with a center screen offset instead
                 if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
                     DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
-                }
-                else{
+                } else {
                     DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
                 }
             }

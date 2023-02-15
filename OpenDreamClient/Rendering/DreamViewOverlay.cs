@@ -214,20 +214,20 @@ sealed class DreamViewOverlay : Overlay {
         }
         //Final draw
         //At this point, all the sprites have been drawn onto their planes, now we just mash those planes together!
-        if(MouseMapRenderEnabled) //if this is enabled, we don't draw the planes, we just draw the mouse map
+        IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        ClearRenderTarget(baseTarget, args.WorldHandle, new Color());
+        //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
+        List<float> planeKeys = new List<float>(PlanesList.Keys);
+        planeKeys.Sort();
+        foreach(float plane in planeKeys){
+            DrawIcon(args.WorldHandle, baseTarget, PlanesList[plane].Item2, Vector2.Zero, PlanesList[plane].Item1.Texture); //draw the plane onto the basetarget
+        }
+
+        if(MouseMapRenderEnabled) //if this is enabled, we just draw the mouse map
             args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
         else
-        {
-            IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-            //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
-            List<float> planeKeys = new List<float>(PlanesList.Keys);
-            planeKeys.Sort();
-            foreach(float plane in planeKeys){
-                DrawIcon(args.WorldHandle, baseTarget, PlanesList[plane].Item2, Vector2.Zero, PlanesList[plane].Item1.Texture); //draw the plane onto the basetarget
-            }
             args.WorldHandle.DrawTexture(baseTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null); //draw the basetarget onto the world
-            ReturnPingPongRenderTarget(baseTarget);
-        }
+        ReturnPingPongRenderTarget(baseTarget);
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
@@ -471,7 +471,7 @@ sealed class DreamViewOverlay : Overlay {
                             new Box2(pixelPosition, pixelPosition+frame.Size),
                             Color.White);
                         handle.UseShader(null);
-                    }, null);
+                }, null);
 
         } else if (frame != null) {
             IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
@@ -544,7 +544,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public List<RendererMetaData> KeepTogetherGroup = new();
     public int AppearanceFlags = 0;
     public int BlendMode = 0;
-    public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
+    public MouseOpacity MouseOpacity = MouseOpacity.Transparent;
 
     public int CompareTo(RendererMetaData other) {
         int val = 0;

@@ -149,7 +149,9 @@ sealed class DreamViewOverlay : Overlay {
                 PlaneMasterActive = true;
                 PlaneMaster = sprite;
                 planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-                ClearRenderTarget(planeTarget, args.WorldHandle, Color.White.WithAlpha(0));
+                ClearRenderTarget(planeTarget, args.WorldHandle, Color.Black.WithAlpha(0));
+                if(sprite.RenderTarget.Length > 0) //if the plane_master is also a render_target
+                    _renderSourceLookup.Add(sprite.RenderTarget, planeTarget);
             } else {
                 byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode()); //.ClickUID
                 Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255);
@@ -170,7 +172,7 @@ sealed class DreamViewOverlay : Overlay {
                     if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
 
                         tmpRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-                        ClearRenderTarget(tmpRenderTarget, args.WorldHandle, Color.White.WithAlpha(0));
+                        ClearRenderTarget(tmpRenderTarget, args.WorldHandle, Color.Black.WithAlpha(0));
                         _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                         _renderTargetsToReturn.Add(tmpRenderTarget);
                     }
@@ -370,7 +372,7 @@ sealed class DreamViewOverlay : Overlay {
             frame = textureOverride;
             //TODO figure out why this is necessary and delete it from existence.
             IRenderTexture TempTexture = RentPingPongRenderTarget(frame.Size);
-            ClearRenderTarget(TempTexture, handle, Color.White.WithAlpha(0));
+            ClearRenderTarget(TempTexture, handle, Color.Black.WithAlpha(0));
             handle.RenderInRenderTarget(TempTexture , () => {
                     handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
                     handle.DrawTextureRect(frame, new Box2(Vector2.Zero, TempTexture.Size));

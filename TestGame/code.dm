@@ -109,13 +109,19 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "all")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "all")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"
 			switch(selected)
 				if("alpha")
 					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"))
+				if("alpha-swap")
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_SWAP)					
+				if("alpha-inverse")
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_INVERSE)
+				if("alpha-both")
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_INVERSE|MASK_SWAP)					
 				if("outline")
 					src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
 				if("greyscale")

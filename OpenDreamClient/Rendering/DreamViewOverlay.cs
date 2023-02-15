@@ -187,6 +187,7 @@ sealed class DreamViewOverlay : Overlay {
                 }
 
                 if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is a PLANE_MASTER, we don't render it, we just set the planeMaster value and move on
+                    sprite.Position = Vector2.Zero; //plane masters should not have a position offset
                     PlanesList[sprite.Plane] = (planeTarget, sprite);
                     continue;
                 }

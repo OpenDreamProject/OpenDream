@@ -27,6 +27,9 @@ sealed class DreamViewOverlay : Overlay {
     private SharedTransformSystem _transformSystem;
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
     public bool ScreenOverlayEnabled = true;
+    public bool RenderTurfEnabled = true;
+    public bool RenderEntityEnabled = true;
+    public bool RenderPlayerEnabled = true;
     public bool MouseMapRenderEnabled = false;
     private IRenderTexture mouseMapRenderTarget;
     public Texture MouseMap;
@@ -87,28 +90,33 @@ sealed class DreamViewOverlay : Overlay {
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
         //self icon
-        if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform))
-            sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
-
+        if(RenderPlayerEnabled){
+            if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform))
+                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
+        }
         //visible entities
-        foreach (EntityUid entity in entities) {
-            if(entity == eye)
-                continue; //don't render the player twice
-            if (!spriteQuery.TryGetComponent(entity, out var sprite))
-                continue;
-            if (!sprite.IsVisible(mapManager: _mapManager))
-                continue;
-            if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
-                continue;
-            sprites.AddRange(ProcessIconComponents(sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
+        if(RenderEntityEnabled){
+            foreach (EntityUid entity in entities) {
+                if(entity == eye)
+                    continue; //don't render the player twice
+                if (!spriteQuery.TryGetComponent(entity, out var sprite))
+                    continue;
+                if (!sprite.IsVisible(mapManager: _mapManager))
+                    continue;
+                if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
+                    continue;
+                sprites.AddRange(ProcessIconComponents(sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
+            }
         }
 
         //visible turfs
-        if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
-            foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
-                MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-                sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
-            }
+        if(RenderTurfEnabled){
+            if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
+                foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
+                    MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
+                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
+                }
+        }
 
         //screen objects
         if(ScreenOverlayEnabled){
@@ -133,76 +141,93 @@ sealed class DreamViewOverlay : Overlay {
 
         sprites.Sort();
 
-        //After sort, group by plane and render together
-        float lastPlane = sprites[0].Plane;
-        IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-        IRenderTexture planeTarget = baseTarget;
+        Dictionary<float, (IRenderTexture, RendererMetaData)> PlanesList = new(sprites.Count); //list of plane textures and their planemaster (if they have one), keyed by plane number
 
-        bool PlaneMasterActive = false;
-        RendererMetaData PlaneMaster = null;
+        //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
 
-        ClearRenderTarget(planeTarget, args.WorldHandle, Color.Transparent);
         for(var i = 0; i < sprites.Count; i++){
             RendererMetaData sprite = sprites[i];
-            //plane masters don't get rendered, but their properties get applied to the overall rendertarget
-            if(((int)sprite.AppearanceFlags & 128) == 128){ //appearance_flags & PLANE_MASTER
-                PlaneMasterActive = true;
-                PlaneMaster = sprite;
-                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-                ClearRenderTarget(planeTarget, args.WorldHandle, Color.Black.WithAlpha(0));
-                if(sprite.RenderTarget.Length > 0) //if the plane_master is also a render_target
-                    _renderSourceLookup.Add(sprite.RenderTarget, planeTarget);
-            } else {
-                byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode()); //.ClickUID
-                Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255);
-                MouseMapLookup[targetColor] = sprite.ClickUID;
-                _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
-                //if we were drawing on a plane_master group, and plane changed, draw the plane master, then draw the sprite normally
-                if(lastPlane != sprite.Plane && PlaneMasterActive){
-                    DrawIcon(args.WorldHandle, baseTarget, PlaneMaster, -screenArea.BottomLeft, planeTarget.Texture);
-                    PlaneMaster = null;
-                    PlaneMasterActive = false;
-                    ReturnPingPongRenderTarget(planeTarget);
-                    planeTarget = baseTarget;
+
+            if(sprite.RenderTarget.Length > 0){
+                //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
+                IRenderTexture tmpRenderTarget;
+                if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
+
+                    tmpRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                    ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
+                    _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
+                    _renderTargetsToReturn.Add(tmpRenderTarget);
                 }
 
-                if(sprite.RenderTarget.Length > 0){
-                    //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
-                    IRenderTexture tmpRenderTarget;
-                    if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
-
-                        tmpRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-                        ClearRenderTarget(tmpRenderTarget, args.WorldHandle, Color.Black.WithAlpha(0));
-                        _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
-                        _renderTargetsToReturn.Add(tmpRenderTarget);
+                if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is also a PLANE_MASTER
+                    if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData?) planeEntry)){
+                        PlanesList[sprite.Plane] = (tmpRenderTarget, sprite); //if the plane hasn't already been created, use the rendertarget as the plane, and store this sprite as the plane_master
                     }
+                    else
+                    {
+                        //the plane has already been created, so return the one we just created and use the existing plane as the rendertarget
+                        _renderTargetsToReturn.Remove(tmpRenderTarget);
+                        ReturnPingPongRenderTarget(tmpRenderTarget);
+                        _renderSourceLookup[sprite.RenderTarget] = planeEntry.Item1;
+                        PlanesList[sprite.Plane] = (planeEntry.Item1, sprite); //replace the planeslist entry with this sprite as its plane master
+                    }
+                }
+                else //if not a PLANE_MASTER, draw the spirte to the render target
                     DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f)); //draw the sprite centered on the RenderTarget
+            }
+            else //We are no longer dealing with RenderTargets, just regular old planes
+            {
+                IRenderTexture planeTarget;
+                if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData?) planeEntry)){
+                    //this plane doesn't exist yet, it's probably the first reference to it.
+                    //Lets create it
+                    planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                    _renderTargetsToReturn.Add(planeTarget);
+                    ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
+                    PlanesList[sprite.Plane] = (planeTarget, new RendererMetaData());
                 }
                 else {
-                    //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
-                    //if it's a render source though, we draw with a texture override with a center screen offset instead
-                    if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
-                        DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
-                    }
-                    else{
-                        DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
-                    }
+                    //the plane exists, lets set planeTarget to it's rendertexture
+                    planeTarget = planeEntry.Item1;
+                }
+
+                if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is a PLANE_MASTER, we don't render it, we just set the planeMaster value and move on
+                    PlanesList[sprite.Plane] = (planeTarget, sprite);
+                    continue;
+                }
+
+                //setup the mousemaplookup shader for use in DrawIcon()
+                byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode());
+                Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255); //TODO - this could result in misclicks due to hash-collision since we ditch a whole byte.
+                MouseMapLookup[targetColor] = sprite.ClickUID;
+                _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
+
+                //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
+                //if it's a render source though, we draw with a texture override with a center screen offset instead
+                if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
+                    DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
+                }
+                else{
+                    DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
                 }
             }
-            lastPlane = sprite.Plane;
         }
-        //if a plane_master was active on the final draw, draw that first
-         if(PlaneMasterActive){
-            DrawIcon(args.WorldHandle, baseTarget, PlaneMaster, -screenArea.BottomLeft, planeTarget.Texture);
-            ReturnPingPongRenderTarget(planeTarget);
-         }
-
-        //final draw
-        if(MouseMapRenderEnabled)
+        //Final draw
+        //At this point, all the sprites have been drawn onto their planes, now we just mash those planes together!
+        if(MouseMapRenderEnabled) //if this is enabled, we don't draw the planes, we just draw the mouse map
             args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
         else
-            args.WorldHandle.DrawTexture(baseTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
-        ReturnPingPongRenderTarget(baseTarget);
+        {
+            IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+            //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
+            List<float> planeKeys = new List<float>(PlanesList.Keys);
+            planeKeys.Sort();
+            foreach(float plane in planeKeys){
+                DrawIcon(args.WorldHandle, baseTarget, PlanesList[plane].Item2, Vector2.Zero, PlanesList[plane].Item1.Texture); //draw the plane onto the basetarget
+            }
+            args.WorldHandle.DrawTexture(baseTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null); //draw the basetarget onto the world
+            ReturnPingPongRenderTarget(baseTarget);
+        }
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
@@ -268,7 +293,6 @@ sealed class DreamViewOverlay : Overlay {
         if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
             RendererMetaData renderTargetPlaceholder = new();
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
-            renderTargetPlaceholder.MainIcon = new DreamIcon(); //current.MainIcon; //placeholder - TODO this might have unintended effects
             renderTargetPlaceholder.Position = current.Position;
             renderTargetPlaceholder.UID = current.UID;
             renderTargetPlaceholder.ClickUID = current.UID;
@@ -361,8 +385,6 @@ sealed class DreamViewOverlay : Overlay {
 
     private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
         DreamIcon icon = iconMetaData.MainIcon;
-        if(icon.Appearance == null && iconMetaData.RenderSource == "")
-            return;
 
         Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
@@ -505,46 +527,8 @@ sealed class DreamViewOverlay : Overlay {
     }
 }
 
-public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
-    public string Command => "togglescreenoverlay";
-    public string Description => "Toggle rendering of screen objects";
-    public string Help => "";
-
-    public void Execute(IConsoleShell shell, string argStr, string[] args) {
-        if (args.Length != 0) {
-            shell.WriteError("This command does not take any arguments!");
-            return;
-        }
-
-        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
-        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
-            overlay is DreamViewOverlay screenOverlay) {
-            screenOverlay.ScreenOverlayEnabled = !screenOverlay.ScreenOverlayEnabled;
-        }
-    }
-}
-
-public sealed class ToggleMouseOverlayCommand : IConsoleCommand {
-    public string Command => "togglemouseoverlay";
-    public string Description => "Toggle rendering of mouse click area for screen objects";
-    public string Help => "";
-
-    public void Execute(IConsoleShell shell, string argStr, string[] args) {
-        if (args.Length != 0) {
-            shell.WriteError("This command does not take any arguments!");
-            return;
-        }
-
-        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
-        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
-            overlay is DreamViewOverlay screenOverlay) {
-            screenOverlay.MouseMapRenderEnabled = !screenOverlay.MouseMapRenderEnabled;
-        }
-    }
-}
-
 internal sealed class RendererMetaData : IComparable<RendererMetaData> {
-    public DreamIcon MainIcon;
+    public DreamIcon MainIcon = new DreamIcon();
     public Vector2 Position = Vector2.Zero;
     public float Plane = 0; //true plane value may be different from appearance plane value, due to special flags
     public float Layer = 0; //ditto for layer
@@ -565,10 +549,21 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public int CompareTo(RendererMetaData other) {
         int val = 0;
 
+        //Render target and source ordering is done first.
+        //Anything with a render target goes first
+        //Anything with a render source which points to a render target must come *after* that render_target
         val = (this.RenderTarget.Length > 0).CompareTo(other.RenderTarget.Length > 0);
         if (val != 0) {
             return -val;
         }
+        if(this.RenderSource.Length > 0)
+        {
+            if(this.RenderSource == other.RenderTarget)
+                return 1;
+        }
+
+        //We now return to your regularly scheduled sprite render order
+
         //Plane
         val =  this.Plane.CompareTo(other.Plane);
         if (val != 0) {
@@ -613,3 +608,100 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     }
 }
 
+
+public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
+    public string Command => "togglescreenoverlay";
+    public string Description => "Toggle rendering of screen objects";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.ScreenOverlayEnabled = !screenOverlay.ScreenOverlayEnabled;
+        }
+    }
+}
+
+#region Render Toggle Commands
+public sealed class ToggleMouseOverlayCommand : IConsoleCommand {
+    public string Command => "togglemouseoverlay";
+    public string Description => "Toggle rendering of mouse click area for screen objects";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.MouseMapRenderEnabled = !screenOverlay.MouseMapRenderEnabled;
+        }
+    }
+}
+
+public sealed class ToggleTurfRenderCommand : IConsoleCommand {
+    public string Command => "toggleturfrender";
+    public string Description => "Toggle rendering of turfs";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.RenderTurfEnabled = !screenOverlay.RenderTurfEnabled;
+        }
+    }
+}
+
+public sealed class ToggleEntityRenderCommand : IConsoleCommand {
+    public string Command => "toggleentityrender";
+    public string Description => "Toggle rendering of entities";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.RenderEntityEnabled = !screenOverlay.RenderEntityEnabled;
+        }
+    }
+}
+
+public sealed class TogglePlayerRenderCommand : IConsoleCommand {
+    public string Command => "toggleplayerrender";
+    public string Description => "Toggle rendering of the player";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.RenderPlayerEnabled = !screenOverlay.RenderPlayerEnabled;
+        }
+    }
+}
+#endregion

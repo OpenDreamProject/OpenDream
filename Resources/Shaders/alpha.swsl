@@ -9,8 +9,10 @@ void fragment() {
     highp vec2 crop_size = vec2(textureSize(TEXTURE, 0));
     highp vec2 mask_size = vec2(textureSize(mask_texture, 0));
     highp vec2 ratio;
+    bool mask_swap_flag = (flags & 2) == 2;
+    bool mask_invert_flag = (flags & 1) == 1;
 
-    if((flags & 2) == 2){ //MASK_SWAP flag
+    if(mask_swap_flag){ 
         new_color = texture(mask_texture, UV);
         ratio = vec2(1,1); 
     }
@@ -19,11 +21,11 @@ void fragment() {
         ratio = crop_size/mask_size;
     }
 
-
-
-
     highp vec4 mask_crop = texture(mask_texture, (-ratio/2.0+0.5)+UV*ratio);
-    new_color.a = min(mask_crop.a, new_color.a);
+
+    if( (mask_invert_flag ^^ (mask_crop.a == 0.0)) || new_color.a == 0.0 ){
+        new_color.a = 0.0;
+    }
 
     COLOR = new_color;
 }

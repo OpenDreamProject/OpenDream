@@ -71,6 +71,10 @@
 	M.color = list(r,g,b,a)
 	if(M.color != "#deadbe")
 		CRASH("Color matrix transformation in rgba() value didn't work correctly, color is '[json_encode(M.color)]' instead.")
+	M.color = null
+	M.filters += filter(type="color",color=list(r,g,b,a))
+	if(M.filters.len < 1)
+		CRASH("Using a color filter created using filter() was not successful.")
 
 /world/New()
 	..()

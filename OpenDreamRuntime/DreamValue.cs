@@ -11,6 +11,7 @@ using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Validation;
 using Robust.Shared.Serialization.TypeSerializers.Interfaces;
+using OpenDreamRuntime.Procs.Native;
 
 namespace OpenDreamRuntime {
     [JsonConverter(typeof(DreamValueJsonConverter))]
@@ -675,6 +676,38 @@ namespace OpenDreamRuntime {
                 return new ValidatedValueNode(node);
 
             return new ErrorNode(node, $"Value {node.Value} is not a matrix");
+        }
+    }
+
+    [TypeSerializer]
+    public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, DreamValueDataNode> {
+        public ColorMatrix Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<ColorMatrix>? instanceProvider = null) {
+            if (node.Value.TryGetValueAsString(out string maybeColorString)) {
+                if (ColorHelpers.TryParseColor(maybeColorString, out Color basicColor)) {
+                    return new ColorMatrix(basicColor);
+                }
+            } else if(node.Value.TryGetValueAsDreamList(out DreamList matrixList)) {
+                if(DreamProcNativeHelpers.TryParseColorMatrix(matrixList, out ColorMatrix matrix)) {
+                    return matrix;
+                }
+            }
+            throw new Exception($"Value {node.Value} was not a color matrix");
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+
+            if (node.Value.TryGetValueAsDreamList(out var _))
+                return new ValidatedValueNode(node);
+            //TODO: Improve validation
+            return new ErrorNode(node, $"Value {node.Value} is not a color matrix");
         }
     }
     #endregion Serialization

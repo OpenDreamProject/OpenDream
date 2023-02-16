@@ -180,6 +180,7 @@ namespace OpenDreamShared.Dream {
             var newFilter = new DreamFilterColor(); // Am I like... doing this right?
             newFilter.Color = matrix;
             newFilter.Space = 0; // TODO: Support color mappings that aren't RGB.
+            newFilter.FilterType = "color";
             Filters.Add(newFilter);
         }
     }

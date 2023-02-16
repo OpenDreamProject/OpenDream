@@ -59,7 +59,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         _entitySystemManager = entitySystemManager;
 
         BoundKeyFunction function = new BoundKeyFunction($"{contextName}_{Id}");
-        KeyBindingRegistration binding = CreateMacroBinding(function, Name);
+        KeyBindingRegistration binding = CreateMacroBinding(function, Name.ToUpperInvariant());
 
         if (binding == null)
             return;

@@ -29,7 +29,7 @@
   kind: source
   path: "/Shaders/colormatrix.swsl"
   params:
-    colorMatrix: 0 #FIXME: actually reasonable default arguments
+    colorMatrix: 1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1
     offsetVector: 0,0,0,0
 
 #unimplemented shaders point to empty.swsl and do nothing

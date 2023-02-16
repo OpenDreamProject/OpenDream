@@ -258,8 +258,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "filters":
                     return new DreamValue(_filterLists[dreamObject]);
                 case "color":
-                    if(!_atomManager.TryGetAppearance(dreamObject, out IconAppearance? appearance))
-                        return DreamValue.Null;
+                    if(!_atomManager.TryGetAppearance(dreamObject, out IconAppearance? appearance)) {
+                        //This is here to avoid infinite loops, since the lazy-init of appearances
+                        // (that would occur if we tried to just invoke MustGetAppearance())
+                        //requires accessing the color var.
+                        if (dreamObject.ObjectDefinition.TryGetVariable("color",out var colorValue)) {
+                            return colorValue;
+                        }
+                        return DreamValue.Null; //idek
+                    }
                     if(appearance.Matrix is not null) {
                         var matrixList = _objectTree.CreateList(20);
                         foreach (float entry in appearance.Matrix.Value.GetValues())

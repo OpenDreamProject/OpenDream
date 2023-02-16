@@ -296,6 +296,7 @@ sealed class DreamViewOverlay : Overlay {
             renderTargetPlaceholder.Plane = current.Plane;
             renderTargetPlaceholder.Layer = current.Layer;
             renderTargetPlaceholder.RenderSource = current.RenderTarget;
+            renderTargetPlaceholder.MouseOpacity = current.MouseOpacity;
             result.Add(renderTargetPlaceholder);
         } else if(current.RenderTarget.Length > 0) {
             current.RenderTarget = current.RenderTarget.Substring(1); //cut the * off, we're done with it

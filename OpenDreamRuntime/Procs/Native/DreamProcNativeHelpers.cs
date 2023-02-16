@@ -152,4 +152,89 @@ internal static class DreamProcNativeHelpers {
         }
         return true;
     }
+
+    /// <summary>
+    /// Takes in a DreamList and tries to interpret it as representing a color matrix, for use in filters and /atom.color.
+    /// </summary>
+    /// <remarks>
+    /// There are MANY different ways to initialize a color matrix, only some of which even appear in our targets: <br/>
+    /// list(rr,rg,rb, gr,gg,gb, br,bg,bb) <br/>
+    /// list(rr, rg, rb, gr, gg, gb, br, bg, bb, cr, cg, cb) <br/>
+    /// list(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa) <br/>
+    /// list(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, cr, cg, cb, ca) <br/>
+    /// list(rgb() or null, rgb() or null, rgb() or null, rgb() or null, rgb() or null) <br/>
+    /// </remarks>
+    /// <returns>True if the list was successfully parsed, false if not.</returns>
+    public static bool TryParseColorMatrix(DreamList list, out ColorMatrix matrix) {
+        matrix = ColorMatrix.Identity;
+        var listArray = list.GetValues();
+        try {
+            switch (list.GetLength()) {
+                case 0:
+                    return true; // Just return the identity matrix. NOTE: Not sure if *exactly* parity.
+                case 1: // 0 to 5 is the rgb() string spam: 
+                case 2: // list(rgb() or null, rgb() or null, rgb() or null, rgb() or null, rgb() or null)
+                case 3:
+                case 4:
+                case 5:
+                    for (var i = 0; i < listArray.Count && i < 5; ++i) {
+                        var listValue = listArray[i];
+                        if (listValue.TryGetValueAsString(out var RGBString)) {
+                            if (ColorHelpers.TryParseColor(RGBString, out var color, defaultAlpha: "00")) {
+                                matrix.SetRow(i, color);
+                            }
+                        }
+                    }
+                    return true;
+                case 9: // list(rr,rg,rb, gr,gg,gb, br,bg,bb)
+                    for (var row = 0; row < listArray.Count && row < 3; ++row) {
+                        var offset = row * 3;
+                        matrix.SetRow(row, listArray[offset].MustGetValueAsFloat(),
+                                           listArray[offset + 1].MustGetValueAsFloat(),
+                                           listArray[offset + 2].MustGetValueAsFloat(),
+                                           0f);
+                    }
+                    return true;
+                case 12: // list(rr,rg,rb, gr,gg,gb, br,bg,bb, cr,cg,cb)
+                    for (var row = 0; row < listArray.Count && row < 3; ++row) {
+                        var offset = row * 3;
+                        matrix.SetRow(row, listArray[offset].MustGetValueAsFloat(),
+                                           listArray[offset + 1].MustGetValueAsFloat(),
+                                           listArray[offset + 2].MustGetValueAsFloat(),
+                                           0f);
+                    }
+                    //We skip over the alpha row in this one. It's kinda wonky.
+                    matrix.SetRow(4, listArray[9].MustGetValueAsFloat(),
+                                     listArray[10].MustGetValueAsFloat(),
+                                     listArray[11].MustGetValueAsFloat(),
+                                     0f);
+                    return true;
+
+                case 16: // list(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa)
+                    for (var row = 0; row < listArray.Count && row < 4; ++row) {
+                        var offset = row * 4;
+                        matrix.SetRow(row, listArray[offset].MustGetValueAsFloat(),
+                                           listArray[offset + 1].MustGetValueAsFloat(),
+                                           listArray[offset + 2].MustGetValueAsFloat(),
+                                           listArray[offset + 2].MustGetValueAsFloat());
+                    }
+                    return true;
+                case 20: // list(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, cr, cg, cb, ca)
+                    for (var row = 0; row < listArray.Count && row < 5; ++row) {
+                        var offset = row * 4;
+                        matrix.SetRow(row, listArray[offset].MustGetValueAsFloat(),
+                                           listArray[offset + 1].MustGetValueAsFloat(),
+                                           listArray[offset + 2].MustGetValueAsFloat(),
+                                           listArray[offset + 2].MustGetValueAsFloat());
+                    }
+                    return true;
+                default:
+                    return false;
+            }
+        } catch(InvalidCastException) { // Lets us use MustGet more liberally in here.
+            return false;
+        } catch(IndexOutOfRangeException) { // Trying to access stuff that should be there but isn't is also pretty catchable for us, here.
+            return false;
+        }
+    }
 }

@@ -1,4 +1,5 @@
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -113,39 +114,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "color":
                     if(value.TryGetValueAsDreamList(out var list)) {
-                        /*
-                            This is being used to define a ColorMatrix.
-                            Possible correct arguments include:
-                            list(rr,rg,rb, gr,gg,gb, br,bg,bb)
-                            list(rr,rg,rb, gr,gg,gb, br,bg,bb, cr,cg,cb)
-                            list(rr,rg,rb,ra, gr,gg,gb,ga, br,bg,bb,ba, ar,ag,ab,aa)
-                            list(rr,rg,rb,ra, gr,gg,gb,ga, br,bg,bb,ba, ar,ag,ab,aa, cr,cg,cb,ca)
-                            list(rgb() or null, rgb() or null, rgb() or null, rgb() or null, rgb() or null) // In this case any of the null ones are just their identity row
-                        */
-                        switch(list.GetLength()) {
-                            case 0:
-                                break; // Back off into the "reset the color var" behaviour that the string|null stuff has, below
-                            case 1: // 1 to 5 is the rgb() string spam
-                            case 2:
-                            case 3:
-                            case 4: 
-                            case 5: 
-                                var newMatrix = ColorMatrix.Identity;
-                                var listArray = list.GetValues();
-                                for (var i = 0; i < listArray.Count && i < 5; ++i) {
-                                    var listValue = listArray[i];
-                                    if(listValue.TryGetValueAsString(out var RGBString)) {
-                                        if(ColorHelpers.TryParseColor(RGBString, out var color, defaultAlpha: "00")) {
-                                            newMatrix.SetRow(i, color);
-                                        }
-                                    }
-                                }
-                                _atomManager.UpdateAppearance(dreamObject, appearance => {
-                                    appearance.SetColor(newMatrix);
-                                });
-                                return;
-                            default:
-                                throw new ArgumentException("Incorrect /list provided for /atom.color");
+                        if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
+                            _atomManager.UpdateAppearance(dreamObject, appearance => {
+                                appearance.SetColor(matrix);
+                            });
+                            break;
+                        } else {
+                            throw new ArgumentException("Invalid /list provided to /atom.color - it is not a color matrix");
                         }
                     }
 

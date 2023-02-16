@@ -3,6 +3,7 @@ using Robust.Shared.Physics.Dynamics.Joints;
 using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -74,6 +75,21 @@ namespace OpenDreamShared.Dream {
             c54 = m54;
         }
 
+        /// <summary>
+        /// Constructs a ColorMatrix that is equivalent to the given color, during transformations.
+        /// </summary>
+        /// <remarks>Note: This constructor assumes that floats are zero-initialized.</remarks>
+        /// <param name="basicColor"></param>
+        public ColorMatrix(in Color basicColor) {
+            c11 = basicColor.R;
+
+            c22 = basicColor.G;
+
+            c33 = basicColor.B;
+
+            c44 = basicColor.A;
+        }
+
         public static ColorMatrix Identity =>
             new ColorMatrix(1F, 0F, 0F, 0F,
                             0F, 1F, 0F, 0F,
@@ -82,37 +98,44 @@ namespace OpenDreamShared.Dream {
                             0F, 0F, 0F, 0F);
 
         public void SetRow(int row, in Color color) {
+            SetRow(row, color.R, color.G, color.B, color.A);
+        }
+
+        public void SetRow(int row, float r, float g, float b, float a) {
             switch(row) {
                 case 0:
-                    c11 = color.R;
-                    c12 = color.G;
-                    c13 = color.B;
-                    c14 = color.A;
+                    c11 = r;
+                    c12 = g;
+                    c13 = b;
+                    c14 = a;
                     break;
                 case 1:
-                    c21 = color.R;
-                    c22 = color.G;
-                    c23 = color.B;
-                    c24 = color.A;
+                    c21 = r;
+                    c22 = g;
+                    c23 = b;
+                    c24 = a;
                     break;
                 case 2:
-                    c31 = color.R;
-                    c32 = color.G;
-                    c33 = color.B;
-                    c34 = color.A;
+                    c31 = r;
+                    c32 = g;
+                    c33 = b;
+                    c34 = a;
                     break;
                 case 3:
-                    c41 = color.R;
-                    c42 = color.G;
-                    c43 = color.B;
-                    c44 = color.A;
+                    c41 = r;
+                    c42 = g;
+                    c43 = b;
+                    c44 = a;
                     break;
                 case 4:
-                    c51 = color.R;
-                    c52 = color.G;
-                    c53 = color.B;
-                    c54 = color.A;
+                    c51 = r;
+                    c52 = g;
+                    c53 = b;
+                    c54 = a;
                     break;
+                default:
+                    //Should be an UnreachableException but it's verbotten or something by the sandboxer
+                    throw new Exception($"Cannot access {row}th row of a 5x4 matrix");
             }
         }
 

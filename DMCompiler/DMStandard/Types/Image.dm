@@ -55,7 +55,7 @@
 
 	// The ref does not mention the pixel_x and pixel_y args...
 	New(icon, loc, icon_state, layer, dir, pixel_x, pixel_y)
-		src.icon = icon
+		if (icon != null) src.icon = icon
 		if (!istext(loc))
 			if (loc != null) src.loc = loc
 			if (icon_state != null) src.icon_state = icon_state

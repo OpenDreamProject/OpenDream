@@ -75,6 +75,35 @@ namespace OpenDreamShared.Dream {
             c54 = m54;
         }
 
+        public ColorMatrix(in ColorMatrix cloned) {
+            //I have never, ever missed the "pointer to member access" goofball operator from C++
+            //until this exact, debilitating moment
+            c11 = cloned.c11;
+            c12 = cloned.c12;
+            c13 = cloned.c13;
+            c14 = cloned.c14;
+
+            c21 = cloned.c21;
+            c22 = cloned.c22;
+            c23 = cloned.c23;
+            c24 = cloned.c24;
+
+            c31 = cloned.c31;
+            c32 = cloned.c32;
+            c33 = cloned.c33;
+            c34 = cloned.c34;
+
+            c41 = cloned.c41;
+            c42 = cloned.c42;
+            c43 = cloned.c43;
+            c44 = cloned.c44;
+
+            c51 = cloned.c51;
+            c52 = cloned.c52;
+            c53 = cloned.c53;
+            c54 = cloned.c54;
+        }
+
         /// <summary>
         /// Constructs a ColorMatrix that is equivalent to the given color, during transformations.
         /// </summary>

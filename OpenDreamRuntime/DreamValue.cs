@@ -680,7 +680,7 @@ namespace OpenDreamRuntime {
     }
 
     [TypeSerializer]
-    public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, DreamValueDataNode> {
+    public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, DreamValueDataNode>, ITypeCopyCreator<ColorMatrix> {
         public ColorMatrix Read(ISerializationManager serializationManager,
             DreamValueDataNode node,
             IDependencyCollection dependencies,
@@ -708,6 +708,12 @@ namespace OpenDreamRuntime {
                 return new ValidatedValueNode(node);
             //TODO: Improve validation
             return new ErrorNode(node, $"Value {node.Value} is not a color matrix");
+        }
+
+        public ColorMatrix CreateCopy(ISerializationManager serializationManager, ColorMatrix source,
+           SerializationHookContext hookCtx,
+           ISerializationContext? context = null) {
+            return new(source);
         }
     }
     #endregion Serialization

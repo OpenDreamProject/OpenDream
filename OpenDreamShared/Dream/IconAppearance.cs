@@ -109,7 +109,7 @@ namespace OpenDreamShared.Dream {
             return maybeColor is not null;
         }
 
-        private void RemoveColorFilter() {
+        public void RemoveColorFilter() {
             for (int i = 0; i < Filters.Count; i++) {
                 if (Filters[i] is DreamFilterColor) {
                     Filters.RemoveAt(i);

@@ -141,7 +141,8 @@ sealed class DreamViewOverlay : Overlay {
 
         sprites.Sort();
 
-        Dictionary<float, (IRenderTexture, RendererMetaData)> PlanesList = new(sprites.Count); //list of plane textures and their planemaster (if they have one), keyed by plane number
+        //dict of planes to their planemaster (if they have one) and list of sprites drawn on that plane in order, keyed by plane number
+        Dictionary<float, (RendererMetaData?, List<RendererMetaData>)> PlanesList = new(sprites.Count);
 
         //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
 
@@ -160,62 +161,74 @@ sealed class DreamViewOverlay : Overlay {
                 }
 
                 if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is also a PLANE_MASTER
-                    if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData) planeEntry)){
-                        PlanesList[sprite.Plane] = (tmpRenderTarget, sprite); //if the plane hasn't already been created, use the rendertarget as the plane, and store this sprite as the plane_master
+                    if(!PlanesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<RendererMetaData>) planeEntry)){
+                        //if the plane hasn't already been created, store this sprite as the plane_master
+                        PlanesList[sprite.Plane] = (sprite, new List<RendererMetaData>());
                     } else {
-                        //the plane has already been created, so return the one we just created and use the existing plane as the rendertarget
-                        _renderTargetsToReturn.Remove(tmpRenderTarget);
-                        ReturnPingPongRenderTarget(tmpRenderTarget);
-                        _renderSourceLookup[sprite.RenderTarget] = planeEntry.Item1;
-                        PlanesList[sprite.Plane] = (planeEntry.Item1, sprite); //replace the planeslist entry with this sprite as its plane master
+                        //the plane has already been created, so just replace the planeslist entry with this sprite as its plane master
+                        PlanesList[sprite.Plane] = (sprite, planeEntry.Item2);
                     }
-                } else {//if not a PLANE_MASTER, draw the spirte to the render target
+                } else {//if not a PLANE_MASTER, draw the sprite to the render target
+                    //note we don't draw this to the mousemap because that's handled when the RenderTarget is used as a source later
+                    _blockColorInstance.SetParameter("targetColor", new Color()); //Set shader instance's block colour to null for the mouse map
                     DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f)); //draw the sprite centered on the RenderTarget
                 }
             } else { //We are no longer dealing with RenderTargets, just regular old planes
-                IRenderTexture planeTarget;
-                if(!PlanesList.TryGetValue(sprite.Plane, out (IRenderTexture, RendererMetaData) planeEntry)){
+                if(!PlanesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<RendererMetaData>) planeEntry)){
                     //this plane doesn't exist yet, it's probably the first reference to it.
                     //Lets create it
-                    planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-                    _renderTargetsToReturn.Add(planeTarget);
-                    ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
-                    PlanesList[sprite.Plane] = (planeTarget, new RendererMetaData());
-                } else {
-                    //the plane exists, lets set planeTarget to it's rendertexture
-                    planeTarget = planeEntry.Item1;
+                    planeEntry = (null, new List<RendererMetaData>());
+                    PlanesList[sprite.Plane] = planeEntry;
                 }
 
                 if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is a PLANE_MASTER, we don't render it, we just set the planeMaster value and move on
                     sprite.Position = Vector2.Zero; //plane masters should not have a position offset
-                    PlanesList[sprite.Plane] = (planeTarget, sprite);
+                    PlanesList[sprite.Plane] = (sprite, planeEntry.Item2);
                     continue;
                 }
 
+                //add this sprite for rendering
+                planeEntry.Item2.Add(sprite);
+                PlanesList[sprite.Plane] = planeEntry;
+            }
+        }
+        //Final draw
+        //At this point, all the sprites have been organised on their planes, render targets have been drawn, now we just draw it all together!
+        IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        ClearRenderTarget(baseTarget, args.WorldHandle, new Color());
+
+        //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
+        List<float> planeKeys = new List<float>(PlanesList.Keys);
+        planeKeys.Sort();
+        foreach(float plane in planeKeys){
+            (RendererMetaData?, List<RendererMetaData>) planeEntry = PlanesList[plane];
+            IRenderTexture planeTarget = baseTarget;
+            if(planeEntry.Item1 != null){
+                //we got a plane master here, so rent out a texture and draw to that
+                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
+            }
+
+            foreach(RendererMetaData sprite in planeEntry.Item2)
+            {
                 //setup the mousemaplookup shader for use in DrawIcon()
                 byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode());
                 Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255); //TODO - this could result in misclicks due to hash-collision since we ditch a whole byte.
                 MouseMapLookup[targetColor] = sprite.ClickUID;
                 _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
 
-                //we draw the icon on the render plane, which is then drawn with the screen offset, so we correct for that in the draw positioning with offset
-                //if it's a render source though, we draw with a texture override with a center screen offset instead
                 if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
                     DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
                 } else {
                     DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
                 }
             }
-        }
-        //Final draw
-        //At this point, all the sprites have been drawn onto their planes, now we just mash those planes together!
-        IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
-        ClearRenderTarget(baseTarget, args.WorldHandle, new Color());
-        //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
-        List<float> planeKeys = new List<float>(PlanesList.Keys);
-        planeKeys.Sort();
-        foreach(float plane in planeKeys){
-            DrawIcon(args.WorldHandle, baseTarget, PlanesList[plane].Item2, Vector2.Zero, PlanesList[plane].Item1.Texture); //draw the plane onto the basetarget
+
+            if(planeEntry.Item1 != null){
+                //this was a plane master, so draw the plane onto the baseTarget and return it
+                DrawIcon(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture);
+                ReturnPingPongRenderTarget(planeTarget);
+            }
         }
 
         if(MouseMapRenderEnabled) //if this is enabled, we just draw the mouse map

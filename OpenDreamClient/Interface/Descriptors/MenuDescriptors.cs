@@ -4,7 +4,8 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 namespace OpenDreamClient.Interface.Descriptors;
 
 public sealed class MenuDescriptor : ElementDescriptor {
-    public readonly List<MenuElementDescriptor> Elements = new();
+    private readonly List<MenuElementDescriptor> _elements = new();
+    public IReadOnlyList<MenuElementDescriptor> Elements => _elements;
 
     public MenuDescriptor(string name) {
         Name = name;
@@ -13,18 +14,31 @@ public sealed class MenuDescriptor : ElementDescriptor {
     public override MenuElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
         var menuElement = serializationManager.Read<MenuElementDescriptor>(attributes);
 
-        Elements.Add(menuElement);
+        _elements.Add(menuElement);
         return menuElement;
     }
 }
 
 public sealed class MenuElementDescriptor : ElementDescriptor {
+    private string _category;
+
     [DataField("command")]
-    public string Command;
+    public string Command { get; init; }
+
     [DataField("category")]
-    public string Category;
+    public string Category {
+        get => _category;
+        init => _category = value;
+    }
+
     [DataField("can-check")]
-    public bool CanCheck;
+    public bool CanCheck { get; init; }
+
+    public MenuElementDescriptor WithCategory(ISerializationManager serialization, string category) {
+        var copy = serialization.CreateCopy(this);
+        copy._category = category;
+        return copy;
+    }
 
     // Menu elements can have other menu elements as children
     public override MenuElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {

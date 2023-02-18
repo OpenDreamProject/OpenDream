@@ -401,7 +401,7 @@ namespace OpenDreamClient.Interface {
             foreach (var windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
                 if (windowDescriptor.Name == controlId) {
                     elementDescriptor = windowDescriptor.WithName(_serializationManager, cloneId);
-                    ((WindowDescriptor)elementDescriptor).IsVisible = false; // per byond spec
+                    elementDescriptor = ((WindowDescriptor)elementDescriptor).WithVisible(_serializationManager, false); // per byond spec
                     break;
                 }
             }

@@ -23,9 +23,15 @@ public sealed class InterfaceDescriptor {
 [Virtual, ImplicitDataDefinitionForInheritors]
 public class ElementDescriptor {
     [DataField("type")]
-    public string Type;
+    public readonly string Type;
+
     [DataField("name")]
-    public string Name;
+    private string _name;
+
+    public string Name {
+        get => _name;
+        init => _name = value;
+    }
 
     public virtual ElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
         throw new InvalidOperationException($"{this} cannot create a child descriptor");
@@ -37,7 +43,7 @@ public class ElementDescriptor {
 
     public ElementDescriptor WithName(ISerializationManager serializationManager, string name) {
         var copy = serializationManager.CreateCopy(this);
-        copy.Name = name;
+        copy._name = name;
         return copy;
     }
 }

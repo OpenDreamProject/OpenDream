@@ -44,8 +44,10 @@ namespace OpenDreamShared.Compiler {
         PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
         MalformedRange = 2300,
         InvalidRange = 2301,
+        InvalidSetStatement = 2302,
         DeadCode = 2400,
         // 3000 - 3999 are reserved for stylistic configuration.
+        EmptyBlock = 3100,
 
         // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     }

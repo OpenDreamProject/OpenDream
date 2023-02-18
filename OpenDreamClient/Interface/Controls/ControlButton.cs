@@ -29,7 +29,7 @@ namespace OpenDreamClient.Interface.Controls {
             return _button;
         }
 
-        public override void UpdateElementDescriptor() {
+        protected override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
             ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;

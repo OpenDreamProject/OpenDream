@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectArea : IDreamMetaObject {
@@ -15,7 +14,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            DreamList contents = DreamList.Create();
+            DreamList contents = _objectTree.CreateList();
 
             contents.ValueAssigned += (_, _, value) => {
                 if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out DreamObject turf))

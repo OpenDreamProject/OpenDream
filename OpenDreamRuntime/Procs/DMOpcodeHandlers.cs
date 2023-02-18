@@ -170,7 +170,7 @@ namespace OpenDreamRuntime.Procs {
 
             // List with an initial capacity
             if (objectType == state.Proc.ObjectTree.List && arguments.ArgumentCount == 1 && arguments.GetArgument(0, "len").TryGetValueAsInteger(out var listSize)) {
-                newObject = DreamList.CreateUninitialized(listSize);
+                newObject = new DreamList(state.Proc.ObjectTree.List.ObjectDefinition, listSize);
             } else { // Everything else
                 newObject = state.Proc.ObjectTree.CreateObject(objectType);
             }

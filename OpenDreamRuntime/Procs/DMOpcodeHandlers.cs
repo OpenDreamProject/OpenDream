@@ -32,7 +32,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateList(DMProcState state) {
             int size = state.ReadInt();
-            var list = DreamList.Create(size);
+            var list = state.Proc.ObjectTree.CreateList(size);
 
             foreach (DreamValue value in state.PopCount(size)) {
                 list.AddValue(value);
@@ -44,7 +44,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateAssociativeList(DMProcState state) {
             int size = state.ReadInt();
-            var list = DreamList.Create(size);
+            var list = state.Proc.ObjectTree.CreateList(size);
 
             ReadOnlySpan<DreamValue> popped = state.PopCount(size * 2);
             for (int i = 0; i < popped.Length; i += 2) {
@@ -561,9 +561,8 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushGlobalVars(DMProcState state)
-        {
-            state.Push(new DreamValue(DreamGlobalVars.Create()));
+        public static ProcStatus? PushGlobalVars(DMProcState state) {
+            state.Push(new DreamValue(new DreamGlobalVars(state.Proc.ObjectTree.List.ObjectDefinition)));
             return null;
         }
         #endregion Values
@@ -695,7 +694,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
+                DreamList newList = state.Proc.ObjectTree.CreateList();
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
                     int len = list.GetLength();
@@ -789,6 +788,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    state.Push(new DreamValue(0));
+                    break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger()));
                     break;
@@ -796,6 +798,27 @@ namespace OpenDreamRuntime.Procs {
                     throw new Exception($"Invalid bit shift left operation on {first} and {second}");
             }
 
+            return null;
+        }
+
+
+        public static ProcStatus? BitShiftLeftReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift left operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
@@ -814,11 +837,31 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? BitShiftRightReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift right operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
+            return null;
+        }
+
         public static ProcStatus? BitXor(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            state.Push(BitXorValues(first, second));
+            state.Push(BitXorValues(state.Proc.ObjectTree, first, second));
             return null;
         }
 
@@ -826,7 +869,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue result = BitXorValues(first, second);
+            DreamValue result = BitXorValues(state.Proc.ObjectTree, first, second);
 
             state.AssignReference(reference, result);
             state.Push(result);
@@ -1849,6 +1892,9 @@ namespace OpenDreamRuntime.Procs {
                     return null;
                 }
 
+                if (values.Count == 0)
+                    throw new Exception("pick() from empty list");
+
                 picked = values[state.DreamManager.Random.Next(0, values.Count)];
             } else {
                 int pickedIndex = state.DreamManager.Random.Next(0, count);
@@ -2075,9 +2121,9 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static DreamValue BitXorValues(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
+        private static DreamValue BitXorValues(IDreamObjectTree objectTree, DreamValue first, DreamValue second) {
+            if (first.TryGetValueAsDreamList(out var list)) {
+                DreamList newList = objectTree.CreateList();
                 IEnumerable<DreamValue> values;
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {

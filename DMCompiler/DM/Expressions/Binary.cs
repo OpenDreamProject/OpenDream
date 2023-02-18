@@ -494,6 +494,11 @@ namespace DMCompiler.DM.Expressions {
         public AssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
+        /// <summary>
+        /// Generic interface for emitting the assignment operation. Has its conditionality and reference generation already handled.
+        /// </summary>
+        /// <remarks>You should always make use of the reference argument, unless you totally override AssignmentBinaryOp's EmitPushValue method.</remarks>
+        /// <param name="reference">A reference to the LHS emitted via <see cref="DMExpression.EmitReference(DMObject, DMProc)"/></param>
         public abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference);
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -642,10 +647,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            proc.PushReferenceValue(reference);
             RHS.EmitPushValue(dmObject, proc);
-            proc.BitShiftLeft();
-            proc.Assign(reference);
+            proc.BitShiftLeftReference(reference);
         }
     }
 
@@ -655,10 +658,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            proc.PushReferenceValue(reference);
             RHS.EmitPushValue(dmObject, proc);
-            proc.BitShiftRight();
-            proc.Assign(reference);
+            proc.BitShiftRightReference(reference);
         }
     }
 

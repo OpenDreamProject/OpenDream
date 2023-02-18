@@ -36,7 +36,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                             for (int j = 0; j < size; j++) {
                                 if (argIndex < dimensions - 1) {
-                                    DreamList newList = DreamList.Create();
+                                    DreamList newList = _objectTree.CreateList();
 
                                     list.AddValue(new DreamValue(newList));
                                     newLists[i * size + j] = newList;

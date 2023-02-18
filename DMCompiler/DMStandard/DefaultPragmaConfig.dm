@@ -19,3 +19,7 @@
 #pragma PointlessBuiltinCall warning
 #pragma MalformedRange warning
 #pragma InvalidRange error
+#pragma InvalidSetStatement error
+
+//3000-3999
+#pragma EmptyBlock warning

@@ -16,7 +16,6 @@ namespace DMCompiler.Compiler.DM {
         public void VisitObjectVarOverride(DMASTObjectVarOverride objectVarOverride) { throw new NotImplementedException(); }
         public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) { throw new NotImplementedException(); }
         public void VisitProcStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) { throw new NotImplementedException(); }
-        public void VisitProcStatementMultipleVarDeclarations(DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations) { throw new NotImplementedException(); }
         public void VisitProcStatementReturn(DMASTProcStatementReturn statementReturn) { throw new NotImplementedException(); }
         public void VisitProcStatementBreak(DMASTProcStatementBreak statementBreak) { throw new NotImplementedException(); }
         public void VisitProcStatementContinue(DMASTProcStatementContinue statementContinue) { throw new NotImplementedException(); }
@@ -149,6 +148,12 @@ namespace DMCompiler.Compiler.DM {
         public DMASTProcStatement(Location location)
             : base(location)
         {}
+        /// <returns>
+        /// Returns true if this statement is either T or an aggregation of T (stored by an <see cref="DMASTAggregate{T}"/> instance). False otherwise.
+        /// </returns>
+        public bool IsAggregateOr<T>() where T : DMASTProcStatement {
+            return (this is T or DMASTAggregate<T>);
+        }
     }
 
     public abstract class DMASTExpression : DMASTNode {
@@ -201,11 +206,37 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcBlockInner : DMASTNode {
         public DMASTProcStatement[] Statements;
+        /// <remarks>
+        /// SetStatements is held separately because all set statements need to be, to borrow cursed JS terms, "hoisted" to the top of the block, before anything else.<br/>
+        /// This isn't SPECIFICALLY a <see cref="DMASTProcStatementSet"/> array because some of these may be DMASTAggregate instances.
+        /// </remarks>
+        public DMASTProcStatement[] SetStatements;
 
-        public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements)
+        /// <summary> Initializes an empty block. </summary>
+        public DMASTProcBlockInner(Location location) : base(location)
+        {
+            Statements = Array.Empty<DMASTProcStatement>();
+            SetStatements = Array.Empty<DMASTProcStatement>();
+        }
+        /// <summary> Initializes a block with only one statement (which may be a <see cref="DMASTProcStatementSet"/> :o) </summary>
+        public DMASTProcBlockInner(Location location, DMASTProcStatement statement) : base(location)
+        {
+            if (statement.IsAggregateOr<DMASTProcStatementSet>()) { // If this is a Set statement or a set of Set statements
+                Statements = Array.Empty<DMASTProcStatement>();
+                SetStatements = new DMASTProcStatement[] { statement };
+            } else {
+                Statements = new DMASTProcStatement[] { statement };
+                SetStatements = Array.Empty<DMASTProcStatement>();
+            }
+        }
+        public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements, DMASTProcStatement[] setStatements)
             : base(location)
         {
             Statements = statements;
+            if (setStatements is null)
+                SetStatements = Array.Empty<DMASTProcStatement>();
+            else
+                SetStatements = setStatements;
         }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -366,15 +397,22 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public class DMASTProcStatementMultipleVarDeclarations : DMASTProcStatement {
-        public DMASTProcStatementVarDeclaration[] VarDeclarations;
+    /// <summary>
+    /// A kinda-abstract class that represents several statements that were created in unison by one "super-statement" <br/>
+    /// Such as, a var declaration that actually declares several vars at once (which in our parser must become "one" statement, hence this thing)
+    /// </summary>
+    /// <typeparam name="T">The DMASTProcStatement-derived class that this AST node holds.</typeparam>
 
-        public DMASTProcStatementMultipleVarDeclarations(Location location, DMASTProcStatementVarDeclaration[] varDeclarations) : base(location) {
-            VarDeclarations = varDeclarations;
+    public class DMASTAggregate<T> : DMASTProcStatement where T : DMASTProcStatement { // Gotta be honest? I like this "where" syntax better than C++20 concepts
+        public T[] Statements { get; }
+
+        public DMASTAggregate(Location location, T[] statements) : base(location) {
+            Statements = statements;
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitProcStatementMultipleVarDeclarations(this);
+            foreach (DMASTProcStatement statement in Statements)
+                statement.Visit(visitor);
         }
     }
 
@@ -456,10 +494,12 @@ namespace DMCompiler.Compiler.DM {
     public class DMASTProcStatementSet : DMASTProcStatement {
         public string Attribute;
         public DMASTExpression Value;
+        public bool WasInKeyword; // Marks whether this was a "set x in y" expression, or a "set x = y" one
 
-        public DMASTProcStatementSet(Location location, string attribute, DMASTExpression value) : base(location) {
+        public DMASTProcStatementSet(Location location, string attribute, DMASTExpression value, bool wasInKeyword) : base(location) {
             Attribute = attribute;
             Value = value;
+            WasInKeyword = wasInKeyword;
         }
 
         public override void Visit(DMASTVisitor visitor) {

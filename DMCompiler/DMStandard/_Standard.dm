@@ -2,6 +2,7 @@
 //So keep this at the top
 /var/world/world = null
 
+//These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
 proc/abs(A)
 proc/addtext(...)
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
@@ -67,11 +68,13 @@ proc/md5(T)
 proc/min(A)
 proc/nonspantext(Haystack, Needles, Start = 1)
 proc/num2text(N, Digits, Radix)
+proc/orange(Dist = 5, Center = usr)
 proc/oview(Dist = 5, Center = usr)
 proc/oviewers(Depth = 5, Center = usr)
 proc/params2list(Params)
 proc/rand(L, H)
 proc/rand_seed(Seed)
+proc/range(Dist, Center)
 proc/ref(Object)
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
@@ -86,6 +89,8 @@ proc/sleep(Delay)
 proc/sorttext(T1, T2)
 proc/sorttextEx(T1, T2)
 proc/sound(file, repeat = 0, wait, channel, volume)
+proc/spantext(Haystack,Needles,Start=1)
+proc/spantext_char(Haystack,Needles,Start=1)
 proc/splittext(Text, Delimiter)
 proc/sqrt(A)
 proc/stat(Name, Value)
@@ -102,7 +107,7 @@ proc/typesof(Item1)
 proc/uppertext(T)
 proc/url_decode(UrlText)
 proc/url_encode(PlainText, format = 0)
-proc/view(Dist = 4, Center = usr)
+proc/view(Dist = 5, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
@@ -152,106 +157,6 @@ proc/block(var/atom/Start, var/atom/End)
 				atoms.Add(locate(x, y, z))
 
 	return atoms
-
-// TODO: Investigate "for(var/turf/T in range(Dist, Center))"-style weirdness that BYOND does. It's a center-out spiral and we need to replicate that.
-proc/range(Dist, Center)
-	. = list()
-
-	var/TrueDist
-	var/atom/TrueCenter
-
-	if(isnum(Dist))
-		if(isnum(Center))
-			. += Center
-			return
-		if(isnull(Center))
-			TrueCenter = usr
-			if(isnull(TrueCenter))
-				return
-		else
-			TrueCenter = Center
-		TrueDist = Dist
-	else
-		if(isnull(Center))
-			var/atom/A = Dist
-			if(istype(A))
-				//TODO change this once spiralling is implemented
-				TrueCenter = locate(1, 1, A.z)
-				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
-			else
-				return
-		else
-			if(!isnum(Center))
-				CRASH("invalid view size")
-			if(isnull(Dist))
-				TrueCenter = usr
-				if(isnull(TrueCenter))
-					return
-			else
-				TrueCenter = Dist
-			TrueDist = Center
-
-	if(!istype(TrueCenter, /atom))
-		. += TrueCenter
-		return
-
-	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
-		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
-			var/turf/t = locate(x, y, TrueCenter.z)
-
-			if (t != null)
-				. += t
-				. += t.contents
-
-proc/orange(Dist, Center)
-	. = list()
-
-	var/TrueDist
-	var/atom/TrueCenter
-
-	if(isnum(Dist))
-		if(isnum(Center))
-			. += Center
-			return
-		if(isnull(Center))
-			TrueCenter = usr
-			if(isnull(TrueCenter))
-				return
-		else
-			TrueCenter = Center
-		TrueDist = Dist
-	else
-		if(isnull(Center))
-			var/atom/A = Dist
-			if(istype(A))
-				//TODO change this once spiralling is implemented
-				TrueCenter = locate(1, 1, A.z)
-				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
-			else
-				return
-		else
-			if(!isnum(Center))
-				CRASH("invalid view size")
-			if(isnull(Dist))
-				TrueCenter = usr
-				if(isnull(TrueCenter))
-					return
-			else
-				TrueCenter = Dist
-			TrueDist = Center
-
-	if(!istype(TrueCenter, /atom))
-		. += TrueCenter
-		return
-
-	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
-		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
-			if (x == TrueCenter.x && y == TrueCenter.y) continue
-
-			var/turf/t = locate(x, y, TrueCenter.z)
-			if (t != null)
-				. += t
-				. += t.contents
 
 proc/get_step(atom/Ref, Dir)
 	if (Ref == null) return null
@@ -377,10 +282,13 @@ proc/get_step_rand(atom/movable/Ref)
 	return get_step(Ref, dir)
 
 proc/hearers(Depth = world.view, Center = usr)
+	set opendream_unimplemented = TRUE
 	//TODO: Actual cursed hearers implementation
 	return viewers(Depth, Center)
 
 proc/ohearers(Depth = world.view, Center = usr)
+	set opendream_unimplemented = TRUE
+	//TODO: Actual cursed ohearers implementation
 	return oviewers(Depth, Center)
 
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)

@@ -192,9 +192,9 @@ namespace OpenDreamRuntime.Procs {
         public int ArgumentCount;
         public string? CurrentSource;
         public int CurrentLine;
-        public int CatchPosition = NoTryCatch;
-        public int CatchVarIndex = NoTryCatch;
-        public const int NoTryCatch = -1;
+        private readonly Stack<int> _catchPosition = new();
+        private readonly Stack<int> _catchVarIndex = new();
+        public const int NoTryCatchVar = -1;
         private Stack<IDreamValueEnumerator>? _enumeratorStack;
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
@@ -348,28 +348,27 @@ namespace OpenDreamRuntime.Procs {
             return thread;
         }
 
-        public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatch) {
-            CatchPosition = catchPosition;
-            CatchVarIndex = catchVarIndex;
+        public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatchVar) {
+            _catchPosition.Push(catchPosition);
+            _catchVarIndex.Push(catchVarIndex);
         }
 
         public void EndTryBlock() {
-            CatchPosition = NoTryCatch;
-            CatchVarIndex = NoTryCatch;
+            _catchPosition.Pop();
+            _catchVarIndex.Pop();
         }
 
-        public override bool IsCatching() => CatchPosition != NoTryCatch;
+        public override bool IsCatching() => _catchPosition.Count > 0;
 
         public override void CatchException(DreamValue value) {
             if (!IsCatching())
                 base.CatchException(value);
 
-            Jump(CatchPosition);
-            if (CatchVarIndex != NoTryCatch) {
-                _localVariables[CatchVarIndex] = value;
+            Jump(_catchPosition.Pop());
+            var varIdx = _catchVarIndex.Pop();
+            if (varIdx != NoTryCatchVar) {
+                _localVariables[varIdx] = value;
             }
-            CatchPosition = NoTryCatch;
-            CatchVarIndex = NoTryCatch;
         }
 
         public override void Dispose() {
@@ -390,6 +389,9 @@ namespace OpenDreamRuntime.Procs {
 
             _dreamValuePool.Return(_localVariables);
             _localVariables = null;
+
+            _catchPosition.Clear();
+            _catchVarIndex.Clear();
 
             Pool.Push(this);
         }

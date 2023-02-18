@@ -211,8 +211,6 @@ namespace OpenDreamRuntime {
             try {
                 CurrentlyExecuting.Value!.Push(this);
                 while (_current != null) {
-                    // _current.Resume may mutate our state!!!
-
                     bool TryCatchException(DreamValue value) {
                         if (!_stack.Any(x => x.IsCatching())) return false;
 
@@ -225,6 +223,7 @@ namespace OpenDreamRuntime {
 
                     ProcStatus status;
                     try {
+                        // _current.Resume may mutate our state!!!
                         status = _current.Resume();
                     } catch (DMCrashRuntime dmCrashRuntime) {
                         //skip one level on the call stack because crash is being treated as an actual proc
@@ -232,17 +231,15 @@ namespace OpenDreamRuntime {
                         if (TryCatchException(dmCrashRuntime.Value)) continue;
                         HandleException(dmCrashRuntime);
                         status = ProcStatus.Returned;
-                    } catch (DMRuntime dmRuntime) {
-                        if (TryCatchException(dmRuntime.Value)) continue;
-                        HandleException(dmRuntime);
-                        status = ProcStatus.Returned;
                     } catch (DMError dmError) {
                         CancelAll();
                         HandleException(dmError);
                         status = ProcStatus.Cancelled;
                     } catch (Exception exception) {
-                        if (TryCatchException(new DreamValue(exception.Message))) continue;
-                        HandleException(exception);
+                        //dmruntime and system exceptions are handled the same (?)
+                        var dmRuntime = exception as DMRuntime ?? new DMRuntime(exception.Message);
+                        if (TryCatchException(dmRuntime.Value)) continue;
+                        HandleException(dmRuntime);
                         status = ProcStatus.Returned;
                     }
 

@@ -2495,9 +2495,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("window_name", Type = DreamValueType.String)]
         [DreamProcParameter("clone_name", Type = DreamValueType.String)]
         public static DreamValue NativeProc_winclone(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if(!arguments.GetArgument(1, "window_name").TryGetValueAsString(out var windowName))
+                return DreamValue.Null;
+            if(!arguments.GetArgument(2, "clone_name").TryGetValueAsString(out var cloneName))
+                return DreamValue.Null;
+
             DreamValue player = arguments.GetArgument(0, "player");
-            var windowName = arguments.GetArgument(1, "window_name").MustGetValueAsString();
-            var cloneName = arguments.GetArgument(2, "clone_name").MustGetValueAsString();
+
             DreamConnection connection;
 
             if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {

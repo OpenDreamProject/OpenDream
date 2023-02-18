@@ -451,7 +451,7 @@ namespace OpenDreamClient.Interface {
         }
 
         private void LoadInterface(InterfaceDescriptor descriptor) {
-            InterfaceDescriptor = descriptor.Copy(_serializationManager);
+            InterfaceDescriptor = descriptor;
 
             foreach (MacroSetDescriptor macroSet in descriptor.MacroSetDescriptors) {
                 LoadDescriptor(macroSet);

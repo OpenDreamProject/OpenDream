@@ -200,7 +200,7 @@ namespace DMCompiler.Compiler.DM {
                             DMASTProcStatement procStatement = ProcStatement();
 
                             if (procStatement != null) {
-                                procBlock = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { procStatement });
+                                procBlock = new DMASTProcBlockInner(loc, procStatement);
                             }
                         }
 
@@ -276,7 +276,7 @@ namespace DMCompiler.Compiler.DM {
                         statement = new DMASTObjectDefinition(loc, _currentPath, null);
                     }
 
-                    if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent) {
+                    if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent && Current().Type != TokenType.DM_RightCurlyBracket) {
                         Error("Expected end of object statement");
                     }
 
@@ -462,10 +462,12 @@ namespace DMCompiler.Compiler.DM {
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
                 } else {
                     List<DMASTProcStatement> statements = new();
+                    List<DMASTProcStatement> setStatements = new(); // set statements are weird and must be held separately.
 
                     do {
-                        List<DMASTProcStatement> blockInner = ProcBlockInner();
-                        if (blockInner != null) statements.AddRange(blockInner);
+                        (List<DMASTProcStatement> stmts, List<DMASTProcStatement> setStmts) = ProcBlockInner(); // Hope you understand tuples
+                        if (stmts is not null) statements.AddRange(stmts);
+                        if (setStmts is not null) setStatements.AddRange(setStmts);
 
                         if (!Check(TokenType.DM_RightCurlyBracket)) {
                             Error(WarningCode.BadToken, "Expected end of braced block");
@@ -478,7 +480,7 @@ namespace DMCompiler.Compiler.DM {
                         }
                     } while (true);
 
-                    block = new DMASTProcBlockInner(loc, statements.ToArray());
+                    block = new DMASTProcBlockInner(loc, statements.ToArray(), setStatements.ToArray());
                 }
 
                 return block;
@@ -491,10 +493,14 @@ namespace DMCompiler.Compiler.DM {
             var loc = Current().Location;
             if (Check(TokenType.DM_Indent)) {
                 List<DMASTProcStatement> statements = new();
+                List<DMASTProcStatement> setStatements = new(); // set statements are weird and must be held separately.
 
                 do {
-                    List<DMASTProcStatement> blockInner = ProcBlockInner();
-                    if (blockInner != null) statements.AddRange(blockInner);
+                    (List<DMASTProcStatement> statements, List<DMASTProcStatement> setStatements) blockInner = ProcBlockInner();
+                    if (blockInner.statements is not null)
+                        statements.AddRange(blockInner.statements);
+                    if (blockInner.setStatements is not null)
+                        setStatements.AddRange(blockInner.setStatements);
 
                     if (!Check(TokenType.DM_Dedent)) {
                         Error("Expected end of proc statement", throwException: false);
@@ -505,14 +511,15 @@ namespace DMCompiler.Compiler.DM {
                     }
                 } while (true);
 
-                return new DMASTProcBlockInner(loc, statements.ToArray());
+                return new DMASTProcBlockInner(loc, statements.ToArray(), setStatements.ToArray());
             }
 
             return null;
         }
 
-        public List<DMASTProcStatement> ProcBlockInner() {
+        public (List<DMASTProcStatement>, List<DMASTProcStatement>) ProcBlockInner() {
             List<DMASTProcStatement> procStatements = new();
+            List<DMASTProcStatement> setStatements = new(); // We have to store them separately because they're evaluated first
 
             DMASTProcStatement statement = null;
             do {
@@ -520,9 +527,12 @@ namespace DMCompiler.Compiler.DM {
 
                 try {
                     statement = ProcStatement();
-                    if (statement != null) {
+                    if (statement is not null) {
                         Whitespace();
-                        procStatements.Add(statement);
+                        if(statement.IsAggregateOr<DMASTProcStatementSet>())
+                            setStatements.Add(statement);
+                        else
+                            procStatements.Add(statement);
                     }
                 } catch (CompileErrorException) {
                     LocateNextStatement();
@@ -534,8 +544,8 @@ namespace DMCompiler.Compiler.DM {
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
 
-            if (procStatements.Count == 0) return null;
-            return procStatements;
+            if (procStatements.Count == 0) return (null,null);
+            return (procStatements, setStatements);
         }
 
         public DMASTProcStatement ProcStatement() {
@@ -631,15 +641,13 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Var)) {
                 if (wasSlash) Error("Unsupported root variable declaration");
 
-                Whitespace();
+                Whitespace(); // We have to consume whitespace here since "var foo = 1" (for example) is valid DM code.
                 DMASTProcStatementVarDeclaration[] vars = ProcVarEnd(allowMultiple);
                 if (vars == null) Error("Expected a var declaration");
+                if (vars.Length > 1)
+                    return new DMASTAggregate<DMASTProcStatementVarDeclaration>(firstToken.Location, vars);
+                return vars[0];
 
-                if (vars.Length > 1) {
-                    return new DMASTProcStatementMultipleVarDeclarations(firstToken.Location, vars);
-                } else {
-                    return vars[0];
-                }
             } else if (wasSlash) {
                 ReuseToken(firstToken);
             }
@@ -647,7 +655,10 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementVarDeclaration[] ProcVarBlock(DMASTPath varPath) {
+        /// <summary>
+        /// <see langword="WARNING:"/> This proc calls itself recursively.
+        /// </summary>
+        private DMASTProcStatementVarDeclaration[] ProcVarBlock(DMASTPath varPath) {
             Token newlineToken = Current();
             bool hasNewline = Newline();
 
@@ -696,7 +707,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementVarDeclaration[] ProcVarEnd(bool allowMultiple, DMASTPath path = null) {
+        private DMASTProcStatementVarDeclaration[] ProcVarEnd(bool allowMultiple, DMASTPath path = null) {
             var loc = Current().Location;
             DMASTPath varPath = Path();
 
@@ -735,6 +746,107 @@ namespace DMCompiler.Compiler.DM {
             }
 
             return varDeclarations.ToArray();
+        }
+
+        /// <summary>
+        /// Similar to <see cref="ProcVarBlock(DMASTPath)"/> except it handles blocks of set declarations. <br/>
+        /// <see langword="TODO:"/> See if we can combine the repetitive code between this and ProcVarBlock.
+        /// </summary>
+        private DMASTProcStatementSet[] ProcSetBlock()
+        {
+            Token newlineToken = Current();
+            bool hasNewline = Newline();
+
+            if (Check(TokenType.DM_Indent))
+            {
+                List<DMASTProcStatementSet> setDeclarations = new();
+
+                while (!Check(TokenType.DM_Dedent))
+                {
+                    DMASTProcStatementSet[] setDecl = ProcSetEnd(false); // Repetitive nesting is a no-no here
+                    if (setDecl == null) Error("Expected a set declaration");
+
+                    setDeclarations.AddRange(setDecl);
+
+                    Whitespace();
+                    Delimiter();
+                    Whitespace();
+                }
+
+                return setDeclarations.ToArray();
+            }
+            else if (Check(TokenType.DM_LeftCurlyBracket))
+            {
+                Whitespace();
+                Newline();
+                bool isIndented = Check(TokenType.DM_Indent);
+
+                List<DMASTProcStatementSet> setDeclarations = new();
+                TokenType type = isIndented ? TokenType.DM_Dedent : TokenType.DM_RightCurlyBracket;
+                while (!Check(type))
+                {
+                    DMASTProcStatementSet[] setDecl = ProcSetEnd(true);
+                    Delimiter();
+                    Whitespace();
+                    if (setDecl == null) Error("Expected a set declaration");
+
+                    setDeclarations.AddRange(setDecl);
+                }
+
+                if (isIndented) Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                if (isIndented)
+                {
+                    Newline();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                }
+                return setDeclarations.ToArray();
+            }
+            else if (hasNewline)
+            {
+                ReuseToken(newlineToken);
+            }
+
+            return null;
+        }
+
+        /// <param name="allowMultiple">This may look like a derelict of ProcVarEnd but it's not;<br/>
+        /// Set does not allow path-based nesting of declarations the way var does, so we only allow nesting once, deactivating it thereafter.</param>
+        private DMASTProcStatementSet[] ProcSetEnd(bool allowMultiple) {
+            var loc = Current().Location;
+
+            if (allowMultiple) {
+                DMASTProcStatementSet[] block = ProcSetBlock();
+                if (block != null) return block;
+            }
+
+            List<DMASTProcStatementSet> setDeclarations = new(); // It's a list even in the non-block case because we could be comma-separated right mcfricking now
+            while (true) { // x [in|=] y{, a [in|=] b} or something. I'm a comment, not a formal BNF expression.
+                Whitespace();
+                Token attributeToken = Current();
+                if(!Check(TokenType.DM_Identifier)) {
+                    Error("Expected an identifier for set declaration");
+                    return setDeclarations.ToArray();
+                }
+                Whitespace();
+                TokenType consumed = Consume(new TokenType[] { TokenType.DM_Equals, TokenType.DM_In },"Expected a 'in' or '=' for set declaration");
+                bool wasInKeyword = false;
+                if (consumed == TokenType.DM_In)
+                    wasInKeyword = true;
+                Whitespace();
+                DMASTExpression value = Expression();
+                if (value == null) Error("Expected an expression");
+                //AsTypes(); // Intentionally not done because the 'as' keyword just kinda.. doesn't work here. I dunno.
+
+                setDeclarations.Add(new DMASTProcStatementSet(loc, attributeToken.Text, value, wasInKeyword));
+                if (!allowMultiple)
+                    break;
+                if (!Check(TokenType.DM_Comma))
+                    break;
+                Whitespace();
+                // and continue!
+            }
+
+            return setDeclarations.ToArray();
         }
 
         public DMASTProcStatementReturn Return() {
@@ -801,23 +913,20 @@ namespace DMCompiler.Compiler.DM {
                 return null;
             }
         }
-
-        public DMASTProcStatementSet Set() {
+        /// <returns>Either a <see cref="DMASTProcStatementSet"/> or a DMASTAggregate that acts as a container for them. May be null.</returns>
+        public DMASTProcStatement Set() {
             if (Check(TokenType.DM_Set)) {
                 Whitespace();
-                Token attributeToken = Current();
 
-                if (Check(TokenType.DM_Identifier)) {
-                    Whitespace();
-                    Consume(new TokenType[] { TokenType.DM_Equals, TokenType.DM_In }, "Expected '=' or 'in'");
-                    Whitespace();
-                    DMASTExpression value = Expression();
-                    if (value == null) Error("Expected an expression");
-
-                    return new DMASTProcStatementSet(attributeToken.Location, attributeToken.Text, value);
-                } else {
-                    Error("Expected property name");
+                DMASTProcStatementSet[] sets = ProcSetEnd(true);
+                Token setBlockToken = Current();
+                if (sets is null || sets.Length == 0) {
+                    Error("Expected set declaration");
+                    return null;
                 }
+                if (sets.Length > 1)
+                    return new DMASTAggregate<DMASTProcStatementSet>(setBlockToken.Location, sets);
+                return sets[0];
             }
 
             return null;
@@ -850,7 +959,7 @@ namespace DMCompiler.Compiler.DM {
                     DMASTProcStatement statement = ProcStatement();
 
                     if (statement == null) Error("Expected body or statement");
-                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                    body = new DMASTProcBlockInner(loc, statement);
                 }
 
                 return new DMASTProcStatementSpawn(loc, delay ?? new DMASTConstantInteger(loc, 0), body);
@@ -878,12 +987,14 @@ namespace DMCompiler.Compiler.DM {
                 DMASTProcBlockInner elseBody = null;
 
                 if (procStatement != null) {
-                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { procStatement });
+                    body = new DMASTProcBlockInner(loc, procStatement);
                 } else {
                     body = ProcBlock();
                 }
 
-                if (body == null) body = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
+                if (body is null) {
+                    body = new DMASTProcBlockInner(loc);
+                }
                 Token afterIfBody = Current();
                 bool newLineAfterIf = Delimiter();
                 if (newLineAfterIf) Whitespace();
@@ -894,12 +1005,14 @@ namespace DMCompiler.Compiler.DM {
                     procStatement = ProcStatement();
 
                     if (procStatement != null) {
-                        elseBody = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { procStatement });
+                        elseBody = new DMASTProcBlockInner(loc, procStatement);
                     } else {
                         elseBody = ProcBlock();
                     }
 
-                    if (elseBody == null) elseBody = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
+                    if (elseBody is null) {
+                        elseBody = new DMASTProcBlockInner(loc);
+                    }
                 } else if (newLineAfterIf) {
                     ReuseToken(afterIfBody);
                 }
@@ -940,8 +1053,6 @@ namespace DMCompiler.Compiler.DM {
                         DMASTExpression endRange = null, step = null;
                         ExpressionTo(ref endRange, ref step);
                         Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
-                        Whitespace();
-                        Newline();
                         return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.Expression, assign.Value, endRange, step), null, null, dmTypes, GetForBody());
                     } else {
                         Error("Expected = before to in for");
@@ -953,21 +1064,15 @@ namespace DMCompiler.Compiler.DM {
                     DMASTExpression listExpr = Expression();
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody());
                 }
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody());
                 }
 
@@ -983,14 +1088,10 @@ namespace DMCompiler.Compiler.DM {
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    Whitespace();
-                    Newline();
                     return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody());
                 }
 
@@ -1005,14 +1106,15 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
-                Whitespace();
-                Newline();
                 return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody());
             }
 
             return null;
 
             DMASTProcBlockInner GetForBody() {
+                Whitespace();
+                Newline();
+
                 DMASTProcBlockInner body = ProcBlock();
                 if (body == null) {
                     var loc = Current().Location;
@@ -1024,7 +1126,7 @@ namespace DMCompiler.Compiler.DM {
                         statement = ProcStatement();
                         if (statement == null) Error("Expected body or statement");
                     }
-                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                    body = new DMASTProcBlockInner(loc, statement);
                 }
 
                 return body;
@@ -1048,9 +1150,11 @@ namespace DMCompiler.Compiler.DM {
                     DMASTProcStatement statement = ProcStatement();
 
                     //Loops without a body are valid DM
-                    if (statement == null) statement = new DMASTProcStatementContinue(loc);
+                    if (statement is null) {
+                        statement = new DMASTProcStatementContinue(loc);
+                    }
 
-                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                    body = new DMASTProcBlockInner(loc, statement);
                 }
                 if(conditional is DMASTConstantInteger){
                     if(((DMASTConstantInteger)conditional).Value != 0){
@@ -1072,9 +1176,12 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) {
                     DMASTProcStatement statement = ProcStatement();
-                    if (statement == null) Error("Expected statement");
-
-                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                    if (statement is null) {// This is consistently fatal in BYOND
+                        Error("Expected statement - do-while requires a non-empty block");
+                        //For the sake of argument, add a statement (avoids repetitive warning emissions down the line :^) )
+                        statement = new DMASTProcStatementContinue(loc);
+                    }
+                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement }, null);
                 }
 
                 Newline();
@@ -1214,9 +1321,9 @@ namespace DMCompiler.Compiler.DM {
                     var loc = Current().Location;
 
                     if (statement != null) {
-                        body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                        body = new DMASTProcBlockInner(loc,statement);
                     } else {
-                        body = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
+                        body = new DMASTProcBlockInner(loc);
                     }
                 }
 
@@ -1234,9 +1341,9 @@ namespace DMCompiler.Compiler.DM {
                     DMASTProcStatement statement = ProcStatement();
 
                     if (statement != null) {
-                        body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                        body = new DMASTProcBlockInner(loc, statement);
                     } else {
-                        body = new DMASTProcBlockInner(loc, new DMASTProcStatement[0]);
+                        body = new DMASTProcBlockInner(loc);
                     }
                 }
 
@@ -1256,7 +1363,7 @@ namespace DMCompiler.Compiler.DM {
                     DMASTProcStatement statement = ProcStatement();
 
                     if (statement == null) Error("Expected body or statement");
-                    tryBody = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                    tryBody = new DMASTProcBlockInner(loc,statement);
                 }
 
                 if (_unimplementedWarnings)
@@ -1283,7 +1390,7 @@ namespace DMCompiler.Compiler.DM {
                 if (catchBody == null) {
                     DMASTProcStatement statement = ProcStatement();
 
-                    if (statement != null) catchBody = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                    if (statement != null) catchBody = new DMASTProcBlockInner(loc, statement);
                 }
 
                 return new DMASTProcStatementTryCatch(loc, tryBody, catchBody, parameter);
@@ -1319,7 +1426,7 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 DMASTProcStatement statement = ProcStatement();
 
-                if (statement != null) body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement });
+                if (statement != null) body = new DMASTProcBlockInner(loc, statement);
             }
             return new DMASTProcStatementLabel(expression.Location, expression.Identifier, body);
         }

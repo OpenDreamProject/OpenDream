@@ -101,6 +101,8 @@ public struct ProcDecoder {
             case DreamProcOpcode.DivideReference:
             case DreamProcOpcode.BitXorReference:
             case DreamProcOpcode.ModulusReference:
+            case DreamProcOpcode.BitShiftLeftReference:
+            case DreamProcOpcode.BitShiftRightReference:
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
             case DreamProcOpcode.Try:

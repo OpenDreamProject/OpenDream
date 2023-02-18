@@ -1,4 +1,6 @@
-﻿namespace OpenDreamShared.Compiler {
+﻿// ReSharper disable InconsistentNaming
+
+namespace OpenDreamShared.Compiler {
     // Must be : byte for ReadOnlySpan<TokenType> x = new TokenType[] { } to be intrinsic'd by the compiler.
     public enum TokenType : byte {
         //Base lexer
@@ -36,6 +38,7 @@
         DM_Preproc_Punctuator_Question,
         DM_Preproc_Punctuator_RightBracket,
         DM_Preproc_Punctuator_RightParenthesis,
+        DM_Preproc_Punctuator_Semicolon,
         DM_Preproc_String,
         DM_Preproc_TokenConcat,
         DM_Preproc_Undefine,
@@ -136,62 +139,24 @@
 
         //DMF
         DMF_Attribute,
-        DMF_Boolean,
-        DMF_Bottom,
-        DMF_BottomLeft,
-        DMF_BottomRight,
-        DMF_Browser,
-        DMF_Button,
-        DMF_Center,
-        DMF_Checkbox,
-        DMF_Child,
-        DMF_Color,
-        DMF_Dimension,
-        DMF_Distort,
         DMF_Elem,
         DMF_Equals,
-        DMF_Grid,
-        DMF_Horizontal,
-        DMF_Info,
-        DMF_Input,
-        DMF_Integer,
-        DMF_Label,
-        DMF_Left,
-        DMF_Line,
         DMF_Macro,
-        DMF_Main,
-        DMF_Map,
         DMF_Menu,
-        DMF_None,
-        DMF_Output,
-        DMF_Position,
-        DMF_PushBox,
-        DMF_PushButton,
-        DMF_Resource,
-        DMF_Radio,
-        DMF_Right,
+        DMF_Period,
         DMF_Semicolon,
-        DMF_Stretch,
-        DMF_String,
-        DMF_Sunken,
-        DMF_Tab,
-        DMF_Top,
-        DMF_TopLeft,
-        DMF_TopRight,
-        DMF_Vertical,
+        DMF_Value,
         DMF_Window
     }
 
-    public sealed partial class Token {
-        public TokenType Type;
+    public sealed class Token {
+        public readonly TokenType Type;
         public Location Location;
         /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>
-        public string Text;
-        public object Value;
+        public readonly string Text;
+        public readonly object Value;
 
-        public string PrintableText {
-            get => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
-        }
+        public string PrintableText => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
 
         public Token(TokenType type, string text, Location location, object value) {
             Type = type;

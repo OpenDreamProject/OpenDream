@@ -5,7 +5,7 @@
 #pragma FileAlreadyIncluded warning
 #pragma MissingIncludedFile error
 #pragma MisplacedDirective error
-#pragma UndefineMissingDirective error
+#pragma UndefineMissingDirective warning
 #pragma DefinedMissingParen error
 #pragma ErrorDirective error
 #pragma WarningDirective warning
@@ -19,3 +19,7 @@
 #pragma PointlessBuiltinCall warning
 #pragma MalformedRange warning
 #pragma InvalidRange error
+#pragma InvalidSetStatement error
+
+//3000-3999
+#pragma EmptyBlock warning

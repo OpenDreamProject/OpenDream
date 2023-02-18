@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Interface;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -23,7 +23,7 @@ namespace OpenDreamClient.Interface.Controls {
             return _grid;
         }
 
-        public override void UpdateElementDescriptor() {
+        protected override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
             ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)ElementDescriptor;

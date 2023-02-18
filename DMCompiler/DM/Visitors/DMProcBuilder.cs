@@ -5,15 +5,26 @@ using OpenDreamShared.Dream;
 using System;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Dream.Procs;
+using System.Diagnostics;
 
 namespace DMCompiler.DM.Visitors {
     class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
+        /// <summary>
+        /// BYOND currently has a ridiculous behaviour, where, <br/>
+        /// sometimes when a set statement has a right-hand side that is non-constant, <br/>
+        /// no error is emitted and instead its value is just, whatever the last well-evaluated set statement's value was. <br/>
+        /// This behaviour is nonsense but for harsh parity we sometimes may need to carry it out to hold up a codebase; <br/>
+        /// Yogstation (at time of writing) actually errors on OD if we don't implement this.
+        /// </summary>
+        private Constant? previousSetStatementValue;
+
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
             _proc = proc;
+            previousSetStatementValue = null; // Intentional; marks that we've never seen one before and should just error like normal people.
         }
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
@@ -46,38 +57,44 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            ProcessBlockInner(procDefinition.Body);
+            ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             _proc.ResolveLabels();
         }
 
-        public void ProcessBlockInner(DMASTProcBlockInner block) {
-            // TODO ProcessStatementSet() needs to be before any loops but this is nasty
-            foreach (var stmt in block.Statements) {
-                if (stmt is DMASTProcStatementSet set) {
-                    try {
-                        ProcessStatementSet(set);
-                    } catch (CompileAbortException e) {
-                        // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                        e.Error.Location = set.Location;
-                        DMCompiler.Emit(e.Error);
-                        return; // Don't spam the error that will continue to exist
-                    } catch (CompileErrorException e) {
-                        //Retreat from the statement when there's an error
-                        DMCompiler.Emit(e.Error);
-                    }
+        /// <param name="silenceEmptyBlockWarning">Used to avoid emitting noisy warnings about procs with nothing in them. <br/>
+        /// FIXME: Eventually we should try to be smart enough to emit the error anyways for procs that <br/>
+        /// A.) are not marked opendream_unimplemented and <br/>
+        /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
+        /// </param>
+        public void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
+            foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
+                Location loc = stmt.Location;
+                try {
+                    ProcessStatement(stmt);
+                    Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
+                } catch (CompileAbortException e) {
+                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
+                    e.Error.Location = loc;
+                    DMCompiler.Emit(e.Error);
+                    return; // Don't spam the error that will continue to exist
+                } catch (CompileErrorException e) {
+                    //Retreat from the statement when there's an error
+                    DMCompiler.Emit(e.Error);
                 }
             }
-
-            foreach (DMASTProcStatement statement in block.Statements) {
-                // see above
-                if (statement is DMASTProcStatementSet) {
-                    continue;
+            if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
+                // Not an error in BYOND, but we do have an emission for this!
+                if(block.SetStatements.Length != 0) { // Give a more articulate message about this, since it's kinda weird
+                    DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected - set statements are executed outside of, before, and unconditional to, this block");
+                } else {
+                    DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected");
                 }
-
+                return;
+            }
+            foreach (DMASTProcStatement statement in block.Statements) {
                 if (statement.Location.Line != null) {
                     _proc.DebugLine(statement.Location.Line.Value);
                 }
-
                 try {
                     ProcessStatement(statement);
                 } catch (CompileAbortException e) {
@@ -116,13 +133,17 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
                 case DMASTProcStatementTryCatch tryCatch: ProcessStatementTryCatch(tryCatch); break;
                 case DMASTProcStatementThrow dmThrow: ProcessStatementThrow(dmThrow); break;
-                case DMASTProcStatementMultipleVarDeclarations multipleVarDeclarations: {
-                    foreach (DMASTProcStatementVarDeclaration varDeclaration in multipleVarDeclarations.VarDeclarations) {
-                        ProcessStatementVarDeclaration(varDeclaration);
-                    }
-
+                case DMASTProcStatementSet statementSet: ProcessStatementSet(statementSet); break;
+                //NOTE: Is there a more generic way of doing this, where Aggregate doesn't need every possible type state specified here?
+                //      please write such generic thing if more than three aggregates show up in this switch.
+                case DMASTAggregate<DMASTProcStatementSet> gregSet: // Hi Greg
+                    foreach (var setStatement in gregSet.Statements)
+                        ProcessStatementSet(setStatement);
                     break;
-                }
+                case DMASTAggregate<DMASTProcStatementVarDeclaration> gregVar:
+                    foreach (var declare in gregVar.Statements)
+                        ProcessStatementVarDeclaration(declare);
+                    break;
                 default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
             }
         }
@@ -161,8 +182,26 @@ namespace DMCompiler.DM.Visitors {
         {
             var attribute = statementSet.Attribute.ToLower();
             // TODO deal with "src"
-            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant) && attribute != "src") {
-                throw new CompileErrorException(statementSet.Location, $"{attribute} attribute should be a constant");
+            if(attribute == "src") {
+                DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
+                return;
+            }
+            if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
+                bool didError = DMCompiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
+                if (didError) // if this is an error
+                    return; // don't do the cursed thing
+                // oh no.
+                if (previousSetStatementValue is null)
+                    throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
+                constant = previousSetStatementValue;
+            } else {
+                previousSetStatementValue = constant;
+            }
+            // Check if it was 'set x in y' or whatever
+            // (which is illegal for everything except setting src to something)
+            if (statementSet.WasInKeyword) {
+                DMCompiler.Emit(WarningCode.BadToken, statementSet.Location, "Use of 'in' keyword is illegal here. Did you mean '='?");
+                //fallthrough into normal behaviour because this error is kinda pedantic
             }
 
             switch (statementSet.Attribute.ToLower()) {
@@ -172,58 +211,38 @@ namespace DMCompiler.DM.Visitors {
                 }
                 case "opendream_unimplemented": {
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Unimplemented;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Unimplemented;
-                    }
                     break;
                 }
                 case "hidden":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Hidden;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Hidden;
-                    }
                     break;
                 case "popup_menu":
                     if (constant.IsTruthy()) // The default is to show it so we flag it if it's hidden
-                    {
                         _proc.Attributes &= ~ProcAttributes.HidePopupMenu;
-                    }
                     else
-                    {
                         _proc.Attributes |= ProcAttributes.HidePopupMenu;
-                    }
 
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Instant;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Instant;
-                    }
 
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set instant is not implemented");
                     break;
                 case "background":
                     if (constant.IsTruthy())
-                    {
                         _proc.Attributes |= ProcAttributes.Background;
-                    }
                     else
-                    {
                         _proc.Attributes &= ~ProcAttributes.Background;
-                    }
                     break;
                 case "name":
                     if (constant is not Expressions.String nameStr) {

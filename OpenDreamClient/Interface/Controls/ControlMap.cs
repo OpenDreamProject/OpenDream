@@ -1,12 +1,12 @@
 ﻿using OpenDreamClient.Input;
-using OpenDreamShared.Interface;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface.Controls;
 
-sealed class ControlMap : InterfaceControl {
+public sealed class ControlMap : InterfaceControl {
     public ScalingViewport Viewport { get; private set; }
 
     private MouseInputSystem _mouseInput;

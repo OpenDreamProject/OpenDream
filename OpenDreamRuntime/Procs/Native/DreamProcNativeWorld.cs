@@ -3,17 +3,14 @@ using System.Net.Http;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 
-namespace OpenDreamRuntime.Procs.Native
-{
-    internal static class DreamProcNativeWorld
-    {
+namespace OpenDreamRuntime.Procs.Native {
+    internal static class DreamProcNativeWorld {
         [DreamProc("Export")]
         [DreamProcParameter("Addr", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("File", Type = DreamValue.DreamValueType.DreamObject)]
         [DreamProcParameter("Persist", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Clients", Type = DreamValue.DreamValueType.DreamObject)]
-        public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.State state)
-        {
+        public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.State state) {
             var addr = state.Arguments.GetArgument(0, "Addr").Stringify();
 
             if (!Uri.TryCreate(addr, UriKind.RelativeOrAbsolute, out var uri))
@@ -26,9 +23,8 @@ namespace OpenDreamRuntime.Procs.Native
             var client = new HttpClient();
             var response = await client.GetAsync(uri);
 
-            var list = DreamList.Create();
-            foreach (var header in response.Headers)
-            {
+            var list = DreamProcNativeRoot.ObjectTree.CreateList();
+            foreach (var header in response.Headers) {
                 // TODO: How to handle headers with multiple values?
                 list.SetValue(new DreamValue(header.Key), new DreamValue(header.Value.First()));
             }

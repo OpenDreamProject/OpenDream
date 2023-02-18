@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
@@ -104,6 +104,8 @@ namespace OpenDreamShared.Dream.Procs {
         ModulusModulusReference = 0x61,
         PushProcStub = 0x62,
         PushVerbStub = 0x63,
+        BitShiftLeftReference = 0x64,
+        BitShiftRightReference = 0x65,
         Try = 0x64,
         TryNoValue = 0x65,
         EndTry = 0x66,

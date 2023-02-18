@@ -175,6 +175,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
             {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
+            {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},
+            {DreamProcOpcode.BitShiftRightReference, DMOpcodeHandlers.BitShiftRightReference},
             {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
             {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
@@ -224,10 +226,6 @@ namespace OpenDreamRuntime.Procs {
         public DMProcState() { }
 
         private DMProcState(DMProcState other, DreamThread thread) {
-            if (other._enumeratorStack?.Count > 0) {
-                throw new NotImplementedException();
-            }
-
             base.Initialize(thread, other.WaitFor);
             _proc = other._proc;
             Instance = other.Instance;
@@ -575,7 +573,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Argument: return _localVariables[reference.Index];
                 case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Index];
                 case DMReference.Type.Args: {
-                    DreamList argsList = DreamList.Create(ArgumentCount);
+                    DreamList argsList = Proc.ObjectTree.CreateList(ArgumentCount);
 
                     for (int i = 0; i < ArgumentCount; i++) {
                         argsList.AddValue(_localVariables[i]);

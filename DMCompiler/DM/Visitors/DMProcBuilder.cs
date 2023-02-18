@@ -15,7 +15,7 @@ namespace DMCompiler.DM.Visitors {
         private readonly DMProc _proc;
 
         [Flags]
-        private enum DMProcTerminator {
+        public enum DMProcTerminator {
             None = 0,
             /// <summary>
             /// The processed statement contains a loop return (break or continue)

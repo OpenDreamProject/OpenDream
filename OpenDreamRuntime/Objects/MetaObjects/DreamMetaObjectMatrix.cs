@@ -1,4 +1,5 @@
 ﻿using OpenDreamShared.Dream;
+using System.Collections.Immutable;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectMatrix : IDreamMetaObject {
@@ -26,6 +27,48 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             matrix.GetVariable("c").TryGetValueAsFloat(out array[4]);
             matrix.GetVariable("f").TryGetValueAsFloat(out array[5]);
             return array;
+        }
+
+        public static float Determinant(DreamObject matrix) {
+            try {
+                return matrix.GetVariable("a").MustGetValueAsFloat() *
+                       matrix.GetVariable("e").MustGetValueAsFloat() -
+                       matrix.GetVariable("d").MustGetValueAsFloat() *
+                       matrix.GetVariable("b").MustGetValueAsFloat();
+            } catch(InvalidCastException) {
+                return 0f;
+            } catch(KeyNotFoundException) {
+                return 0f;
+            }
+        }
+
+        /// <summary>Inverts the given matrix, in-place.</summary>
+        /// <returns>true if inversion was possible, false if not.</returns>
+        public static bool TryInvert(DreamObject matrix) {
+            var determinant = Determinant(matrix);
+            if (determinant == 0f)
+                return false;
+            var oldValues = EnumerateMatrix(matrix).ToImmutableArray();
+            //Just going by what we used to have as DM code within DMStandard. No clue if the math is right, here
+            matrix.SetVariableValue("a", new DreamValue( // a = e
+                    oldValues[4] / determinant
+            ));
+            matrix.SetVariableValue("b", new DreamValue( // b = -b
+                    -oldValues[1] / determinant
+            ));
+            matrix.SetVariableValue("c", new DreamValue( // c = b*f - e*c
+                    (oldValues[1] * oldValues[5] - oldValues[4] * oldValues[2]) / determinant
+            ));
+            matrix.SetVariableValue("d", new DreamValue( // d = -d
+                    -oldValues[3] / determinant
+            ));
+            matrix.SetVariableValue("e", new DreamValue( // e = a
+                    oldValues[0] / determinant
+            ));
+            matrix.SetVariableValue("f", new DreamValue( // f = d*c - a*f
+                    (oldValues[3] * oldValues[2] - oldValues[0] * oldValues[5]) / determinant
+            ));
+            return true;
         }
 
         /// <summary>

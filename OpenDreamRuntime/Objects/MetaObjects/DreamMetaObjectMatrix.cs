@@ -29,6 +29,40 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return array;
         }
 
+        /// <remarks>
+        /// This does elect to actually call /matrix/New() with the old matrix's values, <br/>
+        /// if anything, for the sake of support for having derived classes of /matrix.
+        /// </remarks>
+        /// <param name="matrix">The matrix to clone.</param>
+        /// <returns>A clone of the given matrix.</returns>
+        public static DreamObject MatrixClone(IDreamObjectTree ObjectTree, DreamObject matrix) {
+            var newMatrix = ObjectTree.CreateObject(matrix.ObjectDefinition.TreeEntry);
+            var args = new List<DreamValue>(6);
+            foreach(float f in EnumerateMatrix(matrix)) {
+                args.Add(new DreamValue(f));
+            }
+            newMatrix.InitSpawn(new Procs.DreamProcArguments(args));
+            return newMatrix;
+        }
+
+        /// <summary>
+        /// Simple helper for quickly making a basic matrix given its six values, in a-to-f order.
+        /// </summary>
+        /// <remarks>
+        /// Note that this skips over making a New() call, so hopefully you're not doing anything meaningful in there, DM-side.
+        /// </remarks>
+        /// <returns>A matrix created with a to f as its arguments to New().</returns>
+        public static DreamObject MakeMatrix(IDreamObjectTree ObjectTree, float a, float b, float c, float d, float e, float f) {
+            var newMatrix = ObjectTree.CreateObject(ObjectTree.Matrix);
+            newMatrix.SetVariableValue("a", new(a));
+            newMatrix.SetVariableValue("b", new(b));
+            newMatrix.SetVariableValue("c", new(c));
+            newMatrix.SetVariableValue("d", new(d));
+            newMatrix.SetVariableValue("e", new(e));
+            newMatrix.SetVariableValue("f", new(f));
+            return newMatrix;
+        }
+
         public static float Determinant(DreamObject matrix) {
             try {
                 return matrix.GetVariable("a").MustGetValueAsFloat() *
@@ -104,14 +138,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             left.GetVariable("f").TryGetValueAsFloat(out float lF);
 
             if (b.TryGetValueAsFloat(out float bFloat)) {
-                DreamObject output = _objectTree.CreateObject(_objectTree.Matrix);
-                output.SetVariable("a", new(lA * bFloat));
-                output.SetVariable("b", new(lB * bFloat));
-                output.SetVariable("c", new(lC * bFloat));
-                output.SetVariable("d", new(lD * bFloat));
-                output.SetVariable("e", new(lE * bFloat));
-                output.SetVariable("f", new(lF * bFloat));
-
+                DreamObject output = MakeMatrix(_objectTree,
+                        lA * bFloat,lB * bFloat,lC * bFloat,
+                        lD * bFloat,lE * bFloat,lF * bFloat
+                    );
                 return new(output);
             } else if (b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject right)) {
                 right.GetVariable("a").TryGetValueAsFloat(out float rA);
@@ -121,13 +151,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 right.GetVariable("e").TryGetValueAsFloat(out float rE);
                 right.GetVariable("f").TryGetValueAsFloat(out float rF);
 
-                DreamObject output = _objectTree.CreateObject(_objectTree.Matrix);
-                output.SetVariable("a", new(rA * lA + rD * lB));
-                output.SetVariable("b", new(rB * lA + rE * lB));
-                output.SetVariable("c", new(rC * lA + rF * lB + lC));
-                output.SetVariable("d", new(rA * lD + rD * lE));
-                output.SetVariable("e", new(rB * lD + rE * lE));
-                output.SetVariable("f", new(rC * lD + rF * lE + lF));
+                DreamObject output = MakeMatrix(_objectTree,
+                    rA * lA + rD * lB, // a
+                    rB * lA + rE * lB, // b
+                    rC * lA + rF * lB + lC, // c
+                    rA * lD + rD * lE, // d
+                    rB * lD + rE * lE, // e
+                    rC * lD + rF * lE + lF // f
+                );
 
                 return new(output);
             }

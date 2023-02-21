@@ -100,8 +100,7 @@ namespace OpenDreamRuntime {
     }
 
     sealed class DMCrashRuntime : DMRuntime {
-
-        public DMCrashRuntime(string message) : base(new DreamValue(message)) { }
+        public DMCrashRuntime(string message) : base(message) { }
         public DMCrashRuntime(DreamValue value) : base(value) { }
     }
 

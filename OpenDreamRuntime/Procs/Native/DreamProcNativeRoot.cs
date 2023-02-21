@@ -21,6 +21,10 @@ using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamRuntime.Procs.Native {
+    /// <remarks>
+    /// Note that this proc container also includes global procs which are used to create some DM objects,
+    /// like filter(), matrix(), etc.
+    /// </remarks>
     static class DreamProcNativeRoot {
         // I don't want to edit 100 procs to have the DreamManager passed to them
         // TODO: Pass NativeProc.State to every native proc
@@ -1292,6 +1296,36 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(text.ToLower());
+        }
+        [DreamProc("matrix")]
+        [DreamProcParameter("a")]
+        [DreamProcParameter("b")]
+        [DreamProcParameter("c")]
+        [DreamProcParameter("d")]
+        [DreamProcParameter("e")]
+        [DreamProcParameter("f")]
+        public static DreamValue NativeProc_matrix(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamObject matrix;
+            DreamMetaObjectMatrix metaObjectMatrix = (DreamMetaObjectMatrix) ObjectTree.Matrix.ObjectDefinition.MetaObject!;
+            // normal, documented uses of matrix().
+            switch(arguments.ArgumentCount) {
+                case 6: // Take the arguments and construct a matrix.
+                    matrix = ObjectTree.CreateObject(ObjectTree.Matrix);
+                    matrix.InitSpawn(arguments);
+                    return new DreamValue(matrix);
+                case 1: // Clone the matrix.
+                    var firstArg = arguments.GetArgument(0, "a");
+                    if (!firstArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
+                        throw new ArgumentException($"/matrix() called with invalid argument '{firstArg}'");
+                    matrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, argObject);
+                    return new DreamValue(matrix);
+                case 0: // Create an identity matrix.
+                    matrix = ObjectTree.CreateObject(ObjectTree.Matrix);
+                    matrix.InitSpawn(new DreamProcArguments());
+                    return new DreamValue(matrix);
+                default:
+                    throw new ArgumentException($"/matrix() called with {arguments.ArgumentCount}, expected 6 or less");
+            }
         }
 
         [DreamProc("max")]

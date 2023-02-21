@@ -96,4 +96,3 @@
 		return Multiply(rotation)
 
 proc/matrix(var/a, var/b, var/c, var/d, var/e, var/f)
-	return new /matrix(a, b, c, d, e, f)

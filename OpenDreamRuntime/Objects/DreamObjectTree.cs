@@ -96,8 +96,10 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        // It is the job of whatever calls this function to then initialize the object
-        // by calling the result of DreamObject.InitProc or DreamObject.InitSpawn
+        /// <remarks>
+        /// It is the job of whatever calls this function to then initialize the object! <br/>
+        /// (by calling the result of <see cref="DreamObject.InitProc(DreamThread, DreamObject?, DreamProcArguments)"/> or <see cref="DreamObject.InitSpawn(DreamProcArguments)"/>)
+        /// </remarks>
         public DreamObject CreateObject(TreeEntry type) {
             if (type == List) {
                 return CreateList();

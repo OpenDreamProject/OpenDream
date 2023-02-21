@@ -64,12 +64,12 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamValue GetVariable(string name) {
             if(Deleted){
-                throw new Exception("Cannot read " + name + " on a deleted object");
+                throw new NullReferenceException("Cannot read " + name + " on a deleted object");
             }
             if (TryGetVariable(name, out DreamValue variableValue)) {
                 return variableValue;
             } else {
-                throw new Exception("Variable " + name + " doesn't exist");
+                throw new KeyNotFoundException("Variable " + name + " doesn't exist");
             }
         }
 

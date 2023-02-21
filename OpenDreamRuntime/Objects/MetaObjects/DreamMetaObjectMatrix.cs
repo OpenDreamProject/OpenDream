@@ -126,6 +126,23 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             yield return ret;
         }
 
+        /// <summary> Scales a given matrix by the two scaling factors given.</summary>
+        /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if the matrix has non-float members.</exception>
+        public static void ScaleMatrix(DreamObject matrix, float x, float y) {
+            try {
+                matrix.SetVariableValue("a", new DreamValue(matrix.GetVariable("a").MustGetValueAsFloat() * x));
+                matrix.SetVariableValue("b", new DreamValue(matrix.GetVariable("b").MustGetValueAsFloat() * x));
+                matrix.SetVariableValue("c", new DreamValue(matrix.GetVariable("c").MustGetValueAsFloat() * x));
+
+                matrix.SetVariableValue("d", new DreamValue(matrix.GetVariable("d").MustGetValueAsFloat() * y));
+                matrix.SetVariableValue("e", new DreamValue(matrix.GetVariable("e").MustGetValueAsFloat() * y));
+                matrix.SetVariableValue("f", new DreamValue(matrix.GetVariable("f").MustGetValueAsFloat() * y));
+            } catch(InvalidCastException) { // If any of these MustGet()s fail, try to give a more descriptive runtime
+                throw new InvalidOperationException($"Invalid matrix '{matrix}' cannot be scaled");
+            }
+        }
+
         public DreamValue OperatorMultiply(DreamValue a, DreamValue b) {
             if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject left))
                 throw new ArgumentException($"Invalid matrix {a}");

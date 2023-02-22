@@ -815,12 +815,11 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? BitNot(DMProcState state){
             DreamValue first = state.Pop();
-
-            if(first == DreamValue.Null) {
-                state.Push(new DreamValue(1.0f));
-                return null; //null == 0 --> !null = 1
+            //null evaluates as 0 here, so return ~0
+            if(first == DreamValue.Null){
+                state.Push(new DreamValue(0xFFFFFF));
+                return null;
             }
-
             switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if(first.TryGetValueAsInteger(out int valueInt)) {

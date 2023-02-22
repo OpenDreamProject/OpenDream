@@ -857,6 +857,9 @@ namespace OpenDreamRuntime.Procs {
             if(first == DreamValue.Null) {
                 state.Push(second);
                 return null; //early return for null | anything = anything
+            } else if(second == DreamValue.Null) {
+                state.Push(first);
+                return null; //early return for anything | null = anything
             }
 
             switch(first.Type) {

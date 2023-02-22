@@ -1663,6 +1663,7 @@ namespace OpenDreamRuntime.Procs {
             switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     if(second == DreamValue.Null){
+                        state.AssignReference(reference, first);
                         state.Push(first);
                         return null; // anything - null = anything FOR FLOATS, for list attempt to remove null from the list
                     }
@@ -1699,12 +1700,17 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             if(first == DreamValue.Null) {
-                state.Push(new DreamValue(0.0f));
-                return null; //early return for null - anything = 0
+                state.Push(new DreamValue(second));
+                state.SetSubOpcode(DreamProcOpcode.Negate, null);
+                return null; //early return for null - anything = -anything
             }
 
             switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
+                    if(second == DreamValue.Null){
+                        state.Push(first);
+                        return null; // anything - null = anything FOR FLOATS, for list attempt to remove null from the list
+                    }
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         state.Push(new DreamValue(firstFloat - secondFloat));
                         return null;

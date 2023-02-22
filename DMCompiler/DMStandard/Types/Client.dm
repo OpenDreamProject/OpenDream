@@ -1,5 +1,5 @@
 ﻿/client
-	var/list/verbs = list()
+	var/list/verbs = null
 	var/list/screen = list()
 	var/list/images = list() as opendream_unimplemented
 	var/list/vars

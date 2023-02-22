@@ -939,6 +939,21 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Locate);
         }
 
+        public void StartTry(string label, DMReference reference) {
+            WriteOpcode(DreamProcOpcode.Try);
+            WriteLabel(label);
+            WriteReference(reference);
+        }
+
+        public void StartTryNoValue(string label) {
+            WriteOpcode(DreamProcOpcode.TryNoValue);
+            WriteLabel(label);
+        }
+
+        public void EndTry() {
+            WriteOpcode(DreamProcOpcode.EndTry);
+        }
+
         private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
         }

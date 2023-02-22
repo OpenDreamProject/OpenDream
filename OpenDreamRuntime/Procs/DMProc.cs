@@ -178,6 +178,9 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},
             {DreamProcOpcode.BitShiftRightReference, DMOpcodeHandlers.BitShiftRightReference},
+            {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
+            {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
+            {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
         };
 
         private static readonly OpcodeHandler?[] _opcodeHandlers;
@@ -191,6 +194,9 @@ namespace OpenDreamRuntime.Procs {
         public int ArgumentCount;
         public string? CurrentSource;
         public int CurrentLine;
+        private readonly Stack<int> _catchPosition = new();
+        private readonly Stack<int> _catchVarIndex = new();
+        public const int NoTryCatchVar = -1;
         private Stack<IDreamValueEnumerator>? _enumeratorStack;
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
@@ -268,7 +274,7 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        protected override ProcStatus InternalResume() {
+        public override ProcStatus Resume() {
             if (Instance?.Deleted == true) {
                 return ProcStatus.Returned;
             }
@@ -294,7 +300,18 @@ namespace OpenDreamRuntime.Procs {
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
                     throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
-                ProcStatus? status = handler.Invoke(this);
+
+                ProcStatus? status;
+                try {
+                    status = handler.Invoke(this);
+                } catch (DMRuntime ce) {
+                    if (!IsCatching())
+                        throw;
+
+                    CatchException(ce.Value);
+                    continue;
+                }
+
                 if (status != null) {
                     return status.Value;
                 }
@@ -345,6 +362,29 @@ namespace OpenDreamRuntime.Procs {
             return thread;
         }
 
+        public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatchVar) {
+            _catchPosition.Push(catchPosition);
+            _catchVarIndex.Push(catchVarIndex);
+        }
+
+        public void EndTryBlock() {
+            _catchPosition.Pop();
+            _catchVarIndex.Pop();
+        }
+
+        public override bool IsCatching() => _catchPosition.Count > 0;
+
+        public override void CatchException(DreamValue value) {
+            if (!IsCatching())
+                base.CatchException(value);
+
+            Jump(_catchPosition.Pop());
+            var varIdx = _catchVarIndex.Pop();
+            if (varIdx != NoTryCatchVar) {
+                _localVariables[varIdx] = value;
+            }
+        }
+
         public override void Dispose() {
             base.Dispose();
 
@@ -363,6 +403,9 @@ namespace OpenDreamRuntime.Procs {
 
             _dreamValuePool.Return(_localVariables);
             _localVariables = null;
+
+            _catchPosition.Clear();
+            _catchVarIndex.Clear();
 
             Pool.Push(this);
         }

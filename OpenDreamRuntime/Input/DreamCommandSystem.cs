@@ -35,8 +35,7 @@ namespace OpenDreamRuntime.Input {
             _repeatingCommands.Remove(tuple);
         }
 
-        private void RunCommand(string command, IPlayerSession session)
-        {
+        private void RunCommand(string command, IPlayerSession session) {
             var connection = _dreamManager.GetConnectionBySession(session);
             connection.HandleCommand(command);
         }

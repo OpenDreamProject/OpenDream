@@ -9,6 +9,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
+        public static readonly Dictionary<DreamObject, VerbsList> VerbLists = new();
+
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
         private readonly Dictionary<DreamList, DreamObject> _screenListToClient = new();
 
@@ -25,6 +27,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
+            VerbLists.Add(dreamObject, new VerbsList(_objectTree, dreamObject));
+
             _dreamManager.Clients.Add(dreamObject);
 
             ClientPerspective perspective = (ClientPerspective)dreamObject.GetVariable("perspective").GetValueAsInteger();
@@ -35,6 +39,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public void OnObjectDeleted(DreamObject dreamObject) {
             ParentType?.OnObjectDeleted(dreamObject);
+            VerbLists.Remove(dreamObject);
             _dreamManager.Clients.Remove(dreamObject);
         }
 
@@ -138,6 +143,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "connection":
                     return new DreamValue("seeker");
+                case "verbs":
+                    return new DreamValue(VerbLists[dreamObject]);
                 case "vars": // /client has this too!
                     return new DreamValue(new DreamListVars(_objectTree.List.ObjectDefinition, dreamObject));
                 default:

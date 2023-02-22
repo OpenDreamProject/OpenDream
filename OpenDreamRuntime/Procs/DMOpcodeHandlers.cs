@@ -581,6 +581,9 @@ namespace OpenDreamRuntime.Procs {
             if(first == DreamValue.Null) {
                 state.Push(second);
                 return null; //early return for null + anything = anything
+            } else if(second == DreamValue.Null) {
+                state.Push(first);
+                return null; //early return for anything + null = anything
             }
 
             switch(first.Type) {
@@ -1643,7 +1646,7 @@ namespace OpenDreamRuntime.Procs {
             throw new InvalidOperationException($"Power cannot be done between {first} and {second}");
         }
 
-        public static ProcStatus? Remove(DMProcState state) {
+        public static ProcStatus? Remove(DMProcState state) { //subtract-reference
             DMReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
@@ -1659,6 +1662,10 @@ namespace OpenDreamRuntime.Procs {
 
             switch(first.Type) {
                 case DreamValue.DreamValueType.Float: {
+                    if(second == DreamValue.Null){
+                        state.Push(first);
+                        return null; // anything - null = anything FOR FLOATS, for list attempt to remove null from the list
+                    }
                     if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
                         output = new DreamValue(firstFloat - secondFloat);
                         state.AssignReference(reference, output);

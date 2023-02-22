@@ -125,18 +125,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorRemove(a, b, state);
         }
 
-        public ProcStatus? OperatorOr(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|", out DreamProc overload)) {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
-                    return ProcStatus.Called;
-                }
-                else
-                    throw new InvalidOperationException($"Cannot or {a} and {b}");
-
-            return ParentType.OperatorOr(a, b, state);
-        }
-
         public ProcStatus? OperatorCombine(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|=", out DreamProc overload)) {

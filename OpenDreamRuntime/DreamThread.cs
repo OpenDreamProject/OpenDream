@@ -86,16 +86,31 @@ namespace OpenDreamRuntime {
         }
     }
 
-    sealed class CancellingRuntime : Exception {
-        public CancellingRuntime(string message)
-            : base(message)
-        {}
+    [Virtual]
+    class DMRuntime : Exception {
+        public readonly DreamValue Value;
+        public DMRuntime(string message)
+            : base(message) {
+            Value = new DreamValue(message);
+        }
+
+        public DMRuntime(DreamValue value) : base($"'throw' thrown ({value})") {
+            Value = value;
+        }
     }
 
-    sealed class PropagatingRuntime : Exception {
-        public PropagatingRuntime(string message)
-            : base(message)
-        {}
+    sealed class DMCrashRuntime : DMRuntime {
+        public DMCrashRuntime(string message) : base(message) { }
+        public DMCrashRuntime(DreamValue value) : base(value) { }
+    }
+
+    /// <summary>
+    /// This exception instantly terminates the entire thread of the proc.
+    /// </summary>
+    sealed class DMError : Exception {
+        public DMError(string message)
+            : base(message) {
+        }
     }
 
     public abstract class ProcState : IDisposable {
@@ -107,23 +122,6 @@ namespace OpenDreamRuntime {
 
         public bool WaitFor { get; set; } = true;
 
-        public ProcStatus Resume() {
-            try {
-                return InternalResume();
-            } catch (CancellingRuntime exception) {
-                Thread.CancelAll();
-                Thread.HandleException(exception);
-                return ProcStatus.Cancelled;
-            } catch (PropagatingRuntime exception) {
-                Thread.HandleException(exception);
-                Thread.PopProcState();
-                return ProcStatus.Returned;
-            } catch (Exception exception) {
-                Thread.HandleException(exception);
-                return ProcStatus.Returned;
-            }
-        }
-
         public virtual (string?, int?) SourceLine => (null, null);
 
         public abstract DreamProc? Proc { get; }
@@ -133,7 +131,17 @@ namespace OpenDreamRuntime {
             WaitFor = waitFor;
         }
 
-        protected abstract ProcStatus InternalResume();
+        public abstract ProcStatus Resume();
+
+        /// <summary>
+        /// Returns wether or not the proc is currently in a try catch block.
+        /// </summary>
+        public virtual bool IsCatching() => false;
+
+        public virtual void CatchException(DreamValue value) {
+            throw new InvalidOperationException(
+                $"Called {nameof(CatchException)} on a {nameof(ProcState)} that isn't catching!");
+        }
 
         public abstract void AppendStackFrame(StringBuilder builder);
 
@@ -198,8 +206,39 @@ namespace OpenDreamRuntime {
             try {
                 CurrentlyExecuting.Value!.Push(this);
                 while (_current != null) {
-                    // _current.Resume may mutate our state!!!
-                    switch (_current.Resume()) {
+                    bool TryCatchException(DreamValue value) {
+                        if (!_stack.Any(x => x.IsCatching())) return false;
+
+                        while (!_current.IsCatching()) {
+                            PopProcState();
+                        }
+                        _current.CatchException(value);
+                        return true;
+                    }
+
+                    ProcStatus status;
+                    try {
+                        // _current.Resume may mutate our state!!!
+                        status = _current.Resume();
+                    } catch (DMCrashRuntime dmCrashRuntime) {
+                        //skip one level on the call stack because crash is being treated as an actual proc
+                        PopProcState();
+                        if (TryCatchException(dmCrashRuntime.Value)) continue;
+                        HandleException(dmCrashRuntime);
+                        status = ProcStatus.Returned;
+                    } catch (DMError dmError) {
+                        CancelAll();
+                        HandleException(dmError);
+                        status = ProcStatus.Cancelled;
+                    } catch (Exception exception) {
+                        //dmruntime and system exceptions are handled the same (?)
+                        var dmRuntime = exception as DMRuntime ?? new DMRuntime(exception.Message);
+                        if (TryCatchException(dmRuntime.Value)) continue;
+                        HandleException(dmRuntime);
+                        status = ProcStatus.Returned;
+                    }
+
+                    switch (status) {
                         // The entire Thread is stopping
                         case ProcStatus.Cancelled:
                             var current = _current;
@@ -245,7 +284,7 @@ namespace OpenDreamRuntime {
 
         public void PushProcState(ProcState state) {
             if (_stack.Count >= MaxStackDepth) {
-                throw new CancellingRuntime("stack depth limit reached");
+                throw new DMError("stack depth limit reached");
             }
 
             if (state.WaitFor == false) {

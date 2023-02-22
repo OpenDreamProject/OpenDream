@@ -141,7 +141,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return null;
         }
 
-        public ProcStatus? OperatorOr(DreamValue a, DreamValue b, DMProcState state) {
+        public ProcStatus? OperatorBitOr(DreamValue a, DreamValue b, DMProcState state) {
             DreamList list = a.MustGetValueAsDreamList();
 
             if (b.TryGetValueAsDreamList(out DreamList bList)) {    // List | List
@@ -309,7 +309,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public ProcStatus? OperatorIndexAssign(DreamValue a, DreamValue index, DreamValue value, DMProcState state) {
             DreamList dreamList = a.MustGetValueAsDreamList();
             dreamList.SetValue(index, value);
-            state.Push(value);
             return null;
         }
     }

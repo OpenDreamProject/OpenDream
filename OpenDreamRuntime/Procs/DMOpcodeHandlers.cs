@@ -852,8 +852,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             if(first == DreamValue.Null) {
-                state.Push(new DreamValue(0.0f));
-                return null; //early return for null | anything = 0
+                state.Push(second);
+                return null; //early return for null | anything = anything
             }
 
             switch(first.Type) {
@@ -1256,6 +1256,7 @@ namespace OpenDreamRuntime.Procs {
                         output = new DreamValue(firstFloat / secondFloat);
                         state.AssignReference(reference, output);
                         state.Push(output);
+                        return null;
                     }
                     break;
                 }
@@ -1276,7 +1277,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Or-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"Divide-ref cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Mask(DMProcState state) {

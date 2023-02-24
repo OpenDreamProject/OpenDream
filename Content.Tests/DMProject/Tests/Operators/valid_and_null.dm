@@ -61,4 +61,67 @@
 	ASSERT(null - 1 == -1)
 	ASSERT(1 - null = 1)
 
-	
+	ASSERT(1 < 1 == 0)
+	ASSERT(null < 1 == 1)
+	ASSERT(1 < null == 0)
+
+	ASSERT(1 <= 1 == 1)
+	ASSERT(null <= 1 == 1)
+	ASSERT(1 <= null == 0)	
+
+	ASSERT(1 > 1 == 0)
+	ASSERT(null > 1 == 0)
+	ASSERT(1 > null == 1)	
+
+	ASSERT(1 >= 1 == 1)
+	ASSERT(null >= 1 == 0)
+	ASSERT(1 >= null == 1)	
+
+	ASSERT(1 << 1 == 2)
+	ASSERT(null << 1 == 0)
+	ASSERT(1 << null == 1)	
+
+	ASSERT(1 >> 1 == 0)
+	ASSERT(null >> 1 == 0)
+	ASSERT(1 >> null == 1)	
+
+	ASSERT((1 == 1) == 1)
+	ASSERT((null == null) == 1)
+	ASSERT((null == 0) == 0)
+
+	ASSERT((1 != null) == 1)
+	ASSERT((null != 1) == 1)
+	ASSERT((null != 0) == 1)
+
+	ASSERT((1 <> null) == 1)
+	ASSERT((null <> 1) == 1)
+	ASSERT((null <> 0) == 1)	
+
+	ASSERT((1 ~= 1) == 1)
+	ASSERT((null ~= null) == 1)
+	ASSERT((null ~= 0) == 0)
+
+	ASSERT((1 ~! 1) == 0)
+	ASSERT((null ~! null) == 0)
+	ASSERT((null ~! 0) == 1)
+
+	ASSERT(1 & 1 == 1)
+	ASSERT(null & 1 == 0)
+	ASSERT(1 & null == 0)
+
+	ASSERT(1 ^ 1 == 0)
+	ASSERT(null ^ 1 == 1)
+	ASSERT(1 ^ null == 1)	
+
+	ASSERT(1 | 1 == 1)
+	ASSERT(null | 1 == 1)
+	ASSERT(1 | null == 1)	
+
+	ASSERT(1 && 1 == 1)
+	ASSERT(null && 1 == null)
+	ASSERT(1 && null == null)	
+
+	ASSERT(1 || 1 == 1)
+	ASSERT(null || 1 == 1)
+	ASSERT(1 || null == 1)	
+

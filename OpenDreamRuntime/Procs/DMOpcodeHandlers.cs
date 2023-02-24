@@ -1702,7 +1702,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             if(first == DreamValue.Null) {
-                state.Push(new DreamValue(second));
+                state.Push(second);
                 state.SetSubOpcode(DreamProcOpcode.Negate, null);
                 return null; //early return for null - anything = -anything
             }

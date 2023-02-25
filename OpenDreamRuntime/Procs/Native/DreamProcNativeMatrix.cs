@@ -15,5 +15,18 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             return new DreamValue(src);
         }
+
+        [DreamProc("Scale")]
+        public static DreamValue NativeProc_Scale(DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+            float horizontalScale;
+            float verticalScale;
+            arguments.GetArgument(0, "x").TryGetValueAsFloat(out horizontalScale);
+            if (arguments.ArgumentCount == 2)
+                arguments.GetArgument(1, "y").TryGetValueAsFloat(out verticalScale);
+            else
+                verticalScale = horizontalScale;
+            DreamMetaObjectMatrix.ScaleMatrix(src, horizontalScale, verticalScale);
+            return new DreamValue(src);
+        }
     }
 }

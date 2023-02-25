@@ -61,17 +61,6 @@
 		return src
 
 	proc/Scale(x, y)
-		if(!isnum(x))
-			x = 0
-		if(!isnum(y))
-			y = x
-		a = a * x
-		b = b * x
-		c = c * x
-		d = d * y
-		e = e * y
-		f = f * y
-		return src
 
 	proc/Subtract(matrix/Matrix2)
 		if(!istype(Matrix2))

@@ -5,6 +5,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
+using System.Linq;
 
 namespace DMCompiler.DM.Visitors {
     sealed class DMVisitorExpression : DMASTVisitor {
@@ -183,7 +184,19 @@ namespace DMCompiler.DM.Visitors {
             // arglist hack
             if (procCall.Callable is DMASTCallableProcIdentifier ident) {
                 if (ident.Identifier == "arglist") {
-                    if (procCall.Parameters.Length != 1) throw new CompileErrorException(procCall.Location, "arglist must have 1 argument");
+                    switch (procCall.Parameters.Length) {
+                        case 0:
+                            DMCompiler.Emit(WarningCode.BadArgument, procCall.Location, "arglist() requires 1 argument");
+                            break;
+                        case 1:
+                            break;
+                        default:
+                            DMCompiler.Emit(
+                                WarningCode.TooManyArguments,
+                                procCall.Location,
+                                $"arglist() given {procCall.Parameters.Length} arguments, expecting 1");
+                            break;
+                    }
 
                     var expr = DMExpression.Create(_dmObject, _proc, procCall.Parameters[0].Value, _inferredPath);
                     Result = new Expressions.Arglist(procCall.Location, expr);

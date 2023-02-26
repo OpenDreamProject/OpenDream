@@ -1135,6 +1135,11 @@ namespace OpenDreamRuntime.Procs {
                 state.Push(second);
                 return null; //early return for null ^ anything = anything
             }
+            if(second == DreamValue.Null) {
+                state.AssignReference(reference, first);
+                state.Push(first);
+                return null; //early return for anything ^ null = anything
+            }
 
             DreamValue output;
 
@@ -1205,10 +1210,14 @@ namespace OpenDreamRuntime.Procs {
             DreamValue output;
 
             if(first == DreamValue.Null) {
-                output = new DreamValue(0);
-                state.AssignReference(reference, output);
-                state.Push(output);
-                return null; //early return for null | anything = 0
+                state.AssignReference(reference, second);
+                state.Push(second);
+                return null; //early return for null | anything = anything
+            }
+            if(second == DreamValue.Null) {
+                state.AssignReference(reference, first);
+                state.Push(first);
+                return null; //early return for anything | null = anything
             }
 
             switch(first.Type) {
@@ -1343,11 +1352,11 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null) {
+            if(first == DreamValue.Null || second == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
-                return null; //early return for null && anything = 0
+                return null; //early return for null &= anything = 0 or anything &= null = 0
             }
 
             switch(first.Type) {
@@ -1712,10 +1721,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue output;
 
             if(first == DreamValue.Null) {
-                output = new DreamValue(0);
-                state.AssignReference(reference, output);
-                state.Push(output);
-                return null; //early return for null - anything = 0
+                first = new DreamValue(0); //if first value is null, attempt float math as if it were 0
             }
 
             switch(first.Type) {

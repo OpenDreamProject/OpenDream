@@ -697,13 +697,18 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Increment(DMProcState state) {
+            DreamValue postInc = state.Pop();
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
+
             DreamValue output;
             if(first == DreamValue.Null) {
                 output = new DreamValue(1.0f);
                 state.AssignReference(reference, output);
-                state.Push(output);
+                if(postInc != DreamValue.True)
+                    state.Push(output);
+                else
+                    state.Push(first);
                 return null;
             }
 
@@ -712,7 +717,10 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsFloat(out float firstFloat)) {
                         output = new DreamValue(firstFloat + 1.0f);
                         state.AssignReference(reference, output);
-                        state.Push(output);
+                        if(postInc != DreamValue.True)
+                            state.Push(output);
+                        else
+                            state.Push(first);
                         return null;
                     }
                     break;
@@ -738,13 +746,18 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Decrement(DMProcState state) {
+            DreamValue postDec = state.Pop();
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
+
             DreamValue output;
             if(first == DreamValue.Null) {
                 output = new DreamValue(-1.0f);
                 state.AssignReference(reference, output);
-                state.Push(output);
+                if(postDec != DreamValue.True)
+                    state.Push(output);
+                else
+                    state.Push(first);
                 return null;
             }
 
@@ -753,7 +766,10 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsFloat(out float firstFloat)) {
                         output = new DreamValue(firstFloat - 1.0f);
                         state.AssignReference(reference, output);
-                        state.Push(output);
+                        if(postDec != DreamValue.True)
+                            state.Push(output);
+                        else
+                            state.Push(first);
                         return null;
                     }
                     break;

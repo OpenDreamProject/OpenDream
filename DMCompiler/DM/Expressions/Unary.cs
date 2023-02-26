@@ -95,6 +95,7 @@ namespace DMCompiler.DM.Expressions {
         {}
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+            proc.PushFloat(0.0f); //indicates this is pre-increment
             proc.Increment(reference);
         }
     }
@@ -106,9 +107,8 @@ namespace DMCompiler.DM.Expressions {
         {}
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            proc.PushReferenceValue(reference);
+            proc.PushFloat(1.0f); //indicates this is post-increment
             proc.Increment(reference);
-            proc.Pop();
         }
     }
 
@@ -119,6 +119,7 @@ namespace DMCompiler.DM.Expressions {
         {}
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+            proc.PushFloat(0.0f); //indicates this is pre-decrement
             proc.Decrement(reference);
         }
     }
@@ -130,9 +131,8 @@ namespace DMCompiler.DM.Expressions {
         {}
 
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            proc.PushReferenceValue(reference);
+            proc.PushFloat(1.0f); //indicates this is post-decrement
             proc.Decrement(reference);
-            proc.Pop();
         }
     }
 }

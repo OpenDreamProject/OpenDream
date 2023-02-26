@@ -734,7 +734,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Increment cannot be done on {first}");
+            throw new InvalidOperationException($"++ cannot be done on {first}");
         }
 
         public static ProcStatus? Decrement(DMProcState state) {
@@ -776,14 +776,14 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Decrement cannot be done on {first}");
+            throw new InvalidOperationException($"-- cannot be done on {first}");
         }
 
         public static ProcStatus? BitAnd(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null) {
+            if(first == DreamValue.Null || second == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null & anything = 0
             }
@@ -814,7 +814,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-and cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"& cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitNot(DMProcState state){
@@ -850,7 +850,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-not cannot be done on {first}");
+            throw new InvalidOperationException($"~ cannot be done on {first}");
         }
 
         public static ProcStatus? BitOr(DMProcState state) {
@@ -889,7 +889,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-or cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"| cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitShiftLeft(DMProcState state) {
@@ -899,6 +899,10 @@ namespace OpenDreamRuntime.Procs {
             if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null << anything = 0
+            }
+            if(second == DreamValue.Null) {
+                state.Push(first);
+                return null; //early return for anything << null = anything
             }
 
             switch(first.Type) {
@@ -925,7 +929,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-shift-left cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"<< cannot be done between {first} and {second}");
         }
 
 
@@ -938,6 +942,11 @@ namespace OpenDreamRuntime.Procs {
                 state.AssignReference(reference, DreamValue.False);
                 state.Push(DreamValue.False);
                 return null; //early return for null <<= anything = 0
+            }
+            if(second == DreamValue.Null) {
+                state.AssignReference(reference, first);
+                state.Push(first);
+                return null; //early return for anything <<= null = anything
             }
 
             DreamValue output;
@@ -969,7 +978,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-xor-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"<<= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitShiftRight(DMProcState state) {
@@ -979,6 +988,10 @@ namespace OpenDreamRuntime.Procs {
             if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null >> anything = 0
+            }
+            if(second == DreamValue.Null) {
+                state.Push(first);
+                return null; //early return for anything >> null = anything
             }
 
             switch(first.Type) {
@@ -1005,7 +1018,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-shift-right cannot be done between {first} and {second}");
+            throw new InvalidOperationException($">> cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitShiftRightReference(DMProcState state) {
@@ -1017,6 +1030,11 @@ namespace OpenDreamRuntime.Procs {
                 state.AssignReference(reference, DreamValue.False);
                 state.Push(DreamValue.False);
                 return null; //early return for null >>= anything = 0
+            }
+            if(second == DreamValue.Null) {
+                state.AssignReference(reference, first);
+                state.Push(first);
+                return null; //early return for anything >>= null = anything
             }
 
             DreamValue output;
@@ -1048,7 +1066,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-xor-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($">>= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitXor(DMProcState state) {
@@ -1058,6 +1076,10 @@ namespace OpenDreamRuntime.Procs {
             if(first == DreamValue.Null) {
                 state.Push(second);
                 return null; //early return for null ^ anything = anything
+            }
+            if(second == DreamValue.Null) {
+                state.Push(first);
+                return null; //early return for anything ^ null = anything
             }
 
             switch(first.Type) {
@@ -1084,7 +1106,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-xor cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"^ cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BitXorReference(DMProcState state) {
@@ -1127,7 +1149,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-xor-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"^= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? BooleanAnd(DMProcState state) {
@@ -1200,7 +1222,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Or-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"|= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Divide(DMProcState state) {
@@ -1210,6 +1232,10 @@ namespace OpenDreamRuntime.Procs {
             if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null / anything = 0
+            }
+            if(second == DreamValue.Null){
+                state.Push(first);
+                return null; //early return for anything / null = anything
             }
 
             switch(first.Type) {
@@ -1239,7 +1265,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Divide cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"/ cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? DivideReference(DMProcState state) {
@@ -1254,6 +1280,11 @@ namespace OpenDreamRuntime.Procs {
                 state.AssignReference(reference, output);
                 state.Push(output);
                 return null; //early return for null / anything = 0
+            }
+            if(second == DreamValue.Null){
+                state.AssignReference(reference, first);
+                state.Push(first);
+                return null; //early return for anything / null = anything
             }
 
             switch(first.Type) {
@@ -1286,7 +1317,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Divide-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"/= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Mask(DMProcState state) {
@@ -1300,7 +1331,7 @@ namespace OpenDreamRuntime.Procs {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
-                return null; //early return for null / anything = 0
+                return null; //early return for null && anything = 0
             }
 
             switch(first.Type) {
@@ -1330,7 +1361,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Bit-mask-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"&= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Modulus(DMProcState state) {
@@ -1366,7 +1397,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Modulus cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"% cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? ModulusModulus(DMProcState state) {
@@ -1406,7 +1437,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"ModulusModulus cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"%% cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? ModulusReference(DMProcState state) {
@@ -1450,7 +1481,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Modulus-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"%= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? ModulusModulusReference(DMProcState state) {
@@ -1498,14 +1529,14 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"ModulusModulus-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"%%= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Multiply(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if(first == DreamValue.Null) {
+            if(first == DreamValue.Null || second == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
                 return null; //early return for null * anything = 0
             }
@@ -1534,7 +1565,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Multiply cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"* cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? MultiplyReference(DMProcState state) {
@@ -1544,11 +1575,11 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue output;
 
-            if(first == DreamValue.Null) {
+            if(first == DreamValue.Null || second == DreamValue.Null) {
                 output = new DreamValue(0);
                 state.AssignReference(reference, output);
                 state.Push(output);
-                return null; //early return for null / anything = 0
+                return null; //early return for null * anything = 0
             }
 
             switch(first.Type) {
@@ -1578,7 +1609,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Multiply-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"*= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Negate(DMProcState state) {
@@ -1613,16 +1644,21 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Negate cannot be done on {first}");
+            throw new InvalidOperationException($"- cannot be done on {first}");
         }
 
         public static ProcStatus? Power(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
+            if(second == DreamValue.Null)
+            {
+                state.Push(new DreamValue(1.0f));
+                return null; //early return for anything ** null = 1
+            }
             if(first == DreamValue.Null) {
                 state.Push(new DreamValue(0.0f));
-                return null; //early return for null * anything = 0
+                return null; //early return for null ** anything = 0
             }
 
             switch(first.Type) {
@@ -1649,7 +1685,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Power cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"** cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Remove(DMProcState state) { //subtract-reference
@@ -1698,7 +1734,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Multiply-ref cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"-= cannot be done between {first} and {second}");
         }
 
         public static ProcStatus? Subtract(DMProcState state) {
@@ -1739,7 +1775,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
             }
             //no condition exists to handle the inputs, so error
-            throw new InvalidOperationException($"Subtract cannot be done between {first} and {second}");
+            throw new InvalidOperationException($"- cannot be done between {first} and {second}");
         }
         #endregion Math
 

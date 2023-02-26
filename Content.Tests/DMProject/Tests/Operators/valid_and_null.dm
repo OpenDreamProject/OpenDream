@@ -107,23 +107,23 @@
 	ASSERT((C(null) ~! C(null)) == C(0))
 	ASSERT((C(null) ~! C(0)) == C(1))
 
-	ASSERT(C(1) & C(1) == C(1))
-	ASSERT(C(null) & C(1) == C(0))
-	ASSERT(C(1) & C(null) == C(0))
+	ASSERT((C(1) & C(1)) == C(1))
+	ASSERT((C(null) & C(1)) == C(0))
+	ASSERT((C(1) & C(null)) == C(0))
 
-	ASSERT(C(1) ^ C(1) == C(0))
-	ASSERT(C(null) ^ C(1) == C(1))
-	ASSERT(C(1) ^ C(null) == C(1))	
+	ASSERT((C(1) ^ C(1)) == C(0))
+	ASSERT((C(null) ^ C(5)) == C(5))
+	ASSERT((C(5) ^ C(null)) == C(5))	
 
-	ASSERT(C(1) | C(1) == C(1))
-	ASSERT(C(null) | C(1) == C(1))
-	ASSERT(C(1) | C(null) == C(1))	
+	ASSERT((C(1) | C(1)) == C(1))
+	ASSERT((C(null) | C(1)) == C(1))
+	ASSERT((C(1) | C(null)) == C(1))	
 
-	ASSERT(C(1) && C(1) == C(1))
-	ASSERT(C(null) && C(1) == C(null))
-	ASSERT(C(1) && C(null) == C(null))	
+	ASSERT((C(1) && C(1)) == C(1))
+	ASSERT((C(null) && C(1)) == C(null))
+	ASSERT((C(1) && C(null)) == C(null))	
 
-	ASSERT(C(1) || C(1) == C(1))
-	ASSERT(C(null) || C(1) == C(1))
-	ASSERT(C(1) || C(null) == C(1))	
+	ASSERT((C(1) || C(1)) == C(1))
+	ASSERT((C(null) || C(1)) == C(1))
+	ASSERT((C(1) || C(null)) == C(1))	
 

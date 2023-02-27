@@ -665,6 +665,9 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DreamValue.DreamValueType.DreamObject: {
+                    if(first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _))
+                        goto case DreamValue.DreamValueType.DreamResource;
+
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);

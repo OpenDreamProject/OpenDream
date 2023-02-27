@@ -5,7 +5,7 @@
 	var/text = null
 	var/desc = null
 	var/suffix = null as opendream_unimplemented
-	var/list/verbs = list()
+	var/list/verbs = null
 
 	var/list/contents = list()
 	var/list/overlays = list()

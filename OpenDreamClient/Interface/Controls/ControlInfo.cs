@@ -56,18 +56,18 @@ namespace OpenDreamClient.Interface.Controls {
         public void RefreshVerbs() {
             _grid.Children.Clear();
 
-            foreach ((string verbType, string verbName, string verbCategory) in _dreamInterface.AvailableVerbs) {
+            foreach ((string verbName, string verbId, string verbCategory) in _dreamInterface.AvailableVerbs) {
                 if (verbCategory != PanelName)
                     continue;
 
                 InterfaceButton verbButton = new InterfaceButton() {
                     Margin = new Thickness(2),
                     MinWidth = 100,
-                    Text = verbName == string.Empty ? verbType : verbName
+                    Text = verbName
                 };
 
                 verbButton.OnPressed += _ => {
-                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbType);
+                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbId);
                 };
 
                 _grid.Children.Add(verbButton);

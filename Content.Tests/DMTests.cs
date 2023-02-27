@@ -95,7 +95,7 @@ namespace Content.Tests
                     Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
                 } else {
                     if (exception != null)
-                        Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception.Message}\"");
+                        Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception}\"");
                     else
                         Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
                 }

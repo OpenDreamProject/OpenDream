@@ -306,10 +306,10 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_CRASH(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (arguments.GetArgument(0, "msg").TryGetValueAsString(out var message))
             {
-                throw new PropagatingRuntime(message);
+                throw new DMCrashRuntime(message);
             }
 
-            throw new PropagatingRuntime("");
+            throw new DMCrashRuntime("");
         }
 
         [DreamProc("fcopy")]

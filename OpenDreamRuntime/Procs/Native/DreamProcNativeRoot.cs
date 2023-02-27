@@ -676,7 +676,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 dictSpace.TryGetValueAsInteger(out colorSpace);
             } else {
                 if (!state.Arguments.TryGetNamedArgument("index", out dreamIndex)) {
-                    state.Arguments.TryGetPositionalArgument(state.Arguments.ArgumentCount - 1, out dreamIndex);
+                    state.Arguments.TryGetPositionalArgument(state.Arguments.OrderedArgumentCount - 1, out dreamIndex);
                     state.Arguments.OrderedArguments?.Pop();
                 }
                 gradientList = state.Arguments.GetAllArguments();

@@ -52,17 +52,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return ParentType.OperatorAdd(a, b, state);
         }
-
-        public ProcStatus? OperatorIncrement(DreamValue a, DMProcState state) {
+        //AKA AddRef
+        public ProcStatus? OperatorAppend(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator++", out DreamProc overload)) {
-                    state.Call(overload, obj, new DreamProcArguments());
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator+=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
-                    throw new InvalidOperationException($"Cannot increment {a}");
+                    throw new InvalidOperationException($"Cannot append {b} to {a}");
 
-            return ParentType.OperatorIncrement(a, state);
+            return ParentType.OperatorAppend(a, b, state);
         }
 
         public ProcStatus? OperatorSubtract(DreamValue a, DreamValue b,  DMProcState state) {
@@ -75,6 +75,31 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     throw new InvalidOperationException($"Subtraction cannot be done between {a} and {b}");
 
             return ParentType.OperatorSubtract(a, b, state);
+        }
+
+        //AKA SubtractRef
+        public ProcStatus? OperatorRemove(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator-=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot remove {b} from {a}");
+
+            return ParentType.OperatorRemove(a, b, state);
+        }
+
+        public ProcStatus? OperatorIncrement(DreamValue a, DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator++", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments());
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot increment {a}");
+
+            return ParentType.OperatorIncrement(a, state);
         }
 
         public ProcStatus? OperatorDecrement(DreamValue a, DMProcState state) {
@@ -101,52 +126,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorMultiply(a, b, state);
         }
 
-        public ProcStatus? OperatorAppend(DreamValue a, DreamValue b,  DMProcState state) {
+        public ProcStatus? OperatorMultiplyRef(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator+=", out DreamProc overload)) {
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator*=", out DreamProc overload)) {
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
                 else
-                    throw new InvalidOperationException($"Cannot append {b} to {a}");
+                    throw new InvalidOperationException($"Multiplication cannot be done between {a} and {b}");
 
-            return ParentType.OperatorAppend(a, b, state);
-        }
-
-        public ProcStatus? OperatorRemove(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator-=", out DreamProc overload)) {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
-                    return ProcStatus.Called;
-                }
-                else
-                    throw new InvalidOperationException($"Cannot remove {b} from {a}");
-
-            return ParentType.OperatorRemove(a, b, state);
-        }
-
-        public ProcStatus? OperatorCombine(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|=", out DreamProc overload)) {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
-                    return ProcStatus.Called;
-                }
-                else
-                    throw new InvalidOperationException($"Cannot combine {a} and {b}");
-
-            return ParentType.OperatorCombine(a, b, state);
-        }
-
-        public ProcStatus? OperatorMask(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&=", out DreamProc overload)) {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
-                    return ProcStatus.Called;
-                }
-                else
-                    throw new InvalidOperationException($"Cannot mask {a} and {b}");
-
-            return ParentType.OperatorMask(a, b, state);
+            return ParentType.OperatorMultiplyRef(a, b, state);
         }
 
         public ProcStatus? OperatorIndex(DreamValue a, DreamValue index, DMProcState state) {
@@ -186,6 +175,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return ParentType.OperatorBitAnd(a, b, state);
         }
+        //AKA AndRef
+        public ProcStatus? OperatorMask(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator&=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot mask {a} and {b}");
+
+            return ParentType.OperatorMask(a, b, state);
+        }
 
         public ProcStatus? OperatorBitNot(DreamValue a, DMProcState state) {
             if (ParentType == null)
@@ -211,6 +212,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorBitOr(a, b, state);
         }
 
+        //AKA OrRef
+        public ProcStatus? OperatorCombine(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator|=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot combine {a} and {b}");
+
+            return ParentType.OperatorCombine(a, b, state);
+        }
+
         public ProcStatus? OperatorBitShiftLeft(DreamValue a, DreamValue b, DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator<<", out DreamProc overload)) {
@@ -221,6 +235,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     throw new InvalidOperationException($"Cannot bit-shift-left {a} by {b}");
 
             return ParentType.OperatorBitShiftLeft(a, b, state);
+        }
+
+        public ProcStatus? OperatorBitShiftLeftRef(DreamValue a, DreamValue b, DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator<<=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot bit-shift-left {a} by {b}");
+
+            return ParentType.OperatorBitShiftLeftRef(a, b, state);
         }
         public ProcStatus? OperatorBitShiftRight(DreamValue a, DreamValue b, DMProcState state) {
             if (ParentType == null)
@@ -233,17 +259,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return ParentType.OperatorBitShiftRight(a, b, state);
         }
-        public ProcStatus? OperatorBitShiftLeftRef(DreamValue a, DreamValue b, DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator<<=", out DreamProc overload)) {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
-                    return ProcStatus.Called;
-                }
-                else
-                    throw new InvalidOperationException($"Cannot bit-shift-left {a} by {b}");
 
-            return ParentType.OperatorBitShiftLeftRef(a, b, state);
-        }
         public ProcStatus? OperatorBitShiftRightRef(DreamValue a, DreamValue b, DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator>>=", out DreamProc overload)) {
@@ -267,6 +283,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return ParentType.OperatorBitXor(a, b, state);
         }
+
+        public ProcStatus? OperatorBitXorRef(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator^=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot bit-xor {a} and {b}");
+
+            return ParentType.OperatorBitXorRef(a, b, state);
+        }
+
         public ProcStatus? OperatorDivide(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator/", out DreamProc overload)) {
@@ -278,6 +307,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return ParentType.OperatorDivide(a, b, state);
         }
+
+        public ProcStatus? OperatorDivideRef(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator/=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot divide {a} by {b}");
+
+            return ParentType.OperatorDivideRef(a, b, state);
+        }
+
         public ProcStatus? OperatorModulus(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator%", out DreamProc overload)) {
@@ -289,6 +331,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             return ParentType.OperatorModulus(a, b, state);
         }
+
+        public ProcStatus? OperatorModulusRef(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator%=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot modulo {a} by {b}");
+
+            return ParentType.OperatorModulusRef(a, b, state);
+        }
+
         public ProcStatus? OperatorModulusModulus(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
                 if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator%%", out DreamProc overload)) {
@@ -299,6 +354,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     throw new InvalidOperationException($"Cannot modulo-modulo {a} by {b}");
 
             return ParentType.OperatorModulusModulus(a, b, state);
+        }
+
+        public ProcStatus? OperatorModulusModulusRef(DreamValue a, DreamValue b,  DMProcState state) {
+            if (ParentType == null)
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator%%=", out DreamProc overload)) {
+                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
+                    return ProcStatus.Called;
+                }
+                else
+                    throw new InvalidOperationException($"Cannot modulo-modulo {a} by {b}");
+
+            return ParentType.OperatorModulusModulusRef(a, b, state);
         }
         public ProcStatus? OperatorNegate(DreamValue a, DMProcState state) {
             if (ParentType == null)
@@ -313,7 +380,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
         public ProcStatus? OperatorPower(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator^", out DreamProc overload)) {
+                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator**", out DreamProc overload)) {
                     state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
                     return ProcStatus.Called;
                 }
@@ -323,17 +390,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorPower(a, b, state);
         }
 
-        public ProcStatus? OperatorBitXorRef(DreamValue a, DreamValue b,  DMProcState state) {
-            if (ParentType == null)
-                if(a.TryGetValueAsDreamObject(out DreamObject obj) && obj.TryGetProc("operator^=", out DreamProc overload)) {
-                    state.Call(overload, obj, new DreamProcArguments(new List<DreamValue>(){b}));
-                    return ProcStatus.Called;
-                }
-                else
-                    throw new InvalidOperationException($"Cannot bit-xor {a} and {b}");
 
-            return ParentType.OperatorBitXorRef(a, b, state);
-        }
         //comparators
         public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b,  DMProcState state) {
             if (ParentType == null){

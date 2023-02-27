@@ -98,6 +98,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return null;
         }
 
+        public ProcStatus? OperatorMultiplyRef(DreamValue a, DreamValue b, DMProcState state) {
+            return this.OperatorMultiply(a,b,state);
+        }
+
         public ProcStatus? OperatorEquivalent(DreamValue a, DreamValue b, DMProcState state) {
             if (a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? right)) {
                 const string elements = "abcdef";

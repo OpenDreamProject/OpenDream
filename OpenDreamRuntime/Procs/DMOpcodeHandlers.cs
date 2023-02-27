@@ -781,7 +781,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorIncrement(first, state);
+                        return metaObject?.OperatorDecrement(first, state);
                     }
                     break;
                 }
@@ -1024,7 +1024,7 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        return metaObject?.OperatorBitShiftLeft(first, second, state);
+                        return metaObject?.OperatorBitShiftRight(first, second, state);
                     }
                     break;
                 }
@@ -1332,7 +1332,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorCombine(first, second, state);
+                        return metaObject?.OperatorDivideRef(first, second, state);
                     }
                     break;
                 }
@@ -1496,7 +1496,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorModulus(first, second, state);
+                        return metaObject?.OperatorModulusRef(first, second, state);
                     }
                     break;
                 }
@@ -1544,7 +1544,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorModulusModulus(first, second, state);
+                        return metaObject?.OperatorModulusModulusRef(first, second, state);
                     }
                     break;
                 }
@@ -1624,7 +1624,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorMultiply(first, second, state);
+                        return metaObject?.OperatorMultiplyRef(first, second, state);
                     }
                     break;
                 }

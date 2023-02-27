@@ -1746,7 +1746,7 @@ namespace OpenDreamRuntime.Procs {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
                         state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorSubtract(first, second, state);
+                        return metaObject?.OperatorRemove(first, second, state);
                     }
                     break;
                 }

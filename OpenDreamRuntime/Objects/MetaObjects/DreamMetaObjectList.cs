@@ -120,7 +120,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else {
                 list.AddValue(b);
             }
-            state.Push(new DreamValue(list));
+            state.Push(a);
             return null;
         }
 
@@ -151,7 +151,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 list.AddValue(b);
             }
 
-            state.Push(new DreamValue(list));
+            state.Push(a);
             return null;
         }
 

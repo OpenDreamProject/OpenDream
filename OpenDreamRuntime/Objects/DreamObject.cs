@@ -107,7 +107,7 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Cannot set variable on a deleted object!");
             }
             var oldValue = SetVariableValue(name, value);
-            if (ObjectDefinition.MetaObject != null) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
+            if (ObjectDefinition.MetaObject != null && oldValue != value) ObjectDefinition.MetaObject.OnVariableSet(this, name, value, oldValue);
         }
 
         /// <summary>

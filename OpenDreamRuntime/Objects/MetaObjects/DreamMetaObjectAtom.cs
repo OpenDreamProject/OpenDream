@@ -133,8 +133,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "overlays": {
-                    //if it's a new list object, cut all the previous and clean up
-                    if (value != oldValue && oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= OverlayValueAssigned;
                         oldList.BeforeValueRemoved -= OverlayBeforeValueRemoved;
@@ -153,8 +152,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "underlays": {
-                    //if it's a new list object, cut all the previous and clean up
-                    if (value != oldValue && oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= UnderlayValueAssigned;
                         oldList.BeforeValueRemoved -= UnderlayBeforeValueRemoved;

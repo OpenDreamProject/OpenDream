@@ -49,9 +49,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         /// Simple helper for quickly making a basic matrix given its six values, in a-to-f order.
         /// </summary>
         /// <remarks>
-        /// Note that this skips over making a New() call, so hopefully you're not doing anything meaningful in there, DM-side.
+        /// Note that this skips over making a New() call, so hopefully you're not doing anything meaningful in there, DM-side. <br/>
+        /// <see langword="FIXME:"/> actually call /New(), if necessary, when creating a matrix in this way.
         /// </remarks>
-        /// <returns>A matrix created with a to f as its arguments to New().</returns>
+        /// <returns>A matrix created with a to f manually set to the floats given.</returns>
         public static DreamObject MakeMatrix(IDreamObjectTree ObjectTree, float a, float b, float c, float d, float e, float f) {
             var newMatrix = ObjectTree.CreateObject(ObjectTree.Matrix);
             newMatrix.SetVariableValue("a", new(a));

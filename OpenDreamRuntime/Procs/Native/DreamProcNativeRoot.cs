@@ -1306,10 +1306,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("f")]
         public static DreamValue NativeProc_matrix(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamObject matrix;
-            DreamMetaObjectMatrix metaObjectMatrix = (DreamMetaObjectMatrix) ObjectTree.Matrix.ObjectDefinition.MetaObject!;
             // normal, documented uses of matrix().
             switch(arguments.ArgumentCount) {
                 case 6: // Take the arguments and construct a matrix.
+                case 0: // Since arguments are empty, this just creates an identity matrix.
                     matrix = ObjectTree.CreateObject(ObjectTree.Matrix);
                     matrix.InitSpawn(arguments);
                     return new DreamValue(matrix);
@@ -1318,10 +1318,6 @@ namespace OpenDreamRuntime.Procs.Native {
                     if (!firstArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
                         throw new ArgumentException($"/matrix() called with invalid argument '{firstArg}'");
                     matrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, argObject);
-                    return new DreamValue(matrix);
-                case 0: // Create an identity matrix.
-                    matrix = ObjectTree.CreateObject(ObjectTree.Matrix);
-                    matrix.InitSpawn(new DreamProcArguments());
                     return new DreamValue(matrix);
                 case 5:
                 case 4:
@@ -1364,7 +1360,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     matrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, argObject);
                     return new DreamValue(matrix);
                 case MatrixOpcode.Invert:
-                    if (!firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out DreamObject matrixInput)) // Expecting a matrix here
+                    if (!firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out DreamObject? matrixInput)) // Expecting a matrix here
                         throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}'");
                     //Choose whether we are inverting the original matrix or a clone of it
                     var invertableMatrix = doModify ? matrixInput : DreamMetaObjectMatrix.MatrixClone(ObjectTree, matrixInput);
@@ -1421,7 +1417,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     //matrix(x, y, MATRIX_TRANSLATE)
                     //matrix(m1, x, y, MATRIX_TRANSLATE)
                     if(arguments.ArgumentCount == 4) { // the 4-arg situation
-                        if (!firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out DreamObject targetMatrix)) // Expecting a matrix here
+                        if (!firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out DreamObject? targetMatrix)) // Expecting a matrix here
                             throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}', expecting matrix");
                         DreamObject translateMatrix;
                         if (doModify)

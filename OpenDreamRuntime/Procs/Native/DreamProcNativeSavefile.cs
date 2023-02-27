@@ -8,13 +8,13 @@ public static class DreamProcNativeSavefile {
     [DreamProc("ExportText")]
     [DreamProcParameter("path", Type = DreamValueType.String)]
     [DreamProcParameter("file", Type = DreamValueType.String | DreamValueType.DreamResource)]
-    public static DreamValue NativeProc_ExportText(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+    public static DreamValue NativeProc_ExportText(NativeProc.State state) {
         // Implementing this correctly is a fair amount of effort, and the only use of it I'm aware of is icon2base64()
         // So this implements it just enough to get that working
 
-        var savefile = DreamMetaObjectSavefile.ObjectToSavefile[instance];
-        DreamValue path = arguments.GetArgument(0, "path");
-        DreamValue file = arguments.GetArgument(1, "file");
+        var savefile = DreamMetaObjectSavefile.ObjectToSavefile[state.Src];
+        DreamValue path = state.Arguments.GetArgument(0, "path");
+        DreamValue file = state.Arguments.GetArgument(1, "file");
 
         if (!path.TryGetValueAsString(out var pathStr) || file != DreamValue.Null) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
@@ -25,7 +25,7 @@ public static class DreamProcNativeSavefile {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
-        if (!DreamProcNativeRoot.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
+        if (!state.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
@@ -35,8 +35,8 @@ public static class DreamProcNativeSavefile {
     }
 
     [DreamProc("Flush")]
-    public static DreamValue NativeProc_Flush(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-        var savefile = DreamMetaObjectSavefile.ObjectToSavefile[instance];
+    public static DreamValue NativeProc_Flush(NativeProc.State state) {
+        var savefile = DreamMetaObjectSavefile.ObjectToSavefile[state.Src];
 
         savefile.Flush();
         return DreamValue.Null;

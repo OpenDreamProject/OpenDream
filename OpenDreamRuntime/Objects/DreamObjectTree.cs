@@ -342,7 +342,7 @@ namespace OpenDreamRuntime.Objects {
 
         public NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func, out int procId) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(owningType, name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+            var proc = new NativeProc(owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
             procId = Procs.Count;
             Procs.Add(proc);
             return proc;
@@ -350,7 +350,7 @@ namespace OpenDreamRuntime.Objects {
 
         public AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func, out int procId) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(owningType, name, null, argumentNames, null, defaultArgumentValues, func,null, null, null, null);
+            var proc = new AsyncNativeProc(owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
             procId = Procs.Count;
             Procs.Add(proc);
             return proc;
@@ -358,14 +358,14 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(DreamPath.Root, name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+            var proc = new NativeProc(DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
 
             Procs[_globalProcIds[name]] = proc;
         }
 
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(DreamPath.Root, name, null, argumentNames, null, defaultArgumentValues, func, null, null, null, null);
+            var proc = new AsyncNativeProc(DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
 
             Procs[_globalProcIds[name]] = proc;
         }

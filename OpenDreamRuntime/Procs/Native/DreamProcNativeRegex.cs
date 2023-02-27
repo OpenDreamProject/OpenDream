@@ -12,13 +12,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)]
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
-        public static DreamValue NativeProc_Find(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[instance];
-            DreamValue haystack = arguments.GetArgument(0, "haystack");
-            int next = GetNext(instance, arguments.GetArgument(1, "Start"), dreamRegex.IsGlobal);
-            int end = arguments.GetArgument(2, "End").GetValueAsInteger();
+        public static DreamValue NativeProc_Find(NativeProc.State state) {
+            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
+            DreamValue haystack = state.Arguments.GetArgument(0, "haystack");
+            int next = GetNext(state.Src, state.Arguments.GetArgument(1, "Start"), dreamRegex.IsGlobal);
+            int end = state.Arguments.GetArgument(2, "End").GetValueAsInteger();
 
-            instance.SetVariable("text", haystack);
+            state.Src.SetVariable("text", haystack);
 
             string haystackString;
             if (!haystack.TryGetValueAsString(out haystackString)) {
@@ -30,20 +30,20 @@ namespace OpenDreamRuntime.Procs.Native {
 
             Match match = dreamRegex.Regex.Match(haystackString, next - 1, end - next);
             if (match.Success) {
-                instance.SetVariable("index", new DreamValue(match.Index + 1));
-                instance.SetVariable("match", new DreamValue(match.Value));
+                state.Src.SetVariable("index", new DreamValue(match.Index + 1));
+                state.Src.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = DreamProcNativeRoot.ObjectTree.CreateList(match.Groups.Count);
+                    DreamList groupList = state.ObjectTree.CreateList(match.Groups.Count);
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));
                     }
 
-                    instance.SetVariable("group", new DreamValue(groupList));
+                    state.Src.SetVariable("group", new DreamValue(groupList));
                 }
 
                 if (dreamRegex.IsGlobal) {
-                    instance.SetVariable("next", new DreamValue(match.Index + match.Length));
+                    state.Src.SetVariable("next", new DreamValue(match.Index + match.Length));
                 }
 
                 return new DreamValue(match.Index + 1);

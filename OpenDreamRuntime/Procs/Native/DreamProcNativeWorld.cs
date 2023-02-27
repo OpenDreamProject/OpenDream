@@ -23,7 +23,7 @@ namespace OpenDreamRuntime.Procs.Native {
             var client = new HttpClient();
             var response = await client.GetAsync(uri);
 
-            var list = DreamProcNativeRoot.ObjectTree.CreateList();
+            var list = state.ObjectTree.CreateList();
             foreach (var header in response.Headers) {
                 // TODO: How to handle headers with multiple values?
                 list.SetValue(new DreamValue(header.Key), new DreamValue(header.Value.First()));
@@ -38,10 +38,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("GetConfig")]
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
-        public static DreamValue NativeProc_GetConfig(DreamObject src, DreamObject usr, DreamProcArguments arguments)
-        {
-            arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            var param = arguments.GetArgument(1, "param");
+        public static DreamValue NativeProc_GetConfig(NativeProc.State state) {
+            state.Arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
+            var param = state.Arguments.GetArgument(1, "param");
 
             switch (config_set) {
                 case "env":
@@ -69,11 +68,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("value", Type = DreamValue.DreamValueType.String)]
-        public static DreamValue NativeProc_SetConfig(DreamObject src, DreamObject usr, DreamProcArguments arguments)
-        {
-            arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            arguments.GetArgument(1, "param").TryGetValueAsString(out string param);
-            var value = arguments.GetArgument(2, "value");
+        public static DreamValue NativeProc_SetConfig(NativeProc.State state) {
+            state.Arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
+            state.Arguments.GetArgument(1, "param").TryGetValueAsString(out string param);
+            var value = state.Arguments.GetArgument(2, "value");
 
             switch (config_set) {
                 case "env":

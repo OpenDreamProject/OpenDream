@@ -189,7 +189,7 @@ namespace OpenDreamRuntime
         }
 
         public void HandleMsgTopic(MsgTopic pTopic) {
-            DreamList hrefList = DreamProcNativeRoot.params2list(HttpUtility.UrlDecode(pTopic.Query));
+            DreamList hrefList = DreamProcNativeRoot.params2list(_objectTree, HttpUtility.UrlDecode(pTopic.Query));
             DreamValue srcRefValue = hrefList.GetValue(new DreamValue("src"));
             DreamValue src = DreamValue.Null;
 

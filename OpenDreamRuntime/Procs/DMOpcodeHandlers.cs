@@ -406,7 +406,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject) && dreamObject != null) {
                 objectDefinition = dreamObject.ObjectDefinition;
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;

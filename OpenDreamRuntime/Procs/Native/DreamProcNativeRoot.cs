@@ -2127,15 +2127,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
-        public static DreamValue NativeProc_splicetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_splicetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);            
             arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
             arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);             
             arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text);
 
             if(text == null) 
-                if(insert_text == null | insert_text == "")
+                if(String.IsNullOrEmpty(insert_text))
                     return DreamValue.Null;
                 else
                     return new DreamValue(insert_text);
@@ -2164,15 +2163,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
-        public static DreamValue NativeProc_splicetext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments)
-        {
+        public static DreamValue NativeProc_splicetext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);            
             arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
             arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);             
             arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insert_text);
 
             if(text == null) //this is for BYOND compat, and causes the function to ignore start/end if text is null or empty
-                if(insert_text == null | insert_text == "")
+                if(String.IsNullOrEmpty(insert_text))
                     return DreamValue.Null;
                 else
                     return new DreamValue(insert_text);

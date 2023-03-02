@@ -1,30 +1,26 @@
 ﻿using OpenDreamShared.Dream.Procs;
-using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Utility;
 
-namespace OpenDreamClient.Interface.Prompts
-{
+namespace OpenDreamClient.Interface.Prompts {
     sealed class MessagePrompt : InputWindow {
-        private readonly LineEdit _lineEdit;
+        private readonly TextEdit _textEdit;
 
         public MessagePrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(
             promptId, title, message, defaultValue, canCancel) {
-            // TODO: Switch this to a proper multi-line edit.
-            _lineEdit = new LineEdit {
-                MinHeight = 100,
-                MaxWidth = 500,
-                MaxHeight = 400,
-                //AcceptsReturn = true,
-                //VerticalScrollBarVisibility = ScrollBarVisibility.Visible,
-                //HorizontalScrollBarVisibility = ScrollBarVisibility.Auto,
-                Text = defaultValue,
+            _textEdit = new TextEdit {
+                TextRope = new Rope.Leaf(defaultValue),
+
+                // Select all the text by default
+                CursorPosition = new TextEdit.CursorPos(defaultValue.Length, TextEdit.LineBreakBias.Bottom),
+                SelectionStart = new TextEdit.CursorPos(0, TextEdit.LineBreakBias.Bottom)
             };
 
-            SetPromptControl(_lineEdit);
+            SetPromptControl(_textEdit);
         }
 
         protected override void OkButtonClicked() {
-            FinishPrompt(DMValueType.Message, _lineEdit.Text);
+            FinishPrompt(DMValueType.Message, Rope.Collapse(_textEdit.TextRope));
         }
     }
 }

@@ -304,12 +304,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("CRASH")]
         [DreamProcParameter("msg", Type = DreamValueType.String)]
         public static DreamValue NativeProc_CRASH(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (arguments.GetArgument(0, "msg").TryGetValueAsString(out var message))
-            {
-                throw new DMCrashRuntime(message);
-            }
+            arguments.GetArgument(0, "msg").TryGetValueAsString(out var message);
 
-            throw new DMCrashRuntime("");
+            throw new DMCrashRuntime(new DreamValue(message ?? String.Empty));
         }
 
         [DreamProc("fcopy")]
@@ -2080,20 +2077,20 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(0);
             }
             StringInfo textStringInfo = new StringInfo(text);
-            
+
             if(start < 0) {
                 start = Math.Max(start + textStringInfo.LengthInTextElements + 1, 1);
             }
 
             int result = 0;
-            
+
             TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
             TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
 
             while(textElementEnumerator.MoveNext()) {
                 bool found = false;
                 needlesElementEnumerator.Reset();
-                
+
                 //lol O(N*M)
                 while (needlesElementEnumerator.MoveNext()) {
                     if (textElementEnumerator.Current.Equals(needlesElementEnumerator.Current)) {

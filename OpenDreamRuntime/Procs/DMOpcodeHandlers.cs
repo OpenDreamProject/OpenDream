@@ -179,10 +179,8 @@ namespace OpenDreamRuntime.Procs {
             IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
             DMReference reference = state.ReadReference();
             int jumpToIfFailure = state.ReadInt();
-            bool successfulEnumeration = enumerator.MoveNext();
 
-            state.AssignReference(reference, enumerator.Current);
-            if (!successfulEnumeration)
+            if (!enumerator.Enumerate(state, reference))
                 state.Jump(jumpToIfFailure);
 
             return null;

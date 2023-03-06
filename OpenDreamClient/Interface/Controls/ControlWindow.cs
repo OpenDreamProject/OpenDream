@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -7,6 +8,7 @@ namespace OpenDreamClient.Interface.Controls {
     public sealed class ControlWindow : InterfaceControl {
         [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
         // Just like in win32 (which is definitely what this is inspired by let's be real),
@@ -59,7 +61,14 @@ namespace OpenDreamClient.Interface.Controls {
                 window.SetWidth = window.MaxWidth;
             if (ControlDescriptor.Size?.Y == 0)
                 window.SetHeight = window.MaxHeight;
-            window.Closing += _ => { _openWindows.Remove((window, null)); };
+            window.Closing += _ => {
+                // A window can have a command set to be run when it's closed
+                if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+                    commandSystem.RunCommand(WindowDescriptor.OnClose);
+                }
+
+                _openWindows.Remove((window, null));
+            };
 
             _openWindows.Add((window, null));
             UpdateWindowAttributes((window, null));

@@ -206,8 +206,8 @@ namespace OpenDreamClient.Interface {
                     outputBrowser = FindElementWithName(pBrowse.Window) as ControlBrowser;
 
                     if (outputBrowser == null) {
-
                         if (!_popupWindows.TryGetValue(pBrowse.Window, out popup)) {
+                            // Creating a new popup
                             popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
                             popup.Closed += () => { _popupWindows.Remove(pBrowse.Window); };
 
@@ -300,7 +300,11 @@ namespace OpenDreamClient.Interface {
                         return menuElement;
                 }
 
-                if (MacroSets.TryGetValue(elementName, out var macroSet)) return macroSet;
+                if (MacroSets.TryGetValue(elementName, out var macroSet))
+                    return macroSet;
+
+                if (_popupWindows.TryGetValue(elementName, out var popup))
+                    return popup.WindowElement;
             }
 
             return null;

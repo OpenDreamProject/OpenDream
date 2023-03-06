@@ -35,6 +35,8 @@ public sealed class WindowDescriptor : ControlDescriptor {
     public string Title = null;
     [DataField("macro")]
     public string Macro = null;
+    [DataField("on-close")]
+    public string OnClose = null;
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 

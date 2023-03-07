@@ -304,12 +304,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("CRASH")]
         [DreamProcParameter("msg", Type = DreamValueType.String)]
         public static DreamValue NativeProc_CRASH(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (arguments.GetArgument(0, "msg").TryGetValueAsString(out var message))
-            {
-                throw new DMCrashRuntime(message);
-            }
+            arguments.GetArgument(0, "msg").TryGetValueAsString(out var message);
 
-            throw new DMCrashRuntime("");
+            throw new DMCrashRuntime(new DreamValue(message ?? String.Empty));
         }
 
         [DreamProc("fcopy")]
@@ -2080,20 +2077,20 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(0);
             }
             StringInfo textStringInfo = new StringInfo(text);
-            
+
             if(start < 0) {
                 start = Math.Max(start + textStringInfo.LengthInTextElements + 1, 1);
             }
 
             int result = 0;
-            
+
             TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
             TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
 
             while(textElementEnumerator.MoveNext()) {
                 bool found = false;
                 needlesElementEnumerator.Reset();
-                
+
                 //lol O(N*M)
                 while (needlesElementEnumerator.MoveNext()) {
                     if (textElementEnumerator.Current.Equals(needlesElementEnumerator.Current)) {
@@ -2120,6 +2117,82 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamObject soundObject = ObjectTree.CreateObject(ObjectTree.Sound);
             soundObject.InitSpawn(arguments);
             return new DreamValue(soundObject);
+        }
+
+        [DreamProc("splicetext")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
+        public static DreamValue NativeProc_splicetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);
+            arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);
+            arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
+
+            if(text == null)
+                if(String.IsNullOrEmpty(insertText))
+                    return DreamValue.Null;
+                else
+                    return new DreamValue(insertText);
+            else if(text == "")
+                return new DreamValue(insertText);
+
+            //runtime if start = 0 runtime error: bad text or out of bounds
+
+            if(end == 0 || end > text.Length + 1)
+                end = text.Length+1;
+            if(start < 0)
+                start = Math.Max(start + text.Length + 1, 1);
+            if(end < 0)
+                end = Math.Min(end + text.Length + 1, text.Length);
+
+            if(start == 0 || start > text.Length || start > end)
+                throw new Exception("bad text or out of bounds");
+
+            string result = text.Remove(start - 1, (end-start)).Insert(start - 1, insertText);
+
+            return new DreamValue(result);
+        }
+
+        [DreamProc("splicetext_char")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
+        public static DreamValue NativeProc_splicetext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);
+            arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);
+            arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
+
+            if(text == null) //this is for BYOND compat, and causes the function to ignore start/end if text is null or empty
+                if(String.IsNullOrEmpty(insertText))
+                    return DreamValue.Null;
+                else
+                    return new DreamValue(insertText);
+            else if(text == "")
+                return new DreamValue(insertText);
+
+            //runtime if start = 0 runtime error: bad text or out of bounds
+            StringInfo textElements = new StringInfo(text);
+            if(end == 0 || end > textElements.LengthInTextElements + 1)
+                end = textElements.LengthInTextElements+1;
+            if(start < 0)
+                start = Math.Max(start + textElements.LengthInTextElements + 1, 1);
+            if(end < 0)
+                end = Math.Min(end + textElements.LengthInTextElements + 1, textElements.LengthInTextElements);
+
+            if(start == 0 || start > textElements.LengthInTextElements || start > end)
+                throw new Exception("bad text or out of bounds");
+
+
+            String result = textElements.SubstringByTextElements(0, start - 1);
+            result += insertText;
+            if(end <= textElements.LengthInTextElements)
+                result += textElements.SubstringByTextElements(end - 1);
+
+            return new DreamValue(result);
         }
 
         [DreamProc("splittext")]

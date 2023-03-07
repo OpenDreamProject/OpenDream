@@ -193,10 +193,8 @@ namespace OpenDreamRuntime.Procs {
             IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
             DMReference reference = state.ReadReference();
             int jumpToIfFailure = state.ReadInt();
-            bool successfulEnumeration = enumerator.MoveNext();
 
-            state.AssignReference(reference, enumerator.Current);
-            if (!successfulEnumeration)
+            if (!enumerator.Enumerate(state, reference))
                 state.Jump(jumpToIfFailure);
 
             return null;
@@ -2134,11 +2132,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Throw(DMProcState state) {
             DreamValue value = state.Pop();
 
-            if (value.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Exception, out DreamObject exception)) {
-                throw new DMRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
-            }
-
-            throw new DMRuntime(value);
+            throw new DMThrowException(value);
         }
 
         public static ProcStatus? Try(DMProcState state) {

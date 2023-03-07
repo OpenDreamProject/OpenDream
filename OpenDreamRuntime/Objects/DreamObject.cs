@@ -90,6 +90,7 @@ namespace OpenDreamRuntime.Objects {
             if(Deleted){
                 throw new Exception("Cannot try to get variable on a deleted object");
             }
+
             if ((_variables?.TryGetValue(name, out variableValue) is true) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
                 if (ObjectDefinition.MetaObject != null) variableValue = ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);
 

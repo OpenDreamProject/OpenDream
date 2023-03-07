@@ -96,6 +96,8 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sound);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_spantext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_spantext_char);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splittext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sqrt);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_stat);

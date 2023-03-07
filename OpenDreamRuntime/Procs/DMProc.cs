@@ -304,11 +304,11 @@ namespace OpenDreamRuntime.Procs {
                 ProcStatus? status;
                 try {
                     status = handler.Invoke(this);
-                } catch (DMRuntime ce) {
+                } catch (Exception e) {
                     if (!IsCatching())
                         throw;
 
-                    CatchException(ce.Value);
+                    CatchException(e);
                     continue;
                 }
 
@@ -374,13 +374,20 @@ namespace OpenDreamRuntime.Procs {
 
         public override bool IsCatching() => _catchPosition.Count > 0;
 
-        public override void CatchException(DreamValue value) {
+        public override void CatchException(Exception exception) {
             if (!IsCatching())
-                base.CatchException(value);
+                base.CatchException(exception);
 
             Jump(_catchPosition.Pop());
             var varIdx = _catchVarIndex.Pop();
             if (varIdx != NoTryCatchVar) {
+                DreamValue value;
+
+                if (exception is DMThrowException throwException)
+                    value = throwException.Value;
+                else
+                    value = new DreamValue(exception.Message); // TODO: Probably need to create an /exception
+
                 _localVariables[varIdx] = value;
             }
         }

@@ -10,8 +10,8 @@ namespace OpenDreamRuntime.Procs {
         public sealed class State : ProcState {
             public static readonly Stack<State> Pool = new();
 
-            public DreamObject Src;
-            public DreamObject Usr;
+            public DreamObject? Src;
+            public DreamObject? Usr;
             public DreamProcArguments Arguments;
 
             private AsyncNativeProc? _proc;
@@ -27,7 +27,7 @@ namespace OpenDreamRuntime.Procs {
 
             private bool _inResume;
 
-            public void Initialize(AsyncNativeProc proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+            public void Initialize(AsyncNativeProc? proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
                 base.Initialize(thread, true);
 
                 _proc = proc;
@@ -102,7 +102,7 @@ namespace OpenDreamRuntime.Procs {
                 Result = await _taskFunc(this);
             }
 
-            protected override ProcStatus InternalResume() {
+            public override ProcStatus Resume() {
                 _inResume = true;
 
                 // We've just been created, start our task
@@ -176,7 +176,7 @@ namespace OpenDreamRuntime.Procs {
             _taskFunc = taskFunc;
         }
 
-        public override ProcState CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
             if (_defaultArgumentValues != null) {
                 var newNamedArguments = arguments.NamedArguments;
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {

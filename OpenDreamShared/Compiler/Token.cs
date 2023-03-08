@@ -1,4 +1,6 @@
-﻿namespace OpenDreamShared.Compiler {
+﻿// ReSharper disable InconsistentNaming
+
+namespace OpenDreamShared.Compiler {
     // Must be : byte for ReadOnlySpan<TokenType> x = new TokenType[] { } to be intrinsic'd by the compiler.
     public enum TokenType : byte {
         //Base lexer
@@ -36,6 +38,7 @@
         DM_Preproc_Punctuator_Question,
         DM_Preproc_Punctuator_RightBracket,
         DM_Preproc_Punctuator_RightParenthesis,
+        DM_Preproc_Punctuator_Semicolon,
         DM_Preproc_String,
         DM_Preproc_TokenConcat,
         DM_Preproc_Undefine,
@@ -140,21 +143,20 @@
         DMF_Equals,
         DMF_Macro,
         DMF_Menu,
+        DMF_Period,
         DMF_Semicolon,
         DMF_Value,
         DMF_Window
     }
 
-    public sealed partial class Token {
-        public TokenType Type;
+    public sealed class Token {
+        public readonly TokenType Type;
         public Location Location;
         /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>
-        public string Text;
-        public object Value;
+        public readonly string Text;
+        public readonly object Value;
 
-        public string PrintableText {
-            get => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
-        }
+        public string PrintableText => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
 
         public Token(TokenType type, string text, Location location, object value) {
             Type = type;

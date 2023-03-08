@@ -9,7 +9,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        public static readonly Dictionary<DreamObject, VerbsList> VerbLists = new();
+
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
         [Dependency] private readonly IDreamMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
@@ -27,26 +28,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 _mapManager.AllAtoms.Add(dreamObject);
             }
 
-            // TODO: Create a special list to prevent this needless list creation
-            List<int>? objectVerbs = dreamObject.ObjectDefinition.Verbs;
-            if (objectVerbs != null) {
-                DreamList verbsList = DreamList.Create(objectVerbs.Count);
-
-                foreach (int verbId in objectVerbs) {
-                    DreamProc verb = _objectTree.Procs[verbId];
-
-                    verbsList.AddValue(new DreamValue(verb));
-                }
-
-                dreamObject.SetVariableValue("verbs", new DreamValue(verbsList));
-            }
-
-            _filterLists[dreamObject] = new DreamFilterList(dreamObject);
+            VerbLists[dreamObject] = new VerbsList(_objectTree, dreamObject);
+            _filterLists[dreamObject] = new DreamFilterList(_objectTree.List.ObjectDefinition, dreamObject);
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
+            VerbLists.Remove(dreamObject);
             _filterLists.Remove(dreamObject);
 
             _atomManager.DeleteMovableEntity(dreamObject);
@@ -133,8 +122,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         appearance.Direction = (AtomDirection)dir;
                     });
                     break;
-                case "transform":
-                {
+                case "transform":  {
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         float[] matrixArray = value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var matrix)
                             ? DreamMetaObjectMatrix.MatrixToTransformFloatArray(matrix)
@@ -154,7 +142,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList overlayList;
                     if (!value.TryGetValueAsDreamList(out overlayList)) {
-                        overlayList = DreamList.Create();
+                        overlayList = _objectTree.CreateList();
                     }
 
                     overlayList.ValueAssigned += OverlayValueAssigned;
@@ -173,13 +161,28 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     DreamList underlayList;
                     if (!value.TryGetValueAsDreamList(out underlayList)) {
-                        underlayList = DreamList.Create();
+                        underlayList = _objectTree.CreateList();
                     }
 
                     underlayList.ValueAssigned += UnderlayValueAssigned;
                     underlayList.BeforeValueRemoved += UnderlayBeforeValueRemoved;
                     _atomManager.UnderlaysListToAtom[underlayList] = dreamObject;
                     dreamObject.SetVariableValue(varName, new DreamValue(underlayList));
+                    break;
+                }
+                case "verbs": {
+                    VerbsList verbsList = VerbLists[dreamObject];
+
+                    verbsList.Cut();
+
+                    if (value.TryGetValueAsDreamList(out var valueList)) {
+                        foreach (DreamValue verbValue in valueList.GetValues()) {
+                            verbsList.AddValue(verbValue);
+                        }
+                    } else if (value != DreamValue.Null) {
+                        verbsList.AddValue(value);
+                    }
+
                     break;
                 }
                 case "filters": {
@@ -209,6 +212,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     matrix.InitSpawn(new DreamProcArguments(new() { value }));
 
                     return new DreamValue(matrix);
+                case "verbs":
+                    return new DreamValue(VerbLists[dreamObject]);
                 case "filters":
                     return new DreamValue(_filterLists[dreamObject]);
                 default:

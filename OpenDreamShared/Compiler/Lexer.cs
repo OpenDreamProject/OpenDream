@@ -113,22 +113,6 @@ namespace OpenDreamShared.Compiler {
             _currentPosition++;
             return base.Advance();
         }
-
-        protected bool IsAlphabetic(char c) {
-            return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-        }
-
-        protected bool IsNumeric(char c) {
-            return (c >= '0' && c <= '9');
-        }
-
-        protected bool IsAlphanumeric(char c) {
-            return IsAlphabetic(c) || IsNumeric(c);
-        }
-
-        protected bool IsHex(char c) {
-            return IsNumeric(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
-        }
     }
 
     [Virtual]

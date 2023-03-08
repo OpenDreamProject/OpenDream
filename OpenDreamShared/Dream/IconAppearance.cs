@@ -83,36 +83,38 @@ namespace OpenDreamShared.Dream {
         }
 
         public override int GetHashCode() {
-            int hashCode = (Icon + IconState).GetHashCode();
-            hashCode += Direction.GetHashCode();
-            hashCode += PixelOffset.GetHashCode();
-            hashCode += Color.GetHashCode();
-            hashCode += Layer.GetHashCode();
-            hashCode += Invisibility;
-            hashCode += Opacity.GetHashCode();
-            hashCode += MouseOpacity.GetHashCode();
+            HashCode hashCode = new HashCode();
+
+            hashCode.Add(Icon);
+            hashCode.Add(IconState);
+            hashCode.Add(Direction);
+            hashCode.Add(PixelOffset);
+            hashCode.Add(Color);
+            hashCode.Add(Layer);
+            hashCode.Add(Invisibility);
+            hashCode.Add(Opacity);
+            hashCode.Add(MouseOpacity);
 
             foreach (int overlay in Overlays) {
-                hashCode += overlay;
+                hashCode.Add(overlay);
             }
 
             foreach (int underlay in Underlays) {
-                hashCode += underlay;
+                hashCode.Add(underlay);
             }
 
             foreach (DreamFilter filter in Filters) {
-                hashCode += filter.GetHashCode();
+                hashCode.Add(filter);
             }
 
             for (int i = 0; i < 6; i++) {
-                hashCode += Transform[i].GetHashCode();
+                hashCode.Add(Transform[i]);
             }
 
-            return hashCode;
+            return hashCode.ToHashCode();
         }
 
-        public void SetColor(string color)
-        {
+        public void SetColor(string color) {
             // TODO the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
             if (color == string.Empty) color = "#ffffff";
             if (!ColorHelpers.TryParseColor(color, out Color)) {

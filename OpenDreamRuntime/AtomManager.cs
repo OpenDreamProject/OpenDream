@@ -12,11 +12,14 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
         private readonly Dictionary<DreamObject, EntityUid> _atomToEntity = new();
         private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
+
+        private ServerAppearanceSystem? _appearanceSystem;
 
         private EntityUid CreateMovableEntity(DreamObject atom) {
             EntityUid entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
@@ -86,22 +89,22 @@ namespace OpenDreamRuntime {
             // Don't send the updated appearance to clients, they will animate it
             sprite.SetAppearance(appearance, dirty: false);
 
-            ServerAppearanceSystem appearanceSystem = EntitySystem.Get<ServerAppearanceSystem>();
-            appearanceSystem.Animate(GetMovableEntity(atom), appearance, duration);
+            _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+            _appearanceSystem.Animate(GetMovableEntity(atom), appearance, duration);
         }
 
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
             IconAppearance appearance = new IconAppearance();
 
-            if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource icon)) {
+            if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource? icon)) {
                 appearance.Icon = icon.Id;
             }
 
-            if (atom.GetVariable("icon_state").TryGetValueAsString(out string iconState)) {
+            if (atom.GetVariable("icon_state").TryGetValueAsString(out string? iconState)) {
                 appearance.IconState = iconState;
             }
 
-            if (atom.GetVariable("color").TryGetValueAsString(out string color)) {
+            if (atom.GetVariable("color").TryGetValueAsString(out string? color)) {
                 appearance.SetColor(color);
             }
 

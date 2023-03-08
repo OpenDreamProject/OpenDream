@@ -190,9 +190,11 @@ namespace DMCompiler {
         }
 
         /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
-        public static void Emit(WarningCode code, Location loc, string message) {
+        /// <returns> True if the warning was an error, false if not.</returns>
+        public static bool Emit(WarningCode code, Location loc, string message) {
             ErrorLevel level = Config.errorConfig[code];
             Emit(new CompilerEmission(level, code, loc, message));
+            return level == ErrorLevel.Error;
         }
 
         /// <summary>

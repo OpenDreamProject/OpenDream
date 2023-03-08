@@ -14,6 +14,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IServerNetManager _netManager = default!;
         [Dependency] private readonly DreamResourceManager _dreamRscMan = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -64,7 +65,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             dreamObject.SetVariable("log", log);
 
             DreamValue fps = dreamObject.ObjectDefinition.Variables["fps"];
-            if (fps.TryGetValueAsInteger(out var fpsValue)) {
+
+            if (fps.TryGetValueAsInteger(out var fpsValue) && _netManager.IsServer) {
                 _cfg.SetCVar(CVars.NetTickrate, fpsValue);
             }
 
@@ -112,7 +114,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
                 case "contents":
-                    return new DreamValue(new WorldContentsList(_dreamMapManager));
+                    return new DreamValue(new WorldContentsList(_objectTree.List.ObjectDefinition, _dreamMapManager));
                 case "process":
                     return new DreamValue(Environment.ProcessId);
                 case "tick_lag":
@@ -176,7 +178,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     }
                 }
                 case "vars":
-                    return new DreamValue(DreamListVars.Create(dreamObject));
+                    return new DreamValue(new DreamListVars(_objectTree.List.ObjectDefinition, dreamObject));
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }

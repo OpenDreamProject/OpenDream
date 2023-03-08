@@ -4,5 +4,5 @@
 #define B 6
 
 /proc/RunTest()
-	var/thing1 = A
 	var/thing2 = B
+	var/thing1 = A

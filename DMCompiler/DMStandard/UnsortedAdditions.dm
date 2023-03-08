@@ -20,6 +20,8 @@
 	set opendream_unimplemented = TRUE
 /proc/link(url)
 	set opendream_unimplemented = TRUE
+/proc/load_resource(File)
+	set opendream_unimplemented = TRUE
 proc/missile(Type, Start, End)
 	set opendream_unimplemented = TRUE
 /proc/obounds(Ref=src, Dist=0)
@@ -30,15 +32,11 @@ proc/missile(Type, Start, End)
 	set opendream_unimplemented = TRUE
 /proc/shell(command)
 	set opendream_unimplemented = TRUE
-/proc/spantext_char(Haystack,Needles,Start=1)
-	set opendream_unimplemented = TRUE
 /proc/nonspantext_char(Haystack,Needles,Start=1)
 	set opendream_unimplemented = TRUE
-/proc/splicetext(Text,Start=1,End=0,Insert="")
-	set opendream_unimplemented = TRUE
-/proc/splicetext_char(Text,Start=1,End=0,Insert="")
-	set opendream_unimplemented = TRUE
 /proc/splittext_char(Text,Start=1,End=0,Insert="")
+	set opendream_unimplemented = TRUE
+/proc/text2ascii_char(T,pos=1)
 	set opendream_unimplemented = TRUE
 /proc/walk_rand(Ref,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE

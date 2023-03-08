@@ -3,7 +3,7 @@ using OpenDreamClient.Interface;
 using Robust.Shared.Network;
 
 namespace OpenDreamClient.Input {
-    sealed class DreamCommandSystem : SharedDreamCommandSystem {
+    public sealed class DreamCommandSystem : SharedDreamCommandSystem {
         [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
 
         public void RunCommand(string command) {
@@ -30,12 +30,8 @@ namespace OpenDreamClient.Input {
                     break;
 
                 default: {
-                    if (split.Length > 1)
-                    {
-                        Logger.ErrorS("opendream.commands", "Verb argument parsing is not implemented yet.");
-                        return;
-                    }
-
+                    // Send the entire command to the server.
+                    // It has more info about argument types so it can parse it better than we can.
                     RaiseNetworkEvent(new CommandEvent(command));
                     break;
                 }

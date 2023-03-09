@@ -404,44 +404,16 @@ namespace OpenDreamClient.Interface {
         }
 
         public void WinClone(string controlId, string cloneId) {
-            ElementDescriptor elementDescriptor = null;
-            // window/pane
-            foreach (var windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
-                if (windowDescriptor.Name == controlId) {
-                    elementDescriptor = windowDescriptor.WithName(_serializationManager, cloneId);
-                    elementDescriptor = ((WindowDescriptor)elementDescriptor).WithVisible(_serializationManager, false); // per byond spec
-                    break;
-                }
-            }
+            ElementDescriptor elementDescriptor = InterfaceDescriptor.GetElementDescriptor(controlId);
 
-            // menu
-            if (elementDescriptor == null) {
-                foreach (var menuDescriptor in InterfaceDescriptor.MenuDescriptors) {
-                    if (menuDescriptor.Name == controlId) {
-                        elementDescriptor = _serializationManager.CreateCopy(menuDescriptor);
-                        break;
-                    }
-                }
-            }
-
-            // macro set
-            if (elementDescriptor == null) {
-                foreach (var macroSetDescriptor in InterfaceDescriptor.MacroSetDescriptors) {
-                    if (macroSetDescriptor.Name == controlId) {
-                        elementDescriptor = _serializationManager.CreateCopy(macroSetDescriptor);
-                        break;
-                    }
-                }
-            }
+            elementDescriptor = elementDescriptor?.CreateCopy(_serializationManager, cloneId);
 
             // If window_name is "window", "pane", "menu", or "macro", and the skin file does not have a control of
             // that name already, we will create a new control of that type from scratch.
             if (elementDescriptor == null) {
                 switch (controlId) {
                     case "window" :
-                        elementDescriptor = new WindowDescriptor(cloneId) {
-                            IsVisible = false // per byond spec
-                        };
+                        elementDescriptor = new WindowDescriptor(cloneId);
                         break;
                     case "menu":
                         elementDescriptor = new MenuDescriptor(cloneId);
@@ -453,6 +425,11 @@ namespace OpenDreamClient.Interface {
                         Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
                         return;
                 }
+            }
+
+            if (elementDescriptor is WindowDescriptor windowDescriptor) {
+                // Cloned windows start off non-visible
+                elementDescriptor = windowDescriptor.WithVisible(_serializationManager, false);
             }
 
             LoadDescriptor(elementDescriptor);

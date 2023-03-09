@@ -1,4 +1,5 @@
-﻿using Robust.Shared.Serialization.Manager;
+﻿using JetBrains.Annotations;
+using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface.Descriptors;
@@ -8,7 +9,13 @@ public sealed class MenuDescriptor : ElementDescriptor {
     public IReadOnlyList<MenuElementDescriptor> Elements => _elements;
 
     public MenuDescriptor(string name) {
+        Type = "MENU";
         Name = name;
+    }
+
+    [UsedImplicitly]
+    public MenuDescriptor() {
+
     }
 
     public override MenuElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
@@ -16,6 +23,13 @@ public sealed class MenuDescriptor : ElementDescriptor {
 
         _elements.Add(menuElement);
         return menuElement;
+    }
+
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+        var copy = serializationManager.CreateCopy(this);
+
+        copy._name = name;
+        return copy;
     }
 }
 

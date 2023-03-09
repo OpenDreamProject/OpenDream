@@ -2629,6 +2629,32 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
+        [DreamProc("winclone")]
+        [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("window_name", Type = DreamValueType.String)]
+        [DreamProcParameter("clone_name", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_winclone(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if(!arguments.GetArgument(1, "window_name").TryGetValueAsString(out var windowName))
+                return DreamValue.Null;
+            if(!arguments.GetArgument(2, "clone_name").TryGetValueAsString(out var cloneName))
+                return DreamValue.Null;
+
+            DreamValue player = arguments.GetArgument(0, "player");
+
+            DreamConnection? connection;
+
+            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
+                connection = DreamManager.GetConnectionFromMob(mob);
+            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
+                connection = DreamManager.GetConnectionFromClient(client);
+            } else {
+                throw new ArgumentException($"Invalid \"player\" argument {player}");
+            }
+
+            connection?.WinClone(windowName, cloneName);
+            return DreamValue.Null;
+        }
+
         [DreamProc("winexists")]
         [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("control_id", Type = DreamValueType.String)]
@@ -2670,32 +2696,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             connection.WinSet(winsetControlId, winsetParams);
-            return DreamValue.Null;
-        }
-
-        [DreamProc("winclone")]
-        [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
-        [DreamProcParameter("window_name", Type = DreamValueType.String)]
-        [DreamProcParameter("clone_name", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_winclone(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if(!arguments.GetArgument(1, "window_name").TryGetValueAsString(out var windowName))
-                return DreamValue.Null;
-            if(!arguments.GetArgument(2, "clone_name").TryGetValueAsString(out var cloneName))
-                return DreamValue.Null;
-
-            DreamValue player = arguments.GetArgument(0, "player");
-
-            DreamConnection connection;
-
-            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
-                connection = DreamManager.GetConnectionFromMob(mob);
-            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
-                connection = DreamManager.GetConnectionFromClient(client);
-            } else {
-                throw new ArgumentException($"Invalid \"player\" argument {player}");
-            }
-
-            connection.WinClone(windowName, cloneName);
             return DreamValue.Null;
         }
     }

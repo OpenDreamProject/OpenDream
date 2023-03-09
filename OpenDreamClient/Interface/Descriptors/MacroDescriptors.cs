@@ -1,4 +1,5 @@
-﻿using Robust.Shared.Serialization.Manager;
+﻿using JetBrains.Annotations;
+using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface.Descriptors;
@@ -8,7 +9,13 @@ public sealed class MacroSetDescriptor : ElementDescriptor {
     public IReadOnlyList<MacroDescriptor> Macros => _macros;
 
     public MacroSetDescriptor(string name) {
+        Type = "MACRO_SET";
         Name = name;
+    }
+
+    [UsedImplicitly]
+    public MacroSetDescriptor() {
+
     }
 
     public override MacroDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
@@ -17,8 +24,16 @@ public sealed class MacroSetDescriptor : ElementDescriptor {
         _macros.Add(macro);
         return macro;
     }
+
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+        var copy = serializationManager.CreateCopy(this);
+
+        copy._name = name;
+        return copy;
+    }
 }
 
+[UsedImplicitly]
 public sealed class MacroDescriptor : ElementDescriptor {
     public string Id {
         get => _id ?? Command;

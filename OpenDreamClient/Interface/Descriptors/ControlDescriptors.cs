@@ -1,4 +1,5 @@
-﻿using Robust.Shared.Serialization.Manager;
+﻿using JetBrains.Annotations;
+using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
 
@@ -45,6 +46,7 @@ public sealed class WindowDescriptor : ControlDescriptor {
         Name = name;
     }
 
+    [UsedImplicitly]
     public WindowDescriptor() {
 
     }
@@ -83,6 +85,20 @@ public sealed class WindowDescriptor : ControlDescriptor {
         ControlDescriptor child = (ControlDescriptor) serializationManager.Read(descriptorType, attributes);
         ControlDescriptors.Add(child);
         return child;
+    }
+
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+        var copy = serializationManager.CreateCopy(this);
+
+        copy._name = name;
+        return copy;
+    }
+
+    public WindowDescriptor WithVisible(ISerializationManager serializationManager, bool visible) {
+        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Name);
+
+        copy.IsVisible = visible;
+        return copy;
     }
 }
 

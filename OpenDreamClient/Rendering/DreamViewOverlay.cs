@@ -36,7 +36,8 @@ sealed class DreamViewOverlay : Overlay {
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
     private Dictionary<String, IRenderTexture> _renderSourceLookup = new();
     private List<IRenderTexture> _renderTargetsToReturn = new();
-
+    private Stack<RendererMetaData> _rendererMetaDataRental = new();
+    private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
@@ -72,6 +73,10 @@ sealed class DreamViewOverlay : Overlay {
             ReturnPingPongRenderTarget(RT);
         _renderTargetsToReturn.Clear();
         _renderSourceLookup.Clear();
+
+        while( _rendererMetaDataToReturn.Count > 0)
+            _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
+
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
@@ -242,7 +247,7 @@ sealed class DreamViewOverlay : Overlay {
     private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0)
     {
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
-        RendererMetaData current = new();
+        RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
         current.Position = position + (icon.Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter);
         current.UID = uid;
@@ -299,7 +304,7 @@ sealed class DreamViewOverlay : Overlay {
         keepTogether = keepTogether || ((current.AppearanceFlags & 32) == 32); //KEEP_TOGETHER
 
         if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
-            RendererMetaData renderTargetPlaceholder = new();
+            RendererMetaData renderTargetPlaceholder = RentRendererMetaData();
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
             renderTargetPlaceholder.Position = current.Position;
             renderTargetPlaceholder.UID = current.UID;
@@ -534,26 +539,62 @@ sealed class DreamViewOverlay : Overlay {
             ReturnPingPongRenderTarget(pong);
         }
     }
+
+    private RendererMetaData RentRendererMetaData(){
+        RendererMetaData result;
+        if(_rendererMetaDataRental.Count == 0)
+            result = new RendererMetaData();
+        else {
+            result = _rendererMetaDataRental.Pop();
+            result.Reset();
+        }
+        _rendererMetaDataToReturn.Push(result);
+        return result;
+    }
 }
 
 internal sealed class RendererMetaData : IComparable<RendererMetaData> {
-    public DreamIcon MainIcon = new DreamIcon();
-    public Vector2 Position = Vector2.Zero;
-    public float Plane = 0; //true plane value may be different from appearance plane value, due to special flags
-    public float Layer = 0; //ditto for layer
-    public EntityUid UID = EntityUid.Invalid;
-    public EntityUid ClickUID = EntityUid.Invalid; //the UID of the object clicks on this should be passed to (ie, for overlays)
-    public Boolean IsScreen = false;
-    public int TieBreaker = 0;
-    public Color ColorToApply = Color.White;
-    public float AlphaToApply = 1.0f;
-    public Matrix3 TransformToApply = Matrix3.Identity;
-    public String RenderSource = "";
-    public String RenderTarget = "";
-    public List<RendererMetaData> KeepTogetherGroup = new();
-    public int AppearanceFlags = 0;
-    public int BlendMode = 0;
-    public MouseOpacity MouseOpacity = MouseOpacity.Transparent;
+    public DreamIcon MainIcon;
+    public Vector2 Position;
+    public float Plane; //true plane value may be different from appearance plane value, due to special flags
+    public float Layer; //ditto for layer
+    public EntityUid UID;
+    public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
+    public Boolean IsScreen;
+    public int TieBreaker; //Used for biasing render order (ie, for overlays)
+    public Color ColorToApply;
+    public float AlphaToApply;
+    public Matrix3 TransformToApply;
+    public String RenderSource;
+    public String RenderTarget;
+    public List<RendererMetaData> KeepTogetherGroup;
+    public int AppearanceFlags;
+    public int BlendMode;
+    public MouseOpacity MouseOpacity;
+
+    public RendererMetaData(){
+        Reset();
+    }
+
+    public void Reset(){
+        MainIcon = new DreamIcon();
+        Position = Vector2.Zero;
+        Plane = 0;
+        Layer = 0;
+        UID = EntityUid.Invalid;
+        ClickUID = EntityUid.Invalid;
+        IsScreen = false;
+        TieBreaker = 0;
+        ColorToApply = Color.White;
+        AlphaToApply = 1.0f;
+        TransformToApply = Matrix3.Identity;
+        RenderSource = "";
+        RenderTarget = "";
+        KeepTogetherGroup = new();
+        AppearanceFlags = 0;
+        BlendMode = 0;
+        MouseOpacity = MouseOpacity.Transparent;
+    }
 
     public int CompareTo(RendererMetaData other) {
         int val = 0;

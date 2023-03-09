@@ -72,11 +72,13 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_min);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_nonspantext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_num2text);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_orange);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_oview);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_oviewers);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_params2list);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_rand);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_rand_seed);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_range);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ref);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_regex);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_replacetext);
@@ -92,6 +94,10 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sound);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_spantext);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_spantext_char);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splittext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sqrt);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_stat);

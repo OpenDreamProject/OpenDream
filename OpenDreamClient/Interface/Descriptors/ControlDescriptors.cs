@@ -7,45 +7,36 @@ namespace OpenDreamClient.Interface.Descriptors;
 [Virtual]
 public class ControlDescriptor : ElementDescriptor {
     [DataField("pos")]
-    public Vector2i? Pos { get; init; } = null;
+    public Vector2i? Pos = null;
     [DataField("size")]
-    public Vector2i? Size { get; init; } = null;
+    public Vector2i? Size = null;
     [DataField("anchor1")]
-    public Vector2i? Anchor1 { get; init; } = null;
+    public Vector2i? Anchor1 = null;
     [DataField("anchor2")]
-    public Vector2i? Anchor2 { get; init; } = null;
+    public Vector2i? Anchor2 = null;
     [DataField("background-color")]
-    public Color? BackgroundColor { get; init; } = null;
+    public Color? BackgroundColor = null;
     [DataField("is-visible")]
-    private bool _isVisible = true;
+    public bool IsVisible = true;
     [DataField("is-default")]
-    public bool IsDefault { get; init; } = false;
+    public bool IsDefault = false;
     [DataField("is-disabled")]
-    public bool IsDisabled { get; init; } = false;
-
-    public bool IsVisible {
-        get => _isVisible;
-        init => _isVisible = value;
-    }
-
-    public ControlDescriptor WithVisible(ISerializationManager serializationManager, bool isVisible) {
-        var copy = serializationManager.CreateCopy(this);
-        copy._isVisible = isVisible;
-        return copy;
-    }
+    public bool IsDisabled = false;
 }
 
 public sealed class WindowDescriptor : ControlDescriptor {
     [DataField("is-pane")]
-    public bool IsPane { get; init; } = false;
+    public bool IsPane = false;
     [DataField("icon")]
-    public string Icon { get; init; } = null;
+    public string Icon = null;
     [DataField("menu")]
-    public string Menu { get; init; } = null;
+    public string Menu = null;
     [DataField("title")]
-    public string Title { get; init; } = null;
+    public string Title = null;
     [DataField("macro")]
     public string Macro { get; init; } = null;
+    [DataField("on-close")]
+    public string OnClose { get; init; } = null;
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 
@@ -97,11 +88,11 @@ public sealed class WindowDescriptor : ControlDescriptor {
 
 public sealed class ControlDescriptorChild : ControlDescriptor {
     [DataField("left")]
-    public string Left { get; init; } = null;
+    public string Left = null;
     [DataField("right")]
-    public string Right { get; init; } = null;
+    public string Right = null;
     [DataField("is-vert")]
-    public bool IsVert { get; init; } = false;
+    public bool IsVert = false;
 }
 
 public sealed class ControlDescriptorInput : ControlDescriptor {
@@ -109,9 +100,9 @@ public sealed class ControlDescriptorInput : ControlDescriptor {
 
 public sealed class ControlDescriptorButton : ControlDescriptor {
     [DataField("text")]
-    public string Text { get; init; } = null;
+    public string Text = null;
     [DataField("command")]
-    public string Command { get; init; } = null;
+    public string Command = null;
 }
 
 public sealed class ControlDescriptorOutput : ControlDescriptor {
@@ -128,7 +119,7 @@ public sealed class ControlDescriptorBrowser : ControlDescriptor {
 
 public sealed class ControlDescriptorLabel : ControlDescriptor {
     [DataField("text")]
-    public string Text { get; init; } = null;
+    public string Text = null;
 }
 
 public sealed class ControlDescriptorGrid : ControlDescriptor {

@@ -271,6 +271,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 appearance.Icon = resource.Id;
                 appearance.IconState = resource.DMI.GetStateOrDefault(iconState)?.Name;
+            } else if (_resourceManager.TryLoadIcon(value, out var loadedIcon)) {
+                appearance.Icon = loadedIcon.Id;
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var overlayAtom)) {
                 appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
             } else if (value.TryGetValueAsType(out var type)) {

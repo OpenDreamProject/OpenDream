@@ -222,6 +222,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(tmp);
             } else if (value.TryGetValueAsFloat(out float floatVal)) {
                 return new DreamValue(Math.Clamp(floatVal, lVal, hVal));
+            } else if (value == DreamValue.Null) {
+                return new DreamValue(Math.Clamp(0.0, lVal, hVal));
             } else {
                 throw new Exception("Clamp expects a number or list");
             }

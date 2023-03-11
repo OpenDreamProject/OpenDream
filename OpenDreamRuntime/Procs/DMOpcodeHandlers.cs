@@ -1057,6 +1057,7 @@ namespace OpenDreamRuntime.Procs {
 
             switch (value.Type) {
                 case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.GetValueAsFloat())); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
                 default: throw new Exception("Invalid negate operation on " + value);
             }
 

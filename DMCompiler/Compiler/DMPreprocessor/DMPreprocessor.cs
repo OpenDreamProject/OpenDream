@@ -247,7 +247,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         public void PreprocessFile(string includeDir, string file) {
             string filePath = Path.Combine(includeDir, file).Replace('\\', Path.DirectorySeparatorChar);
-            string source = File.ReadAllText(filePath);
+            string source = "\n" + File.ReadAllText(filePath); // Cope with whitespace before #includes by prepending a newline
             source = source.Replace("\r\n", "\n");
             source += '\n';
 

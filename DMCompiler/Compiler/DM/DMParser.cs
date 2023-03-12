@@ -179,12 +179,9 @@ namespace DMCompiler.Compiler.DM {
                     var parameters = DefinitionParameters();
 
                     if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
-                        !Check(TokenType.DM_IndeterminateArgs))
-                    {
+                        !Check(TokenType.DM_IndeterminateArgs)) {
                         if (parameters.Count > 0) // Separate error handling mentions the missing right-paren
-                        {
                             Error($"error: {parameters.Last().Name}: missing comma ',' or right-paren ')'", false);
-                        }
                         parameters.AddRange(DefinitionParameters());
                     }
                     if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {

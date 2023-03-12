@@ -31,6 +31,7 @@ namespace DMCompiler.DM.Visitors {
             DMObjectTree.Reset(); // Blank the object tree
             VarDefined = null;
             AwaitedObjectDefinitions.Clear(); // Need to do this since this static is re-used during unit testing :^)
+            AwaitedProcDefinitions.Clear();
         }
         public static void BuildObjectTree(DMASTFile astFile) {
             Reset();
@@ -56,33 +57,26 @@ namespace DMCompiler.DM.Visitors {
             //Lets check in on all the types we found promised before and see if we actually got them. :^)
             //Note: Dynamically removing types as we find them would've made the compiler 4x slower, per some tests I did.
             //      It's much more performant to do it this way.
-            if(AwaitedObjectDefinitions.Count != 0) {
-                foreach(var pair in AwaitedObjectDefinitions) {
-                    if(!DMObjectTree.TryGetTypeId(pair.Key,out var _))
-                        DMCompiler.Emit(WarningCode.DanglingVarType, pair.Value, $"Definition for path {pair.Key} not found");
-                }
+            foreach(var pair in AwaitedObjectDefinitions) {
+                if(!DMObjectTree.TryGetTypeId(pair.Key,out var _))
+                    DMCompiler.Emit(WarningCode.DanglingVarType, pair.Value, $"Definition for path {pair.Key} not found");
             }
 
             //And now all the proc definitions we were promised
-            if(AwaitedProcDefinitions.Count != 0) {
-                foreach (var pair in AwaitedProcDefinitions) {
-                    if (pair.Value.IsRoot) { // Have to do this since DMObjectTree is what holds global procs, not the root DMObject, interestingly enough
-                        if(!DMObjectTree.SeenGlobalProcDefinition.Contains(pair.Key)) { // If we didn't see a definition for it :(
-                            int ID = DMObjectTree.GlobalProcs[pair.Key];
-                            DMProc proc = DMObjectTree.AllProcs[ID];
-                            DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for global proc {pair.Key} not found");
-                        }
-                        continue;
+            foreach (var pair in AwaitedProcDefinitions) {
+                if (pair.Value.IsRoot) { // Have to do this since DMObjectTree is what holds global procs, not the root DMObject, interestingly enough
+                    if(!DMObjectTree.SeenGlobalProcDefinition.Contains(pair.Key)) { // If we didn't see a definition for it :(
+                        int ID = DMObjectTree.GlobalProcs[pair.Key];
+                        DMProc proc = DMObjectTree.AllProcs[ID];
+                        DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for global proc {pair.Key} not found");
                     }
-                    if (!pair.Value.HasProcDefined(pair.Key)) {
-                        DMProc proc = DMObjectTree.AllProcs[pair.Value.GetProcs(pair.Key)[0]];
-                        DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for proc {pair.Key} on type {pair.Value.Path} not found");
-                    }
+                    continue;
+                }
+                if (!pair.Value.HasProcDefined(pair.Key)) {
+                    DMProc proc = DMObjectTree.AllProcs[pair.Value.GetProcs(pair.Key)[0]];
+                    DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for proc {pair.Key} on type {pair.Value.Path} not found");
                 }
             }
-
-            AwaitedObjectDefinitions.Clear(); // Need to do this since this static is re-used during unit testing :^)
-            AwaitedProcDefinitions.Clear();
 
             // TODO Nuke this pass
             // (Note that VarDefined's lazy evaluation behaviour is dependent on happening BEFORE the the initialization proc statements are emitted)

@@ -46,6 +46,7 @@ namespace OpenDreamShared.Compiler {
         MalformedRange = 2300,
         InvalidRange = 2301,
         InvalidSetStatement = 2302,
+        InvalidOverride = 2303,
         DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,

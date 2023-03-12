@@ -16,6 +16,17 @@
 /datum/composite_the_two/f()
 	return ..() + "od"
 
+//Overrides on global procs should prefer the topmost, /proc/ version, regardless of ordering.
+/proc/glob_say_definition()
+	return "good"
+/glob_say_definition()
+	return "bad"
+
+/you_cant_override_these()
+	return "bad"
+/proc/you_cant_override_these()
+	return "good"
+
 /proc/RunTest()
 	var/d = new /datum/say_the_definition()
 	ASSERT(d:f() == "good")
@@ -23,3 +34,6 @@
 	ASSERT(d:f() == "good")
 	d = new /datum/composite_the_two()
 	ASSERT(d:f() == "good")
+	//
+	ASSERT(glob_say_definition() == "good")
+	ASSERT(you_cant_override_these() == "good")

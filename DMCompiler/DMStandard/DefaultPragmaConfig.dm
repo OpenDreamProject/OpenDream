@@ -21,6 +21,7 @@
 #pragma MalformedRange warning
 #pragma InvalidRange error
 #pragma InvalidSetStatement error
+#pragma InvalidOverride warning
 #pragma DanglingVarType warning
 
 //3000-3999

@@ -256,11 +256,15 @@ namespace DMCompiler.DM.Visitors {
                 DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
 
                 if (procDefinition.ObjectPath == DreamPath.Root) {
-                    DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
-                    if(!procDefinition.IsOverride) { // If this is a define, then we found a define for this global! Yay!
-                        if(!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
+                    if(procDefinition.IsOverride) {
+                        DMCompiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");
+                        //Continue processing the proc anyhoo, just don't add it.
+                    } else {
+                        if (!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
                             DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
-                            return;
+                            //Again, even though this is likely an error, process the statements anyways.
+                        } else {
+                            DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                         }
                     }
                 } else {

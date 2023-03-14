@@ -42,8 +42,6 @@ proc/missile(Type, Start, End)
 	set opendream_unimplemented = TRUE
 /proc/winget(player, control_id, params)
 	set opendream_unimplemented = TRUE
-/proc/winshow(player, window, show=1)
-	set opendream_unimplemented = TRUE
 
 /database
 	parent_type = /datum

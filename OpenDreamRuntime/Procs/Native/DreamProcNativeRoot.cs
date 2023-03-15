@@ -640,9 +640,13 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
-            var listing = resourceManager.EnumerateListing(path);
-            DreamList list = ObjectTree.CreateList(listing);
-            return new DreamValue(list);
+            try {
+                var listing = resourceManager.EnumerateListing(path);
+                DreamList list = ObjectTree.CreateList(listing);
+                return new DreamValue(list);
+            } catch (DirectoryNotFoundException) {
+                return new DreamValue(ObjectTree.CreateList()); // empty list
+            }
         }
 
         [DreamProc("floor")]

@@ -3,5 +3,5 @@
 
 /proc/RunTest()
 	// Assert that a nonexistent dir returns an empty list
-	var/list/L = flist("./woiguowejsiojioeh") // If you create this dir, I'll kill you
+	var/list/L = flist("woiguowejsiojioeh/") // If you create this dir, I'll kill you
 	ASSERT(islist(L) && L.len == 0)

@@ -36,6 +36,7 @@ proc/flist(Path)
 proc/floor(A)
 proc/fract(n)
 proc/ftime(File, IsCreationTime = 0)
+proc/get_step(atom/Ref, Dir)
 proc/gradient(A, index)
 proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
@@ -160,24 +161,6 @@ proc/block(var/atom/Start, var/atom/End)
 				atoms.Add(locate(x, y, z))
 
 	return atoms
-
-proc/get_step(atom/Ref, Dir)
-	if (Ref == null) return null
-
-	var/x = Ref.x
-	var/y = Ref.y
-	var/z = Ref.z
-
-	if (Dir & NORTH) y += 1
-	else if (Dir & SOUTH) y -= 1
-
-	if (Dir & EAST) x += 1
-	else if (Dir & WEST) x -= 1
-
-	if (Dir & UP) z += 1
-	else if (Dir & DOWN) z -= 1
-
-	return locate(x, y, z)
 
 proc/get_dir(atom/Loc1, atom/Loc2)
 	if (Loc1 == null || Loc2 == null || Loc1.z != Loc2.z) return 0

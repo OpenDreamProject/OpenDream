@@ -232,7 +232,7 @@ namespace OpenDreamRuntime {
         public bool TryGetValueAsDreamObject(out DreamObject? dreamObject) {
             if (Type == DreamValueType.DreamObject) {
                 dreamObject = MustGetValueAsDreamObject();
-                return true;
+                return dreamObject != null; // dreamObject will be null if the atom was deleted
             } else {
                 dreamObject = null;
                 return false;

@@ -674,6 +674,43 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(0);
         }
 
+        [DreamProc("get_dir")]
+        [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_get_dir(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "Loc1").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var loc1))
+                return new DreamValue(0);
+            if (!arguments.GetArgument(1, "Loc2").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var loc2))
+                return new DreamValue(0);
+
+            loc1.GetVariable("z").TryGetValueAsInteger(out var z1);
+            loc2.GetVariable("z").TryGetValueAsInteger(out var z2);
+            if (z1 != z2) // They must be on the same z-level
+                return new DreamValue(0);
+
+            loc1.GetVariable("x").TryGetValueAsInteger(out var x1);
+            loc1.GetVariable("y").TryGetValueAsInteger(out var y1);
+
+            loc2.GetVariable("x").TryGetValueAsInteger(out var x2);
+            loc2.GetVariable("y").TryGetValueAsInteger(out var y2);
+
+            int direction = 0;
+
+            // East or West
+            if (x2 < x1)
+                direction |= (int)AtomDirection.West;
+            else if (x2 > x1)
+                direction |= (int)AtomDirection.East;
+
+            // North or South
+            if (y2 < y1)
+                direction |= (int) AtomDirection.South;
+            else if (y2 > y1)
+                direction |= (int) AtomDirection.North;
+
+            return new DreamValue(direction);
+        }
+
         [DreamProc("gradient")]
         [DreamProcParameter("A", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("index", Type = DreamValueType.Float)]

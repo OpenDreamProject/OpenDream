@@ -164,9 +164,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_block(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
-            if (!arguments.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var start))
+            if (!arguments.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(ObjectTree.Turf, out var start))
                 return new DreamValue(ObjectTree.CreateList());
-            if (!arguments.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var end))
+            if (!arguments.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(ObjectTree.Turf, out var end))
                 return new DreamValue(ObjectTree.CreateList());
 
             start.GetVariable("x").TryGetValueAsInteger(out var x1);
@@ -714,7 +714,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             return new DreamValue(0);
         }
-        
+
         [DreamProc("get_dir")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
@@ -751,7 +751,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             return new DreamValue(direction);
         }
-        
+
         [DreamProc("get_step")]
         [DreamProcParameter("Ref", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Dir", Type = DreamValueType.Float)]

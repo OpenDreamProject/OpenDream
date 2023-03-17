@@ -26,6 +26,7 @@ namespace OpenDreamRuntime.Procs.Native {
         // TODO: Pass NativeProc.State to every native proc
         public static IDreamManager DreamManager;
         public static DreamResourceManager ResourceManager;
+        public static IDreamMapManager MapManager;
         public static IDreamObjectTree ObjectTree;
 
         [DreamProc("abs")]
@@ -673,7 +674,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             return new DreamValue(0);
         }
-
+        
         [DreamProc("get_dir")]
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
@@ -709,6 +710,37 @@ namespace OpenDreamRuntime.Procs.Native {
                 direction |= (int) AtomDirection.North;
 
             return new DreamValue(direction);
+        }
+        
+        [DreamProc("get_step")]
+        [DreamProcParameter("Ref", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Dir", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_get_step(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "Ref").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var loc))
+                return DreamValue.Null;
+
+            arguments.GetArgument(1, "Dir").TryGetValueAsInteger(out var dir);
+            if (dir >= 16) // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
+                return DreamValue.Null;
+
+            loc.GetVariable("x").TryGetValueAsInteger(out var x);
+            loc.GetVariable("y").TryGetValueAsInteger(out var y);
+            loc.GetVariable("z").TryGetValueAsInteger(out var z);
+
+            if (dir > 0) {
+                if ((dir & (int) AtomDirection.North) == (int) AtomDirection.North)
+                    y += 1;
+                if ((dir & (int) AtomDirection.South) == (int) AtomDirection.South) // A dir of NORTH | SOUTH will cancel out
+                    y -= 1;
+
+                if ((dir & (int) AtomDirection.East) == (int) AtomDirection.East)
+                    x += 1;
+                if ((dir & (int) AtomDirection.West) == (int) AtomDirection.West) // A dir of EAST | WEST will cancel out
+                    x -= 1;
+            }
+
+            MapManager.TryGetTurfAt((x, y), z, out var turf);
+            return new DreamValue(turf);
         }
 
         [DreamProc("gradient")]

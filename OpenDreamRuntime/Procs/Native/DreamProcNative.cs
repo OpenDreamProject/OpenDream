@@ -6,6 +6,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static void SetupNativeProcs(IDreamObjectTree objectTree) {
             DreamProcNativeRoot.DreamManager = IoCManager.Resolve<IDreamManager>();
             DreamProcNativeRoot.ResourceManager = IoCManager.Resolve<DreamResourceManager>();
+            DreamProcNativeRoot.MapManager = IoCManager.Resolve<IDreamMapManager>();
             DreamProcNativeRoot.ObjectTree = objectTree;
 
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);
@@ -41,6 +42,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_fract);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ftime);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_dir);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_step);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_gradient);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hascall);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_html_decode);

@@ -11,6 +11,7 @@ proc/arccos(X)
 proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
+proc/block(var/atom/Start, var/atom/End)
 proc/ceil(A)
 proc/ckey(Key)
 proc/ckeyEx(Text)
@@ -146,22 +147,6 @@ proc/winset(player, control_id, params)
 proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 	set opendream_unimplemented = TRUE
 	return Haystack
-
-proc/block(var/atom/Start, var/atom/End)
-	var/list/atoms = list()
-
-	var/startX = min(Start.x, End.x)
-	var/startY = min(Start.y, End.y)
-	var/startZ = min(Start.z, End.z)
-	var/endX = max(Start.x, End.x)
-	var/endY = max(Start.y, End.y)
-	var/endZ = max(Start.z, End.z)
-	for (var/z=startZ; z<=endZ; z++)
-		for (var/y=startY; y<=endY; y++)
-			for (var/x=startX; x<=endX; x++)
-				atoms.Add(locate(x, y, z))
-
-	return atoms
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
 	//TODO: Speed = step_size if Speed is 0

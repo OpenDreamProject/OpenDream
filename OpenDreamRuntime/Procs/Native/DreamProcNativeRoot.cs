@@ -160,6 +160,46 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(Convert.ToChar(asciiValue).ToString());
         }
 
+        [DreamProc("block")]
+        [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_block(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var start))
+                return new DreamValue(ObjectTree.CreateList());
+            if (!arguments.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var end))
+                return new DreamValue(ObjectTree.CreateList());
+
+            start.GetVariable("x").TryGetValueAsInteger(out var x1);
+            start.GetVariable("y").TryGetValueAsInteger(out var y1);
+            start.GetVariable("z").TryGetValueAsInteger(out var z1);
+
+            end.GetVariable("x").TryGetValueAsInteger(out var x2);
+            end.GetVariable("y").TryGetValueAsInteger(out var y2);
+            end.GetVariable("z").TryGetValueAsInteger(out var z2);
+
+            int startX = Math.Min(x1, x2);
+            int startY = Math.Min(y1, y2);
+            int startZ = Math.Min(z1, z2);
+            int endX = Math.Max(x1, x2);
+            int endY = Math.Max(y1, y2);
+            int endZ = Math.Max(z1, z2);
+
+            DreamList turfs = ObjectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
+
+            // Collected in z-y-x order
+            for (int z = startZ; z <= endZ; z++) {
+                for (int y = startY; y <= endY; y++) {
+                    for (int x = startX; x <= endX; x++) {
+                        MapManager.TryGetTurfAt((x, y), z, out var turf);
+
+                        turfs.AddValue(new DreamValue(turf));
+                    }
+                }
+            }
+
+            return new DreamValue(turfs);
+        }
+
         [DreamProc("ceil")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_ceil(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

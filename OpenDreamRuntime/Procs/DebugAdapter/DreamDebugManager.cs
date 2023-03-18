@@ -498,7 +498,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     private void HandleRequestThreads(DebugAdapterClient client, RequestThreads reqThreads) {
         var threads = new List<Thread>();
-        foreach (var thread in InspectThreads().Distinct()) {
+        foreach (var thread in InspectThreads().Distinct().Where(x => x != null)) {
             threads.Add(new Thread(thread.Id, thread.Name));
         }
         if (!threads.Any()) {
@@ -567,7 +567,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private void HandleRequestStackTrace(DebugAdapterClient client, RequestStackTrace reqStackTrace) {
-        var thread = InspectThreads().FirstOrDefault(t => t.Id == reqStackTrace.Arguments.ThreadId);
+        var thread = InspectThreads().FirstOrDefault(t => t?.Id == reqStackTrace.Arguments.ThreadId);
         if (thread is null) {
             reqStackTrace.RespondError(client, $"No thread with ID {reqStackTrace.Arguments.ThreadId}");
             return;

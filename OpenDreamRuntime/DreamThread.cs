@@ -108,8 +108,8 @@ namespace OpenDreamRuntime {
         }
     }
 
-    sealed class DMCrashRuntime : DMThrowException {
-        public DMCrashRuntime(DreamValue value) : base(value) { }
+    sealed class DMCrashRuntime : Exception {
+        public DMCrashRuntime(string message) : base(message) { }
     }
 
     /// <summary>

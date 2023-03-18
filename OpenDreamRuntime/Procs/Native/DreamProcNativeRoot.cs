@@ -2719,6 +2719,78 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(0);
         }
 
+        [DreamProc("turn")]
+        [DreamProcParameter("Dir", Type = DreamValueType.Float)]
+        [DreamProcParameter("Angle", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_turn(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue dirArg = arguments.GetArgument(0, "dir");
+            DreamValue angleArg = arguments.GetArgument(1, "angle");
+
+            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) {
+                DreamValue matrixCopy = new DreamValue(matrix);
+/*
+ * 	if (istype(Dir, /matrix))
+		var/matrix/copy = new(Dir)
+		return copy.Turn(Angle)
+ */
+
+
+            }
+            // Handle an invalid angle, defaults to 0
+            if (!angleArg.TryGetValueAsFloat(out float angle)) {
+                angle = 0;
+
+            }
+            if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {
+                throw new ArgumentException($"Invalid Dir for Turn: \"{dirArg.ToString()}\"");
+            }
+
+            if (!Enum.IsDefined(typeof(AtomDirection), possibleDir)) { // Invalid dir
+                // If Dir is invalid and angle is 0, Dir is returned
+                if (angle == 0) {
+                    return dirArg;
+                }
+                // Otherwise, a random direction
+                var allDirs = Enum.GetValues(typeof(AtomDirection));
+                return (DreamValue)(allDirs.GetValue(DreamManager.Random.Next(allDirs.Length)) ?? AtomDirection.North);
+            }
+
+            AtomDirection dir = (AtomDirection)possibleDir;
+            float dirAngle = dir switch {
+                    AtomDirection.East => 0,
+                    AtomDirection.Northeast => 45,
+                    AtomDirection.North => 90,
+                    AtomDirection.Northwest => 135,
+                    AtomDirection.West => 180,
+                    AtomDirection.Southwest => 225,
+                    AtomDirection.South => 270,
+                    AtomDirection.Southeast => 315,
+                    _ => 0
+            };
+
+            dirAngle += MathF.Truncate(angle / 45) * 45;
+            dirAngle %= 360;
+
+            if (dirAngle < 0) {
+                dirAngle = 360 + dirAngle;
+            }
+
+            AtomDirection toReturn = dirAngle switch {
+                    45 => AtomDirection.Northeast,
+                    90 => AtomDirection.North,
+                    135 => AtomDirection.Northwest,
+                    180 => AtomDirection.West,
+                    225 => AtomDirection.Southwest,
+                    270 => AtomDirection.South,
+                    315 => AtomDirection.Southeast,
+                    _ => AtomDirection.East
+            };
+            return new DreamValue(toReturn);
+        }
+
+
+
+
         [DreamProc("typesof")]
         [DreamProcParameter("Item1", Type = DreamValueType.DreamType | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

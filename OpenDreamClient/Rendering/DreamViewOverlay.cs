@@ -5,6 +5,7 @@ using Robust.Shared.Map;
 using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
+using System.Linq;
 
 namespace OpenDreamClient.Rendering;
 
@@ -249,9 +250,9 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
-    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, List<int> tieBreaker = null)
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int[] tieBreaker = null)
     {
-        tieBreaker ??= new List<int>();
+        tieBreaker ??= new int[0];
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
@@ -342,9 +343,8 @@ sealed class DreamViewOverlay : Overlay {
         int underlayTiebreaker = 0;
         foreach (DreamIcon underlay in icon.Underlays) {
             underlayTiebreaker--;
-            List<int> nextTiebreaker = new List<int>(tieBreaker.Count+1);
-            nextTiebreaker.AddRange(tieBreaker);
-            nextTiebreaker.Add(underlayTiebreaker);
+            int[] nextTiebreaker = tieBreaker.Concat(new[] { underlayTiebreaker }).ToArray();
+
             if(!keepTogether || (underlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, nextTiebreaker));
             else
@@ -355,9 +355,8 @@ sealed class DreamViewOverlay : Overlay {
         int overlayTiebreaker = 0;
         foreach (DreamIcon overlay in icon.Overlays) {
             overlayTiebreaker++;
-            List<int> nextTiebreaker = new List<int>(tieBreaker.Count+1);
-            nextTiebreaker.AddRange(tieBreaker);
-            nextTiebreaker.Add(overlayTiebreaker);
+            int[] nextTiebreaker = tieBreaker.Concat(new[] { overlayTiebreaker }).ToArray();
+
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, nextTiebreaker));
             else
@@ -577,7 +576,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public EntityUid UID;
     public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public Boolean IsScreen;
-    public List<int> TieBreaker; //Used for biasing render order (ie, for overlays)
+    public int[] TieBreaker; //Used for biasing render order (ie, for overlays)
     public Color ColorToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
@@ -600,7 +599,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         UID = EntityUid.Invalid;
         ClickUID = EntityUid.Invalid;
         IsScreen = false;
-        TieBreaker = new List<int>();
+        TieBreaker = new int[0];
         ColorToApply = Color.White;
         AlphaToApply = 1.0f;
         TransformToApply = Matrix3.Identity;
@@ -667,10 +666,10 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         }
 
         //alright, this isn't the prettiest, but it basically works out a tree flattening for overlays render order
-        if(this.TieBreaker.Count == 0 && other.TieBreaker.Count > 0)
+        if(this.TieBreaker.Length == 0 && other.TieBreaker.Length > 0)
             return -other.TieBreaker[0].CompareTo(0);
-        for (int i = 0; i < this.TieBreaker.Count; i++) {
-            if(i >= other.TieBreaker.Count)
+        for (int i = 0; i < this.TieBreaker.Length; i++) {
+            if(i >= other.TieBreaker.Length)
                 return this.TieBreaker[i].CompareTo(0);
             val = this.TieBreaker[i].CompareTo(other.TieBreaker[i]);
             if (val != 0) {

@@ -259,9 +259,11 @@ proc/step_rand(atom/movable/Ref, Speed=0)
 	return Ref.Move(target, get_dir(Ref, target))
 
 proc/jointext(list/List, Glue, Start = 1, End = 0)
-	if (isnull(List)) CRASH("Invalid list")
-
-	return List.Join(Glue, Start, End)
+	if(islist(List))
+		return List.Join(Glue, Start, End)
+	if(istext(List))
+		return List
+	CRASH("jointext was passed a non-list, non-text value")
 
 proc/lentext(T)
 	return length(T)

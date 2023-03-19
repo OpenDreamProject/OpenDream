@@ -531,8 +531,8 @@ namespace OpenDreamRuntime.Objects {
             int movableCount = _cell.Movables.Count + 1;
             if (end == 0 || end > movableCount) end = movableCount;
 
-            for (int i = start - 1; i < end - 1; i++) {
-                _cell.Movables[i].SetVariable("loc", DreamValue.Null);
+            for (int i = start; i < end; i++) {
+                _cell.Movables[i - 1].SetVariable("loc", DreamValue.Null);
             }
         }
 

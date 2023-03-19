@@ -2406,6 +2406,27 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
+        [DreamProc("text2ascii_char")]
+        [DreamProcParameter("T", Type = DreamValueType.String)]
+        [DreamProcParameter("pos", Type = DreamValueType.Float, DefaultValue = 1)]
+        public static DreamValue NativeProc_text2ascii_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out var text)) {
+                return new DreamValue(0);
+            }
+            StringInfo textElements = new StringInfo(text);
+
+            arguments.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
+            if (pos == 0) pos = 1; //0 is same as 1
+            else if (pos < 0) pos += textElements.LengthInTextElements + 1; //Wraps around
+
+            if (pos > textElements.LengthInTextElements || pos < 1) {
+                return new DreamValue(0);
+            } else {
+                //practically identical to (our) text2ascii but more explicit about subchar indexing
+                return new DreamValue((int)textElements.SubstringByTextElements(pos - 1, 1)[0]);
+            }
+        }
+
         [DreamProc("text2file")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("File", Type = DreamValueType.String)]

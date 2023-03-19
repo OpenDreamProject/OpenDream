@@ -77,5 +77,7 @@
 		c += x
 		f += y
 
+	proc/Turn(angle)
+
 
 proc/matrix(var/a, var/b, var/c, var/d, var/e, var/f)

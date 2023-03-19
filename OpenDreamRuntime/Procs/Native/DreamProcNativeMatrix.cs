@@ -61,13 +61,12 @@ internal static class DreamProcNativeMatrix {
     /// <summary> Turns a given matrix a given amount of degrees clockwise. </summary>
     /// <returns> Returns a new matrix which has been rotated </returns>
     public static DreamValue _NativeProc_TurnInternal(DreamObject src, DreamObject usr, float angle) {
-        float angleCos = MathF.Cos(angle);
         float angleSin = MathF.Sin(angle);
+        float angleCos = MathF.Cos(angle);
 
-        DreamObject clonedMatrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, src);
         DreamObject rotationMatrix = DreamMetaObjectMatrix.MakeMatrix(ObjectTree,angleCos, angleSin, 0, -angleSin, angleCos, 0);
-        DreamMetaObjectMatrix.MultiplyMatrix(clonedMatrix, rotationMatrix);
+        DreamMetaObjectMatrix.MultiplyMatrix(src, rotationMatrix);
 
-        return new DreamValue(clonedMatrix);
+        return new DreamValue(src);
     }
 }

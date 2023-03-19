@@ -2719,6 +2719,8 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(0);
         }
 
+        /// <summary> Global turn() proc </summary>
+        /// <remarks> Take note that this turn proc is a counterclockwise rotation unlike the rest </remarks>
         [DreamProc("turn")]
         [DreamProcParameter("Dir", Type = DreamValueType.Float)]
         [DreamProcParameter("Angle", Type = DreamValueType.Float)]
@@ -2733,7 +2735,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // If Dir is actually a matrix, call /matrix.Turn
             if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) {
-                return DreamProcNativeMatrix._NativeProc_TurnInternal(matrix, usr, angle);
+                // Clone matrix here since it's specified to return a new one
+                DreamObject clonedMatrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, matrix);
+                return DreamProcNativeMatrix._NativeProc_TurnInternal(clonedMatrix, usr, angle);
             }
 
             if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {

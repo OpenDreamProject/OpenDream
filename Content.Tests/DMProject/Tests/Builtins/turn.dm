@@ -1,5 +1,5 @@
 ﻿/proc/RunTest()
-	// Note byond goes counter clockwise (why)
+	// Note byond goes counterclockwise (why)
 
 	// Make sure it returns right
 	ASSERT(turn(EAST, 0) == EAST)

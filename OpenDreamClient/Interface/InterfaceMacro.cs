@@ -107,11 +107,11 @@ public sealed class InterfaceMacro : InterfaceElement {
     }
 
     private static KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, string macroName) {
+        macroName = macroName.Replace("+UP", String.Empty);
+        macroName = macroName.Replace("+REP", String.Empty);
         macroName = macroName.Replace("SHIFT+", String.Empty);
         macroName = macroName.Replace("CTRL+", String.Empty);
         macroName = macroName.Replace("ALT+", String.Empty);
-        macroName = macroName.Replace("+UP", String.Empty);
-        macroName = macroName.Replace("+REP", String.Empty);
 
         //TODO: modifiers
         var key = KeyNameToKey(macroName);

@@ -352,7 +352,7 @@ sealed class DreamViewOverlay : Overlay {
         //dont forget the vis_flags
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
-        int underlayTiebreaker = -icon.Underlays.Count;
+        int underlayTiebreaker = -icon.Underlays.Count+tieBreaker;
         foreach (DreamIcon underlay in icon.Underlays) {
             underlayTiebreaker--;
 
@@ -365,7 +365,7 @@ sealed class DreamViewOverlay : Overlay {
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
-        int overlayTiebreaker = icon.Overlays.Count;
+        int overlayTiebreaker = icon.Overlays.Count+tieBreaker;
         foreach (DreamIcon overlay in icon.Overlays) {
             overlayTiebreaker++;
 

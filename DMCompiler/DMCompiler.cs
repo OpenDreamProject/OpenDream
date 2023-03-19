@@ -185,8 +185,8 @@ namespace DMCompiler {
                     ++ErrorCount;
                     break;
             }
+
             Console.WriteLine(emission);
-            return;
         }
 
         /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
@@ -207,7 +207,7 @@ namespace DMCompiler {
 
         /// <inheritdoc cref="ForcedError(string)"/>
         public static void ForcedError(Location loc, string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
             ErrorCount++;
         }
 
@@ -216,13 +216,13 @@ namespace DMCompiler {
         /// Completely ignores the warning configuration. Use wisely!
         /// </summary>
         public static void ForcedWarning(string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message).ToString());
             WarningCount++;
         }
 
         /// <inheritdoc cref="ForcedWarning(string)"/>
         public static void ForcedWarning(Location loc, string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message).ToString());
             WarningCount++;
         }
 
@@ -308,12 +308,16 @@ namespace DMCompiler {
 
             // Successful serialization
             if (ErrorCount == 0) {
-                var outputFileHandle = File.Create(outputFile);
+                using var outputFileHandle = File.Create(outputFile);
 
-                JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
-                outputFileHandle.Close();
-                return $"Saved to {outputFile}";
+                try {
+                    JsonSerializer.Serialize(outputFileHandle, compiledDream,
+                        new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+
+                    return $"Saved to {outputFile}";
+                } catch (Exception e) {
+                    Console.WriteLine($"Failed to save to {outputFile}: {e.Message}");
+                }
             }
 
             return string.Empty;

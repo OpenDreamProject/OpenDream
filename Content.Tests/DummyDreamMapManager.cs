@@ -1,4 +1,7 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Runtime.InteropServices.JavaScript;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
@@ -11,6 +14,8 @@ namespace Content.Tests {
         public Vector2i Size => Vector2i.Zero;
         public int Levels => 0;
         public List<DreamObject> AllAtoms { get; } = new();
+        public IEnumerable<DreamObject> AllAreas { get; } = Array.Empty<DreamObject>();
+        public IEnumerable<DreamObject> AllTurfs { get; } = Array.Empty<DreamObject>();
 
         public void Initialize() { }
 

@@ -16,6 +16,11 @@ namespace DMCompiler.DM {
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
         public static Dictionary<string, int> GlobalProcs = new();
+        /// <summary>
+        /// Used to keep track of when we see a /proc/foo() or whatever, so that duplicates or missing definitions can be discovered,
+        /// even as GlobalProcs keeps clobbering old global proc overrides/definitions.
+        /// </summary>
+        public static HashSet<string> SeenGlobalProcDefinition = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
@@ -40,6 +45,7 @@ namespace DMCompiler.DM {
 
             Globals.Clear();
             GlobalProcs.Clear();
+            SeenGlobalProcDefinition.Clear();
             StringTable.Clear();
             StringToStringID.Clear();
 
@@ -95,6 +101,7 @@ namespace DMCompiler.DM {
             return GlobalProcs.TryGetValue(name, out var id) && AllProcs.TryGetValue(id, out proc);
         }
 
+        /// <returns>True if the path exists, false if not. Keep in mind though that we may just have not found this object path yet while walking in ObjectBuilder.</returns>
         public static bool TryGetTypeId(DreamPath path, out int typeId) {
             return _pathToTypeId.TryGetValue(path, out typeId);
         }
@@ -160,7 +167,7 @@ namespace DMCompiler.DM {
         }
 
         public static void AddGlobalProc(string name, int id) {
-            GlobalProcs.Add(name, id);
+            GlobalProcs[name] = id; // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
         }
 
         public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {

@@ -27,11 +27,12 @@ namespace DMCompiler.DM {
         public List<DMExpression> InitializationProcExpressions = new();
         public int? InitializationProc;
 
-        private bool IsRoot => Path == DreamPath.Root;
-        [CanBeNull] private List<DMProc> _verbs;
-
+        public bool IsRoot => Path == DreamPath.Root;
+        
         public List<DMASTObjectVarOverride>? danglingOverrides = null; // Overrides waiting for the LateVarDef event to happen
+
         private bool _isSubscribedToVarDef = false;
+        [CanBeNull] private List<DMProc> _verbs;
 
         public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
@@ -136,6 +137,28 @@ namespace DMCompiler.DM {
             if (Procs.ContainsKey(name)) return true;
 
             return Parent?.HasProc(name) ?? false;
+        }
+
+        public bool HasProcNoInheritence(string name) {
+            return Procs.ContainsKey(name);
+        }
+
+        /// <summary>
+        /// Slightly more nuanced than HasProc, makes sure that one of the DMProcs we have in this hierarchy is the original definition.
+        /// </summary>
+        /// <returns>True if we could find a definition, false if not.</returns>
+        public bool HasProcDefined(string name) {
+            if(Procs.TryGetValue(name, out var IDList)) {
+                // You'd expect us to be able to just index into the first entry,
+                // but, no, it can seriously be in {override, override, definition, override} order
+                foreach (int ID in IDList) {
+                    DMProc proc = DMObjectTree.AllProcs[ID];
+                    if((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
+                        return true;
+                    }
+                }
+            }
+            return Parent?.HasProcDefined(name) ?? false;
         }
 
         [CanBeNull]

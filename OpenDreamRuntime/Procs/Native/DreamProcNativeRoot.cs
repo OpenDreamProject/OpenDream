@@ -26,6 +26,7 @@ namespace OpenDreamRuntime.Procs.Native {
         // TODO: Pass NativeProc.State to every native proc
         public static IDreamManager DreamManager;
         public static DreamResourceManager ResourceManager;
+        public static IDreamMapManager MapManager;
         public static IDreamObjectTree ObjectTree;
 
         [DreamProc("abs")]
@@ -159,6 +160,46 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(Convert.ToChar(asciiValue).ToString());
         }
 
+        [DreamProc("block")]
+        [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_block(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(ObjectTree.Turf, out var start))
+                return new DreamValue(ObjectTree.CreateList());
+            if (!arguments.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(ObjectTree.Turf, out var end))
+                return new DreamValue(ObjectTree.CreateList());
+
+            start.GetVariable("x").TryGetValueAsInteger(out var x1);
+            start.GetVariable("y").TryGetValueAsInteger(out var y1);
+            start.GetVariable("z").TryGetValueAsInteger(out var z1);
+
+            end.GetVariable("x").TryGetValueAsInteger(out var x2);
+            end.GetVariable("y").TryGetValueAsInteger(out var y2);
+            end.GetVariable("z").TryGetValueAsInteger(out var z2);
+
+            int startX = Math.Min(x1, x2);
+            int startY = Math.Min(y1, y2);
+            int startZ = Math.Min(z1, z2);
+            int endX = Math.Max(x1, x2);
+            int endY = Math.Max(y1, y2);
+            int endZ = Math.Max(z1, z2);
+
+            DreamList turfs = ObjectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
+
+            // Collected in z-y-x order
+            for (int z = startZ; z <= endZ; z++) {
+                for (int y = startY; y <= endY; y++) {
+                    for (int x = startX; x <= endX; x++) {
+                        MapManager.TryGetTurfAt((x, y), z, out var turf);
+
+                        turfs.AddValue(new DreamValue(turf));
+                    }
+                }
+            }
+
+            return new DreamValue(turfs);
+        }
+
         [DreamProc("ceil")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_ceil(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -222,6 +263,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(tmp);
             } else if (value.TryGetValueAsFloat(out float floatVal)) {
                 return new DreamValue(Math.Clamp(floatVal, lVal, hVal));
+            } else if (value == DreamValue.Null) {
+                return new DreamValue(Math.Clamp(0.0, lVal, hVal));
             } else {
                 throw new Exception("Clamp expects a number or list");
             }
@@ -304,12 +347,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("CRASH")]
         [DreamProcParameter("msg", Type = DreamValueType.String)]
         public static DreamValue NativeProc_CRASH(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            if (arguments.GetArgument(0, "msg").TryGetValueAsString(out var message))
-            {
-                throw new DMCrashRuntime(message);
-            }
+            arguments.GetArgument(0, "msg").TryGetValueAsString(out var message);
 
-            throw new DMCrashRuntime("");
+            throw new DMCrashRuntime(message ?? String.Empty);
         }
 
         [DreamProc("fcopy")]
@@ -647,9 +687,13 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             var resourceManager = IoCManager.Resolve<DreamResourceManager>();
-            var listing = resourceManager.EnumerateListing(path);
-            DreamList list = ObjectTree.CreateList(listing);
-            return new DreamValue(list);
+            try {
+                var listing = resourceManager.EnumerateListing(path);
+                DreamList list = ObjectTree.CreateList(listing);
+                return new DreamValue(list);
+            } catch (DirectoryNotFoundException) {
+                return new DreamValue(ObjectTree.CreateList()); // empty list
+            }
         }
 
         [DreamProc("floor")]
@@ -673,6 +717,74 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(floatnum - MathF.Truncate(floatnum));
             }
             return new DreamValue(0);
+        }
+
+        [DreamProc("get_dir")]
+        [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
+        public static DreamValue NativeProc_get_dir(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "Loc1").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var loc1))
+                return new DreamValue(0);
+            if (!arguments.GetArgument(1, "Loc2").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var loc2))
+                return new DreamValue(0);
+
+            loc1.GetVariable("z").TryGetValueAsInteger(out var z1);
+            loc2.GetVariable("z").TryGetValueAsInteger(out var z2);
+            if (z1 != z2) // They must be on the same z-level
+                return new DreamValue(0);
+
+            loc1.GetVariable("x").TryGetValueAsInteger(out var x1);
+            loc1.GetVariable("y").TryGetValueAsInteger(out var y1);
+
+            loc2.GetVariable("x").TryGetValueAsInteger(out var x2);
+            loc2.GetVariable("y").TryGetValueAsInteger(out var y2);
+
+            int direction = 0;
+
+            // East or West
+            if (x2 < x1)
+                direction |= (int)AtomDirection.West;
+            else if (x2 > x1)
+                direction |= (int)AtomDirection.East;
+
+            // North or South
+            if (y2 < y1)
+                direction |= (int) AtomDirection.South;
+            else if (y2 > y1)
+                direction |= (int) AtomDirection.North;
+
+            return new DreamValue(direction);
+        }
+
+        [DreamProc("get_step")]
+        [DreamProcParameter("Ref", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Dir", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_get_step(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "Ref").TryGetValueAsDreamObjectOfType(ObjectTree.Atom, out var loc))
+                return DreamValue.Null;
+
+            arguments.GetArgument(1, "Dir").TryGetValueAsInteger(out var dir);
+            if (dir >= 16) // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
+                return DreamValue.Null;
+
+            loc.GetVariable("x").TryGetValueAsInteger(out var x);
+            loc.GetVariable("y").TryGetValueAsInteger(out var y);
+            loc.GetVariable("z").TryGetValueAsInteger(out var z);
+
+            if (dir > 0) {
+                if ((dir & (int) AtomDirection.North) == (int) AtomDirection.North)
+                    y += 1;
+                if ((dir & (int) AtomDirection.South) == (int) AtomDirection.South) // A dir of NORTH | SOUTH will cancel out
+                    y -= 1;
+
+                if ((dir & (int) AtomDirection.East) == (int) AtomDirection.East)
+                    x += 1;
+                if ((dir & (int) AtomDirection.West) == (int) AtomDirection.West) // A dir of EAST | WEST will cancel out
+                    x -= 1;
+            }
+
+            MapManager.TryGetTurfAt((x, y), z, out var turf);
+            return new DreamValue(turf);
         }
 
         [DreamProc("gradient")]
@@ -2084,20 +2196,20 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(0);
             }
             StringInfo textStringInfo = new StringInfo(text);
-            
+
             if(start < 0) {
                 start = Math.Max(start + textStringInfo.LengthInTextElements + 1, 1);
             }
 
             int result = 0;
-            
+
             TextElementEnumerator needlesElementEnumerator = StringInfo.GetTextElementEnumerator(needles);
             TextElementEnumerator textElementEnumerator = StringInfo.GetTextElementEnumerator(text, start - 1);
 
             while(textElementEnumerator.MoveNext()) {
                 bool found = false;
                 needlesElementEnumerator.Reset();
-                
+
                 //lol O(N*M)
                 while (needlesElementEnumerator.MoveNext()) {
                     if (textElementEnumerator.Current.Equals(needlesElementEnumerator.Current)) {
@@ -2124,6 +2236,82 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamObject soundObject = ObjectTree.CreateObject(ObjectTree.Sound);
             soundObject.InitSpawn(arguments);
             return new DreamValue(soundObject);
+        }
+
+        [DreamProc("splicetext")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
+        public static DreamValue NativeProc_splicetext(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);
+            arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);
+            arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
+
+            if(text == null)
+                if(String.IsNullOrEmpty(insertText))
+                    return DreamValue.Null;
+                else
+                    return new DreamValue(insertText);
+            else if(text == "")
+                return new DreamValue(insertText);
+
+            //runtime if start = 0 runtime error: bad text or out of bounds
+
+            if(end == 0 || end > text.Length + 1)
+                end = text.Length+1;
+            if(start < 0)
+                start = Math.Max(start + text.Length + 1, 1);
+            if(end < 0)
+                end = Math.Min(end + text.Length + 1, text.Length);
+
+            if(start == 0 || start > text.Length || start > end)
+                throw new Exception("bad text or out of bounds");
+
+            string result = text.Remove(start - 1, (end-start)).Insert(start - 1, insertText);
+
+            return new DreamValue(result);
+        }
+
+        [DreamProc("splicetext_char")]
+        [DreamProcParameter("Text", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
+        public static DreamValue NativeProc_splicetext_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);
+            arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);
+            arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
+
+            if(text == null) //this is for BYOND compat, and causes the function to ignore start/end if text is null or empty
+                if(String.IsNullOrEmpty(insertText))
+                    return DreamValue.Null;
+                else
+                    return new DreamValue(insertText);
+            else if(text == "")
+                return new DreamValue(insertText);
+
+            //runtime if start = 0 runtime error: bad text or out of bounds
+            StringInfo textElements = new StringInfo(text);
+            if(end == 0 || end > textElements.LengthInTextElements + 1)
+                end = textElements.LengthInTextElements+1;
+            if(start < 0)
+                start = Math.Max(start + textElements.LengthInTextElements + 1, 1);
+            if(end < 0)
+                end = Math.Min(end + textElements.LengthInTextElements + 1, textElements.LengthInTextElements);
+
+            if(start == 0 || start > textElements.LengthInTextElements || start > end)
+                throw new Exception("bad text or out of bounds");
+
+
+            String result = textElements.SubstringByTextElements(0, start - 1);
+            result += insertText;
+            if(end <= textElements.LengthInTextElements)
+                result += textElements.SubstringByTextElements(end - 1);
+
+            return new DreamValue(result);
         }
 
         [DreamProc("splittext")]
@@ -2219,6 +2407,27 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(0);
             } else {
                 return new DreamValue((int)text[pos - 1]);
+            }
+        }
+
+        [DreamProc("text2ascii_char")]
+        [DreamProcParameter("T", Type = DreamValueType.String)]
+        [DreamProcParameter("pos", Type = DreamValueType.Float, DefaultValue = 1)]
+        public static DreamValue NativeProc_text2ascii_char(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            if (!arguments.GetArgument(0, "T").TryGetValueAsString(out var text)) {
+                return new DreamValue(0);
+            }
+            StringInfo textElements = new StringInfo(text);
+
+            arguments.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
+            if (pos == 0) pos = 1; //0 is same as 1
+            else if (pos < 0) pos += textElements.LengthInTextElements + 1; //Wraps around
+
+            if (pos > textElements.LengthInTextElements || pos < 1) {
+                return new DreamValue(0);
+            } else {
+                //practically identical to (our) text2ascii but more explicit about subchar indexing
+                return new DreamValue((int)textElements.SubstringByTextElements(pos - 1, 1)[0]);
             }
         }
 
@@ -2557,6 +2766,32 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_walk_to(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             //TODO: Implement walk_to()
 
+            return DreamValue.Null;
+        }
+
+        [DreamProc("winclone")]
+        [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("window_name", Type = DreamValueType.String)]
+        [DreamProcParameter("clone_name", Type = DreamValueType.String)]
+        public static DreamValue NativeProc_winclone(DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
+            if(!arguments.GetArgument(1, "window_name").TryGetValueAsString(out var windowName))
+                return DreamValue.Null;
+            if(!arguments.GetArgument(2, "clone_name").TryGetValueAsString(out var cloneName))
+                return DreamValue.Null;
+
+            DreamValue player = arguments.GetArgument(0, "player");
+
+            DreamConnection? connection;
+
+            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
+                connection = DreamManager.GetConnectionFromMob(mob);
+            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
+                connection = DreamManager.GetConnectionFromClient(client);
+            } else {
+                throw new ArgumentException($"Invalid \"player\" argument {player}");
+            }
+
+            connection?.WinClone(windowName, cloneName);
             return DreamValue.Null;
         }
 

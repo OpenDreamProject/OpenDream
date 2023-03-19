@@ -69,6 +69,13 @@ namespace OpenDreamRuntime.Procs {
                     if (dreamObject.IsSubtypeOf(objectTree.Atom)) {
                         list = dreamObject.GetVariable("contents").GetValueAsDreamList();
                     } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
+                        // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
+                        if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
+                            return new DreamObjectEnumerator(mapManager.AllAreas, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
+                            return new DreamObjectEnumerator(mapManager.AllTurfs, filterType);
+                        }
+
                         return new WorldContentsEnumerator(mapManager, filterType);
                     }
                 }
@@ -179,10 +186,8 @@ namespace OpenDreamRuntime.Procs {
             IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
             DMReference reference = state.ReadReference();
             int jumpToIfFailure = state.ReadInt();
-            bool successfulEnumeration = enumerator.MoveNext();
 
-            state.AssignReference(reference, enumerator.Current);
-            if (!successfulEnumeration)
+            if (!enumerator.Enumerate(state, reference))
                 state.Jump(jumpToIfFailure);
 
             return null;
@@ -605,7 +610,18 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
             DreamValue result;
-            if (first.TryGetValueAsDreamObject(out var firstObj)) {
+            if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)) {
+                // Implicitly create a new /icon and ICON_ADD blend it
+                // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
+                DreamObject iconObj = state.Proc.ObjectTree.CreateObject(state.Proc.ObjectTree.Icon);
+                var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
+                if (!state.Proc.DreamResourceManager.TryLoadIcon(first, out var from))
+                    throw new Exception($"Failed to create an icon from {from}");
+
+                icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+                DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
+                result = new DreamValue(iconObj);
+            } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
                     IDreamMetaObject metaObject = firstObj.ObjectDefinition.MetaObject;
 
@@ -620,17 +636,6 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     result = second;
                 }
-            } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)) {
-                // Implicitly create a new /icon and ICON_ADD blend it
-                // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
-                DreamObject iconObj = state.Proc.ObjectTree.CreateObject(state.Proc.ObjectTree.Icon);
-                var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
-                if (!state.Proc.DreamResourceManager.TryLoadIcon(first, out var from))
-                    throw new Exception($"Failed to create an icon from {from}");
-
-                icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
-                DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
-                result = new DreamValue(iconObj);
             } else if (second != DreamValue.Null) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
@@ -1059,6 +1064,7 @@ namespace OpenDreamRuntime.Procs {
 
             switch (value.Type) {
                 case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.GetValueAsFloat())); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
                 default: throw new Exception("Invalid negate operation on " + value);
             }
 
@@ -1456,11 +1462,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Throw(DMProcState state) {
             DreamValue value = state.Pop();
 
-            if (value.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Exception, out DreamObject exception)) {
-                throw new DMRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
-            }
-
-            throw new DMRuntime(value);
+            throw new DMThrowException(value);
         }
 
         public static ProcStatus? Try(DMProcState state) {

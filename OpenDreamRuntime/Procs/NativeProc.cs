@@ -6,7 +6,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class NativeProc : DreamProc {
-        public delegate DreamValue HandlerFn(DreamObject? src, DreamObject usr, DreamProcArguments arguments);
+        public delegate DreamValue HandlerFn(DreamObject? src, DreamObject? usr, DreamProcArguments arguments);
 
         public static (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
             List<Attribute> attributes = new(func.GetInvocationList()[0].Method.GetCustomAttributes());

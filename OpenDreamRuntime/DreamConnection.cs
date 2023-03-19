@@ -465,5 +465,11 @@ namespace OpenDreamRuntime
 
             Session.ConnectedClient.SendMessage(msg);
         }
+
+        public void WinClone(string controlId, string cloneId) {
+            var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId, };
+
+            Session.ConnectedClient.SendMessage(msg);
+        }
     }
 }

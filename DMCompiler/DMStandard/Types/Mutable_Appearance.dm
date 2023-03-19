@@ -29,5 +29,15 @@
 			src.pixel_y = image.pixel_y
 		else if (isfile(copy_from))
 			src.icon = copy_from
+		else if (ispath(copy_from))
+			var/atom/appearance = copy_from
+			src.icon = initial(appearance.icon)
+			src.icon_state = initial(appearance.icon_state)
+			src.dir = initial(appearance.dir)
+			src.color = initial(appearance.color)
+			src.alpha = initial(appearance.alpha)
+			src.layer = initial(appearance.layer)
+			src.pixel_x = initial(appearance.pixel_x)
+			src.pixel_y = initial(appearance.pixel_y)
 		else if (!isnull(copy_from))
 			CRASH("Invalid arguments for /mutable_appearance/New()")

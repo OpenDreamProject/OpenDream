@@ -182,6 +182,10 @@ proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 		var/matrix/copy = new(Dir)
 		return copy.Turn(Angle)
 
+	if (istype(Dir, /icon))
+		var/icon/copy = new(Dir)
+		return copy.Turn(Angle)
+
 	var/dirAngle = 0
 
 	switch (Dir)

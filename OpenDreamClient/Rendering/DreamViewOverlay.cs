@@ -31,6 +31,7 @@ sealed class DreamViewOverlay : Overlay {
     public bool RenderEntityEnabled = true;
     public bool RenderPlayerEnabled = true;
     public bool MouseMapRenderEnabled = false;
+    public bool CheckForZFighting = false;
     private IRenderTexture mouseMapRenderTarget;
     public Texture MouseMap;
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
@@ -145,7 +146,11 @@ sealed class DreamViewOverlay : Overlay {
             return;
 
         sprites.Sort();
-
+        if(CheckForZFighting){
+            for(int i = 1; i < sprites.Count; i++)
+                if(sprites[i-1].Position == sprites[i].Position && sprites[i-1].CompareTo(sprites[i]) == 0 && sprites[i].CompareTo(sprites[i-1]) == 0)
+                    Logger.Debug($"Z fighting! Objects at {sprites[i].Position} with iconstates {sprites[i].MainIcon?.Appearance?.IconState} and {sprites[i-1].MainIcon?.Appearance?.IconState}");
+        }
         //dict of planes to their planemaster (if they have one) and list of sprites drawn on that plane in order, keyed by plane number
         Dictionary<float, (RendererMetaData?, List<RendererMetaData>)> PlanesList = new(sprites.Count);
 
@@ -244,8 +249,9 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
-    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0)
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, List<int> tieBreaker = null)
     {
+        tieBreaker ??= new List<int>();
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
@@ -333,19 +339,29 @@ sealed class DreamViewOverlay : Overlay {
         //dont forget the vis_flags
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
+        int underlayTiebreaker = 0;
         foreach (DreamIcon underlay in icon.Underlays) {
+            underlayTiebreaker--;
+            List<int> nextTiebreaker = new List<int>(tieBreaker.Count+1);
+            nextTiebreaker.AddRange(tieBreaker);
+            nextTiebreaker.Add(underlayTiebreaker);
             if(!keepTogether || (underlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, -1));
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, nextTiebreaker));
             else
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, -1));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, nextTiebreaker));
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
+        int overlayTiebreaker = 0;
         foreach (DreamIcon overlay in icon.Overlays) {
+            overlayTiebreaker++;
+            List<int> nextTiebreaker = new List<int>(tieBreaker.Count+1);
+            nextTiebreaker.AddRange(tieBreaker);
+            nextTiebreaker.Add(overlayTiebreaker);
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, 1));
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, nextTiebreaker));
             else
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, 1));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, nextTiebreaker));
         }
 
         //TODO maptext - note colour + transform apply
@@ -561,7 +577,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public EntityUid UID;
     public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public Boolean IsScreen;
-    public int TieBreaker; //Used for biasing render order (ie, for overlays)
+    public List<int> TieBreaker; //Used for biasing render order (ie, for overlays)
     public Color ColorToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
@@ -584,7 +600,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         UID = EntityUid.Invalid;
         ClickUID = EntityUid.Invalid;
         IsScreen = false;
-        TieBreaker = 0;
+        TieBreaker = new List<int>();
         ColorToApply = Color.White;
         AlphaToApply = 1.0f;
         TransformToApply = Matrix3.Identity;
@@ -649,11 +665,18 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         if (val != 0) {
             return val;
         }
-        val = this.TieBreaker.CompareTo(other.TieBreaker);
-        if (val != 0) {
-            return val;
-        }
 
+        //alright, this isn't the prettiest, but it basically works out a tree flattening for overlays render order
+        if(this.TieBreaker.Count == 0 && other.TieBreaker.Count > 0)
+            return -other.TieBreaker[0].CompareTo(0);
+        for (int i = 0; i < this.TieBreaker.Count; i++) {
+            if(i >= other.TieBreaker.Count)
+                return this.TieBreaker[i].CompareTo(0);
+            val = this.TieBreaker[i].CompareTo(other.TieBreaker[i]);
+            if (val != 0) {
+                return val;
+            }
+        }
         return 0;
     }
 }
@@ -751,6 +774,25 @@ public sealed class TogglePlayerRenderCommand : IConsoleCommand {
         if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
             overlay is DreamViewOverlay screenOverlay) {
             screenOverlay.RenderPlayerEnabled = !screenOverlay.RenderPlayerEnabled;
+        }
+    }
+}
+
+public sealed class ToggleZFightingDebugCommand : IConsoleCommand {
+    public string Command => "togglezfighting";
+    public string Description => "Toggle checking for instances of z-fighting";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
+        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
+            overlay is DreamViewOverlay screenOverlay) {
+            screenOverlay.CheckForZFighting = !screenOverlay.CheckForZFighting;
         }
     }
 }

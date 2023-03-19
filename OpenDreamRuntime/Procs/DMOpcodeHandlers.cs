@@ -69,6 +69,13 @@ namespace OpenDreamRuntime.Procs {
                     if (dreamObject.IsSubtypeOf(objectTree.Atom)) {
                         list = dreamObject.GetVariable("contents").GetValueAsDreamList();
                     } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
+                        // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
+                        if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
+                            return new DreamObjectEnumerator(mapManager.AllAreas, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
+                            return new DreamObjectEnumerator(mapManager.AllTurfs, filterType);
+                        }
+
                         return new WorldContentsEnumerator(mapManager, filterType);
                     }
                 }

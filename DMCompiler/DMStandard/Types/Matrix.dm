@@ -77,11 +77,5 @@
 		c += x
 		f += y
 
-	proc/Turn(angle)
-		var/angleCos = cos(angle)
-		var/angleSin = sin(angle)
-		var/matrix/rotation = new(angleCos, angleSin, 0, -angleSin, angleCos, 0)
-
-		return Multiply(rotation)
 
 proc/matrix(var/a, var/b, var/c, var/d, var/e, var/f)

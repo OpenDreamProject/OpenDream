@@ -2726,21 +2726,16 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue dirArg = arguments.GetArgument(0, "dir");
             DreamValue angleArg = arguments.GetArgument(1, "angle");
 
-            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) {
-                DreamValue matrixCopy = new DreamValue(matrix);
-/*
- * 	if (istype(Dir, /matrix))
-		var/matrix/copy = new(Dir)
-		return copy.Turn(Angle)
- */
-
-
-            }
             // Handle an invalid angle, defaults to 0
             if (!angleArg.TryGetValueAsFloat(out float angle)) {
                 angle = 0;
-
             }
+
+            // If Dir is actually a matrix, call /matrix.Turn
+            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) {
+                return DreamProcNativeMatrix._NativeProc_TurnInternal(matrix, usr, angle);
+            }
+
             if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {
                 throw new ArgumentException($"Invalid Dir for Turn: \"{dirArg.ToString()}\"");
             }
@@ -2785,7 +2780,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     315 => AtomDirection.Southeast,
                     _ => AtomDirection.East
             };
-            return new DreamValue(toReturn);
+            return new DreamValue((int)toReturn);
         }
 
 

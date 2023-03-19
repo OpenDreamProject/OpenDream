@@ -6,4 +6,4 @@
 	M.Multiply(N)
 
 	if(M ~! matrix(39, 54, 78, 54, 75, 108))
-		CRASH("Unexpected matrix/Multiply result")
+		CRASH("Unexpected matrix/Multiply result: [json_encode(M)]")

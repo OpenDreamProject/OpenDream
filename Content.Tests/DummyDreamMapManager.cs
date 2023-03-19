@@ -1,9 +1,11 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 
 namespace Content.Tests {
@@ -28,12 +30,21 @@ namespace Content.Tests {
             return new IconAppearance();
         }
 
+        public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out IDreamMapManager.Cell? cell) {
+            cell = null;
+            return false;
+        }
+
+        public IDreamMapManager.Cell GetCellFromTurf(DreamObject turf) {
+            throw null;
+        }
+
         public bool TryGetTurfAt(Vector2i pos, int z, out DreamObject turf) {
             turf = null;
             return false;
         }
 
-        public (Vector2i Pos, DreamMapManager.Level Level) GetTurfPosition(DreamObject turf) {
+        public (Vector2i Pos, IDreamMapManager.Level Level) GetTurfPosition(DreamObject turf) {
             return (Vector2i.Zero, null);
         }
 

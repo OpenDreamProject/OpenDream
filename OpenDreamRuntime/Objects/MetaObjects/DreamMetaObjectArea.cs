@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out DreamObject turf))
                     return;
 
-                (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
+                (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
                 level.SetArea(pos, dreamObject);
             };
 

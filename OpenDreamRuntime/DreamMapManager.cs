@@ -1,59 +1,27 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
+using Level = OpenDreamRuntime.IDreamMapManager.Level;
+using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
 
 namespace OpenDreamRuntime {
     public sealed class DreamMapManager : IDreamMapManager {
-        public sealed class Level {
-            public readonly int Z;
-            public readonly MapGridComponent Grid;
-            public readonly Cell[,] Cells;
-            public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
-
-            public Level(int z, MapGridComponent grid, DreamObject area, Vector2i size) {
-                Z = z;
-                Grid = grid;
-
-                Cells = new Cell[size.X, size.Y];
-                for (int x = 0; x < size.X; x++) {
-                    for (int y = 0; y < size.Y; y++) {
-                        Cells[x, y] = new Cell(area);
-                    }
-                }
-            }
-
-            public void SetArea(Vector2i pos, DreamObject area) {
-                if (!area.GetVariable("x").TryGetValueAsInteger(out int x) || x == 0 || x > pos.X)
-                    area.SetVariable("x", new DreamValue(pos.X));
-                if (!area.GetVariable("y").TryGetValueAsInteger(out int y) || y == 0 || y > pos.Y)
-                    area.SetVariable("y", new DreamValue(pos.Y));
-                if (!area.GetVariable("z").TryGetValueAsInteger(out int z) || z == 0 || z > Z)
-                    area.SetVariable("z", new DreamValue(Z));
-
-                Cells[pos.X - 1, pos.Y - 1].Area = area;
-            }
-        }
-
-        public sealed class Cell {
-            public DreamObject? Turf;
-            public DreamObject Area;
-
-            public Cell(DreamObject area) {
-                Area = area;
-            }
-        };
-
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        private ServerAppearanceSystem _appearanceSystem = default!;  // set in Initialize
+
+        // Systems set in Initialize
+        private ServerAppearanceSystem _appearanceSystem = default!;
+        private TransformSystem _transformSystem = default!;
 
         public Vector2i Size { get; private set; }
         public int Levels => _levels.Count;
@@ -69,6 +37,7 @@ namespace OpenDreamRuntime {
             AllAtoms.Clear();
 
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+            _transformSystem = _entitySystemManager.GetEntitySystem<TransformSystem>();
 
             DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
 
@@ -182,6 +151,7 @@ namespace OpenDreamRuntime {
                 // Only add the /turf to .contents when it's created.
                 cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
                 AllAtoms.Add(cell.Turf);
+                DreamMetaObjectTurf.TurfContentsLists.Add(cell.Turf, new TurfContentsList(_objectTree.List.ObjectDefinition, _objectTree, cell));
             }
 
             cell.Turf.InitSpawn(creationArguments);
@@ -217,6 +187,25 @@ namespace OpenDreamRuntime {
 
             uint appearanceId = (uint)tile.TypeId - 1;
             return _appearanceSystem.GetAppearance(appearanceId);
+        }
+
+        public Cell GetCellFromTurf(DreamObject turf) {
+            var (turfPos, level) = _turfToTilePos[turf];
+
+            return level.Cells[turfPos.X - 1, turfPos.Y - 1];
+        }
+
+        public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out Cell? cell) {
+            var pos = (Vector2i) _transformSystem.GetWorldPosition(transform);
+            var z = (int) transform.MapID;
+
+            if (IsInvalidCoordinate(pos, z)) {
+                cell = null;
+                return false;
+            }
+
+            cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
+            return true;
         }
 
         public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObject? turf) {
@@ -354,6 +343,46 @@ namespace OpenDreamRuntime {
     }
 
     public interface IDreamMapManager {
+        public sealed class Level {
+            public readonly int Z;
+            public readonly MapGridComponent Grid;
+            public readonly Cell[,] Cells;
+            public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
+
+            public Level(int z, MapGridComponent grid, DreamObject area, Vector2i size) {
+                Z = z;
+                Grid = grid;
+
+                Cells = new Cell[size.X, size.Y];
+                for (int x = 0; x < size.X; x++) {
+                    for (int y = 0; y < size.Y; y++) {
+                        Cells[x, y] = new Cell(area);
+                    }
+                }
+            }
+
+            public void SetArea(Vector2i pos, DreamObject area) {
+                if (!area.GetVariable("x").TryGetValueAsInteger(out int x) || x == 0 || x > pos.X)
+                    area.SetVariable("x", new DreamValue(pos.X));
+                if (!area.GetVariable("y").TryGetValueAsInteger(out int y) || y == 0 || y > pos.Y)
+                    area.SetVariable("y", new DreamValue(pos.Y));
+                if (!area.GetVariable("z").TryGetValueAsInteger(out int z) || z == 0 || z > Z)
+                    area.SetVariable("z", new DreamValue(Z));
+
+                Cells[pos.X - 1, pos.Y - 1].Area = area;
+            }
+        }
+
+        public sealed class Cell {
+            public DreamObject? Turf;
+            public DreamObject Area;
+            public readonly List<DreamObject> Movables = new();
+
+            public Cell(DreamObject area) {
+                Area = area;
+            }
+        }
+
         public Vector2i Size { get; }
         public int Levels { get; }
         public List<DreamObject> AllAtoms { get; }
@@ -366,8 +395,10 @@ namespace OpenDreamRuntime {
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
         public void SetTurfAppearance(DreamObject turf, IconAppearance appearance);
         public IconAppearance GetTurfAppearance(DreamObject turf);
+        public Cell GetCellFromTurf(DreamObject turf);
+        public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out Cell? cell);
         public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObject? turf);
-        public (Vector2i Pos, DreamMapManager.Level Level) GetTurfPosition(DreamObject turf);
+        public (Vector2i Pos, Level Level) GetTurfPosition(DreamObject turf);
         public DreamObject GetAreaAt(DreamObject turf);
         public void SetZLevels(int levels);
     }

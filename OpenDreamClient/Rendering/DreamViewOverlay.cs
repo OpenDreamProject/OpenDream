@@ -358,8 +358,10 @@ sealed class DreamViewOverlay : Overlay {
 
             if(!keepTogether || (underlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, underlayTiebreaker));
-            else
+            else {
+                current.KeepTogetherGroup ??= new();
                 current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, underlayTiebreaker));
+            }
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
@@ -369,8 +371,10 @@ sealed class DreamViewOverlay : Overlay {
 
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, overlayTiebreaker));
-            else
+            else {
+                current.KeepTogetherGroup ??= new();
                 current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, overlayTiebreaker));
+            }
         }
 
         //TODO maptext - note colour + transform apply
@@ -378,12 +382,13 @@ sealed class DreamViewOverlay : Overlay {
         //TODO particles - colour and transform don't apply?
 
         //flatten keeptogethergroup. Done here so we get implicit recursive iteration down the tree.
-        if(current.KeepTogetherGroup.Count > 0){
+        if(current.KeepTogetherGroup != null && current.KeepTogetherGroup.Count > 0){
             List<RendererMetaData> flatKTGroup = new List<RendererMetaData>(current.KeepTogetherGroup.Count);
             foreach(RendererMetaData KTItem in current.KeepTogetherGroup){
-                flatKTGroup.AddRange(KTItem.KeepTogetherGroup);
+                if(KTItem.KeepTogetherGroup != null)
+                    flatKTGroup.AddRange(KTItem.KeepTogetherGroup);
                 flatKTGroup.Add(KTItem);
-                KTItem.KeepTogetherGroup.Clear();
+                KTItem.KeepTogetherGroup = null; //might need to be Clear()
             }
             current.KeepTogetherGroup = flatKTGroup;
         }
@@ -446,7 +451,7 @@ sealed class DreamViewOverlay : Overlay {
 
 
 
-        if(iconMetaData.KeepTogetherGroup.Count > 0)
+        if(iconMetaData.KeepTogetherGroup != null && iconMetaData.KeepTogetherGroup.Count > 0)
         {
             //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
             Matrix3 KTParentTransform = iconMetaData.TransformToApply;
@@ -592,7 +597,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Matrix3 TransformToApply;
     public String RenderSource;
     public String RenderTarget;
-    public List<RendererMetaData> KeepTogetherGroup;
+    public List<RendererMetaData>? KeepTogetherGroup;
     public int AppearanceFlags;
     public int BlendMode;
     public MouseOpacity MouseOpacity;
@@ -615,7 +620,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         TransformToApply = Matrix3.Identity;
         RenderSource = "";
         RenderTarget = "";
-        KeepTogetherGroup = new();
+        KeepTogetherGroup = null; //don't actually need to allocate this 90% of the time
         AppearanceFlags = 0;
         BlendMode = 0;
         MouseOpacity = MouseOpacity.Transparent;

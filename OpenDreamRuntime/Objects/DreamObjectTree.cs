@@ -7,6 +7,7 @@ using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using Robust.Shared.Serialization.Manager.Exceptions;
 using TreeEntry = OpenDreamRuntime.Objects.IDreamObjectTree.TreeEntry;
 
 namespace OpenDreamRuntime.Objects {
@@ -130,13 +131,17 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public DreamValue GetDreamValueFromJsonElement(object value) {
+        public DreamValue GetDreamValueFromJsonElement(object? value) {
             if (value == null) return DreamValue.Null;
 
             JsonElement jsonElement = (JsonElement)value;
             switch (jsonElement.ValueKind) {
                 case JsonValueKind.String:
-                    return new DreamValue(jsonElement.GetString());
+                    var str = jsonElement.GetString();
+                    if (str == null)
+                        throw new NullNotAllowedException();
+
+                    return new DreamValue(str);
                 case JsonValueKind.Number:
                     return new DreamValue(jsonElement.GetSingle());
                 case JsonValueKind.Object: {
@@ -144,20 +149,14 @@ namespace OpenDreamRuntime.Objects {
 
                     switch (variableType) {
                         case JsonVariableType.Resource: {
-                            JsonElement resourcePathElement = jsonElement.GetProperty("resourcePath");
+                            var resourcePath = jsonElement.GetProperty("resourcePath").GetString();
+                            if (resourcePath == null)
+                                throw new NullNotAllowedException();
 
-                            switch (resourcePathElement.ValueKind) {
-                                case JsonValueKind.String: {
-                                    var resM = IoCManager.Resolve<DreamResourceManager>();
-                                    DreamResource resource = resM.LoadResource(resourcePathElement.GetString());
+                            var resM = IoCManager.Resolve<DreamResourceManager>();
+                            DreamResource resource = resM.LoadResource(resourcePath);
 
-                                    return new DreamValue(resource);
-                                }
-                                case JsonValueKind.Null:
-                                    return DreamValue.Null;
-                                default:
-                                    throw new Exception("Property 'resourcePath' must be a string or null");
-                            }
+                            return new DreamValue(resource);
                         }
                         case JsonVariableType.Type:
                             JsonElement typeValue = jsonElement.GetProperty("value");
@@ -193,6 +192,10 @@ namespace OpenDreamRuntime.Objects {
                             }
 
                             return new DreamValue(list);
+                        case JsonVariableType.PositiveInfinity:
+                            return new DreamValue(float.PositiveInfinity);
+                        case JsonVariableType.NegativeInfinity:
+                            return new DreamValue(float.NegativeInfinity);
                         default:
                             throw new Exception($"Invalid variable type ({variableType})");
                     }

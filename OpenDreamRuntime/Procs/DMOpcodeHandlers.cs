@@ -627,6 +627,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
+
             if(first == DreamValue.Null) {
                 state.AssignReference(reference, second);
                 state.Push(second);

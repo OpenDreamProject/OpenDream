@@ -4,7 +4,6 @@ using System.Collections.Immutable;
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectMatrix : IDreamMetaObject {
         public static readonly float[] IdentityMatrixArray = {1f, 0f, 0f, 0f, 1f, 0f};
-        public static readonly float[] ZeroMatrixArray = {0f, 0f, 0f, 0f, 0f, 0f};
 
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }

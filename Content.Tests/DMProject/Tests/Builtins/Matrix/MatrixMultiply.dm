@@ -7,7 +7,7 @@
 	if(M ~! matrix(39, 54, 78, 54, 75, 108))
 		CRASH("Unexpected matrix/Multiply result: [json_encode(M)]")
 
-	M.multiply(null) // Doesn't do anything
+	M.Multiply(null) // Doesn't do anything
 	if(M ~! matrix(39, 54, 78, 54, 75, 108))
 		CRASH("Unexpected matrix/Multiply(null) result: [json_encode(M)]")
 
@@ -19,4 +19,4 @@
 
 	M.Multiply("a")
 	if(M ~! matrix(0, 0, 0, 0, 0, 0))
-		CRASH("Unexpected matrix/Multiply("a") result: [json_encode(M)]")
+		CRASH("Unexpected matrix/Multiply(\"a\") result: [json_encode(M)]")

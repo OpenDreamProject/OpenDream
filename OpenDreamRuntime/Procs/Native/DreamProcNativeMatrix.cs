@@ -31,8 +31,9 @@ internal static class DreamProcNativeMatrix {
         if (possibleMatrix.Equals(DreamValue.Null)) {
             return new DreamValue(src);
         }
-        // Give up and return the zero matrix on invalid input
-        return new DreamValue(DreamMetaObjectMatrix.MakeMatrix(ObjectTree, DreamMetaObjectMatrix.ZeroMatrixArray));
+        // Give up and turn the input into the zero matrix on invalid input
+        DreamMetaObjectMatrix.ScaleMatrix(src, 0, 0);
+        return new DreamValue(src);
     }
 
     [DreamProc("Scale")]

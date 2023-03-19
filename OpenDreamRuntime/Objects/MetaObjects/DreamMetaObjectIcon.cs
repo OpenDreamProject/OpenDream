@@ -72,4 +72,16 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
         ObjectToDreamIcon.Add(icon, dreamIcon);
         return dreamIcon;
     }
+
+    public static DreamObject CloneIcon(IDreamObjectTree ObjectTree, DreamObject icon) {
+        // var newIcon = ObjectTree.CreateObject(icon.ObjectDefinition.TreeEntry);
+        // newIcon.InitSpawn(new Procs.DreamProcArguments(args));
+        //TODO: actually clone the icon
+        return icon;
+    }
+
+    public static DreamIcon TurnIcon(DreamIcon icon, float angle) {
+        //TODO: actually rotate the icon clockwise x degrees
+        return icon;
+    }
 }

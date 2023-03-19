@@ -2733,6 +2733,13 @@ namespace OpenDreamRuntime.Procs.Native {
                 angle = 0;
             }
 
+            // If Dir is actually an icon, call /icon.Turn
+            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Icon, out var icon)) {
+                // Clone icon here since it's specified to return a new one
+                DreamObject clonedIcon = DreamMetaObjectIcon.CloneIcon(ObjectTree, icon);
+                return DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, usr, angle);
+            }
+
             // If Dir is actually a matrix, call /matrix.Turn
             if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) {
                 // Clone matrix here since it's specified to return a new one
@@ -2786,9 +2793,6 @@ namespace OpenDreamRuntime.Procs.Native {
             };
             return new DreamValue((int)toReturn);
         }
-
-
-
 
         [DreamProc("typesof")]
         [DreamProcParameter("Item1", Type = DreamValueType.DreamType | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]

@@ -9,6 +9,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamProcNativeRoot.MapManager = IoCManager.Resolve<IDreamMapManager>();
             DreamProcNativeRoot.ObjectTree = objectTree;
 
+            DreamProcNativeIcon.ObjectTree = objectTree;
             DreamProcNativeMatrix.ObjectTree = objectTree;
 
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);

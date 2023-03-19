@@ -18,6 +18,8 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
+    private EntityQuery<DMISpriteComponent> spriteQuery;
+    private EntityQuery<TransformComponent> xformQuery;
     private ShaderInstance _blockColorInstance;
     private Dictionary<int, ShaderInstance> _blendmodeInstances;
 
@@ -37,7 +39,7 @@ sealed class DreamViewOverlay : Overlay {
     public Texture MouseMap;
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
     private Dictionary<String, IRenderTexture> _renderSourceLookup = new();
-    private List<IRenderTexture> _renderTargetsToReturn = new();
+    private Stack<IRenderTexture> _renderTargetsToReturn = new();
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
 
@@ -53,6 +55,9 @@ sealed class DreamViewOverlay : Overlay {
         _blendmodeInstances.Add(3, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
         _blendmodeInstances.Add(4, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
         _blendmodeInstances.Add(5, protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()); //BLEND_INSET_OVERLAY //TODO
+
+        spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
     }
 
     protected override void Draw(in OverlayDrawArgs args) {
@@ -62,20 +67,29 @@ sealed class DreamViewOverlay : Overlay {
         //because we render everything in render targets, and then render those to the world, we've got to apply some transformations to all world draws
         //in order to correct for different coordinate systems and general weirdness
         args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
+
+        //get our mouse map ready for drawing, and clear the hash table
         mouseMapRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         ClearRenderTarget(mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
+
+        //Main drawing of sprites happens here
         DrawAll(args, eye.Value);
+
+        //store our mouse map's image and return the render target
         MouseMap = mouseMapRenderTarget.Texture;
         ReturnPingPongRenderTarget(mouseMapRenderTarget);
+
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
+
         //some render targets need to be kept until the end of the render cycle, so return them here.
-        foreach(IRenderTexture RT in _renderTargetsToReturn)
-            ReturnPingPongRenderTarget(RT);
-        _renderTargetsToReturn.Clear();
         _renderSourceLookup.Clear();
 
+        while(_renderTargetsToReturn.Count > 0)
+            ReturnPingPongRenderTarget(_renderTargetsToReturn.Pop());
+
+        //RendererMetaData objects get reused instead of GC'd
         while( _rendererMetaDataToReturn.Count > 0)
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
 
@@ -86,8 +100,7 @@ sealed class DreamViewOverlay : Overlay {
         _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
         _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
         _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
-        var spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
-        var xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+
 
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
@@ -168,7 +181,7 @@ sealed class DreamViewOverlay : Overlay {
                     tmpRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                     ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
                     _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
-                    _renderTargetsToReturn.Add(tmpRenderTarget);
+                    _renderTargetsToReturn.Push(tmpRenderTarget);
                 }
 
                 if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is also a PLANE_MASTER
@@ -250,9 +263,8 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
-    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int[] tieBreaker = null)
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0)
     {
-        tieBreaker ??= new int[0];
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
@@ -340,27 +352,25 @@ sealed class DreamViewOverlay : Overlay {
         //dont forget the vis_flags
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
-        int underlayTiebreaker = 0;
+        int underlayTiebreaker = -icon.Underlays.Count;
         foreach (DreamIcon underlay in icon.Underlays) {
             underlayTiebreaker--;
-            int[] nextTiebreaker = tieBreaker.Concat(new[] { underlayTiebreaker }).ToArray();
 
             if(!keepTogether || (underlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, nextTiebreaker));
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, underlayTiebreaker));
             else
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, nextTiebreaker));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, underlayTiebreaker));
         }
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
-        int overlayTiebreaker = 0;
+        int overlayTiebreaker = icon.Overlays.Count;
         foreach (DreamIcon overlay in icon.Overlays) {
             overlayTiebreaker++;
-            int[] nextTiebreaker = tieBreaker.Concat(new[] { overlayTiebreaker }).ToArray();
 
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, nextTiebreaker));
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, overlayTiebreaker));
             else
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, nextTiebreaker));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, overlayTiebreaker));
         }
 
         //TODO maptext - note colour + transform apply
@@ -475,7 +485,7 @@ sealed class DreamViewOverlay : Overlay {
             iconMetaData.AlphaToApply = KTParentAlpha;
             iconMetaData.BlendMode = KTParentBlendMode;
 
-            _renderTargetsToReturn.Add(KTTexture);
+            _renderTargetsToReturn.Push(KTTexture);
         }
 
         if(frame != null && (icon.Appearance == null || icon.Appearance.Filters.Count == 0)) {
@@ -576,7 +586,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public EntityUid UID;
     public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public Boolean IsScreen;
-    public int[] TieBreaker; //Used for biasing render order (ie, for overlays)
+    public int TieBreaker; //Used for biasing render order (ie, for overlays)
     public Color ColorToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
@@ -599,7 +609,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         UID = EntityUid.Invalid;
         ClickUID = EntityUid.Invalid;
         IsScreen = false;
-        TieBreaker = new int[0];
+        TieBreaker = 0;
         ColorToApply = Color.White;
         AlphaToApply = 1.0f;
         TransformToApply = Matrix3.Identity;
@@ -665,18 +675,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
             return val;
         }
 
-        //alright, this isn't the prettiest, but it basically works out a tree flattening for overlays render order
-        if(this.TieBreaker.Length == 0 && other.TieBreaker.Length > 0)
-            return -other.TieBreaker[0].CompareTo(0);
-        for (int i = 0; i < this.TieBreaker.Length; i++) {
-            if(i >= other.TieBreaker.Length)
-                return this.TieBreaker[i].CompareTo(0);
-            val = this.TieBreaker[i].CompareTo(other.TieBreaker[i]);
-            if (val != 0) {
-                return val;
-            }
-        }
-        return 0;
+        val = this.TieBreaker.CompareTo(other.TieBreaker);
+        return val;
     }
 }
 

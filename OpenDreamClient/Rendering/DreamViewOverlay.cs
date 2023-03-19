@@ -69,7 +69,7 @@ sealed class DreamViewOverlay : Overlay {
         args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
 
         //get our mouse map ready for drawing, and clear the hash table
-        mouseMapRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        mouseMapRenderTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         ClearRenderTarget(mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
 
@@ -78,7 +78,7 @@ sealed class DreamViewOverlay : Overlay {
 
         //store our mouse map's image and return the render target
         MouseMap = mouseMapRenderTarget.Texture;
-        ReturnPingPongRenderTarget(mouseMapRenderTarget);
+        ReturnRenderTarget(mouseMapRenderTarget);
 
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
@@ -87,7 +87,7 @@ sealed class DreamViewOverlay : Overlay {
         _renderSourceLookup.Clear();
 
         while(_renderTargetsToReturn.Count > 0)
-            ReturnPingPongRenderTarget(_renderTargetsToReturn.Pop());
+            ReturnRenderTarget(_renderTargetsToReturn.Pop());
 
         //RendererMetaData objects get reused instead of GC'd
         while( _rendererMetaDataToReturn.Count > 0)
@@ -178,7 +178,7 @@ sealed class DreamViewOverlay : Overlay {
                 IRenderTexture tmpRenderTarget;
                 if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
 
-                    tmpRenderTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                    tmpRenderTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                     ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
                     _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                     _renderTargetsToReturn.Push(tmpRenderTarget);
@@ -218,7 +218,7 @@ sealed class DreamViewOverlay : Overlay {
         }
         //Final draw
         //At this point, all the sprites have been organised on their planes, render targets have been drawn, now we just draw it all together!
-        IRenderTexture baseTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        IRenderTexture baseTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         ClearRenderTarget(baseTarget, args.WorldHandle, new Color());
 
         //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
@@ -229,7 +229,7 @@ sealed class DreamViewOverlay : Overlay {
             IRenderTexture planeTarget = baseTarget;
             if(planeEntry.Item1 != null){
                 //we got a plane master here, so rent out a texture and draw to that
-                planeTarget = RentPingPongRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                planeTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
                 ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
             }
 
@@ -251,7 +251,7 @@ sealed class DreamViewOverlay : Overlay {
             if(planeEntry.Item1 != null){
                 //this was a plane master, so draw the plane onto the baseTarget and return it
                 DrawIcon(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture);
-                ReturnPingPongRenderTarget(planeTarget);
+                ReturnRenderTarget(planeTarget);
             }
         }
 
@@ -259,7 +259,7 @@ sealed class DreamViewOverlay : Overlay {
             args.WorldHandle.DrawTexture(mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
         else
             args.WorldHandle.DrawTexture(baseTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null); //draw the basetarget onto the world
-        ReturnPingPongRenderTarget(baseTarget);
+        ReturnRenderTarget(baseTarget);
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
@@ -396,7 +396,7 @@ sealed class DreamViewOverlay : Overlay {
         return result;
     }
 
-    private IRenderTexture RentPingPongRenderTarget(Vector2i size) {
+    private IRenderTexture RentRenderTarget(Vector2i size) {
         IRenderTexture result;
 
         if (!_renderTargetCache.TryGetValue(size, out var listResult)) {
@@ -414,7 +414,7 @@ sealed class DreamViewOverlay : Overlay {
         return result;
     }
 
-    private void ReturnPingPongRenderTarget(IRenderTexture rental) {
+    private void ReturnRenderTarget(IRenderTexture rental) {
         if (!_renderTargetCache.TryGetValue(rental.Size, out var storeList))
             storeList = new List<IRenderTexture>(4);
 
@@ -437,14 +437,14 @@ sealed class DreamViewOverlay : Overlay {
         if(textureOverride != null) {
             frame = textureOverride;
             //TODO figure out why this is necessary and delete it from existence.
-            IRenderTexture TempTexture = RentPingPongRenderTarget(frame.Size);
+            IRenderTexture TempTexture = RentRenderTarget(frame.Size);
             ClearRenderTarget(TempTexture, handle, Color.Black.WithAlpha(0));
             handle.RenderInRenderTarget(TempTexture , () => {
                     handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
                     handle.DrawTextureRect(frame, new Box2(Vector2.Zero, TempTexture.Size));
                 }, Color.Transparent);
             frame = TempTexture.Texture;
-            ReturnPingPongRenderTarget(TempTexture);
+            ReturnRenderTarget(TempTexture);
         }
         else
             frame = icon.CurrentFrame;
@@ -470,20 +470,20 @@ sealed class DreamViewOverlay : Overlay {
 
             KTItems.Sort();
             //draw it onto an additional render target that we can return immediately for correction of transform
-            IRenderTexture TempTexture = RentPingPongRenderTarget(frame.Size);
+            IRenderTexture TempTexture = RentRenderTarget(frame.Size);
             ClearRenderTarget(TempTexture, handle, Color.Transparent);
 
             foreach(RendererMetaData KTItem in KTItems){
                 DrawIcon(handle, TempTexture, KTItem, -KTItem.Position);
             }
             //but keep the handle to the final KT group's render target so we don't override it later in the render cycle
-            IRenderTexture KTTexture = RentPingPongRenderTarget(TempTexture.Size);
+            IRenderTexture KTTexture = RentRenderTarget(TempTexture.Size);
             handle.RenderInRenderTarget(KTTexture , () => {
                     handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
                     handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, TempTexture.Size));
                 }, Color.Transparent);
             frame = KTTexture.Texture;
-            ReturnPingPongRenderTarget(TempTexture);
+            ReturnRenderTarget(TempTexture);
             //now restore the original color, alpha, blend, and transform so they can be applied to the render target as a whole
             iconMetaData.TransformToApply = KTParentTransform;
             iconMetaData.ColorToApply = KTParentColor;
@@ -518,8 +518,8 @@ sealed class DreamViewOverlay : Overlay {
                 }, null);
 
         } else if (frame != null) {
-            IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
-            IRenderTexture pong = RentPingPongRenderTarget(frame.Size * 2);
+            IRenderTexture ping = RentRenderTarget(frame.Size * 2);
+            IRenderTexture pong = RentRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
 
             handle.RenderInRenderTarget(pong,
@@ -565,8 +565,8 @@ sealed class DreamViewOverlay : Overlay {
                             Color.White);
                         handle.UseShader(null);
                     }, null);
-            ReturnPingPongRenderTarget(ping);
-            ReturnPingPongRenderTarget(pong);
+            ReturnRenderTarget(ping);
+            ReturnRenderTarget(pong);
         }
     }
 

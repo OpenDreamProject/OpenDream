@@ -1485,7 +1485,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 case MatrixOpcode.Rotate:
                     if (!firstArgument.TryGetValueAsFloat(out float rotationAngle))
                         throw new ArgumentException($"/matrix() called with invalid rotation angle '{rotationAngle}'");
-                    var (angleSin, angleCos) = ((float, float))Math.SinCos(Math.PI / 180.0 * rotationAngle); // NOTE: Not sure if BYOND uses double or float precision in this specific case.
+                    var (angleSin, angleCos) = ((float, float))Math.SinCos(Angle.FromDegrees(rotationAngle)); // NOTE: Not sure if BYOND uses double or float precision in this specific case.
                     if (float.IsSubnormal(angleSin)) // FIXME: Think of a better solution to bad results for some angles.
                         angleSin = 0;
                     if (float.IsSubnormal(angleCos))

@@ -38,8 +38,7 @@ public sealed class InterfaceMacroSet : InterfaceElement {
     public override void AddChild(ElementDescriptor descriptor) {
         if (descriptor is not MacroDescriptor macroDescriptor)
             throw new ArgumentException($"Attempted to add a {descriptor} to a macro set", nameof(descriptor));
-
-        Macros.Add(macroDescriptor.Name, new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext));
+        Macros[macroDescriptor.Name] = new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext);
     }
 
     public void SetActive() {

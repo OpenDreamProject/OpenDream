@@ -25,6 +25,7 @@ public sealed class DMFLexer : TextLexer {
                     break;
                 }
                 case '.':
+                    if (_parsingAttributeName == false) goto default;
                     Advance();
                     token = CreateToken(TokenType.DMF_Period, c);
                     _parsingAttributeName = true; // Still parsing an attribute name, the last one was actually an element name!

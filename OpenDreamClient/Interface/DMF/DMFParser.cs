@@ -203,12 +203,19 @@ public sealed class DMFParser : Parser<char> {
             }
 
             Token attributeValue = Current();
-            if (!Check(TokenType.DMF_Value))
-                Error($"Invalid attribute value ({attributeValue.Text})");
+            if (!Check(TokenType.DMF_Value)) {
+                if (Check(TokenType.DMF_Semicolon)) {
+                    token = "none";
+                } else {
+                    Error($"Invalid attribute value ({attributeValue.Text})");
+                }
+            } else {
+                token = attributeValue.Text;
+            }
 
             Newline();
             key = attributeToken.Text;
-            token = attributeValue.Text;
+
             return true;
         }
 

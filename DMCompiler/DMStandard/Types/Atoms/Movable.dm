@@ -2,7 +2,7 @@
 	var/screen_loc
 
 	var/animate_movement = FORWARD_STEPS as opendream_unimplemented
-	var/list/locs = list() as opendream_unimplemented
+	var/list/locs = null as opendream_unimplemented
 	var/glide_size as opendream_unimplemented
 	var/step_size as opendream_unimplemented
 	var/bound_x as opendream_unimplemented

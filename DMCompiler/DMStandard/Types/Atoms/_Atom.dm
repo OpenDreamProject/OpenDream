@@ -7,9 +7,9 @@
 	var/suffix = null as opendream_unimplemented
 	var/list/verbs = null
 
-	var/list/contents = list()
-	var/list/overlays = list()
-	var/list/underlays = list()
+	var/list/contents = null
+	var/list/overlays = null
+	var/list/underlays = null
 	var/atom/loc
 	var/dir = SOUTH
 	var/x = 0

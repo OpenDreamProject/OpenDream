@@ -31,6 +31,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             VerbLists[dreamObject] = new VerbsList(_objectTree, dreamObject);
             _filterLists[dreamObject] = new DreamFilterList(_objectTree.List.ObjectDefinition, dreamObject);
 
+            // TODO: These should use their own special list types
+            dreamObject.SetVariable("overlays", new(_objectTree.CreateList()));
+            dreamObject.SetVariable("underlays", new(_objectTree.CreateList()));
+            dreamObject.SetVariableValue("vis_locs", new(_objectTree.CreateList()));
+            dreamObject.SetVariableValue("vis_contents", new(_objectTree.CreateList()));
+
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
@@ -133,15 +139,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "overlays": {
-                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out var oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= OverlayValueAssigned;
                         oldList.BeforeValueRemoved -= OverlayBeforeValueRemoved;
                         _atomManager.OverlaysListToAtom.Remove(oldList);
                     }
 
-                    DreamList overlayList;
-                    if (!value.TryGetValueAsDreamList(out overlayList)) {
+                    if (!value.TryGetValueAsDreamList(out var overlayList)) {
                         overlayList = _objectTree.CreateList();
                     }
 
@@ -152,15 +157,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "underlays": {
-                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out var oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= UnderlayValueAssigned;
                         oldList.BeforeValueRemoved -= UnderlayBeforeValueRemoved;
                         _atomManager.UnderlaysListToAtom.Remove(oldList);
                     }
 
-                    DreamList underlayList;
-                    if (!value.TryGetValueAsDreamList(out underlayList)) {
+                    if (!value.TryGetValueAsDreamList(out var underlayList)) {
                         underlayList = _objectTree.CreateList();
                     }
 

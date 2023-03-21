@@ -192,8 +192,7 @@ sealed class DreamViewOverlay : Overlay {
                     }
                 } else {//if not a PLANE_MASTER, draw the sprite to the render target
                     //note we don't draw this to the mousemap because that's handled when the RenderTarget is used as a source later
-                    _blockColorInstance.SetParameter("targetColor", new Color()); //Set shader instance's block colour to null for the mouse map
-                    DrawIconNow(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f)); //draw the sprite centered on the RenderTarget
+                    DrawIconNow(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f), null, true); //draw the sprite centered on the RenderTarget
                 }
             } else { //We are no longer dealing with RenderTargets, just regular old planes, so we collect the draw actions for batching
                 if(!PlanesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<(Action, Action)>) planeEntry)){
@@ -453,7 +452,7 @@ sealed class DreamViewOverlay : Overlay {
                     handle.DrawTextureRect(frame, new Box2(Vector2.Zero, TempTexture.Size));
                 }, Color.Transparent);
             frame = TempTexture.Texture;
-            ReturnRenderTarget(TempTexture);
+            _renderTargetsToReturn.Push(TempTexture);
         }
         else
             frame = icon.CurrentFrame;
@@ -491,7 +490,7 @@ sealed class DreamViewOverlay : Overlay {
                     handle.DrawTextureRect(TempTexture.Texture, new Box2(Vector2.Zero, TempTexture.Size));
                 }, Color.Transparent);
             frame = KTTexture.Texture;
-            ReturnRenderTarget(TempTexture);
+            _renderTargetsToReturn.Push(TempTexture);
             //now restore the original color, alpha, blend, and transform so they can be applied to the render target as a whole
             iconMetaData.TransformToApply = KTParentTransform;
             iconMetaData.ColorToApply = KTParentColor;
@@ -597,7 +596,7 @@ sealed class DreamViewOverlay : Overlay {
         }
     }
 
-    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
+    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null, bool noMouseMap = false) {
 
         (Action IconDrawAction, Action MouseMapDrawAction) = DrawIconAction(handle, iconMetaData, positionOffset, textureOverride);
 
@@ -605,7 +604,7 @@ sealed class DreamViewOverlay : Overlay {
                 IconDrawAction();
             }, null);
         //action should be NOP if this is transparent, but save a RiRT call anyway since we can
-        if(iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
+        if(noMouseMap || iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
             handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
                 MouseMapDrawAction();
             }, null);

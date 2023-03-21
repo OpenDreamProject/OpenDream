@@ -23,8 +23,6 @@
   id: blockcolor
   kind: source
   path: "/Shaders/blockcolor.swsl"
-  params:
-    targetColor: "#FF000000"
 
 - type: shader
   id: blend_add

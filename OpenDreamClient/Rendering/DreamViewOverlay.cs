@@ -48,7 +48,6 @@ sealed class DreamViewOverlay : Overlay {
         Logger.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
-
         _blendmodeInstances = new(4);
         //_blendmodeInstances.Add(0, protoManager.Index<ShaderPrototype>("empty").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY - null shaders, because overlay is default behaviour
         _blendmodeInstances.Add(2, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
@@ -72,7 +71,6 @@ sealed class DreamViewOverlay : Overlay {
         mouseMapRenderTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
         ClearRenderTarget(mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
-
         //Main drawing of sprites happens here
         DrawAll(args, eye.Value);
 
@@ -165,8 +163,8 @@ sealed class DreamViewOverlay : Overlay {
                 if(sprites[i-1].Position == sprites[i].Position && sprites[i-1].CompareTo(sprites[i]) == 0 && sprites[i].CompareTo(sprites[i-1]) == 0)
                     Logger.Debug($"Z fighting! Objects at {sprites[i].Position} with iconstates {sprites[i].MainIcon?.Appearance?.IconState} and {sprites[i-1].MainIcon?.Appearance?.IconState}");
         }
-        //dict of planes to their planemaster (if they have one) and list of sprites drawn on that plane in order, keyed by plane number
-        Dictionary<float, (RendererMetaData?, List<RendererMetaData>)> PlanesList = new(sprites.Count);
+        //dict of planes to their planemaster (if they have one) and list of mousmap and sprite draw actions on that plane in order, keyed by plane number
+        Dictionary<float, (RendererMetaData?, List<(Action, Action)>)> PlanesList = new(sprites.Count);
 
         //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
 
@@ -185,9 +183,9 @@ sealed class DreamViewOverlay : Overlay {
                 }
 
                 if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is also a PLANE_MASTER
-                    if(!PlanesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<RendererMetaData>) planeEntry)){
+                    if(!PlanesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<(Action, Action)>) planeEntry)){
                         //if the plane hasn't already been created, store this sprite as the plane_master
-                        PlanesList[sprite.Plane] = (sprite, new List<RendererMetaData>());
+                        PlanesList[sprite.Plane] = (sprite, new List<(Action, Action)>());
                     } else {
                         //the plane has already been created, so just replace the planeslist entry with this sprite as its plane master
                         PlanesList[sprite.Plane] = (sprite, planeEntry.Item2);
@@ -195,13 +193,13 @@ sealed class DreamViewOverlay : Overlay {
                 } else {//if not a PLANE_MASTER, draw the sprite to the render target
                     //note we don't draw this to the mousemap because that's handled when the RenderTarget is used as a source later
                     _blockColorInstance.SetParameter("targetColor", new Color()); //Set shader instance's block colour to null for the mouse map
-                    DrawIcon(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f)); //draw the sprite centered on the RenderTarget
+                    DrawIconNow(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f)); //draw the sprite centered on the RenderTarget
                 }
-            } else { //We are no longer dealing with RenderTargets, just regular old planes
-                if(!PlanesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<RendererMetaData>) planeEntry)){
+            } else { //We are no longer dealing with RenderTargets, just regular old planes, so we collect the draw actions for batching
+                if(!PlanesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<(Action, Action)>) planeEntry)){
                     //this plane doesn't exist yet, it's probably the first reference to it.
                     //Lets create it
-                    planeEntry = (null, new List<RendererMetaData>());
+                    planeEntry = (null, new List<(Action, Action)>());
                     PlanesList[sprite.Plane] = planeEntry;
                 }
 
@@ -212,7 +210,13 @@ sealed class DreamViewOverlay : Overlay {
                 }
 
                 //add this sprite for rendering
-                planeEntry.Item2.Add(sprite);
+                (Action,Action) drawActions;
+                if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
+                    drawActions = DrawIconAction(args.WorldHandle, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
+                } else {
+                    drawActions = DrawIconAction(args.WorldHandle, sprite, -screenArea.BottomLeft);
+                }
+                planeEntry.Item2.Add(drawActions);
                 PlanesList[sprite.Plane] = planeEntry;
             }
         }
@@ -224,8 +228,9 @@ sealed class DreamViewOverlay : Overlay {
         //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
         List<float> planeKeys = new List<float>(PlanesList.Keys);
         planeKeys.Sort();
+
         foreach(float plane in planeKeys){
-            (RendererMetaData?, List<RendererMetaData>) planeEntry = PlanesList[plane];
+            (RendererMetaData?, List<(Action,Action)>) planeEntry = PlanesList[plane];
             IRenderTexture planeTarget = baseTarget;
             if(planeEntry.Item1 != null){
                 //we got a plane master here, so rent out a texture and draw to that
@@ -233,24 +238,27 @@ sealed class DreamViewOverlay : Overlay {
                 ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
             }
 
-            foreach(RendererMetaData sprite in planeEntry.Item2)
+            List<Action> mouseMapActions = new(planeEntry.Item2.Count);
+            List<Action> iconActions = new(planeEntry.Item2.Count);
+            foreach((Action IconAction, Action MouseMapAction) in planeEntry.Item2)
             {
-                //setup the mousemaplookup shader for use in DrawIcon()
-                byte[] rgba = BitConverter.GetBytes(sprite.GetHashCode());
-                Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255); //TODO - this could result in misclicks due to hash-collision since we ditch a whole byte.
-                MouseMapLookup[targetColor] = sprite.ClickUID;
-                _blockColorInstance.SetParameter("targetColor", targetColor); //Set shader instance's block colour for the mouse map
-
-                if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
-                    DrawIcon(args.WorldHandle, planeTarget, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
-                } else {
-                    DrawIcon(args.WorldHandle, planeTarget, sprite, -screenArea.BottomLeft);
-                }
+                mouseMapActions.Add(MouseMapAction);
+                iconActions.Add(IconAction);
             }
+
+            args.WorldHandle.RenderInRenderTarget(planeTarget, () => {
+                foreach(Action a in iconActions)
+                    a();
+                }, null);
+            args.WorldHandle.RenderInRenderTarget(mouseMapRenderTarget, () => {
+                foreach(Action a in mouseMapActions)
+                    a();
+                }, null);
+
 
             if(planeEntry.Item1 != null){
                 //this was a plane master, so draw the plane onto the baseTarget and return it
-                DrawIcon(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture);
+                DrawIconNow(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture);
                 ReturnRenderTarget(planeTarget);
             }
         }
@@ -427,7 +435,8 @@ sealed class DreamViewOverlay : Overlay {
         handle.RenderInRenderTarget(target, () => {}, clearColor);
     }
 
-    private void DrawIcon(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
+
+    private (Action, Action) DrawIconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
         DreamIcon icon = iconMetaData.MainIcon;
 
         Vector2 position = iconMetaData.Position + positionOffset;
@@ -449,8 +458,7 @@ sealed class DreamViewOverlay : Overlay {
         else
             frame = icon.CurrentFrame;
 
-
-
+        //KEEP_TOGETHER groups
         if(iconMetaData.KeepTogetherGroup != null && iconMetaData.KeepTogetherGroup.Count > 0)
         {
             //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
@@ -474,7 +482,7 @@ sealed class DreamViewOverlay : Overlay {
             ClearRenderTarget(TempTexture, handle, Color.Transparent);
 
             foreach(RendererMetaData KTItem in KTItems){
-                DrawIcon(handle, TempTexture, KTItem, -KTItem.Position);
+                DrawIconNow(handle, TempTexture, KTItem, -KTItem.Position);
             }
             //but keep the handle to the final KT group's render target so we don't override it later in the render cycle
             IRenderTexture KTTexture = RentRenderTarget(TempTexture.Size);
@@ -493,31 +501,48 @@ sealed class DreamViewOverlay : Overlay {
             _renderTargetsToReturn.Push(KTTexture);
         }
 
-        if(frame != null && (icon.Appearance == null || icon.Appearance.Filters.Count == 0)) {
+
+        //if frame is still null, this doesn't require a draw, so return NOP
+        if(frame == null)
+            return (()=>{},()=>{});
+
+        Action IconDrawAction;
+        Action MouseMapDrawAction;
+
+        //setup the mousemaplookup shader for use in DrawIcon()
+        byte[] rgba = BitConverter.GetBytes(iconMetaData.GetHashCode());
+        Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255); //TODO - this could result in misclicks due to hash-collision since we ditch a whole byte.
+        MouseMapLookup[targetColor] = iconMetaData.ClickUID;
+
+        Matrix3 tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
+                                    iconMetaData.TransformToApply *
+                                    Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
+        Box2 drawBounds = new Box2(pixelPosition, pixelPosition+frame.Size);
+        if(icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
-            handle.RenderInRenderTarget(renderTarget, () => {
+            IconDrawAction = () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out var value) ? value : null);
-                    handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
-                                        iconMetaData.TransformToApply *
-                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
+                    handle.SetTransform(tmpTranslation);
                     handle.DrawTextureRect(frame,
-                        new Box2(pixelPosition, pixelPosition+frame.Size),
+                        drawBounds,
                         iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
                     handle.UseShader(null);
-                }, null);
-            if(iconMetaData.MouseOpacity != MouseOpacity.Transparent)
-                handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
-                        handle.UseShader(_blockColorInstance);
-                        handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
-                                        iconMetaData.TransformToApply *
-                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
-                        handle.DrawTextureRect(frame,
-                            new Box2(pixelPosition, pixelPosition+frame.Size),
-                            Color.White);
-                        handle.UseShader(null);
-                }, null);
+                };
+            if(iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
+                MouseMapDrawAction = () => {
+                    handle.UseShader(_blockColorInstance);
+                    handle.SetTransform(tmpTranslation);
+                    handle.DrawTextureRect(frame,
+                        drawBounds,
+                        targetColor);
+                    handle.UseShader(null);
+                };
+            } else {
+                MouseMapDrawAction = () => {};
+            }
+            return (IconDrawAction, MouseMapDrawAction);
 
-        } else if (frame != null) {
+        } else { //Slower path for filtered icons
             IRenderTexture ping = RentRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
@@ -544,29 +569,45 @@ sealed class DreamViewOverlay : Overlay {
                 pong = tmpHolder;
             }
 
-            handle.RenderInRenderTarget(renderTarget, () => {
+            IconDrawAction = () => {
                     handle.UseShader(_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out var value) ? value : null);
-                    handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
-                                        iconMetaData.TransformToApply *
-                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
+                    handle.SetTransform(tmpTranslation);
                     handle.DrawTextureRect(pong.Texture,
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
                         null);
                     handle.UseShader(null);
-                }, null);
-            if(iconMetaData.MouseOpacity != MouseOpacity.Transparent)
-                handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
-                        handle.UseShader(_blockColorInstance);
-                        handle.SetTransform(Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
-                                        iconMetaData.TransformToApply *
-                                        Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2)));
+                };
+            if(iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
+                MouseMapDrawAction = () => {
+                    handle.UseShader(_blockColorInstance);
+                    handle.SetTransform(tmpTranslation);
                         handle.DrawTextureRect(pong.Texture,
                             new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
-                            Color.White);
-                        handle.UseShader(null);
-                    }, null);
-            ReturnRenderTarget(ping);
+                            targetColor);
+                    handle.UseShader(null);
+                };
+
+            } else {
+                MouseMapDrawAction = () => {};
+            }
+            ReturnRenderTarget(ping); //TODO Is this dangerous? It might be
             ReturnRenderTarget(pong);
+            return (IconDrawAction, MouseMapDrawAction);
+        }
+    }
+
+    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
+
+        (Action IconDrawAction, Action MouseMapDrawAction) = DrawIconAction(handle, iconMetaData, positionOffset, textureOverride);
+
+        handle.RenderInRenderTarget(renderTarget, () => {
+                IconDrawAction();
+            }, null);
+        //action should be NOP if this is transparent, but save a RiRT call anyway since we can
+        if(iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
+            handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
+                MouseMapDrawAction();
+            }, null);
         }
     }
 

@@ -5,11 +5,15 @@
 	var/text = null
 	var/desc = null
 	var/suffix = null as opendream_unimplemented
-	var/list/verbs = null
 
-	var/list/contents = list()
-	var/list/overlays = list()
-	var/list/underlays = list()
+	// The initialization/usage of these lists is handled internally by the runtime
+	var/list/verbs = null
+	var/list/contents = null
+	var/list/overlays = null
+	var/list/underlays = null
+	var/list/vis_locs = null as opendream_unimplemented
+	var/list/vis_contents = null as opendream_unimplemented
+  
 	var/atom/loc
 	var/dir = SOUTH
 	var/x = 0
@@ -54,8 +58,6 @@
 	var/mouse_over_pointer as opendream_unimplemented
 	var/render_target
 	var/vis_flags as opendream_unimplemented
-	var/list/vis_locs = list() as opendream_unimplemented
-	var/list/vis_contents = list() as opendream_unimplemented
 
 	proc/Click(location, control, params)
 

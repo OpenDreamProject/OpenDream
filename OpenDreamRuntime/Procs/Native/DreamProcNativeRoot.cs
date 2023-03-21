@@ -1254,13 +1254,15 @@ namespace OpenDreamRuntime.Procs.Native {
             else if (value.TryGetValueAsString(out var text))
                 writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
-                writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(type.Path.PathString));
+                writer.WriteStringValue(type.Path.PathString);
+            else if (value.TryGetValueAsProc(out var proc))
+                writer.WriteStringValue(proc.ToString());
             else if (value.TryGetValueAsDreamList(out var list)) {
                 if (list.IsAssociative) {
                     writer.WriteStartObject();
 
                     foreach (DreamValue listValue in list.GetValues()) {
-                        var key = HttpUtility.JavaScriptStringEncode(listValue.Stringify());
+                        var key = listValue.Stringify();
 
                         if (list.ContainsKey(listValue)) {
                             writer.WritePropertyName(key);

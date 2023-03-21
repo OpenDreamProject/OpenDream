@@ -1252,7 +1252,7 @@ namespace OpenDreamRuntime.Procs.Native {
             else if (value.TryGetValueAsType(out var type))
                 writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(type.Path.PathString));
             else if (value.TryGetValueAsProc(out var proc))
-                writer.WriteStringValue(HttpUtility.JavaScriptStringEncode(proc.ToString()));
+                writer.WriteStringValue(proc.ToString());
             else if (value.TryGetValueAsDreamList(out var list)) {
                 if (list.IsAssociative) {
                     writer.WriteStartObject();

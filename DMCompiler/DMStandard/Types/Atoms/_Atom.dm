@@ -12,7 +12,7 @@
 	var/list/overlays = null
 	var/list/underlays = null
 	var/list/vis_locs = null as opendream_unimplemented
-    var/list/vis_contents = null as opendream_unimplemented
+	var/list/vis_contents = null as opendream_unimplemented
 
 	var/atom/loc
 	var/dir = SOUTH

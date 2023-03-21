@@ -590,8 +590,9 @@ sealed class DreamViewOverlay : Overlay {
             } else {
                 MouseMapDrawAction = () => {};
             }
-            ReturnRenderTarget(ping); //TODO Is this dangerous? It might be
-            ReturnRenderTarget(pong);
+
+            ReturnRenderTarget(ping);
+            _renderTargetsToReturn.Push(pong);
             return (IconDrawAction, MouseMapDrawAction);
         }
     }

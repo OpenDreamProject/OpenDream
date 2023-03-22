@@ -277,3 +277,6 @@ proc/isobj(Loc1)
 		if (!istype(arg, /obj)) return 0
 
 	return 1
+
+proc/winshow(player, window, show=1)
+	winset(player, window, "is-visible=[show ? "true" : "false"]")

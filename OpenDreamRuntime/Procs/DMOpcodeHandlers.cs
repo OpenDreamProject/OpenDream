@@ -420,7 +420,7 @@ namespace OpenDreamRuntime.Procs {
                     if (listObject.IsSubtypeOf(state.Proc.ObjectTree.Atom) || listObject.IsSubtypeOf(state.Proc.ObjectTree.World)) {
                         list = listObject.GetVariable("contents").GetValueAsDreamList();
                     } else {
-                        // BYOND ignores all floats, strings, types, etc. here and just doesn't run the loop.
+                        // BYOND ignores all floats, strings, types, etc. here and just returns 0.
                         state.Push(new DreamValue(0));
                     }
                 }

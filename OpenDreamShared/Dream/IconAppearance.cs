@@ -3,6 +3,7 @@ using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamShared.Dream {
@@ -13,7 +14,14 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
-        [ViewVariables] public ColorMatrix? Matrix;
+        /// <remarks>
+        /// An appearance can gain a color matrix filter by two possible forces: <br/>
+        /// 1. the /atom.color var is modified. <br/>
+        /// 2. the /atom.filters var gets a new filter of type "color". <br/>
+        /// DM crashes in some circumstances of this but we, as an extension :^), should try not to. <br/>
+        /// So, this exists as a way for the appearance to remember whether it's coloured by .color, specifically.
+        /// </remarks>
+        [ViewVariables] public DreamFilterColor? SillyColorFilter;
         [ViewVariables] public float Layer;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
@@ -34,6 +42,7 @@ namespace OpenDreamShared.Dream {
             Direction = appearance.Direction;
             PixelOffset = appearance.PixelOffset;
             Color = appearance.Color;
+            SillyColorFilter = appearance.SillyColorFilter;
             Layer = appearance.Layer;
             Invisibility = appearance.Invisibility;
             Opacity = appearance.Opacity;
@@ -57,6 +66,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Direction != Direction) return false;
             if (appearance.PixelOffset != PixelOffset) return false;
             if (appearance.Color != Color) return false;
+            if (appearance.SillyColorFilter != SillyColorFilter) return false;
             if (appearance.Layer != Layer) return false;
             if (appearance.Invisibility != Invisibility) return false;
             if (appearance.Opacity != Opacity) return false;
@@ -118,6 +128,17 @@ namespace OpenDreamShared.Dream {
             }
         }
 
+        /// <summary>
+        /// Iterates over everything in <see cref="Filters"/>, plus <see cref="SillyColorFilter"/> if it's there, bein silly.
+        /// </summary>
+        public IEnumerable<DreamFilter> GetAllFilters() {
+            if (SillyColorFilter is not null)
+                yield return SillyColorFilter;
+            foreach (DreamFilter filter in Filters) {
+                yield return filter;
+            }
+        }
+
         public override int GetHashCode() {
             HashCode hashCode = new HashCode();
 
@@ -126,6 +147,7 @@ namespace OpenDreamShared.Dream {
             hashCode.Add(Direction);
             hashCode.Add(PixelOffset);
             hashCode.Add(Color);
+            hashCode.Add(SillyColorFilter);
             hashCode.Add(Layer);
             hashCode.Add(Invisibility);
             hashCode.Add(Opacity);
@@ -155,11 +177,14 @@ namespace OpenDreamShared.Dream {
         /// </summary>
         /// <exception cref="ArgumentException">Thrown if color is not valid.</exception>
         public void SetColor(string color) {
-            // TODO the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
-            if (color == string.Empty) color = "#ffffff";
-            if (Matrix is not null) {
-                Matrix = null; // reset our color matrix if we had one
-                RemoveColorFilter();
+            // TODO: the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
+            if (SillyColorFilter is not null) {
+                SillyColorFilter = null; // reset our color matrix if we had one
+            }
+            RemoveColorFilter();
+            if (color == string.Empty) {
+                Color = Color.White;
+                return;
             }
             if (!ColorHelpers.TryParseColor(color, out Color)) {
                 throw new ArgumentException($"Invalid color '{color}'");
@@ -168,20 +193,23 @@ namespace OpenDreamShared.Dream {
         /// <summary>
         /// Sets the 'color' attribute to a color matrix, which will be used on the icon later on by a shader.
         /// </summary>
-        public void SetColor(ColorMatrix matrix) {
-            if(TryRepresentMatrixAsRGBAColor(matrix, out var matrixColor)) {
+        public void SetColor(in ColorMatrix matrix) {
+            RemoveColorFilter();
+            if (TryRepresentMatrixAsRGBAColor(matrix, out var matrixColor)) {
                 Color = matrixColor.Value;
-                Matrix = null;
-                RemoveColorFilter();
+                SillyColorFilter = null;
                 return;
             }
             Color = Color.White;
-            Matrix = matrix;
-            var newFilter = new DreamFilterColor(); // Am I like... doing this right?
-            newFilter.Color = matrix;
-            newFilter.Space = 0; // TODO: Support color mappings that aren't RGB.
-            newFilter.FilterType = "color";
-            Filters.Add(newFilter);
+            if (SillyColorFilter is not null) { // If we already had a matrix!
+                SillyColorFilter.Color = matrix;
+                return;
+            }
+            SillyColorFilter = new DreamFilterColor { // Am I like... doing this right?
+                Color = matrix,
+                Space = 0, // TODO: Support color mappings that aren't RGB.
+                FilterType = "color"
+            };
         }
     }
 }

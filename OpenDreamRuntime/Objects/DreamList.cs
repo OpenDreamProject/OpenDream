@@ -430,13 +430,12 @@ namespace OpenDreamRuntime.Objects {
 
             DreamMetaObjectFilter.FilterAttachedTo[copy] = this;
             _atomManager.UpdateAppearance(_atom, appearance => {
-                if(appearance.Matrix is not null) { // If this appearance already has a color matrix (and therefore a color filter somewhere)
+                // If this appearance already has a color filter (from /atom.color)
+                if(copy is DreamFilterColor && appearance.SillyColorFilter is not null) {
                     // This is to support an edge case where an atom's .color var has been set to a matrix, and then it also gets a color filter.
                     // In BYOND, this apparently causes a crash or something, depending on the order.
                     // Lets just... try to support it though, huh? :^)
-                    appearance.RemoveColorFilter();
-                    appearance.Matrix = null;
-                    appearance.Color = Color.White; // NOTE: Not sure if parity
+                    appearance.SillyColorFilter = null;
                 }
                 appearance.Filters.Add(copy);
             });

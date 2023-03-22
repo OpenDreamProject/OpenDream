@@ -4,6 +4,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
+using System.Diagnostics;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectAtom : IDreamMetaObject {
@@ -116,12 +117,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if(value.TryGetValueAsDreamList(out var list)) {
                         if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
                             _atomManager.UpdateAppearance(dreamObject, appearance => {
-                                appearance.SetColor(matrix);
+                                appearance.SetColor(in matrix);
                             });
                             break;
-                        } else {
-                            throw new ArgumentException("Invalid /list provided to /atom.color - it is not a color matrix");
                         }
+                        throw new ArgumentException("Invalid /list provided to /atom.color - it is not a color matrix");
                     }
 
                     value.TryGetValueAsString(out var colorString);
@@ -242,14 +242,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         }
                         return DreamValue.Null; //idek
                     }
-                    if(appearance.Matrix is not null) {
+                    if(appearance!.SillyColorFilter is not null) {
                         var matrixList = _objectTree.CreateList(20);
-                        foreach (float entry in appearance.Matrix.Value.GetValues())
+                        foreach (float entry in appearance.SillyColorFilter.Color.GetValues())
                             matrixList.AddValue(new DreamValue(entry));
                         return new DreamValue(matrixList);
                     }
-                    if (appearance.Color == Color.White)
+                    if (appearance.Color == Color.White) {
                         return DreamValue.Null;
+                    }
                     return new DreamValue(appearance.Color.ToHexNoAlpha().ToLower()); // BYOND quirk, does not return the alpha channel for some reason.
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;

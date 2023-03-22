@@ -172,7 +172,7 @@ internal static class DreamProcNativeHelpers {
             switch (list.GetLength()) {
                 case 0:
                     return true; // Just return the identity matrix. NOTE: Not sure if *exactly* parity.
-                case 1: // 0 to 5 is the rgb() string spam: 
+                case 1: // 0 to 5 is the rgb() string spam:
                 case 2: // list(rgb() or null, rgb() or null, rgb() or null, rgb() or null, rgb() or null)
                 case 3:
                 case 4:
@@ -216,7 +216,7 @@ internal static class DreamProcNativeHelpers {
                         matrix.SetRow(row, listArray[offset].MustGetValueAsFloat(),
                                            listArray[offset + 1].MustGetValueAsFloat(),
                                            listArray[offset + 2].MustGetValueAsFloat(),
-                                           listArray[offset + 2].MustGetValueAsFloat());
+                                           listArray[offset + 3].MustGetValueAsFloat());
                     }
                     return true;
                 case 20: // list(rr, rg, rb, ra, gr, gg, gb, ga, br, bg, bb, ba, ar, ag, ab, aa, cr, cg, cb, ca)
@@ -225,7 +225,7 @@ internal static class DreamProcNativeHelpers {
                         matrix.SetRow(row, listArray[offset].MustGetValueAsFloat(),
                                            listArray[offset + 1].MustGetValueAsFloat(),
                                            listArray[offset + 2].MustGetValueAsFloat(),
-                                           listArray[offset + 2].MustGetValueAsFloat());
+                                           listArray[offset + 3].MustGetValueAsFloat());
                     }
                     return true;
                 default:

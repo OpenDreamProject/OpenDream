@@ -1,5 +1,5 @@
 light_mode unshaded;
-blend_mode multiply;
+blend_mode mix;
 
 uniform lowp mat4 colorMatrix;
 uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is
@@ -27,3 +27,5 @@ void fragment() {
                 oldColor[3] * colorMatrix[3][3];
     COLOR = COLOR + offsetVector;
 }
+
+    

@@ -25,6 +25,11 @@
   path: "/Shaders/blockcolor.swsl"
 
 - type: shader
+  id: blend_overlay
+  kind: source
+  path: "/Shaders/blendoverlay.swsl"
+
+- type: shader
   id: blend_add
   kind: source
   path: "/Shaders/blendadd.swsl"
@@ -40,6 +45,11 @@
   path: "/Shaders/blendmultiply.swsl"
 
 - type: shader
+  id: blend_inset_overlay
+  kind: source
+  path: "/Shaders/blendinsetoverlay.swsl"
+
+- type: shader
   id: alpha
   kind: source
   path: "/Shaders/alpha.swsl"
@@ -50,10 +60,6 @@
 
 #unimplemented shaders point to empty.swsl and do nothing
 
-- type: shader
-  id: blend_inset_overlay
-  kind: source
-  path: "/Shaders/empty.swsl"
 
 
 

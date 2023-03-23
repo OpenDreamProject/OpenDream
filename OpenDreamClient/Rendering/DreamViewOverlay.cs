@@ -49,7 +49,7 @@ sealed class DreamViewOverlay : Overlay {
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _blendmodeInstances = new(4);
-        //_blendmodeInstances.Add(0, protoManager.Index<ShaderPrototype>("empty").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY - null shaders, because overlay is default behaviour
+        _blendmodeInstances.Add(0, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY - null shaders, because overlay is default behaviour
         _blendmodeInstances.Add(2, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
         _blendmodeInstances.Add(3, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
         _blendmodeInstances.Add(4, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
@@ -517,14 +517,24 @@ sealed class DreamViewOverlay : Overlay {
                                     iconMetaData.TransformToApply *
                                     Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
         Box2 drawBounds = new Box2(pixelPosition, pixelPosition+frame.Size);
+
         if(icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             IconDrawAction = () => {
-                    handle.UseShader(_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out var value) ? value : null);
+                    Matrix4 colorMatrix = new Matrix4();
+                    Color RGBA = iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply);
+                    colorMatrix.M11 = RGBA.R;
+                    colorMatrix.M22 = RGBA.G;
+                    colorMatrix.M33 = RGBA.B;
+                    colorMatrix.M44 = RGBA.A;
+                    ShaderInstance blendAndColor = _blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out var value) ? value : _blendmodeInstances[0];
+                    blendAndColor.SetParameter("colorMatrix", colorMatrix);
+                    blendAndColor.SetParameter("offsetVector", Vector4.Zero);
+                    handle.UseShader(blendAndColor);
                     handle.SetTransform(tmpTranslation);
                     handle.DrawTextureRect(frame,
                         drawBounds,
-                        iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
+                        null);
                     handle.UseShader(null);
                 };
             if(iconMetaData.MouseOpacity != MouseOpacity.Transparent) {

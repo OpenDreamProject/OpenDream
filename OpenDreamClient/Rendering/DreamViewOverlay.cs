@@ -42,6 +42,7 @@ sealed class DreamViewOverlay : Overlay {
     private Stack<IRenderTexture> _renderTargetsToReturn = new();
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
+    private Matrix3 flipMatrix;
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
@@ -57,6 +58,8 @@ sealed class DreamViewOverlay : Overlay {
 
         spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+        flipMatrix = Matrix3.Identity;
+        flipMatrix.R1C1 = -1;
     }
 
     protected override void Draw(in OverlayDrawArgs args) {
@@ -435,6 +438,27 @@ sealed class DreamViewOverlay : Overlay {
     }
 
 
+    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, int? blendOverride = null)
+    {
+        Color RGBA = colorOverride == null ? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply) : colorOverride.Value;
+        Matrix4 colorMatrix;
+        //if(iconMetaData.colorMatrix == null)
+        colorMatrix = new Matrix4();
+        colorMatrix.M11 = RGBA.R;
+        colorMatrix.M22 = RGBA.G;
+        colorMatrix.M33 = RGBA.B;
+        colorMatrix.M44 = RGBA.A;
+        //else
+        // colorMatrix = iconMetaData.colorMatrix
+        ShaderInstance blendAndColor;
+        if(blendOverride != null || !_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out blendAndColor))
+            blendAndColor = _blendmodeInstances[blendOverride == null ? 0 : blendOverride.Value];
+        blendAndColor = blendAndColor.Duplicate();
+        blendAndColor.SetParameter("colorMatrix", colorMatrix);
+        blendAndColor.SetParameter("offsetVector", Vector4.Zero);
+        return blendAndColor;
+    }
+
     private (Action, Action) DrawIconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
         DreamIcon icon = iconMetaData.MainIcon;
 
@@ -444,15 +468,8 @@ sealed class DreamViewOverlay : Overlay {
         Texture frame;
         if(textureOverride != null) {
             frame = textureOverride;
-            //TODO figure out why this is necessary and delete it from existence.
-            IRenderTexture TempTexture = RentRenderTarget(frame.Size);
-            ClearRenderTarget(TempTexture, handle, Color.Black.WithAlpha(0));
-            handle.RenderInRenderTarget(TempTexture , () => {
-                    handle.DrawRect(new Box2(Vector2.Zero, TempTexture.Size), new Color());
-                    handle.DrawTextureRect(frame, new Box2(Vector2.Zero, TempTexture.Size));
-                }, Color.Transparent);
-            frame = TempTexture.Texture;
-            _renderTargetsToReturn.Push(TempTexture);
+            //we flip this because GL's coordinate system is bottom-left first, and so render target textures are upside down
+            iconMetaData.TransformToApply = iconMetaData.TransformToApply * flipMatrix;
         }
         else
             frame = icon.CurrentFrame;
@@ -513,6 +530,8 @@ sealed class DreamViewOverlay : Overlay {
         Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255); //TODO - this could result in misclicks due to hash-collision since we ditch a whole byte.
         MouseMapLookup[targetColor] = iconMetaData.ClickUID;
 
+
+
         Matrix3 tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
                                     iconMetaData.TransformToApply *
                                     Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
@@ -521,17 +540,7 @@ sealed class DreamViewOverlay : Overlay {
         if(icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             IconDrawAction = () => {
-                    Matrix4 colorMatrix = new Matrix4();
-                    Color RGBA = iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply);
-                    colorMatrix.M11 = RGBA.R;
-                    colorMatrix.M22 = RGBA.G;
-                    colorMatrix.M33 = RGBA.B;
-                    colorMatrix.M44 = RGBA.A;
-                    ShaderInstance blendAndColor = _blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out var value) ? value : _blendmodeInstances[0];
-                    blendAndColor = blendAndColor.Duplicate();
-                    blendAndColor.SetParameter("colorMatrix", colorMatrix);
-                    blendAndColor.SetParameter("offsetVector", Vector4.Zero);
-                    handle.UseShader(blendAndColor);
+                    handle.UseShader(GetBlendAndColorShader(iconMetaData));
                     handle.SetTransform(tmpTranslation);
                     handle.DrawTextureRect(frame,
                         drawBounds,
@@ -553,16 +562,22 @@ sealed class DreamViewOverlay : Overlay {
             return (IconDrawAction, MouseMapDrawAction);
 
         } else { //Slower path for filtered icons
+            //first we do ping pong rendering for the multiple filters
             IRenderTexture ping = RentRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
 
             handle.RenderInRenderTarget(pong,
                 () => {
+                    handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());
+                    //we override the blend mode here because that is applied after the filters
+                    handle.UseShader(GetBlendAndColorShader(iconMetaData, blendOverride: 0));
                     handle.DrawTextureRect(frame,
                         new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)),
-                        iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
+                        null);
+                    handle.UseShader(null);
                 }, Color.Black.WithAlpha(0));
+
 
             foreach (DreamFilter filterId in icon.Appearance.Filters) {
                 ShaderInstance s = _appearanceSystem.GetFilterShader(filterId, _renderSourceLookup);
@@ -574,13 +589,20 @@ sealed class DreamViewOverlay : Overlay {
                     handle.UseShader(null);
                 }, Color.Black.WithAlpha(0));
 
+
                 tmpHolder = ping;
                 ping = pong;
                 pong = tmpHolder;
             }
+            if(icon.Appearance?.Filters.Count % 2 == 0) //if we have an even number of filters, we need to flip
+                tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
+                                    iconMetaData.TransformToApply * flipMatrix *
+                                    Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
 
+            //then we return the Action that draws the actual icon with filters applied
             IconDrawAction = () => {
-                    handle.UseShader(_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out var value) ? value : null);
+                    //note we apply the color *before* the filters, so we use override here
+                    handle.UseShader(GetBlendAndColorShader(iconMetaData, colorOverride: Color.White));
                     handle.SetTransform(tmpTranslation);
                     handle.DrawTextureRect(pong.Texture,
                         new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
@@ -596,7 +618,6 @@ sealed class DreamViewOverlay : Overlay {
                             targetColor);
                     handle.UseShader(null);
                 };
-
             } else {
                 MouseMapDrawAction = () => {};
             }

@@ -528,6 +528,7 @@ sealed class DreamViewOverlay : Overlay {
                     colorMatrix.M33 = RGBA.B;
                     colorMatrix.M44 = RGBA.A;
                     ShaderInstance blendAndColor = _blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out var value) ? value : _blendmodeInstances[0];
+                    blendAndColor = blendAndColor.Duplicate();
                     blendAndColor.SetParameter("colorMatrix", colorMatrix);
                     blendAndColor.SetParameter("offsetVector", Vector4.Zero);
                     handle.UseShader(blendAndColor);

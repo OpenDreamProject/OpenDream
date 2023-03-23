@@ -95,10 +95,10 @@ namespace DMCompiler.DM.Visitors {
                     Result = new Expressions.Args(identifier.Location);
                     break;
                 case "__TYPE__":
-                    Result = new Expressions.__TYPE__(identifier.Location);
+                    Result = new Expressions.ProcOwnerType(identifier.Location);
                     break;
                 case "__PROC__": // The saner alternative to .....
-                    Result = new Expressions.__PROC__(identifier.Location);
+                    Result = new Expressions.ProcType(identifier.Location);
                     break;
                 default:
                 {

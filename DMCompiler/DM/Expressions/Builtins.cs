@@ -508,8 +508,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // __TYPE__
-    class __TYPE__ : DMExpression {
-        public __TYPE__(Location location)
+    class ProcOwnerType : DMExpression {
+        public ProcOwnerType(Location location)
             : base(location)
         {}
 
@@ -523,8 +523,9 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class __PROC__ : DMExpression {
-        public __PROC__(Location location)
+    // __PROC__
+    class ProcType : DMExpression {
+        public ProcType(Location location)
             : base(location)
         {}
 

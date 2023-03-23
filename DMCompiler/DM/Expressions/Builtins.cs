@@ -507,9 +507,25 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // opendream_procpath
-    class OpenDreamProcpath : DMExpression {
-        public OpenDreamProcpath(Location location)
+    // __TYPE__
+    class ProcOwnerType : DMExpression {
+        public ProcOwnerType(Location location)
+            : base(location)
+        {}
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            // BYOND returns null if this is called in a global proc
+            if (dmObject.Path == DreamPath.Root) {
+                proc.PushNull();
+            } else {
+                proc.PushType(dmObject.Id);
+            }
+        }
+    }
+
+    // __PROC__
+    class ProcType : DMExpression {
+        public ProcType(Location location)
             : base(location)
         {}
 

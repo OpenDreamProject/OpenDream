@@ -110,7 +110,7 @@
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
 				if("color")
 					usr << "[usr], you fool! You have activated my evil attack!"
-					var/list/M = list("#ff0000","#000000","#00ff00")	
+					var/list/M = list("#de0000","#000000","#00ad00")	
 					src.color = M
 					usr << json_encode(src.color)
 				if("all")

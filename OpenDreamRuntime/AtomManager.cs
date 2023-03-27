@@ -210,7 +210,7 @@ namespace OpenDreamRuntime {
 
         public IconAppearance? MustGetAppearance(DreamObject atom);
 
-        public bool TryGetAppearance(DreamObject atom, out IconAppearance? appearance);
+        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);

@@ -14,12 +14,16 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public AtomDirection Direction;
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
-        /// <remarks>
+        /// <summary>
         /// An appearance can gain a color matrix filter by two possible forces: <br/>
         /// 1. the /atom.color var is modified. <br/>
         /// 2. the /atom.filters var gets a new filter of type "color". <br/>
         /// DM crashes in some circumstances of this but we, as an extension :^), should try not to. <br/>
         /// So, this exists as a way for the appearance to remember whether it's coloured by .color, specifically.
+        /// </summary>
+        /// <remarks>
+        /// The reason we don't just take the slow path and always use this filter is not just for optimization,<br/>
+        /// it's also for parity! See <see cref="TryRepresentMatrixAsRGBAColor(in ColorMatrix, out Color?)"/> for more.
         /// </remarks>
         [ViewVariables] public DreamFilterColor? SillyColorFilter;
         [ViewVariables] public float Layer;
@@ -105,15 +109,18 @@ namespace OpenDreamShared.Dream {
             // The R G B A values need to be bounded [0,1] for a color conversion to work;
             // anything higher implies trying to render "superblue" or something.
             float diagonalSum = 0f;
-            foreach(float diagonalValue in matrix.GetDiagonal()) {
+            foreach (float diagonalValue in matrix.GetDiagonal()) {
                 if (diagonalValue < 0 || diagonalValue > 1)
                     return false;
                 diagonalSum += diagonalValue;
             }
             // and then all of the other values need to be zero, including the offset vector.
             float sum = 0f;
-            foreach(float value in matrix.GetValues())
+            foreach (float value in matrix.GetValues()) {
+                if (value < 0f) // To avoid situations like negatives and positives cancelling out this checksum.
+                    return false;
                 sum += value;
+            }
             if (sum - diagonalSum == 0) // PREEETTY sure I can trust the floating-point math here. Not 100% though
                 maybeColor = new Color(matrix.c11, matrix.c22, matrix.c33, matrix.c44);
             return maybeColor is not null;

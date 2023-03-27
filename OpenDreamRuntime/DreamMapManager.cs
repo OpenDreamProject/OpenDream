@@ -192,7 +192,6 @@ namespace OpenDreamRuntime {
         }
 
         public IconAppearance MustGetTurfAppearance(DreamObject turf) {
-
             return _appearanceSystem.MustGetAppearance(GetAppearanceIDForTurf(turf));
         }
 
@@ -408,7 +407,7 @@ namespace OpenDreamRuntime {
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
         public void SetTurfAppearance(DreamObject turf, IconAppearance appearance);
         public IconAppearance MustGetTurfAppearance(DreamObject turf);
-        public bool TryGetTurfAppearance(DreamObject turf, out IconAppearance? appearance);
+        public bool TryGetTurfAppearance(DreamObject turf, [NotNullWhen(true)] out IconAppearance? appearance);
         public Cell GetCellFromTurf(DreamObject turf);
         public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out Cell? cell);
         public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObject? turf);

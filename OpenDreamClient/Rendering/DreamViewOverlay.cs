@@ -3,6 +3,8 @@ using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
 using OpenDreamShared.Dream;
+using Robust.Shared.Player;
+using System.Net.NetworkInformation;
 
 namespace OpenDreamClient.Rendering;
 
@@ -125,13 +127,14 @@ sealed class DreamViewOverlay : Overlay {
         }
 
         AtlasTexture frame = icon.CurrentFrame;
-        if(frame != null && icon.Appearance.Filters.Count == 0) {
+        if(frame is not null && icon.Appearance.Filters.Count == 0 && icon.Appearance.SillyColorFilter is null) {
             //faster path for rendering unshaded sprites
             handle.DrawTexture(frame, position, icon.Appearance.Color);
-        } else if (frame != null) {
+        } else if (frame is not null) {
             IRenderTexture ping = RentPingPongRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentPingPongRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
+
 
             handle.RenderInRenderTarget(pong,
                 () => {
@@ -141,7 +144,7 @@ sealed class DreamViewOverlay : Overlay {
                 }, Color.Transparent);
 
             bool rotate = true;
-            foreach (DreamFilter filterId in icon.Appearance.Filters) {
+            foreach (DreamFilter filterId in icon.Appearance.GetAllFilters()) {
                 ShaderInstance s = _appearanceSystem.GetFilterShader(filterId);
 
                 handle.RenderInRenderTarget(ping, () => {
@@ -157,7 +160,7 @@ sealed class DreamViewOverlay : Overlay {
                 rotate = !rotate;
             }
 
-            //this is so dumb
+            //FIXME: this is so dumb, make it stop rotating
             if (rotate) {
                 handle.RenderInRenderTarget(ping, () => {
                     handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());

@@ -268,7 +268,10 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitAppend(DMASTAppend append) {
             var lhs = DMExpression.Create(_dmObject, _proc, append.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, append.B, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, append.B, lhs.Path);
+            if (lhs.Path == DreamPath.List && rhs is NewPath) {
+                DMCompiler.Emit(WarningCode.SuspiciousListNew, rhs.Location, "Appending \"new\" to a list is ambiguous");
+            }
             Result = new Expressions.Append(append.Location, lhs, rhs);
         }
 

@@ -26,3 +26,4 @@
 
 //3000-3999
 #pragma EmptyBlock notice
+#pragma SuspiciousListNew warning

@@ -4,6 +4,7 @@ using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
+using OpenDreamShared;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.WebView;
@@ -24,7 +25,11 @@ namespace OpenDreamClient {
 
         public override void PreInit()
         {
-            IoCManager.Resolve<IConfigurationManager>().OverrideDefault(WCVars.WebUserAgentOverride, UserAgent);
+            var config = IoCManager.Resolve<IConfigurationManager>();
+            if (config.GetCVar(OpenDreamCVars.SpoofIEUserAgent))
+            {
+                config.OverrideDefault(WCVars.WebUserAgentOverride, UserAgent);
+            }
         }
 
         public override void Init() {

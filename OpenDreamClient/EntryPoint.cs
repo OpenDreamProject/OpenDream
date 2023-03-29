@@ -6,6 +6,7 @@ using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
+using Robust.Client.WebView;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
@@ -17,6 +18,14 @@ namespace OpenDreamClient {
         private readonly IDreamInterfaceManager _dreamInterface = default!;
         [Dependency]
         private readonly IDreamResourceManager _dreamResource = default!;
+
+        private const string UserAgent =
+            "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.2; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729; Tablet PC 2.0; Zoom 3.6.0) ";
+
+        public override void PreInit()
+        {
+            IoCManager.Resolve<IConfigurationManager>().OverrideDefault(WCVars.WebUserAgentOverride, UserAgent);
+        }
 
         public override void Init() {
             IoCManager.Resolve<IConfigurationManager>().OverrideDefault(CVars.NetPredict, false);

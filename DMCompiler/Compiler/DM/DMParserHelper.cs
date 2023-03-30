@@ -23,6 +23,12 @@ namespace DMCompiler.Compiler.DM {
             return level == ErrorLevel.Error;
         }
 
+        /// <inheritdoc cref="Parser{SourceType}.Error(string, bool)"/>
+        [Obsolete("This is not a desirable way for DMParser to emit an error, as errors should emit an error code and not cause unnecessary throws. Use DMParser's overrides of this method, instead.")]
+        new protected void Error(string message, bool throwException = true) {
+            base.Error(message, throwException);
+        }
+
         protected bool PeekDelimiter() {
             return Current().Type == TokenType.Newline || Current().Type == TokenType.DM_Semicolon;
         }

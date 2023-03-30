@@ -30,3 +30,4 @@
 //3000-3999
 #pragma EmptyBlock notice
 #pragma EmptyProc disabled // NOTE: If you enable this in OD's default pragma config file, it will emit for OD's DMStandard. Put it in your codebase's pragma config file.
+#pragma SuspiciousSwitchCase warning

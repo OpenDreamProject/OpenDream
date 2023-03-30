@@ -1290,7 +1290,7 @@ namespace DMCompiler.Compiler.DM {
 
                 DMASTProcStatementSwitch.SwitchCase[]? switchCases = SwitchCases();
 
-                if (switchCases == null) Error("Expected switch cases");
+                if (switchCases == null) Error(WarningCode.BadExpression, "Expected switch cases");
                 return new DMASTProcStatementSwitch(loc, value, switchCases);
             }
 
@@ -1341,7 +1341,7 @@ namespace DMCompiler.Compiler.DM {
             List<DMASTProcStatementSwitch.SwitchCase> switchCases = new();
             DMASTProcStatementSwitch.SwitchCase? switchCase = SwitchCase();
 
-            while (switchCase != null) {
+            while(switchCase is not null) {
                 switchCases.Add(switchCase);
                 Newline();
                 Whitespace();
@@ -1364,7 +1364,7 @@ namespace DMCompiler.Compiler.DM {
                     DMASTExpression? expression = Expression();
                     if (expression == null) {
                         if (expressions.Count == 0) {
-                            Error("Expected an expression");
+                            Error(WarningCode.BadExpression, "Expected an expression");
                         } else {
                             //Eat a trailing comma if there's at least 1 expression
                             break;
@@ -1375,7 +1375,7 @@ namespace DMCompiler.Compiler.DM {
                         var loc = Current().Location;
                         Whitespace();
                         DMASTExpression? rangeEnd = Expression();
-                        if (rangeEnd == null) Error("Expected an upper limit");
+                        if (rangeEnd == null) Error(WarningCode.BadExpression, "Expected an upper limit");
 
                         expressions.Add(new DMASTSwitchCaseRange(loc, expression, rangeEnd));
                     } else {
@@ -1405,7 +1405,9 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 Whitespace();
                 if (Current().Type == TokenType.DM_If) {
-                    Error("Expected \"if\" or \"else\", \"else if\" is not permitted as a switch case");
+                    //From now on, all ifs/elseifs/elses are actually part of this if's chain, not the switch's.
+                    //Ambiguous, but that is parity behaviour. Ergo, the following emission.
+                    Error(WarningCode.SuspiciousSwitchCase, "Expected \"if\" or \"else\" - \"else if\" is ambiguous as a switch case and may cause unintended flow");
                 }
                 DMASTProcBlockInner? body = ProcBlock();
 

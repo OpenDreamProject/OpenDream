@@ -80,7 +80,19 @@ namespace OpenDreamClient.Interface.Controls
                 context.DoCancel();
 
                 if (newUri.Host == "winset") { // Embedded winset. Ex: usr << browse("<a href=\"byond://winset?command=.quit\">Quit</a>", "window=quitbutton")
-                    _interfaceManager.WinSet(null, newUri.Query.Substring(1)); // Strip the question mark
+                    // Strip the question mark out before parsing
+                    var queryParams = HttpUtility.ParseQueryString(newUri.Query.Substring(1));
+
+                    // We need to extract the control element (if one was included)
+                    string? element = queryParams.Get("element");
+                    queryParams.Remove("element");
+
+                    // Reassemble the query params without element then convert to winset syntax
+                    var query = queryParams.ToString();
+                    query = query!.Replace('&', ';');
+
+                    // We can finally call winset
+                    _interfaceManager.WinSet(element, query);
                     return;
                 }
 

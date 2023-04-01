@@ -1,8 +1,10 @@
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
+using System.Diagnostics;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectAtom : IDreamMetaObject {
@@ -143,10 +145,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     break;
                 case "color":
+                    if(value.TryGetValueAsDreamList(out var list)) {
+                        if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
+                            _atomManager.UpdateAppearance(dreamObject, appearance => {
+                                appearance.SetColor(in matrix);
+                            });
+                            break;
+                        }
+                        throw new ArgumentException("Invalid /list provided to /atom.color - it is not a color matrix");
+                    }
+
+                    value.TryGetValueAsString(out var colorString);
+                    colorString ??= "white";
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsString(out string color);
-                        color ??= "white";
-                        appearance.SetColor(color);
+                        appearance.SetColor(colorString);
                     });
                     break;
                 case "dir":
@@ -251,6 +263,26 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new DreamValue(VerbLists[dreamObject]);
                 case "filters":
                     return new DreamValue(_filterLists[dreamObject]);
+                case "color":
+                    if(!_atomManager.TryGetAppearance(dreamObject, out IconAppearance? appearance)) {
+                        //This is here to avoid infinite loops, since the lazy-init of appearances
+                        // (that would occur if we tried to just invoke MustGetAppearance())
+                        //requires accessing the color var.
+                        if (dreamObject.ObjectDefinition.TryGetVariable("color",out var colorValue)) {
+                            return colorValue;
+                        }
+                        return DreamValue.Null; //idek
+                    }
+                    if(appearance.SillyColorFilter is not null) {
+                        var matrixList = _objectTree.CreateList(20);
+                        foreach (float entry in appearance.SillyColorFilter.Color.GetValues())
+                            matrixList.AddValue(new DreamValue(entry));
+                        return new DreamValue(matrixList);
+                    }
+                    if (appearance.Color == Color.White) {
+                        return DreamValue.Null;
+                    }
+                    return new DreamValue(appearance.Color.ToHexNoAlpha().ToLower()); // BYOND quirk, does not return the alpha channel for some reason.
                 default:
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
@@ -260,14 +292,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IconAppearance appearance = new IconAppearance();
 
             if (value.TryGetValueAsString(out string valueString)) {
-                appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
+                appearance.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
                 appearance.IconState = valueString;
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.MutableAppearance, out var mutableAppearance)) {
                 DreamValue icon = mutableAppearance.GetVariable("icon");
                 if (icon.TryGetValueAsDreamResource(out var iconResource)) {
                     appearance.Icon = iconResource.Id;
                 } else if (icon == DreamValue.Null) {
-                    appearance.Icon = _atomManager.GetAppearance(atom)?.Icon;
+                    appearance.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
                 }
 
                 DreamValue colorValue = mutableAppearance.GetVariable("color");

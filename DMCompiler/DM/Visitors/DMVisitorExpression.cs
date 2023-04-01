@@ -94,8 +94,11 @@ namespace DMCompiler.DM.Visitors {
                 case "args":
                     Result = new Expressions.Args(identifier.Location);
                     break;
-                case "opendream_procpath": // Our saner alternative to .....
-                    Result = new Expressions.OpenDreamProcpath(identifier.Location);
+                case "__TYPE__":
+                    Result = new Expressions.ProcOwnerType(identifier.Location);
+                    break;
+                case "__PROC__": // The saner alternative to .....
+                    Result = new Expressions.ProcType(identifier.Location);
                     break;
                 default:
                 {

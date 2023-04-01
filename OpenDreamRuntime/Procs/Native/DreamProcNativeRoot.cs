@@ -508,7 +508,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             DreamFilter? filter = serializationManager.Read(filterType, attributes) as DreamFilter;
-            if (filter == null)
+            if (filter is null)
                 throw new Exception($"Failed to create filter of type {filterType}");
 
             DreamObject filterObject = ObjectTree.CreateObject(ObjectTree.Filter);

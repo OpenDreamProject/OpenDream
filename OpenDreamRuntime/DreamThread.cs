@@ -180,7 +180,7 @@ namespace OpenDreamRuntime {
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
 
-        private const int MaxStackDepth = 256;
+        private const int MaxStackDepth = 400; // Same as BYOND but /world/loop_checks = 0 raises the limit
 
         private ProcState? _current;
         private Stack<ProcState> _stack = new();

@@ -4,8 +4,12 @@ using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
+using OpenDreamShared;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
+using Robust.Client.Map;
 using Robust.Client.UserInterface;
+using Robust.Client.WebView;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
@@ -13,10 +17,21 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamClient {
     public sealed class EntryPoint : GameClient {
-        [Dependency]
-        private readonly IDreamInterfaceManager _dreamInterface = default!;
-        [Dependency]
-        private readonly IDreamResourceManager _dreamResource = default!;
+        [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+        [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
+        [Dependency] private readonly IOverlayManager _overlayManager = default!;
+
+        private const string UserAgent =
+            "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.2; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729)";
+
+        public override void PreInit() {
+            var config = IoCManager.Resolve<IConfigurationManager>();
+            if (config.GetCVar(OpenDreamCVars.SpoofIEUserAgent)) {
+                config.OverrideDefault(WCVars.WebUserAgentOverride, UserAgent);
+            }
+
+            IoCManager.Resolve<IEntitySystemManager>().SystemLoaded += OnEntitySystemLoaded;
+        }
 
         public override void Init() {
             IoCManager.Resolve<IConfigurationManager>().OverrideDefault(CVars.NetPredict, false);
@@ -54,8 +69,7 @@ namespace OpenDreamClient {
             lightManager.DrawLighting = false;
             lightManager.DrawShadows = true;
 
-            IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
-            overlayManager.AddOverlay(new DreamViewOverlay());
+            _overlayManager.AddOverlay(new DreamViewOverlay());
 
             _dreamInterface.Initialize();
             IoCManager.Resolve<IDreamSoundEngine>().Initialize();
@@ -69,6 +83,17 @@ namespace OpenDreamClient {
             if (level == ModUpdateLevel.FramePostEngine) {
                 _dreamInterface.FrameUpdate(frameEventArgs);
             }
+        }
+
+        // As of RobustToolbox v0.90.0.0 there's a TileEdgeOverlay that breaks our rendering
+        // because we don't have an ITileDefinition for each tile.
+        // This removes that overlay immediately after MapSystem adds it.
+        // TODO: Fix this engine-side
+        private void OnEntitySystemLoaded(object sender, SystemChangedArgs e) {
+            if (e.System is not MapSystem)
+                return;
+
+            _overlayManager.RemoveOverlay<TileEdgeOverlay>();
         }
     }
 }

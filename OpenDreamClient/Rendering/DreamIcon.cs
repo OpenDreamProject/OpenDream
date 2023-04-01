@@ -4,9 +4,11 @@ using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
+using Robust.Shared.Player;
 
 namespace OpenDreamClient.Rendering {
     sealed class DreamIcon {
+
         public delegate void SizeChangedEventHandler();
 
         public List<DreamIcon> Overlays { get; } = new();
@@ -186,7 +188,7 @@ namespace OpenDreamClient.Rendering {
 
             AtlasTexture frame = CurrentFrame;
             if (frame != null) {
-                handle.DrawTexture(frame, position, Appearance.Color);
+                handle.DrawTexture(frame, position, Appearance.Color); // TODO: Does not consider SillyColorFilter
             }
 
             foreach (DreamIcon overlay in Overlays) {

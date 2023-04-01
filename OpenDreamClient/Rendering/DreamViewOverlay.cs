@@ -6,6 +6,8 @@ using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
 using System.Linq;
+using Robust.Shared.Player;
+using System.Net.NetworkInformation;
 
 namespace OpenDreamClient.Rendering;
 
@@ -566,6 +568,7 @@ sealed class DreamViewOverlay : Overlay {
             IRenderTexture ping = RentRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
+
 
             handle.RenderInRenderTarget(pong,
                 () => {

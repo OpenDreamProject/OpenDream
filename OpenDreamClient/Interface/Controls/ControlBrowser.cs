@@ -32,6 +32,7 @@ namespace OpenDreamClient.Interface.Controls
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
+        [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
         private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
@@ -77,6 +78,11 @@ namespace OpenDreamClient.Interface.Controls
 
             if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
                 context.DoCancel();
+
+                if (newUri.Host == "winset") { // Embedded winset. Ex: usr << browse("<a href=\"byond://winset?command=.quit\">Quit</a>", "window=quitbutton")
+                    _interfaceManager.WinSet(null, newUri.Query.Substring(1)); // Strip the question mark
+                    return;
+                }
 
                 var msg = new MsgTopic() { Query = newUri.Query };
                 _netManager.ClientSendMessage(msg);

@@ -187,7 +187,7 @@
 
 	push()
 		usr.overlays += new /obj/keep_apart_obj()
-
+//render sources
 /obj/plaque/render_source_test 
 	data = "<h3>Render source Test</h3><p>Click the button to toggle set the render_source to the render_target of your mob</p>"
 
@@ -201,6 +201,7 @@
 
 		usr << "Render target set to your mob's render source"	
 
+//screen objects
 /obj/background_image
 	icon = 'icons/background.dmi'
 	icon_state = "opendream"
@@ -217,12 +218,13 @@
 	push()
 		usr.client.screen |= new /obj/background_image()
 
+//planes
 /obj/lighting_plane
 	screen_loc = "1,1"
 	plane = PLANE_LIGHTING
 	blend_mode = BLEND_MULTIPLY
 	appearance_flags = PLANE_MASTER | NO_CLIENT_COLOR
-	color = "#333f" //should be color = list(null, null, null, "#0000", "#333f") when color matrix is done
+	color = list(null, null, null, "#0000", "#333f") 
 	mouse_opacity = 0 
 
 /image/spotlight
@@ -245,7 +247,7 @@
 		usr.client.screen |= new /obj/lighting_plane()	
 		usr.overlays += new /image/spotlight()
 
-
+//render sources for filters
 /obj/plaque/alpha_rendersource_test 
 	data = "<h3>Alpha Filter RenderSource Test</h3><p>Click the button to add an alpha filter with this button as the render source</p>"
 
@@ -257,6 +259,7 @@
 	push()
 		usr.filters = filter(type="alpha", render_source="button")
 
+//render order sanity checks
 /obj/order_test
 	icon = 'icons/hanoy.dmi'
 	icon_state = "0"

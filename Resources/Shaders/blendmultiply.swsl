@@ -5,7 +5,7 @@ uniform lowp mat4 colorMatrix;
 uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is
 
 void fragment() {
-    highp vec4 oldColor = zTexture(UV);
+    highp vec4 oldColor = zToSrgb(zTexture(UV)); // TODO: It'd be easier and more precise if we avoided this color-space conversion.
     COLOR[0] =  oldColor[0] * colorMatrix[0][0] + 
                 oldColor[1] * colorMatrix[0][1] + 
                 oldColor[2] * colorMatrix[0][2] + 

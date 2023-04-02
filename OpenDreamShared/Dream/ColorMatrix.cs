@@ -210,4 +210,17 @@ public struct ColorMatrix {
         yield return c54;
         yield break;
     }
+
+    public Matrix4 GetMatrix4(){
+        return new Matrix4(
+            c11, c12, c13, c14,
+            c21, c22, c23, c24,
+            c31, c32, c33, c34,
+            c41, c42, c43, c44
+        );
+    }
+
+    public Vector4 GetOffsetVector(){
+        return new Vector4(c51, c52, c53, c54);
+    }
 }

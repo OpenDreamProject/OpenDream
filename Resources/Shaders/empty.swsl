@@ -1,3 +1,5 @@
+blend_mode none;
+light_mode unshaded;
 uniform highp float size;
 uniform highp float x;
 uniform highp float y;   

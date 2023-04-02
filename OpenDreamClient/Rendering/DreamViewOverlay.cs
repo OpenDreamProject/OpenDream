@@ -300,10 +300,14 @@ sealed class DreamViewOverlay : Overlay {
 
         if(parentIcon != null){
             current.ClickUID = parentIcon.ClickUID;
-            if((icon.Appearance.AppearanceFlags & 2) == 2 || keepTogether) //RESET_COLOR
+            if((icon.Appearance.AppearanceFlags & 2) == 2 || keepTogether){ //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
-            else
+                current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
+            }
+            else{
                 current.ColorToApply = parentIcon.ColorToApply;
+                current.ColorMatrixToApply = parentIcon.ColorMatrixToApply;
+            }
 
             if((icon.Appearance.AppearanceFlags & 4) == 4 || keepTogether) //RESET_ALPHA
                 current.AlphaToApply = icon.Appearance.Alpha/255.0f;
@@ -326,6 +330,7 @@ sealed class DreamViewOverlay : Overlay {
                 current.Layer = icon.Appearance.Layer;
         } else {
             current.ColorToApply = icon.Appearance.Color;
+            current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             current.TransformToApply = iconAppearanceTransformMatrix;
             current.Plane = icon.Appearance.Plane;
@@ -443,21 +448,17 @@ sealed class DreamViewOverlay : Overlay {
     private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, int? blendOverride = null)
     {
         Color RGBA = colorOverride == null ? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply) : colorOverride.Value;
-        Matrix4 colorMatrix;
-        //if(iconMetaData.colorMatrix == null)
-        colorMatrix = new Matrix4();
-        colorMatrix.M11 = RGBA.R;
-        colorMatrix.M22 = RGBA.G;
-        colorMatrix.M33 = RGBA.B;
-        colorMatrix.M44 = RGBA.A;
-        //else
-        // colorMatrix = iconMetaData.colorMatrix
+        ColorMatrix colorMatrix;
+        if(iconMetaData.ColorMatrixToApply == null)
+            colorMatrix = new ColorMatrix(RGBA);
+        else
+            colorMatrix = iconMetaData.ColorMatrixToApply.Value;
         ShaderInstance blendAndColor;
         if(blendOverride != null || !_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out blendAndColor))
             blendAndColor = _blendmodeInstances[blendOverride == null ? 0 : blendOverride.Value];
         blendAndColor = blendAndColor.Duplicate();
-        blendAndColor.SetParameter("colorMatrix", colorMatrix);
-        blendAndColor.SetParameter("offsetVector", Vector4.Zero);
+        blendAndColor.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
+        blendAndColor.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
         return blendAndColor;
     }
 
@@ -669,6 +670,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Boolean IsScreen;
     public int TieBreaker; //Used for biasing render order (ie, for overlays)
     public Color ColorToApply;
+    public ColorMatrix? ColorMatrixToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
     public String RenderSource;
@@ -692,6 +694,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         IsScreen = false;
         TieBreaker = 0;
         ColorToApply = Color.White;
+        ColorMatrixToApply = null;
         AlphaToApply = 1.0f;
         TransformToApply = Matrix3.Identity;
         RenderSource = "";

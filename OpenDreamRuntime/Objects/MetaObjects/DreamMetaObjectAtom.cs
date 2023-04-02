@@ -273,9 +273,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         }
                         return DreamValue.Null; //idek
                     }
-                    if(appearance.SillyColorFilter is not null) {
+                    if(appearance.ColorMatrix is not null) {
                         var matrixList = _objectTree.CreateList(20);
-                        foreach (float entry in appearance.SillyColorFilter.Color.GetValues())
+                        foreach (float entry in appearance.ColorMatrix.Value.GetValues())
                             matrixList.AddValue(new DreamValue(entry));
                         return new DreamValue(matrixList);
                     }

@@ -29,13 +29,17 @@
 "C" = (/obj/order_test,/turf,/area)
 "D" = (/obj/button/alpha_rendersource_test,/turf,/area)
 "E" = (/obj/plaque/alpha_rendersource_test,/turf,/area)
+"F" = (/obj/button/color_test,/turf,/area)
+"G" = (/obj/button/color_matrix_test,/turf,/area)
+"H" = (/obj/plaque/color_test,/turf,/area)
+"I" = (/obj/plaque/color_matrix_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
 bedciklwopsuaaaaaaaaab
 bfghjmnxqrtvaaaaaaaaab
-byADaaaaaaaaaaaaaaaaab
-bzBEaaaaaaaaaaaaaaaaab
+byADFGaaaaaaaaaaaaaaab
+bzBEHIaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab

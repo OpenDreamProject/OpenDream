@@ -73,7 +73,7 @@ sealed class DreamViewOverlay : Overlay {
         args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
 
         //get our mouse map ready for drawing, and clear the hash table
-        mouseMapRenderTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        mouseMapRenderTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
         ClearRenderTarget(mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
         //Main drawing of sprites happens here
@@ -181,7 +181,7 @@ sealed class DreamViewOverlay : Overlay {
                 IRenderTexture tmpRenderTarget;
                 if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
 
-                    tmpRenderTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                    tmpRenderTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
                     ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
                     _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                     _renderTargetsToReturn.Push(tmpRenderTarget);
@@ -226,7 +226,7 @@ sealed class DreamViewOverlay : Overlay {
         }
         //Final draw
         //At this point, all the sprites have been organised on their planes, render targets have been drawn, now we just draw it all together!
-        IRenderTexture baseTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+        IRenderTexture baseTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
         ClearRenderTarget(baseTarget, args.WorldHandle, new Color());
 
         //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
@@ -238,7 +238,7 @@ sealed class DreamViewOverlay : Overlay {
             IRenderTexture planeTarget = baseTarget;
             if(planeEntry.Item1 != null){
                 //we got a plane master here, so rent out a texture and draw to that
-                planeTarget = RentRenderTarget((Vector2i) args.WorldAABB.Size*EyeManager.PixelsPerMeter);
+                planeTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
                 ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
             }
 

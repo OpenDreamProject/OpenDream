@@ -259,6 +259,28 @@
 	push()
 		usr.filters = filter(type="alpha", render_source="button")
 
+// Color
+/obj/plaque/color_matrix_test
+	data = "<h3>Color Matrix Test</h3><p>Click the button to apply inverse color matrix to your mob</p>"
+
+/obj/button/color_matrix_test
+	name = "Color Matrix Test"
+	desc = "Click me to apply color matrix!"
+
+	push()
+		usr.color = list(-1,0,0,0, -1,0,0,0, -1,1,1,1)
+
+/obj/plaque/color_test
+	data = "<h3>Color Test</h3><p>Click the button to apply random color to your mob</p>"
+
+/obj/button/color_test
+	name = "Color Test"
+	desc = "Click me to apply a random color!"
+
+	push()
+		usr.color = rgb(rand(0,255), rand(0,255), rand(0,255))
+
+
 //render order sanity checks
 /obj/order_test
 	icon = 'icons/hanoy.dmi'

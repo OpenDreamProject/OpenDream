@@ -136,10 +136,7 @@
 				if("grey/outline")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
 				if("color")
-					usr << "[usr], you fool! You have activated my evil attack!"
-					var/list/M = list("#de0000","#000000","#00ad00")	
-					src.color = M
-					usr << json_encode(src.color)
+					src.filters = filter(type="color", color=list("#de0000","#000000","#00ad00"))
 				if("all")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2), filter(type="alpha", icon=icon('icons/objects.dmi',"checker")))
 			usr << "Applied [selected] filter"		

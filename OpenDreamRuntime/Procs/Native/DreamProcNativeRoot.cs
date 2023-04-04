@@ -21,6 +21,10 @@ using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamRuntime.Procs.Native {
+    /// <remarks>
+    /// Note that this proc container also includes global procs which are used to create some DM objects,
+    /// like filter(), matrix(), etc.
+    /// </remarks>
     static class DreamProcNativeRoot {
         // I don't want to edit 100 procs to have the DreamManager passed to them
         // TODO: Pass NativeProc.State to every native proc
@@ -1410,6 +1414,159 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(text.ToLower());
+        }
+        [DreamProc("matrix")]
+        [DreamProcParameter("a")]
+        [DreamProcParameter("b")]
+        [DreamProcParameter("c")]
+        [DreamProcParameter("d")]
+        [DreamProcParameter("e")]
+        [DreamProcParameter("f")]
+        public static DreamValue NativeProc_matrix(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamObject matrix;
+            // normal, documented uses of matrix().
+            switch(arguments.ArgumentCount) {
+                case 6: // Take the arguments and construct a matrix.
+                case 0: // Since arguments are empty, this just creates an identity matrix.
+                    matrix = ObjectTree.CreateObject(ObjectTree.Matrix);
+                    matrix.InitSpawn(arguments);
+                    return new DreamValue(matrix);
+                case 1: // Clone the matrix.
+                    var firstArg = arguments.GetArgument(0, "a");
+                    if (!firstArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
+                        throw new ArgumentException($"/matrix() called with invalid argument '{firstArg}'");
+                    matrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, argObject);
+                    return new DreamValue(matrix);
+                case 5:
+                case 4:
+                case 3:
+                case 2:
+                    break;
+                default:
+                    throw new ArgumentException($"/matrix() called with {arguments.ArgumentCount}, expected 6 or less");
+            }
+            /* Byond here be dragons.
+             * In 2015, Lummox posted onto the BYOND forums this little blog post: http://www.byond.com/forum/post/1881375
+             * in it, he describes an otherwise-completely-undocumented use of the matrix() proc
+             * in which it takes, some sort of "opcode" and some system of arguments and does stuff with them,
+             * all of which are just aliases for already-existing behaviour in DM through the /matrix methods
+             * (m.Clone() or m.Interpolate() and so on)
+             * 
+             * Normally I'd never stoop to developing any such ridiculous behaviour, but for some reason,
+             * Paradise and a few other targets actually make use of these alternative signatures.
+             * So, here's that.
+            */
+            //First lets extract the opcode.
+            var opcodeArgument = arguments.GetArgument(arguments.ArgumentCount - 1, "opcode");
+            if (!opcodeArgument.TryGetValueAsInteger(out int opcodeArgumentValue))
+                throw new ArgumentException($"/matrix() override called with '{opcodeArgument}', expecting opcode");
+            bool doModify = false; // A bool to represent the MATRIX_MODIFY flag
+            if ((opcodeArgumentValue & (int)MatrixOpcode.Modify) == (int)MatrixOpcode.Modify) {
+                doModify = true;
+                opcodeArgumentValue &= ~(int)MatrixOpcode.Modify;
+            }
+            MatrixOpcode opcode = (MatrixOpcode)opcodeArgumentValue;
+            if (!Enum.IsDefined(opcode))
+                throw new ArgumentException($"/matrix() override called with invalid opcode '{opcodeArgumentValue}'");
+            //Now do the transformation or whatever that's implied by the opcode.
+            var firstArgument = arguments.GetArgument(0, "a");
+            var secondArgument = arguments.GetArgument(1, "b");
+            switch (opcode) {
+                case MatrixOpcode.Copy: // Clone the matrix. Basically a redundant version of matrix(m).
+                    if (!firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
+                        throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}'");
+                    matrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, argObject);
+                    return new DreamValue(matrix);
+                case MatrixOpcode.Invert:
+                    if (!firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out DreamObject? matrixInput)) // Expecting a matrix here
+                        throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}'");
+                    //Choose whether we are inverting the original matrix or a clone of it
+                    var invertableMatrix = doModify ? matrixInput : DreamMetaObjectMatrix.MatrixClone(ObjectTree, matrixInput);
+                    if (!DreamMetaObjectMatrix.TryInvert(invertableMatrix)) {
+                        throw new ArgumentException("/matrix provided for MATRIX_INVERT cannot be inverted");
+                    }
+                    return new DreamValue(invertableMatrix);
+                case MatrixOpcode.Rotate:
+                    if (!firstArgument.TryGetValueAsFloat(out float rotationAngle))
+                        throw new ArgumentException($"/matrix() called with invalid rotation angle '{rotationAngle}'");
+                    var (angleSin, angleCos) = ((float, float))Math.SinCos(Math.PI / 180.0 * rotationAngle); // NOTE: Not sure if BYOND uses double or float precision in this specific case.
+                    if (float.IsSubnormal(angleSin)) // FIXME: Think of a better solution to bad results for some angles.
+                        angleSin = 0;
+                    if (float.IsSubnormal(angleCos))
+                        angleCos = 0;
+                    var rotationMatrix = DreamMetaObjectMatrix.MakeMatrix(ObjectTree, angleCos, angleSin, 0, -angleSin, angleCos, 0);
+                    return new DreamValue(rotationMatrix);
+                case MatrixOpcode.Scale:
+                    //Four possible signatures: two to create a scale-matrix, and one to scale an existing matrix
+                    //matrix(scale, MATRIX_SCALE)
+                    //matrix(x,  y, MATRIX_SCALE)
+                    //
+                    //matrix(m1,scale,MATRIX_SCALE)
+                    //matrix(m1,x,y,MATRIX_SCALE)
+                    float horizontalScale;
+                    float verticalScale;
+                    if (firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrixArgument)) { // scaling a matrix
+                        DreamObject scaledMatrix = doModify ? matrixArgument : DreamMetaObjectMatrix.MatrixClone(ObjectTree, matrixArgument);
+                        if (!secondArgument.TryGetValueAsFloat(out horizontalScale))
+                            throw new ArgumentException($"/matrix() called with invalid scaling factor '{secondArgument}'");
+                        if (arguments.ArgumentCount == 4) {
+                            if (!arguments.GetArgument(2, "c").TryGetValueAsFloat(out verticalScale))
+                                throw new ArgumentException($"/matrix() called with invalid scaling factor '{arguments.GetArgument(2, "c")}'");
+                        } else {
+                            verticalScale = horizontalScale;
+                        }
+                        DreamMetaObjectMatrix.ScaleMatrix(scaledMatrix,horizontalScale, verticalScale);
+                        return new DreamValue(scaledMatrix);
+                    } else { // making a scale-matrix
+                        if (!firstArgument.TryGetValueAsFloat(out horizontalScale))
+                            throw new ArgumentException($"/matrix() called with invalid scaling factor '{firstArgument}'");
+                        if (arguments.ArgumentCount == 3) { // The 3-argument version of scale. matrix(x,y, MATRIX_SCALE)
+                            if (!secondArgument.TryGetValueAsFloat(out verticalScale))
+                                throw new ArgumentException($"/matrix() called with invalid scaling factor '{secondArgument}'");
+                        } else { // The 2-argument version. matrix(scale, MATRIX_SCALE)
+                            verticalScale = horizontalScale;
+                        }
+                        //A scaling matrix has the form {s,0,0, 0,s,0}, where s is the scaling factor.
+                        return new DreamValue(DreamMetaObjectMatrix.MakeMatrix(ObjectTree, horizontalScale, 0, 0, 0, verticalScale, 0));
+                    }
+                case MatrixOpcode.Translate:
+                    //Possible signatures:
+                    //matrix(x, MATRIX_TRANSLATE), although this one isn't even freaking documented in the blog post!!
+                    //matrix(x, y, MATRIX_TRANSLATE)
+                    //matrix(m1, x, y, MATRIX_TRANSLATE)
+                    if(arguments.ArgumentCount == 4) { // the 4-arg situation
+                        if (!firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out DreamObject? targetMatrix)) // Expecting a matrix here
+                            throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}', expecting matrix");
+                        DreamObject translateMatrix;
+                        if (doModify)
+                            translateMatrix = targetMatrix;
+                        else
+                            translateMatrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, targetMatrix);
+                        arguments.GetArgument(1,"b").TryGetValueAsFloat(out float horizontalOffset);
+                        translateMatrix.GetVariable("c").TryGetValueAsFloat(out float oldXOffset);
+                        translateMatrix.SetVariableValue("c", new(horizontalOffset + oldXOffset));
+
+                        arguments.GetArgument(2, "c").TryGetValueAsFloat(out float verticalOffset);
+                        translateMatrix.GetVariable("f").TryGetValueAsFloat(out float oldYOffset);
+                        translateMatrix.SetVariableValue("f", new(verticalOffset + oldYOffset));
+                        return new DreamValue(translateMatrix);
+                    }
+                    float horizontalShift;
+                    float verticalShift;
+                    if (!firstArgument.TryGetValueAsFloat(out horizontalShift))
+                        throw new ArgumentException($"/matrix() called with invalid translation factor '{firstArgument}'");
+                    if (arguments.ArgumentCount == 3) {
+                        var secondArg = arguments.GetArgument(1, "b");
+                        if (!secondArg.TryGetValueAsFloat(out verticalShift))
+                            throw new ArgumentException($"/matrix() called with invalid translation factor '{secondArg}'");
+                    } else {
+                        verticalShift = horizontalShift;
+                    }
+                    var translationMatrix = DreamMetaObjectMatrix.MakeMatrix(ObjectTree, 1, 0, horizontalShift, 0, 1, verticalShift);
+                    return new DreamValue(translationMatrix);
+                default: // Being here means that the opcode is defined but not yet implemented within this switch.
+                    throw new NotImplementedException($"/matrix() called with unimplemented opcode '{Enum.GetName(opcode)}'");
+            }
         }
 
         [DreamProc("max")]

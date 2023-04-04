@@ -137,11 +137,18 @@
 #define BACK_EASING		8
 #define JUMP_EASING		9
 
-//undocumented matrix defines?
-#define MATRIX_TRANSLATE	(1<<0)
-#define MATRIX_ROTATE		(1<<1)
-#define MATRIX_SCALE		(1<<2)
-#define MATRIX_MODIFY		(1<<3)
+//Undocumented matrix defines (see https://www.byond.com/forum/post/1881375)
+#define MATRIX_COPY 0
+#define MATRIX_MULTIPLY 1 // idk why this is first, either
+#define MATRIX_ADD 2
+#define MATRIX_SUBTRACT 3
+#define MATRIX_INVERT 4
+#define MATRIX_INTERPOLATE 8
+//NOTE: Targets (specifically Para, afaik) only use these ones.
+#define MATRIX_ROTATE		5
+#define MATRIX_SCALE		6
+#define MATRIX_TRANSLATE	7
+#define MATRIX_MODIFY		128
 
 //world/Profile() arg
 #define PROFILE_STOP	1

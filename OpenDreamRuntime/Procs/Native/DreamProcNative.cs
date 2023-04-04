@@ -71,6 +71,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_list2params);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_log);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_lowertext);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_matrix);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_max);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_md5);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_min);
@@ -134,6 +135,9 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Insert);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
+
+            objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Invert);
+            objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Scale);
 
             objectTree.SetNativeProc(objectTree.Regex, DreamProcNativeRegex.NativeProc_Find);
             objectTree.SetNativeProc(objectTree.Regex, DreamProcNativeRegex.NativeProc_Replace);

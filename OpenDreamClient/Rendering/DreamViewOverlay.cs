@@ -23,6 +23,7 @@ sealed class DreamViewOverlay : Overlay {
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
     private ShaderInstance _blockColorInstance;
+    private ShaderInstance _colorInstance;
     private Dictionary<int, ShaderInstance> _blendmodeInstances;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
@@ -51,8 +52,9 @@ sealed class DreamViewOverlay : Overlay {
         Logger.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
+        _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendmodeInstances = new(4);
-        _blendmodeInstances.Add(0, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY - null shaders, because overlay is default behaviour
+        _blendmodeInstances.Add(0, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY
         _blendmodeInstances.Add(2, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
         _blendmodeInstances.Add(3, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
         _blendmodeInstances.Add(4, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
@@ -453,7 +455,7 @@ sealed class DreamViewOverlay : Overlay {
     {
         Color RGBA = colorOverride == null ? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply) : colorOverride.Value;
         ColorMatrix colorMatrix;
-        if(iconMetaData.ColorMatrixToApply == null)
+        if(colorOverride != null || iconMetaData.ColorMatrixToApply == null)
             colorMatrix = new ColorMatrix(RGBA);
         else
             colorMatrix = iconMetaData.ColorMatrixToApply.Value;
@@ -577,9 +579,17 @@ sealed class DreamViewOverlay : Overlay {
 
             handle.RenderInRenderTarget(pong,
                 () => {
-                    handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());
-                    //we override the blend mode here because that is applied after the filters
-                    handle.UseShader(GetBlendAndColorShader(iconMetaData, blendOverride: 0));
+                    //we can use the color matrix shader here, since we don't need to blend
+                    //also because blend mode is none, we don't need to drawrect clear
+                    ColorMatrix colorMatrix;
+                    if(iconMetaData.ColorMatrixToApply == null)
+                        colorMatrix = new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
+                    else
+                        colorMatrix = iconMetaData.ColorMatrixToApply.Value;
+                    ShaderInstance colorShader = _colorInstance.Duplicate();
+                    colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
+                    colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
+                    handle.UseShader(colorShader);
                     handle.DrawTextureRect(frame,
                         new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)),
                         null);

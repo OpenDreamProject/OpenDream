@@ -601,7 +601,6 @@ sealed class DreamViewOverlay : Overlay {
                 ShaderInstance s = _appearanceSystem.GetFilterShader(filterId, _renderSourceLookup);
 
                 handle.RenderInRenderTarget(ping, () => {
-                    handle.DrawRect(new Box2(Vector2.Zero, frame.Size * 2), new Color());
                     handle.UseShader(s);
                     handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size * 2));
                     handle.UseShader(null);

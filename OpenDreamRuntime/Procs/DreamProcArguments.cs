@@ -40,6 +40,9 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
+        /// <remarks>
+        /// Argument position is 0-indexed.
+        /// </remarks>
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
             if (NamedArguments != null && NamedArguments.TryGetValue(argumentName, out DreamValue argumentValue)) {
                 return argumentValue;

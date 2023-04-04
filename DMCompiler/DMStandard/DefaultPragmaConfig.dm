@@ -18,6 +18,7 @@
 #pragma TooManyArguments error
 #pragma PointlessParentCall warning
 #pragma PointlessBuiltinCall warning
+#pragma SuspiciousMatrixCall warning
 #pragma MalformedRange warning
 #pragma InvalidRange error
 #pragma InvalidSetStatement error

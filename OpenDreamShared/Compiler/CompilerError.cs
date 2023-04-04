@@ -43,6 +43,7 @@ namespace OpenDreamShared.Compiler {
         TooManyArguments = 2200,
         PointlessParentCall = 2205,
         PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
+        SuspiciousMatrixCall = 2207, // Calling matrix() with seemingly the wrong arguments
         MalformedRange = 2300,
         InvalidRange = 2301,
         InvalidSetStatement = 2302,

@@ -114,9 +114,9 @@ sealed class DreamViewOverlay : Overlay {
 
         int seeVis = 127;
         //self icon
-        if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
+        if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
             seeVis = player.Icon.Appearance.SeeInvisibility;
-            if(RenderPlayerEnabled)
+            if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
                 sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
         }
 

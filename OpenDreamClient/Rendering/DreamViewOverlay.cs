@@ -112,11 +112,15 @@ sealed class DreamViewOverlay : Overlay {
         var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, screenArea.Scale(1.2f)); //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
+        int seeVis = 127;
         //self icon
-        if(RenderPlayerEnabled){
-            if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform))
+        if (spriteQuery.TryGetComponent(eye, out var player) && player.IsVisible(mapManager: _mapManager) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
+            seeVis = player.Icon.Appearance.SeeInvisibility;
+            if(RenderPlayerEnabled)
                 sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
         }
+
+
         //visible entities
         if(RenderEntityEnabled){
             foreach (EntityUid entity in entities) {
@@ -124,7 +128,7 @@ sealed class DreamViewOverlay : Overlay {
                     continue; //don't render the player twice
                 if (!spriteQuery.TryGetComponent(entity, out var sprite))
                     continue;
-                if (!sprite.IsVisible(mapManager: _mapManager))
+                if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
                     continue;
                 if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
                     continue;
@@ -144,7 +148,7 @@ sealed class DreamViewOverlay : Overlay {
         //screen objects
         if(ScreenOverlayEnabled){
             foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
-                if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager))
+                if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager, seeInvis: seeVis))
                     continue;
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                     continue;

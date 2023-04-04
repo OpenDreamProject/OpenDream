@@ -35,7 +35,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     connection.MobDreamObject = dreamObject;
                 }
             } else if (varName == "see_invisible") {
-               //TODO
+               //Done on atom, don't worry about it
             } else if (varName == "client" && value != oldValue) {
                 var newClient = value.GetValueAsDreamObject();
                 var oldClient = oldValue.GetValueAsDreamObject();

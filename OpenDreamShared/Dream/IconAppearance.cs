@@ -32,6 +32,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public float BlendMode;
         [ViewVariables] public int AppearanceFlags = 0;
         [ViewVariables] public int Invisibility;
+        [ViewVariables] public int SeeInvisibility = 127; //most things don't have this, only mobs, so default to full visibility
         [ViewVariables] public bool Opacity;
         [ViewVariables] public string RenderSource = "";
         [ViewVariables] public string RenderTarget = "";
@@ -61,6 +62,7 @@ namespace OpenDreamShared.Dream {
             BlendMode = appearance.BlendMode;
             AppearanceFlags = appearance.AppearanceFlags;
             Invisibility = appearance.Invisibility;
+            SeeInvisibility = appearance.SeeInvisibility;
             Opacity = appearance.Opacity;
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<uint>(appearance.Overlays);
@@ -91,6 +93,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.BlendMode != BlendMode) return false;
             if (appearance.AppearanceFlags != AppearanceFlags) return false;
             if (appearance.Invisibility != Invisibility) return false;
+            if (appearance.SeeInvisibility != SeeInvisibility) return false;
             if (appearance.Opacity != Opacity) return false;
             if (appearance.MouseOpacity != MouseOpacity) return false;
             if (appearance.Overlays.Count != Overlays.Count) return false;
@@ -155,6 +158,7 @@ namespace OpenDreamShared.Dream {
             hashCode.Add(ColorMatrix);
             hashCode.Add(Layer);
             hashCode.Add(Invisibility);
+            hashCode.Add(SeeInvisibility);
             hashCode.Add(Opacity);
             hashCode.Add(MouseOpacity);
             hashCode.Add(Alpha);

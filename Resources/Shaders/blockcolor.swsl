@@ -1,4 +1,4 @@
-﻿blend_mode none;
+﻿//blend_mode none;
 light_mode unshaded;
 void fragment() {
     highp vec4 color = zTexture(UV);

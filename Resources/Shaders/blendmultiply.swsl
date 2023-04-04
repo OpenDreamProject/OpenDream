@@ -25,5 +25,5 @@ void fragment() {
                 oldColor[1] * colorMatrix[3][1] + 
                 oldColor[2] * colorMatrix[3][2] + 
                 oldColor[3] * colorMatrix[3][3];
-    COLOR = COLOR + offsetVector;
+    COLOR = zFromSrgb(COLOR + offsetVector);
 }

@@ -1,5 +1,5 @@
 light_mode unshaded;
-blend_mode none;
+//blend_mode none;
 
 uniform lowp mat4 colorMatrix;
 uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is
@@ -25,7 +25,7 @@ void fragment() {
                 oldColor[1] * colorMatrix[3][1] + 
                 oldColor[2] * colorMatrix[3][2] + 
                 oldColor[3] * colorMatrix[3][3];
-    COLOR = COLOR + offsetVector;
+    COLOR = zFromSrgb(COLOR + offsetVector);
 }
 
     

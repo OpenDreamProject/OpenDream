@@ -269,7 +269,7 @@ sealed class DreamViewOverlay : Overlay {
 
             if(planeEntry.Item1 != null){
                 //this was a plane master, so draw the plane onto the baseTarget and return it
-                DrawIconNow(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture);
+                DrawIconNow(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture, noMouseMap: true);
                 ReturnRenderTarget(planeTarget);
             }
         }
@@ -640,9 +640,9 @@ sealed class DreamViewOverlay : Overlay {
                 MouseMapDrawAction = () => {
                     handle.UseShader(_blockColorInstance);
                     handle.SetTransform(tmpTranslation);
-                        handle.DrawTextureRect(pong.Texture,
-                            new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
-                            targetColor);
+                    handle.DrawTextureRect(pong.Texture,
+                        new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
+                        targetColor);
                     handle.UseShader(null);
                 };
             } else {
@@ -663,7 +663,7 @@ sealed class DreamViewOverlay : Overlay {
                 IconDrawAction();
             }, null);
         //action should be NOP if this is transparent, but save a RiRT call anyway since we can
-        if(noMouseMap || iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
+        if(!(noMouseMap || iconMetaData.MouseOpacity != MouseOpacity.Transparent)) {
             handle.RenderInRenderTarget(mouseMapRenderTarget, () => {
                 MouseMapDrawAction();
             }, null);

@@ -39,6 +39,10 @@ namespace DMCompiler.DM.Expressions {
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             return (DMReference.Src, false);
         }
+
+        public override string EmitNameof(DMObject dmObject, DMProc proc) {
+            return "src";
+        }
     }
 
     // usr

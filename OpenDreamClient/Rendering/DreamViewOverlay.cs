@@ -547,7 +547,16 @@ sealed class DreamViewOverlay : Overlay {
                                     Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
         Box2 drawBounds = new Box2(pixelPosition, pixelPosition+frame.Size);
 
-        if(icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
+        //go fast when the only filter is color, and we don't have more color things to consider
+        bool goFastOverride = false;
+        if(icon.Appearance != null && iconMetaData.ColorMatrixToApply == null && iconMetaData.ColorToApply == Color.White && iconMetaData.AlphaToApply == 1.0f && icon.Appearance.Filters.Count == 1 && icon.Appearance.Filters[0].FilterType == "color"){
+            DreamFilterColor colorFilter = (DreamFilterColor)icon.Appearance.Filters[0];
+            iconMetaData.ColorMatrixToApply = colorFilter.Color;
+            goFastOverride = true;
+        }
+
+
+        if(goFastOverride || icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
             IconDrawAction = () => {
                     handle.UseShader(GetBlendAndColorShader(iconMetaData));

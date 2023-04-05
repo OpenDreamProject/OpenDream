@@ -24,7 +24,7 @@
 	New()
 		..()
 		loc = locate(5, 5, 1)
-		color = rgb(rand(0,255), rand(0,255), rand(0,255))
+		//color = rgb(rand(0,255), rand(0,255), rand(0,255))
 
 	Login()
 		world.log << "login ran"

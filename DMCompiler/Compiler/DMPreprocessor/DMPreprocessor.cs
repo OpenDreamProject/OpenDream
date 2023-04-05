@@ -295,8 +295,25 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 GetLineOfTokens(); // consume what's on this line and leave
                 return;
             }
-            if(defineIdentifier.Text == "defined") {
-                DMCompiler.Emit(WarningCode.SoftReservedKeyword, defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name");
+            switch (defineIdentifier.Text)
+            {
+                case "defined":
+                    DMCompiler.Emit(WarningCode.SoftReservedKeyword, defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name");
+                    break;
+                case "DM_VERSION":
+                    if (!_defines.ContainsKey("DM_VERSION")) { // Trying to override the macro should use normal compiler behavior
+                        _defines["DM_VERSION"] = new DMMacro(null, new List<Token>(1){new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMVersion, defineToken.Location, null)});
+                        PushToken(new Token(TokenType.Newline, "\n", defineToken.Location, null));
+                        return;
+                    }
+                    break;
+                case "DM_BUILD":
+                    if (!_defines.ContainsKey("DM_BUILD")) { // Trying to override the macro should use normal compiler behavior
+                        _defines["DM_BUILD"] = new DMMacro(null, new List<Token>(1){new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMBuild, defineToken.Location, null)});
+                        PushToken(new Token(TokenType.Newline, "\n", defineToken.Location, null));
+                        return;
+                    }
+                    break;
             }
 
             List<string> parameters = null;

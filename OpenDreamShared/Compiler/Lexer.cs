@@ -13,7 +13,7 @@ namespace OpenDreamShared.Compiler {
 
         protected Queue<Token> _pendingTokenQueue = new();
 
-        private IEnumerator<SourceType> _sourceEnumerator = null;
+        private IEnumerator<SourceType> _sourceEnumerator;
         private SourceType _current;
 
         protected Lexer(string sourceName, IEnumerable<SourceType> source) {

@@ -26,9 +26,9 @@ namespace OpenDreamClient.Resources {
         [Dependency] private readonly IDynamicTypeFactory _typeFactory = default!;
         [Dependency] private readonly IConfigurationManager _cfg = default!;
 
-        private ResourcePath _cacheDirectory;
+        private ResourcePath _cacheDirectory = default!;
 
-        private ISawmill _sawmill;
+        private ISawmill _sawmill = default!;
 
         public void Initialize() {
             _sawmill = Logger.GetSawmill("opendream.res");
@@ -81,7 +81,7 @@ namespace OpenDreamClient.Resources {
         }
 
         public void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T:DreamResource {
-            DreamResource resource = GetCachedResource(resourceId);
+            DreamResource? resource = GetCachedResource(resourceId);
 
             if (resource == null) {
                 if (!_loadingResources.ContainsKey(resourceId)) {
@@ -99,8 +99,8 @@ namespace OpenDreamClient.Resources {
                     });
                 }
 
-                _loadingResources[resourceId].LoadCallbacks.Add((DreamResource resource) => {
-                    onLoadCallback.Invoke((T)resource);
+                _loadingResources[resourceId].LoadCallbacks.Add(loadedResource => {
+                    onLoadCallback.Invoke((T)loadedResource);
                 });
             } else {
                 onLoadCallback.Invoke((T)resource);
@@ -126,12 +126,10 @@ namespace OpenDreamClient.Resources {
             return new ResourcePath(filename);
         }
 
-        private DreamResource GetCachedResource(int resourceId) {
-            if (_resourceCache.TryGetValue(resourceId, out var cached)) {
-                return cached;
-            } else {
-                return null;
-            }
+        private DreamResource? GetCachedResource(int resourceId) {
+            _resourceCache.TryGetValue(resourceId, out var cached);
+
+            return cached;
         }
 
         private struct LoadingResourceEntry {

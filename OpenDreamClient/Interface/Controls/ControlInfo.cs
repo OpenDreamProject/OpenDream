@@ -107,7 +107,7 @@ namespace OpenDreamClient.Interface.Controls {
         }
 
         public void SelectStatPanel(string statPanelName) {
-            if (_statPanels.TryGetValue(statPanelName, out StatPanel panel))
+            if (_statPanels.TryGetValue(statPanelName, out var panel))
                 _tabControl.CurrentTab = panel.GetPositionInParent();
         }
 
@@ -121,9 +121,7 @@ namespace OpenDreamClient.Interface.Controls {
             }
 
             foreach (KeyValuePair<string, List<string>> updatingPanel in pUpdateStatPanels.StatPanels) {
-                StatPanel panel;
-
-                if (!_statPanels.TryGetValue(updatingPanel.Key, out panel)) {
+                if (!_statPanels.TryGetValue(updatingPanel.Key, out var panel)) {
                     panel = CreateStatPanel(updatingPanel.Key);
                 }
 

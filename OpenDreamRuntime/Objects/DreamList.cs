@@ -430,6 +430,13 @@ namespace OpenDreamRuntime.Objects {
 
             DreamMetaObjectFilter.FilterAttachedTo[copy] = this;
             _atomManager.UpdateAppearance(_atom, appearance => {
+                // If this appearance already has a color filter (from /atom.color)
+                if(copy is DreamFilterColor && appearance.SillyColorFilter is not null) {
+                    // This is to support an edge case where an atom's .color var has been set to a matrix, and then it also gets a color filter.
+                    // In BYOND, this apparently causes a crash or something, depending on the order.
+                    // Lets just... try to support it though, huh? :^)
+                    appearance.SillyColorFilter = null;
+                }
                 appearance.Filters.Add(copy);
             });
         }
@@ -439,7 +446,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         private IconAppearance GetAppearance() {
-            IconAppearance? appearance = _atomManager.GetAppearance(_atom);
+            IconAppearance? appearance = _atomManager.MustGetAppearance(_atom);
             if (appearance == null)
                 throw new Exception("Atom has no appearance");
 
@@ -483,6 +490,61 @@ namespace OpenDreamRuntime.Objects {
 
         public override int GetLength() {
             return _mapManager.AllAtoms.Count;
+        }
+    }
+
+    // turf.contents list
+    public sealed class TurfContentsList : DreamList {
+        private readonly IDreamObjectTree _objectTree;
+        private readonly IDreamMapManager.Cell _cell;
+
+        public TurfContentsList(DreamObjectDefinition listDef, IDreamObjectTree objectTree, IDreamMapManager.Cell cell) : base(listDef, 0) {
+            _objectTree = objectTree;
+            _cell = cell;
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var index))
+                throw new Exception($"Invalid index into turf contents list: {key}");
+            if (index < 1 || index > _cell.Movables.Count)
+                throw new Exception($"Out of bounds index on turf contents list: {index}");
+
+            return new DreamValue(_cell.Movables[index - 1]);
+        }
+
+        // TODO: This would preferably be an IEnumerable<> method. Probably as part of #985.
+        public override List<DreamValue> GetValues() {
+            List<DreamValue> values = new(_cell.Movables.Count);
+
+            foreach (var movable in _cell.Movables) {
+                values.Add(new(movable));
+            }
+
+            return values;
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot set an index of turf contents list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+                throw new Exception($"Cannot add {value} to turf contents");
+
+            movable.SetVariable("loc", new(_cell.Turf));
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            int movableCount = _cell.Movables.Count + 1;
+            if (end == 0 || end > movableCount) end = movableCount;
+
+            for (int i = start; i < end; i++) {
+                _cell.Movables[i - 1].SetVariable("loc", DreamValue.Null);
+            }
+        }
+
+        public override int GetLength() {
+            return _cell.Movables.Count;
         }
     }
 }

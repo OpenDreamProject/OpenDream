@@ -112,8 +112,20 @@ namespace OpenDreamClient.Rendering {
                     case DreamFilterBlur blur:
                         instance.SetParameter("size", blur.Size);
                         break;
-                    case DreamFilterColor color:
+                    case DreamFilterColor color: {
+                        //Since SWSL doesn't support 4x5 matrices, we need to get a bit silly.
+                        instance.SetParameter("colorMatrix", new Matrix4(
+                            color.Color.c11, color.Color.c12, color.Color.c13, color.Color.c14,
+                            color.Color.c21, color.Color.c22, color.Color.c23, color.Color.c24,
+                            color.Color.c31, color.Color.c32, color.Color.c33, color.Color.c34,
+                            color.Color.c41, color.Color.c42, color.Color.c43, color.Color.c44
+                            ));
+                        instance.SetParameter("offsetVector", new Vector4(
+                            color.Color.c51, color.Color.c52, color.Color.c53, color.Color.c54
+                            ));
+                        //TODO: Support the alternative colour mappings.
                         break;
+                    }
                     case DreamFilterDisplace displace:
                         break;
                     case DreamFilterDropShadow dropShadow:

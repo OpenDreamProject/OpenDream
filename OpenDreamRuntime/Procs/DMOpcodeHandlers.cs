@@ -83,6 +83,13 @@ namespace OpenDreamRuntime.Procs {
                     if (dreamObject.IsSubtypeOf(objectTree.Atom)) {
                         list = dreamObject.GetVariable("contents").GetValueAsDreamList();
                     } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
+                        // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
+                        if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
+                            return new DreamObjectEnumerator(mapManager.AllAreas, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
+                            return new DreamObjectEnumerator(mapManager.AllTurfs, filterType);
+                        }
+
                         return new WorldContentsEnumerator(mapManager, filterType);
                     }
                 }
@@ -99,8 +106,8 @@ namespace OpenDreamRuntime.Procs {
                     ? new DreamValueArrayEnumerator(values)
                     : new FilteredDreamValueArrayEnumerator(values, filterType);
             }
-
-            throw new Exception($"Value {value} is not a {objectTree.List}, {objectTree.Atom}, {objectTree.World}, or null");
+            // BYOND ignores all floats, strings, types, etc. here and just doesn't run the loop.
+            return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
@@ -434,7 +441,8 @@ namespace OpenDreamRuntime.Procs {
                     if (listObject.IsSubtypeOf(state.Proc.ObjectTree.Atom) || listObject.IsSubtypeOf(state.Proc.ObjectTree.World)) {
                         list = listObject.GetVariable("contents").GetValueAsDreamList();
                     } else {
-                        throw new Exception($"Value {listObject} is not a {state.Proc.ObjectTree.List}, {state.Proc.ObjectTree.Atom}, or {state.Proc.ObjectTree.World}");
+                        // BYOND ignores all floats, strings, types, etc. here and just returns 0.
+                        state.Push(new DreamValue(0));
                     }
                 }
 

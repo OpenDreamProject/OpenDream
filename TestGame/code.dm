@@ -8,6 +8,9 @@
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
+	name = "Square Man"
+	desc = "Such a beautiful smile."
+	gender = MALE
 
 	New()
 		..()
@@ -90,7 +93,7 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("outline", "greyscale", "blur", "outline/grey", "grey/outline", "all")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("outline", "greyscale", "blur", "outline/grey", "grey/outline", "color", "all")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"
@@ -105,6 +108,11 @@
 					src.filters = list(filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="greyscale"))
 				if("grey/outline")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
+				if("color")
+					usr << "[usr], you fool! You have activated my evil attack!"
+					var/list/M = list("#de0000","#000000","#00ad00")	
+					src.color = M
+					usr << json_encode(src.color)
 				if("all")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
 			usr << "Applied [selected] filter"

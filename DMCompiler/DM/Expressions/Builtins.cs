@@ -471,6 +471,19 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // nameof(x)
+    class Nameof : DMExpression {
+        DMExpression _expr;
+
+        public Nameof(Location location, DMExpression expr) : base(location) {
+            _expr = expr;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.PushString(_expr.GetNameof(dmObject, proc));
+        }
+    }
+
     // call(...)(...)
     class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName

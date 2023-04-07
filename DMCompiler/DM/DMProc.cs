@@ -153,6 +153,10 @@ namespace DMCompiler.DM {
             return procDefinition;
         }
 
+        public string GetLocalVarName(int index) {
+            return _localVariableNames[index].Add;
+        }
+
         public void WaitFor(bool waitFor) {
             if (waitFor)
             {

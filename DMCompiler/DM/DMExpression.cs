@@ -55,7 +55,7 @@ namespace DMCompiler.DM {
         }
 
         // Attempt to create a json-serializable version of this expression
-        public virtual bool TryAsJsonRepresentation([NotNullWhen(true)] out object? json) {
+        public virtual bool TryAsJsonRepresentation(out object? json) {
             json = null;
             return false;
         }

@@ -1,14 +1,14 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class LValue : DMExpression {
-        public override DreamPath? Path => _path;
-        DreamPath? _path;
+        public override DreamPath? Path { get; }
 
-        public LValue(Location location, DreamPath? path) : base(location) {
-            _path = path;
+        protected LValue(Location location, DreamPath? path) : base(location) {
+            Path = path;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -80,7 +80,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (LocalVar is DMProc.LocalConstVariable constVar) {
                 constant = constVar.Value;
                 return true;
@@ -122,7 +122,7 @@ namespace DMCompiler.DM.Expressions {
             return (DMReference.CreateSrcField(Variable.Name), false);
         }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (Variable.IsConst && Variable.Value != null) {
                 return Variable.Value.TryAsConstant(out constant);
             }
@@ -155,7 +155,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             DMVariable global = DMObjectTree.Globals[Id];
             if (global.IsConst) {
                 return global.Value.TryAsConstant(out constant);
@@ -166,8 +166,7 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class GlobalVars : LValue
-    {
+    class GlobalVars : LValue {
         public GlobalVars(Location location)
             : base(location, null) {
         }
@@ -176,5 +175,4 @@ namespace DMCompiler.DM.Expressions {
             proc.PushGlobalVars();
         }
     }
-
 }

@@ -1,4 +1,3 @@
-using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -8,7 +7,7 @@ using System.Linq;
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
     class Proc : DMExpression {
-        string _identifier;
+        private readonly string _identifier;
 
         public Proc(Location location, string identifier) : base(location) {
             _identifier = identifier;
@@ -21,17 +20,16 @@ namespace DMCompiler.DM.Expressions {
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             if (dmObject.HasProc(_identifier)) {
                 return (DMReference.CreateSrcProc(_identifier), false);
-            } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
+            } else if (DMObjectTree.TryGetGlobalProc(_identifier, out var globalProc)) {
                 return (DMReference.CreateGlobalProc(globalProc.Id), false);
             }
-            
+
             DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             //Just... pretend there is one for the sake of argument.
             return (DMReference.CreateSrcProc(_identifier), false);
         }
 
-        public DMProc GetProc(DMObject dmObject)
-        {
+        public DMProc? GetProc(DMObject dmObject) {
             var procId = dmObject.GetProcs(_identifier)?[^1];
             return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
@@ -42,7 +40,7 @@ namespace DMCompiler.DM.Expressions {
     /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
     /// </remarks>
     class GlobalProc : DMExpression {
-        string _name;
+        private readonly string _name;
 
         public GlobalProc(Location location, string name) : base(location) {
             _name = name;
@@ -59,7 +57,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public DMProc GetProc() {
-            if (!DMObjectTree.TryGetGlobalProc(_name, out DMProc globalProc)) {
+            if (!DMObjectTree.TryGetGlobalProc(_name, out var globalProc)) {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{_name}\"");
                 return DMObjectTree.GlobalInitProc; // Just give this, who cares
             }
@@ -101,8 +99,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x(y, z, ...)
     sealed class ProcCall : DMExpression {
-        DMExpression _target;
-        ArgumentList _arguments;
+        private readonly DMExpression _target;
+        private readonly ArgumentList _arguments;
 
         public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
             _target = target;
@@ -151,7 +149,7 @@ namespace DMCompiler.DM.Expressions {
         /// This is a good place to do some compile-time linting of any native procs that require it,
         /// such as native procs that check ahead of time if the number of arguments is correct (like matrix() or sin())
         /// </summary>
-        protected void DoCompiletimeLinting(DMObject procOwner, DMProc targetProc) {
+        protected void DoCompiletimeLinting(DMObject? procOwner, DMProc? targetProc) {
             if(procOwner is null || procOwner.Path == DreamPath.Root) {
                 if (targetProc is null)
                     return;
@@ -159,15 +157,13 @@ namespace DMCompiler.DM.Expressions {
                     switch(_arguments.Length) {
                         case 0:
                         case 1: // NOTE: 'case 1' also ends up referring to the arglist situation. FIXME: Make this lint work for that, too?
-                        case 6: 
+                        case 6:
                             break; // Normal cases
                         case 2:
                         case 3: // These imply that they're trying to use the undocumented matrix signatures.
                         case 4: // The lint is to just check that the last argument is a numeric constant that is a valid matrix "opcode."
                             var lastArg = _arguments.Expressions.Last().Expr;
-                            if (lastArg is null)
-                                break;
-                            if(lastArg.TryAsConstant(out Constant constant)) {
+                            if(lastArg.TryAsConstant(out var constant)) {
                                 if(constant is not Number opcodeNumber) {
                                     DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
@@ -183,7 +179,6 @@ namespace DMCompiler.DM.Expressions {
                                     //Not sure if that is a parity behaviour or not!
                                     DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
-                                    break;
                                 }
                             }
                             break;
@@ -201,12 +196,10 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override bool TryAsJsonRepresentation(out object json) {
+        public override bool TryAsJsonRepresentation(out object? json) {
             json = null;
             DMCompiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
             return true; //TODO
         }
     }
-
-
 }

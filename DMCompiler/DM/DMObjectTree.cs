@@ -24,7 +24,7 @@ namespace DMCompiler.DM {
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
-        public static DMObject Root => GetDMObject(DreamPath.Root);
+        public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
@@ -53,7 +53,7 @@ namespace DMCompiler.DM {
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;
             _dmProcIdCounter = 0;
-            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
+            GlobalInitProc = new(-1, Root, null);
         }
 
         public static DMProc CreateDMProc(DMObject dmObject, DMASTProcDefinition? astDefinition) {
@@ -63,15 +63,16 @@ namespace DMCompiler.DM {
             return dmProc;
         }
 
-        public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
+        [ContractAnnotation("createIfNonexistent:true => notnull")]
+        public static DMObject? GetDMObject(DreamPath path, bool createIfNonexistent = true) {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             }
             if (!createIfNonexistent) return null;
 
-            DMObject parent = null;
+            DMObject? parent = null;
             if (path.Elements.Length > 1) {
-                parent = GetDMObject(path.FromElements(0, -2), true); // Create all parent classes as dummies, if we're being dummy-created too
+                parent = GetDMObject(path.FromElements(0, -2)); // Create all parent classes as dummies, if we're being dummy-created too
             } else if (path.Elements.Length == 1) {
                 switch (path.LastElement) {
                     case "client":
@@ -108,7 +109,7 @@ namespace DMCompiler.DM {
         // TODO: This is all so snowflake and needs redone
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
             bool requireProcElement = search.Type == DreamPath.PathType.Absolute;
-            string searchingProcName = null;
+            string? searchingProcName = null;
 
             int procElement = path.FindElement("proc");
             if (procElement == -1) procElement = path.FindElement("verb");
@@ -182,7 +183,6 @@ namespace DMCompiler.DM {
         public static void CreateGlobalInitProc() {
             if (_globalInitAssigns.Count == 0) return;
 
-            DMObject root = GetDMObject(DreamPath.Root);
             foreach (var globals in _globalInitAssigns.Values) {
                 foreach (var assign in globals) {
                     try {
@@ -190,7 +190,8 @@ namespace DMCompiler.DM {
                             GlobalInitProc.DebugSource(assign.Value.Location.SourceFile);
                             GlobalInitProc.DebugLine(line);
                         }
-                        assign.Value.EmitPushValue(root, GlobalInitProc);
+
+                        assign.Value.EmitPushValue(Root, GlobalInitProc);
                         GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
                     } catch (CompileErrorException e) {
                         DMCompiler.Emit(e.Error);

@@ -40,7 +40,7 @@ namespace DMCompiler.DM.Expressions {
             return (DMReference.Src, false);
         }
 
-        public override string EmitNameof(DMObject dmObject, DMProc proc) {
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
             return "src";
         }
     }
@@ -100,7 +100,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string EmitNameof(DMObject dmObject, DMProc proc) {
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
             return LocalVar.IsParameter ? proc.Parameters[LocalVar.Id] : proc.GetLocalVarName(LocalVar.Id);
         }
     }
@@ -163,7 +163,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string EmitNameof(DMObject dmObject, DMProc proc) {
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
             DMVariable global = DMObjectTree.Globals[Id];
             return global.Name;
         }

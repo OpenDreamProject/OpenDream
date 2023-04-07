@@ -414,7 +414,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override string EmitNameof(DMObject dmObject, DMProc proc) {
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
             return Value.LastElement;
         }
 

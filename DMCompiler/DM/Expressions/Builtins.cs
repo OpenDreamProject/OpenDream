@@ -488,7 +488,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushString(_expr.EmitNameof(dmObject, proc));
+            proc.PushString(_expr.GetNameof(dmObject, proc));
         }
     }
 

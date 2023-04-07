@@ -23,6 +23,7 @@ namespace Content.Tests
     [TestFixture]
     public sealed class DMTests : ContentUnitTest {
         public const string TestProject = "DMProject";
+        public const string MapFile = "map.dmm";
         public const string InitializeEnvironment = "./environment.dme";
 
         [Dependency] private readonly IDreamManager _dreamMan = default!;
@@ -55,7 +56,7 @@ namespace Content.Tests
 
         private static string? Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
-                Files = new() { sourceFile }
+                Files = new() { sourceFile, MapFile }
             });
 
             return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;

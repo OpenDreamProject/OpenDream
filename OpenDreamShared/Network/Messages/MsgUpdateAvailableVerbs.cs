@@ -1,3 +1,4 @@
+using System;
 using Lidgren.Network;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
@@ -6,7 +7,7 @@ namespace OpenDreamShared.Network.Messages {
     public sealed class MsgUpdateAvailableVerbs : NetMessage {
         public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
-        public (string Name, string Id, string Category)[] AvailableVerbs;
+        public (string Name, string Id, string Category)[] AvailableVerbs = Array.Empty<(string, string, string)>();
 
         public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
             var count = buffer.ReadVariableInt32();

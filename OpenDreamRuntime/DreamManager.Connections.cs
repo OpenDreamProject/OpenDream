@@ -67,7 +67,7 @@ namespace OpenDreamRuntime {
                 case SessionStatus.Connected:
                     var interfaceResource = _dreamResourceManager.LoadResource(_compiledJson.Interface);
                     var msgLoadInterface = new MsgLoadInterface() {
-                        InterfaceText = interfaceResource.ReadAsString()
+                        InterfaceText = interfaceResource.ReadAsString() ?? String.Empty
                     };
 
                     e.Session.ConnectedClient.SendMessage(msgLoadInterface);

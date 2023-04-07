@@ -138,7 +138,7 @@ namespace OpenDreamRuntime
 
                     await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
                     if (Session.Status == SessionStatus.InGame) {
-                        var msg = new MsgUpdateStatPanels() { StatPanels = _statPanels };
+                        var msg = new MsgUpdateStatPanels(_statPanels);
                         Session.ConnectedClient.SendMessage(msg);
                     }
 

@@ -1683,9 +1683,9 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (client != null) {
-                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
+                DreamConnection? connection = state.DreamManager.GetConnectionFromClient(client);
 
-                connection.BrowseResource(file, (filename != DreamValue.Null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
+                connection?.BrowseResource(file, (filename != DreamValue.Null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
             }
 
             return null;
@@ -1722,11 +1722,10 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (client != null) {
-                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
-                if (!message.TryGetValueAsString(out var messageStr) && message != DreamValue.Null)
-                    throw new Exception($"Invalid output() message {message}");
+                DreamConnection? connection = state.DreamManager.GetConnectionFromClient(client);
+                string messageStr = message.Stringify();
 
-                connection.OutputControl(messageStr, control);
+                connection?.OutputControl(messageStr, control);
             }
 
             // TODO: When errors are more strict (or a setting for it added), a null client should error

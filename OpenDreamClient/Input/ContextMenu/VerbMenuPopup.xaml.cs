@@ -6,7 +6,7 @@ using Robust.Client.UserInterface.XAML;
 namespace OpenDreamClient.Input.ContextMenu {
     [GenerateTypedNameReferences]
     public sealed partial class VerbMenuPopup : Popup {
-        public VerbMenuPopup([CanBeNull] MetaDataComponent entityMetaData) {
+        public VerbMenuPopup(MetaDataComponent? entityMetaData) {
             RobustXamlLoader.Load(this);
 
             if (entityMetaData != null && !string.IsNullOrEmpty(entityMetaData.EntityDescription)) {

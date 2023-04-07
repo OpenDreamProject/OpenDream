@@ -52,17 +52,17 @@ namespace DMCompiler.DM {
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 
-        [CanBeNull] public string VerbName;
-        [CanBeNull] public string VerbCategory = string.Empty;
-        [CanBeNull] public string VerbDesc;
+        public string? VerbName;
+        public string? VerbCategory = string.Empty;
+        public string? VerbDesc;
         public sbyte? Invisibility;
 
         private DMObject _dmObject;
-        private DMASTProcDefinition _astDefinition = null;
+        private DMASTProcDefinition? _astDefinition = null;
         private BinaryWriter _bytecodeWriter = null;
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
-        [CanBeNull] private Stack<string> _loopStack = null;
+        private Stack<string>? _loopStack = null;
         private Stack<DMProcScope> _scopes = new();
         private Dictionary<string, LocalVariable> _parameters = new();
         private int _labelIdCounter = 0;
@@ -83,8 +83,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
-        {
+        public DMProc(int id, DMObject dmObject, DMASTProcDefinition? astDefinition) {
             Id = id;
             _dmObject = dmObject;
             _astDefinition = astDefinition;

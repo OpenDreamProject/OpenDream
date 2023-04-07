@@ -34,8 +34,7 @@ namespace OpenDreamShared.Resources {
             /// <remarks>The default state could also not exist</remarks>
             /// <param name="stateName">The requested state's name</param>
             /// <returns>The requested state, default state, or null</returns>
-            [CanBeNull]
-            public ParsedDMIState GetStateOrDefault(string stateName) {
+            public ParsedDMIState? GetStateOrDefault(string stateName) {
                 if (!States.TryGetValue(stateName, out var state)) {
                     States.TryGetValue(String.Empty, out state);
                 }

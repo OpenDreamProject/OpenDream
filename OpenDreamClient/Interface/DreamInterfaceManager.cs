@@ -265,8 +265,7 @@ namespace OpenDreamClient.Interface {
                 DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
         }
 
-        [CanBeNull]
-        public InterfaceElement FindElementWithName(string name) {
+        public InterfaceElement? FindElementWithName(string name) {
             string[] split = name.Split(".");
 
             if (split.Length == 2) {

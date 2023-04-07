@@ -56,8 +56,7 @@ namespace DMCompiler.DM {
             GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
         }
 
-        public static DMProc CreateDMProc(DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
-        {
+        public static DMProc CreateDMProc(DMObject dmObject, DMASTProcDefinition? astDefinition) {
             DMProc dmProc = new DMProc(_dmProcIdCounter++, dmObject, astDefinition);
             AllProcs.Add(dmProc);
 
@@ -96,7 +95,7 @@ namespace DMCompiler.DM {
             return dmObject;
         }
 
-        public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] [CanBeNull] out DMProc proc) {
+        public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DMProc? proc) {
             proc = null;
             return GlobalProcs.TryGetValue(name, out var id) && AllProcs.TryGetValue(id, out proc);
         }

@@ -28,11 +28,11 @@ namespace DMCompiler.DM {
         public int? InitializationProc;
 
         public bool IsRoot => Path == DreamPath.Root;
-        
+
         public List<DMASTObjectVarOverride>? danglingOverrides = null; // Overrides waiting for the LateVarDef event to happen
 
         private bool _isSubscribedToVarDef = false;
-        [CanBeNull] private List<DMProc> _verbs;
+        private List<DMProc>? _verbs;
 
         public DMObject(int id, DreamPath path, DMObject parent) {
             Id = id;
@@ -161,8 +161,7 @@ namespace DMCompiler.DM {
             return Parent?.HasProcDefined(name) ?? false;
         }
 
-        [CanBeNull]
-        public List<int> GetProcs(string name) {
+        public List<int>? GetProcs(string name) {
             return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
         }
 

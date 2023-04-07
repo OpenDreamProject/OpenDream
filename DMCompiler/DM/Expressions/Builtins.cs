@@ -427,10 +427,10 @@ namespace DMCompiler.DM.Expressions {
     class Input : DMExpression {
         private readonly DMExpression[] _arguments;
         private readonly DMValueType _types;
-        [CanBeNull] private readonly DMExpression _list;
+        private readonly DMExpression? _list;
 
         public Input(Location location, DMExpression[] arguments, DMValueType types,
-            [CanBeNull] DMExpression list) : base(location) {
+            DMExpression? list) : base(location) {
             if (arguments.Length is 0 or > 4) {
                 throw new CompileErrorException(location, "input() must have 1 to 4 arguments");
             }

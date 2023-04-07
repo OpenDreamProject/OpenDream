@@ -86,9 +86,8 @@ namespace DMCompiler {
             return successfulCompile;
         }
 
-        [CanBeNull]
-        private static DMPreprocessor Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
-            DMPreprocessor build() {
+        private static DMPreprocessor? Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
+            DMPreprocessor? build() {
                 DMPreprocessor preproc = new DMPreprocessor(true);
                 if (macroDefines != null) {
                     foreach (var (key, value) in macroDefines) {

@@ -20,8 +20,7 @@ public record DreamFilter {
     [ViewVariables, DataField("type")]
     public string FilterType;
 
-    [CanBeNull]
-    public static Type GetType(string filterType) {
+    public static Type? GetType(string filterType) {
         return filterType switch {
             "alpha" => typeof(DreamFilterAlpha),
             "angular_blur" => typeof(DreamFilterAngularBlur),

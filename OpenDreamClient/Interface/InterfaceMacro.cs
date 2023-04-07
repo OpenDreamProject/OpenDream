@@ -78,7 +78,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease, outsidePrediction: false));
     }
 
-    private void OnMacroPress([CanBeNull] ICommonSession session) {
+    private void OnMacroPress(ICommonSession? session) {
         if (String.IsNullOrEmpty(Command))
             return;
         if (_isRelease)
@@ -93,7 +93,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         }
     }
 
-    private void OnMacroRelease([CanBeNull] ICommonSession session) {
+    private void OnMacroRelease(ICommonSession? session) {
         if (String.IsNullOrEmpty(Command))
             return;
 

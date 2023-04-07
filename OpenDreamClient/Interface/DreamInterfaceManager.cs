@@ -327,7 +327,7 @@ namespace OpenDreamClient.Interface {
             });
         }
 
-        public void WinSet(string controlId, string winsetParams) {
+        public void WinSet(string? controlId, string winsetParams) {
             DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
             DMFParser parser = new DMFParser(lexer, _serializationManager);
 
@@ -516,6 +516,6 @@ namespace OpenDreamClient.Interface {
         InterfaceElement? FindElementWithName(string name);
         void SaveScreenshot(bool openDialog);
         void LoadInterfaceFromSource(string source);
-        void WinSet(string controlId, string winsetParams);
+        void WinSet(string? controlId, string winsetParams);
     }
 }

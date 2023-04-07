@@ -594,14 +594,14 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitList(DMASTList list) {
-            (DMExpression Key, DMExpression Value)[] values = Array.Empty<(DMExpression, DMExpression)>();
+            (DMExpression? Key, DMExpression Value)[] values = Array.Empty<(DMExpression?, DMExpression)>();
 
             if (list.Values != null) {
-                values = new (DMExpression, DMExpression)[list.Values.Length];
+                values = new (DMExpression?, DMExpression)[list.Values.Length];
 
                 for (int i = 0; i < list.Values.Length; i++) {
                     DMASTCallParameter value = list.Values[i];
-                    DMExpression key = (value.Key != null) ? DMExpression.Create(_dmObject, _proc, value.Key) : null;
+                    DMExpression? key = (value.Key != null) ? DMExpression.Create(_dmObject, _proc, value.Key) : null;
                     DMExpression listValue = DMExpression.Create(_dmObject, _proc, value.Value);
 
                     values[i] = (key, listValue);

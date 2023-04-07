@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
     /// <remarks>
@@ -17,7 +18,7 @@ namespace DMCompiler.DM {
     class DMObject {
         public int Id;
         public DreamPath Path;
-        public DMObject Parent;
+        public DMObject? Parent;
         public Dictionary<string, List<int>> Procs = new();
         public Dictionary<string, DMVariable> Variables = new();
         /// <summary> It's OK if the override var is not literally the exact same object as what it overrides. </summary>
@@ -34,7 +35,7 @@ namespace DMCompiler.DM {
         private bool _isSubscribedToVarDef = false;
         private List<DMProc>? _verbs;
 
-        public DMObject(int id, DreamPath path, DMObject parent) {
+        public DMObject(int id, DreamPath path, DMObject? parent) {
             Id = id;
             Path = path;
             Parent = parent;
@@ -46,16 +47,17 @@ namespace DMCompiler.DM {
             Procs[name].Add(proc.Id);
         }
 
-        private void HandleLateVarDef(object sender, DMVariable varDefined)
-        {
-            DMObject maybeAncestor = (DMObject)sender;
-            for(int i = 0; i < danglingOverrides.Count; ++i)
-            {
+        private void HandleLateVarDef(object? sender, DMVariable varDefined) {
+            DMObject? maybeAncestor = sender as DMObject;
+            if (maybeAncestor == null || danglingOverrides == null)
+                return;
+
+            for(int i = 0; i < danglingOverrides.Count; ++i) {
                 var varOverride = danglingOverrides[i];
-                if (varOverride.VarName == varDefined.Name) // FINALLY we can do this
-                {
-                    if (IsSubtypeOf(maybeAncestor.Path)) // Resolves the ambiguous var override
-                    {
+
+                // FINALLY we can do this
+                if (varOverride.VarName == varDefined.Name) {
+                    if (IsSubtypeOf(maybeAncestor.Path)) { // Resolves the ambiguous var override
                         // Thank god DMObjectBuilder is static, amirite?
                         DMObjectBuilder.OverrideVariableValue(this, ref varDefined, varOverride.Value); // I'd like to mark DMObjectBuilder as a friend class but that's not a thing in C# so
                         VariableOverrides[varDefined.Name] = varDefined;
@@ -64,33 +66,34 @@ namespace DMCompiler.DM {
                     }
                 }
             }
-            if (danglingOverrides.Count == 0) // Unsubscribe if we're done doing this
-            {
-                Robust.Shared.Utility.DebugTools.Assert(danglingOverrides.Count == 0);
-                DMObjectBuilder.VarDefined -= this.HandleLateVarDef;
+
+            // Unsubscribe if we're done doing this
+            if (danglingOverrides.Count == 0) {
+                DebugTools.Assert(danglingOverrides.Count == 0);
+                DMObjectBuilder.VarDefined -= HandleLateVarDef;
                 _isSubscribedToVarDef = false;
             }
         }
 
-        public void WaitForLateVarDefinition(DMASTObjectVarOverride varOverride)
-        {
-            if (danglingOverrides is null)
-                danglingOverrides = new List<DMASTObjectVarOverride>();
-            for(int i = 0; i < danglingOverrides.Count; ++i)
-            {
+        public void WaitForLateVarDefinition(DMASTObjectVarOverride varOverride) {
+            danglingOverrides ??= new List<DMASTObjectVarOverride>();
+
+            for(int i = 0; i < danglingOverrides.Count; ++i) {
                 var otherOverride = danglingOverrides[i];
-                if(otherOverride.VarName == varOverride.VarName) // This looks like an override for ANOTHER override.
-                {   // Meaning we're probably already subscribed or... something?
+
+                if(otherOverride.VarName == varOverride.VarName) {
+                    // This looks like an override for ANOTHER override.
+                    // Meaning we're probably already subscribed or... something?
                     // Whatever. I guess we're the real override, now.
                     danglingOverrides[i] = varOverride;
                     // NOTE: This doesn't work quite right if DMObjectBuilder ever starts evaluating object definitions in a different order than how they appear in the source code.
                     return;
                 }
             }
+
             danglingOverrides.Add(varOverride);
-            if (_isSubscribedToVarDef == false)
-            {
-                DMObjectBuilder.VarDefined += this.HandleLateVarDef; // GOD I hope this works
+            if (_isSubscribedToVarDef == false) {
+                DMObjectBuilder.VarDefined += HandleLateVarDef; // GOD I hope this works
                 _isSubscribedToVarDef = true;
             }
         }
@@ -99,10 +102,11 @@ namespace DMCompiler.DM {
         /// Note that this DOES NOT query our <see cref= "GlobalVariables" />. <br/>
         /// <see langword="TODO:"/> Make this (and other things) match the nomenclature of <see cref="HasLocalVariable"/>
         /// </remarks>
-        public DMVariable GetVariable(string name) {
-            if (Variables.TryGetValue(name, out DMVariable variable)) {
+        public DMVariable? GetVariable(string name) {
+            if (Variables.TryGetValue(name, out var variable)) {
                 return variable;
             }
+
             return Parent?.GetVariable(name);
         }
 
@@ -202,7 +206,7 @@ namespace DMCompiler.DM {
                 init.PushArguments(0);
                 init.Call(DMReference.SuperProc);
 
-                string lastSource = null;
+                string? lastSource = null;
                 foreach (DMExpression expression in InitializationProcExpressions) {
                     try {
                         if (expression.Location.Line is int line) {

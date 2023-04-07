@@ -141,7 +141,7 @@ namespace DMCompiler.Compiler.DM {
                                     } while (preprocToken.Type != TokenType.EndOfFile);
 
                                     DMLexer expressionLexer = new DMLexer(constantToken.Location.SourceFile, preprocTokens);
-                                    DMParser expressionParser = new DMParser(expressionLexer, _unimplementedWarnings);
+                                    DMParser expressionParser = new DMParser(expressionLexer);
 
                                     DMASTExpression expression = null;
                                     try

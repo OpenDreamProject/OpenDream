@@ -37,7 +37,7 @@ namespace OpenDreamClient.Interface {
 
         }
 
-        public void WinSet(string controlId, string winsetParams) {
+        public void WinSet(string? controlId, string winsetParams) {
 
         }
     }

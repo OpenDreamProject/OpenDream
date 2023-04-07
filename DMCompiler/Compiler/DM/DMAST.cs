@@ -1840,9 +1840,9 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTCallParameter : DMASTNode {
         public DMASTExpression Value;
-        public DMASTExpression Key;
+        public DMASTExpression? Key;
 
-        public DMASTCallParameter(Location location, DMASTExpression value, DMASTExpression key = null) : base(location) {
+        public DMASTCallParameter(Location location, DMASTExpression value, DMASTExpression? key = null) : base(location) {
             Value = value;
             Key = key;
         }

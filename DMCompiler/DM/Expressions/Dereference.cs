@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
@@ -58,18 +59,15 @@ namespace DMCompiler.DM.Expressions {
             return (DMReference.CreateField(PropertyName), _conditional);
         }
 
-        public override bool TryAsConstant(out Constant constant)
-        {
-            if(_expr.Path is not null)
-            {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if(_expr.Path is not null) {
                 var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
                 var variable = obj.GetVariable(PropertyName);
-                if (variable != null)
-                {
+                if (variable != null) {
                     if(variable.IsConst)
                         return variable.Value.TryAsConstant(out constant);
-                    if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
-                    {
+
+                    if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
                         variable.Value.TryAsConstant(out constant);
                         return true; // MUST be true.
                     }
@@ -133,8 +131,7 @@ namespace DMCompiler.DM.Expressions {
         bool _conditional;
 
         public ListIndex(Location location, DMExpression expr, DMExpression index, DreamPath? path, bool conditional)
-            : base(location, path)
-        {
+            : base(location, path) {
             _expr = expr;
             _index = index;
             _conditional = conditional;

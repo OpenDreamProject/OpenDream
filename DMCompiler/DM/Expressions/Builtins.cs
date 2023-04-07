@@ -332,10 +332,10 @@ namespace DMCompiler.DM.Expressions {
 
     // list(...)
     class List : DMExpression {
-        private readonly (DMExpression Key, DMExpression Value)[] _values;
+        private readonly (DMExpression? Key, DMExpression Value)[] _values;
         private readonly bool _isAssociative;
 
-        public List(Location location, (DMExpression Key, DMExpression Value)[] values) : base(location) {
+        public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
             _values = values;
 
             _isAssociative = false;

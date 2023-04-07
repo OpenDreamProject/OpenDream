@@ -51,7 +51,7 @@ public sealed class WindowDescriptor : ControlDescriptor {
 
     }
 
-    public override ControlDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
+    public override ControlDescriptor? CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
         if (!attributes.TryGet("type", out var elementType) || elementType is not ValueDataNode elementTypeValue)
             return null;
 
@@ -60,12 +60,12 @@ public sealed class WindowDescriptor : ControlDescriptor {
             attributes["name"] = new ValueDataNode(Name);
 
             // Read the attributes into this descriptor
-            serializationManager.Read(attributes, instanceProvider: () => this);
+            serializationManager.Read(attributes, notNullableOverride: true, instanceProvider: () => this);
             return this;
         }
 
 
-        Type descriptorType = elementTypeValue.Value switch {
+        Type? descriptorType = elementTypeValue.Value switch {
             "MAP" => typeof(ControlDescriptorMap),
             "CHILD" => typeof(ControlDescriptorChild),
             "OUTPUT" => typeof(ControlDescriptorOutput),
@@ -82,13 +82,16 @@ public sealed class WindowDescriptor : ControlDescriptor {
         if (descriptorType == null)
             return null;
 
-        ControlDescriptor child = (ControlDescriptor) serializationManager.Read(descriptorType, attributes);
+        var child = (ControlDescriptor?) serializationManager.Read(descriptorType, attributes);
+        if (child == null)
+            return null;
+
         ControlDescriptors.Add(child);
         return child;
     }
 
     public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
-        var copy = serializationManager.CreateCopy(this);
+        var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
         copy._name = name;
         return copy;

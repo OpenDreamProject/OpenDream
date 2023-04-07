@@ -250,7 +250,8 @@ namespace OpenDreamClient.Interface {
         }
 
         private void RxLoadInterface(MsgLoadInterface message) {
-            LoadInterfaceFromSource(message.InterfaceText);
+            if (message.InterfaceText != null) // TODO: Default interface if none exists
+                LoadInterfaceFromSource(message.InterfaceText);
 
             _netManager.ClientSendMessage(new MsgAckLoadInterface());
         }

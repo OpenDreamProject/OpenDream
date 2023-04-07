@@ -34,10 +34,10 @@ namespace OpenDreamShared.Compiler {
                 _currentToken = _lexer.GetNextToken();
 
                 if (_currentToken.Type == TokenType.Error) {
-                    Error((string)_currentToken.Value, throwException: false);
+                    Error((string)_currentToken.Value!, throwException: false);
                     Advance();
                 } else if (_currentToken.Type == TokenType.Warning) {
-                    Warning((string)_currentToken.Value);
+                    Warning((string)_currentToken.Value!);
                     Advance();
                 }
             }

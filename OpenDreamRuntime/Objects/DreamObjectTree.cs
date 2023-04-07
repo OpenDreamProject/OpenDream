@@ -13,7 +13,7 @@ using TreeEntry = OpenDreamRuntime.Objects.IDreamObjectTree.TreeEntry;
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectTree : IDreamObjectTree {
         public TreeEntry[] Types { get; private set; }
-        public List<DreamProc> Procs { get; private set; }
+        public List<DreamProc> Procs { get; private set; } = new();
         public List<string> Strings { get; private set; } //TODO: Store this somewhere else
         public DreamProc? GlobalInitProc { get; private set; }
 
@@ -47,17 +47,21 @@ namespace OpenDreamRuntime.Objects {
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
 
         public void LoadJson(DreamCompiledJson json) {
-            Strings = json.Strings;
+            Strings = json.Strings ?? new();
 
-            if (json.GlobalInitProc is ProcDefinitionJson initProcDef) {
+            if (json.GlobalInitProc is { } initProcDef) {
                 GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", _dreamManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
             } else {
                 GlobalInitProc = null;
             }
 
+            var types = json.Types ?? Array.Empty<DreamTypeJson>();
+            var procs = json.Procs;
+            var globalProcs = json.GlobalProcs;
+
             // Load procs first so types can set their init proc's super proc
-            LoadProcsFromJson(json.Types, json.Procs, json.GlobalProcs);
-            LoadTypesFromJson(json.Types);
+            LoadProcsFromJson(types, procs, globalProcs);
+            LoadTypesFromJson(types);
         }
 
         public TreeEntry GetTreeEntry(DreamPath path) {
@@ -328,14 +332,18 @@ namespace OpenDreamRuntime.Objects {
                 _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
         }
 
-        private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs) {
-            Procs = new(jsonProcs.Length);
-            foreach (var proc in jsonProcs) {
-                Procs.Add(LoadProcJson(types, proc));
+        private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[]? jsonProcs, int[]? jsonGlobalProcs) {
+            Procs.Clear();
+            if (jsonProcs != null) {
+                Procs.EnsureCapacity(jsonProcs.Length);
+
+                foreach (var proc in jsonProcs) {
+                    Procs.Add(LoadProcJson(types, proc));
+                }
             }
 
             if (jsonGlobalProcs != null) {
-                _globalProcIds = new(jsonGlobalProcs.Count);
+                _globalProcIds = new(jsonGlobalProcs.Length);
 
                 foreach (var procId in jsonGlobalProcs) {
                     var proc = Procs[procId];

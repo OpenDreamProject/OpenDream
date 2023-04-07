@@ -27,7 +27,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
 
-            if (token == null) {
+            if (token.Type == TokenType.Unknown) {
                 char c = GetCurrent();
 
                 switch (c) {

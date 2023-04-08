@@ -36,7 +36,6 @@ namespace OpenDreamClient.Rendering {
         }
 
         public bool IsVisible(bool checkWorld = true, [CanBeNull] IMapManager mapManager = null, int seeInvis = 0) {
-            //if (Icon?.DMI == null) return false;
             if (Icon.Appearance?.Invisibility > seeInvis) return false;
 
             if (checkWorld) {

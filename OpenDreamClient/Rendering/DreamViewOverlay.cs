@@ -251,8 +251,7 @@ sealed class DreamViewOverlay : Overlay {
 
             List<Action> mouseMapActions = new(planeEntry.Item2.Count);
             List<Action> iconActions = new(planeEntry.Item2.Count);
-            foreach((Action IconAction, Action MouseMapAction) in planeEntry.Item2)
-            {
+            foreach((Action IconAction, Action MouseMapAction) in planeEntry.Item2) {
                 mouseMapActions.Add(MouseMapAction);
                 iconActions.Add(IconAction);
             }
@@ -282,8 +281,7 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
-    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0)
-    {
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0) {
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
@@ -446,14 +444,12 @@ sealed class DreamViewOverlay : Overlay {
         _renderTargetCache[rental.Size] = storeList;
     }
 
-    private void ClearRenderTarget(IRenderTexture target, DrawingHandleWorld handle, Color clearColor)
-    {
+    private void ClearRenderTarget(IRenderTexture target, DrawingHandleWorld handle, Color clearColor) {
         handle.RenderInRenderTarget(target, () => {}, clearColor);
     }
 
 
-    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, int? blendOverride = null)
-    {
+    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, int? blendOverride = null) {
         Color RGBA = colorOverride == null ? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply) : colorOverride.Value;
         ColorMatrix colorMatrix;
         if(colorOverride != null || iconMetaData.ColorMatrixToApply == null)
@@ -485,8 +481,7 @@ sealed class DreamViewOverlay : Overlay {
             frame = icon.CurrentFrame;
 
         //KEEP_TOGETHER groups
-        if(iconMetaData.KeepTogetherGroup != null && iconMetaData.KeepTogetherGroup.Count > 0)
-        {
+        if(iconMetaData.KeepTogetherGroup != null && iconMetaData.KeepTogetherGroup.Count > 0) {
             //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
             Matrix3 KTParentTransform = iconMetaData.TransformToApply;
             iconMetaData.TransformToApply = Matrix3.Identity;
@@ -766,12 +761,12 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         val = this.Layer.CompareTo(other.Layer);
         if (val != 0) {
             //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
-            int effects_layer = (((int)this.Layer & 5000) == 5000).CompareTo(((int)other.Layer & 5000) == 5000);
-            if(effects_layer != 0)
-                return effects_layer;
-            int background_layer = (((int)this.Layer & 20000) == 20000).CompareTo(((int)other.Layer & 20000) == 20000);
-            if(background_layer != 0)
-                return -background_layer; //flipped because background_layer flag forces it to the back
+            int effectsLayer = (((int)this.Layer & 5000) == 5000).CompareTo(((int)other.Layer & 5000) == 5000);
+            if(effectsLayer != 0)
+                return effectsLayer;
+            int backgroundLayer = (((int)this.Layer & 20000) == 20000).CompareTo(((int)other.Layer & 20000) == 20000);
+            if(backgroundLayer != 0)
+                return -backgroundLayer; //flipped because background_layer flag forces it to the back
             return val;
         }
 

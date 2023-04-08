@@ -730,7 +730,6 @@ namespace OpenDreamRuntime {
             return new ErrorNode(node, $"Value {node.Value} is not a valid flag set");
         }
     }
-    #endregion Serialization
 
 
     [TypeSerializer]
@@ -772,3 +771,4 @@ namespace OpenDreamRuntime {
     }
 
 }
+#endregion Serialization

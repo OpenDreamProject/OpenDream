@@ -166,7 +166,8 @@ namespace OpenDreamRuntime {
                 appearance.Plane = plane;
             }
             if (atom.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode)) {
-                appearance.BlendMode = blend_mode;
+                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
+
             }
             if (atom.GetVariable("render_source").TryGetValueAsString(out string? renderSource)) {
                 appearance.RenderSource = renderSource;
@@ -238,7 +239,7 @@ namespace OpenDreamRuntime {
                 appearance.RenderTarget = renderTarget;
             }
             if (def.TryGetVariable("blend_mode", out var blendmodeVar) && blendmodeVar.TryGetValueAsFloat(out float blend_mode)) {
-                appearance.BlendMode = blend_mode;
+                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
             }
             if (def.TryGetVariable("appearance_flags", out var appearanceFlagsVar) && appearanceFlagsVar.TryGetValueAsFloat(out float appearance_flags)) {
                 appearance.AppearanceFlags = (int) appearance_flags;

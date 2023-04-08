@@ -29,7 +29,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public ColorMatrix? ColorMatrix;
         [ViewVariables] public float Layer;
         [ViewVariables] public float Plane;
-        [ViewVariables] public float BlendMode;
+        [ViewVariables] public BlendMode BlendMode;
         [ViewVariables] public int AppearanceFlags = 0;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public int SeeInvisibility = 127; //most things don't have this, only mobs, so default to full visibility
@@ -218,5 +218,15 @@ namespace OpenDreamShared.Dream {
             Color = Color.White;
             ColorMatrix = matrix;
         }
+    }
+
+    public enum BlendMode
+    {
+        BLEND_DEFAULT,
+        BLEND_OVERLAY,
+        BLEND_ADD,
+        BLEND_SUBTRACT,
+        BLEND_MULTIPLY,
+        BLEND_INSET_OVERLAY
     }
 }

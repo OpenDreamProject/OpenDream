@@ -1447,7 +1447,7 @@ namespace OpenDreamRuntime.Procs.Native {
              * in which it takes, some sort of "opcode" and some system of arguments and does stuff with them,
              * all of which are just aliases for already-existing behaviour in DM through the /matrix methods
              * (m.Clone() or m.Interpolate() and so on)
-             * 
+             *
              * Normally I'd never stoop to developing any such ridiculous behaviour, but for some reason,
              * Paradise and a few other targets actually make use of these alternative signatures.
              * So, here's that.
@@ -1485,7 +1485,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 case MatrixOpcode.Rotate:
                     if (!firstArgument.TryGetValueAsFloat(out float rotationAngle))
                         throw new ArgumentException($"/matrix() called with invalid rotation angle '{rotationAngle}'");
-                    var (angleSin, angleCos) = ((float, float))Math.SinCos(Angle.FromDegrees(rotationAngle)); // NOTE: Not sure if BYOND uses double or float precision in this specific case.
+                    var (angleSin, angleCos) = ((float, float))Math.SinCos(Math.PI / 180.0 * rotationAngle); // NOTE: Not sure if BYOND uses double or float precision in this specific case.
                     if (float.IsSubnormal(angleSin)) // FIXME: Think of a better solution to bad results for some angles.
                         angleSin = 0;
                     if (float.IsSubnormal(angleCos))

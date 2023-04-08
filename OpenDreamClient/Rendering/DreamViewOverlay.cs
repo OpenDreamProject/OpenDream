@@ -24,7 +24,7 @@ sealed class DreamViewOverlay : Overlay {
     private EntityQuery<TransformComponent> xformQuery;
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
-    private Dictionary<int, ShaderInstance> _blendmodeInstances;
+    private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
     private EntityLookupSystem _lookupSystem;
@@ -53,11 +53,11 @@ sealed class DreamViewOverlay : Overlay {
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendmodeInstances = new(4);
-        _blendmodeInstances.Add(0, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY
-        _blendmodeInstances.Add(2, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
-        _blendmodeInstances.Add(3, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
-        _blendmodeInstances.Add(4, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
-        _blendmodeInstances.Add(5, protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()); //BLEND_INSET_OVERLAY //TODO
+        _blendmodeInstances.Add(BlendMode.BLEND_DEFAULT, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY
+        _blendmodeInstances.Add(BlendMode.BLEND_ADD, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
+        _blendmodeInstances.Add(BlendMode.BLEND_SUBTRACT, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
+        _blendmodeInstances.Add(BlendMode.BLEND_MULTIPLY, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
+        _blendmodeInstances.Add(BlendMode.BLEND_INSET_OVERLAY, protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()); //BLEND_INSET_OVERLAY //TODO
 
         spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -287,7 +287,7 @@ sealed class DreamViewOverlay : Overlay {
         current.RenderSource = icon.Appearance.RenderSource;
         current.RenderTarget = icon.Appearance.RenderTarget;
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
-        current.BlendMode = (int)icon.Appearance.BlendMode;
+        current.BlendMode = icon.Appearance.BlendMode;
         current.MouseOpacity = icon.Appearance.MouseOpacity;
 
 
@@ -443,7 +443,7 @@ sealed class DreamViewOverlay : Overlay {
     }
 
 
-    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, int? blendOverride = null) {
+    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, BlendMode? blendOverride = null) {
         Color RGBA = colorOverride == null ? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply) : colorOverride.Value;
         ColorMatrix colorMatrix;
         if(colorOverride != null || iconMetaData.ColorMatrixToApply == null)
@@ -452,7 +452,7 @@ sealed class DreamViewOverlay : Overlay {
             colorMatrix = iconMetaData.ColorMatrixToApply.Value;
         ShaderInstance blendAndColor;
         if(blendOverride != null || !_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out blendAndColor))
-            blendAndColor = _blendmodeInstances[blendOverride == null ? 0 : blendOverride.Value];
+            blendAndColor = _blendmodeInstances[blendOverride == null ? BlendMode.BLEND_DEFAULT : blendOverride.Value];
         blendAndColor = blendAndColor.Duplicate();
         blendAndColor.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
         blendAndColor.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
@@ -483,8 +483,8 @@ sealed class DreamViewOverlay : Overlay {
             iconMetaData.ColorToApply = Color.White;
             float ktParentAlpha = iconMetaData.AlphaToApply;
             iconMetaData.AlphaToApply = 1f;
-            int ktParentBlendMode = iconMetaData.BlendMode;
-            iconMetaData.BlendMode = 0; //BLEND_DEFAULT
+            BlendMode ktParentBlendMode = iconMetaData.BlendMode;
+            iconMetaData.BlendMode = BlendMode.BLEND_DEFAULT;
 
             List<RendererMetaData> ktItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup.Count+1);
             ktItems.Add(iconMetaData);
@@ -689,7 +689,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public String RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
     public int AppearanceFlags;
-    public int BlendMode;
+    public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
 
     public RendererMetaData(){
@@ -713,7 +713,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         RenderTarget = "";
         KeepTogetherGroup = null; //don't actually need to allocate this 90% of the time
         AppearanceFlags = 0;
-        BlendMode = 0;
+        BlendMode = BlendMode.BLEND_DEFAULT;
         MouseOpacity = MouseOpacity.Transparent;
     }
 

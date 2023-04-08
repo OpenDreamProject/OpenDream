@@ -105,7 +105,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "appearance_flags":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsInteger(out appearance.AppearanceFlags);
+                        value.TryGetValueAsInteger(out int flagsVar);
+                        appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
                     });
                     break;
                 case "alpha":
@@ -325,7 +326,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
                 mutableAppearance.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
-                mutableAppearance.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
+                mutableAppearance.GetVariable("appearance_flags").TryGetValueAsInteger(out int flagsVar);
+                appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
                 appearance.RenderTarget = mutableAppearance.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
                 appearance.RenderSource = mutableAppearance.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 mutableAppearance.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
@@ -350,7 +352,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
                 image.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
                 appearance.Alpha = (byte) floatAlpha;
-                image.GetVariable("appearance_flags").TryGetValueAsInteger(out appearance.AppearanceFlags);
+                image.GetVariable("appearance_flags").TryGetValueAsInteger(out int flagsVar);
+                appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
                 appearance.RenderTarget = image.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
                 appearance.RenderSource = image.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);

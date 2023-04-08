@@ -30,7 +30,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public float Layer;
         [ViewVariables] public float Plane;
         [ViewVariables] public BlendMode BlendMode;
-        [ViewVariables] public int AppearanceFlags = 0;
+        [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public int SeeInvisibility = 127; //most things don't have this, only mobs, so default to full visibility
         [ViewVariables] public bool Opacity;
@@ -220,13 +220,28 @@ namespace OpenDreamShared.Dream {
         }
     }
 
-    public enum BlendMode
-    {
+    public enum BlendMode {
         BLEND_DEFAULT,
         BLEND_OVERLAY,
         BLEND_ADD,
         BLEND_SUBTRACT,
         BLEND_MULTIPLY,
         BLEND_INSET_OVERLAY
+    }
+
+    public enum AppearanceFlags {
+        None = 0,
+        LONG_GLIDE = 1,
+        RESET_COLOR = 2,
+        RESET_ALPHA = 4,
+        RESET_TRANSFORM = 8,
+        NO_CLIENT_COLOR = 16,
+        KEEP_TOGETHER = 32,
+        KEEP_APART = 64,
+        PLANE_MASTER = 128,
+        TILE_BOUND = 256,
+        PIXEL_SCALE = 512,
+        PASS_MOUSE = 1024,
+        TILE_MOVER = 2048
     }
 }

@@ -176,7 +176,7 @@ namespace OpenDreamRuntime {
                 appearance.RenderTarget = renderTarget;
             }
             if (atom.GetVariable("appearance_flags").TryGetValueAsFloat(out float appearance_flags)) {
-                appearance.AppearanceFlags = (int)appearance_flags;
+                appearance.AppearanceFlags = (AppearanceFlags)appearance_flags;
             }
             if (atom.GetVariable("transform").TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
                 appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
@@ -242,7 +242,7 @@ namespace OpenDreamRuntime {
                 appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
             }
             if (def.TryGetVariable("appearance_flags", out var appearanceFlagsVar) && appearanceFlagsVar.TryGetValueAsFloat(out float appearance_flags)) {
-                appearance.AppearanceFlags = (int) appearance_flags;
+                appearance.AppearanceFlags = (AppearanceFlags) appearance_flags;
             }
             if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
                 appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);

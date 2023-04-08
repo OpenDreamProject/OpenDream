@@ -188,7 +188,7 @@ sealed class DreamViewOverlay : Overlay {
                     _renderTargetsToReturn.Push(tmpRenderTarget);
                 }
 
-                if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is also a PLANE_MASTER
+                if((sprite.AppearanceFlags & AppearanceFlags.PLANE_MASTER) != 0){ //if this is also a PLANE_MASTER
                     if(!planesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<(Action, Action)>) planeEntry)){
                         //if the plane hasn't already been created, store this sprite as the plane_master
                         planesList[sprite.Plane] = (sprite, new List<(Action, Action)>());
@@ -208,7 +208,7 @@ sealed class DreamViewOverlay : Overlay {
                     planesList[sprite.Plane] = planeEntry;
                 }
 
-                if(((int)sprite.AppearanceFlags & 128) == 128){ //if this is a PLANE_MASTER, we don't render it, we just set the planeMaster value and move on
+                if((sprite.AppearanceFlags & AppearanceFlags.PLANE_MASTER) != 0){ //if this is a PLANE_MASTER, we don't render it, we just set the planeMaster value and move on
                     sprite.Position = Vector2.Zero; //plane masters should not have a position offset
                     planesList[sprite.Plane] = (sprite, planeEntry.Item2);
                     continue;
@@ -299,7 +299,7 @@ sealed class DreamViewOverlay : Overlay {
 
         if(parentIcon != null){
             current.ClickUID = parentIcon.ClickUID;
-            if((icon.Appearance.AppearanceFlags & 2) == 2 || keepTogether){ //RESET_COLOR
+            if((icon.Appearance.AppearanceFlags & AppearanceFlags.RESET_COLOR) != 0 || keepTogether){ //RESET_COLOR
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             }
@@ -308,12 +308,12 @@ sealed class DreamViewOverlay : Overlay {
                 current.ColorMatrixToApply = parentIcon.ColorMatrixToApply;
             }
 
-            if((icon.Appearance.AppearanceFlags & 4) == 4 || keepTogether) //RESET_ALPHA
+            if((icon.Appearance.AppearanceFlags & AppearanceFlags.RESET_ALPHA) !=0 || keepTogether) //RESET_ALPHA
                 current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             else
                 current.AlphaToApply = parentIcon.AlphaToApply;
 
-            if((icon.Appearance.AppearanceFlags & 8) == 8 || keepTogether) //RESET_TRANSFORM
+            if((icon.Appearance.AppearanceFlags & AppearanceFlags.RESET_TRANSFORM) != 0 || keepTogether) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
             else
                 current.TransformToApply = parentIcon.TransformToApply;
@@ -336,7 +336,7 @@ sealed class DreamViewOverlay : Overlay {
             current.Layer = icon.Appearance.Layer;
         }
 
-        keepTogether = keepTogether || ((current.AppearanceFlags & 32) == 32); //KEEP_TOGETHER
+        keepTogether = keepTogether || ((current.AppearanceFlags & AppearanceFlags.KEEP_TOGETHER) != 0); //KEEP_TOGETHER
 
         if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
             RendererMetaData renderTargetPlaceholder = RentRendererMetaData();
@@ -372,7 +372,7 @@ sealed class DreamViewOverlay : Overlay {
         foreach (DreamIcon underlay in icon.Underlays) {
             underlayTiebreaker--;
 
-            if(!keepTogether || (underlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+            if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, underlayTiebreaker));
             else {
                 current.KeepTogetherGroup ??= new();
@@ -385,7 +385,7 @@ sealed class DreamViewOverlay : Overlay {
         foreach (DreamIcon overlay in icon.Overlays) {
             overlayTiebreaker++;
 
-            if(!keepTogether || (overlay.Appearance.AppearanceFlags & 64) == 64) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+            if(!keepTogether || (overlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, overlayTiebreaker));
             else {
                 current.KeepTogetherGroup ??= new();
@@ -688,7 +688,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public String RenderSource;
     public String RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
-    public int AppearanceFlags;
+    public AppearanceFlags AppearanceFlags;
     public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
 
@@ -712,7 +712,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         RenderSource = "";
         RenderTarget = "";
         KeepTogetherGroup = null; //don't actually need to allocate this 90% of the time
-        AppearanceFlags = 0;
+        AppearanceFlags = AppearanceFlags.None;
         BlendMode = BlendMode.BLEND_DEFAULT;
         MouseOpacity = MouseOpacity.Transparent;
     }
@@ -740,7 +740,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         if (val != 0) {
             return val;
         }
-        val = (((int)this.AppearanceFlags & 128) == 128).CompareTo(((int)other.AppearanceFlags & 128) == 128); //appearance_flags & PLANE_MASTER
+        val = ((this.AppearanceFlags & AppearanceFlags.PLANE_MASTER) != 0).CompareTo((other.AppearanceFlags & AppearanceFlags.PLANE_MASTER) != 0); //appearance_flags & PLANE_MASTER
         //PLANE_MASTER objects go first for any given plane
         if (val != 0) {
             return -val; //sign flip because we want 1 < -1

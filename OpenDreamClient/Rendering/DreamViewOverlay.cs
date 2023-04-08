@@ -37,7 +37,6 @@ sealed class DreamViewOverlay : Overlay {
     public bool RenderEntityEnabled = true;
     public bool RenderPlayerEnabled = true;
     public bool MouseMapRenderEnabled = false;
-    public bool CheckForZFighting = false;
     private IRenderTexture _mouseMapRenderTarget;
     public Texture MouseMap;
     public Dictionary<Color, EntityUid> MouseMapLookup = new();
@@ -170,11 +169,6 @@ sealed class DreamViewOverlay : Overlay {
             return;
 
         sprites.Sort();
-        if(CheckForZFighting){
-            for(int i = 1; i < sprites.Count; i++)
-                if(sprites[i-1].Position == sprites[i].Position && sprites[i-1].CompareTo(sprites[i]) == 0 && sprites[i].CompareTo(sprites[i-1]) == 0)
-                    Logger.Debug($"Z fighting! Objects at {sprites[i].Position} with iconstates {sprites[i].MainIcon?.Appearance?.IconState} and {sprites[i-1].MainIcon?.Appearance?.IconState}");
-        }
         //dict of planes to their planemaster (if they have one) and list of mousmap and sprite draw actions on that plane in order, keyed by plane number
         Dictionary<float, (RendererMetaData?, List<(Action, Action)>)> planesList = new(sprites.Count);
 
@@ -879,22 +873,5 @@ public sealed class TogglePlayerRenderCommand : IConsoleCommand {
     }
 }
 
-public sealed class ToggleZFightingDebugCommand : IConsoleCommand {
-    public string Command => "togglezfighting";
-    public string Description => "Toggle checking for instances of z-fighting";
-    public string Help => "";
 
-    public void Execute(IConsoleShell shell, string argStr, string[] args) {
-        if (args.Length != 0) {
-            shell.WriteError("This command does not take any arguments!");
-            return;
-        }
-
-        IOverlayManager overlayManager = IoCManager.Resolve<IOverlayManager>();
-        if (overlayManager.TryGetOverlay(typeof(DreamViewOverlay), out var overlay) &&
-            overlay is DreamViewOverlay screenOverlay) {
-            screenOverlay.CheckForZFighting = !screenOverlay.CheckForZFighting;
-        }
-    }
-}
 #endregion

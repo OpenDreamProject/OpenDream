@@ -20,7 +20,7 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IClyde _clyde = default!;
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
-    private EntityQuery<DreamClientAppearanceComponent> clientAppearenceQuery;
+    private EntityQuery<DreamMobSightComponent> clientAppearenceQuery;
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
@@ -60,7 +60,7 @@ sealed class DreamViewOverlay : Overlay {
 
         spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
-        clientAppearenceQuery = _entityManager.GetEntityQuery<DreamClientAppearanceComponent>();
+        clientAppearenceQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
         _flipMatrix = Matrix3.Identity;
         _flipMatrix.R1C1 = -1;
     }
@@ -114,10 +114,11 @@ sealed class DreamViewOverlay : Overlay {
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
         int seeVis = 127;
+        if(clientAppearenceQuery.TryGetComponent(eye, out var clientInfo)){
+            seeVis = clientInfo.SeeInvisibility;
+        }
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
-            if(clientAppearenceQuery.TryGetComponent(eye, out var clientInfo))
-                seeVis = clientInfo.SeeInvisibility;
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
                 sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
         }

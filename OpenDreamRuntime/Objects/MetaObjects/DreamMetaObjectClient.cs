@@ -1,7 +1,6 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Rendering;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -18,8 +17,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
-        [Dependency] private readonly IAtomManager _atomManager = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public DreamMetaObjectClient() {
             IoCManager.InjectDependencies(this);
@@ -44,10 +41,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnObjectDeleted(dreamObject);
             VerbLists.Remove(dreamObject);
             _dreamManager.Clients.Remove(dreamObject);
-            //this should be safe, since DM requires that a client always has a mob attached (see world.mob and client.New in DMref)
-            dreamObject.TryGetVariable("mob", out DreamValue mob);
-            EntityUid entity = _atomManager.GetMovableEntity(mob.MustGetValueAsDreamObject());
-            _entityManager.RemoveComponent<DreamClientAppearanceComponent>(entity);
         }
 
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
@@ -69,26 +62,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "mob": {
                     DreamConnection connection = _dreamManager.GetConnectionFromClient(dreamObject);
-                    connection.MobDreamObject = value.GetValueAsDreamObject();
 
-                    //clientAppearanceComponent for client.images and other client specific render data
-                    EntityUid entity;
-                    DreamClientAppearanceComponent clientAppearanceComponent;
-                    if(oldValue == DreamValue.Null) {
-                        entity = _atomManager.GetMovableEntity(value.MustGetValueAsDreamObject());
-                        clientAppearanceComponent = _entityManager.AddComponent<DreamClientAppearanceComponent>(entity);
-                    } else {
-                        entity = _atomManager.GetMovableEntity(oldValue.MustGetValueAsDreamObject());
-                        clientAppearanceComponent = _entityManager.GetComponent<DreamClientAppearanceComponent>(entity);
-                        _entityManager.RemoveComponent(entity, clientAppearanceComponent);
-                        if(value == DreamValue.Null)
-                            break; //client is disconnected, no need to go further
-                        entity = _atomManager.GetMovableEntity(value.MustGetValueAsDreamObject());
-                        _entityManager.AddComponent(entity, clientAppearanceComponent);
-                    }
-                    connection.MobDreamObject.TryGetVariable("see_invisible", out DreamValue seeVisValue);
-                    clientAppearanceComponent.SeeInvisibility = seeVisValue.MustGetValueAsInteger();
-                    clientAppearanceComponent.Dirty();
+                    connection.MobDreamObject = value.GetValueAsDreamObject();
                     break;
                 }
                 case "screen": {

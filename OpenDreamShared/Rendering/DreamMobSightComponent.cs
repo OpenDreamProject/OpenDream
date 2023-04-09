@@ -3,38 +3,40 @@ using Robust.Shared.Serialization;
 using System;
 using Robust.Shared.GameStates;
 using OpenDreamShared.Dream;
+using System.Collections.Generic;
 
 namespace OpenDreamShared.Rendering {
     [RegisterComponent]
     [NetworkedComponent]
-    public class DreamClientAppearanceComponent : Component {
+    public class DreamMobSightComponent : Component {
         //hey this'd probably be a good place for client images
         ///The current attached mob's see_invisible value
 
-        public int SeeInvisibility;
+        public sbyte SeeInvisibility;
 
-        public DreamClientAppearanceComponent() {
+        public DreamMobSightComponent() {
         }
 
         public override ComponentState GetComponentState() {
-            return new DreamClientAppearanceComponentState(SeeInvisibility);
+            return new DreamMobSightComponentState(SeeInvisibility);
         }
 
         public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
             if (curState == null)
                 return;
 
-            DreamClientAppearanceComponentState state = (DreamClientAppearanceComponentState)curState;
+            DreamMobSightComponentState state = (DreamMobSightComponentState)curState;
 
             this.SeeInvisibility = state.SeeInvisibility;
         }
 
         [Serializable, NetSerializable]
-        protected sealed class DreamClientAppearanceComponentState : ComponentState {
-            public readonly int SeeInvisibility;
+        protected sealed class DreamMobSightComponentState : ComponentState {
+            public readonly sbyte SeeInvisibility;
 
-            public DreamClientAppearanceComponentState(int SeeInvisibility) {
+            public DreamMobSightComponentState(sbyte SeeInvisibility) {
                 this.SeeInvisibility = SeeInvisibility;
+
             }
         }
     }

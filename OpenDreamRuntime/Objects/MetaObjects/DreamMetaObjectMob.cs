@@ -20,12 +20,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
             _dreamManager.Mobs.Add(dreamObject);
-
+            EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
+            _entityManager.AddComponent<DreamMobSightComponent>(entity);
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
             ParentType?.OnObjectDeleted(dreamObject);
             _dreamManager.Mobs.Remove(dreamObject);
+            EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
+            _entityManager.RemoveComponent<DreamMobSightComponent>(entity);
         }
 
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
@@ -39,11 +42,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
             } else if (varName == "see_invisible") {
                 value.TryGetValueAsInteger(out int seevis);
-                seevis = Math.Clamp(seevis, -127, 127); //I'm assuming this is the same as invisibility
                 EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
-                DreamClientAppearanceComponent clientAppearanceComponent = _entityManager.GetComponent<DreamClientAppearanceComponent>(entity);
-                clientAppearanceComponent.SeeInvisibility = seevis;
-                clientAppearanceComponent.Dirty();
+                DreamMobSightComponent mobSightComponent = _entityManager.GetComponent<DreamMobSightComponent>(entity);
+                mobSightComponent.SeeInvisibility = (sbyte)seevis;
+                mobSightComponent.Dirty();
                 dreamObject.SetVariableValue("see_invisible", new DreamValue(seevis));
             } else if (varName == "client" && value != oldValue) {
                 var newClient = value.GetValueAsDreamObject();

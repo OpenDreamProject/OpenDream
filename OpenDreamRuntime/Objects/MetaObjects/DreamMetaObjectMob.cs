@@ -43,6 +43,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
                 DreamClientAppearanceComponent clientAppearanceComponent = _entityManager.GetComponent<DreamClientAppearanceComponent>(entity);
                 clientAppearanceComponent.SeeInvisibility = seevis;
+                clientAppearanceComponent.Dirty();
                 dreamObject.SetVariableValue("see_invisible", new DreamValue(seevis));
             } else if (varName == "client" && value != oldValue) {
                 var newClient = value.GetValueAsDreamObject();

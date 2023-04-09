@@ -88,6 +88,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     }
                     connection.MobDreamObject.TryGetVariable("see_invisible", out DreamValue seeVisValue);
                     clientAppearanceComponent.SeeInvisibility = seeVisValue.MustGetValueAsInteger();
+                    clientAppearanceComponent.Dirty();
                     break;
                 }
                 case "screen": {

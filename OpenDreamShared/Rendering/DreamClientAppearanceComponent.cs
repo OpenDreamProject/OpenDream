@@ -9,13 +9,24 @@ namespace OpenDreamShared.Rendering {
     [NetworkedComponent]
     public class DreamClientAppearanceComponent : Component {
         //hey this'd probably be a good place for client images
-        public int SeeInvisibility = 127; //most things don't have this, only mobs, so default to full visibility
+        ///The current attached mob's see_invisible value
+
+        public int SeeInvisibility;
 
         public DreamClientAppearanceComponent() {
         }
 
         public override ComponentState GetComponentState() {
             return new DreamClientAppearanceComponentState(SeeInvisibility);
+        }
+
+        public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
+            if (curState == null)
+                return;
+
+            DreamClientAppearanceComponentState state = (DreamClientAppearanceComponentState)curState;
+
+            this.SeeInvisibility = state.SeeInvisibility;
         }
 
         [Serializable, NetSerializable]

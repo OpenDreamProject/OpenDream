@@ -20,6 +20,7 @@
 	name = "Square Man"
 	desc = "Such a beautiful smile."
 	gender = MALE
+	see_invisible = 101
 
 	New()
 		..()

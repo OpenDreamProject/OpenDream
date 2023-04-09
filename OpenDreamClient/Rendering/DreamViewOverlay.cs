@@ -676,7 +676,7 @@ sealed class DreamViewOverlay : Overlay {
 internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public DreamIcon MainIcon;
     public Vector2 Position;
-    public float Plane; //true plane value may be different from appearance plane value, due to special flags
+    public int Plane; //true plane value may be different from appearance plane value, due to special flags
     public float Layer; //ditto for layer
     public EntityUid UID;
     public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)

@@ -28,7 +28,7 @@ namespace OpenDreamShared.Dream {
         /// </remarks>
         [ViewVariables] public ColorMatrix? ColorMatrix;
         [ViewVariables] public float Layer;
-        [ViewVariables] public float Plane;
+        [ViewVariables] public int Plane;
         [ViewVariables] public BlendMode BlendMode;
         [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
         [ViewVariables] public int Invisibility;

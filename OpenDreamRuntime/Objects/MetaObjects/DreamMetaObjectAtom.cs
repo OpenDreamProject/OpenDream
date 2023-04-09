@@ -94,7 +94,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 case "plane":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsFloat(out appearance.Plane);
+                        value.TryGetValueAsInteger(out appearance.Plane);
                     });
                     break;
                 case "blend_mode":
@@ -313,7 +313,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").TryGetValueAsString(out var iconState) ? iconState : null;
                 mutableAppearance.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
-                mutableAppearance.GetVariable("plane").TryGetValueAsFloat(out appearance.Plane);
+                mutableAppearance.GetVariable("plane").TryGetValueAsInteger(out appearance.Plane);
                 mutableAppearance.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode);
                 appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
                 mutableAppearance.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
@@ -339,7 +339,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.SetColor(color);
                 appearance.Direction = (AtomDirection) image.GetVariable("dir").GetValueAsInteger();
                 image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
-                image.GetVariable("plane").TryGetValueAsFloat(out appearance.Plane);
+                image.GetVariable("plane").TryGetValueAsInteger(out appearance.Plane);
                 image.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode);
                 appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
                 image.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);

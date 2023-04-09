@@ -294,15 +294,14 @@
 	New()
 		src.overlays += new /obj/order_test_item/one()
 		src.overlays += new /obj/order_test_item/two()
-		new /obj/order_test_item/three(src.loc)
 		new /obj/order_test_item/four(src.loc)
 		new /obj/order_test_item/five(src.loc)
-		new /obj/order_test_item/six(src.loc)
 		new /obj/order_test_item/seven(src.loc)
+		new /obj/order_test_item/three(src.loc)
+		new /obj/order_test_item/six(src.loc)
+		new /obj/order_test_item/nine(src.loc)
 		new /obj/order_test_item/render_seven(locate(1,1,1))
 		new /obj/order_test_item/eight(src.loc)
-		new /obj/order_test_item/nine(src.loc)
-
 
 
 /obj/order_test_item

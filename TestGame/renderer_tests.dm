@@ -2,13 +2,13 @@
 #define TALL_OBJECT_PLANE 10
 #define PLANE_LIGHTING 50
 
-#define PLANE_HANOY_0 20
-#define PLANE_HANOY_1 21
-#define PLANE_HANOY_3 23
-#define PLANE_HANOY_4 24
-#define PLANE_HANOY_7 27
-#define PLANE_HANOY_8 28
-#define PLANE_HANOY_9 29
+#define PLANE_hanoi_0 20
+#define PLANE_hanoi_1 21
+#define PLANE_hanoi_3 23
+#define PLANE_hanoi_4 24
+#define PLANE_hanoi_7 27
+#define PLANE_hanoi_8 28
+#define PLANE_hanoi_9 29
 
 
 /obj/plaque
@@ -284,12 +284,12 @@
 
 //render order sanity checks
 /obj/order_test
-	icon = 'icons/hanoy.dmi'
+	icon = 'icons/hanoi.dmi'
 	icon_state = "0"
 	name = "Render order test"
 	desc = "If this isn't a nice set of 10 squares stacked on top of eachother, something has gone wrong"
 	layer = OBJ_LAYER
-	plane = PLANE_HANOY_0
+	plane = PLANE_hanoi_0
 
 	New()
 		src.overlays += new /obj/order_test_item/one()
@@ -305,11 +305,11 @@
 
 
 /obj/order_test_item
-	icon = 'icons/hanoy.dmi'
+	icon = 'icons/hanoi.dmi'
 	
 /obj/order_test_item/one //make sure planes apply properly
 	icon_state = "1"
-	plane = PLANE_HANOY_1
+	plane = PLANE_hanoi_1
 
 /obj/order_test_item/two //test FLOAT_PLANE
 	icon_state = "2"
@@ -318,44 +318,44 @@
 /obj/order_test_item/plane_master //plane master test
 	screen_loc = "1,1"
 	appearance_flags = PLANE_MASTER
-	plane = PLANE_HANOY_3
+	plane = PLANE_hanoi_3
 
 /obj/order_test_item/three //plane master test
 	icon_state = "3"
-	plane = PLANE_HANOY_3
+	plane = PLANE_hanoi_3
 
 /obj/order_test_item/four //layer test
 	icon_state = "4"
-	plane = PLANE_HANOY_4
+	plane = PLANE_hanoi_4
 	layer = BACKGROUND_LAYER
 
 /obj/order_test_item/five //layer test
 	icon_state = "5"
-	plane = PLANE_HANOY_4	
+	plane = PLANE_hanoi_4	
 	layer = 1
 
 /obj/order_test_item/six //layer test
 	icon_state = "6"
-	plane = PLANE_HANOY_4	
+	plane = PLANE_hanoi_4	
 	layer = EFFECTS_LAYER
 
 /obj/order_test_item/seven //render source/target test
-	render_source = "hanoy7"
-	plane = PLANE_HANOY_7	
+	render_source = "hanoi7"
+	plane = PLANE_hanoi_7	
 
 /obj/order_test_item/render_seven //render source/target test
-	render_target = "hanoy7"
+	render_target = "hanoi7"
 	icon_state = "7"
 	plane = -100	//render below everything
 
 /obj/order_test_item/eight //image test
 	icon_state = ""
-	plane = PLANE_HANOY_8
+	plane = PLANE_hanoi_8
 
 	New()
-		src.overlays += image(icon = 'icons/hanoy.dmi', icon_state="8")
+		src.overlays += image(icon = 'icons/hanoi.dmi', icon_state="8")
 
 /obj/order_test_item/nine //image test
 	icon_state = "9"
-	plane = PLANE_HANOY_9
+	plane = PLANE_hanoi_9
 	invisibility = 99		

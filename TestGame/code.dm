@@ -151,7 +151,7 @@
 			usr << "now blind to invisible things"
 
 	verb/add_client_image()
-		var/image/i = image(icon = 'icons/hanoy.dmi', icon_state="8")
+		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
 		i.loc = src
 		src.client.images += i
 		spawn(20)

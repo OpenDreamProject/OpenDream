@@ -114,8 +114,8 @@ sealed class DreamViewOverlay : Overlay {
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
         int seeVis = 127;
-        if(mobSightQuery.TryGetComponent(eye, out var clientInfo)){
-            seeVis = clientInfo.SeeInvisibility;
+        if(mobSightQuery.TryGetComponent(eye, out var mobSight)){
+            seeVis = mobSight.SeeInvisibility;
         }
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){

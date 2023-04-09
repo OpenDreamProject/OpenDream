@@ -21,7 +21,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
             _dreamManager.Mobs.Add(dreamObject);
             EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
-            _entityManager.AddComponent<DreamMobSightComponent>(entity);
+            DreamMobSightComponent mobSightComponent = _entityManager.AddComponent<DreamMobSightComponent>(entity);
+            dreamObject.TryGetVariable("see_invisible", out DreamValue seevis);
+            mobSightComponent.SeeInvisibility = (sbyte)seevis.MustGetValueAsInteger();
+
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {

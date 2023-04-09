@@ -152,11 +152,11 @@
 
 	verb/add_client_image()
 		var/image/i = image(icon = 'icons/hanoy.dmi', icon_state="8")
-		i.set_loc(src)
+		i.loc = src
 		src.client.images += i
 		spawn(20)
 			src.client.images.Remove(i)
-			qdel(i)
+			del(i)
 
 /mob/Stat()
 	if (statpanel("Status"))

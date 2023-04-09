@@ -1,6 +1,7 @@
 ﻿using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
 using Robust.Server.Player;
+using OpenDreamShared.Rendering;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectMob : IDreamMetaObject {
@@ -10,7 +11,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
-
+        [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly IAtomManager _atomManager = default!;
         public DreamMetaObjectMob() {
             IoCManager.InjectDependencies(this);
         }
@@ -18,6 +20,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
             _dreamManager.Mobs.Add(dreamObject);
+
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
@@ -35,7 +38,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     connection.MobDreamObject = dreamObject;
                 }
             } else if (varName == "see_invisible") {
-               //Done on atom, don't worry about it
+                value.TryGetValueAsInteger(out int seevis);
+                seevis = Math.Clamp(seevis, -127, 127); //I'm assuming this is the same as invisibility
+                EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
+                DreamClientAppearanceComponent clientAppearanceComponent = _entityManager.GetComponent<DreamClientAppearanceComponent>(entity);
+                clientAppearanceComponent.SeeInvisibility = seevis;
+                dreamObject.SetVariableValue("see_invisible", new DreamValue(seevis));
             } else if (varName == "client" && value != oldValue) {
                 var newClient = value.GetValueAsDreamObject();
                 var oldClient = oldValue.GetValueAsDreamObject();

@@ -133,14 +133,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     });
                     dreamObject.SetVariableValue("invisibility", new DreamValue(vis));
                     break;
-                case "see_invisible":
-                    value.TryGetValueAsInteger(out int seevis);
-                    vis = Math.Clamp(seevis, -127, 127); //I'm assuming this is the same as invisibility
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.SeeInvisibility = seevis;
-                    });
-                    dreamObject.SetVariableValue("see_invisible", new DreamValue(seevis));
-                    break;
                 case "opacity":
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         value.TryGetValueAsInteger(out var opacity);

@@ -143,10 +143,6 @@ namespace OpenDreamRuntime {
                 appearance.Invisibility = invisibility;
             }
 
-            if (atom.TryGetVariable("see_invisible", out DreamValue seeInvisVar) && seeInvisVar.TryGetValueAsInteger(out int seeinvisible)) {
-                appearance.SeeInvisibility = seeinvisible;
-            }
-
             if (atom.GetVariable("opacity").TryGetValueAsInteger(out int opacity)) {
                 appearance.Opacity = (opacity != 0);
             }
@@ -210,10 +206,6 @@ namespace OpenDreamRuntime {
 
             if (def.TryGetVariable("invisibility", out var invisVar) && invisVar.TryGetValueAsInteger(out int invisibility)) {
                 appearance.Invisibility = invisibility;
-            }
-
-            if (def.TryGetVariable("see_invisible", out var seeinvisVar) && seeinvisVar.TryGetValueAsInteger(out int seeinvisibility)) {
-                appearance.SeeInvisibility = seeinvisibility;
             }
 
             if (def.TryGetVariable("mouse_opacity", out var mouseVar) && mouseVar.TryGetValueAsInteger(out int mouseOpacity)) {

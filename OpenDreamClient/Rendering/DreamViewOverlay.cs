@@ -5,9 +5,7 @@ using Robust.Shared.Map;
 using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
-using System.Linq;
-using Robust.Shared.Player;
-using System.Net.NetworkInformation;
+using OpenDreamShared.Rendering;
 
 namespace OpenDreamClient.Rendering;
 
@@ -22,6 +20,7 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IClyde _clyde = default!;
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
+    private EntityQuery<DreamClientAppearanceComponent> clientAppearenceQuery;
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
@@ -61,6 +60,7 @@ sealed class DreamViewOverlay : Overlay {
 
         spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+        clientAppearenceQuery = _entityManager.GetEntityQuery<DreamClientAppearanceComponent>();
         _flipMatrix = Matrix3.Identity;
         _flipMatrix.R1C1 = -1;
     }
@@ -116,8 +116,8 @@ sealed class DreamViewOverlay : Overlay {
         int seeVis = 127;
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
-            if(player?.Icon?.Appearance?.SeeInvisibility != null)
-                seeVis = player.Icon.Appearance.SeeInvisibility;
+            if(clientAppearenceQuery.TryGetComponent(eye, out var clientInfo))
+                seeVis = clientInfo.SeeInvisibility;
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
                 sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
         }

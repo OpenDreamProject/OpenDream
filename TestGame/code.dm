@@ -139,7 +139,15 @@
 					src.filters = filter(type="color", color=list("#de0000","#000000","#00ad00"))
 				if("all")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2), filter(type="alpha", icon=icon('icons/objects.dmi',"checker")))
-			usr << "Applied [selected] filter"		
+			usr << "Applied [selected] filter"	
+
+	verb/toggle_see_invisibility()
+		if(src.see_invisible == 0)	
+			src.see_invisible = 101
+			usr << "now seeing invisible things"
+		else
+			src.see_invisible = 0
+			usr << "now blind to invisible things"
 
 /mob/Stat()
 	if (statpanel("Status"))

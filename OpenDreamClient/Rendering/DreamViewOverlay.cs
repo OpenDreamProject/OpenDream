@@ -20,7 +20,7 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IClyde _clyde = default!;
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
-    private EntityQuery<DreamMobSightComponent> clientAppearenceQuery;
+    private EntityQuery<DreamMobSightComponent> mobSightQuery;
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
@@ -60,7 +60,7 @@ sealed class DreamViewOverlay : Overlay {
 
         spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
-        clientAppearenceQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
+        mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
         _flipMatrix = Matrix3.Identity;
         _flipMatrix.R1C1 = -1;
     }
@@ -114,7 +114,7 @@ sealed class DreamViewOverlay : Overlay {
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
         int seeVis = 127;
-        if(clientAppearenceQuery.TryGetComponent(eye, out var clientInfo)){
+        if(mobSightQuery.TryGetComponent(eye, out var clientInfo)){
             seeVis = clientInfo.SeeInvisibility;
         }
         //self icon

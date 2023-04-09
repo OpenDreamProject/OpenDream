@@ -9,8 +9,10 @@ namespace OpenDreamShared.Rendering {
     [RegisterComponent]
     [NetworkedComponent]
     public class DreamMobSightComponent : Component {
-        //hey this'd probably be a good place for client images
-        ///The current attached mob's see_invisible value
+        //this would be a good place for:
+        //see_in_dark
+        //see_infrared
+        //sight
 
         public sbyte SeeInvisibility;
 

@@ -78,7 +78,15 @@ sealed class DreamViewOverlay : Overlay {
         ClearRenderTarget(_mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
         //Main drawing of sprites happens here
-        DrawAll(args, eye.Value);
+        try
+        {
+            DrawAll(args, eye.Value);
+        }
+        catch (Exception e)
+        {
+            Logger.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
+        }
+
 
         //store our mouse map's image and return the render target
         MouseMap = _mouseMapRenderTarget.Texture;
@@ -277,6 +285,8 @@ sealed class DreamViewOverlay : Overlay {
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
     private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0) {
+        if(icon.Appearance is null) //in the event that appearance hasn't loaded yet
+            return new List<RendererMetaData>(0);
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
         RendererMetaData current = RentRendererMetaData();
         current.MainIcon = icon;
@@ -324,7 +334,7 @@ sealed class DreamViewOverlay : Overlay {
             else
                 current.Plane = icon.Appearance.Plane;
 
-            if(icon.Appearance.Layer == -1) //FLOAT_LAYER
+            if(icon.Appearance.Layer < 0) //FLOAT_LAYER
                 current.Layer = parentIcon.Layer;
             else
                 current.Layer = icon.Appearance.Layer;
@@ -334,7 +344,7 @@ sealed class DreamViewOverlay : Overlay {
             current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             current.TransformToApply = iconAppearanceTransformMatrix;
             current.Plane = icon.Appearance.Plane;
-            current.Layer = icon.Appearance.Layer;
+            current.Layer = Math.Max(0, icon.Appearance.Layer); //float layers are invalid for icons with no parent
         }
 
         //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
@@ -763,7 +773,15 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         if (val != 0) {
             return val;
         }
-
+        //despite assurances to the contrary by the dmref, position is in fact used for draw order in topdown mode
+        val = this.Position.X.CompareTo(other.Position.X);
+        if (val != 0) {
+            return val;
+        }
+        val = this.Position.Y.CompareTo(other.Position.Y);
+        if (val != 0) {
+            return -val;
+        }
         //Finally, tie-breaker - in BYOND, this is order of creation of the sprites
         //for us, we use EntityUID, with a tie-breaker (for underlays/overlays)
         val = this.UID.CompareTo(other.UID);
@@ -772,6 +790,9 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         }
 
         val = this.TieBreaker.CompareTo(other.TieBreaker);
+        if (val != 0) {
+            return val;
+        }
         return val;
     }
 }

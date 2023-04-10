@@ -319,8 +319,8 @@ sealed class DreamViewOverlay : Overlay {
             else
                 current.TransformToApply = parentIcon.TransformToApply;
 
-            if(((int)icon.Appearance.Plane & -32767) == -32767) //FLOAT_PLANE
-                current.Plane = parentIcon.Plane + ((int)icon.Appearance.Plane & ~(-32767));
+            if((icon.Appearance.Plane < -10000)) //FLOAT_PLANE - Note: yes, this really is how it works. Yes it's dumb as shit.
+                current.Plane = parentIcon.Plane + (icon.Appearance.Plane + 32767);
             else
                 current.Plane = icon.Appearance.Plane;
 
@@ -336,6 +336,12 @@ sealed class DreamViewOverlay : Overlay {
             current.Plane = icon.Appearance.Plane;
             current.Layer = icon.Appearance.Layer;
         }
+
+        //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
+        //SO IT TURNS OUT EFFECTS_LAYER IS JUST A LIE *scream
+        //and BACKGROUND_LAYER is basically the same behaviour as FLOAT_PLANE
+        if(current.Layer > 20000)
+            current.Layer -= 40000;
 
         keepTogether = keepTogether || ((current.AppearanceFlags & AppearanceFlags.KEEP_TOGETHER) != 0); //KEEP_TOGETHER
 
@@ -755,13 +761,6 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         //TODO
         val = this.Layer.CompareTo(other.Layer);
         if (val != 0) {
-            //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
-            int effectsLayer = (((int)this.Layer & 5000) == 5000).CompareTo(((int)other.Layer & 5000) == 5000);
-            if(effectsLayer != 0)
-                return effectsLayer;
-            int backgroundLayer = (((int)this.Layer & 20000) == 20000).CompareTo(((int)other.Layer & 20000) == 20000);
-            if(backgroundLayer != 0)
-                return -backgroundLayer; //flipped because background_layer flag forces it to the back
             return val;
         }
 

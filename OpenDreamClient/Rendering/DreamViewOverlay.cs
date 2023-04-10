@@ -765,7 +765,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         //subplane (ie, HUD vs not HUD)
         val = this.IsScreen.CompareTo(other.IsScreen);
         if (val != 0) {
-            return -val;
+            return val;
         }
         //depending on world.map_format, either layer or physical position
         //TODO

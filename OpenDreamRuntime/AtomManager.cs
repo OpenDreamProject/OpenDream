@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -130,6 +131,10 @@ namespace OpenDreamRuntime {
                 appearance.SetColor(color);
             }
 
+            if (atom.GetVariable("alpha").TryGetValueAsFloat(out float alpha)) {
+                appearance.Alpha = (byte)alpha;
+            }
+
             if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
                 appearance.Direction = (AtomDirection)dir;
             }
@@ -153,6 +158,25 @@ namespace OpenDreamRuntime {
             if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
                 appearance.Layer = layer;
             }
+            if (atom.GetVariable("plane").TryGetValueAsInteger(out int plane)) {
+                appearance.Plane = plane;
+            }
+            if (atom.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode)) {
+                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
+
+            }
+            if (atom.GetVariable("render_source").TryGetValueAsString(out string? renderSource)) {
+                appearance.RenderSource = renderSource;
+            }
+            if (atom.GetVariable("render_target").TryGetValueAsString(out string? renderTarget)) {
+                appearance.RenderTarget = renderTarget;
+            }
+            if (atom.GetVariable("appearance_flags").TryGetValueAsFloat(out float appearance_flags)) {
+                appearance.AppearanceFlags = (AppearanceFlags)appearance_flags;
+            }
+            if (atom.GetVariable("transform").TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
+                appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
+            }
 
             return appearance;
         }
@@ -170,6 +194,10 @@ namespace OpenDreamRuntime {
 
             if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out var color)) {
                 appearance.SetColor(color);
+            }
+
+            if (def.TryGetVariable("alpha", out var alphaVar) && alphaVar.TryGetValueAsFloat(out float alpha)) {
+                appearance.Alpha = (byte)alpha;
             }
 
             if (def.TryGetVariable("dir", out var dirVar) && dirVar.TryGetValueAsInteger(out int dir)) {
@@ -193,7 +221,24 @@ namespace OpenDreamRuntime {
             if (def.TryGetVariable("layer", out var layerVar) && layerVar.TryGetValueAsFloat(out float layer)) {
                 appearance.Layer = layer;
             }
-
+            if (def.TryGetVariable("plane", out var planeVar) && planeVar.TryGetValueAsInteger(out int plane)) {
+                appearance.Plane = plane;
+            }
+            if (def.TryGetVariable("render_source", out var renderSourceVar) && renderSourceVar.TryGetValueAsString(out String renderSource)) {
+                appearance.RenderSource = renderSource;
+            }
+            if (def.TryGetVariable("render_target", out var renderTargetVar) && renderSourceVar.TryGetValueAsString(out String renderTarget)) {
+                appearance.RenderTarget = renderTarget;
+            }
+            if (def.TryGetVariable("blend_mode", out var blendmodeVar) && blendmodeVar.TryGetValueAsFloat(out float blend_mode)) {
+                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
+            }
+            if (def.TryGetVariable("appearance_flags", out var appearanceFlagsVar) && appearanceFlagsVar.TryGetValueAsFloat(out float appearance_flags)) {
+                appearance.AppearanceFlags = (AppearanceFlags) appearance_flags;
+            }
+            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
+                appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
+            }
             return appearance;
         }
     }

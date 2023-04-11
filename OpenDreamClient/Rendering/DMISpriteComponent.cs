@@ -35,9 +35,8 @@ namespace OpenDreamClient.Rendering {
             return Icon.GetWorldAABB(transform.Position);
         }
 
-        public bool IsVisible(bool checkWorld = true, [CanBeNull] IMapManager mapManager = null) {
-            if (Icon?.DMI == null) return false;
-            if (Icon.Appearance.Invisibility > 0) return false; //TODO: mob.see_invisibility
+        public bool IsVisible(bool checkWorld = true, [CanBeNull] IMapManager mapManager = null, int seeInvis = 0) {
+            if (Icon.Appearance?.Invisibility > seeInvis) return false;
 
             if (checkWorld) {
                 //Only render movables not inside another movable's contents (parented to the grid)

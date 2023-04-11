@@ -92,6 +92,39 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         value.TryGetValueAsFloat(out appearance.Layer);
                     });
                     break;
+                case "plane":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsInteger(out appearance.Plane);
+                    });
+                    break;
+                case "blend_mode":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsFloat(out float blend_mode);
+                        appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
+                    });
+                    break;
+                case "appearance_flags":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsInteger(out int flagsVar);
+                        appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
+                    });
+                    break;
+                case "alpha":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsFloat(out float floatAlpha);
+                        appearance.Alpha = (byte) floatAlpha;
+                    });
+                    break;
+                case "render_source":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsString(out appearance.RenderSource);
+                    });
+                    break;
+                case "render_target":
+                    _atomManager.UpdateAppearance(dreamObject, appearance => {
+                        value.TryGetValueAsString(out appearance.RenderTarget);
+                    });
+                    break;
                 case "invisibility":
                     value.TryGetValueAsInteger(out int vis);
                     vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
@@ -242,9 +275,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                         }
                         return DreamValue.Null; //idek
                     }
-                    if(appearance.SillyColorFilter is not null) {
+                    if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
                         var matrixList = _objectTree.CreateList(20);
-                        foreach (float entry in appearance.SillyColorFilter.Color.GetValues())
+                        foreach (float entry in appearance.ColorMatrix.GetValues())
                             matrixList.AddValue(new DreamValue(entry));
                         return new DreamValue(matrixList);
                     }
@@ -280,6 +313,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                 appearance.IconState = mutableAppearance.GetVariable("icon_state").TryGetValueAsString(out var iconState) ? iconState : null;
                 mutableAppearance.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
+                mutableAppearance.GetVariable("plane").TryGetValueAsInteger(out appearance.Plane);
+                mutableAppearance.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode);
+                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
+                mutableAppearance.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
+                appearance.Alpha = (byte) floatAlpha;
+                mutableAppearance.GetVariable("appearance_flags").TryGetValueAsInteger(out int flagsVar);
+                appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
+                appearance.RenderTarget = mutableAppearance.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
+                appearance.RenderSource = mutableAppearance.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 mutableAppearance.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 mutableAppearance.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var image)) {
@@ -297,6 +339,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 appearance.SetColor(color);
                 appearance.Direction = (AtomDirection) image.GetVariable("dir").GetValueAsInteger();
                 image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
+                image.GetVariable("plane").TryGetValueAsInteger(out appearance.Plane);
+                image.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode);
+                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
+                image.GetVariable("alpha").TryGetValueAsFloat(out float floatAlpha);
+                appearance.Alpha = (byte) floatAlpha;
+                image.GetVariable("appearance_flags").TryGetValueAsInteger(out int flagsVar);
+                appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
+                appearance.RenderTarget = image.GetVariable("render_target").TryGetValueAsString(out var renderTarget) ? renderTarget : "";
+                appearance.RenderSource = image.GetVariable("render_source").TryGetValueAsString(out var renderSource) ? renderSource : "";
                 image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
                 image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
             } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var icon)) {
@@ -344,10 +395,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             });
         }
 
-        private void UnderlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
+        private void UnderlayValueAssigned(DreamList underList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
+            DreamObject atom = _atomManager.UnderlaysListToAtom[underList];
 
             _atomManager.UpdateAppearance(atom, appearance => {
                 IconAppearance underlay = CreateOverlayAppearance(atom, value);
@@ -357,10 +408,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             });
         }
 
-        private void UnderlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
+        private void UnderlayBeforeValueRemoved(DreamList underlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
 
-            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
+            DreamObject atom = _atomManager.UnderlaysListToAtom[underlayList];
             IconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);
             uint? underlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(underlayAppearance);
             if (underlayAppearanceId == null) return;

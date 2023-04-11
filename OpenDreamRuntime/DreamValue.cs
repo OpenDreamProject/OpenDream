@@ -679,6 +679,59 @@ namespace OpenDreamRuntime {
         }
     }
 
+
+    [TypeSerializer]
+    public sealed class DreamValueIconSerializer : ITypeReader<int, DreamValueDataNode> {
+        private readonly DreamResourceManager _dreamResourceManager = IoCManager.Resolve<DreamResourceManager>();
+
+        public int Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<int>? instanceProvider = null) {
+            if (!_dreamResourceManager.TryLoadIcon(node.Value, out IconResource icon))
+                throw new Exception($"Value {node.Value} was not a valid IconResource type");
+
+            return icon.Id;
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+            if (_dreamResourceManager.TryLoadIcon(node.Value, out IconResource icon))
+                return new ValidatedValueNode(node);
+
+            return new ErrorNode(node, $"Value {node.Value} is not an Icon");
+        }
+    }
+
+    [TypeSerializer]
+    public sealed class DreamValueFlagsSerializer : ITypeReader<short, DreamValueDataNode> {
+        private readonly DreamResourceManager _dreamResourceManager = IoCManager.Resolve<DreamResourceManager>();
+
+        public short Read(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            SerializationHookContext hookCtx,
+            ISerializationContext? context = null,
+            ISerializationManager.InstantiationDelegate<short>? instanceProvider = null) {
+            return (short) node.Value.MustGetValueAsInteger();
+        }
+
+        public ValidationNode Validate(ISerializationManager serializationManager,
+            DreamValueDataNode node,
+            IDependencyCollection dependencies,
+            ISerializationContext? context = null) {
+            if (node.Value.TryGetValueAsInteger(out int val) && val < short.MaxValue)
+                return new ValidatedValueNode(node);
+
+            return new ErrorNode(node, $"Value {node.Value} is not a valid flag set");
+        }
+    }
+
+
     [TypeSerializer]
     public sealed class DreamValueColorMatrixSerializer : ITypeReader<ColorMatrix, DreamValueDataNode>, ITypeCopyCreator<ColorMatrix> {
         public ColorMatrix Read(ISerializationManager serializationManager,
@@ -716,5 +769,6 @@ namespace OpenDreamRuntime {
             return new(source);
         }
     }
-    #endregion Serialization
+
 }
+#endregion Serialization

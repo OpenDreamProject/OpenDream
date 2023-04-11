@@ -211,6 +211,19 @@ public struct ColorMatrix {
         yield break;
     }
 
+    public Matrix4 GetMatrix4(){
+        return new Matrix4(
+            c11, c12, c13, c14,
+            c21, c22, c23, c24,
+            c31, c32, c33, c34,
+            c41, c42, c43, c44
+        );
+    }
+
+    public Vector4 GetOffsetVector(){
+        return new Vector4(c51, c52, c53, c54);
+    }
+
     /// <summary>
     /// Fastest possible comparison between two color matrices.
     /// </summary>
@@ -219,7 +232,7 @@ public struct ColorMatrix {
     /// since that (default) method actually does a lot of boxing, which causes LUDICROUS memory churning when running targets. <br/><br/>
     ///
     /// This method avoids implementing <see cref="IEquatable{T}"/> since that would make the argument be copied - <br/>
-    /// the argument in that interface lacks an 'in' modifier and one cannot be provided! 
+    /// the argument in that interface lacks an 'in' modifier and one cannot be provided!
     /// </remarks>
     public bool Equals(in ColorMatrix other) {
         //there is currently no kosher, "safe" C# way

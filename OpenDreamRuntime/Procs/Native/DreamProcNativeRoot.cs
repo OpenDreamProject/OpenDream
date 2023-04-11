@@ -2748,15 +2748,16 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {
-                throw new ArgumentException($"Invalid Dir for Turn: \"{dirArg.ToString()}\"");
+                possibleDir = 0; // Mark as invalid dir
             }
 
-            if (!Enum.IsDefined(typeof(AtomDirection), possibleDir)) { // Invalid dir
-                // If Dir is invalid and angle is 0, Dir is returned
+            // Is the dir invalid (includes zero)?
+            if (possibleDir == 0) {
+                // If Dir is invalid and angle is zero, 0 is returned
                 if (angle == 0) {
-                    return dirArg;
+                    return new DreamValue(0);
                 }
-                // Otherwise, a random direction
+                // Otherwise, it returns a random direction
                 var allDirs = Enum.GetValues(typeof(AtomDirection));
                 return (DreamValue)(allDirs.GetValue(DreamManager.Random.Next(allDirs.Length)) ?? AtomDirection.North);
             }

@@ -28,7 +28,7 @@
 			return FALSE
 		// Ensure the atoms on the turf also permit this exit
 		for (var/atom/movable/exiting in loc)
-			if (!exiting.Exit(src, NewLoc))
+			if (!exiting.Uncross(src))
 				return FALSE
 
 		if (NewLoc.Enter(src, loc))

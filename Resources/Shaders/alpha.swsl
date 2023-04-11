@@ -26,9 +26,9 @@ void fragment() {
     }  
 
     if(mask_invert_flag){
-        new_color.a = min(1.0-new_color.a, 1.0-mask_color.a);
+        new_color.a *= 1.0-mask_color.a;
     } else {
-        new_color.a = min(mask_color.a, new_color.a);
+        new_color.a *= mask_color.a;
     }
 
     COLOR = new_color;

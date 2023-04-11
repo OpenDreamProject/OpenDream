@@ -357,7 +357,8 @@ sealed class DreamViewOverlay : Overlay {
 
         keepTogether = keepTogether || ((current.AppearanceFlags & AppearanceFlags.KEEP_TOGETHER) != 0); //KEEP_TOGETHER
 
-        if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){ //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
+        //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
+        if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){
             RendererMetaData renderTargetPlaceholder = RentRendererMetaData();
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
             renderTargetPlaceholder.Position = current.Position;
@@ -370,8 +371,6 @@ sealed class DreamViewOverlay : Overlay {
             renderTargetPlaceholder.RenderSource = current.RenderTarget;
             renderTargetPlaceholder.MouseOpacity = current.MouseOpacity;
             result.Add(renderTargetPlaceholder);
-        } else if(current.RenderTarget.Length > 0) {
-            current.RenderTarget = current.RenderTarget.Substring(1); //cut the * off, we're done with it
         }
 
         //TODO check for images with override here

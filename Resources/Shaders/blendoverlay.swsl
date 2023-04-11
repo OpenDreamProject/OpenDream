@@ -1,5 +1,5 @@
 light_mode unshaded;
-//blend_mode none;
+blend_mode normal;
 
 uniform lowp mat4 colorMatrix;
 uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is

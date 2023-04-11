@@ -280,3 +280,9 @@ proc/isobj(Loc1)
 
 proc/winshow(player, window, show=1)
 	winset(player, window, "is-visible=[show ? "true" : "false"]")
+
+proc/refcount(var/Object)
+	// woah that's a lot of refs
+	// i wonder if it's true??
+	return 100
+	// (it's not)

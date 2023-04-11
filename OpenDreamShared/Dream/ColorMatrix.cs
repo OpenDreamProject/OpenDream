@@ -223,4 +223,45 @@ public struct ColorMatrix {
     public Vector4 GetOffsetVector(){
         return new Vector4(c51, c52, c53, c54);
     }
+
+    /// <summary>
+    /// Fastest possible comparison between two color matrices.
+    /// </summary>
+    /// <remarks>
+    /// STRONGLY prefer using this over <see cref="ValueType.Equals(object?)"/> if at all possible, <br/>
+    /// since that (default) method actually does a lot of boxing, which causes LUDICROUS memory churning when running targets. <br/><br/>
+    ///
+    /// This method avoids implementing <see cref="IEquatable{T}"/> since that would make the argument be copied - <br/>
+    /// the argument in that interface lacks an 'in' modifier and one cannot be provided!
+    /// </remarks>
+    public bool Equals(in ColorMatrix other) {
+        //there is currently no kosher, "safe" C# way
+        //of doing a fast-path pointer compare here.
+        //(ReferenceEquals actually boxes structs just like default Equals)
+        //so this pretty much MUST be a long elementwise compare on all elements.
+        return c11 == other.c11 &&
+               c12 == other.c12 &&
+               c13 == other.c13 &&
+               c14 == other.c14 &&
+
+               c21 == other.c21 &&
+               c22 == other.c22 &&
+               c23 == other.c23 &&
+               c24 == other.c24 &&
+
+               c31 == other.c31 &&
+               c32 == other.c32 &&
+               c33 == other.c33 &&
+               c34 == other.c34 &&
+
+               c41 == other.c41 &&
+               c42 == other.c42 &&
+               c43 == other.c43 &&
+               c44 == other.c44 &&
+
+               c51 == other.c51 &&
+               c52 == other.c52 &&
+               c53 == other.c53 &&
+               c54 == other.c54;
+    }
 }

@@ -414,6 +414,10 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
+            return Value.LastElement;
+        }
+
         public override bool IsTruthy() => true;
 
         public override bool TryAsJsonRepresentation(out object json) {

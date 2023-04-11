@@ -21,7 +21,7 @@ void fragment() {
         mask_color = zTexture((-ratio/2.0+0.5)+UV*ratio);        
     } else {
         ratio = input_size/mask_size;
-        new_color = texture(TEXTURE, UV);   
+        new_color = zTexture(UV);   
         mask_color = texture(mask_texture, (-ratio/2.0+0.5)+UV*ratio);
     }  
 

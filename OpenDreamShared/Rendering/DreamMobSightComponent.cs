@@ -38,12 +38,7 @@ namespace OpenDreamShared.Rendering {
 
             public DreamMobSightComponentState(sbyte SeeInvisibility) {
                 this.SeeInvisibility = SeeInvisibility;
-
             }
         }
     }
-
-
-
-
 }

@@ -160,8 +160,7 @@ namespace DMCompiler {
                 Console.WriteLine("At least one DME or DM file must be provided as an argument");
                 return false;
             } else {
-                foreach(var file in settings.Files)
-                {
+                foreach(var file in settings.Files) {
                     Console.WriteLine($"Compiling {Path.GetFileName(file)} on {settings.DMVersion}.{settings.DMBuild}");
                 }
             }

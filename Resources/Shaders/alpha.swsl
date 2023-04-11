@@ -18,7 +18,7 @@ void fragment() {
     if(mask_swap_flag){        
         ratio = mask_size/input_size;
         new_color = texture(mask_texture, UV);  
-        mask_color = texture(TEXTURE, (-ratio/2.0+0.5)+UV*ratio);        
+        mask_color = zTexture((-ratio/2.0+0.5)+UV*ratio);        
     } else {
         ratio = input_size/mask_size;
         new_color = texture(TEXTURE, UV);   

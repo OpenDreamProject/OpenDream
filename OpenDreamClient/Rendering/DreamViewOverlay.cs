@@ -464,10 +464,10 @@ sealed class DreamViewOverlay : Overlay {
     private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, BlendMode? blendOverride = null) {
         Color RGBA = colorOverride == null ? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply) : colorOverride.Value;
         ColorMatrix colorMatrix;
-        if(colorOverride != null || iconMetaData.ColorMatrixToApply == null)
+        if(colorOverride != null || iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))
             colorMatrix = new ColorMatrix(RGBA);
         else
-            colorMatrix = iconMetaData.ColorMatrixToApply.Value;
+            colorMatrix = iconMetaData.ColorMatrixToApply;
         ShaderInstance blendAndColor;
         if(blendOverride != null || !_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out blendAndColor))
             blendAndColor = _blendmodeInstances[blendOverride == null ? BlendMode.BLEND_DEFAULT : blendOverride.Value];
@@ -556,7 +556,7 @@ sealed class DreamViewOverlay : Overlay {
 
         //go fast when the only filter is color, and we don't have more color things to consider
         bool goFastOverride = false;
-        if(icon.Appearance != null && iconMetaData.ColorMatrixToApply == null && iconMetaData.ColorToApply == Color.White && iconMetaData.AlphaToApply == 1.0f && icon.Appearance.Filters.Count == 1 && icon.Appearance.Filters[0].FilterType == "color"){
+        if(icon.Appearance != null && iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) && iconMetaData.ColorToApply == Color.White && iconMetaData.AlphaToApply == 1.0f && icon.Appearance.Filters.Count == 1 && icon.Appearance.Filters[0].FilterType == "color"){
             DreamFilterColor colorFilter = (DreamFilterColor)icon.Appearance.Filters[0];
             iconMetaData.ColorMatrixToApply = colorFilter.Color;
             goFastOverride = true;
@@ -599,10 +599,10 @@ sealed class DreamViewOverlay : Overlay {
                     //we can use the color matrix shader here, since we don't need to blend
                     //also because blend mode is none, we don't need to drawrect clear
                     ColorMatrix colorMatrix;
-                    if(iconMetaData.ColorMatrixToApply == null)
+                    if(iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))
                         colorMatrix = new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
                     else
-                        colorMatrix = iconMetaData.ColorMatrixToApply.Value;
+                        colorMatrix = iconMetaData.ColorMatrixToApply;
                     ShaderInstance colorShader = _colorInstance.Duplicate();
                     colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
                     colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
@@ -700,7 +700,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Boolean IsScreen;
     public int TieBreaker; //Used for biasing render order (ie, for overlays)
     public Color ColorToApply;
-    public ColorMatrix? ColorMatrixToApply;
+    public ColorMatrix ColorMatrixToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
     public String RenderSource;
@@ -724,7 +724,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         IsScreen = false;
         TieBreaker = 0;
         ColorToApply = Color.White;
-        ColorMatrixToApply = null;
+        ColorMatrixToApply = ColorMatrix.Identity;
         AlphaToApply = 1.0f;
         TransformToApply = Matrix3.Identity;
         RenderSource = "";

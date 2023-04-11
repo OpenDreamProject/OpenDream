@@ -26,7 +26,7 @@ namespace OpenDreamShared.Dream {
         /// The reason we don't just take the slow path and always use this filter is not just for optimization,<br/>
         /// it's also for parity! See <see cref="TryRepresentMatrixAsRGBAColor(in ColorMatrix, out Color?)"/> for more.
         /// </remarks>
-        [ViewVariables] public ColorMatrix? ColorMatrix;
+        [ViewVariables] public ColorMatrix ColorMatrix = ColorMatrix.Identity;
         [ViewVariables] public float Layer;
         [ViewVariables] public int Plane;
         [ViewVariables] public BlendMode BlendMode;
@@ -189,9 +189,7 @@ namespace OpenDreamShared.Dream {
         /// <exception cref="ArgumentException">Thrown if color is not valid.</exception>
         public void SetColor(string color) {
             // TODO: the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
-            if (ColorMatrix is not null) {
-                ColorMatrix = null; // reset our color matrix if we had one
-            }
+            ColorMatrix = ColorMatrix.Identity; // reset our color matrix if we had one
 
             if (color == string.Empty) {
                 Color = Color.White;
@@ -208,7 +206,7 @@ namespace OpenDreamShared.Dream {
 
             if (TryRepresentMatrixAsRGBAColor(matrix, out var matrixColor)) {
                 Color = matrixColor.Value;
-                ColorMatrix = null;
+                ColorMatrix = ColorMatrix.Identity;
                 return;
             }
             Color = Color.White;

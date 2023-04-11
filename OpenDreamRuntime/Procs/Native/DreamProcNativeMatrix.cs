@@ -15,7 +15,7 @@ internal static class DreamProcNativeMatrix {
     }
 
     [DreamProc("Multiply")]
-    [DreamProcParameter("Matrix2")] // or "n"
+    [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject | DreamValueType.Float)] // or "n"
     public static DreamValue NativeProc_Multiply(DreamObject src, DreamObject usr, DreamProcArguments arguments) {
         DreamValue possibleMatrix = arguments.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrixArg)) {

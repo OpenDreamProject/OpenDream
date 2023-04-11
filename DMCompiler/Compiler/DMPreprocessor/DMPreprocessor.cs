@@ -295,8 +295,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 GetLineOfTokens(); // consume what's on this line and leave
                 return;
             }
-            switch (defineIdentifier.Text)
-            {
+            switch (defineIdentifier.Text) {
                 case "defined":
                     DMCompiler.Emit(WarningCode.SoftReservedKeyword, defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name");
                     break;

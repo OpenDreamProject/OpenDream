@@ -114,6 +114,9 @@ namespace OpenDreamClient.Rendering {
                                     instance.SetParameter("mask_texture", rsc.Texture);
                                 });
                         }
+                        else{
+                            instance.SetParameter("mask_texture", Texture.Transparent);
+                        }
                         instance.SetParameter("x",alpha.X);
                         instance.SetParameter("y",alpha.Y);
                         instance.SetParameter("flags",alpha.Flags);

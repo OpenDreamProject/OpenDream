@@ -30,8 +30,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectDeleted(DreamObject dreamObject) {
             ParentType?.OnObjectDeleted(dreamObject);
             _dreamManager.Mobs.Remove(dreamObject);
-            EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
-            _entityManager.RemoveComponent<DreamMobSightComponent>(entity);
         }
 
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {

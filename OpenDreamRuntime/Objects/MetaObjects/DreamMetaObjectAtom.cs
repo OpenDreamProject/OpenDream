@@ -193,8 +193,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     if (!value.TryGetValueAsDreamList(out var overlayList)) {
                         overlayList = _objectTree.CreateList();
+                    } else {
+                        overlayList = overlayList.CreateCopy();
                     }
-
                     overlayList.ValueAssigned += OverlayValueAssigned;
                     overlayList.BeforeValueRemoved += OverlayBeforeValueRemoved;
                     _atomManager.OverlaysListToAtom[overlayList] = dreamObject;
@@ -211,6 +212,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     if (!value.TryGetValueAsDreamList(out var underlayList)) {
                         underlayList = _objectTree.CreateList();
+                    } else {
+                        underlayList = underlayList.CreateCopy();
                     }
 
                     underlayList.ValueAssigned += UnderlayValueAssigned;

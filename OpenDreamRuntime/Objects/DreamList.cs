@@ -28,6 +28,9 @@ namespace OpenDreamRuntime.Objects {
             _values = values;
         }
 
+        /// <summary>
+        /// Returns a deep copy of a DreamList or a subset of it
+        /// </summary>
         public DreamList CreateCopy(int start = 1, int end = 0) {
             if (start == 0) ++start; //start being 0 and start being 1 are equivalent
             if (end > _values.Count + 1) throw new Exception("list index out of bounds");

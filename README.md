@@ -31,7 +31,7 @@ There's 3 main parts: Compiler, Server, and Client
 **Client:** Run `OpenDreamClient.exe`. You will be prompted to choose a server address, port, and username. The defaults should work for a locally hosted server.
 
 ## Screenshots
-The following screenshots are taken from a version of Paradise Station with 64-bit rustg available [here](https://github.com/ike709/Paradise/tree/rustg_64).
+The following screenshots are taken from a version of Paradise Station with a recompiled 64-bit rustg DLL. This branch of Paradise is available [here](https://github.com/ike709/Paradise/tree/rustg_64).
 
 ![](./.github/assets/screenshot.png?raw=true)
 ![](./.github/assets/screenshot2.png?raw=true)

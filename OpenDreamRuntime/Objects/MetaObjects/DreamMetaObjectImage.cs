@@ -40,7 +40,7 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
         }
 
         foreach (string argName in IconCreationArgs) {
-            var arg = creationArguments.GetArgument(argIndex, argName);
+            var arg = creationArguments.GetArgument(argIndex++, argName);
             if (arg == DreamValue.Null)
                 continue;
 
@@ -59,7 +59,7 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
     public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
         switch (varName) {
             case "appearance":
-                var newAppearance = _atomManager.CreateAppearanceFrom(value) ?? new IconAppearance();
+                var newAppearance = _atomManager.CreateAppearanceFrom(value);
 
                 ObjectToAppearance[dreamObject] = newAppearance;
                 break;

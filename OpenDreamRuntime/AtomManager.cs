@@ -350,42 +350,40 @@ namespace OpenDreamRuntime {
         public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def) {
             IconAppearance appearance = new IconAppearance();
 
-            if (_appearanceSystem != null || _entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) {
-                def.TryGetVariable("icon", out var iconVar);
-                def.TryGetVariable("icon_state", out var stateVar);
-                def.TryGetVariable("color", out var colorVar);
-                def.TryGetVariable("alpha", out var alphaVar);
-                def.TryGetVariable("dir", out var dirVar);
-                def.TryGetVariable("invisibility", out var invisibilityVar);
-                def.TryGetVariable("mouse_opacity", out var mouseVar);
-                def.TryGetVariable("pixel_x", out var xVar);
-                def.TryGetVariable("pixel_y", out var yVar);
-                def.TryGetVariable("layer", out var layerVar);
-                def.TryGetVariable("plane", out var planeVar);
-                def.TryGetVariable("render_source", out var renderSourceVar);
-                def.TryGetVariable("render_target", out var renderTargetVar);
-                def.TryGetVariable("blend_mode", out var blendModeVar);
-                def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
+            def.TryGetVariable("icon", out var iconVar);
+            def.TryGetVariable("icon_state", out var stateVar);
+            def.TryGetVariable("color", out var colorVar);
+            def.TryGetVariable("alpha", out var alphaVar);
+            def.TryGetVariable("dir", out var dirVar);
+            def.TryGetVariable("invisibility", out var invisibilityVar);
+            def.TryGetVariable("mouse_opacity", out var mouseVar);
+            def.TryGetVariable("pixel_x", out var xVar);
+            def.TryGetVariable("pixel_y", out var yVar);
+            def.TryGetVariable("layer", out var layerVar);
+            def.TryGetVariable("plane", out var planeVar);
+            def.TryGetVariable("render_source", out var renderSourceVar);
+            def.TryGetVariable("render_target", out var renderTargetVar);
+            def.TryGetVariable("blend_mode", out var blendModeVar);
+            def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
 
-                SetAppearanceVar(appearance, "icon", iconVar);
-                SetAppearanceVar(appearance, "icon_state", stateVar);
-                SetAppearanceVar(appearance, "color", colorVar);
-                SetAppearanceVar(appearance, "alpha", alphaVar);
-                SetAppearanceVar(appearance, "dir", dirVar);
-                SetAppearanceVar(appearance, "invisibility", invisibilityVar);
-                SetAppearanceVar(appearance, "mouse_opacity", mouseVar);
-                SetAppearanceVar(appearance, "pixel_x", xVar);
-                SetAppearanceVar(appearance, "pixel_y", yVar);
-                SetAppearanceVar(appearance, "layer", layerVar);
-                SetAppearanceVar(appearance, "plane", planeVar);
-                SetAppearanceVar(appearance, "render_source", renderSourceVar);
-                SetAppearanceVar(appearance, "render_target", renderTargetVar);
-                SetAppearanceVar(appearance, "blend_mode", blendModeVar);
-                SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
+            SetAppearanceVar(appearance, "icon", iconVar);
+            SetAppearanceVar(appearance, "icon_state", stateVar);
+            SetAppearanceVar(appearance, "color", colorVar);
+            SetAppearanceVar(appearance, "alpha", alphaVar);
+            SetAppearanceVar(appearance, "dir", dirVar);
+            SetAppearanceVar(appearance, "invisibility", invisibilityVar);
+            SetAppearanceVar(appearance, "mouse_opacity", mouseVar);
+            SetAppearanceVar(appearance, "pixel_x", xVar);
+            SetAppearanceVar(appearance, "pixel_y", yVar);
+            SetAppearanceVar(appearance, "layer", layerVar);
+            SetAppearanceVar(appearance, "plane", planeVar);
+            SetAppearanceVar(appearance, "render_source", renderSourceVar);
+            SetAppearanceVar(appearance, "render_target", renderTargetVar);
+            SetAppearanceVar(appearance, "blend_mode", blendModeVar);
+            SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
 
-                if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
-                    appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
-                }
+            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
+                appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
             }
 
             return appearance;

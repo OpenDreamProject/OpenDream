@@ -53,8 +53,8 @@ sealed class DreamViewOverlay : Overlay {
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendmodeInstances = new(4);
-        _blendmodeInstances.Add(BlendMode.BLEND_DEFAULT, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY
-        _blendmodeInstances.Add(BlendMode.BLEND_OVERLAY, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY
+        _blendmodeInstances.Add(BlendMode.BLEND_DEFAULT, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT
+        _blendmodeInstances.Add(BlendMode.BLEND_OVERLAY, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_OVERLAY (same as BLEND_DEFAULT)
         _blendmodeInstances.Add(BlendMode.BLEND_ADD, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
         _blendmodeInstances.Add(BlendMode.BLEND_SUBTRACT, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
         _blendmodeInstances.Add(BlendMode.BLEND_MULTIPLY, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY

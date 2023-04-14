@@ -161,7 +161,19 @@ namespace DMCompiler.DM.Expressions {
         public override bool IsTruthy() => Value != 0;
 
         public override bool TryAsJsonRepresentation(out object json) {
-            json = Value;
+            // Positive/Negative infinity cannot be represented in JSON and need a special value
+            if (float.IsPositiveInfinity(Value)) {
+                json = new Dictionary<string, JsonVariableType>() {
+                    {"type", JsonVariableType.PositiveInfinity}
+                };
+            } else if (float.IsNegativeInfinity(Value)) {
+                json = new Dictionary<string, JsonVariableType>() {
+                    {"type", JsonVariableType.NegativeInfinity}
+                };
+            } else {
+                json = Value;
+            }
+
             return true;
         }
 
@@ -400,6 +412,10 @@ namespace DMCompiler.DM.Expressions {
                     DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
                     break;
             }
+        }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
+            return Value.LastElement;
         }
 
         public override bool IsTruthy() => true;

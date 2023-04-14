@@ -1,3 +1,5 @@
+light_mode unshaded;
+blend_mode none;
 preset raw;
 
 uniform highp float size;

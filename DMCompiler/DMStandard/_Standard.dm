@@ -2,6 +2,7 @@
 //So keep this at the top
 /var/world/world = null
 
+//These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
 proc/abs(A)
 proc/addtext(...)
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
@@ -10,6 +11,7 @@ proc/arccos(X)
 proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
+proc/block(var/atom/Start, var/atom/End)
 proc/ceil(A)
 proc/ckey(Key)
 proc/ckeyEx(Text)
@@ -35,6 +37,8 @@ proc/flist(Path)
 proc/floor(A)
 proc/fract(n)
 proc/ftime(File, IsCreationTime = 0)
+proc/get_dir(atom/Loc1, atom/Loc2)
+proc/get_step(atom/Ref, Dir)
 proc/gradient(A, index)
 proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
@@ -67,11 +71,13 @@ proc/md5(T)
 proc/min(A)
 proc/nonspantext(Haystack, Needles, Start = 1)
 proc/num2text(N, Digits, Radix)
+proc/orange(Dist = 5, Center = usr)
 proc/oview(Dist = 5, Center = usr)
 proc/oviewers(Depth = 5, Center = usr)
 proc/params2list(Params)
 proc/rand(L, H)
 proc/rand_seed(Seed)
+proc/range(Dist, Center)
 proc/ref(Object)
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
@@ -86,12 +92,17 @@ proc/sleep(Delay)
 proc/sorttext(T1, T2)
 proc/sorttextEx(T1, T2)
 proc/sound(file, repeat = 0, wait, channel, volume)
+proc/spantext(Haystack,Needles,Start=1)
+proc/spantext_char(Haystack,Needles,Start=1)
+proc/splicetext(Text, Start = 1, End = 0, Insert = "")
+proc/splicetext_char(Text, Start = 1, End = 0, Insert = "")
 proc/splittext(Text, Delimiter)
 proc/sqrt(A)
 proc/stat(Name, Value)
 proc/statpanel(Panel, Name, Value)
 proc/tan(X)
 proc/text2ascii(T, pos = 1)
+proc/text2ascii_char(T, pos = 1)
 proc/text2file(Text, File)
 proc/text2num(T, radix = 10)
 proc/text2path(T)
@@ -102,10 +113,11 @@ proc/typesof(Item1)
 proc/uppertext(T)
 proc/url_decode(UrlText)
 proc/url_encode(PlainText, format = 0)
-proc/view(Dist = 4, Center = usr)
+proc/view(Dist = 5, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
+proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id)
 proc/winset(player, control_id, params)
 
@@ -136,153 +148,6 @@ proc/winset(player, control_id, params)
 proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 	set opendream_unimplemented = TRUE
 	return Haystack
-
-proc/block(var/atom/Start, var/atom/End)
-	var/list/atoms = list()
-
-	var/startX = min(Start.x, End.x)
-	var/startY = min(Start.y, End.y)
-	var/startZ = min(Start.z, End.z)
-	var/endX = max(Start.x, End.x)
-	var/endY = max(Start.y, End.y)
-	var/endZ = max(Start.z, End.z)
-	for (var/z=startZ; z<=endZ; z++)
-		for (var/y=startY; y<=endY; y++)
-			for (var/x=startX; x<=endX; x++)
-				atoms.Add(locate(x, y, z))
-
-	return atoms
-
-// TODO: Investigate "for(var/turf/T in range(Dist, Center))"-style weirdness that BYOND does. It's a center-out spiral and we need to replicate that.
-proc/range(Dist, Center)
-	. = list()
-
-	var/TrueDist
-	var/atom/TrueCenter
-
-	if(isnum(Dist))
-		if(isnum(Center))
-			. += Center
-			return
-		if(isnull(Center))
-			TrueCenter = usr
-			if(isnull(TrueCenter))
-				return
-		else
-			TrueCenter = Center
-		TrueDist = Dist
-	else
-		if(isnull(Center))
-			var/atom/A = Dist
-			if(istype(A))
-				//TODO change this once spiralling is implemented
-				TrueCenter = locate(1, 1, A.z)
-				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
-			else
-				return
-		else
-			if(!isnum(Center))
-				CRASH("invalid view size")
-			if(isnull(Dist))
-				TrueCenter = usr
-				if(isnull(TrueCenter))
-					return
-			else
-				TrueCenter = Dist
-			TrueDist = Center
-
-	if(!istype(TrueCenter, /atom))
-		. += TrueCenter
-		return
-
-	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
-		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
-			var/turf/t = locate(x, y, TrueCenter.z)
-
-			if (t != null)
-				. += t
-				. += t.contents
-
-proc/orange(Dist, Center)
-	. = list()
-
-	var/TrueDist
-	var/atom/TrueCenter
-
-	if(isnum(Dist))
-		if(isnum(Center))
-			. += Center
-			return
-		if(isnull(Center))
-			TrueCenter = usr
-			if(isnull(TrueCenter))
-				return
-		else
-			TrueCenter = Center
-		TrueDist = Dist
-	else
-		if(isnull(Center))
-			var/atom/A = Dist
-			if(istype(A))
-				//TODO change this once spiralling is implemented
-				TrueCenter = locate(1, 1, A.z)
-				TrueDist = world.maxx > world.maxy ? world.maxx : world.maxy
-			else
-				return
-		else
-			if(!isnum(Center))
-				CRASH("invalid view size")
-			if(isnull(Dist))
-				TrueCenter = usr
-				if(isnull(TrueCenter))
-					return
-			else
-				TrueCenter = Dist
-			TrueDist = Center
-
-	if(!istype(TrueCenter, /atom))
-		. += TrueCenter
-		return
-
-	for (var/x = max(TrueCenter.x - TrueDist, 1); x <= min(TrueCenter.x + TrueDist, world.maxx); x++)
-		for (var/y = max(TrueCenter.y - TrueDist, 1); y <= min(TrueCenter.y + TrueDist, world.maxy); y++)
-			if (x == TrueCenter.x && y == TrueCenter.y) continue
-
-			var/turf/t = locate(x, y, TrueCenter.z)
-			if (t != null)
-				. += t
-				. += t.contents
-
-proc/get_step(atom/Ref, Dir)
-	if (Ref == null) return null
-
-	var/x = Ref.x
-	var/y = Ref.y
-	var/z = Ref.z
-
-	if (Dir & NORTH) y += 1
-	else if (Dir & SOUTH) y -= 1
-
-	if (Dir & EAST) x += 1
-	else if (Dir & WEST) x -= 1
-
-	if (Dir & UP) z += 1
-	else if (Dir & DOWN) z -= 1
-
-	return locate(x, y, z)
-
-proc/get_dir(atom/Loc1, atom/Loc2)
-	if (Loc1 == null || Loc2 == null || Loc1.z != Loc2.z) return 0
-
-	var/dir = 0
-
-	if (Loc2.x < Loc1.x) dir |= WEST
-	else if (Loc2.x > Loc1.x) dir |= EAST
-
-	if (Loc2.y < Loc1.y) dir |= SOUTH
-	else if (Loc2.y > Loc1.y) dir |= NORTH
-
-	return dir
 
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
 	//TODO: Speed = step_size if Speed is 0
@@ -315,6 +180,10 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 /proc/turn(Dir, Angle)
 	if (istype(Dir, /matrix))
 		var/matrix/copy = new(Dir)
+		return copy.Turn(Angle)
+
+	if (istype(Dir, /icon))
+		var/icon/copy = new(Dir)
 		return copy.Turn(Angle)
 
 	var/dirAngle = 0
@@ -377,10 +246,13 @@ proc/get_step_rand(atom/movable/Ref)
 	return get_step(Ref, dir)
 
 proc/hearers(Depth = world.view, Center = usr)
+	set opendream_unimplemented = TRUE
 	//TODO: Actual cursed hearers implementation
 	return viewers(Depth, Center)
 
 proc/ohearers(Depth = world.view, Center = usr)
+	set opendream_unimplemented = TRUE
+	//TODO: Actual cursed ohearers implementation
 	return oviewers(Depth, Center)
 
 proc/step_towards(atom/movable/Ref, /atom/Trg, Speed)
@@ -391,9 +263,11 @@ proc/step_rand(atom/movable/Ref, Speed=0)
 	return Ref.Move(target, get_dir(Ref, target))
 
 proc/jointext(list/List, Glue, Start = 1, End = 0)
-	if (isnull(List)) CRASH("Invalid list")
-
-	return List.Join(Glue, Start, End)
+	if(islist(List))
+		return List.Join(Glue, Start, End)
+	if(istext(List))
+		return List
+	CRASH("jointext was passed a non-list, non-text value")
 
 proc/lentext(T)
 	return length(T)
@@ -403,3 +277,12 @@ proc/isobj(Loc1)
 		if (!istype(arg, /obj)) return 0
 
 	return 1
+
+proc/winshow(player, window, show=1)
+	winset(player, window, "is-visible=[show ? "true" : "false"]")
+
+proc/refcount(var/Object)
+	// woah that's a lot of refs
+	// i wonder if it's true??
+	return 100
+	// (it's not)

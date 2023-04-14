@@ -1,6 +1,12 @@
+/mob/verb/examine(atom/thing as obj|mob in world)
+	set category = null
+	usr << "This is [thing]. [thing.desc]"
+
 /turf
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
+	layer = TURF_LAYER
+	plane = -1
 
 /turf/blue
 	icon_state = "turf_blue"
@@ -8,10 +14,27 @@
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
+	layer = MOB_LAYER
+	plane = 5
+	blend_mode = BLEND_OVERLAY
+	name = "Square Man"
+	desc = "Such a beautiful smile."
+	gender = MALE
+	see_invisible = 101
 
 	New()
 		..()
 		loc = locate(5, 5, 1)
+		//color = rgb(rand(0,255), rand(0,255), rand(0,255))
+
+	Login()
+		world.log << "login ran"
+		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+
+	verb/rotate()
+		for(var/i in 1 to 8)
+			src.transform = src.transform.Turn(45)
+			sleep(2)
 
 	verb/shake()
 		animate(src, pixel_x = -4, time = 2)
@@ -90,11 +113,19 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("outline", "greyscale", "blur", "outline/grey", "grey/outline", "all")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "color", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "all")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"
 			switch(selected)
+				if("alpha")
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"))
+				if("alpha-swap")
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_SWAP)					
+				if("alpha-inverse")
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_INVERSE)
+				if("alpha-both")
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_INVERSE|MASK_SWAP)					
 				if("outline")
 					src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
 				if("greyscale")
@@ -105,9 +136,27 @@
 					src.filters = list(filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="greyscale"))
 				if("grey/outline")
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
+				if("color")
+					src.filters = filter(type="color", color=list("#de0000","#000000","#00ad00"))
 				if("all")
-					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2))
-			usr << "Applied [selected] filter"
+					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2), filter(type="alpha", icon=icon('icons/objects.dmi',"checker")))
+			usr << "Applied [selected] filter"	
+
+	verb/toggle_see_invisibility()
+		if(src.see_invisible == 0)	
+			src.see_invisible = 101
+			usr << "now seeing invisible things"
+		else
+			src.see_invisible = 0
+			usr << "now blind to invisible things"
+
+	verb/add_client_image()
+		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
+		i.loc = src
+		src.client.images += i
+		spawn(20)
+			src.client.images.Remove(i)
+			del(i)
 
 /mob/Stat()
 	if (statpanel("Status"))

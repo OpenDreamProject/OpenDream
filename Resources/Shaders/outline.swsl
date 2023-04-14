@@ -27,7 +27,9 @@
 //
 //************************************************************************
 
+blend_mode none;
 light_mode unshaded;
+
 //shader_type canvas_item;
 uniform highp float size; // = 2.0;
 // TODO: implement that hint_color thingy.

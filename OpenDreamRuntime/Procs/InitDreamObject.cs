@@ -54,7 +54,7 @@ namespace OpenDreamRuntime.Procs {
             Pool.Push(this);
         }
 
-        protected override ProcStatus InternalResume() {
+        public override ProcStatus Resume() {
             var src = _dreamObject;
 
             switch_start:

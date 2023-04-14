@@ -26,6 +26,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            _atomManager.CreateMovableEntity(dreamObject); // TODO: Should probably be moved to earlier in init; before even <init> is called.
+
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             DreamValue locArgument = creationArguments.GetArgument(0, "loc");
@@ -58,11 +60,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "loc": {
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
+                    if (!_entityManager.TryGetComponent(entity, out TransformComponent? transform))
+                        return;
+
+                    if (_dreamMapManager.TryGetCellFromTransform(transform, out var oldMapCell)) {
+                        oldMapCell.Movables.Remove(dreamObject);
+                    }
 
                     if (value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turfLoc)) {
-                        (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
+                        (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
                         _transformSystem.SetParent(entity, level.Grid.Owner);
                         _transformSystem.SetWorldPosition(entity, pos);
+
+                        var newMapCell = _dreamMapManager.GetCellFromTurf(turfLoc);
+                        newMapCell.Movables.Add(dreamObject);
                     } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movableLoc)) {
                         EntityUid locEntity = _atomManager.GetMovableEntity(movableLoc);
                         _transformSystem.SetParent(entity, locEntity);
@@ -85,7 +96,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "desc": {
-                    value.TryGetValueAsString(out string desc);
+                    value.TryGetValueAsString(out string? desc);
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
                     if (!_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData))
                         break;
@@ -117,7 +128,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new(coordinate);
                 }
                 case "contents": {
-                    DreamList contents = DreamList.Create();
+                    DreamList contents = _objectTree.CreateList();
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
 
                     if (_entityManager.TryGetComponent<TransformComponent>(entity, out var transform)) {
@@ -135,7 +146,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "locs": {
                     // Unimplemented; just return a list containing src.loc
-                    DreamList locs = DreamList.Create();
+                    DreamList locs = _objectTree.CreateList();
                     locs.AddValue(dreamObject.GetVariable("loc"));
 
                     return new DreamValue(locs);
@@ -150,7 +161,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return;
 
             ScreenLocation screenLocation;
-            if (screenLocationValue.TryGetValueAsString(out string screenLocationString)) {
+            if (screenLocationValue.TryGetValueAsString(out string? screenLocationString)) {
                 screenLocation = new ScreenLocation(screenLocationString);
             } else {
                 screenLocation = new ScreenLocation(0, 0, 0, 0);

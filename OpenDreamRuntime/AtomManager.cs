@@ -2,7 +2,6 @@
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Rendering;
-using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
 
@@ -22,11 +21,14 @@ namespace OpenDreamRuntime {
 
         private ServerAppearanceSystem? _appearanceSystem;
 
-        private EntityUid CreateMovableEntity(DreamObject atom) {
-            EntityUid entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
+        public EntityUid CreateMovableEntity(DreamObject atom) {
+            if (_atomToEntity.TryGetValue(atom, out var entity))
+                return entity;
+
+            entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
-            sprite.SetAppearance(CreateAppearanceFromAtom(atom));
+            sprite.SetAppearance(CreateAppearanceFromDefinition(atom.ObjectDefinition));
 
             if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
                 atom.GetVariable("desc").TryGetValueAsString(out string desc);
@@ -39,8 +41,7 @@ namespace OpenDreamRuntime {
             return entity;
         }
 
-        public EntityUid GetMovableEntity(DreamObject movable)
-        {
+        public EntityUid GetMovableEntity(DreamObject movable) {
             return _atomToEntity.ContainsKey(movable) ? _atomToEntity[movable] : CreateMovableEntity(movable);
         }
 
@@ -119,62 +120,25 @@ namespace OpenDreamRuntime {
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
             IconAppearance appearance = new IconAppearance();
 
-            if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource? icon)) {
-                appearance.Icon = icon.Id;
-            }
+            _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+            _appearanceSystem.SetAppearanceVar(appearance, "icon", atom.GetVariable("icon"));
+            _appearanceSystem.SetAppearanceVar(appearance, "icon_state", atom.GetVariable("icon_state"));
+            _appearanceSystem.SetAppearanceVar(appearance, "color", atom.GetVariable("color"));
+            _appearanceSystem.SetAppearanceVar(appearance, "alpha", atom.GetVariable("alpha"));
+            _appearanceSystem.SetAppearanceVar(appearance, "dir", atom.GetVariable("dir"));
+            _appearanceSystem.SetAppearanceVar(appearance, "invisibility", atom.GetVariable("invisibility"));
+            _appearanceSystem.SetAppearanceVar(appearance, "opacity", atom.GetVariable("opacity"));
+            _appearanceSystem.SetAppearanceVar(appearance, "mouse_opacity", atom.GetVariable("mouse_opacity"));
+            _appearanceSystem.SetAppearanceVar(appearance, "pixel_x", atom.GetVariable("pixel_x"));
+            _appearanceSystem.SetAppearanceVar(appearance, "pixel_y", atom.GetVariable("pixel_y"));
+            _appearanceSystem.SetAppearanceVar(appearance, "layer", atom.GetVariable("layer"));
+            _appearanceSystem.SetAppearanceVar(appearance, "plane", atom.GetVariable("plane"));
+            _appearanceSystem.SetAppearanceVar(appearance, "blend_mode", atom.GetVariable("blend_mode"));
+            _appearanceSystem.SetAppearanceVar(appearance, "render_source", atom.GetVariable("render_source"));
+            _appearanceSystem.SetAppearanceVar(appearance, "render_target", atom.GetVariable("render_target"));
+            _appearanceSystem.SetAppearanceVar(appearance, "appearance_flags", atom.GetVariable("appearance_flags"));
 
-            if (atom.GetVariable("icon_state").TryGetValueAsString(out string? iconState)) {
-                appearance.IconState = iconState;
-            }
-
-            if (atom.GetVariable("color").TryGetValueAsString(out string? color)) {
-                appearance.SetColor(color);
-            }
-
-            if (atom.GetVariable("alpha").TryGetValueAsFloat(out float alpha)) {
-                appearance.Alpha = (byte)alpha;
-            }
-
-            if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
-                appearance.Direction = (AtomDirection)dir;
-            }
-
-            if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
-                appearance.Invisibility = invisibility;
-            }
-
-            if (atom.GetVariable("opacity").TryGetValueAsInteger(out int opacity)) {
-                appearance.Opacity = (opacity != 0);
-            }
-
-            if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
-                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
-            }
-
-            atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX);
-            atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
-            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
-
-            if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
-                appearance.Layer = layer;
-            }
-            if (atom.GetVariable("plane").TryGetValueAsInteger(out int plane)) {
-                appearance.Plane = plane;
-            }
-            if (atom.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode)) {
-                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
-
-            }
-            if (atom.GetVariable("render_source").TryGetValueAsString(out string? renderSource)) {
-                appearance.RenderSource = renderSource;
-            }
-            if (atom.GetVariable("render_target").TryGetValueAsString(out string? renderTarget)) {
-                appearance.RenderTarget = renderTarget;
-            }
-            if (atom.GetVariable("appearance_flags").TryGetValueAsFloat(out float appearance_flags)) {
-                appearance.AppearanceFlags = (AppearanceFlags)appearance_flags;
-            }
-            if (atom.GetVariable("transform").TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
+            if (atom.GetVariable("transform").TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
                 appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
             }
 
@@ -184,61 +148,43 @@ namespace OpenDreamRuntime {
         public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def) {
             IconAppearance appearance = new IconAppearance();
 
-            if (def.TryGetVariable("icon", out var iconVar) && iconVar.TryGetValueAsDreamResource(out DreamResource icon)) {
-                appearance.Icon = icon.Id;
-            }
-
-            if (def.TryGetVariable("icon_state", out var stateVar) && stateVar.TryGetValueAsString(out var iconState)) {
-                appearance.IconState = iconState;
-            }
-
-            if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out var color)) {
-                appearance.SetColor(color);
-            }
-
-            if (def.TryGetVariable("alpha", out var alphaVar) && alphaVar.TryGetValueAsFloat(out float alpha)) {
-                appearance.Alpha = (byte)alpha;
-            }
-
-            if (def.TryGetVariable("dir", out var dirVar) && dirVar.TryGetValueAsInteger(out int dir)) {
-                appearance.Direction = (AtomDirection)dir;
-            }
-
-            if (def.TryGetVariable("invisibility", out var invisVar) && invisVar.TryGetValueAsInteger(out int invisibility)) {
-                appearance.Invisibility = invisibility;
-            }
-
-            if (def.TryGetVariable("mouse_opacity", out var mouseVar) && mouseVar.TryGetValueAsInteger(out int mouseOpacity)) {
-                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
-            }
-
+            def.TryGetVariable("icon", out var iconVar);
+            def.TryGetVariable("icon_state", out var stateVar);
+            def.TryGetVariable("color", out var colorVar);
+            def.TryGetVariable("alpha", out var alphaVar);
+            def.TryGetVariable("dir", out var dirVar);
+            def.TryGetVariable("invisibility", out var invisibilityVar);
+            def.TryGetVariable("mouse_opacity", out var mouseVar);
             def.TryGetVariable("pixel_x", out var xVar);
-            xVar.TryGetValueAsInteger(out int pixelX);
             def.TryGetVariable("pixel_y", out var yVar);
-            yVar.TryGetValueAsInteger(out int pixelY);
-            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
+            def.TryGetVariable("layer", out var layerVar);
+            def.TryGetVariable("plane", out var planeVar);
+            def.TryGetVariable("render_source", out var renderSourceVar);
+            def.TryGetVariable("render_target", out var renderTargetVar);
+            def.TryGetVariable("blend_mode", out var blendModeVar);
+            def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
 
-            if (def.TryGetVariable("layer", out var layerVar) && layerVar.TryGetValueAsFloat(out float layer)) {
-                appearance.Layer = layer;
-            }
-            if (def.TryGetVariable("plane", out var planeVar) && planeVar.TryGetValueAsInteger(out int plane)) {
-                appearance.Plane = plane;
-            }
-            if (def.TryGetVariable("render_source", out var renderSourceVar) && renderSourceVar.TryGetValueAsString(out String renderSource)) {
-                appearance.RenderSource = renderSource;
-            }
-            if (def.TryGetVariable("render_target", out var renderTargetVar) && renderSourceVar.TryGetValueAsString(out String renderTarget)) {
-                appearance.RenderTarget = renderTarget;
-            }
-            if (def.TryGetVariable("blend_mode", out var blendmodeVar) && blendmodeVar.TryGetValueAsFloat(out float blend_mode)) {
-                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
-            }
-            if (def.TryGetVariable("appearance_flags", out var appearanceFlagsVar) && appearanceFlagsVar.TryGetValueAsFloat(out float appearance_flags)) {
-                appearance.AppearanceFlags = (AppearanceFlags) appearance_flags;
-            }
-            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
+            _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+            _appearanceSystem.SetAppearanceVar(appearance, "icon", iconVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "icon_state", stateVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "color", colorVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "alpha", alphaVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "dir", dirVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "invisibility", invisibilityVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "mouse_opacity", mouseVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "pixel_x", xVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "pixel_y", yVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "layer", layerVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "plane", planeVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "render_source", renderSourceVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "render_target", renderTargetVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "blend_mode", blendModeVar);
+            _appearanceSystem.SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
+
+            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
                 appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
             }
+
             return appearance;
         }
     }
@@ -247,6 +193,7 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 
+        public EntityUid CreateMovableEntity(DreamObject movable);
         public EntityUid GetMovableEntity(DreamObject movable);
 
         public bool TryGetMovableEntity(DreamObject movable, out EntityUid entity);

@@ -4,7 +4,6 @@ using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
-using Robust.Shared.Player;
 
 namespace OpenDreamClient.Rendering {
     sealed class DreamIcon {
@@ -250,18 +249,22 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void UpdateIcon() {
-            if (Appearance?.Icon == null) {
+            if (Appearance == null) {
                 DMI = null;
                 return;
             }
 
-            IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
-                if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
+            if (Appearance.Icon == null) {
+                DMI = null;
+            } else {
+                IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
+                    if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
 
-                DMI = dmi;
-                _animationFrame = 0;
-                _animationFrameTime = DateTime.Now;
-            });
+                    DMI = dmi;
+                    _animationFrame = 0;
+                    _animationFrameTime = DateTime.Now;
+                });
+            }
 
             Overlays.Clear();
             foreach (uint overlayId in Appearance.Overlays) {
@@ -293,9 +296,9 @@ namespace OpenDreamClient.Rendering {
         }
 
         private struct AppearanceAnimation {
-            public DateTime Start;
-            public TimeSpan Duration;
-            public IconAppearance EndAppearance;
+            public readonly DateTime Start;
+            public readonly TimeSpan Duration;
+            public readonly IconAppearance EndAppearance;
 
             public AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance) {
                 Start = start;

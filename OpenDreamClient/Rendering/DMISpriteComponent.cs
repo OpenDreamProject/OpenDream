@@ -1,7 +1,6 @@
 ﻿using JetBrains.Annotations;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
-using Robust.Client.Graphics;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
 
@@ -50,37 +49,6 @@ namespace OpenDreamClient.Rendering {
             }
 
             return true;
-        }
-
-        public bool CheckClickWorld(Vector2 worldPos) {
-            if (!IsVisible()) return false;
-
-            switch (Icon.Appearance.MouseOpacity) {
-                case MouseOpacity.Opaque: return true;
-                case MouseOpacity.Transparent: return false;
-                case MouseOpacity.PixelOpaque: {
-                    if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
-                        return false;
-
-                    return Icon.CheckClickWorld(transform.WorldPosition, worldPos);
-                }
-                default: throw new InvalidOperationException("Invalid mouse_opacity");
-            }
-        }
-
-        public bool CheckClickScreen(Vector2 screenPos, Vector2 mousePos) {
-            if (!IsVisible(checkWorld: false)) return false;
-            if (Icon.Appearance.MouseOpacity == MouseOpacity.Transparent) return false;
-
-            Vector2 size = Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter * (ScreenLocation.RepeatX, ScreenLocation.RepeatY);
-            Box2 iconBox = Box2.FromDimensions(screenPos, size);
-            if (!iconBox.Contains(mousePos)) return false;
-
-            switch (Icon.Appearance.MouseOpacity) {
-                case MouseOpacity.Opaque: return true;
-                case MouseOpacity.PixelOpaque: return Icon.CheckClickScreen(screenPos, mousePos);
-                default: throw new InvalidOperationException("Invalid mouse_opacity");
-            }
         }
 
         private void OnIconSizeChanged() {

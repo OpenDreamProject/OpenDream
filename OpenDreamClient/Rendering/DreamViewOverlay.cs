@@ -1,4 +1,5 @@
-﻿using Robust.Client.Graphics;
+﻿using JetBrains.Annotations;
+using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
@@ -52,7 +53,8 @@ sealed class DreamViewOverlay : Overlay {
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendmodeInstances = new(4);
-        _blendmodeInstances.Add(BlendMode.BLEND_DEFAULT, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT, BLEND_OVERLAY
+        _blendmodeInstances.Add(BlendMode.BLEND_DEFAULT, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_DEFAULT
+        _blendmodeInstances.Add(BlendMode.BLEND_OVERLAY, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()); //BLEND_OVERLAY (same as BLEND_DEFAULT)
         _blendmodeInstances.Add(BlendMode.BLEND_ADD, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()); //BLEND_ADD
         _blendmodeInstances.Add(BlendMode.BLEND_SUBTRACT, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()); //BLEND_SUBTRACT
         _blendmodeInstances.Add(BlendMode.BLEND_MULTIPLY, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
@@ -125,12 +127,12 @@ sealed class DreamViewOverlay : Overlay {
         if(mobSightQuery.TryGetComponent(eye, out var mobSight)){
             seeVis = mobSight.SeeInvisibility;
         }
+
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
                 sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
         }
-
 
         //visible entities
         if(RenderEntityEnabled){
@@ -186,11 +188,10 @@ sealed class DreamViewOverlay : Overlay {
         for(var i = 0; i < sprites.Count; i++){
             RendererMetaData sprite = sprites[i];
 
-            if(sprite.RenderTarget.Length > 0){
+            if(!string.IsNullOrEmpty(sprite.RenderTarget)) {
                 //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
                 IRenderTexture tmpRenderTarget;
                 if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
-
                     tmpRenderTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
                     ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
                     _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
@@ -225,7 +226,7 @@ sealed class DreamViewOverlay : Overlay {
 
                 //add this sprite for rendering
                 (Action,Action) drawActions;
-                if(sprite.RenderSource.Length > 0 && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)){
+                if(!string.IsNullOrEmpty(sprite.RenderSource) && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)) {
                     drawActions = DrawiconAction(args.WorldHandle, sprite, (-screenArea.BottomLeft)-(args.WorldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
                 } else {
                     drawActions = DrawiconAction(args.WorldHandle, sprite, -screenArea.BottomLeft);
@@ -268,7 +269,6 @@ sealed class DreamViewOverlay : Overlay {
                     a();
                 }, null);
 
-
             if(planeEntry.Item1 != null){
                 //this was a plane master, so draw the plane onto the baseTarget and return it
                 DrawIconNow(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture, noMouseMap: true);
@@ -300,7 +300,6 @@ sealed class DreamViewOverlay : Overlay {
         current.AppearanceFlags = icon.Appearance.AppearanceFlags;
         current.BlendMode = icon.Appearance.BlendMode;
         current.MouseOpacity = icon.Appearance.MouseOpacity;
-
 
         Matrix3 iconAppearanceTransformMatrix = new(new float[] { //reverse rotation transforms because of 180 flip from rendertarget->world transform
                 icon.Appearance.Transform[0], -icon.Appearance.Transform[1], icon.Appearance.Transform[4],
@@ -358,7 +357,7 @@ sealed class DreamViewOverlay : Overlay {
         keepTogether = keepTogether || ((current.AppearanceFlags & AppearanceFlags.KEEP_TOGETHER) != 0); //KEEP_TOGETHER
 
         //if the rendertarget starts with *, we don't render it. If it doesn't we create a placeholder rendermetadata to position it correctly
-        if(current.RenderTarget.Length > 0 && current.RenderTarget[0]!='*'){
+        if(!string.IsNullOrEmpty(current.RenderTarget) && current.RenderTarget[0]!='*') {
             RendererMetaData renderTargetPlaceholder = RentRendererMetaData();
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
             renderTargetPlaceholder.Position = current.Position;
@@ -511,7 +510,8 @@ sealed class DreamViewOverlay : Overlay {
 
             ktItems.Sort();
             //draw it onto an additional render target that we can return immediately for correction of transform
-            IRenderTexture tempTexture = RentRenderTarget(frame.Size);
+            // TODO: Use something better than a hardcoded 64x64 fallback
+            IRenderTexture tempTexture = RentRenderTarget(frame?.Size ?? (64,64));
             ClearRenderTarget(tempTexture, handle, Color.Transparent);
 
             foreach(RendererMetaData ktItem in ktItems){
@@ -703,8 +703,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public ColorMatrix ColorMatrixToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
-    public String RenderSource;
-    public String RenderTarget;
+    [CanBeNull] public String RenderSource;
+    [CanBeNull] public String RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
     public AppearanceFlags AppearanceFlags;
     public BlendMode BlendMode;
@@ -741,13 +741,12 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         //Render target and source ordering is done first.
         //Anything with a render target goes first
         //Anything with a render source which points to a render target must come *after* that render_target
-        val = (this.RenderTarget.Length > 0).CompareTo(other.RenderTarget.Length > 0);
+        val = (!string.IsNullOrEmpty(RenderTarget)).CompareTo(!string.IsNullOrEmpty(other.RenderTarget));
         if (val != 0) {
             return -val;
         }
-        if(this.RenderSource.Length > 0)
-        {
-            if(this.RenderSource == other.RenderTarget)
+        if(!string.IsNullOrEmpty(RenderSource)) {
+            if(RenderSource == other.RenderTarget)
                 return 1;
         }
 

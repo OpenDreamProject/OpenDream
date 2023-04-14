@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -16,17 +17,21 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
         private readonly Dictionary<DreamObject, EntityUid> _atomToEntity = new();
         private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
 
         private ServerAppearanceSystem? _appearanceSystem;
 
-        private EntityUid CreateMovableEntity(DreamObject atom) {
-            EntityUid entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
+        public EntityUid CreateMovableEntity(DreamObject atom) {
+            if (_atomToEntity.TryGetValue(atom, out var entity))
+                return entity;
+
+            entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
-            sprite.SetAppearance(CreateAppearanceFromAtom(atom));
+            sprite.SetAppearance(CreateAppearanceFromDefinition(atom.ObjectDefinition));
 
             if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
                 atom.GetVariable("desc").TryGetValueAsString(out string desc);
@@ -39,8 +44,7 @@ namespace OpenDreamRuntime {
             return entity;
         }
 
-        public EntityUid GetMovableEntity(DreamObject movable)
-        {
+        public EntityUid GetMovableEntity(DreamObject movable) {
             return _atomToEntity.ContainsKey(movable) ? _atomToEntity[movable] : CreateMovableEntity(movable);
         }
 
@@ -58,6 +62,179 @@ namespace OpenDreamRuntime {
             _entityToAtom.Remove(entity);
             _atomToEntity.Remove(movable);
             _entityManager.DeleteEntity(entity);
+        }
+
+        public bool IsValidAppearanceVar(string name) {
+            switch (name) {
+                case "icon":
+                case "icon_state":
+                case "dir":
+                case "pixel_x":
+                case "pixel_y":
+                case "color":
+                case "layer":
+                case "invisibility":
+                case "opacity":
+                case "mouse_opacity":
+                case "plane":
+                case "blend_mode":
+                case "appearance_flags":
+                case "alpha":
+                case "render_source":
+                case "render_target":
+                    return true;
+
+                // Get/SetAppearanceVar doesn't handle these
+                case "overlays":
+                case "underlays":
+                case "filters":
+                case "transform":
+                default:
+                    return false;
+            }
+        }
+
+        public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value) {
+            switch (varName) {
+                case "icon":
+                    if (_resourceManager.TryLoadIcon(value, out var icon)) {
+                        appearance.Icon = icon.Id;
+                    } else {
+                        appearance.Icon = null;
+                    }
+
+                    break;
+                case "icon_state":
+                    value.TryGetValueAsString(out appearance.IconState);
+                    break;
+                case "dir":
+                    //TODO figure out the weird inconsistencies with this being internally clamped
+                    value.TryGetValueAsInteger(out var dir);
+
+                    appearance.Direction = (AtomDirection)dir;
+                    break;
+                case "pixel_x":
+                    value.TryGetValueAsInteger(out appearance.PixelOffset.X);
+                    break;
+                case "pixel_y":
+                    value.TryGetValueAsInteger(out appearance.PixelOffset.Y);
+                    break;
+                case "color":
+                    if(value.TryGetValueAsDreamList(out var list)) {
+                        if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
+                            appearance.SetColor(in matrix);
+                            break;
+                        }
+
+                        throw new ArgumentException($"Cannot set appearance's color to {value}");
+                    }
+
+                    value.TryGetValueAsString(out var colorString);
+                    colorString ??= "white";
+                    appearance.SetColor(colorString);
+                    break;
+                case "layer":
+                    value.TryGetValueAsFloat(out appearance.Layer);
+                    break;
+                case "invisibility":
+                    value.TryGetValueAsInteger(out int vis);
+                    vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
+                    appearance.Invisibility = vis;
+                    break;
+                case "opacity":
+                    value.TryGetValueAsInteger(out var opacity);
+                    appearance.Opacity = (opacity != 0);
+                    break;
+                case "mouse_opacity":
+                    //TODO figure out the weird inconsistencies with this being internally clamped
+                    value.TryGetValueAsInteger(out var mouseOpacity);
+                    appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
+                    break;
+                case "plane":
+                    value.TryGetValueAsInteger(out appearance.Plane);
+                    break;
+                case "blend_mode":
+                    value.TryGetValueAsFloat(out float blendMode);
+                    appearance.BlendMode = Enum.IsDefined((BlendMode)blendMode) ? (BlendMode)blendMode : BlendMode.BLEND_DEFAULT;
+                    break;
+                case "appearance_flags":
+                    value.TryGetValueAsInteger(out int flagsVar);
+                    appearance.AppearanceFlags = (AppearanceFlags) flagsVar;
+                    break;
+                case "alpha":
+                    value.TryGetValueAsFloat(out float floatAlpha);
+                    appearance.Alpha = (byte) floatAlpha;
+                    break;
+                case "render_source":
+                    value.TryGetValueAsString(out appearance.RenderSource);
+                    break;
+                case "render_target":
+                    value.TryGetValueAsString(out appearance.RenderTarget);
+                    break;
+                // TODO: overlays, underlays, filters, transform
+                //       Those are handled separately by whatever is calling SetAppearanceVar currently
+                default:
+                    throw new ArgumentException($"Invalid appearance var {varName}");
+            }
+        }
+
+        public DreamValue GetAppearanceVar(IconAppearance appearance, string varName) {
+            switch (varName) {
+                case "icon":
+                    if (appearance.Icon == null)
+                        return DreamValue.Null;
+
+                    var iconResource = _resourceManager.GetResource(appearance.Icon.Value);
+                    return new(iconResource);
+                case "icon_state":
+                    if (appearance.IconState == null)
+                        return DreamValue.Null;
+
+                    return new(appearance.IconState);
+                case "dir":
+                    return new((int) appearance.Direction);
+                case "pixel_x":
+                    return new(appearance.PixelOffset.X);
+                case "pixel_y":
+                    return new(appearance.PixelOffset.Y);
+                case "color":
+                    if(!appearance.ColorMatrix.Equals(ColorMatrix.Identity)) {
+                        var matrixList = _objectTree.CreateList(20);
+                        foreach (float entry in appearance.ColorMatrix.GetValues())
+                            matrixList.AddValue(new DreamValue(entry));
+                        return new DreamValue(matrixList);
+                    }
+
+                    if (appearance.Color == Color.White) {
+                        return DreamValue.Null;
+                    }
+
+                    return new DreamValue(appearance.Color.ToHexNoAlpha().ToLower()); // BYOND quirk, does not return the alpha channel for some reason.
+                case "layer":
+                    return new(appearance.Layer);
+                case "invisibility":
+                    return new(appearance.Invisibility);
+                case "opacity":
+                    return appearance.Opacity ? DreamValue.True : DreamValue.False;
+                case "mouse_opacity":
+                    return new((int)appearance.MouseOpacity);
+                case "plane":
+                    return new(appearance.Plane);
+                case "blend_mode":
+                    return new((int) appearance.BlendMode);
+                case "appearance_flags":
+                    return new((int) appearance.AppearanceFlags);
+                case "alpha":
+                    return new(appearance.Alpha);
+                case "render_source":
+                    return new(appearance.RenderSource);
+                case "render_target":
+                    return new(appearance.RenderTarget);
+                // TODO: overlays, underlays, filters, transform
+                //       Those are handled separately by whatever is calling GetAppearanceVar currently
+                default:
+                    throw new ArgumentException($"Invalid appearance var {varName}");
+            }
         }
 
         /// <summary>
@@ -116,65 +293,54 @@ namespace OpenDreamRuntime {
             _appearanceSystem.Animate(GetMovableEntity(atom), appearance, duration);
         }
 
+        public IconAppearance CreateAppearanceFrom(DreamValue value) {
+            if (value.TryGetValueAsAppearance(out var copyFromAppearance)) {
+                return new(copyFromAppearance);
+            }
+
+            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var copyFromImage)) {
+                return new(DreamMetaObjectImage.ObjectToAppearance[copyFromImage]);
+            }
+
+            if (value.TryGetValueAsType(out var copyFromType)) {
+                return CreateAppearanceFromDefinition(copyFromType.ObjectDefinition);
+            }
+
+            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var copyFromAtom)) {
+                return CreateAppearanceFromAtom(copyFromAtom);
+            }
+
+            var appearance = new IconAppearance();
+            if (_resourceManager.TryLoadIcon(value, out var iconResource)) {
+                appearance.Icon = iconResource.Id;
+            } else if (value != DreamValue.Null) {
+                throw new Exception($"Cannot create an appearance from {value}");
+            }
+
+            return appearance;
+        }
+
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
             IconAppearance appearance = new IconAppearance();
 
-            if (atom.GetVariable("icon").TryGetValueAsDreamResource(out DreamResource? icon)) {
-                appearance.Icon = icon.Id;
-            }
+            SetAppearanceVar(appearance, "icon", atom.GetVariable("icon"));
+            SetAppearanceVar(appearance, "icon_state", atom.GetVariable("icon_state"));
+            SetAppearanceVar(appearance, "color", atom.GetVariable("color"));
+            SetAppearanceVar(appearance, "alpha", atom.GetVariable("alpha"));
+            SetAppearanceVar(appearance, "dir", atom.GetVariable("dir"));
+            SetAppearanceVar(appearance, "invisibility", atom.GetVariable("invisibility"));
+            SetAppearanceVar(appearance, "opacity", atom.GetVariable("opacity"));
+            SetAppearanceVar(appearance, "mouse_opacity", atom.GetVariable("mouse_opacity"));
+            SetAppearanceVar(appearance, "pixel_x", atom.GetVariable("pixel_x"));
+            SetAppearanceVar(appearance, "pixel_y", atom.GetVariable("pixel_y"));
+            SetAppearanceVar(appearance, "layer", atom.GetVariable("layer"));
+            SetAppearanceVar(appearance, "plane", atom.GetVariable("plane"));
+            SetAppearanceVar(appearance, "blend_mode", atom.GetVariable("blend_mode"));
+            SetAppearanceVar(appearance, "render_source", atom.GetVariable("render_source"));
+            SetAppearanceVar(appearance, "render_target", atom.GetVariable("render_target"));
+            SetAppearanceVar(appearance, "appearance_flags", atom.GetVariable("appearance_flags"));
 
-            if (atom.GetVariable("icon_state").TryGetValueAsString(out string? iconState)) {
-                appearance.IconState = iconState;
-            }
-
-            if (atom.GetVariable("color").TryGetValueAsString(out string? color)) {
-                appearance.SetColor(color);
-            }
-
-            if (atom.GetVariable("alpha").TryGetValueAsFloat(out float alpha)) {
-                appearance.Alpha = (byte)alpha;
-            }
-
-            if (atom.GetVariable("dir").TryGetValueAsInteger(out int dir)) {
-                appearance.Direction = (AtomDirection)dir;
-            }
-
-            if (atom.GetVariable("invisibility").TryGetValueAsInteger(out int invisibility)) {
-                appearance.Invisibility = invisibility;
-            }
-
-            if (atom.GetVariable("opacity").TryGetValueAsInteger(out int opacity)) {
-                appearance.Opacity = (opacity != 0);
-            }
-
-            if (atom.GetVariable("mouse_opacity").TryGetValueAsInteger(out int mouseOpacity)) {
-                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
-            }
-
-            atom.GetVariable("pixel_x").TryGetValueAsInteger(out int pixelX);
-            atom.GetVariable("pixel_y").TryGetValueAsInteger(out int pixelY);
-            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
-
-            if (atom.GetVariable("layer").TryGetValueAsFloat(out float layer)) {
-                appearance.Layer = layer;
-            }
-            if (atom.GetVariable("plane").TryGetValueAsInteger(out int plane)) {
-                appearance.Plane = plane;
-            }
-            if (atom.GetVariable("blend_mode").TryGetValueAsFloat(out float blend_mode)) {
-                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
-
-            }
-            if (atom.GetVariable("render_source").TryGetValueAsString(out string? renderSource)) {
-                appearance.RenderSource = renderSource;
-            }
-            if (atom.GetVariable("render_target").TryGetValueAsString(out string? renderTarget)) {
-                appearance.RenderTarget = renderTarget;
-            }
-            if (atom.GetVariable("appearance_flags").TryGetValueAsFloat(out float appearance_flags)) {
-                appearance.AppearanceFlags = (AppearanceFlags)appearance_flags;
-            }
-            if (atom.GetVariable("transform").TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
+            if (atom.GetVariable("transform").TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
                 appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
             }
 
@@ -184,61 +350,42 @@ namespace OpenDreamRuntime {
         public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def) {
             IconAppearance appearance = new IconAppearance();
 
-            if (def.TryGetVariable("icon", out var iconVar) && iconVar.TryGetValueAsDreamResource(out DreamResource icon)) {
-                appearance.Icon = icon.Id;
-            }
-
-            if (def.TryGetVariable("icon_state", out var stateVar) && stateVar.TryGetValueAsString(out var iconState)) {
-                appearance.IconState = iconState;
-            }
-
-            if (def.TryGetVariable("color", out var colorVar) && colorVar.TryGetValueAsString(out var color)) {
-                appearance.SetColor(color);
-            }
-
-            if (def.TryGetVariable("alpha", out var alphaVar) && alphaVar.TryGetValueAsFloat(out float alpha)) {
-                appearance.Alpha = (byte)alpha;
-            }
-
-            if (def.TryGetVariable("dir", out var dirVar) && dirVar.TryGetValueAsInteger(out int dir)) {
-                appearance.Direction = (AtomDirection)dir;
-            }
-
-            if (def.TryGetVariable("invisibility", out var invisVar) && invisVar.TryGetValueAsInteger(out int invisibility)) {
-                appearance.Invisibility = invisibility;
-            }
-
-            if (def.TryGetVariable("mouse_opacity", out var mouseVar) && mouseVar.TryGetValueAsInteger(out int mouseOpacity)) {
-                appearance.MouseOpacity = (MouseOpacity)mouseOpacity;
-            }
-
+            def.TryGetVariable("icon", out var iconVar);
+            def.TryGetVariable("icon_state", out var stateVar);
+            def.TryGetVariable("color", out var colorVar);
+            def.TryGetVariable("alpha", out var alphaVar);
+            def.TryGetVariable("dir", out var dirVar);
+            def.TryGetVariable("invisibility", out var invisibilityVar);
+            def.TryGetVariable("mouse_opacity", out var mouseVar);
             def.TryGetVariable("pixel_x", out var xVar);
-            xVar.TryGetValueAsInteger(out int pixelX);
             def.TryGetVariable("pixel_y", out var yVar);
-            yVar.TryGetValueAsInteger(out int pixelY);
-            appearance.PixelOffset = new Vector2i(pixelX, pixelY);
+            def.TryGetVariable("layer", out var layerVar);
+            def.TryGetVariable("plane", out var planeVar);
+            def.TryGetVariable("render_source", out var renderSourceVar);
+            def.TryGetVariable("render_target", out var renderTargetVar);
+            def.TryGetVariable("blend_mode", out var blendModeVar);
+            def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
 
-            if (def.TryGetVariable("layer", out var layerVar) && layerVar.TryGetValueAsFloat(out float layer)) {
-                appearance.Layer = layer;
-            }
-            if (def.TryGetVariable("plane", out var planeVar) && planeVar.TryGetValueAsInteger(out int plane)) {
-                appearance.Plane = plane;
-            }
-            if (def.TryGetVariable("render_source", out var renderSourceVar) && renderSourceVar.TryGetValueAsString(out String renderSource)) {
-                appearance.RenderSource = renderSource;
-            }
-            if (def.TryGetVariable("render_target", out var renderTargetVar) && renderSourceVar.TryGetValueAsString(out String renderTarget)) {
-                appearance.RenderTarget = renderTarget;
-            }
-            if (def.TryGetVariable("blend_mode", out var blendmodeVar) && blendmodeVar.TryGetValueAsFloat(out float blend_mode)) {
-                appearance.BlendMode = Enum.IsDefined(typeof(BlendMode), (int)blend_mode) ? (BlendMode)(int)blend_mode : BlendMode.BLEND_DEFAULT;
-            }
-            if (def.TryGetVariable("appearance_flags", out var appearanceFlagsVar) && appearanceFlagsVar.TryGetValueAsFloat(out float appearance_flags)) {
-                appearance.AppearanceFlags = (AppearanceFlags) appearance_flags;
-            }
-            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject transformMatrix)) {
+            SetAppearanceVar(appearance, "icon", iconVar);
+            SetAppearanceVar(appearance, "icon_state", stateVar);
+            SetAppearanceVar(appearance, "color", colorVar);
+            SetAppearanceVar(appearance, "alpha", alphaVar);
+            SetAppearanceVar(appearance, "dir", dirVar);
+            SetAppearanceVar(appearance, "invisibility", invisibilityVar);
+            SetAppearanceVar(appearance, "mouse_opacity", mouseVar);
+            SetAppearanceVar(appearance, "pixel_x", xVar);
+            SetAppearanceVar(appearance, "pixel_y", yVar);
+            SetAppearanceVar(appearance, "layer", layerVar);
+            SetAppearanceVar(appearance, "plane", planeVar);
+            SetAppearanceVar(appearance, "render_source", renderSourceVar);
+            SetAppearanceVar(appearance, "render_target", renderTargetVar);
+            SetAppearanceVar(appearance, "blend_mode", blendModeVar);
+            SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
+
+            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
                 appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
             }
+
             return appearance;
         }
     }
@@ -247,17 +394,23 @@ namespace OpenDreamRuntime {
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 
+        public EntityUid CreateMovableEntity(DreamObject movable);
         public EntityUid GetMovableEntity(DreamObject movable);
 
         public bool TryGetMovableEntity(DreamObject movable, out EntityUid entity);
         public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);
         public void DeleteMovableEntity(DreamObject movable);
 
+        public bool IsValidAppearanceVar(string varName);
+        public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value);
+        public DreamValue GetAppearanceVar(IconAppearance appearance, string varName);
+
         public IconAppearance? MustGetAppearance(DreamObject atom);
 
         public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
+        public IconAppearance CreateAppearanceFrom(DreamValue value);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
         public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def);
     }

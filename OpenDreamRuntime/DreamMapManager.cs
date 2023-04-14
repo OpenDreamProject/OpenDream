@@ -15,6 +15,7 @@ using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
 
 namespace OpenDreamRuntime {
     public sealed class DreamMapManager : IDreamMapManager {
+        [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
@@ -155,6 +156,9 @@ namespace OpenDreamRuntime {
                 AllAtoms.Add(cell.Turf);
                 DreamMetaObjectTurf.TurfContentsLists.Add(cell.Turf, new TurfContentsList(_objectTree.List.ObjectDefinition, _objectTree, cell));
             }
+
+            IconAppearance turfAppearance = _atomManager.CreateAppearanceFromDefinition(cell.Turf.ObjectDefinition);
+            SetTurfAppearance(cell.Turf, turfAppearance);
 
             cell.Turf.InitSpawn(creationArguments);
             return cell.Turf;

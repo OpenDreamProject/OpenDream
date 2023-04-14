@@ -3,18 +3,18 @@ using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class IconAppearance : IEquatable<IconAppearance> {
         [ViewVariables] public int? Icon;
-        [ViewVariables] public string IconState;
-        [ViewVariables] public AtomDirection Direction;
+        [ViewVariables] [CanBeNull] public string IconState;
+        [ViewVariables] public AtomDirection Direction = AtomDirection.South;
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
-        [ViewVariables] public byte Alpha;
+        [ViewVariables] public byte Alpha = 255;
         /// <summary>
         /// An appearance can gain a color matrix filter by two possible forces: <br/>
         /// 1. the /atom.color var is modified. <br/>
@@ -27,14 +27,14 @@ namespace OpenDreamShared.Dream {
         /// it's also for parity! See <see cref="TryRepresentMatrixAsRGBAColor(in ColorMatrix, out Color?)"/> for more.
         /// </remarks>
         [ViewVariables] public ColorMatrix ColorMatrix = ColorMatrix.Identity;
-        [ViewVariables] public float Layer;
-        [ViewVariables] public int Plane;
-        [ViewVariables] public BlendMode BlendMode;
+        [ViewVariables] public float Layer = -1f;
+        [ViewVariables] public int Plane = -32767;
+        [ViewVariables] public BlendMode BlendMode = BlendMode.BLEND_DEFAULT;
         [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
-        [ViewVariables] public string RenderSource = "";
-        [ViewVariables] public string RenderTarget = "";
+        [ViewVariables] [CanBeNull] public string RenderSource;
+        [ViewVariables] [CanBeNull] public string RenderTarget;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();

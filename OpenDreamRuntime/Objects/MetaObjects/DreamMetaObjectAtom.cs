@@ -14,14 +14,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IDreamMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
-        private readonly ServerAppearanceSystem _appearanceSystem;
+        private ServerAppearanceSystem? _appearanceSystem;
 
         private readonly Dictionary<DreamObject, DreamFilterList> _filterLists = new();
 
         public DreamMetaObjectAtom() {
             IoCManager.InjectDependencies(this);
-
-            _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -141,9 +139,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 default:
-                    if (_appearanceSystem.IsValidAppearanceVar(varName)) {
+                    if (_atomManager.IsValidAppearanceVar(varName)) {
                         _atomManager.UpdateAppearance(dreamObject, appearance => {
-                            _appearanceSystem.SetAppearanceVar(appearance, varName, value);
+                            _atomManager.SetAppearanceVar(appearance, varName, value);
                         });
                     }
 
@@ -172,10 +170,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "filters":
                     return new DreamValue(_filterLists[dreamObject]);
                 default:
-                    if (_appearanceSystem.IsValidAppearanceVar(varName)) {
+                    if (_atomManager.IsValidAppearanceVar(varName)) {
                         var appearance = _atomManager.MustGetAppearance(dreamObject);
 
-                        return _appearanceSystem.GetAppearanceVar(appearance, varName);
+                        return _atomManager.GetAppearanceVar(appearance, varName);
                     }
 
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
@@ -190,7 +188,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     IconState = iconState
                 };
             } else {
-                overlay = _appearanceSystem.CreateAppearanceFrom(value);
+                overlay = _atomManager.CreateAppearanceFrom(value);
             }
 
             if (overlay.Icon == null) {
@@ -202,6 +200,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private void OverlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
             DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
 
@@ -215,6 +214,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private void OverlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
             DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
             IconAppearance overlayAppearance = CreateOverlayAppearance(atom, value);
@@ -228,6 +228,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private void UnderlayValueAssigned(DreamList underList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
             DreamObject atom = _atomManager.UnderlaysListToAtom[underList];
 
@@ -241,6 +242,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private void UnderlayBeforeValueRemoved(DreamList underlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
             DreamObject atom = _atomManager.UnderlaysListToAtom[underlayList];
             IconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);

@@ -1,6 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Rendering;
-using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects;
@@ -9,16 +7,10 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
     public bool ShouldCallNew => true;
     public IDreamMetaObject? ParentType { get; set; }
 
-    [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly IAtomManager _atomManager = default!;
-    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    private readonly ServerAppearanceSystem _appearanceSystem;
 
     public DreamMetaObjectImage() {
         IoCManager.InjectDependencies(this);
-
-        _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
     }
 
     public static readonly Dictionary<DreamObject, IconAppearance> ObjectToAppearance = new();
@@ -38,7 +30,7 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
         ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
         DreamValue icon = creationArguments.GetArgument(0, "icon");
-        IconAppearance appearance = _appearanceSystem.CreateAppearanceFrom(icon);
+        IconAppearance appearance = _atomManager.CreateAppearanceFrom(icon);
 
         int argIndex = 1;
         DreamValue loc = creationArguments.GetArgument(1, "loc");
@@ -52,7 +44,7 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
             if (arg == DreamValue.Null)
                 continue;
 
-            _appearanceSystem.SetAppearanceVar(appearance, argName, arg);
+            _atomManager.SetAppearanceVar(appearance, argName, arg);
         }
 
         ObjectToAppearance.Add(dreamObject, appearance);
@@ -67,15 +59,15 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
     public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
         switch (varName) {
             case "appearance":
-                var newAppearance = _appearanceSystem.CreateAppearanceFrom(value);
+                var newAppearance = _atomManager.CreateAppearanceFrom(value) ?? new IconAppearance();
 
                 ObjectToAppearance[dreamObject] = newAppearance;
                 break;
             default:
-                if (_appearanceSystem.IsValidAppearanceVar(varName)) {
+                if (_atomManager.IsValidAppearanceVar(varName)) {
                     IconAppearance appearance = ObjectToAppearance[dreamObject];
 
-                    _appearanceSystem.SetAppearanceVar(appearance, varName, value);
+                    _atomManager.SetAppearanceVar(appearance, varName, value);
                 } else {
                     ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
                 }
@@ -85,10 +77,10 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
     }
 
     public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
-        if (_appearanceSystem.IsValidAppearanceVar(varName)) {
+        if (_atomManager.IsValidAppearanceVar(varName)) {
             IconAppearance appearance = ObjectToAppearance[dreamObject];
 
-            return _appearanceSystem.GetAppearanceVar(appearance, varName);
+            return _atomManager.GetAppearanceVar(appearance, varName);
         } else if (varName == "appearance") {
             IconAppearance appearance = ObjectToAppearance[dreamObject];
             IconAppearance appearanceCopy = new IconAppearance(appearance);

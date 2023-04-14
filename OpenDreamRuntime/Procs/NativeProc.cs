@@ -6,7 +6,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class NativeProc : DreamProc {
-        public delegate DreamValue HandlerFn(DreamObject src, DreamObject usr, DreamProcArguments arguments);
+        public delegate DreamValue HandlerFn(DreamObject? src, DreamObject? usr, DreamProcArguments arguments);
 
         public static (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
             List<Attribute> attributes = new(func.GetInvocationList()[0].Method.GetCustomAttributes());
@@ -33,14 +33,14 @@ namespace OpenDreamRuntime.Procs {
         public sealed class State : ProcState {
             public static readonly Stack<State> Pool = new();
 
-            public DreamObject Src;
-            public DreamObject Usr;
+            public DreamObject? Src;
+            public DreamObject? Usr;
             public DreamProcArguments Arguments;
 
-            private NativeProc _proc;
-            public override NativeProc Proc => _proc;
+            private NativeProc? _proc;
+            public override NativeProc? Proc => _proc;
 
-            public void Initialize(NativeProc proc, DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+            public void Initialize(NativeProc? proc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
                 base.Initialize(thread, true);
 
                 _proc = proc;
@@ -49,7 +49,7 @@ namespace OpenDreamRuntime.Procs {
                 Arguments = arguments;
             }
 
-            protected override ProcStatus InternalResume() {
+            public override ProcStatus Resume() {
                 Result = _proc.Handler.Invoke(Src, Usr, Arguments);
 
                 return ProcStatus.Returned;
@@ -85,7 +85,7 @@ namespace OpenDreamRuntime.Procs {
             Handler = handler;
         }
 
-        public override State CreateState(DreamThread thread, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+        public override State CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
             if (_defaultArgumentValues != null) {
                 var newNamedArguments = arguments.NamedArguments;
                 foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {

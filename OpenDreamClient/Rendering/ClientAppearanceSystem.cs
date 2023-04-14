@@ -1,10 +1,11 @@
 ﻿using OpenDreamShared.Dream;
-using Robust.Client.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
+using OpenDreamClient.Resources;
+using OpenDreamClient.Resources.ResourceTypes;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
@@ -19,6 +20,8 @@ namespace OpenDreamClient.Rendering {
         private readonly Dictionary<(MapGridComponent, Vector2i), EntityUid> _opaqueTurfEntities = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
+        [Dependency] private readonly OccluderSystem _occluderSystem = default!;
+        [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -96,7 +99,7 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        public ShaderInstance GetFilterShader(DreamFilter filter) {
+        public ShaderInstance GetFilterShader(DreamFilter filter, Dictionary<string, IRenderTexture> renderSourceLookup) {
             if (!_filterShaders.TryGetValue(filter, out var instance)) {
                 var protoManager = IoCManager.Resolve<IPrototypeManager>();
 
@@ -104,6 +107,19 @@ namespace OpenDreamClient.Rendering {
 
                 switch (filter) {
                     case DreamFilterAlpha alpha:
+                        if(!String.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out var renderSourceTexture))
+                            instance.SetParameter("mask_texture", renderSourceTexture.Texture);
+                        else if(alpha.Icon != 0){
+                            _dreamResourceManager.LoadResourceAsync<DMIResource>(alpha.Icon, (DMIResource rsc) => {
+                                    instance.SetParameter("mask_texture", rsc.Texture);
+                                });
+                        }
+                        else{
+                            instance.SetParameter("mask_texture", Texture.Transparent);
+                        }
+                        instance.SetParameter("x",alpha.X);
+                        instance.SetParameter("y",alpha.Y);
+                        instance.SetParameter("flags",alpha.Flags);
                         break;
                     case DreamFilterAngularBlur angularBlur:
                         break;
@@ -112,8 +128,13 @@ namespace OpenDreamClient.Rendering {
                     case DreamFilterBlur blur:
                         instance.SetParameter("size", blur.Size);
                         break;
-                    case DreamFilterColor color:
+                    case DreamFilterColor color: {
+                        //Since SWSL doesn't support 4x5 matrices, we need to get a bit silly.
+                        instance.SetParameter("colorMatrix", color.Color.GetMatrix4());
+                        instance.SetParameter("offsetVector", color.Color.GetOffsetVector());
+                        //TODO: Support the alternative colour mappings.
                         break;
+                    }
                     case DreamFilterDisplace displace:
                         break;
                     case DreamFilterDropShadow dropShadow:
@@ -161,9 +182,9 @@ namespace OpenDreamClient.Rendering {
                     // TODO: Maybe use a prototype?
                     opaqueEntity = _entityManager.SpawnEntity(null, entityPosition);
                     _entityManager.GetComponent<TransformComponent>(opaqueEntity).Anchored = true;
-                    var occluder = _entityManager.AddComponent<ClientOccluderComponent>(opaqueEntity);
-                    occluder.BoundingBox = Box2.FromDimensions(-1.0f, -1.0f, 1.0f, 1.0f);
-                    occluder.Enabled = true;
+                    var occluder = _entityManager.AddComponent<OccluderComponent>(opaqueEntity);
+                    _occluderSystem.SetBoundingBox(opaqueEntity, Box2.FromDimensions(-1.0f, -1.0f, 1.0f, 1.0f), occluder);
+                    _occluderSystem.SetEnabled(opaqueEntity, true, occluder);
 
                     _opaqueTurfEntities.Add((grid, position), opaqueEntity);
                 } else if (hasOpaqueEntity) {

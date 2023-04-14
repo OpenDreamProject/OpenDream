@@ -1,0 +1,7 @@
+﻿//blend_mode none;
+light_mode unshaded;
+void fragment() {
+    highp vec4 color = zTexture(UV);
+
+    COLOR = vec4(vec3(1.0,1.0,1.0), ceil(color.a));
+}

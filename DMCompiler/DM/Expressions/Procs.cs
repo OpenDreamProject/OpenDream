@@ -1,5 +1,9 @@
+using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using System;
+using System.Linq;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
@@ -96,7 +100,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x(y, z, ...)
-    class ProcCall : DMExpression {
+    sealed class ProcCall : DMExpression {
         DMExpression _target;
         ArgumentList _arguments;
 
@@ -105,7 +109,7 @@ namespace DMCompiler.DM.Expressions {
             _arguments = arguments;
         }
 
-        public (DMObject ProcOwner, DMProc Proc) GetTargetProc(DMObject dmObject) {
+        public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
             return _target switch {
                 Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
                 GlobalProc procTarget => (null, procTarget.GetProc()),
@@ -115,7 +119,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            (DMObject procOwner, DMProc targetProc) = GetTargetProc(dmObject);
+            (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(dmObject);
+            DoCompiletimeLinting(procOwner, targetProc);
             if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
                 DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
@@ -142,10 +147,66 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
+        /// <summary>
+        /// This is a good place to do some compile-time linting of any native procs that require it,
+        /// such as native procs that check ahead of time if the number of arguments is correct (like matrix() or sin())
+        /// </summary>
+        protected void DoCompiletimeLinting(DMObject procOwner, DMProc targetProc) {
+            if(procOwner is null || procOwner.Path == DreamPath.Root) {
+                if (targetProc is null)
+                    return;
+                if(targetProc.Name == "matrix") {
+                    switch(_arguments.Length) {
+                        case 0:
+                        case 1: // NOTE: 'case 1' also ends up referring to the arglist situation. FIXME: Make this lint work for that, too?
+                        case 6: 
+                            break; // Normal cases
+                        case 2:
+                        case 3: // These imply that they're trying to use the undocumented matrix signatures.
+                        case 4: // The lint is to just check that the last argument is a numeric constant that is a valid matrix "opcode."
+                            var lastArg = _arguments.Expressions.Last().Expr;
+                            if (lastArg is null)
+                                break;
+                            if(lastArg.TryAsConstant(out Constant constant)) {
+                                if(constant is not Number opcodeNumber) {
+                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                                    "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
+                                    break;
+                                }
+                                //Note that it is possible for the numeric value to not be an opcode itself,
+                                //but the call is still valid.
+                                //This is because of MATRIX_MODIFY; things like MATRIX_INVERT | MATRIX_MODIFY are okay!
+                                const int notModifyBits = ~(int)MatrixOpcode.Modify;
+                                if (!Enum.IsDefined((MatrixOpcode) ((int)opcodeNumber.Value & notModifyBits))) {
+                                    //NOTE: This still does let some certain weird opcodes through,
+                                    //like a MODIFY with no other operation present.
+                                    //Not sure if that is a parity behaviour or not!
+                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                                    "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
+                                    break;
+                                }
+                            }
+                            break;
+                        case 5: // BYOND always runtimes but DOES compile, here
+                            DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                                $"Calling matrix() with 5 arguments will always error when called at runtime");
+                            break;
+                        default: // BYOND always compiletimes here
+                            DMCompiler.Emit(WarningCode.TooManyArguments, _arguments.Location,
+                                $"Too many arguments to matrix() - got {_arguments.Length} arguments, expecting 6 or less");
+                            break;
+
+                    }
+                }
+            }
+        }
+
         public override bool TryAsJsonRepresentation(out object json) {
             json = null;
             DMCompiler.UnimplementedWarning(Location, $"DMM overrides for expression {GetType()} are not implemented");
             return true; //TODO
         }
     }
+
+
 }

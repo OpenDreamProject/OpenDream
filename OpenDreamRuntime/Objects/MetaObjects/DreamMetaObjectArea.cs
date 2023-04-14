@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectArea : IDreamMetaObject {
@@ -15,13 +14,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            DreamList contents = DreamList.Create();
+            DreamList contents = _objectTree.CreateList();
 
             contents.ValueAssigned += (_, _, value) => {
                 if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out DreamObject turf))
                     return;
 
-                (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
+                (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
                 level.SetArea(pos, dreamObject);
             };
 

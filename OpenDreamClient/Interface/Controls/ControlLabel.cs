@@ -18,7 +18,7 @@ namespace OpenDreamClient.Interface.Controls
             return _label;
         }
 
-        public override void UpdateElementDescriptor() {
+        protected override void UpdateElementDescriptor() {
             base.UpdateElementDescriptor();
 
             ControlDescriptorLabel controlDescriptor = (ControlDescriptorLabel)ElementDescriptor;

@@ -154,6 +154,10 @@ namespace DMCompiler.DM {
             return procDefinition;
         }
 
+        public string GetLocalVarName(int index) {
+            return _localVariableNames[index].Add;
+        }
+
         public void WaitFor(bool waitFor) {
             if (waitFor)
             {
@@ -731,9 +735,19 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.BitShiftLeft);
         }
 
+        public void BitShiftLeftReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.BitShiftLeftReference);
+            WriteReference(reference);
+        }
+
         public void BitShiftRight() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitShiftRight);
+        }
+
+        public void BitShiftRightReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.BitShiftRightReference);
+            WriteReference(reference);
         }
 
         public void BinaryNot() {
@@ -924,6 +938,21 @@ namespace DMCompiler.DM {
         public void Locate() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Locate);
+        }
+
+        public void StartTry(string label, DMReference reference) {
+            WriteOpcode(DreamProcOpcode.Try);
+            WriteLabel(label);
+            WriteReference(reference);
+        }
+
+        public void StartTryNoValue(string label) {
+            WriteOpcode(DreamProcOpcode.TryNoValue);
+            WriteLabel(label);
+        }
+
+        public void EndTry() {
+            WriteOpcode(DreamProcOpcode.EndTry);
         }
 
         private void WriteOpcode(DreamProcOpcode opcode) {

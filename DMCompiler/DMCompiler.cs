@@ -185,14 +185,16 @@ namespace DMCompiler {
                     ++ErrorCount;
                     break;
             }
+
             Console.WriteLine(emission);
-            return;
         }
 
         /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
-        public static void Emit(WarningCode code, Location loc, string message) {
+        /// <returns> True if the warning was an error, false if not.</returns>
+        public static bool Emit(WarningCode code, Location loc, string message) {
             ErrorLevel level = Config.errorConfig[code];
             Emit(new CompilerEmission(level, code, loc, message));
+            return level == ErrorLevel.Error;
         }
 
         /// <summary>
@@ -205,7 +207,7 @@ namespace DMCompiler {
 
         /// <inheritdoc cref="ForcedError(string)"/>
         public static void ForcedError(Location loc, string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
             ErrorCount++;
         }
 
@@ -214,13 +216,13 @@ namespace DMCompiler {
         /// Completely ignores the warning configuration. Use wisely!
         /// </summary>
         public static void ForcedWarning(string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message).ToString());
             WarningCount++;
         }
 
         /// <inheritdoc cref="ForcedWarning(string)"/>
         public static void ForcedWarning(Location loc, string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message).ToString());
             WarningCount++;
         }
 
@@ -306,12 +308,16 @@ namespace DMCompiler {
 
             // Successful serialization
             if (ErrorCount == 0) {
-                var outputFileHandle = File.Create(outputFile);
+                using var outputFileHandle = File.Create(outputFile);
 
-                JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
-                outputFileHandle.Close();
-                return $"Saved to {outputFile}";
+                try {
+                    JsonSerializer.Serialize(outputFileHandle, compiledDream,
+                        new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+
+                    return $"Saved to {outputFile}";
+                } catch (Exception e) {
+                    Console.WriteLine($"Failed to save to {outputFile}: {e.Message}");
+                }
             }
 
             return string.Empty;

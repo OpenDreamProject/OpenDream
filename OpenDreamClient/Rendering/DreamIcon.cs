@@ -7,14 +7,12 @@ using Robust.Client.Graphics;
 
 namespace OpenDreamClient.Rendering {
     sealed class DreamIcon {
+
         public delegate void SizeChangedEventHandler();
 
         public List<DreamIcon> Overlays { get; } = new();
         public List<DreamIcon> Underlays { get; } = new();
         public event SizeChangedEventHandler SizeChanged;
-
-        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-        [Dependency] private readonly IClickMapManager _clickMapManager = default!;
 
         public DMIResource DMI {
             get => _dmi;
@@ -51,13 +49,9 @@ namespace OpenDreamClient.Rendering {
         private AppearanceAnimation? _appearanceAnimation = null;
         private Box2? _cachedAABB = null;
 
-        public DreamIcon() {
-            IoCManager.InjectDependencies(this);
-        }
+        public DreamIcon() { }
 
         public DreamIcon(uint appearanceId, AtomDirection? parentDir = null) {
-            IoCManager.InjectDependencies(this);
-
             SetAppearance(appearanceId, parentDir);
         }
 
@@ -125,12 +119,13 @@ namespace OpenDreamClient.Rendering {
         }
 
         public bool CheckClickWorld(Vector2 iconPos, Vector2 clickWorldPos) {
+            IClickMapManager _clickMap = IoCManager.Resolve<IClickMapManager>();
             iconPos += Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
             if (CurrentFrame != null) {
                 Vector2 pos = (clickWorldPos - (iconPos - 0.5f)) * EyeManager.PixelsPerMeter;
 
-                if (_clickMapManager.IsOccluding(CurrentFrame, ((int)pos.X, DMI.IconSize.Y - (int)pos.Y))) {
+                if (_clickMap.IsOccluding(CurrentFrame, ((int)pos.X, DMI.IconSize.Y - (int)pos.Y))) {
                     return true;
                 }
             }
@@ -151,12 +146,14 @@ namespace OpenDreamClient.Rendering {
         }
 
         public bool CheckClickScreen(Vector2 screenPos, Vector2 clickPos) {
+            IClickMapManager _clickMap = IoCManager.Resolve<IClickMapManager>();
+
             if (CurrentFrame != null) {
                 Vector2 pos = (clickPos - screenPos) * EyeManager.PixelsPerMeter;
                 pos.X %= DMI.IconSize.X;
                 pos.Y = DMI.IconSize.Y - (pos.Y % DMI.IconSize.Y);
 
-                if (_clickMapManager.IsOccluding(CurrentFrame, ((int)pos.X, (int)pos.Y))) {
+                if (_clickMap.IsOccluding(CurrentFrame, ((int)pos.X, (int)pos.Y))) {
                     return true;
                 }
             }
@@ -176,6 +173,26 @@ namespace OpenDreamClient.Rendering {
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Render this icon using a given world rendering handle and position
+        /// </summary>
+        public void Draw(DrawingHandleWorld handle, Vector2 position) {
+            position += Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
+
+            foreach (DreamIcon underlay in Underlays) {
+                underlay.Draw(handle, position);
+            }
+
+            AtlasTexture frame = CurrentFrame;
+            if (frame != null) {
+                handle.DrawTexture(frame, position, Appearance.Color); // TODO: Does not consider ColorMatrix
+            }
+
+            foreach (DreamIcon overlay in Overlays) {
+                overlay.Draw(handle, position);
+            }
         }
 
         private void UpdateAnimation() {
@@ -240,7 +257,7 @@ namespace OpenDreamClient.Rendering {
             if (Appearance.Icon == null) {
                 DMI = null;
             } else {
-                _resourceManager.LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
+                IoCManager.Resolve<IDreamResourceManager>().LoadResourceAsync<DMIResource>(Appearance.Icon.Value, dmi => {
                     if (dmi.Id != Appearance.Icon) return; //Icon changed while resource was loading
 
                     DMI = dmi;

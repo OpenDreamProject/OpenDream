@@ -314,7 +314,8 @@ namespace OpenDreamRuntime {
             if (_resourceManager.TryLoadIcon(value, out var iconResource)) {
                 appearance.Icon = iconResource.Id;
             } else if (value != DreamValue.Null) {
-                throw new Exception($"Cannot create an appearance from {value}");
+                // Return a default appearance, but log a warning about it
+                Logger.Warning($"Attempted to create an appearance from {value}. This is invalid and a default appearance was created instead.");
             }
 
             return appearance;

@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using Robust.Client.Graphics;
+﻿using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
@@ -697,20 +696,20 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public float Layer; //ditto for layer
     public EntityUid UID;
     public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
-    public Boolean IsScreen;
+    public bool IsScreen;
     public int TieBreaker; //Used for biasing render order (ie, for overlays)
     public Color ColorToApply;
     public ColorMatrix ColorMatrixToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
-    [CanBeNull] public String RenderSource;
-    [CanBeNull] public String RenderTarget;
+    public string? RenderSource;
+    public string? RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
     public AppearanceFlags AppearanceFlags;
     public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
 
-    public RendererMetaData(){
+    public RendererMetaData() {
         Reset();
     }
 

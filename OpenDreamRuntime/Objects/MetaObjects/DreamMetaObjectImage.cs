@@ -30,7 +30,12 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
         ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
         DreamValue icon = creationArguments.GetArgument(0, "icon");
-        IconAppearance appearance = _atomManager.CreateAppearanceFrom(icon);
+        if (!_atomManager.TryCreateAppearanceFrom(icon, out var appearance)) {
+            // Use a default appearance, but log a warning about it if icon wasn't null
+            appearance = new IconAppearance();
+            if (icon != DreamValue.Null)
+                Logger.Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
+        }
 
         int argIndex = 1;
         DreamValue loc = creationArguments.GetArgument(1, "loc");
@@ -59,7 +64,8 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
     public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
         switch (varName) {
             case "appearance":
-                var newAppearance = _atomManager.CreateAppearanceFrom(value);
+                if (!_atomManager.TryCreateAppearanceFrom(value, out var newAppearance))
+                    return; // Ignore attempts to set an invalid appearance
 
                 ObjectToAppearance[dreamObject] = newAppearance;
                 break;

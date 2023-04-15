@@ -293,32 +293,37 @@ namespace OpenDreamRuntime {
             _appearanceSystem.Animate(GetMovableEntity(atom), appearance, duration);
         }
 
-        public IconAppearance CreateAppearanceFrom(DreamValue value) {
+        public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {
             if (value.TryGetValueAsAppearance(out var copyFromAppearance)) {
-                return new(copyFromAppearance);
+                appearance = new(copyFromAppearance);
+                return true;
             }
 
             if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var copyFromImage)) {
-                return new(DreamMetaObjectImage.ObjectToAppearance[copyFromImage]);
+                appearance = new(DreamMetaObjectImage.ObjectToAppearance[copyFromImage]);
+                return true;
             }
 
             if (value.TryGetValueAsType(out var copyFromType)) {
-                return CreateAppearanceFromDefinition(copyFromType.ObjectDefinition);
+                appearance = CreateAppearanceFromDefinition(copyFromType.ObjectDefinition);
+                return true;
             }
 
             if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var copyFromAtom)) {
-                return CreateAppearanceFromAtom(copyFromAtom);
+                appearance = CreateAppearanceFromAtom(copyFromAtom);
+                return true;
             }
 
-            var appearance = new IconAppearance();
             if (_resourceManager.TryLoadIcon(value, out var iconResource)) {
-                appearance.Icon = iconResource.Id;
-            } else if (value != DreamValue.Null) {
-                // Return a default appearance, but log a warning about it
-                Logger.Warning($"Attempted to create an appearance from {value}. This is invalid and a default appearance was created instead.");
+                appearance = new IconAppearance() {
+                    Icon = iconResource.Id
+                };
+
+                return true;
             }
 
-            return appearance;
+            appearance = null;
+            return false;
         }
 
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
@@ -411,7 +416,7 @@ namespace OpenDreamRuntime {
         public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
-        public IconAppearance CreateAppearanceFrom(DreamValue value);
+        public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
         public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def);
     }

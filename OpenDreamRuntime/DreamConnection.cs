@@ -9,9 +9,9 @@ using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
+using Robust.Shared.Utility;
 
-namespace OpenDreamRuntime
-{
+namespace OpenDreamRuntime {
     public sealed class DreamConnection {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
@@ -21,16 +21,49 @@ namespace OpenDreamRuntime
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
         [ViewVariables] private readonly Dictionary<string, List<string>> _statPanels = new();
         [ViewVariables] private bool _currentlyUpdatingStat;
-        [ViewVariables] public IPlayerSession Session { get; }
 
-        [ViewVariables] public DreamObject ClientDreamObject;
+        [ViewVariables] public IPlayerSession? Session { get; private set; }
+        [ViewVariables] public DreamObject? Client { get; private set; }
+        [ViewVariables] public DreamObject? Mob {
+            get => _mob;
+            set {
+                DebugTools.Assert(value == null || value.IsSubtypeOf(_objectTree.Mob));
 
-        [ViewVariables] private DreamObject _mobDreamObject;
+                if (_mob != value) {
+                    _mob?.SetVariableValue("ckey", DreamValue.Null);
+                    _mob?.SetVariableValue("key", DreamValue.Null);
+                    _mob?.SpawnProc("Logout");
 
-        [ViewVariables] private string _outputStatPanel;
+                    if (value != null) {
+                        // If the mob is already owned by another player, kick them out
+                        if (_dreamManager.TryGetConnectionFromMob(value, out var existingMobOwner))
+                            existingMobOwner.Mob = null;
+
+                        _mob = value;
+                        _mob.SetVariableValue("ckey", new(Session!.Name));
+                        _mob.SetVariableValue("key", new(Session!.Name));
+                        _mob.SpawnProc("Login", usr: _mob);
+                    } else {
+                        _mob = null;
+                    }
+
+                    UpdateAvailableVerbs();
+                }
+
+                if (_mob != null) {
+                    Session!.AttachToEntity(_atomManager.GetMovableEntity(_mob));
+                } else {
+                    Session!.DetachFromEntity();
+                }
+            }
+        }
+
+        [ViewVariables] private string? _outputStatPanel;
         [ViewVariables] private string _selectedStatPanel;
         [ViewVariables] private readonly Dictionary<int, Action<DreamValue>> _promptEvents = new();
         [ViewVariables] private int _nextPromptEvent = 1;
+
+        private DreamObject? _mob;
 
         public string SelectedStatPanel {
             get => _selectedStatPanel;
@@ -38,40 +71,34 @@ namespace OpenDreamRuntime
                 _selectedStatPanel = value;
 
                 var msg = new MsgSelectStatPanel() { StatPanel = value };
-                Session.ConnectedClient.SendMessage(msg);
+                Session?.ConnectedClient.SendMessage(msg);
             }
         }
 
-        public DreamObject MobDreamObject
-        {
-            get => _mobDreamObject;
-            set
-            {
-                if (_mobDreamObject != value) {
-                    if (_mobDreamObject != null) _mobDreamObject.SpawnProc("Logout");
-
-                    if (value != null && value.IsSubtypeOf(_objectTree.Mob)) {
-                        DreamConnection oldMobConnection = _dreamManager.GetConnectionFromMob(value);
-                        if (oldMobConnection != null) oldMobConnection.MobDreamObject = null;
-
-                        _mobDreamObject = value;
-                        ClientDreamObject?.SetVariable("eye", new DreamValue(_mobDreamObject));
-                        _mobDreamObject.SpawnProc("Login", usr: _mobDreamObject);
-                        Session.AttachToEntity(_atomManager.GetMovableEntity(_mobDreamObject));
-                    } else {
-                        Session.DetachFromEntity();
-                        _mobDreamObject = null;
-                    }
-
-                    UpdateAvailableVerbs();
-                }
-            }
-        }
-
-        public DreamConnection(IPlayerSession session) {
+        public DreamConnection() {
             IoCManager.InjectDependencies(this);
+        }
+
+        public void HandleConnection(IPlayerSession session) {
+            var client = _objectTree.CreateObject(_objectTree.Client);
 
             Session = session;
+
+            Client = client;
+            Client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
+        }
+
+        public void HandleDisconnection() {
+            if (Session == null || Client == null) // Already disconnected?
+                return;
+
+            _mob?.SpawnProc("Logout"); // Don't null out the ckey here
+            _mob = null;
+
+            Session = null;
+
+            Client.Delete(_dreamManager);
+            Client = null;
         }
 
         public void UpdateAvailableVerbs() {
@@ -104,7 +131,7 @@ namespace OpenDreamRuntime
                     // Explicitly null category is hidden from verb panels, "" category becomes the default_verb_category
                     if (category == string.Empty) {
                         // But if default_verb_category is null, we hide it from the verb panel
-                        ClientDreamObject.GetVariable("default_verb_category").TryGetValueAsString(out category);
+                        Client.GetVariable("default_verb_category").TryGetValueAsString(out category);
                     }
 
                     // Null category is serialized as an empty string and treated as hidden
@@ -112,21 +139,21 @@ namespace OpenDreamRuntime
                 }
             }
 
-            AddVerbs(ClientDreamObject, DreamMetaObjectClient.VerbLists[ClientDreamObject].GetValues());
+            AddVerbs(Client, DreamMetaObjectClient.VerbLists[Client].GetValues());
 
-            if (MobDreamObject != null) {
-                AddVerbs(MobDreamObject, DreamMetaObjectAtom.VerbLists[MobDreamObject].GetValues());
+            if (Mob != null) {
+                AddVerbs(Mob, DreamMetaObjectAtom.VerbLists[Mob].GetValues());
             }
 
             var msg = new MsgUpdateAvailableVerbs() {
                 AvailableVerbs = verbs.ToArray()
             };
 
-            Session.ConnectedClient.SendMessage(msg);
+            Session?.ConnectedClient.SendMessage(msg);
         }
 
         public void UpdateStat() {
-            if (_currentlyUpdatingStat)
+            if (Session == null || Client == null || _currentlyUpdatingStat)
                 return;
 
             _currentlyUpdatingStat = true;
@@ -134,9 +161,9 @@ namespace OpenDreamRuntime
 
             DreamThread.Run("Stat", async (state) => {
                 try {
-                    var statProc = ClientDreamObject.GetProc("Stat");
+                    var statProc = Client.GetProc("Stat");
 
-                    await state.Call(statProc, ClientDreamObject, _mobDreamObject, new DreamProcArguments(null));
+                    await state.Call(statProc, Client, Mob, new DreamProcArguments(null));
                     if (Session.Status == SessionStatus.InGame) {
                         var msg = new MsgUpdateStatPanels(_statPanels);
                         Session.ConnectedClient.SendMessage(msg);
@@ -149,30 +176,25 @@ namespace OpenDreamRuntime
             });
         }
 
-        public void SetOutputStatPanel(string name)
-        {
+        public void SetOutputStatPanel(string name) {
             if (!_statPanels.ContainsKey(name)) _statPanels.Add(name, new List<string>());
 
             _outputStatPanel = name;
         }
 
-        public void AddStatPanelLine(string text)
-        {
+        public void AddStatPanelLine(string text) {
             if (_outputStatPanel == null || !_statPanels.ContainsKey(_outputStatPanel))
                 SetOutputStatPanel("Stats");
 
             _statPanels[_outputStatPanel].Add(text);
         }
 
-        public void HandleMsgSelectStatPanel(MsgSelectStatPanel message)
-        {
+        public void HandleMsgSelectStatPanel(MsgSelectStatPanel message) {
             _selectedStatPanel = message.StatPanel;
         }
 
-        public void HandleMsgPromptResponse(MsgPromptResponse message)
-        {
-            if (!_promptEvents.TryGetValue(message.PromptId, out Action<DreamValue> promptEvent))
-            {
+        public void HandleMsgPromptResponse(MsgPromptResponse message) {
+            if (!_promptEvents.TryGetValue(message.PromptId, out var promptEvent)) {
                 Logger.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
                 return;
             }
@@ -203,12 +225,12 @@ namespace OpenDreamRuntime
                 src
             });
 
-            ClientDreamObject?.SpawnProc("Topic", topicArguments, MobDreamObject);
+            Client?.SpawnProc("Topic", topicArguments, Mob);
         }
 
 
         public void OutputDreamValue(DreamValue value) {
-            if (value.TryGetValueAsDreamObject(out DreamObject outputObject)) {
+            if (value.TryGetValueAsDreamObject(out var outputObject)) {
                 if (outputObject?.IsSubtypeOf(_objectTree.Sound) == true) {
                     UInt16 channel = (UInt16)outputObject.GetVariable("channel").GetValueAsInteger();
                     UInt16 volume = (UInt16)outputObject.GetVariable("volume").GetValueAsInteger();
@@ -237,7 +259,7 @@ namespace OpenDreamRuntime
                             throw new Exception($"Sound {value} is not a supported file type");
                     }
 
-                    Session.ConnectedClient.SendMessage(msg);
+                    Session?.ConnectedClient.SendMessage(msg);
                     return;
                 }
             }
@@ -245,13 +267,13 @@ namespace OpenDreamRuntime
             OutputControl(value.Stringify(), null);
         }
 
-        public void OutputControl(string message, string control) {
+        public void OutputControl(string message, string? control) {
             var msg = new MsgOutput() {
                 Value = message,
                 Control = control
             };
 
-            Session.ConnectedClient.SendMessage(msg);
+            Session?.ConnectedClient.SendMessage(msg);
         }
 
         public void HandleCommand(string fullCommand) {
@@ -262,15 +284,15 @@ namespace OpenDreamRuntime
 
             switch (command) {
                 //TODO: Maybe move these verbs to DM code?
-                case ".north": ClientDreamObject.SpawnProc("North"); break;
-                case ".east": ClientDreamObject.SpawnProc("East"); break;
-                case ".south": ClientDreamObject.SpawnProc("South"); break;
-                case ".west": ClientDreamObject.SpawnProc("West"); break;
-                case ".northeast": ClientDreamObject.SpawnProc("Northeast"); break;
-                case ".southeast": ClientDreamObject.SpawnProc("Southeast"); break;
-                case ".southwest": ClientDreamObject.SpawnProc("Southwest"); break;
-                case ".northwest": ClientDreamObject.SpawnProc("Northwest"); break;
-                case ".center": ClientDreamObject.SpawnProc("Center"); break;
+                case ".north": Client?.SpawnProc("North"); break;
+                case ".east": Client?.SpawnProc("East"); break;
+                case ".south": Client?.SpawnProc("South"); break;
+                case ".west": Client?.SpawnProc("West"); break;
+                case ".northeast": Client?.SpawnProc("Northeast"); break;
+                case ".southeast": Client?.SpawnProc("Southeast"); break;
+                case ".southwest": Client?.SpawnProc("Southwest"); break;
+                case ".northwest": Client?.SpawnProc("Northwest"); break;
+                case ".center": Client?.SpawnProc("Center"); break;
 
                 default: {
                     if (_availableVerbs.TryGetValue(command, out var value)) {
@@ -303,7 +325,7 @@ namespace OpenDreamRuntime
                                 }
                             }
 
-                            await state.Call(verb, verbSrc, MobDreamObject, new DreamProcArguments(new(), arguments));
+                            await state.Call(verb, verbSrc, Mob, new DreamProcArguments(new(), arguments));
                             return DreamValue.Null;
                         });
                     }
@@ -384,8 +406,7 @@ namespace OpenDreamRuntime
             return task;
         }
 
-        public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3)
-        {
+        public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
             var task = MakePromptTask(out var promptId);
             var msg = new MsgAlert() {
                 PromptId = promptId,
@@ -400,8 +421,7 @@ namespace OpenDreamRuntime
             return task;
         }
 
-        private Task<DreamValue> MakePromptTask(out int promptId)
-        {
+        private Task<DreamValue> MakePromptTask(out int promptId) {
             TaskCompletionSource<DreamValue> tcs = new();
             promptId = _nextPromptEvent++;
 
@@ -421,7 +441,7 @@ namespace OpenDreamRuntime
                 Data = resource.ResourceData
             };
 
-            Session.ConnectedClient.SendMessage(msg);
+            Session?.ConnectedClient.SendMessage(msg);
         }
 
         public void Browse(string body, string? options) {
@@ -454,22 +474,22 @@ namespace OpenDreamRuntime
                 HtmlSource = body
             };
 
-            Session.ConnectedClient.SendMessage(msg);
+            Session?.ConnectedClient.SendMessage(msg);
         }
 
-        public void WinSet(string controlId, string @params) {
+        public void WinSet(string? controlId, string @params) {
             var msg = new MsgWinSet() {
                 ControlId = controlId,
                 Params = @params
             };
 
-            Session.ConnectedClient.SendMessage(msg);
+            Session?.ConnectedClient.SendMessage(msg);
         }
 
         public void WinClone(string controlId, string cloneId) {
             var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId, };
 
-            Session.ConnectedClient.SendMessage(msg);
+            Session?.ConnectedClient.SendMessage(msg);
         }
     }
 }

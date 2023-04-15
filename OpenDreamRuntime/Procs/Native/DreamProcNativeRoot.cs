@@ -69,8 +69,10 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (String.IsNullOrEmpty(button1)) button1 = "Ok";
 
-            DreamConnection connection = DreamManager.GetConnectionFromMob(mob);
-            return await connection.Alert(title, message, button1, button2, button3);
+            if (mob != null && DreamManager.TryGetConnectionFromMob(mob, out var connection))
+                return await connection.Alert(title, message, button1, button2, button3);
+            else
+                return new("OK"); // Returns "OK" if Usr is invalid
         }
 
         [DreamProc("animate")]
@@ -477,19 +479,23 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("type", Type = DreamValueType.String)] // Must be from a valid list
         [DreamProcParameter("size", Type = DreamValueType.Float)]
         [DreamProcParameter("color", Type = DreamValueType.String)]
-        [DreamProcParameter("flags", Type = DreamValueType.Float)]
         [DreamProcParameter("x", Type = DreamValueType.Float)]
         [DreamProcParameter("y", Type = DreamValueType.Float)]
         [DreamProcParameter("offset", Type = DreamValueType.Float)]
-        [DreamProcParameter("threshold", Type = DreamValueType.String)]
-        [DreamProcParameter("alpha", Type = DreamValueType.Float)]
+        [DreamProcParameter("flags", Type = DreamValueType.Float)]
+        [DreamProcParameter("border", Type = DreamValueType.Float)]
+        [DreamProcParameter("render_source", Type = DreamValueType.String)]
+        [DreamProcParameter("icon", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("space", Type = DreamValueType.Float)]
         [DreamProcParameter("transform", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("blend_mode", Type = DreamValueType.Float)]
+        [DreamProcParameter("density", Type = DreamValueType.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueType.String)]
         [DreamProcParameter("factor", Type = DreamValueType.Float)]
         [DreamProcParameter("repeat", Type = DreamValueType.Float)]
         [DreamProcParameter("radius", Type = DreamValueType.Float)]
         [DreamProcParameter("falloff", Type = DreamValueType.Float)]
+        [DreamProcParameter("alpha", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
                 return DreamValue.Null;
@@ -1447,7 +1453,7 @@ namespace OpenDreamRuntime.Procs.Native {
              * in which it takes, some sort of "opcode" and some system of arguments and does stuff with them,
              * all of which are just aliases for already-existing behaviour in DM through the /matrix methods
              * (m.Clone() or m.Interpolate() and so on)
-             * 
+             *
              * Normally I'd never stoop to developing any such ridiculous behaviour, but for some reason,
              * Paradise and a few other targets actually make use of these alternative signatures.
              * So, here's that.
@@ -2512,9 +2518,10 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_stat(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue name = arguments.GetArgument(0, "Name");
             DreamValue value = arguments.GetArgument(1, "Value");
-            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            OutputToStatPanel(connection, name, value);
+            if (DreamManager.TryGetConnectionFromMob(usr, out var connection))
+                OutputToStatPanel(connection, name, value);
+
             return DreamValue.Null;
         }
 
@@ -2526,14 +2533,17 @@ namespace OpenDreamRuntime.Procs.Native {
             string panel = arguments.GetArgument(0, "Panel").GetValueAsString();
             DreamValue name = arguments.GetArgument(1, "Name");
             DreamValue value = arguments.GetArgument(2, "Value");
-            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            connection.SetOutputStatPanel(panel);
-            if (name != DreamValue.Null || value != DreamValue.Null) {
-                OutputToStatPanel(connection, name, value);
+            if (DreamManager.TryGetConnectionFromMob(usr, out var connection)) {
+                connection.SetOutputStatPanel(panel);
+                if (name != DreamValue.Null || value != DreamValue.Null) {
+                    OutputToStatPanel(connection, name, value);
+                }
+
+                return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
             }
 
-            return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
+            return DreamValue.False;
         }
 
         [DreamProc("tan")]
@@ -2939,7 +2949,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamConnection? connection;
 
             if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
-                connection = DreamManager.GetConnectionFromMob(mob);
+                DreamManager.TryGetConnectionFromMob(mob, out connection);
             } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
                 connection = DreamManager.GetConnectionFromClient(client);
             } else {
@@ -2955,16 +2965,18 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("control_id", Type = DreamValueType.String)]
         public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.State state) {
             DreamValue player = state.Arguments.GetArgument(0, "player");
-            if (!state.Arguments.GetArgument(1, "control_id").TryGetValueAsString(out string controlId)) {
+            if (!state.Arguments.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
                 return new DreamValue("");
             }
 
-            DreamConnection connection;
-            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out DreamObject mob)) {
-                connection = DreamManager.GetConnectionFromMob(mob);
-            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out DreamObject client)) {
+            DreamConnection? connection = null;
+            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
+                DreamManager.TryGetConnectionFromMob(mob, out connection);
+            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
                 connection = DreamManager.GetConnectionFromClient(client);
-            } else {
+            }
+
+            if (connection == null) {
                 throw new Exception($"Invalid client {player}");
             }
 
@@ -2980,13 +2992,15 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue controlId = arguments.GetArgument(1, "control_id");
             string winsetControlId = (controlId != DreamValue.Null) ? controlId.GetValueAsString() : null;
             string winsetParams = arguments.GetArgument(2, "params").GetValueAsString();
-            DreamConnection connection;
 
+            DreamConnection? connection = null;
             if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
-                connection = DreamManager.GetConnectionFromMob(mob);
+                DreamManager.TryGetConnectionFromMob(mob, out connection);
             } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
                 connection = DreamManager.GetConnectionFromClient(client);
-            } else {
+            }
+
+            if (connection == null) {
                 throw new ArgumentException($"Invalid \"player\" argument {player}");
             }
 

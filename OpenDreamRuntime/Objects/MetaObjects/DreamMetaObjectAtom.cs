@@ -1,10 +1,7 @@
 using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
-using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
-using System.Diagnostics;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectAtom : IDreamMetaObject {
@@ -13,10 +10,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public static readonly Dictionary<DreamObject, VerbsList> VerbLists = new();
 
-        [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
+        private ServerAppearanceSystem? _appearanceSystem;
 
         private readonly Dictionary<DreamObject, DreamFilterList> _filterLists = new();
 
@@ -63,83 +61,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
             switch (varName) {
-                case "icon":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        if (_resourceManager.TryLoadIcon(value, out var icon)) {
-                            appearance.Icon = icon.Id;
-                        } else {
-                            appearance.Icon = null;
-                        }
-                    });
-                    break;
-                case "icon_state":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsString(out appearance.IconState);
-                    });
-                    break;
-                case "pixel_x":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsInteger(out appearance.PixelOffset.X);
-                    });
-                    break;
-                case "pixel_y":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsInteger(out appearance.PixelOffset.Y);
-                    });
-                    break;
-                case "layer":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsFloat(out appearance.Layer);
-                    });
-                    break;
-                case "invisibility":
-                    value.TryGetValueAsInteger(out int vis);
-                    vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.Invisibility = vis;
-                    });
-                    dreamObject.SetVariableValue("invisibility", new DreamValue(vis));
-                    break;
-                case "opacity":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        value.TryGetValueAsInteger(out var opacity);
-                        appearance.Opacity = (opacity != 0);
-                    });
-                    break;
-                case "mouse_opacity":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        //TODO figure out the weird inconsistencies with this being internally clamped
-                        value.TryGetValueAsInteger(out var opacity);
-                        appearance.MouseOpacity = (MouseOpacity)opacity;
-                    });
-                    break;
-                case "color":
-                    if(value.TryGetValueAsDreamList(out var list)) {
-                        if(DreamProcNativeHelpers.TryParseColorMatrix(list, out var matrix)) {
-                            _atomManager.UpdateAppearance(dreamObject, appearance => {
-                                appearance.SetColor(in matrix);
-                            });
-                            break;
-                        }
-                        throw new ArgumentException("Invalid /list provided to /atom.color - it is not a color matrix");
-                    }
-
-                    value.TryGetValueAsString(out var colorString);
-                    colorString ??= "white";
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        appearance.SetColor(colorString);
-                    });
-                    break;
-                case "dir":
-                    _atomManager.UpdateAppearance(dreamObject, appearance => {
-                        //TODO figure out the weird inconsistencies with this being internally clamped
-                        if (!value.TryGetValueAsInteger(out var dir))
-                        {
-                            dir = 2; // SOUTH
-                        }
-                        appearance.Direction = (AtomDirection)dir;
-                    });
-                    break;
                 case "transform":  {
                     _atomManager.UpdateAppearance(dreamObject, appearance => {
                         float[] matrixArray = value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var matrix)
@@ -217,11 +138,27 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     break;
                 }
+                default:
+                    if (_atomManager.IsValidAppearanceVar(varName)) {
+                        _atomManager.UpdateAppearance(dreamObject, appearance => {
+                            _atomManager.SetAppearanceVar(appearance, varName, value);
+                        });
+                    }
+
+                    break;
             }
         }
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
+                case "appearance": {
+                    var appearance = _atomManager.MustGetAppearance(dreamObject);
+                    if (appearance == null) // Shouldn't be possible?
+                        return DreamValue.Null;
+
+                    var copy = new IconAppearance(appearance); // Return a copy of our appearance
+                    return new(copy);
+                }
                 case "transform":
                     // Clone the matrix
                     DreamObject matrix = _objectTree.CreateObject(_objectTree.Matrix);
@@ -232,100 +169,44 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new DreamValue(VerbLists[dreamObject]);
                 case "filters":
                     return new DreamValue(_filterLists[dreamObject]);
-                case "color":
-                    if(!_atomManager.TryGetAppearance(dreamObject, out IconAppearance? appearance)) {
-                        //This is here to avoid infinite loops, since the lazy-init of appearances
-                        // (that would occur if we tried to just invoke MustGetAppearance())
-                        //requires accessing the color var.
-                        if (dreamObject.ObjectDefinition.TryGetVariable("color",out var colorValue)) {
-                            return colorValue;
-                        }
-                        return DreamValue.Null; //idek
-                    }
-                    if(appearance.SillyColorFilter is not null) {
-                        var matrixList = _objectTree.CreateList(20);
-                        foreach (float entry in appearance.SillyColorFilter.Color.GetValues())
-                            matrixList.AddValue(new DreamValue(entry));
-                        return new DreamValue(matrixList);
-                    }
-                    if (appearance.Color == Color.White) {
-                        return DreamValue.Null;
-                    }
-                    return new DreamValue(appearance.Color.ToHexNoAlpha().ToLower()); // BYOND quirk, does not return the alpha channel for some reason.
                 default:
+                    if (_atomManager.IsValidAppearanceVar(varName)) {
+                        var appearance = _atomManager.MustGetAppearance(dreamObject);
+
+                        return _atomManager.GetAppearanceVar(appearance, varName);
+                    }
+
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
 
         private IconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
-            IconAppearance appearance = new IconAppearance();
+            IconAppearance overlay;
 
-            if (value.TryGetValueAsString(out string valueString)) {
-                appearance.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
-                appearance.IconState = valueString;
-            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.MutableAppearance, out var mutableAppearance)) {
-                DreamValue icon = mutableAppearance.GetVariable("icon");
-                if (icon.TryGetValueAsDreamResource(out var iconResource)) {
-                    appearance.Icon = iconResource.Id;
-                } else if (icon == DreamValue.Null) {
-                    appearance.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
-                }
-
-                DreamValue colorValue = mutableAppearance.GetVariable("color");
-                if (colorValue.TryGetValueAsString(out string color)) {
-                    appearance.SetColor(color);
-                } else {
-                    appearance.SetColor("white");
-                }
-
-                appearance.IconState = mutableAppearance.GetVariable("icon_state").TryGetValueAsString(out var iconState) ? iconState : null;
-                mutableAppearance.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
-                mutableAppearance.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
-                mutableAppearance.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
-            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var image)) {
-                DreamValue icon = image.GetVariable("icon");
-                DreamValue iconState = image.GetVariable("icon_state");
-
-                appearance.Icon = icon.TryGetValueAsDreamResource(out var iconResource)
-                    ? iconResource.Id
-                    : null;
-
-                if (iconState.TryGetValueAsString(out var iconStateString)) appearance.IconState = iconStateString;
-                var color = image.GetVariable("color").TryGetValueAsString(out var colorString)
-                    ? colorString
-                    : "#FFFFFF"; // Defaults to white
-                appearance.SetColor(color);
-                appearance.Direction = (AtomDirection) image.GetVariable("dir").GetValueAsInteger();
-                image.GetVariable("layer").TryGetValueAsFloat(out appearance.Layer);
-                image.GetVariable("pixel_x").TryGetValueAsInteger(out appearance.PixelOffset.X);
-                image.GetVariable("pixel_y").TryGetValueAsInteger(out appearance.PixelOffset.Y);
-            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var icon)) {
-                var iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[icon];
-                var resource = iconObj.GenerateDMI();
-
-                atom.GetVariable("icon_state").TryGetValueAsString(out var iconState);
-
-                appearance.Icon = resource.Id;
-                appearance.IconState = resource.DMI.GetStateOrDefault(iconState)?.Name;
-            } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var overlayAtom)) {
-                appearance = _atomManager.CreateAppearanceFromAtom(overlayAtom);
-            } else if (value.TryGetValueAsType(out var type)) {
-                appearance = _atomManager.CreateAppearanceFromDefinition(type.ObjectDefinition);
+            if (value.TryGetValueAsString(out var iconState)) {
+                overlay = new IconAppearance() {
+                    IconState = iconState
+                };
             } else {
-                throw new Exception($"Invalid overlay {value}");
+                overlay = _atomManager.CreateAppearanceFrom(value);
             }
 
-            return appearance;
+            if (overlay.Icon == null) {
+                overlay.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
+            }
+
+            return overlay;
         }
 
         private void OverlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
             DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
 
             _atomManager.UpdateAppearance(atom, appearance => {
                 IconAppearance overlay = CreateOverlayAppearance(atom, value);
-                uint id = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(overlay);
+                uint id = _appearanceSystem.AddAppearance(overlay);
 
                 appearance.Overlays.Add(id);
             });
@@ -333,10 +214,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         private void OverlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
             DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
             IconAppearance overlayAppearance = CreateOverlayAppearance(atom, value);
-            uint? overlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(overlayAppearance);
+            uint? overlayAppearanceId = _appearanceSystem.GetAppearanceId(overlayAppearance);
             if (overlayAppearanceId == null) return;
 
             _atomManager.UpdateAppearance(atom, appearance => {
@@ -344,25 +226,27 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             });
         }
 
-        private void UnderlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
+        private void UnderlayValueAssigned(DreamList underList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
-            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
+            DreamObject atom = _atomManager.UnderlaysListToAtom[underList];
 
             _atomManager.UpdateAppearance(atom, appearance => {
                 IconAppearance underlay = CreateOverlayAppearance(atom, value);
-                uint id = EntitySystem.Get<ServerAppearanceSystem>().AddAppearance(underlay);
+                uint id = _appearanceSystem.AddAppearance(underlay);
 
                 appearance.Underlays.Add(id);
             });
         }
 
-        private void UnderlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
+        private void UnderlayBeforeValueRemoved(DreamList underlayList, DreamValue key, DreamValue value) {
             if (value == DreamValue.Null) return;
+            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
 
-            DreamObject atom = _atomManager.UnderlaysListToAtom[overlayList];
+            DreamObject atom = _atomManager.UnderlaysListToAtom[underlayList];
             IconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);
-            uint? underlayAppearanceId = EntitySystem.Get<ServerAppearanceSystem>().GetAppearanceId(underlayAppearance);
+            uint? underlayAppearanceId = _appearanceSystem.GetAppearanceId(underlayAppearance);
             if (underlayAppearanceId == null) return;
 
             _atomManager.UpdateAppearance(atom, appearance => {

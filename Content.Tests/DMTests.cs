@@ -7,6 +7,7 @@ using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
+using OpenDreamShared.Rendering;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
@@ -48,6 +49,7 @@ namespace Content.Tests
             _taskManager.Initialize();
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.RegisterClass<DMISpriteComponent>();
+            componentFactory.RegisterClass<DreamMobSightComponent>(); //wow this is terrible TODO figure out why this is necessary
             componentFactory.GenerateNetIds();
             Compile(InitializeEnvironment);
             _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));

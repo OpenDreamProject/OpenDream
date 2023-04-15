@@ -155,6 +155,7 @@ namespace OpenDreamRuntime {
             _objectTree.SetMetaObject(_objectTree.Turf, new DreamMetaObjectTurf());
             _objectTree.SetMetaObject(_objectTree.Movable, new DreamMetaObjectMovable());
             _objectTree.SetMetaObject(_objectTree.Mob, new DreamMetaObjectMob());
+            _objectTree.SetMetaObject(_objectTree.Image, new DreamMetaObjectImage());
             _objectTree.SetMetaObject(_objectTree.Icon, new DreamMetaObjectIcon());
             _objectTree.SetMetaObject(_objectTree.Filter, new DreamMetaObjectFilter());
             _objectTree.SetMetaObject(_objectTree.Savefile, new DreamMetaObjectSavefile());

@@ -3,17 +3,18 @@ using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class IconAppearance : IEquatable<IconAppearance> {
         [ViewVariables] public int? Icon;
-        [ViewVariables] public string IconState;
-        [ViewVariables] public AtomDirection Direction;
+        [ViewVariables] [CanBeNull] public string IconState;
+        [ViewVariables] public AtomDirection Direction = AtomDirection.South;
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
+        [ViewVariables] public byte Alpha = 255;
         /// <summary>
         /// An appearance can gain a color matrix filter by two possible forces: <br/>
         /// 1. the /atom.color var is modified. <br/>
@@ -25,10 +26,15 @@ namespace OpenDreamShared.Dream {
         /// The reason we don't just take the slow path and always use this filter is not just for optimization,<br/>
         /// it's also for parity! See <see cref="TryRepresentMatrixAsRGBAColor(in ColorMatrix, out Color?)"/> for more.
         /// </remarks>
-        [ViewVariables] public DreamFilterColor? SillyColorFilter;
-        [ViewVariables] public float Layer;
+        [ViewVariables] public ColorMatrix ColorMatrix = ColorMatrix.Identity;
+        [ViewVariables] public float Layer = -1f;
+        [ViewVariables] public int Plane = -32767;
+        [ViewVariables] public BlendMode BlendMode = BlendMode.BLEND_DEFAULT;
+        [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
+        [ViewVariables] [CanBeNull] public string RenderSource;
+        [ViewVariables] [CanBeNull] public string RenderTarget;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
@@ -46,8 +52,14 @@ namespace OpenDreamShared.Dream {
             Direction = appearance.Direction;
             PixelOffset = appearance.PixelOffset;
             Color = appearance.Color;
-            SillyColorFilter = appearance.SillyColorFilter;
+            Alpha = appearance.Alpha;
+            ColorMatrix = appearance.ColorMatrix;
             Layer = appearance.Layer;
+            Plane = appearance.Plane;
+            RenderSource = appearance.RenderSource;
+            RenderTarget = appearance.RenderTarget;
+            BlendMode = appearance.BlendMode;
+            AppearanceFlags = appearance.AppearanceFlags;
             Invisibility = appearance.Invisibility;
             Opacity = appearance.Opacity;
             MouseOpacity = appearance.MouseOpacity;
@@ -70,8 +82,14 @@ namespace OpenDreamShared.Dream {
             if (appearance.Direction != Direction) return false;
             if (appearance.PixelOffset != PixelOffset) return false;
             if (appearance.Color != Color) return false;
-            if (appearance.SillyColorFilter != SillyColorFilter) return false;
+            if (appearance.Alpha != Alpha) return false;
+            if (!appearance.ColorMatrix.Equals(ColorMatrix)) return false;
             if (appearance.Layer != Layer) return false;
+            if (appearance.Plane != Plane) return false;
+            if (appearance.RenderSource != RenderSource) return false;
+            if (appearance.RenderTarget != RenderTarget) return false;
+            if (appearance.BlendMode != BlendMode) return false;
+            if (appearance.AppearanceFlags != AppearanceFlags) return false;
             if (appearance.Invisibility != Invisibility) return false;
             if (appearance.Opacity != Opacity) return false;
             if (appearance.MouseOpacity != MouseOpacity) return false;
@@ -126,26 +144,6 @@ namespace OpenDreamShared.Dream {
             return maybeColor is not null;
         }
 
-        public void RemoveColorFilter() {
-            for (int i = 0; i < Filters.Count; i++) {
-                if (Filters[i] is DreamFilterColor) {
-                    Filters.RemoveAt(i);
-                    return;
-                }
-            }
-        }
-
-        /// <summary>
-        /// Iterates over everything in <see cref="Filters"/>, plus <see cref="SillyColorFilter"/> if it's there, bein silly.
-        /// </summary>
-        public IEnumerable<DreamFilter> GetAllFilters() {
-            if (SillyColorFilter is not null)
-                yield return SillyColorFilter;
-            foreach (DreamFilter filter in Filters) {
-                yield return filter;
-            }
-        }
-
         public override int GetHashCode() {
             HashCode hashCode = new HashCode();
 
@@ -154,11 +152,17 @@ namespace OpenDreamShared.Dream {
             hashCode.Add(Direction);
             hashCode.Add(PixelOffset);
             hashCode.Add(Color);
-            hashCode.Add(SillyColorFilter);
+            hashCode.Add(ColorMatrix);
             hashCode.Add(Layer);
             hashCode.Add(Invisibility);
             hashCode.Add(Opacity);
             hashCode.Add(MouseOpacity);
+            hashCode.Add(Alpha);
+            hashCode.Add(Plane);
+            hashCode.Add(RenderSource);
+            hashCode.Add(RenderTarget);
+            hashCode.Add(BlendMode);
+            hashCode.Add(AppearanceFlags);
 
             foreach (int overlay in Overlays) {
                 hashCode.Add(overlay);
@@ -185,10 +189,8 @@ namespace OpenDreamShared.Dream {
         /// <exception cref="ArgumentException">Thrown if color is not valid.</exception>
         public void SetColor(string color) {
             // TODO: the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
-            if (SillyColorFilter is not null) {
-                SillyColorFilter = null; // reset our color matrix if we had one
-            }
-            RemoveColorFilter();
+            ColorMatrix = ColorMatrix.Identity; // reset our color matrix if we had one
+
             if (color == string.Empty) {
                 Color = Color.White;
                 return;
@@ -201,22 +203,39 @@ namespace OpenDreamShared.Dream {
         /// Sets the 'color' attribute to a color matrix, which will be used on the icon later on by a shader.
         /// </summary>
         public void SetColor(in ColorMatrix matrix) {
-            RemoveColorFilter();
+
             if (TryRepresentMatrixAsRGBAColor(matrix, out var matrixColor)) {
                 Color = matrixColor.Value;
-                SillyColorFilter = null;
+                ColorMatrix = ColorMatrix.Identity;
                 return;
             }
             Color = Color.White;
-            if (SillyColorFilter is not null) { // If we already had a matrix!
-                SillyColorFilter.Color = matrix;
-                return;
-            }
-            SillyColorFilter = new DreamFilterColor { // Am I like... doing this right?
-                Color = matrix,
-                Space = 0, // TODO: Support color mappings that aren't RGB.
-                FilterType = "color"
-            };
+            ColorMatrix = matrix;
         }
+    }
+
+    public enum BlendMode {
+        BLEND_DEFAULT,
+        BLEND_OVERLAY,
+        BLEND_ADD,
+        BLEND_SUBTRACT,
+        BLEND_MULTIPLY,
+        BLEND_INSET_OVERLAY
+    }
+
+    public enum AppearanceFlags {
+        None = 0,
+        LONG_GLIDE = 1,
+        RESET_COLOR = 2,
+        RESET_ALPHA = 4,
+        RESET_TRANSFORM = 8,
+        NO_CLIENT_COLOR = 16,
+        KEEP_TOGETHER = 32,
+        KEEP_APART = 64,
+        PLANE_MASTER = 128,
+        TILE_BOUND = 256,
+        PIXEL_SCALE = 512,
+        PASS_MOUSE = 1024,
+        TILE_MOVER = 2048
     }
 }

@@ -109,7 +109,7 @@ window "statwindow"
 window "mainwindow"
 	elem "mainwindow"
 		type = MAIN
-		size = 0x0
+		size = 800x400
 		is-default = true
 		menu = "menu"
 		macro = "macro"

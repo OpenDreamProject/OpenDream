@@ -26,6 +26,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            _atomManager.CreateMovableEntity(dreamObject); // TODO: Should probably be moved to earlier in init; before even <init> is called.
+
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             DreamValue locArgument = creationArguments.GetArgument(0, "loc");

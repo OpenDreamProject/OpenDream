@@ -1633,8 +1633,8 @@ namespace OpenDreamRuntime.Procs {
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             IEnumerable<DreamConnection> clients;
-            if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Mob)) {
-                clients = new[] { state.DreamManager.GetConnectionFromMob(receiver) };
+            if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Mob) && state.DreamManager.TryGetConnectionFromMob(receiver, out var connection)) {
+                clients = new[] { connection };
             } else if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Client)) {
                 clients = new[] { state.DreamManager.GetConnectionFromClient(receiver) };
             } else if (receiver == state.DreamManager.WorldInstance) {

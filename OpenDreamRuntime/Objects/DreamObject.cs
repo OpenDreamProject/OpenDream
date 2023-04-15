@@ -37,7 +37,7 @@ namespace OpenDreamRuntime.Objects {
 
         public void Delete(IDreamManager manager) {
             if (Deleted) return;
-            ObjectDefinition?.MetaObject?.OnObjectDeleted(this);
+            ObjectDefinition.MetaObject?.OnObjectDeleted(this);
             Deleted = true;
             //we release all relevant information, making this a very tiny object
             _variables = null;

@@ -49,7 +49,16 @@
 
 	proc/New(TopicData)
 		view = world.view
-		mob = new world.mob(null)
+
+		// Search every mob for one with our ckey
+		for (var/mob/M in world)
+			if (M.key == key)
+				mob = M
+				break
+
+		if (mob == null) // No existing mob, create a default one
+			mob = new world.mob(locate(1,1,1)) // TODO: Find nearest non-dense turf
+
 		return mob
 
 	proc/Del()

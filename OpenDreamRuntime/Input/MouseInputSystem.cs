@@ -34,10 +34,10 @@ namespace OpenDreamRuntime.Input {
 
         private void HandleAtomClick(IAtomClickedEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {
             IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
-            var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
+            var connection = _dreamManager.GetConnectionBySession(session);
+            var usr = connection.Mob;
 
-            client.GetVariable("mob").TryGetValueAsDreamObject(out var usr);
-            client.SpawnProc("Click", ConstructClickArguments(atom, e), usr: usr);
+            connection.Client?.SpawnProc("Click", ConstructClickArguments(atom, e), usr: usr);
         }
 
         private DreamProcArguments ConstructClickArguments(DreamObject atom, IAtomClickedEvent e) {

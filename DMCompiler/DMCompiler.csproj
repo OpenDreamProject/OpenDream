@@ -6,11 +6,14 @@
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
-    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
     <DMStandard Include="DMStandard\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
   </ItemGroup>
 
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">

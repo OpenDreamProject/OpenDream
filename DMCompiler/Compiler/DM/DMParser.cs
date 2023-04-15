@@ -2351,6 +2351,11 @@ namespace DMCompiler.Compiler.DM {
 
                         return new DMASTInitial(identifier.Location, callParameters[0].Value);
                     }
+                    case "nameof": {
+                        if (callParameters.Length != 1) Error("nameof() requires 1 argument");
+
+                        return new DMASTNameof(identifier.Location, callParameters[0].Value);
+                    }
                     case "issaved": {
                         if (callParameters.Length != 1) Error("issaved() requires 1 argument");
 

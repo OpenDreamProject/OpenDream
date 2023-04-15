@@ -1,9 +1,5 @@
-using System.IO;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Resources;
-using ParsedDMIDescription = OpenDreamShared.Resources.DMIParser.ParsedDMIDescription;
 
 namespace OpenDreamRuntime.Objects.MetaObjects;
 
@@ -12,7 +8,6 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
     public IDreamMetaObject? ParentType { get; set; }
 
     [Dependency] private readonly DreamResourceManager _rscMan = default!;
-    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
     public DreamMetaObjectIcon() {
         IoCManager.InjectDependencies(this);

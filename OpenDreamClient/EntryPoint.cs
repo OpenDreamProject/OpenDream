@@ -70,7 +70,6 @@ namespace OpenDreamClient {
             lightManager.DrawShadows = true;
 
             _overlayManager.AddOverlay(new DreamViewOverlay());
-            _overlayManager.AddOverlay(new DreamScreenOverlay());
 
             _dreamInterface.Initialize();
             IoCManager.Resolve<IDreamSoundEngine>().Initialize();

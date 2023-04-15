@@ -56,6 +56,7 @@ namespace DMCompiler.Compiler.DM {
             { "as", TokenType.DM_As },
             { "set", TokenType.DM_Set },
             { "call", TokenType.DM_Call },
+            { "call_ext", TokenType.DM_Call},
             { "spawn", TokenType.DM_Spawn },
             { "goto", TokenType.DM_Goto },
             { "step", TokenType.DM_Step },

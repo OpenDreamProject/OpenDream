@@ -13,7 +13,7 @@
 	var/list/underlays = null
 	var/list/vis_locs = null as opendream_unimplemented
 	var/list/vis_contents = null as opendream_unimplemented
-  
+
 	var/atom/loc
 	var/dir = SOUTH
 	var/x = 0
@@ -27,7 +27,7 @@
 	var/icon = null
 	var/icon_state = ""
 	var/layer = 2.0
-	var/plane = FLOAT_PLANE as opendream_unimplemented
+	var/plane = 0
 	var/alpha = 255
 	var/color = "#FFFFFF"
 	var/invisibility = 0
@@ -36,7 +36,7 @@
 	var/luminosity = 0 as opendream_unimplemented
 	var/opacity = 0 as opendream_unimplemented
 	var/matrix/transform
-	var/blend_mode = 0 as opendream_unimplemented
+	var/blend_mode = 0
 
 	var/gender = NEUTER
 	var/density = FALSE
@@ -44,19 +44,19 @@
 	var/maptext as opendream_unimplemented
 
 	var/list/filters = null
-	var/appearance as opendream_unimplemented
-	var/appearance_flags as opendream_unimplemented
+	var/appearance
+	var/appearance_flags = 0
 	var/maptext_width as opendream_unimplemented
 	var/maptext_height as opendream_unimplemented
 	var/maptext_x = 32 as opendream_unimplemented
 	var/maptext_y = 32 as opendream_unimplemented
 	var/step_x as opendream_unimplemented
 	var/step_y as opendream_unimplemented
-	var/render_source as opendream_unimplemented
+	var/render_source
 	var/mouse_drag_pointer as opendream_unimplemented
 	var/mouse_drop_pointer as opendream_unimplemented
 	var/mouse_over_pointer as opendream_unimplemented
-	var/render_target as opendream_unimplemented
+	var/render_target
 	var/vis_flags as opendream_unimplemented
 
 	proc/Click(location, control, params)

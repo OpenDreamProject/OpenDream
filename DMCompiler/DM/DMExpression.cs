@@ -69,6 +69,10 @@ namespace DMCompiler.DM {
             throw new CompileAbortException(Location, $"Cannot reference r-value");
         }
 
+        public virtual string GetNameof(DMObject dmObject, DMProc proc) {
+            throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
+        }
+
         public virtual DreamPath? Path => null;
     }
 

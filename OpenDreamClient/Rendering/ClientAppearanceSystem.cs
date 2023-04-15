@@ -4,6 +4,8 @@ using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
+using OpenDreamClient.Resources;
+using OpenDreamClient.Resources.ResourceTypes;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientAppearanceSystem : SharedAppearanceSystem {
@@ -19,6 +21,7 @@ namespace OpenDreamClient.Rendering {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly OccluderSystem _occluderSystem = default!;
+        [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -96,7 +99,7 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        public ShaderInstance GetFilterShader(DreamFilter filter) {
+        public ShaderInstance GetFilterShader(DreamFilter filter, Dictionary<string, IRenderTexture> renderSourceLookup) {
             if (!_filterShaders.TryGetValue(filter, out var instance)) {
                 var protoManager = IoCManager.Resolve<IPrototypeManager>();
 
@@ -104,6 +107,19 @@ namespace OpenDreamClient.Rendering {
 
                 switch (filter) {
                     case DreamFilterAlpha alpha:
+                        if(!String.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out var renderSourceTexture))
+                            instance.SetParameter("mask_texture", renderSourceTexture.Texture);
+                        else if(alpha.Icon != 0){
+                            _dreamResourceManager.LoadResourceAsync<DMIResource>(alpha.Icon, (DMIResource rsc) => {
+                                    instance.SetParameter("mask_texture", rsc.Texture);
+                                });
+                        }
+                        else{
+                            instance.SetParameter("mask_texture", Texture.Transparent);
+                        }
+                        instance.SetParameter("x",alpha.X);
+                        instance.SetParameter("y",alpha.Y);
+                        instance.SetParameter("flags",alpha.Flags);
                         break;
                     case DreamFilterAngularBlur angularBlur:
                         break;
@@ -114,15 +130,8 @@ namespace OpenDreamClient.Rendering {
                         break;
                     case DreamFilterColor color: {
                         //Since SWSL doesn't support 4x5 matrices, we need to get a bit silly.
-                        instance.SetParameter("colorMatrix", new Matrix4(
-                            color.Color.c11, color.Color.c12, color.Color.c13, color.Color.c14,
-                            color.Color.c21, color.Color.c22, color.Color.c23, color.Color.c24,
-                            color.Color.c31, color.Color.c32, color.Color.c33, color.Color.c34,
-                            color.Color.c41, color.Color.c42, color.Color.c43, color.Color.c44
-                            ));
-                        instance.SetParameter("offsetVector", new Vector4(
-                            color.Color.c51, color.Color.c52, color.Color.c53, color.Color.c54
-                            ));
+                        instance.SetParameter("colorMatrix", color.Color.GetMatrix4());
+                        instance.SetParameter("offsetVector", color.Color.GetOffsetVector());
                         //TODO: Support the alternative colour mappings.
                         break;
                     }

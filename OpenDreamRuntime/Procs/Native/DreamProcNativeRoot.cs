@@ -477,19 +477,23 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("type", Type = DreamValueType.String)] // Must be from a valid list
         [DreamProcParameter("size", Type = DreamValueType.Float)]
         [DreamProcParameter("color", Type = DreamValueType.String)]
-        [DreamProcParameter("flags", Type = DreamValueType.Float)]
         [DreamProcParameter("x", Type = DreamValueType.Float)]
         [DreamProcParameter("y", Type = DreamValueType.Float)]
         [DreamProcParameter("offset", Type = DreamValueType.Float)]
-        [DreamProcParameter("threshold", Type = DreamValueType.String)]
-        [DreamProcParameter("alpha", Type = DreamValueType.Float)]
+        [DreamProcParameter("flags", Type = DreamValueType.Float)]
+        [DreamProcParameter("border", Type = DreamValueType.Float)]
+        [DreamProcParameter("render_source", Type = DreamValueType.String)]
+        [DreamProcParameter("icon", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("space", Type = DreamValueType.Float)]
         [DreamProcParameter("transform", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("blend_mode", Type = DreamValueType.Float)]
+        [DreamProcParameter("density", Type = DreamValueType.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueType.String)]
         [DreamProcParameter("factor", Type = DreamValueType.Float)]
         [DreamProcParameter("repeat", Type = DreamValueType.Float)]
         [DreamProcParameter("radius", Type = DreamValueType.Float)]
         [DreamProcParameter("falloff", Type = DreamValueType.Float)]
+        [DreamProcParameter("alpha", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_filter(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             if (!arguments.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
                 return DreamValue.Null;

@@ -47,7 +47,9 @@ namespace OpenDreamClient.Input {
             ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocPos.Y, 32); // TODO: icon_size other than 32
 
             MapCoordinates mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
-            RendererMetaData entity = GetEntityUnderMouse(screenLocPos);
+            RendererMetaData? entity = GetEntityUnderMouse(screenLocPos);
+            if (entity == null)
+                return false;
 
             if (entity.ClickUID == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
                 // Grid coordinates are half a meter off from entity coordinates
@@ -56,9 +58,10 @@ namespace OpenDreamClient.Input {
                 if (_mapManager.TryFindGridAt(mapCoords, out var grid)){
                     Vector2i position = grid.CoordinatesToTile(mapCoords);
                     MapCoordinates worldPosition = grid.GridTileToWorld(position);
-                    Vector2i iconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
-                    RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc,  shift, ctrl, alt, iconPosition));
+                    Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
+                    RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc,  shift, ctrl, alt, turfIconPosition));
                 }
+
                 return true;
             }
 
@@ -79,12 +82,9 @@ namespace OpenDreamClient.Input {
                 return true;
             }
 
-            if (entity != null) { // Entity was clicked, and it wasn't a right click
-                // TODO: Take icon transformations into account
-                Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
-                RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, shift, ctrl, alt, iconPosition));
-            }
-
+            // TODO: Take icon transformations into account
+            Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
+            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, shift, ctrl, alt, iconPosition));
             return true;
         }
 

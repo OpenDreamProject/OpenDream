@@ -96,11 +96,11 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!arguments.GetArgument(0, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
             if (arguments.GetArgument(0, "loop").TryGetValueAsInteger(out int loop))
-                throw new NotImplementedException("Looped animations are not implemented");
+                return DreamValue.Null; // TODO: Looped animations are not implemented
             if (arguments.GetArgument(0, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
-                throw new NotImplementedException("Non-linear easing types are not implemented");
+                return DreamValue.Null; // TODO: Non-linear animation easing types are not implemented"
             if (arguments.GetArgument(0, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
-                throw new NotImplementedException("Flags are not implemented");
+                return DreamValue.Null; // TODO: Animation flags are not implemented
 
             IAtomManager atomManager = IoCManager.Resolve<IAtomManager>();
             atomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {

@@ -1740,45 +1740,41 @@ namespace OpenDreamRuntime.Procs {
             DreamValue message, title, defaultValue;
 
             DreamValue firstArg = state.Pop();
-            if (firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Mob, out var recipientMob)) {
+            if (firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Mob, out var recipient) ||
+                firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Client, out recipient)) {
                 message = state.Pop();
                 title = state.Pop();
                 defaultValue = state.Pop();
             } else {
-                recipientMob = state.Usr;
+                recipient = state.Usr;
                 message = firstArg;
                 title = state.Pop();
                 defaultValue = state.Pop();
                 state.Pop(); //Fourth argument, should be null
             }
 
-            if (recipientMob == null) {
+            DreamConnection? connection = null;
+            if (recipient?.IsSubtypeOf(state.Proc.ObjectTree.Mob) == true)
+                state.Proc.DreamManager.TryGetConnectionFromMob(recipient, out connection);
+            else if (recipient?.IsSubtypeOf(state.Proc.ObjectTree.Client) == true)
+                connection = state.Proc.DreamManager.GetConnectionFromClient(recipient);
+
+            if (connection == null) {
                 state.Push(DreamValue.Null);
                 return null;
             }
 
-            if (recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Client, out var clientObject)) {
-                DreamConnection? connection = state.DreamManager.GetConnectionFromClient(clientObject);
-                if (connection == null) {
-                    state.Push(DreamValue.Null);
-                    return null;
-                }
-
-                Task<DreamValue> promptTask;
-                if (list.TryGetValueAsDreamList(out var valueList)) {
-                    promptTask = connection.PromptList(types, valueList, title.Stringify(), message.Stringify(), defaultValue);
-                } else {
-                    promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
-                }
-
-                // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
-                var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async _ => await promptTask);
-                state.Thread.PushProcState(waiter);
-                return ProcStatus.Called;
+            Task<DreamValue> promptTask;
+            if (list.TryGetValueAsDreamList(out var valueList)) {
+                promptTask = connection.PromptList(types, valueList, title.Stringify(), message.Stringify(), defaultValue);
+            } else {
+                promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
             }
 
-            state.Push(DreamValue.Null);
-            return null;
+            // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
+            var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async _ => await promptTask);
+            state.Thread.PushProcState(waiter);
+            return ProcStatus.Called;
         }
 
         public static ProcStatus? LocateCoord(DMProcState state)

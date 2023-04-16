@@ -187,8 +187,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 overlay = new IconAppearance() {
                     IconState = iconState
                 };
+            } else if (_atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
+                overlay = overlayAppearance;
             } else {
-                overlay = _atomManager.CreateAppearanceFrom(value);
+                return new IconAppearance(); // Not a valid overlay, use a default appearance
             }
 
             if (overlay.Icon == null) {

@@ -39,7 +39,7 @@ sealed class DreamViewOverlay : Overlay {
     public bool MouseMapRenderEnabled = false;
     private IRenderTexture _mouseMapRenderTarget;
     public Texture MouseMap;
-    public Dictionary<Color, EntityUid> MouseMapLookup = new();
+    public Dictionary<Color, RendererMetaData> MouseMapLookup = new();
     private Dictionary<String, IRenderTexture> _renderSourceLookup = new();
     private Stack<IRenderTexture> _renderTargetsToReturn = new();
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
@@ -425,6 +425,7 @@ sealed class DreamViewOverlay : Overlay {
             }
             current.KeepTogetherGroup = flatKTGroup;
         }
+
         result.Add(current);
         return result;
     }
@@ -545,13 +546,11 @@ sealed class DreamViewOverlay : Overlay {
         //setup the mousemaplookup shader for use in DrawIcon()
         byte[] rgba = BitConverter.GetBytes(iconMetaData.GetHashCode());
         Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255); //TODO - this could result in misclicks due to hash-collision since we ditch a whole byte.
-        MouseMapLookup[targetColor] = iconMetaData.ClickUID;
-
-
+        MouseMapLookup[targetColor] = iconMetaData;
 
         Matrix3 tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
-                                    iconMetaData.TransformToApply *
-                                    Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
+                                 iconMetaData.TransformToApply *
+                                 Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
         Box2 drawBounds = new Box2(pixelPosition, pixelPosition+frame.Size);
 
         //go fast when the only filter is color, and we don't have more color things to consider

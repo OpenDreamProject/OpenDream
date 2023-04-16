@@ -91,6 +91,7 @@ namespace OpenDreamRuntime.Objects {
             if (valueIndex != -1) {
                 BeforeValueRemoved?.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
 
+                _associativeValues?.Remove(value);
                 _values.RemoveAt(valueIndex);
             }
         }

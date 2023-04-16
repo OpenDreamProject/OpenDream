@@ -52,14 +52,15 @@ namespace OpenDreamRuntime.Procs.Native {
             string message, title, button1, button2, button3;
 
             DreamValue usrArgument = state.Arguments.GetArgument(0, "Usr");
-            if (usrArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
+            if (usrArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var usr) ||
+                usrArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out usr)) {
                 message = state.Arguments.GetArgument(1, "Message").Stringify();
                 title = state.Arguments.GetArgument(2, "Title").Stringify();
                 button1 = state.Arguments.GetArgument(3, "Button1").Stringify();
                 button2 = state.Arguments.GetArgument(4, "Button2").Stringify();
                 button3 = state.Arguments.GetArgument(5, "Button3").Stringify();
-            } else {
-                mob = state.Usr;
+            } else { // Implicitly use usr, shift args over 1
+                usr = state.Usr;
                 message = usrArgument.Stringify();
                 title = state.Arguments.GetArgument(1, "Message").Stringify();
                 button1 = state.Arguments.GetArgument(2, "Title").Stringify();
@@ -67,12 +68,18 @@ namespace OpenDreamRuntime.Procs.Native {
                 button3 = state.Arguments.GetArgument(4, "Button2").Stringify();
             }
 
+            DreamConnection? connection = null;
+            if (usr?.IsSubtypeOf(ObjectTree.Mob) == true)
+                DreamManager.TryGetConnectionFromMob(usr, out connection);
+            else if (usr?.IsSubtypeOf(ObjectTree.Client) == true)
+                connection = DreamManager.GetConnectionFromClient(usr);
+
+            if (connection == null)
+                return new("OK"); // Returns "OK" if Usr is invalid
+
             if (String.IsNullOrEmpty(button1)) button1 = "Ok";
 
-            if (mob != null && DreamManager.TryGetConnectionFromMob(mob, out var connection))
-                return await connection.Alert(title, message, button1, button2, button3);
-            else
-                return new("OK"); // Returns "OK" if Usr is invalid
+            return await connection.Alert(title, message, button1, button2, button3);
         }
 
         [DreamProc("animate")]

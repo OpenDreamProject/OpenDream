@@ -39,7 +39,7 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
 
         int argIndex = 1;
         DreamValue loc = creationArguments.GetArgument(1, "loc");
-        if (loc.Type != DreamValue.DreamValueType.String) { // If it's a string, it's actually icon_state and not loc
+        if (loc.Type == DreamValue.DreamValueType.DreamObject) { // If it's not a DreamObject, it's actually icon_state and not loc
             dreamObject.SetVariableValue("loc", loc);
             argIndex = 2;
         }
@@ -50,6 +50,12 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
                 continue;
 
             _atomManager.SetAppearanceVar(appearance, argName, arg);
+            if (argName == "dir") {
+                // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir
+                // Setting dir after construction does not affect this
+                // This is undocumented and I hate it
+                appearance.InheritsDirection = false;
+            }
         }
 
         ObjectToAppearance.Add(dreamObject, appearance);
@@ -66,6 +72,10 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
             case "appearance":
                 if (!_atomManager.TryCreateAppearanceFrom(value, out var newAppearance))
                     return; // Ignore attempts to set an invalid appearance
+
+                // The dir does not get changed
+                var oldDir = ObjectToAppearance[dreamObject].Direction;
+                newAppearance.Direction = oldDir;
 
                 ObjectToAppearance[dreamObject] = newAppearance;
                 break;

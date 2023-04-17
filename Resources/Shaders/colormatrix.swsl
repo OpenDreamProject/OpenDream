@@ -2,8 +2,8 @@
 //caused by DM colour matrices: https://secure.byond.com/docs/ref/#/{notes}/color-matrix
 //In general, our code should try to avoid using this shader, in favour of the 'modulate' Color parameter available in some RT/Clyde drawing routines.
 //This should only be used for color transformations that can only be expressed as the linear algebra nonsense featured below.
-
-blend_mode none; // Assuming that Wix's inclusion of this ends up in RT, here
+blend_mode none;
+light_mode unshaded;
 
 uniform lowp mat4 colorMatrix;
 uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is

@@ -91,6 +91,7 @@ namespace OpenDreamRuntime.Objects {
             if (valueIndex != -1) {
                 BeforeValueRemoved?.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
 
+                _associativeValues?.Remove(value);
                 _values.RemoveAt(valueIndex);
             }
         }
@@ -430,13 +431,6 @@ namespace OpenDreamRuntime.Objects {
 
             DreamMetaObjectFilter.FilterAttachedTo[copy] = this;
             _atomManager.UpdateAppearance(_atom, appearance => {
-                // If this appearance already has a color filter (from /atom.color)
-                if(copy is DreamFilterColor && appearance.SillyColorFilter is not null) {
-                    // This is to support an edge case where an atom's .color var has been set to a matrix, and then it also gets a color filter.
-                    // In BYOND, this apparently causes a crash or something, depending on the order.
-                    // Lets just... try to support it though, huh? :^)
-                    appearance.SillyColorFilter = null;
-                }
                 appearance.Filters.Add(copy);
             });
         }

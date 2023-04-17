@@ -415,6 +415,7 @@ namespace DMCompiler.DM.Visitors {
                     "icon" => true,
                     "file" => true,
                     "sound" => true,
+                    "nameof" => true,
                     _ => false
                 },
 

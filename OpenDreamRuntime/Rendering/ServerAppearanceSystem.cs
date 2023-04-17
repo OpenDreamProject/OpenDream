@@ -1,5 +1,4 @@
-﻿using OpenDreamShared.Rendering;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
@@ -7,8 +6,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamRuntime.Rendering {
     sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-        private Dictionary<IconAppearance, uint> _appearanceToId = new();
-        private Dictionary<uint, IconAppearance> _idToAppearance = new();
+        private readonly Dictionary<IconAppearance, uint> _appearanceToId = new();
+        private readonly Dictionary<uint, IconAppearance> _idToAppearance = new();
         private uint _appearanceIdCounter = 0;
 
         [Dependency] private readonly IPlayerManager _playerManager = default!;

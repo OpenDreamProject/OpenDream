@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Objects;
 using Robust.Server.Player;
 using Robust.Shared.Timing;
@@ -23,16 +24,12 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Datums { get; set; }
         public Random Random { get; set; }
         public Dictionary<string, List<DreamObject>> Tags { get; set; }
+        IEnumerable<DreamConnection> Connections { get; }
 
         public void PreInitialize(string? testingJson);
         public void StartWorld();
         public void Shutdown();
         public bool LoadJson(string? jsonPath);
-        public IPlayerSession GetSessionFromClient(DreamObject client);
-        DreamConnection? GetConnectionFromClient(DreamObject client);
-        public DreamObject? GetClientFromMob(DreamObject mob);
-        DreamConnection? GetConnectionFromMob(DreamObject mob);
-        DreamConnection GetConnectionBySession(IPlayerSession session);
         public void Update();
 
         public void WriteWorldLog(string message, LogLevel level, string sawmill = "world.log");
@@ -40,7 +37,9 @@ namespace OpenDreamRuntime {
         public string CreateRef(DreamValue value);
         public DreamValue LocateRef(string refString);
 
-        IEnumerable<DreamConnection> Connections { get; }
+        public DreamConnection GetConnectionBySession(IPlayerSession session);
+        public DreamConnection GetConnectionFromClient(DreamObject client);
+        public bool TryGetConnectionFromMob(DreamObject mob, [NotNullWhen(true)] out DreamConnection? connection);
 
         public void HandleException(Exception e);
     }

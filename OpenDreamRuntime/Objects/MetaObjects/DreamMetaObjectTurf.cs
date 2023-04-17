@@ -1,25 +1,14 @@
-﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
-
-namespace OpenDreamRuntime.Objects.MetaObjects {
+﻿namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectTurf : IDreamMetaObject {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
-        [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
         public static readonly Dictionary<DreamObject, TurfContentsList> TurfContentsLists = new();
 
         public DreamMetaObjectTurf() {
             IoCManager.InjectDependencies(this);
-        }
-
-        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            ParentType?.OnObjectCreated(dreamObject, creationArguments);
-
-            IconAppearance turfAppearance = _atomManager.CreateAppearanceFromAtom(dreamObject);
-            _dreamMapManager.SetTurfAppearance(dreamObject, turfAppearance);
         }
 
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {

@@ -681,6 +681,11 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Initial(initial.Location, expr);
         }
 
+        public void VisitNameof(DMASTNameof nameof) {
+            var expr = DMExpression.Create(_dmObject, _proc, nameof.Expression, _inferredPath);
+            Result = new Expressions.Nameof(nameof.Location, expr);
+        }
+
         public void VisitIn(DMASTExpressionIn expressionIn) {
             var expr = DMExpression.Create(_dmObject, _proc, expressionIn.Value, _inferredPath);
             var container = DMExpression.Create(_dmObject, _proc, expressionIn.List, _inferredPath);

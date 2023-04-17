@@ -1,6 +1,9 @@
-/mob/testmob{name="thing"; color="#ff0000"}
+/datum/var/test_var = "foo"
+/datum/var/test_var_2 = "bar"
+
+/datum/descendant{test_var="foo_overriden"; test_var_2="bar_overriden"}
 
 /proc/RunTest()
-	var/mob/testmob/T = new
-	ASSERT(T.name == "thing")
-	ASSERT(T.color == "#ff0000")
+	var/datum/descendant/D = new
+	ASSERT(D.test_var == "foo_overriden")
+	ASSERT(D.test_var_2 == "bar_overriden")

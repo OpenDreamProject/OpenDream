@@ -34,10 +34,10 @@ namespace OpenDreamRuntime.Input {
 
         private void HandleAtomClick(IAtomClickedEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {
             IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
-            var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
+            var connection = _dreamManager.GetConnectionBySession(session);
+            var usr = connection.Mob;
 
-            client.GetVariable("mob").TryGetValueAsDreamObject(out var usr);
-            client.SpawnProc("Click", ConstructClickArguments(atom, e), usr: usr);
+            connection.Client?.SpawnProc("Click", ConstructClickArguments(atom, e), usr: usr);
         }
 
         private DreamProcArguments ConstructClickArguments(DreamObject atom, IAtomClickedEvent e) {
@@ -46,7 +46,8 @@ namespace OpenDreamRuntime.Input {
             if (e.Ctrl) paramsBuilder.Add("ctrl", "1");
             if (e.Alt) paramsBuilder.Add("alt", "1");
             paramsBuilder.Add("screen-loc", e.ScreenLoc.ToString());
-            //TODO: "icon-x", "icon-y"
+            paramsBuilder.Add("icon-x", e.IconX.ToString());
+            paramsBuilder.Add("icon-y", e.IconY.ToString());
 
             return new DreamProcArguments(new() {
                 new DreamValue(atom),

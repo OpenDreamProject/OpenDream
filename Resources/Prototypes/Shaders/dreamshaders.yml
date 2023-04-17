@@ -25,6 +25,36 @@
     size: 1
 
 - type: shader
+  id: blockcolor
+  kind: source
+  path: "/Shaders/blockcolor.swsl"
+
+- type: shader
+  id: blend_overlay
+  kind: source
+  path: "/Shaders/blendoverlay.swsl"
+
+- type: shader
+  id: blend_add
+  kind: source
+  path: "/Shaders/blendadd.swsl"
+
+- type: shader
+  id: blend_subtract
+  kind: source
+  path: "/Shaders/blendsubtract.swsl"
+
+- type: shader
+  id: blend_multiply
+  kind: source
+  path: "/Shaders/blendmultiply.swsl"
+
+- type: shader
+  id: blend_inset_overlay
+  kind: source
+  path: "/Shaders/blendinsetoverlay.swsl"
+  
+- type: shader
   id: color
   kind: source
   path: "/Shaders/colormatrix.swsl"
@@ -37,13 +67,16 @@
 - type: shader
   id: alpha
   kind: source
-  path: "/Shaders/empty.swsl"
+  path: "/Shaders/alpha.swsl"
   params:
     x: 0
     y: 0
-    icon: 0
-    render_source: 0
-    flags: 0
+    flags: 0  
+
+#unimplemented shaders point to empty.swsl and do nothing
+
+
+
 
 - type: shader
   id: angular_blur

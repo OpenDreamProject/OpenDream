@@ -74,11 +74,6 @@
 #define EYE_PERSPECTIVE 1
 #define EDGE_PERSPECTIVE 2
 
-//These are used for the world.byond_version, client.byond_version, etc. vars too
-//Their actual values are set in DMCompilerSettings
-#define DM_VERSION
-#define DM_BUILD
-
 //regex
 #define REGEX_QUOTE(a) regex((a), 1)
 #define REGEX_QUOTE_REPLACEMENT(a) regex((a), 2)

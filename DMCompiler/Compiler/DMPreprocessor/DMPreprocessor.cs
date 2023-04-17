@@ -29,7 +29,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private readonly bool _enableDirectives;
         private readonly Dictionary<string, DMMacro> _defines = new(12288) { // Capacity Note: TG peaks at 9827 at time of writing. Current value is arbitrarily 4096 * 3.
             { "__LINE__", new DMMacroLine() },
-            { "__FILE__", new DMMacroFile() }
+            { "__FILE__", new DMMacroFile() },
+            { "DM_VERSION", new DMVersion() },
+            { "DM_BUILD", new DMBuild() }
         };
         /// <summary>
         /// This stores previous evaluations of if-directives that have yet to find their #endif.<br/>
@@ -295,24 +297,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 GetLineOfTokens(); // consume what's on this line and leave
                 return;
             }
-            switch (defineIdentifier.Text) {
-                case "defined":
-                    DMCompiler.Emit(WarningCode.SoftReservedKeyword, defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name");
-                    break;
-                case "DM_VERSION":
-                    if (!_defines.ContainsKey("DM_VERSION")) { // Trying to override the macro should use normal compiler behavior
-                        _defines["DM_VERSION"] = new DMMacro(null, new List<Token>(1){new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMVersion, defineToken.Location, null)});
-                        PushToken(new Token(TokenType.Newline, "\n", defineToken.Location, null));
-                        return;
-                    }
-                    break;
-                case "DM_BUILD":
-                    if (!_defines.ContainsKey("DM_BUILD")) { // Trying to override the macro should use normal compiler behavior
-                        _defines["DM_BUILD"] = new DMMacro(null, new List<Token>(1){new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMBuild, defineToken.Location, null)});
-                        PushToken(new Token(TokenType.Newline, "\n", defineToken.Location, null));
-                        return;
-                    }
-                    break;
+            if(defineIdentifier.Text == "defined") {
+                DMCompiler.Emit(WarningCode.SoftReservedKeyword, defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name");
             }
 
             List<string> parameters = null;

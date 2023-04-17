@@ -346,10 +346,10 @@ namespace OpenDreamRuntime.Procs {
                         // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
                         if (interps[prevInterpIndex].TryGetValueAsInteger(out var ordinalNumber)) {
 
-                            /// For some mystical reason byond converts \th to integers
-                            interps[prevInterpIndex].TryGetValueAsFloat(out var temp);
-                            /// This is slightly hacky but the only reliable way I know how to replace the number
-                            formattedString.Length -= temp.ToString().Length;
+                            // For some mystical reason byond converts \th to integers
+                            // This is slightly hacky but the only reliable way I know how to replace the number
+                            // Need to call stringy to make sure its the right length to cut
+                            formattedString.Length -= interps[prevInterpIndex].Stringify().Length;
                             formattedString.Append(ordinalNumber);
                             switch (ordinalNumber) {
                                 case 1:

@@ -146,7 +146,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
             return new(1) {
-                new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMVersion, replacing.Location, DMCompiler.Settings.DMVersion)
+                new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMVersion, replacing.Location, null)
             };
         }
     }

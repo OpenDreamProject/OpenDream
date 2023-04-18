@@ -47,7 +47,7 @@ sealed class DreamViewOverlay : Overlay {
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private Matrix3 _flipMatrix;
-    private const LookupFlags Flags = LookupFlags.Approximate | LookupFlags.Dynamic | LookupFlags.Static | LookupFlags.Sundries | LookupFlags.Contained;
+    private const LookupFlags Flags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);

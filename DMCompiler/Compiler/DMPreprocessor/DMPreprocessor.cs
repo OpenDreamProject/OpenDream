@@ -30,8 +30,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private readonly Dictionary<string, DMMacro> _defines = new(12288) { // Capacity Note: TG peaks at 9827 at time of writing. Current value is arbitrarily 4096 * 3.
             { "__LINE__", new DMMacroLine() },
             { "__FILE__", new DMMacroFile() },
-            { "DM_VERSION", new DMVersion() },
-            { "DM_BUILD", new DMBuild() }
+            { "DM_VERSION", new DMMacroVersion() },
+            { "DM_BUILD", new DMMacroBuild() }
         };
         /// <summary>
         /// This stores previous evaluations of if-directives that have yet to find their #endif.<br/>

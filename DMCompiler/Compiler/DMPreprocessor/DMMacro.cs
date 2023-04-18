@@ -141,8 +141,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
     // DM_VERSION
 
-    sealed class DMVersion : DMMacro {
-        public DMVersion() : base(null, null) { }
+    sealed class DMMacroVersion : DMMacro {
+        public DMMacroVersion() : base(null, null) { }
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
             return new(1) {
@@ -153,8 +153,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
     // DM_BUILD
 
-    sealed class DMBuild : DMMacro {
-        public DMBuild() : base(null, null) { }
+    sealed class DMMacroBuild : DMMacro {
+        public DMMacroBuild() : base(null, null) { }
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
             return new(1) {

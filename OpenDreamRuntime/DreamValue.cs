@@ -417,7 +417,18 @@ namespace OpenDreamRuntime {
                     TryGetValueAsString(out var stringString);
                     return stringString;
                 case DreamValueType.Float:
-                    return _floatValue.ToString();
+                    var floatValue = MustGetValueAsFloat();
+
+                    if (floatValue > 16777216f) {
+                        return floatValue.ToString("g6");
+                    }
+
+                    if (floatValue >= 1000000 && ((int)floatValue == floatValue)) {
+                        return floatValue.ToString("g8");
+                    }
+
+                    return floatValue.ToString("g6");
+
                 case DreamValueType.DreamResource:
                     TryGetValueAsDreamResource(out var rscPath);
                     return rscPath.ResourcePath;

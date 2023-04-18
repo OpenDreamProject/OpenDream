@@ -1726,16 +1726,29 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("num2text")]
         [DreamProcParameter("N")]
-        [DreamProcParameter("Digits", Type = DreamValueType.Float)]
+        [DreamProcParameter("SigFig", Type = DreamValueType.Float, DefaultValue = 6)]
+        [DreamProcParameter("Digits", Type = DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Radix", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_num2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue number = arguments.GetArgument(0, "N");
-
-            if (number.TryGetValueAsFloat(out float floatValue)) {
-                return new DreamValue(floatValue.ToString(CultureInfo.InvariantCulture));
-            } else {
+            if(!number.TryGetValueAsFloat(out var floatNum)) {
                 return new DreamValue("0");
             }
+
+            if(arguments.ArgumentCount == 2) {
+                var sigFig = arguments.GetArgument(1, "SigFig");
+                return new DreamValue(floatNum.ToString('g' + sigFig.ToString()));
+            }
+
+            if(arguments.ArgumentCount == 3) {
+                var digits = arguments.GetArgument(1, "Digits").MustGetValueAsInteger();
+                var radix = arguments.GetArgument(2, "Radix").MustGetValueAsInteger();
+                var intNum = (int)floatNum;
+                return new DreamValue(DreamProcNativeHelpers.ToBase(intNum, radix).PadLeft(digits, '0'));
+            }
+
+            // Mauybe an exception is better?
+            return new DreamValue("0");
         }
 
         [DreamProc("orange")]

@@ -11,6 +11,14 @@ namespace OpenDreamRuntime.Procs.Native;
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
 internal static class DreamProcNativeHelpers {
+    private static char[] radixArray = new char[36] {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+        'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+        'w', 'x', 'y', 'z'
+    };
+
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -236,5 +244,25 @@ internal static class DreamProcNativeHelpers {
         } catch(IndexOutOfRangeException) { // Trying to access stuff that should be there but isn't is also pretty catchable for us, here.
             return false;
         }
+    }
+
+    public static string ToBase(int value, int radix) {
+        if(radix > 36) {
+            throw new ArgumentOutOfRangeException(nameof(radix), "radix is above 36");
+        }
+
+        var bufferIter = 32;
+        char[] buffer = new char[32];
+
+        do {
+            buffer[--bufferIter] = radixArray[value % radix];
+            value /= radix;
+        }
+        while (value > 0);
+
+        char[] result = new char[32 - bufferIter];
+        Array.Copy(buffer, bufferIter, result, 0, 32 - bufferIter);
+
+        return new string(result);
     }
 }

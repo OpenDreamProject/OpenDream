@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Procs.Native;
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
 internal static class DreamProcNativeHelpers {
-    private static char[] radixArray = new char[36] {
+    private static readonly char[] radixArray = new char[36] {
         '0', '1', '2', '3', '4', '5', '6', '7',
         '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
         'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',

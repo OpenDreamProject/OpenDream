@@ -19,9 +19,8 @@ namespace OpenDreamRuntime {
         public IReadOnlyList<string> GlobalNames { get; }
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
-        public List<DreamObject> Mobs { get; set; }
-        public List<DreamObject> Clients { get; set; }
-        public List<DreamObject> Datums { get; set; }
+        public HashSet<DreamObject> Clients { get; set; }
+        public HashSet<DreamObject> Datums { get; set; }
         public Random Random { get; set; }
         public Dictionary<string, List<DreamObject>> Tags { get; set; }
         IEnumerable<DreamConnection> Connections { get; }

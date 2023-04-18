@@ -4,6 +4,7 @@ using OpenDreamRuntime.Resources;
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {
         public static void SetupNativeProcs(IDreamObjectTree objectTree) {
+            DreamProcNativeRoot.AtomManager = IoCManager.Resolve<IAtomManager>();
             DreamProcNativeRoot.DreamManager = IoCManager.Resolve<IDreamManager>();
             DreamProcNativeRoot.ResourceManager = IoCManager.Resolve<DreamResourceManager>();
             DreamProcNativeRoot.MapManager = IoCManager.Resolve<IDreamMapManager>();

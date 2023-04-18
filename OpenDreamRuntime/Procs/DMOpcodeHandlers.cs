@@ -60,7 +60,7 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IDreamMapManager mapManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
+        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IAtomManager atomManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
             if (!value.TryGetValueAsDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
@@ -71,12 +71,16 @@ namespace OpenDreamRuntime.Procs {
                     } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
                         // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
                         if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
-                            return new DreamObjectEnumerator(mapManager.AllAreas, filterType);
+                            return new DreamObjectEnumerator(atomManager.Areas, filterType);
                         } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
-                            return new DreamObjectEnumerator(mapManager.AllTurfs, filterType);
+                            return new DreamObjectEnumerator(atomManager.Turfs, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Obj) == true) {
+                            return new DreamObjectEnumerator(atomManager.Objects, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Mob) == true) {
+                            return new DreamObjectEnumerator(atomManager.Mobs, filterType);
                         }
 
-                        return new WorldContentsEnumerator(mapManager, filterType);
+                        return new WorldContentsEnumerator(atomManager, filterType);
                     }
                 }
             }
@@ -84,7 +88,7 @@ namespace OpenDreamRuntime.Procs {
             if (list != null) {
                 // world.contents has its own special enumerator to prevent the huge copy
                 if (list is WorldContentsList)
-                    return new WorldContentsEnumerator(mapManager, filterType);
+                    return new WorldContentsEnumerator(atomManager, filterType);
 
                 var values = list.GetValues().ToArray();
 
@@ -97,7 +101,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), null);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), null);
 
             state.EnumeratorStack.Push(enumerator);
             return null;
@@ -106,7 +110,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? CreateFilteredListEnumerator(DMProcState state) {
             var filterTypeId = state.ReadInt();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), filterType);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
 
             state.EnumeratorStack.Push(enumerator);
             return null;
@@ -124,7 +128,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Atom)) {
-                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.DreamMapManager, type));
+                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.AtomManager, type));
                 return null;
             }
 

@@ -26,9 +26,6 @@ namespace OpenDreamRuntime {
 
         public Vector2i Size { get; private set; }
         public int Levels => _levels.Count;
-        public List<DreamObject> AllAtoms { get; } = new();
-        public IEnumerable<DreamObject> AllAreas => _areas.Values;
-        public IEnumerable<DreamObject> AllTurfs => _turfToTilePos.Keys; // Hijack this dictionary
 
         private readonly List<Level> _levels = new();
         private readonly Dictionary<DreamObject, (Vector2i Pos, Level Level)> _turfToTilePos = new();
@@ -37,8 +34,6 @@ namespace OpenDreamRuntime {
         private IDreamObjectTree.TreeEntry _defaultTurf;
 
         public void Initialize() {
-            AllAtoms.Clear();
-
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
             _transformSystem = _entitySystemManager.GetEntitySystem<TransformSystem>();
 
@@ -118,11 +113,9 @@ namespace OpenDreamRuntime {
 
             // Also call New() on all /area not in the grid.
             // This may call New() a SECOND TIME. This is intentional.
-            foreach (var thing in AllAtoms) {
-                if (thing.IsSubtypeOf(_objectTree.Area)) {
-                    if (seenAreas.Add(thing)) {
-                        thing.SpawnProc("New");
-                    }
+            foreach (var thing in _atomManager.Areas) {
+                if (seenAreas.Add(thing)) {
+                    thing.SpawnProc("New");
                 }
             }
 
@@ -153,7 +146,7 @@ namespace OpenDreamRuntime {
                 _turfToTilePos.Add(cell.Turf, (pos, level));
                 // Only add the /turf to .contents when it's created.
                 cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
-                AllAtoms.Add(cell.Turf);
+                _atomManager.Turfs.Add(cell.Turf);
                 DreamMetaObjectTurf.TurfContentsLists.Add(cell.Turf, new TurfContentsList(_objectTree.List.ObjectDefinition, _objectTree, cell));
             }
 
@@ -399,9 +392,6 @@ namespace OpenDreamRuntime {
 
         public Vector2i Size { get; }
         public int Levels { get; }
-        public List<DreamObject> AllAtoms { get; }
-        public IEnumerable<DreamObject> AllAreas { get; }
-        public IEnumerable<DreamObject> AllTurfs { get; }
 
         public void Initialize();
         public void LoadAreasAndTurfs(List<DreamMapJson> maps);

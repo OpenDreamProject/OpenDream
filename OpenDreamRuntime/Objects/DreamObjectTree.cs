@@ -41,6 +41,7 @@ namespace OpenDreamRuntime.Objects {
         private Dictionary<DreamPath, TreeEntry> _pathToType = new();
         private Dictionary<string, int> _globalProcIds;
 
+        [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly IDreamDebugManager _dreamDebugManager = default!;
@@ -50,7 +51,7 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings;
 
             if (json.GlobalInitProc is ProcDefinitionJson initProcDef) {
-                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", _dreamManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
+                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
             } else {
                 GlobalInitProc = null;
             }
@@ -325,7 +326,7 @@ namespace OpenDreamRuntime.Objects {
         public DreamProc LoadProcJson(DreamTypeJson[] types, ProcDefinitionJson procDefinition) {
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
             return new DMProc(owningType, procDefinition, null, _dreamManager,
-                _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
+                _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
         }
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[] jsonProcs, List<int> jsonGlobalProcs) {

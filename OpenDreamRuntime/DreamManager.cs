@@ -4,11 +4,9 @@ using System.Text.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
@@ -37,9 +35,8 @@ namespace OpenDreamRuntime {
         public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
-        public List<DreamObject> Mobs { get; set; } = new();
-        public List<DreamObject> Clients { get; set; } = new();
-        public List<DreamObject> Datums { get; set; } = new();
+        public HashSet<DreamObject> Clients { get; set; } = new();
+        public HashSet<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
 
@@ -149,6 +146,7 @@ namespace OpenDreamRuntime {
             _objectTree.SetMetaObject(_objectTree.Area, new DreamMetaObjectArea());
             _objectTree.SetMetaObject(_objectTree.Turf, new DreamMetaObjectTurf());
             _objectTree.SetMetaObject(_objectTree.Movable, new DreamMetaObjectMovable());
+            _objectTree.SetMetaObject(_objectTree.Obj, new DreamMetaObjectObj());
             _objectTree.SetMetaObject(_objectTree.Mob, new DreamMetaObjectMob());
             _objectTree.SetMetaObject(_objectTree.Image, new DreamMetaObjectImage());
             _objectTree.SetMetaObject(_objectTree.Icon, new DreamMetaObjectIcon());

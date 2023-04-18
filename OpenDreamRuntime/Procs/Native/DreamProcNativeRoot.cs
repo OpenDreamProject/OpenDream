@@ -28,6 +28,7 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
         // I don't want to edit 100 procs to have the DreamManager passed to them
         // TODO: Pass NativeProc.State to every native proc
+        public static IAtomManager AtomManager;
         public static IDreamManager DreamManager;
         public static DreamResourceManager ResourceManager;
         public static IDreamMapManager MapManager;
@@ -1816,7 +1817,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            foreach (DreamObject mob in DreamManager.Mobs) {
+            foreach (DreamObject mob in AtomManager.Mobs) {
                 int mobX = mob.GetVariable("x").GetValueAsInteger();
                 int mobY = mob.GetVariable("y").GetValueAsInteger();
 
@@ -2906,7 +2907,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int centerX = center.GetVariable("x").MustGetValueAsInteger();
             int centerY = center.GetVariable("y").MustGetValueAsInteger();
 
-            foreach (DreamObject mob in DreamManager.Mobs) {
+            foreach (DreamObject mob in AtomManager.Mobs) {
                 int mobX = mob.GetVariable("x").MustGetValueAsInteger();
                 int mobY = mob.GetVariable("y").MustGetValueAsInteger();
 

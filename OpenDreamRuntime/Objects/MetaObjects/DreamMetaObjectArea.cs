@@ -1,10 +1,12 @@
 ﻿using OpenDreamRuntime.Procs;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectArea : IDreamMetaObject {
         public bool ShouldCallNew => true;
         public IDreamMetaObject? ParentType { get; set; }
 
+        [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -24,13 +26,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 level.SetArea(pos, dreamObject);
             };
 
+            _atomManager.Areas.Add(dreamObject);
             _dreamManager.AreaContents.Add(dreamObject, contents);
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
+            _atomManager.Areas.RemoveSwap(_atomManager.Areas.IndexOf(dreamObject));
             _dreamManager.AreaContents.Remove(dreamObject);
+
             ParentType?.OnObjectDeleted(dreamObject);
         }
 

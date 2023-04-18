@@ -1,7 +1,7 @@
 ﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 using Robust.Server.Player;
 using OpenDreamShared.Rendering;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectMob : IDreamMetaObject {
@@ -13,13 +13,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
+
         public DreamMetaObjectMob() {
             IoCManager.InjectDependencies(this);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            _atomManager.Mobs.Add(dreamObject);
+
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
-            _dreamManager.Mobs.Add(dreamObject);
+
             EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
             DreamMobSightComponent mobSightComponent = _entityManager.AddComponent<DreamMobSightComponent>(entity);
             dreamObject.TryGetVariable("see_invisible", out DreamValue seeVis);
@@ -27,8 +30,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
+            _atomManager.Mobs.RemoveSwap(_atomManager.Mobs.IndexOf(dreamObject));
+
             ParentType?.OnObjectDeleted(dreamObject);
-            _dreamManager.Mobs.Remove(dreamObject);
         }
 
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {

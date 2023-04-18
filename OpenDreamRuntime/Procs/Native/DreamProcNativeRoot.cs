@@ -1726,17 +1726,23 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("num2text")]
         [DreamProcParameter("N")]
-        [DreamProcParameter("SigFig", Type = DreamValueType.Float, DefaultValue = 6)]
-        [DreamProcParameter("Digits", Type = DreamValueType.Float, DefaultValue = 0)]
+        [DreamProcParameter("SigFig", Type = DreamValueType.Float)]
+        [DreamProcParameter("Digits", Type = DreamValueType.Float)]
         [DreamProcParameter("Radix", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_num2text(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue number = arguments.GetArgument(0, "N");
             if(!number.TryGetValueAsFloat(out var floatNum)) {
                 return new DreamValue("0");
             }
+            if(arguments.ArgumentCount == 1) {
+                return new DreamValue(floatNum.ToString("g6"));
+            }
 
             if(arguments.ArgumentCount == 2) {
                 var sigFig = arguments.GetArgument(1, "SigFig");
+                if(sigFig == DreamValue.Null) {
+                    return new DreamValue(floatNum.ToString("g6"));
+                }
                 return new DreamValue(floatNum.ToString('g' + sigFig.ToString()));
             }
 

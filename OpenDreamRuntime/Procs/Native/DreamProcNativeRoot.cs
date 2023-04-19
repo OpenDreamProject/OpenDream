@@ -1874,7 +1874,7 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (arguments.ArgumentCount == 1) {
                 arguments.GetArgument(0, "L").TryGetValueAsInteger(out var high);
 
-                return new DreamValue(DreamManager.Random.Next(high)+1);
+                return new DreamValue(DreamManager.Random.Next(high)+1); // rand() is inclusive on both ends
             } else {
                 arguments.GetArgument(0, "L").TryGetValueAsInteger(out var low);
                 arguments.GetArgument(1, "H").TryGetValueAsInteger(out var high);

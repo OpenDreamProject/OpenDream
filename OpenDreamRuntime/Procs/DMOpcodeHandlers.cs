@@ -1580,7 +1580,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (a.TryGetValueAsDreamObject(out var dreamObject)) {
                 IDreamMetaObject? metaObject = dreamObject!.ObjectDefinition?.MetaObject;
 
-                metaObject?.OperatorOutput(a, b);
+                metaObject?.OperatorOutput(dreamObject, b);
             } else {
                 throw new NotImplementedException($"Unimplemented output operation between {a} and {b}");
             }
@@ -1718,7 +1718,7 @@ namespace OpenDreamRuntime.Procs {
 
             if (receiver == state.DreamManager.WorldInstance) {
                 //Same as "world << ..."
-                receiver.ObjectDefinition.MetaObject.OperatorOutput(new(receiver), message);
+                receiver.ObjectDefinition.MetaObject.OperatorOutput(receiver, message);
                 return null;
             }
 

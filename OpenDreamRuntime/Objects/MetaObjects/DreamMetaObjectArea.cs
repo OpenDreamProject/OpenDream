@@ -10,16 +10,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
+        private readonly EntityQuery<TransformComponent> _transformQuery;
 
         public DreamMetaObjectArea() {
             IoCManager.InjectDependencies(this);
+
+            _transformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList contents = _objectTree.CreateList();
 
             contents.ValueAssigned += (_, _, value) => {
-                if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out DreamObject turf))
+                if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turf))
                     return;
 
                 (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
@@ -45,6 +49,33 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } else {
                 return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
+        }
+
+        public void OperatorOutput(DreamObject a, DreamValue b) {
+            if (b.TryGetValueAsDreamObjectOfType(_objectTree.Sound, out _)) {
+                // Output the sound to every connection with a mob inside the area
+                foreach (var connection in _dreamManager.Connections) {
+                    var mob = connection.Mob;
+                    if (mob == null)
+                        continue;
+
+                    var mobEntity = _atomManager.GetMovableEntity(mob);
+                    if (!_transformQuery.TryGetComponent(mobEntity, out var mobTransform))
+                        continue;
+
+                    if (!_dreamMapManager.TryGetCellFromTransform(mobTransform, out var cell))
+                        continue;
+
+                    if (cell.Area != a)
+                        continue;
+
+                    connection.OutputDreamValue(b);
+                }
+
+                return;
+            }
+
+            ParentType?.OperatorOutput(a, b);
         }
     }
 }

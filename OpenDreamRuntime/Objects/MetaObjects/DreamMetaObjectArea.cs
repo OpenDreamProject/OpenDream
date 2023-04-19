@@ -46,5 +46,27 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
         }
+
+        public void OperatorOutput(DreamObject a, DreamValue b) {
+            if (b.TryGetValueAsDreamObjectOfType(_objectTree.Sound, out _)) {
+                // Output the sound to every connection with a mob inside the area
+                foreach (var connection in _dreamManager.Connections) {
+                    var mob = connection.Mob;
+                    if (mob == null)
+                        continue;
+
+                    if (!mob.GetVariable("loc").TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turf))
+                        continue;
+
+                    var area = _dreamMapManager.GetCellFromTurf(turf).Area;
+                    if (area != a)
+                        continue;
+
+                    connection.OutputDreamValue(b);
+                }
+            }
+
+            ParentType?.OperatorOutput(a, b);
+        }
     }
 }

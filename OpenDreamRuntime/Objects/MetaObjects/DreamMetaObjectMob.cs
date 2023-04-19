@@ -73,13 +73,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public void OperatorOutput(DreamValue a, DreamValue b) {
-            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Mob, out var mob))
-                throw new ArgumentException($"Left-hand value was not the expected type {_objectTree.Mob}");
-            if (!mob.GetVariable("client").TryGetValueAsDreamObjectOfType(_objectTree.Client, out var client))
+        public void OperatorOutput(DreamObject mob, DreamValue b) {
+            if (!_dreamManager.TryGetConnectionFromMob(mob, out var connection))
                 return;
 
-            DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
         }
     }

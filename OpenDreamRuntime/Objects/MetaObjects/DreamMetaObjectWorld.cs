@@ -185,7 +185,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public void OperatorOutput(DreamValue a, DreamValue b) {
+        public void OperatorOutput(DreamObject a, DreamValue b) {
             foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }

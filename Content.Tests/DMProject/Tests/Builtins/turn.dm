@@ -1,5 +1,8 @@
 ﻿/proc/RunTest()
-	// Note byond goes counter clockwise (why)
+	// Note byond goes counterclockwise (why) (unlike every other turn proc also)
+
+	// Handle the testable invalid case
+	ASSERT(turn(0, 0) == 0)
 
 	// Make sure it returns right
 	ASSERT(turn(EAST, 0) == EAST)

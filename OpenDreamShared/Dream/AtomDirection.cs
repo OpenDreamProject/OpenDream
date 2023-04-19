@@ -2,7 +2,7 @@
 using System;
 
 namespace OpenDreamShared.Dream {
-    [Serializable, NetSerializable]
+    [Serializable, NetSerializable, Flags]
     public enum AtomDirection {
         None = 0,
 

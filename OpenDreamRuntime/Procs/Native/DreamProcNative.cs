@@ -10,6 +10,9 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamProcNativeRoot.MapManager = IoCManager.Resolve<IDreamMapManager>();
             DreamProcNativeRoot.ObjectTree = objectTree;
 
+            DreamProcNativeIcon.ObjectTree = objectTree;
+            DreamProcNativeMatrix.ObjectTree = objectTree;
+
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_alert);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_animate);
@@ -117,6 +120,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_time2text);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_trimtext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_trunc);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_turn);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_typesof);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_uppertext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_url_decode);
@@ -138,7 +142,9 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Invert);
+            objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Multiply);
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Scale);
+            objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Turn);
 
             objectTree.SetNativeProc(objectTree.Regex, DreamProcNativeRegex.NativeProc_Find);
             objectTree.SetNativeProc(objectTree.Regex, DreamProcNativeRegex.NativeProc_Replace);

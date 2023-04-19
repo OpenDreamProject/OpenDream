@@ -42,23 +42,6 @@
 	proc/Invert()
 
 	proc/Multiply(m)
-		if(!istype(m, /matrix))
-			return Scale(m)
-		var/matrix/n = m
-		var/old_a = a
-		var/old_b = b
-		var/old_c = c
-		var/old_d = d
-		var/old_e = e
-		var/old_f = f
-
-		a = old_a*n.a + old_d*n.b
-		b = old_b*n.a + old_e*n.b
-		c = old_c*n.a + old_f*n.b + n.c
-		d = old_a*n.d + old_d*n.e
-		e = old_b*n.d + old_e*n.e
-		f = old_c*n.d + old_f*n.e + n.f
-		return src
 
 	proc/Scale(x, y)
 
@@ -78,10 +61,6 @@
 		f += y
 
 	proc/Turn(angle)
-		var/angleCos = cos(angle)
-		var/angleSin = sin(angle)
-		var/matrix/rotation = new(angleCos, angleSin, 0, -angleSin, angleCos, 0)
 
-		return Multiply(rotation)
 
 proc/matrix(var/a, var/b, var/c, var/d, var/e, var/f)

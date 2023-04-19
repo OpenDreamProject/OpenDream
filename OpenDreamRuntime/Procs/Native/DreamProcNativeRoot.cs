@@ -2737,6 +2737,82 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(0);
         }
 
+        /// <summary> Global turn() proc </summary>
+        /// <remarks> Take note that this turn proc is a counterclockwise rotation unlike the rest </remarks>
+        [DreamProc("turn")]
+        [DreamProcParameter("Dir", Type = DreamValueType.Float)]
+        [DreamProcParameter("Angle", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_turn(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue dirArg = arguments.GetArgument(0, "dir");
+            DreamValue angleArg = arguments.GetArgument(1, "angle");
+
+            // Handle an invalid angle, defaults to 0
+            if (!angleArg.TryGetValueAsFloat(out float angle)) {
+                angle = 0;
+            }
+
+            // If Dir is actually an icon, call /icon.Turn
+            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Icon, out var icon)) {
+                // Clone icon here since it's specified to return a new one
+                DreamObject clonedIcon = DreamMetaObjectIcon.CloneIcon(ObjectTree, icon);
+                return DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, usr, angle);
+            }
+
+            // If Dir is actually a matrix, call /matrix.Turn
+            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) {
+                // Clone matrix here since it's specified to return a new one
+                DreamObject clonedMatrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, matrix);
+                return DreamProcNativeMatrix._NativeProc_TurnInternal(clonedMatrix, usr, angle);
+            }
+
+            if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {
+                possibleDir = 0; // Mark as invalid dir
+            }
+
+            // Is the dir invalid (includes zero)?
+            if (possibleDir == 0) {
+                // If Dir is invalid and angle is zero, 0 is returned
+                if (angle == 0) {
+                    return new DreamValue(0);
+                }
+                // Otherwise, it returns a random direction
+                var allDirs = Enum.GetValues(typeof(AtomDirection));
+                return (DreamValue)(allDirs.GetValue(DreamManager.Random.Next(allDirs.Length)) ?? AtomDirection.North);
+            }
+
+            AtomDirection dir = (AtomDirection)possibleDir;
+            float dirAngle = dir switch {
+                    AtomDirection.East => 0,
+                    AtomDirection.Northeast => 45,
+                    AtomDirection.North => 90,
+                    AtomDirection.Northwest => 135,
+                    AtomDirection.West => 180,
+                    AtomDirection.Southwest => 225,
+                    AtomDirection.South => 270,
+                    AtomDirection.Southeast => 315,
+                    _ => 0
+            };
+
+            dirAngle += MathF.Truncate(angle / 45) * 45;
+            dirAngle %= 360;
+
+            if (dirAngle < 0) {
+                dirAngle = 360 + dirAngle;
+            }
+
+            AtomDirection toReturn = dirAngle switch {
+                    45 => AtomDirection.Northeast,
+                    90 => AtomDirection.North,
+                    135 => AtomDirection.Northwest,
+                    180 => AtomDirection.West,
+                    225 => AtomDirection.Southwest,
+                    270 => AtomDirection.South,
+                    315 => AtomDirection.Southeast,
+                    _ => AtomDirection.East
+            };
+            return new DreamValue((int)toReturn);
+        }
+
         [DreamProc("typesof")]
         [DreamProcParameter("Item1", Type = DreamValueType.DreamType | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {

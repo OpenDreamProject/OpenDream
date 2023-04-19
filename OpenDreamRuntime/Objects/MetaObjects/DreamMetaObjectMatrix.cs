@@ -64,6 +64,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return newMatrix;
         }
 
+        /// <summary> Helper for the normal MakeMatrix that accepts a list of matrix values. </summary>
+        /// <remarks> Be sure that all of the float array are valid values. </remarks>
+        /// <seealso cref="MakeMatrix(OpenDreamRuntime.Objects.IDreamObjectTree,float,float,float,float,float,float)"/>
+        public static DreamObject MakeMatrix(IDreamObjectTree ObjectTree, float[] matrixValues) {
+            return MakeMatrix(ObjectTree,
+                              matrixValues[0], matrixValues[1], matrixValues[2],
+                              matrixValues[3], matrixValues[4], matrixValues[5]);
+        }
+
         public static float Determinant(DreamObject matrix) {
             try {
                 return matrix.GetVariable("a").MustGetValueAsFloat() *
@@ -142,6 +151,46 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             } catch(InvalidCastException) { // If any of these MustGet()s fail, try to give a more descriptive runtime
                 throw new InvalidOperationException($"Invalid matrix '{matrix}' cannot be scaled");
             }
+        }
+
+        /// <summary> Multiplies the first given matrix by the other given matrix. </summary>
+        /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if either matrix has non-float members.</exception>
+        public static void MultiplyMatrix(DreamObject lMatrix, DreamObject rMatrix) {
+            float lA;
+            float lB;
+            float lC;
+            float lD;
+            float lE;
+            float lF;
+            float rA;
+            float rB;
+            float rC;
+            float rD;
+            float rE;
+            float rF;
+            try {
+                lA = lMatrix.GetVariable("a").MustGetValueAsFloat();
+                lB = lMatrix.GetVariable("b").MustGetValueAsFloat();
+                lC = lMatrix.GetVariable("c").MustGetValueAsFloat();
+                lD = lMatrix.GetVariable("d").MustGetValueAsFloat();
+                lE = lMatrix.GetVariable("e").MustGetValueAsFloat();
+                lF = lMatrix.GetVariable("f").MustGetValueAsFloat();
+                rA = rMatrix.GetVariable("a").MustGetValueAsFloat();
+                rB = rMatrix.GetVariable("b").MustGetValueAsFloat();
+                rC = rMatrix.GetVariable("c").MustGetValueAsFloat();
+                rD = rMatrix.GetVariable("d").MustGetValueAsFloat();
+                rE = rMatrix.GetVariable("e").MustGetValueAsFloat();
+                rF = rMatrix.GetVariable("f").MustGetValueAsFloat();
+            } catch (InvalidCastException) {
+                throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be multiplied.");
+            }
+            lMatrix.SetVariableValue("a", new DreamValue(lA*rA + lD*rB));
+            lMatrix.SetVariableValue("b", new DreamValue(lB*rA + lE*rB));
+            lMatrix.SetVariableValue("c", new DreamValue(lC*rA + lF*rB + rC));
+            lMatrix.SetVariableValue("d", new DreamValue(lA*rD + lD*rE));
+            lMatrix.SetVariableValue("e", new DreamValue(lB*rD + lE*rE));
+            lMatrix.SetVariableValue("f", new DreamValue(lC*rD + lF*rE + rF));
         }
 
         public DreamValue OperatorMultiply(DreamValue a, DreamValue b) {

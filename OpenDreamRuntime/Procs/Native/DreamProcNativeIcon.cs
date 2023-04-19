@@ -3,9 +3,12 @@ using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
+using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeIcon {
+        public static IDreamObjectTree ObjectTree;
+
         [DreamProc("Width")]
         public static DreamValue NativeProc_Width(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
@@ -93,6 +96,23 @@ namespace OpenDreamRuntime.Procs.Native {
             iconObj.Width = width;
             iconObj.Height = height;
             return DreamValue.Null;
+        }
+
+        [DreamProc("Turn")]
+        [DreamProcParameter("angle", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_Turn(DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue angleArg = arguments.GetArgument(0, "angle");
+            if (!angleArg.TryGetValueAsFloat(out float angle)) {
+                return new DreamValue(src); // Defaults to input on invalid angle
+            }
+            return _NativeProc_TurnInternal(src, usr, angle);
+        }
+
+        /// <summary> Turns a given icon a given amount of degrees clockwise. </summary>
+        /// <returns> Returns a new icon which has been rotated </returns>
+        public static DreamValue _NativeProc_TurnInternal(DreamObject src, DreamObject usr, float angle) {
+            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[src];
+            return new DreamValue(DreamMetaObjectIcon.TurnIcon(dreamIconObject, angle));
         }
     }
 }

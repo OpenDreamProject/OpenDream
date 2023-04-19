@@ -64,6 +64,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     connection.OutputDreamValue(b);
                 }
+
+                return;
             }
 
             ParentType?.OperatorOutput(a, b);

@@ -10,16 +10,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
+        private readonly EntityQuery<TransformComponent> _transformQuery;
 
         public DreamMetaObjectArea() {
             IoCManager.InjectDependencies(this);
+
+            _transformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             DreamList contents = _objectTree.CreateList();
 
             contents.ValueAssigned += (_, _, value) => {
-                if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out DreamObject turf))
+                if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turf))
                     return;
 
                 (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
@@ -55,11 +59,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (mob == null)
                         continue;
 
-                    if (!mob.GetVariable("loc").TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turf))
+                    var mobEntity = _atomManager.GetMovableEntity(mob);
+                    if (!_transformQuery.TryGetComponent(mobEntity, out var mobTransform))
                         continue;
 
-                    var area = _dreamMapManager.GetCellFromTurf(turf).Area;
-                    if (area != a)
+                    if (!_dreamMapManager.TryGetCellFromTransform(mobTransform, out var cell))
+                        continue;
+
+                    if (cell.Area != a)
                         continue;
 
                     connection.OutputDreamValue(b);

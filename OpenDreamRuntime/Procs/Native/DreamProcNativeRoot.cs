@@ -4,6 +4,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -2765,23 +2766,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamProcNativeMatrix._NativeProc_TurnInternal(clonedMatrix, usr, angle);
             }
 
-            if (!dirArg.TryGetValueAsInteger(out int possibleDir)) {
-                possibleDir = 0; // Mark as invalid dir
-            }
-
-            // Is the dir invalid (includes zero)?
-            if (possibleDir == 0) {
-                // If Dir is invalid and angle is zero, 0 is returned
-                if (angle == 0) {
-                    return new DreamValue(0);
-                }
-                // Otherwise, it returns a random direction
-                var allDirs = Enum.GetValues(typeof(AtomDirection));
-                return (DreamValue)(allDirs.GetValue(DreamManager.Random.Next(allDirs.Length)) ?? AtomDirection.North);
-            }
+            dirArg.TryGetValueAsInteger(out int possibleDir);
 
             AtomDirection dir = (AtomDirection)possibleDir;
-            float dirAngle = dir switch {
+            float? dirAngle = dir switch {
                     AtomDirection.East => 0,
                     AtomDirection.Northeast => 45,
                     AtomDirection.North => 90,
@@ -2790,8 +2778,33 @@ namespace OpenDreamRuntime.Procs.Native {
                     AtomDirection.Southwest => 225,
                     AtomDirection.South => 270,
                     AtomDirection.Southeast => 315,
-                    _ => 0
+                    _ => null
             };
+
+            // Is the dir invalid?
+            if (dirAngle == null) {
+                // If Dir is invalid and angle is zero, 0 is returned
+                if (angle == 0) {
+                    return new DreamValue(0);
+                }
+
+                // Otherwise, it returns a random direction
+                // Can't just select a random value from AtomDirection since that contains AtomDirection.None
+                var selectedDirIndex = DreamManager.Random.Next(8);
+                var selectedDir = selectedDirIndex switch {
+                    0 => AtomDirection.North,
+                    1 => AtomDirection.South,
+                    2 => AtomDirection.East,
+                    3 => AtomDirection.West,
+                    4 => AtomDirection.Northeast,
+                    5 => AtomDirection.Southeast,
+                    6 => AtomDirection.Southwest,
+                    7 => AtomDirection.Northwest,
+                    _ => throw new UnreachableException()
+                };
+
+                return new((int)selectedDir);
+            }
 
             dirAngle += MathF.Truncate(angle / 45) * 45;
             dirAngle %= 360;

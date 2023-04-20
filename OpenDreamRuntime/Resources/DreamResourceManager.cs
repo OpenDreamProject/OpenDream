@@ -5,6 +5,7 @@ using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Shared.Network;
+using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -79,8 +80,8 @@ namespace OpenDreamRuntime.Resources {
             return resource;
         }
 
-        public DreamResource GetResource(int resourceId) {
-            return _resourceCache[resourceId];
+        public bool TryGetResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {
+            return _resourceCache.TryGetValue(resourceId, out resource);
         }
 
         public bool TryLoadResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {

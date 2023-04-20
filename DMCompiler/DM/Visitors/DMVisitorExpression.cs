@@ -221,7 +221,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.Path);
+            var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.NestedPath);
             if(lhs.TryAsConstant(out var _))
             {
                 DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
@@ -312,12 +312,12 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitLogicalAndAssign(DMASTLogicalAndAssign land) {
             var lhs = DMExpression.Create(_dmObject, _proc, land.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, land.B, lhs.Path);
+            var rhs = DMExpression.Create(_dmObject, _proc, land.B, lhs.NestedPath);
             Result = new Expressions.LogicalAndAssign(land.Location, lhs, rhs);
         }
         public void VisitLogicalOrAssign(DMASTLogicalOrAssign lor) {
             var lhs = DMExpression.Create(_dmObject, _proc, lor.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, lhs.Path);
+            var rhs = DMExpression.Create(_dmObject, _proc, lor.B, lhs.NestedPath);
             Result = new Expressions.LogicalOrAssign(lor.Location, lhs, rhs);
         }
 
@@ -359,7 +359,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitModulusModulusAssign(DMASTModulusModulusAssign modulusModulusAssign) {
             var lhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.A, _inferredPath);
-            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.B, lhs.Path);
+            var rhs = DMExpression.Create(_dmObject, _proc, modulusModulusAssign.B, lhs.NestedPath);
             Result = new Expressions.ModulusModulusAssign(modulusModulusAssign.Location, lhs, rhs);
         }
 
@@ -641,7 +641,7 @@ namespace DMCompiler.DM.Visitors {
                     case DMASTDereference.OperationKind.IndexSafe:
                         // Passing the path here is cursed, but one of the tests seems to suggest we want that?
                         operation.Index = DMExpression.Create(_dmObject, _proc, astOperation.Index, prevPath);
-                        operation.Path = null;
+                        operation.Path = prevPath;
                         prevPath = null;
                         pathIsFuzzy = true;
                         break;

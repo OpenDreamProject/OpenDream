@@ -85,6 +85,8 @@ namespace DMCompiler.DM {
         }
 
         public virtual DreamPath? Path => null;
+
+        public virtual DreamPath? NestedPath => Path;
     }
 
     // (a, b, c, ...)

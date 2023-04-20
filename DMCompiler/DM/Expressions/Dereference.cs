@@ -34,6 +34,9 @@ namespace DMCompiler.DM.Expressions {
         public override DreamPath? Path => _path;
         DreamPath? _path;
 
+        public override DreamPath? NestedPath => _nestedPath;
+        DreamPath? _nestedPath;
+
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
             _expression = expression;
@@ -43,6 +46,8 @@ namespace DMCompiler.DM.Expressions {
             if (_operations.Length == 0) {
                 throw new System.InvalidOperationException("deref expression has no operations");
             }
+
+            _nestedPath = _operations[^1].Path;
         }
 
         private void ShortCircuitHandler(DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {

@@ -9,6 +9,13 @@ using Robust.Shared.Map;
 
 namespace OpenDreamRuntime {
     internal sealed class AtomManager : IAtomManager {
+        public List<DreamObject> Areas { get; } = new();
+        public List<DreamObject> Turfs { get; } = new();
+        public List<DreamObject> Movables { get; } = new();
+        public List<DreamObject> Objects { get; } = new();
+        public List<DreamObject> Mobs { get; } = new();
+        public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
+
         //TODO: Maybe turn these into a special DreamList, similar to DreamListVars?
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; } = new();
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
@@ -23,6 +30,29 @@ namespace OpenDreamRuntime {
         private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
 
         private ServerAppearanceSystem? _appearanceSystem;
+
+        public DreamObject GetAtom(int index) {
+            if (index < Areas.Count)
+                return Areas[index];
+
+            index -= Areas.Count;
+            if (index < Turfs.Count)
+                return Turfs[index];
+
+            index -= Turfs.Count;
+            if (index < Movables.Count)
+                return Movables[index];
+
+            index -= Movables.Count;
+            if (index < Objects.Count)
+                return Objects[index];
+
+            index -= Objects.Count;
+            if (index < Mobs.Count)
+                return Mobs[index];
+
+            throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
+        }
 
         public EntityUid CreateMovableEntity(DreamObject atom) {
             if (_atomToEntity.TryGetValue(atom, out var entity))
@@ -293,31 +323,37 @@ namespace OpenDreamRuntime {
             _appearanceSystem.Animate(GetMovableEntity(atom), appearance, duration);
         }
 
-        public IconAppearance CreateAppearanceFrom(DreamValue value) {
+        public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {
             if (value.TryGetValueAsAppearance(out var copyFromAppearance)) {
-                return new(copyFromAppearance);
+                appearance = new(copyFromAppearance);
+                return true;
             }
 
             if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var copyFromImage)) {
-                return new(DreamMetaObjectImage.ObjectToAppearance[copyFromImage]);
+                appearance = new(DreamMetaObjectImage.ObjectToAppearance[copyFromImage]);
+                return true;
             }
 
             if (value.TryGetValueAsType(out var copyFromType)) {
-                return CreateAppearanceFromDefinition(copyFromType.ObjectDefinition);
+                appearance = CreateAppearanceFromDefinition(copyFromType.ObjectDefinition);
+                return true;
             }
 
             if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var copyFromAtom)) {
-                return CreateAppearanceFromAtom(copyFromAtom);
+                appearance = CreateAppearanceFromAtom(copyFromAtom);
+                return true;
             }
 
-            var appearance = new IconAppearance();
             if (_resourceManager.TryLoadIcon(value, out var iconResource)) {
-                appearance.Icon = iconResource.Id;
-            } else if (value != DreamValue.Null) {
-                throw new Exception($"Cannot create an appearance from {value}");
+                appearance = new IconAppearance() {
+                    Icon = iconResource.Id
+                };
+
+                return true;
             }
 
-            return appearance;
+            appearance = null;
+            return false;
         }
 
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
@@ -391,8 +427,17 @@ namespace OpenDreamRuntime {
     }
 
     public interface IAtomManager {
+        public List<DreamObject> Areas { get; }
+        public List<DreamObject> Turfs { get; }
+        public List<DreamObject> Movables { get; }
+        public List<DreamObject> Objects { get; }
+        public List<DreamObject> Mobs { get; }
+        public int AtomCount { get; }
+
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
+
+        public DreamObject GetAtom(int index);
 
         public EntityUid CreateMovableEntity(DreamObject movable);
         public EntityUid GetMovableEntity(DreamObject movable);
@@ -410,7 +455,7 @@ namespace OpenDreamRuntime {
         public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
         public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
-        public IconAppearance CreateAppearanceFrom(DreamValue value);
+        public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
         public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def);
     }

@@ -4,6 +4,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
 using System.Collections.Specialized;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -28,6 +29,7 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRoot {
         // I don't want to edit 100 procs to have the DreamManager passed to them
         // TODO: Pass NativeProc.State to every native proc
+        public static IAtomManager AtomManager;
         public static IDreamManager DreamManager;
         public static DreamResourceManager ResourceManager;
         public static IDreamMapManager MapManager;
@@ -52,14 +54,15 @@ namespace OpenDreamRuntime.Procs.Native {
             string message, title, button1, button2, button3;
 
             DreamValue usrArgument = state.Arguments.GetArgument(0, "Usr");
-            if (usrArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
+            if (usrArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var usr) ||
+                usrArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out usr)) {
                 message = state.Arguments.GetArgument(1, "Message").Stringify();
                 title = state.Arguments.GetArgument(2, "Title").Stringify();
                 button1 = state.Arguments.GetArgument(3, "Button1").Stringify();
                 button2 = state.Arguments.GetArgument(4, "Button2").Stringify();
                 button3 = state.Arguments.GetArgument(5, "Button3").Stringify();
-            } else {
-                mob = state.Usr;
+            } else { // Implicitly use usr, shift args over 1
+                usr = state.Usr;
                 message = usrArgument.Stringify();
                 title = state.Arguments.GetArgument(1, "Message").Stringify();
                 button1 = state.Arguments.GetArgument(2, "Title").Stringify();
@@ -67,9 +70,17 @@ namespace OpenDreamRuntime.Procs.Native {
                 button3 = state.Arguments.GetArgument(4, "Button2").Stringify();
             }
 
+            DreamConnection? connection = null;
+            if (usr?.IsSubtypeOf(ObjectTree.Mob) == true)
+                DreamManager.TryGetConnectionFromMob(usr, out connection);
+            else if (usr?.IsSubtypeOf(ObjectTree.Client) == true)
+                connection = DreamManager.GetConnectionFromClient(usr);
+
+            if (connection == null)
+                return new("OK"); // Returns "OK" if Usr is invalid
+
             if (String.IsNullOrEmpty(button1)) button1 = "Ok";
 
-            DreamConnection connection = DreamManager.GetConnectionFromMob(mob);
             return await connection.Alert(title, message, button1, button2, button3);
         }
 
@@ -87,11 +98,11 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!arguments.GetArgument(0, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
             if (arguments.GetArgument(0, "loop").TryGetValueAsInteger(out int loop))
-                throw new NotImplementedException("Looped animations are not implemented");
+                return DreamValue.Null; // TODO: Looped animations are not implemented
             if (arguments.GetArgument(0, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
-                throw new NotImplementedException("Non-linear easing types are not implemented");
+                return DreamValue.Null; // TODO: Non-linear animation easing types are not implemented"
             if (arguments.GetArgument(0, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
-                throw new NotImplementedException("Flags are not implemented");
+                return DreamValue.Null; // TODO: Animation flags are not implemented
 
             IAtomManager atomManager = IoCManager.Resolve<IAtomManager>();
             atomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
@@ -1451,7 +1462,7 @@ namespace OpenDreamRuntime.Procs.Native {
              * in which it takes, some sort of "opcode" and some system of arguments and does stuff with them,
              * all of which are just aliases for already-existing behaviour in DM through the /matrix methods
              * (m.Clone() or m.Interpolate() and so on)
-             * 
+             *
              * Normally I'd never stoop to developing any such ridiculous behaviour, but for some reason,
              * Paradise and a few other targets actually make use of these alternative signatures.
              * So, here's that.
@@ -1807,7 +1818,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int centerX = center.GetVariable("x").GetValueAsInteger();
             int centerY = center.GetVariable("y").GetValueAsInteger();
 
-            foreach (DreamObject mob in DreamManager.Mobs) {
+            foreach (DreamObject mob in AtomManager.Mobs) {
                 int mobX = mob.GetVariable("x").GetValueAsInteger();
                 int mobY = mob.GetVariable("y").GetValueAsInteger();
 
@@ -1864,12 +1875,12 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (arguments.ArgumentCount == 1) {
                 arguments.GetArgument(0, "L").TryGetValueAsInteger(out var high);
 
-                return new DreamValue(DreamManager.Random.Next(high));
+                return new DreamValue(DreamManager.Random.Next(high+1)); // rand() is inclusive on both ends
             } else {
                 arguments.GetArgument(0, "L").TryGetValueAsInteger(out var low);
                 arguments.GetArgument(1, "H").TryGetValueAsInteger(out var high);
 
-                return new DreamValue(DreamManager.Random.Next(Math.Min(low, high), Math.Max(low, high)));
+                return new DreamValue(DreamManager.Random.Next(Math.Min(low, high), Math.Max(low, high)+1)); // rand() is inclusive on both ends
             }
         }
 
@@ -2516,9 +2527,10 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_stat(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
             DreamValue name = arguments.GetArgument(0, "Name");
             DreamValue value = arguments.GetArgument(1, "Value");
-            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            OutputToStatPanel(connection, name, value);
+            if (DreamManager.TryGetConnectionFromMob(usr, out var connection))
+                OutputToStatPanel(connection, name, value);
+
             return DreamValue.Null;
         }
 
@@ -2530,14 +2542,17 @@ namespace OpenDreamRuntime.Procs.Native {
             string panel = arguments.GetArgument(0, "Panel").GetValueAsString();
             DreamValue name = arguments.GetArgument(1, "Name");
             DreamValue value = arguments.GetArgument(2, "Value");
-            DreamConnection connection = DreamManager.GetConnectionFromMob(usr);
 
-            connection.SetOutputStatPanel(panel);
-            if (name != DreamValue.Null || value != DreamValue.Null) {
-                OutputToStatPanel(connection, name, value);
+            if (DreamManager.TryGetConnectionFromMob(usr, out var connection)) {
+                connection.SetOutputStatPanel(panel);
+                if (name != DreamValue.Null || value != DreamValue.Null) {
+                    OutputToStatPanel(connection, name, value);
+                }
+
+                return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
             }
 
-            return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
+            return DreamValue.False;
         }
 
         [DreamProc("tan")]
@@ -2723,6 +2738,94 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(0);
         }
 
+        /// <summary> Global turn() proc </summary>
+        /// <remarks> Take note that this turn proc is a counterclockwise rotation unlike the rest </remarks>
+        [DreamProc("turn")]
+        [DreamProcParameter("Dir", Type = DreamValueType.Float)]
+        [DreamProcParameter("Angle", Type = DreamValueType.Float)]
+        public static DreamValue NativeProc_turn(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+            DreamValue dirArg = arguments.GetArgument(0, "dir");
+            DreamValue angleArg = arguments.GetArgument(1, "angle");
+
+            // Handle an invalid angle, defaults to 0
+            if (!angleArg.TryGetValueAsFloat(out float angle)) {
+                angle = 0;
+            }
+
+            // If Dir is actually an icon, call /icon.Turn
+            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Icon, out var icon)) {
+                // Clone icon here since it's specified to return a new one
+                DreamObject clonedIcon = DreamMetaObjectIcon.CloneIcon(ObjectTree, icon);
+                return DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, usr, angle);
+            }
+
+            // If Dir is actually a matrix, call /matrix.Turn
+            if (dirArg.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out var matrix)) {
+                // Clone matrix here since it's specified to return a new one
+                DreamObject clonedMatrix = DreamMetaObjectMatrix.MatrixClone(ObjectTree, matrix);
+                return DreamProcNativeMatrix._NativeProc_TurnInternal(clonedMatrix, usr, angle);
+            }
+
+            dirArg.TryGetValueAsInteger(out int possibleDir);
+
+            AtomDirection dir = (AtomDirection)possibleDir;
+            float? dirAngle = dir switch {
+                    AtomDirection.East => 0,
+                    AtomDirection.Northeast => 45,
+                    AtomDirection.North => 90,
+                    AtomDirection.Northwest => 135,
+                    AtomDirection.West => 180,
+                    AtomDirection.Southwest => 225,
+                    AtomDirection.South => 270,
+                    AtomDirection.Southeast => 315,
+                    _ => null
+            };
+
+            // Is the dir invalid?
+            if (dirAngle == null) {
+                // If Dir is invalid and angle is zero, 0 is returned
+                if (angle == 0) {
+                    return new DreamValue(0);
+                }
+
+                // Otherwise, it returns a random direction
+                // Can't just select a random value from AtomDirection since that contains AtomDirection.None
+                var selectedDirIndex = DreamManager.Random.Next(8);
+                var selectedDir = selectedDirIndex switch {
+                    0 => AtomDirection.North,
+                    1 => AtomDirection.South,
+                    2 => AtomDirection.East,
+                    3 => AtomDirection.West,
+                    4 => AtomDirection.Northeast,
+                    5 => AtomDirection.Southeast,
+                    6 => AtomDirection.Southwest,
+                    7 => AtomDirection.Northwest,
+                    _ => throw new UnreachableException()
+                };
+
+                return new((int)selectedDir);
+            }
+
+            dirAngle += MathF.Truncate(angle / 45) * 45;
+            dirAngle %= 360;
+
+            if (dirAngle < 0) {
+                dirAngle = 360 + dirAngle;
+            }
+
+            AtomDirection toReturn = dirAngle switch {
+                    45 => AtomDirection.Northeast,
+                    90 => AtomDirection.North,
+                    135 => AtomDirection.Northwest,
+                    180 => AtomDirection.West,
+                    225 => AtomDirection.Southwest,
+                    270 => AtomDirection.South,
+                    315 => AtomDirection.Southeast,
+                    _ => AtomDirection.East
+            };
+            return new DreamValue((int)toReturn);
+        }
+
         [DreamProc("typesof")]
         [DreamProcParameter("Item1", Type = DreamValueType.DreamType | DreamValueType.DreamObject | DreamValueType.ProcStub | DreamValueType.VerbStub)]
         public static DreamValue NativeProc_typesof(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
@@ -2893,7 +2996,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int centerX = center.GetVariable("x").MustGetValueAsInteger();
             int centerY = center.GetVariable("y").MustGetValueAsInteger();
 
-            foreach (DreamObject mob in DreamManager.Mobs) {
+            foreach (DreamObject mob in AtomManager.Mobs) {
                 int mobX = mob.GetVariable("x").MustGetValueAsInteger();
                 int mobY = mob.GetVariable("y").MustGetValueAsInteger();
 
@@ -2943,7 +3046,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamConnection? connection;
 
             if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
-                connection = DreamManager.GetConnectionFromMob(mob);
+                DreamManager.TryGetConnectionFromMob(mob, out connection);
             } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
                 connection = DreamManager.GetConnectionFromClient(client);
             } else {
@@ -2959,16 +3062,18 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("control_id", Type = DreamValueType.String)]
         public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.State state) {
             DreamValue player = state.Arguments.GetArgument(0, "player");
-            if (!state.Arguments.GetArgument(1, "control_id").TryGetValueAsString(out string controlId)) {
+            if (!state.Arguments.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
                 return new DreamValue("");
             }
 
-            DreamConnection connection;
-            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out DreamObject mob)) {
-                connection = DreamManager.GetConnectionFromMob(mob);
-            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out DreamObject client)) {
+            DreamConnection? connection = null;
+            if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
+                DreamManager.TryGetConnectionFromMob(mob, out connection);
+            } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
                 connection = DreamManager.GetConnectionFromClient(client);
-            } else {
+            }
+
+            if (connection == null) {
                 throw new Exception($"Invalid client {player}");
             }
 
@@ -2984,13 +3089,15 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue controlId = arguments.GetArgument(1, "control_id");
             string winsetControlId = (controlId != DreamValue.Null) ? controlId.GetValueAsString() : null;
             string winsetParams = arguments.GetArgument(2, "params").GetValueAsString();
-            DreamConnection connection;
 
+            DreamConnection? connection = null;
             if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Mob, out var mob)) {
-                connection = DreamManager.GetConnectionFromMob(mob);
+                DreamManager.TryGetConnectionFromMob(mob, out connection);
             } else if (player.TryGetValueAsDreamObjectOfType(ObjectTree.Client, out var client)) {
                 connection = DreamManager.GetConnectionFromClient(client);
-            } else {
+            }
+
+            if (connection == null) {
                 throw new ArgumentException($"Invalid \"player\" argument {player}");
             }
 

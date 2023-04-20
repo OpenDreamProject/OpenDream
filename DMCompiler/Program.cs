@@ -103,12 +103,35 @@ namespace DMCompiler {
                             settings.PragmaFileOverride = arg.Value;
                             break;
                     }
+                    case "version": {
+                        if(arg.Value is null) {
+                            if(skipBad) {
+                                DMCompiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
+                                continue;
+                            }
+                            Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
+                            return false;
+                        }
+
+                        var split = arg.Value.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                        if (split.Length != 2 || !int.TryParse(split[0], out _) || !int.TryParse(split[1], out _)) { // We want to make sure that they *are* ints but the preprocessor takes strings
+                            if(skipBad) {
+                                DMCompiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
+                                continue;
+                            }
+                            Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
+                            return false;
+                        }
+
+                        settings.DMVersion = split[0];
+                        settings.DMBuild = split[1];
+                        break;
+                    }
                     case null: { // Value-only argument
                         if (arg.Value is null) // A completely empty argument? This should be a bug.
                             continue;
                         if (HasValidDMExtension(arg.Value)) {
                             settings.Files.Add(arg.Value);
-                            Console.WriteLine($"Compiling {Path.GetFileName(arg.Value)}");
                             break;
                         }
                         if(skipBad) {
@@ -136,6 +159,10 @@ namespace DMCompiler {
             {
                 Console.WriteLine("At least one DME or DM file must be provided as an argument");
                 return false;
+            } else {
+                foreach(var file in settings.Files) {
+                    Console.WriteLine($"Compiling {Path.GetFileName(file)} on {settings.DMVersion}.{settings.DMBuild}");
+                }
             }
 
             return true;

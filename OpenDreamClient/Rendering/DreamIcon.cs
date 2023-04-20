@@ -66,7 +66,7 @@ namespace OpenDreamClient.Rendering {
             ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
 
             appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
-                if (parentDir != null) {
+                if (parentDir != null && appearance.InheritsDirection) {
                     appearance = new IconAppearance(appearance) {
                         Direction = parentDir.Value
                     };

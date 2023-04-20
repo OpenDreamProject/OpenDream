@@ -7,6 +7,7 @@ using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
 using OpenDreamShared.Rendering;
+using Robust.Shared.Profiling;
 
 namespace OpenDreamClient.Rendering;
 
@@ -19,6 +20,7 @@ sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
+    [Dependency] private readonly ProfManager _prof = default!;
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
     private EntityQuery<DreamMobSightComponent> mobSightQuery;
@@ -39,12 +41,13 @@ sealed class DreamViewOverlay : Overlay {
     public bool MouseMapRenderEnabled = false;
     private IRenderTexture _mouseMapRenderTarget;
     public Texture MouseMap;
-    public Dictionary<Color, EntityUid> MouseMapLookup = new();
+    public Dictionary<Color, RendererMetaData> MouseMapLookup = new();
     private Dictionary<String, IRenderTexture> _renderSourceLookup = new();
     private Stack<IRenderTexture> _renderTargetsToReturn = new();
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private Matrix3 _flipMatrix;
+    private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
@@ -70,6 +73,8 @@ sealed class DreamViewOverlay : Overlay {
     protected override void Draw(in OverlayDrawArgs args) {
         EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
         if (eye == null) return;
+
+        using var _ = _prof.Group("Dream View Overlay");
 
         //because we render everything in render targets, and then render those to the world, we've got to apply some transformations to all world draws
         //in order to correct for different coordinate systems and general weirdness
@@ -120,7 +125,13 @@ sealed class DreamViewOverlay : Overlay {
             return;
         Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
 
-        var entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, screenArea.Scale(1.2f)); //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
+        HashSet<EntityUid> entities;
+        using (_prof.Group("lookup")) {
+            //TODO use a sprite tree.
+            //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
+            entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, screenArea.Scale(1.2f), MapLookupFlags);
+        }
+
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
         int seeVis = 127;
@@ -135,10 +146,12 @@ sealed class DreamViewOverlay : Overlay {
         }
 
         //visible entities
-        if(RenderEntityEnabled){
+        if(RenderEntityEnabled) {
+            using var _ = _prof.Group("process entities");
             foreach (EntityUid entity in entities) {
                 if(entity == eye)
                     continue; //don't render the player twice
+                // TODO use a sprite tree.
                 if (!spriteQuery.TryGetComponent(entity, out var sprite))
                     continue;
                 if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
@@ -151,6 +164,7 @@ sealed class DreamViewOverlay : Overlay {
 
         //visible turfs
         if(RenderTurfEnabled){
+            using var _ = _prof.Group("visible turfs");
             if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
                 foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
                     MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
@@ -160,6 +174,7 @@ sealed class DreamViewOverlay : Overlay {
 
         //screen objects
         if(ScreenOverlayEnabled){
+            using var _ = _prof.Group("screen objects");
             foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
                 if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager, seeInvis: seeVis))
                     continue;
@@ -179,12 +194,16 @@ sealed class DreamViewOverlay : Overlay {
         if(sprites.Count == 0)
             return;
 
-        sprites.Sort();
+        using (_prof.Group("sort sprites")) {
+            sprites.Sort();
+        }
+
         //dict of planes to their planemaster (if they have one) and list of mousmap and sprite draw actions on that plane in order, keyed by plane number
         Dictionary<float, (RendererMetaData?, List<(Action, Action)>)> planesList = new(sprites.Count);
 
         //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
 
+        var profGroup = _prof.Group("draw sprites");
         for(var i = 0; i < sprites.Count; i++){
             RendererMetaData sprite = sprites[i];
 
@@ -235,6 +254,8 @@ sealed class DreamViewOverlay : Overlay {
                 planesList[sprite.Plane] = planeEntry;
             }
         }
+        profGroup.Dispose();
+
         //Final draw
         //At this point, all the sprites have been organised on their planes, render targets have been drawn, now we just draw it all together!
         IRenderTexture baseTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
@@ -242,8 +263,12 @@ sealed class DreamViewOverlay : Overlay {
 
         //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
         List<float> planeKeys = new List<float>(planesList.Keys);
-        planeKeys.Sort();
 
+        using (_prof.Group("sort planeKeys")) {
+            planeKeys.Sort();
+        }
+
+        profGroup = _prof.Group("draw planeKeys");
         foreach(float plane in planeKeys){
             (RendererMetaData?, List<(Action,Action)>) planeEntry = planesList[plane];
             IRenderTexture planeTarget = baseTarget;
@@ -275,6 +300,7 @@ sealed class DreamViewOverlay : Overlay {
                 ReturnRenderTarget(planeTarget);
             }
         }
+        profGroup.Dispose();
 
         if(MouseMapRenderEnabled) //if this is enabled, we just draw the mouse map
             args.WorldHandle.DrawTexture(_mouseMapRenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom*-1), null);
@@ -425,6 +451,7 @@ sealed class DreamViewOverlay : Overlay {
             }
             current.KeepTogetherGroup = flatKTGroup;
         }
+
         result.Add(current);
         return result;
     }
@@ -545,13 +572,11 @@ sealed class DreamViewOverlay : Overlay {
         //setup the mousemaplookup shader for use in DrawIcon()
         byte[] rgba = BitConverter.GetBytes(iconMetaData.GetHashCode());
         Color targetColor = new Color(rgba[0],rgba[1],rgba[2],255); //TODO - this could result in misclicks due to hash-collision since we ditch a whole byte.
-        MouseMapLookup[targetColor] = iconMetaData.ClickUID;
-
-
+        MouseMapLookup[targetColor] = iconMetaData;
 
         Matrix3 tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, untranslate
-                                    iconMetaData.TransformToApply *
-                                    Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
+                                 iconMetaData.TransformToApply *
+                                 Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
         Box2 drawBounds = new Box2(pixelPosition, pixelPosition+frame.Size);
 
         //go fast when the only filter is color, and we don't have more color things to consider

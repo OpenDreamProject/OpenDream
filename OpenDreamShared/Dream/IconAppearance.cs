@@ -12,6 +12,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public int? Icon;
         [ViewVariables] [CanBeNull] public string IconState;
         [ViewVariables] public AtomDirection Direction = AtomDirection.South;
+        [ViewVariables] public bool InheritsDirection = true; // Inherits direction when used as an overlay
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
         [ViewVariables] public byte Alpha = 255;
@@ -50,6 +51,7 @@ namespace OpenDreamShared.Dream {
             Icon = appearance.Icon;
             IconState = appearance.IconState;
             Direction = appearance.Direction;
+            InheritsDirection = appearance.InheritsDirection;
             PixelOffset = appearance.PixelOffset;
             Color = appearance.Color;
             Alpha = appearance.Alpha;
@@ -80,6 +82,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Icon != Icon) return false;
             if (appearance.IconState != IconState) return false;
             if (appearance.Direction != Direction) return false;
+            if (appearance.InheritsDirection != InheritsDirection) return false;
             if (appearance.PixelOffset != PixelOffset) return false;
             if (appearance.Color != Color) return false;
             if (appearance.Alpha != Alpha) return false;
@@ -150,6 +153,7 @@ namespace OpenDreamShared.Dream {
             hashCode.Add(Icon);
             hashCode.Add(IconState);
             hashCode.Add(Direction);
+            hashCode.Add(InheritsDirection);
             hashCode.Add(PixelOffset);
             hashCode.Add(Color);
             hashCode.Add(ColorMatrix);

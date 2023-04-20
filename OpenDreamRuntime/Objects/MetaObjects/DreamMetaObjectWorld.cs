@@ -13,6 +13,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public bool ShouldCallNew => false; // Gets called manually later
         public IDreamMetaObject? ParentType { get; set; }
 
+        [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IServerNetManager _netManager = default!;
@@ -114,7 +115,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
                 case "contents":
-                    return new DreamValue(new WorldContentsList(_objectTree.List.ObjectDefinition, _dreamMapManager));
+                    return new DreamValue(new WorldContentsList(_objectTree.List.ObjectDefinition, _atomManager));
                 case "process":
                     return new DreamValue(Environment.ProcessId);
                 case "tick_lag":
@@ -184,7 +185,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public void OperatorOutput(DreamValue a, DreamValue b) {
+        public void OperatorOutput(DreamObject a, DreamValue b) {
             foreach (DreamConnection connection in _dreamManager.Connections) {
                 connection.OutputDreamValue(b);
             }

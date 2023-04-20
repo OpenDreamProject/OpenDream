@@ -451,9 +451,16 @@ namespace OpenDreamRuntime {
         public override bool Equals(object? obj) => obj is DreamValue other && Equals(other);
 
         public bool Equals(DreamValue other) {
+            // Ensure deleted DreamObjects are made null
+            if ((_refValue as DreamObject)?.Deleted == true)
+                _refValue = null;
+            if ((other._refValue as DreamObject)?.Deleted == true)
+                other._refValue = null;
+
             if (Type != other.Type) return false;
             if (Type == DreamValueType.Float) return _floatValue == other._floatValue;
             if (_refValue == null) return other._refValue == null;
+
             return _refValue.Equals(other._refValue);
         }
 

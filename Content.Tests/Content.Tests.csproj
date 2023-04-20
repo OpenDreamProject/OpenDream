@@ -7,7 +7,7 @@
     <IsPackable>false</IsPackable>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\bin\Content.Tests\</OutputPath>
-    <Configurations>Debug;Release</Configurations>
+    <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
     <Nullable>enable</Nullable>
   </PropertyGroup>

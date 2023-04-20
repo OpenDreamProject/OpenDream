@@ -7,8 +7,6 @@ using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeIcon {
-        public static IDreamObjectTree ObjectTree;
-
         [DreamProc("Width")]
         public static DreamValue NativeProc_Width(NativeProc.State state) {
             DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];

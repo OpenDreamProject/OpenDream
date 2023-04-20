@@ -42,6 +42,8 @@ namespace OpenDreamRuntime.Procs {
             public override NativeProc Proc => _proc;
 
             public IDreamManager DreamManager => _proc._dreamManager;
+            public IAtomManager AtomManager => _proc._atomManager;
+            public IDreamMapManager MapManager => _proc._mapManager;
             public DreamResourceManager ResourceManager => _proc._resourceManager;
             public IDreamObjectTree ObjectTree => _proc._objectTree;
 
@@ -77,18 +79,22 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private readonly IDreamManager _dreamManager;
+        private readonly IAtomManager _atomManager;
+        private readonly IDreamMapManager _mapManager;
         private readonly DreamResourceManager _resourceManager;
         private readonly IDreamObjectTree _objectTree;
 
         private readonly Dictionary<string, DreamValue> _defaultArgumentValues;
         private readonly HandlerFn _handler;
 
-        public NativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
+        public NativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
             : base(owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _handler = handler;
 
             _dreamManager = dreamManager;
+            _atomManager = atomManager;
+            _mapManager = mapManager;
             _resourceManager = resourceManager;
             _objectTree = objectTree;
         }

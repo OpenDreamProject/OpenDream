@@ -9,6 +9,13 @@ using Robust.Shared.Map;
 
 namespace OpenDreamRuntime {
     internal sealed class AtomManager : IAtomManager {
+        public List<DreamObject> Areas { get; } = new();
+        public List<DreamObject> Turfs { get; } = new();
+        public List<DreamObject> Movables { get; } = new();
+        public List<DreamObject> Objects { get; } = new();
+        public List<DreamObject> Mobs { get; } = new();
+        public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
+
         //TODO: Maybe turn these into a special DreamList, similar to DreamListVars?
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; } = new();
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
@@ -23,6 +30,29 @@ namespace OpenDreamRuntime {
         private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
 
         private ServerAppearanceSystem? _appearanceSystem;
+
+        public DreamObject GetAtom(int index) {
+            if (index < Areas.Count)
+                return Areas[index];
+
+            index -= Areas.Count;
+            if (index < Turfs.Count)
+                return Turfs[index];
+
+            index -= Turfs.Count;
+            if (index < Movables.Count)
+                return Movables[index];
+
+            index -= Movables.Count;
+            if (index < Objects.Count)
+                return Objects[index];
+
+            index -= Objects.Count;
+            if (index < Mobs.Count)
+                return Mobs[index];
+
+            throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
+        }
 
         public EntityUid CreateMovableEntity(DreamObject atom) {
             if (_atomToEntity.TryGetValue(atom, out var entity))
@@ -183,8 +213,9 @@ namespace OpenDreamRuntime {
                 case "icon":
                     if (appearance.Icon == null)
                         return DreamValue.Null;
+                    if (!_resourceManager.TryLoadResource(appearance.Icon.Value, out var iconResource))
+                        return DreamValue.Null;
 
-                    var iconResource = _resourceManager.GetResource(appearance.Icon.Value);
                     return new(iconResource);
                 case "icon_state":
                     if (appearance.IconState == null)
@@ -397,8 +428,17 @@ namespace OpenDreamRuntime {
     }
 
     public interface IAtomManager {
+        public List<DreamObject> Areas { get; }
+        public List<DreamObject> Turfs { get; }
+        public List<DreamObject> Movables { get; }
+        public List<DreamObject> Objects { get; }
+        public List<DreamObject> Mobs { get; }
+        public int AtomCount { get; }
+
         public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
         public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
+
+        public DreamObject GetAtom(int index);
 
         public EntityUid CreateMovableEntity(DreamObject movable);
         public EntityUid GetMovableEntity(DreamObject movable);

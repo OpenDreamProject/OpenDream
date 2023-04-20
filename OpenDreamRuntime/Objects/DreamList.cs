@@ -451,19 +451,19 @@ namespace OpenDreamRuntime.Objects {
     // world.contents list
     // Operates on a list of all atoms
     public sealed class WorldContentsList : DreamList {
-        private readonly IDreamMapManager _mapManager;
+        private readonly IAtomManager _atomManager;
 
-        public WorldContentsList(DreamObjectDefinition listDef, IDreamMapManager mapManager) : base(listDef, 0) {
-            _mapManager = mapManager;
+        public WorldContentsList(DreamObjectDefinition listDef, IAtomManager atomManager) : base(listDef, 0) {
+            _atomManager = atomManager;
         }
 
         public override DreamValue GetValue(DreamValue key) {
             if (!key.TryGetValueAsInteger(out var index))
                 throw new Exception($"Invalid index into world contents list: {key}");
-            if (index < 1 || index > _mapManager.AllAtoms.Count)
+            if (index < 1 || index > _atomManager.AtomCount)
                 throw new Exception($"Out of bounds index on world contents list: {index}");
 
-            return new DreamValue(_mapManager.AllAtoms[index - 1]);
+            return new DreamValue(_atomManager.GetAtom(index - 1));
         }
 
         public override List<DreamValue> GetValues() {
@@ -483,7 +483,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override int GetLength() {
-            return _mapManager.AllAtoms.Count;
+            return _atomManager.AtomCount;
         }
     }
 

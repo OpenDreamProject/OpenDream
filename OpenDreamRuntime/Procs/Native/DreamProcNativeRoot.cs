@@ -1481,15 +1481,24 @@ namespace OpenDreamRuntime.Procs.Native {
                     }
                     return new DreamValue(invertableMatrix);
                 case MatrixOpcode.Rotate:
-                    if (!firstArgument.TryGetValueAsFloat(out float rotationAngle))
-                        throw new ArgumentException($"/matrix() called with invalid rotation angle '{rotationAngle}'");
+                    var angleArgument = firstArgument;
+                    if (firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out DreamObject? matrixToRotate)) {
+                        //We have a matrix to rotate, and an angle to rotate it by.
+                        angleArgument = secondArgument;
+                    }
+                    if (!angleArgument.TryGetValueAsFloat(out float rotationAngle))
+                        throw new ArgumentException($"/matrix() called with invalid rotation angle '{firstArgument}'");
                     var (angleSin, angleCos) = ((float, float))Math.SinCos(Math.PI / 180.0 * rotationAngle); // NOTE: Not sure if BYOND uses double or float precision in this specific case.
                     if (float.IsSubnormal(angleSin)) // FIXME: Think of a better solution to bad results for some angles.
                         angleSin = 0;
                     if (float.IsSubnormal(angleCos))
                         angleCos = 0;
                     var rotationMatrix = DreamMetaObjectMatrix.MakeMatrix(state.ObjectTree, angleCos, angleSin, 0, -angleSin, angleCos, 0);
-                    return new DreamValue(rotationMatrix);
+                    if (matrixToRotate == null) return new DreamValue(rotationMatrix);
+                    if (!doModify)
+                        matrixToRotate = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, matrixToRotate);
+                    DreamMetaObjectMatrix.MultiplyMatrix(matrixToRotate, rotationMatrix);
+                    return new DreamValue(matrixToRotate);
                 case MatrixOpcode.Scale:
                     //Four possible signatures: two to create a scale-matrix, and one to scale an existing matrix
                     //matrix(scale, MATRIX_SCALE)

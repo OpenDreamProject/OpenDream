@@ -37,6 +37,18 @@
 	if(rotated ~! matrix(0,1,0,-1,0,0))
 		CRASH("MATRIX_ROTATE failure, expected \[0,1,0,-1,0,0\], got [json_encode(matrix(90, MATRIX_ROTATE))]")
 	
+	//MATRIX_ROTATE with matrix argument
+	var/matrix/before_rotate = matrix(1,2,3,4,5,6)
+	var/matrix/rotated2 = matrix(before_rotate, 90, MATRIX_ROTATE)
+	rotated2 = round_but_todo_please_fix_this_inaccuracy(rotated2)
+	if(rotated2 ~! matrix(4,5,6,-1,-2,-3))
+		CRASH("MATRIX_ROTATE failure, expected \[4,5,6,-1,-2,-3\], got [json_encode(matrix(matrix(1,2,3,4,5,6), 90, MATRIX_ROTATE))]")
+	if(before_rotate ~! matrix(1,2,3,4,5,6))
+		CRASH("MATRIX_ROTATE modified the matrix it was given, without being given a MATRIX_MODIFY flag.")
+	matrix(before_rotate, 90, MATRIX_ROTATE | MATRIX_MODIFY)
+	if(before_rotate ~! matrix(4,5,6,-1,-2,-3))
+		CRASH("MATRIX_ROTATE | MATRIX_MODIFY failed to leave a modified, rotated matrix. Matrix is instead [json_encode(before_rotate)].")
+
 	//MATRIX_INVERT
 	var/matrix/inv = matrix(doReMe,MATRIX_INVERT)
 	if(inv ~! matrix(-5/3,2/3,1,4/3,-1/3,-2))

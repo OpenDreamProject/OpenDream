@@ -47,7 +47,7 @@ sealed class DreamViewOverlay : Overlay {
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private Matrix3 _flipMatrix;
-    private const LookupFlags Flags = LookupFlags.Approximate | LookupFlags.Uncontained;
+    private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
@@ -129,7 +129,7 @@ sealed class DreamViewOverlay : Overlay {
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
             //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
-            entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, screenArea.Scale(1.2f), Flags);
+            entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, screenArea.Scale(1.2f), MapLookupFlags);
         }
 
         List<RendererMetaData> sprites = new(entities.Count + 1);

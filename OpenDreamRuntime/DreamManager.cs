@@ -213,10 +213,7 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsAppearance(out var appearance)) {
                 refType = RefType.DreamAppearance;
                 _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                uint? appearanceId = _appearanceSystem.GetAppearanceId(appearance);
-                if (appearanceId == null) {
-                    throw new Exception("Cannot create reference ID for an appearance that is not registered");
-                }
+                uint? appearanceId = _appearanceSystem.GetAppearanceId(appearance) ?? _appearanceSystem.AddAppearance(appearance);
                 idx = (int)appearanceId;
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 // Bit of a hack. This should use a resource's ID once they are refactored to have them.

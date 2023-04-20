@@ -1,6 +1,7 @@
 ﻿using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Serialization.Manager;
 
 namespace OpenDreamClient.Interface;
 
@@ -118,7 +119,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         public override void AddChild(ElementDescriptor descriptor) {
             // Set the child's category to this element
             // TODO: The "parent" and "category" attributes seem to be treated differently in BYOND; not the same thing.
-            ((Descriptors.MenuElementDescriptor) descriptor).Category = MenuElementDescriptor.Name;
+            descriptor = ((MenuElementDescriptor) descriptor).WithCategory(IoCManager.Resolve<ISerializationManager>(), MenuElementDescriptor.Name);
 
             // Pass this on to the parent menu
             _menu.AddChild(descriptor);

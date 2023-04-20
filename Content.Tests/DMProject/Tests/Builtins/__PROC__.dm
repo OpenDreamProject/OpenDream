@@ -1,11 +1,9 @@
 
-// opendream_procpath is equivalent to ..... in BYOND
-
 /atom/movable/proc/foo()
-	return opendream_procpath
+	return __PROC__
 
 /proc/bar()
-	return opendream_procpath
+	return __PROC__
 
 /proc/RunTest()
 	var/atom/movable/A = new

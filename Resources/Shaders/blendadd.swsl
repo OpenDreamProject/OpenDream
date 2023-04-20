@@ -1,0 +1,31 @@
+light_mode unshaded;
+blend_mode add;
+
+uniform lowp mat4 colorMatrix;
+uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is
+
+void fragment() {
+    highp vec4 oldColor = zToSrgb(zTexture(UV)); // TODO: It'd be easier and more precise if we avoided this color-space conversion.
+    COLOR[0] =  oldColor[0] * colorMatrix[0][0] + 
+                oldColor[1] * colorMatrix[0][1] + 
+                oldColor[2] * colorMatrix[0][2] + 
+                oldColor[3] * colorMatrix[0][3];
+
+    COLOR[1] =  oldColor[0] * colorMatrix[1][0] + 
+                oldColor[1] * colorMatrix[1][1] + 
+                oldColor[2] * colorMatrix[1][2] + 
+                oldColor[3] * colorMatrix[1][3];
+
+    COLOR[2] =  oldColor[0] * colorMatrix[2][0] + 
+                oldColor[1] * colorMatrix[2][1] + 
+                oldColor[2] * colorMatrix[2][2] + 
+                oldColor[3] * colorMatrix[2][3];
+
+    COLOR[3] =  oldColor[0] * colorMatrix[3][0] + 
+                oldColor[1] * colorMatrix[3][1] + 
+                oldColor[2] * colorMatrix[3][2] + 
+                oldColor[3] * colorMatrix[3][3];
+    COLOR = zFromSrgb(COLOR + offsetVector);
+}
+
+    

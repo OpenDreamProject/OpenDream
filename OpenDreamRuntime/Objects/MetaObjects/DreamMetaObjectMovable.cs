@@ -3,6 +3,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     [Virtual]
@@ -26,6 +27,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            if (dreamObject.ObjectDefinition == _objectTree.Movable.ObjectDefinition)
+                _atomManager.Movables.Add(dreamObject);
+
+            _atomManager.CreateMovableEntity(dreamObject); // TODO: Should probably be moved to earlier in init; before even <init> is called.
+
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             DreamValue locArgument = creationArguments.GetArgument(0, "loc");
@@ -35,6 +41,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             DreamValue screenLocationValue = dreamObject.GetVariable("screen_loc");
             if (screenLocationValue != DreamValue.Null) UpdateScreenLocation(dreamObject, screenLocationValue);
+        }
+
+        public void OnObjectDeleted(DreamObject dreamObject) {
+            if (dreamObject.ObjectDefinition == _objectTree.Movable.ObjectDefinition)
+                _atomManager.Movables.RemoveSwap(_atomManager.Movables.IndexOf(dreamObject));
+
+            ParentType?.OnObjectDeleted(dreamObject);
         }
 
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
@@ -58,11 +71,20 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 }
                 case "loc": {
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
+                    if (!_entityManager.TryGetComponent(entity, out TransformComponent? transform))
+                        return;
+
+                    if (_dreamMapManager.TryGetCellFromTransform(transform, out var oldMapCell)) {
+                        oldMapCell.Movables.Remove(dreamObject);
+                    }
 
                     if (value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turfLoc)) {
-                        (Vector2i pos, DreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
+                        (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turfLoc);
                         _transformSystem.SetParent(entity, level.Grid.Owner);
                         _transformSystem.SetWorldPosition(entity, pos);
+
+                        var newMapCell = _dreamMapManager.GetCellFromTurf(turfLoc);
+                        newMapCell.Movables.Add(dreamObject);
                     } else if (value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movableLoc)) {
                         EntityUid locEntity = _atomManager.GetMovableEntity(movableLoc);
                         _transformSystem.SetParent(entity, locEntity);
@@ -85,7 +107,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "desc": {
-                    value.TryGetValueAsString(out string desc);
+                    value.TryGetValueAsString(out string? desc);
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
                     if (!_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData))
                         break;

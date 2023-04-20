@@ -32,6 +32,7 @@ namespace OpenDreamClient.Interface.Controls
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
+        [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
         private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
@@ -77,6 +78,23 @@ namespace OpenDreamClient.Interface.Controls
 
             if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
                 context.DoCancel();
+
+                if (newUri.Host == "winset") { // Embedded winset. Ex: usr << browse("<a href=\"byond://winset?command=.quit\">Quit</a>", "window=quitbutton")
+                    // Strip the question mark out before parsing
+                    var queryParams = HttpUtility.ParseQueryString(newUri.Query.Substring(1));
+
+                    // We need to extract the control element (if one was included)
+                    string? element = queryParams.Get("element");
+                    queryParams.Remove("element");
+
+                    // Reassemble the query params without element then convert to winset syntax
+                    var query = queryParams.ToString();
+                    query = query!.Replace('&', ';'); // TODO: More robust parsing
+
+                    // We can finally call winset
+                    _interfaceManager.WinSet(element, query);
+                    return;
+                }
 
                 var msg = new MsgTopic() { Query = newUri.Query };
                 _netManager.ClientSendMessage(msg);

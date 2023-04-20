@@ -43,7 +43,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 if (dreamRegex.IsGlobal) {
-                    state.Src.SetVariable("next", new DreamValue(match.Index + match.Length));
+                    state.Src.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
                 }
 
                 return new DreamValue(match.Index + 1);

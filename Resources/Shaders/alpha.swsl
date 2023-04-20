@@ -1,0 +1,35 @@
+blend_mode none;
+light_mode unshaded;
+uniform highp float x;
+uniform highp float y;   
+uniform highp int flags;
+uniform sampler2D mask_texture;
+
+void fragment() {
+    highp vec4 mask_color;
+    highp vec4 new_color;
+    highp vec2 mask_size = vec2(textureSize(mask_texture, 0));
+    highp vec2 input_size = vec2(textureSize(TEXTURE, 0));
+    highp vec2 ratio;
+    
+    bool mask_swap_flag = (flags & 2) == 2;
+    bool mask_invert_flag = (flags & 1) == 1;
+
+    if(mask_swap_flag){        
+        ratio = mask_size/input_size;
+        new_color = texture(mask_texture, UV);  
+        mask_color = zTexture((-ratio/2.0+0.5)+UV*ratio);        
+    } else {
+        ratio = input_size/mask_size;
+        new_color = zTexture(UV);   
+        mask_color = texture(mask_texture, (-ratio/2.0+0.5)+UV*ratio);
+    }  
+
+    if(mask_invert_flag){
+        new_color.a *= 1.0-mask_color.a;
+    } else {
+        new_color.a *= mask_color.a;
+    }
+
+    COLOR = new_color;
+}

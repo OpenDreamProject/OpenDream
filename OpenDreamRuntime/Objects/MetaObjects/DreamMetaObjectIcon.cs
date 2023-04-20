@@ -1,9 +1,5 @@
-using System.IO;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Resources;
-using ParsedDMIDescription = OpenDreamShared.Resources.DMIParser.ParsedDMIDescription;
 
 namespace OpenDreamRuntime.Objects.MetaObjects;
 
@@ -12,7 +8,6 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
     public IDreamMetaObject? ParentType { get; set; }
 
     [Dependency] private readonly DreamResourceManager _rscMan = default!;
-    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
     public DreamMetaObjectIcon() {
         IoCManager.InjectDependencies(this);
@@ -71,5 +66,17 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
 
         ObjectToDreamIcon.Add(icon, dreamIcon);
         return dreamIcon;
+    }
+
+    public static DreamObject CloneIcon(IDreamObjectTree ObjectTree, DreamObject icon) {
+        // var newIcon = ObjectTree.CreateObject(icon.ObjectDefinition.TreeEntry);
+        // newIcon.InitSpawn(new Procs.DreamProcArguments(args));
+        //TODO: actually clone the icon
+        return icon;
+    }
+
+    public static DreamIcon TurnIcon(DreamIcon icon, float angle) {
+        //TODO: actually rotate the icon clockwise x degrees
+        return icon;
     }
 }

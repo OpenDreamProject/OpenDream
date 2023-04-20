@@ -15,5 +15,8 @@ namespace OpenDreamShared {
 
         public static readonly CVarDef<int> DebugAdapterLaunched =
             CVarDef.Create("opendream.debug_adapter_launched", 0, CVar.SERVERONLY);
+
+        public static readonly CVarDef<bool> SpoofIEUserAgent =
+            CVarDef.Create("opendream.spoof_ie_user_agent", true, CVar.CLIENTONLY);
     }
 }

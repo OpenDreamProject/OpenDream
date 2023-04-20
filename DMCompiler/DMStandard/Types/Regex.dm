@@ -20,6 +20,10 @@
 			src.flags = flags
 
 	proc/Find(haystack, Start = 1, End = 0)
+
+	proc/Find_char(haystack, Start = 1, End = 0)
+		set opendream_unimplemented = TRUE
+
 	proc/Replace(haystack, replacement, Start = 1, End = 0)
 
 	proc/Replace_char(haystack, replacement, Start = 1, End = 0)

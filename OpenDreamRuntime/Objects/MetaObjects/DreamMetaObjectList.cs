@@ -125,7 +125,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OperatorRemove(DreamValue a, DreamValue b) {
             DreamList list = a.MustGetValueAsDreamList();
 
-            if (b.TryGetValueAsDreamList(out DreamList bList)) {
+            if (b.TryGetValueAsDreamList(out var bList)) {
                 DreamValue[] values = bList.GetValues().ToArray();
 
                 foreach (DreamValue value in values) {

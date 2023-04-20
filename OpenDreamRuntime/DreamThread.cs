@@ -87,21 +87,29 @@ namespace OpenDreamRuntime {
     }
 
     [Virtual]
-    class DMRuntime : Exception {
+    class DMThrowException : Exception {
         public readonly DreamValue Value;
-        public DMRuntime(string message)
-            : base(message) {
-            Value = new DreamValue(message);
+
+        public DMThrowException(DreamValue value) : base(GetRuntimeMessage(value)) {
+            Value = value;
         }
 
-        public DMRuntime(DreamValue value) : base($"'throw' thrown ({value})") {
-            Value = value;
+        private static string GetRuntimeMessage(DreamValue value) {
+            string? name;
+
+            value.TryGetValueAsDreamObject(out var dreamObject);
+            if (dreamObject?.TryGetVariable("name", out var nameVar) == true) {
+                name = nameVar.TryGetValueAsString(out name) ? name : String.Empty;
+            } else {
+                name = String.Empty;
+            }
+
+            return name;
         }
     }
 
-    sealed class DMCrashRuntime : DMRuntime {
+    sealed class DMCrashRuntime : Exception {
         public DMCrashRuntime(string message) : base(message) { }
-        public DMCrashRuntime(DreamValue value) : base(value) { }
     }
 
     /// <summary>
@@ -134,11 +142,11 @@ namespace OpenDreamRuntime {
         public abstract ProcStatus Resume();
 
         /// <summary>
-        /// Returns wether or not the proc is currently in a try catch block.
+        /// Returns whether or not the proc is currently in a try catch block.
         /// </summary>
         public virtual bool IsCatching() => false;
 
-        public virtual void CatchException(DreamValue value) {
+        public virtual void CatchException(Exception exception) {
             throw new InvalidOperationException(
                 $"Called {nameof(CatchException)} on a {nameof(ProcState)} that isn't catching!");
         }
@@ -172,7 +180,7 @@ namespace OpenDreamRuntime {
         private static int _idCounter = 0;
         public int Id { get; } = ++_idCounter;
 
-        private const int MaxStackDepth = 256;
+        private const int MaxStackDepth = 400; // Same as BYOND but /world/loop_checks = 0 raises the limit
 
         private ProcState? _current;
         private Stack<ProcState> _stack = new();
@@ -206,13 +214,14 @@ namespace OpenDreamRuntime {
             try {
                 CurrentlyExecuting.Value!.Push(this);
                 while (_current != null) {
-                    bool TryCatchException(DreamValue value) {
+                    bool TryCatchException(Exception exception) {
                         if (!_stack.Any(x => x.IsCatching())) return false;
 
                         while (!_current.IsCatching()) {
                             PopProcState();
                         }
-                        _current.CatchException(value);
+
+                        _current.CatchException(exception);
                         return true;
                     }
 
@@ -223,7 +232,7 @@ namespace OpenDreamRuntime {
                     } catch (DMCrashRuntime dmCrashRuntime) {
                         //skip one level on the call stack because crash is being treated as an actual proc
                         PopProcState();
-                        if (TryCatchException(dmCrashRuntime.Value)) continue;
+                        if (TryCatchException(dmCrashRuntime)) continue;
                         HandleException(dmCrashRuntime);
                         status = ProcStatus.Returned;
                     } catch (DMError dmError) {
@@ -231,10 +240,8 @@ namespace OpenDreamRuntime {
                         HandleException(dmError);
                         status = ProcStatus.Cancelled;
                     } catch (Exception exception) {
-                        //dmruntime and system exceptions are handled the same (?)
-                        var dmRuntime = exception as DMRuntime ?? new DMRuntime(exception.Message);
-                        if (TryCatchException(dmRuntime.Value)) continue;
-                        HandleException(dmRuntime);
+                        if (TryCatchException(exception)) continue;
+                        HandleException(exception);
                         status = ProcStatus.Returned;
                     }
 

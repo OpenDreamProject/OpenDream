@@ -11,6 +11,7 @@ proc/arccos(X)
 proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
+proc/block(var/atom/Start, var/atom/End)
 proc/ceil(A)
 proc/ckey(Key)
 proc/ckeyEx(Text)
@@ -36,6 +37,8 @@ proc/flist(Path)
 proc/floor(A)
 proc/fract(n)
 proc/ftime(File, IsCreationTime = 0)
+proc/get_dir(atom/Loc1, atom/Loc2)
+proc/get_step(atom/Ref, Dir)
 proc/gradient(A, index)
 proc/hascall(Object, ProcName)
 proc/html_decode(HtmlText)
@@ -91,18 +94,22 @@ proc/sorttextEx(T1, T2)
 proc/sound(file, repeat = 0, wait, channel, volume)
 proc/spantext(Haystack,Needles,Start=1)
 proc/spantext_char(Haystack,Needles,Start=1)
+proc/splicetext(Text, Start = 1, End = 0, Insert = "")
+proc/splicetext_char(Text, Start = 1, End = 0, Insert = "")
 proc/splittext(Text, Delimiter)
 proc/sqrt(A)
 proc/stat(Name, Value)
 proc/statpanel(Panel, Name, Value)
 proc/tan(X)
 proc/text2ascii(T, pos = 1)
+proc/text2ascii_char(T, pos = 1)
 proc/text2file(Text, File)
 proc/text2num(T, radix = 10)
 proc/text2path(T)
 proc/time2text(timestamp, format)
 proc/trimtext(Text)
 proc/trunc(n)
+proc/turn(Dir, Angle)
 proc/typesof(Item1)
 proc/uppertext(T)
 proc/url_decode(UrlText)
@@ -111,6 +118,7 @@ proc/view(Dist = 5, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
+proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id)
 proc/winset(player, control_id, params)
 
@@ -142,53 +150,6 @@ proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 	set opendream_unimplemented = TRUE
 	return Haystack
 
-proc/block(var/atom/Start, var/atom/End)
-	var/list/atoms = list()
-
-	var/startX = min(Start.x, End.x)
-	var/startY = min(Start.y, End.y)
-	var/startZ = min(Start.z, End.z)
-	var/endX = max(Start.x, End.x)
-	var/endY = max(Start.y, End.y)
-	var/endZ = max(Start.z, End.z)
-	for (var/z=startZ; z<=endZ; z++)
-		for (var/y=startY; y<=endY; y++)
-			for (var/x=startX; x<=endX; x++)
-				atoms.Add(locate(x, y, z))
-
-	return atoms
-
-proc/get_step(atom/Ref, Dir)
-	if (Ref == null) return null
-
-	var/x = Ref.x
-	var/y = Ref.y
-	var/z = Ref.z
-
-	if (Dir & NORTH) y += 1
-	else if (Dir & SOUTH) y -= 1
-
-	if (Dir & EAST) x += 1
-	else if (Dir & WEST) x -= 1
-
-	if (Dir & UP) z += 1
-	else if (Dir & DOWN) z -= 1
-
-	return locate(x, y, z)
-
-proc/get_dir(atom/Loc1, atom/Loc2)
-	if (Loc1 == null || Loc2 == null || Loc1.z != Loc2.z) return 0
-
-	var/dir = 0
-
-	if (Loc2.x < Loc1.x) dir |= WEST
-	else if (Loc2.x > Loc1.x) dir |= EAST
-
-	if (Loc2.y < Loc1.y) dir |= SOUTH
-	else if (Loc2.y > Loc1.y) dir |= NORTH
-
-	return dir
-
 /proc/step(atom/movable/Ref, var/Dir, var/Speed=0)
 	//TODO: Speed = step_size if Speed is 0
 	Ref.Move(get_step(Ref, Dir), Dir)
@@ -216,46 +177,6 @@ proc/get_dir(atom/Loc1, atom/Loc2)
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE
 	CRASH("/walk_away() is not implemented")
-
-/proc/turn(Dir, Angle)
-	if (istype(Dir, /matrix))
-		var/matrix/copy = new(Dir)
-		return copy.Turn(Angle)
-
-	var/dirAngle = 0
-
-	switch (Dir)
-		if (EAST) dirAngle = 0
-		if (NORTHEAST) dirAngle = 45
-		if (NORTH) dirAngle = 90
-		if (NORTHWEST) dirAngle = 135
-		if (WEST) dirAngle = 180
-		if (SOUTHWEST) dirAngle = 225
-		if (SOUTH) dirAngle = 270
-		if (SOUTHEAST) dirAngle = 315
-		else
-			if (Angle != 0)
-				return pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
-			else if (!isnum(Dir))
-				CRASH("Invalid Dir \"[json_encode(Dir)]\"")
-			else
-				return Dir
-
-	dirAngle += trunc(Angle/45) * 45
-
-	dirAngle = dirAngle % 360
-	if(dirAngle < 0)
-		dirAngle = 360 + dirAngle
-
-	switch (dirAngle)
-		if (45) return NORTHEAST
-		if (90) return NORTH
-		if (135) return NORTHWEST
-		if (180) return WEST
-		if (225) return SOUTHWEST
-		if (270) return SOUTH
-		if (315) return SOUTHEAST
-		else return EAST
 
 proc/get_dist(atom/Loc1, atom/Loc2)
 	if (!istype(Loc1) || !istype(Loc2)) return 127
@@ -299,9 +220,11 @@ proc/step_rand(atom/movable/Ref, Speed=0)
 	return Ref.Move(target, get_dir(Ref, target))
 
 proc/jointext(list/List, Glue, Start = 1, End = 0)
-	if (isnull(List)) CRASH("Invalid list")
-
-	return List.Join(Glue, Start, End)
+	if(islist(List))
+		return List.Join(Glue, Start, End)
+	if(istext(List))
+		return List
+	CRASH("jointext was passed a non-list, non-text value")
 
 proc/lentext(T)
 	return length(T)
@@ -311,3 +234,12 @@ proc/isobj(Loc1)
 		if (!istype(arg, /obj)) return 0
 
 	return 1
+
+proc/winshow(player, window, show=1)
+	winset(player, window, "is-visible=[show ? "true" : "false"]")
+
+proc/refcount(var/Object)
+	// woah that's a lot of refs
+	// i wonder if it's true??
+	return 100
+	// (it's not)

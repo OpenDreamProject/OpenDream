@@ -94,6 +94,7 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgBrowse>(RxBrowse);
             _netManager.RegisterNetMessage<MsgTopic>();
             _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
+            _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
             _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
             _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
             _netManager.RegisterNetMessage<MsgAckLoadInterface>();
@@ -206,8 +207,8 @@ namespace OpenDreamClient.Interface {
                     outputBrowser = FindElementWithName(pBrowse.Window) as ControlBrowser;
 
                     if (outputBrowser == null) {
-
                         if (!_popupWindows.TryGetValue(pBrowse.Window, out popup)) {
+                            // Creating a new popup
                             popup = new BrowsePopup(pBrowse.Window, pBrowse.Size, _clyde.MainWindow);
                             popup.Closed += () => { _popupWindows.Remove(pBrowse.Window); };
 
@@ -231,6 +232,10 @@ namespace OpenDreamClient.Interface {
 
         private void RxWinSet(MsgWinSet message) {
             WinSet(message.ControlId, message.Params);
+        }
+
+        private void RxWinClone(MsgWinClone message) {
+            WinClone(message.ControlId, message.CloneId);
         }
 
         private void RxWinExists(MsgWinExists message) {
@@ -300,7 +305,11 @@ namespace OpenDreamClient.Interface {
                         return menuElement;
                 }
 
-                if (MacroSets.TryGetValue(elementName, out var macroSet)) return macroSet;
+                if (MacroSets.TryGetValue(elementName, out var macroSet))
+                    return macroSet;
+
+                if (_popupWindows.TryGetValue(elementName, out var popup))
+                    return popup.WindowElement;
             }
 
             return null;
@@ -394,26 +403,51 @@ namespace OpenDreamClient.Interface {
             }
         }
 
+        public void WinClone(string controlId, string cloneId) {
+            ElementDescriptor elementDescriptor = InterfaceDescriptor.GetElementDescriptor(controlId);
+
+            elementDescriptor = elementDescriptor?.CreateCopy(_serializationManager, cloneId);
+
+            // If window_name is "window", "pane", "menu", or "macro", and the skin file does not have a control of
+            // that name already, we will create a new control of that type from scratch.
+            if (elementDescriptor == null) {
+                switch (controlId) {
+                    case "window" :
+                        elementDescriptor = new WindowDescriptor(cloneId);
+                        break;
+                    case "menu":
+                        elementDescriptor = new MenuDescriptor(cloneId);
+                        break;
+                    case "macro":
+                        elementDescriptor = new MacroSetDescriptor(cloneId);
+                        break;
+                    default:
+                        Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
+                        return;
+                }
+            }
+
+            if (elementDescriptor is WindowDescriptor windowDescriptor) {
+                // Cloned windows start off non-visible
+                elementDescriptor = windowDescriptor.WithVisible(_serializationManager, false);
+            }
+
+            LoadDescriptor(elementDescriptor);
+        }
+
         private void LoadInterface(InterfaceDescriptor descriptor) {
             InterfaceDescriptor = descriptor;
 
             foreach (MacroSetDescriptor macroSet in descriptor.MacroSetDescriptors) {
-                MacroSets.Add(macroSet.Name, new(macroSet, _entitySystemManager, _inputManager));
+                LoadDescriptor(macroSet);
             }
 
             foreach (MenuDescriptor menuDescriptor in InterfaceDescriptor.MenuDescriptors) {
-                InterfaceMenu menu = new(menuDescriptor);
-
-                Menus.Add(menu.Name, menu);
+                LoadDescriptor(menuDescriptor);
             }
 
             foreach (WindowDescriptor windowDescriptor in InterfaceDescriptor.WindowDescriptors) {
-                ControlWindow window = new ControlWindow(windowDescriptor);
-
-                Windows.Add(windowDescriptor.Name, window);
-                if (window.IsDefault) {
-                    DefaultWindow = window;
-                }
+                LoadDescriptor(windowDescriptor);
             }
 
             foreach (ControlWindow window in Windows.Values) {
@@ -437,6 +471,29 @@ namespace OpenDreamClient.Interface {
             LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
             _userInterfaceManager.StateRoot.AddChild(DefaultWindow.UIElement);
+        }
+
+        private void LoadDescriptor(ElementDescriptor descriptor) {
+            switch (descriptor) {
+                case MacroSetDescriptor macroSetDescriptor:
+                    InterfaceMacroSet macroSet = new(macroSetDescriptor, _entitySystemManager, _inputManager);
+
+                    MacroSets.Add(macroSet.Name, macroSet);
+                    break;
+                case MenuDescriptor menuDescriptor:
+                    InterfaceMenu menu = new(menuDescriptor);
+
+                    Menus.Add(menu.Name, menu);
+                    break;
+                case WindowDescriptor windowDescriptor:
+                    ControlWindow window = new ControlWindow(windowDescriptor);
+
+                    Windows.Add(windowDescriptor.Name, window);
+                    if (window.IsDefault) {
+                        DefaultWindow = window;
+                    }
+                    break;
+            }
         }
     }
 

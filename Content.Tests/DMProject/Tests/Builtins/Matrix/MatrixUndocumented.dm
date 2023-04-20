@@ -42,7 +42,7 @@
 	var/matrix/rotated2 = matrix(before_rotate, 90, MATRIX_ROTATE)
 	rotated2 = round_but_todo_please_fix_this_inaccuracy(rotated2)
 	if(rotated2 ~! matrix(4,5,6,-1,-2,-3))
-		CRASH("MATRIX_ROTATE failure, expected \[4,5,6,-1,-2,-3\], got [json_encode(matrix(matrix(1,2,3,4,5,6), 90, MATRIX_ROTATE))]")
+		CRASH("MATRIX_ROTATE failure, expected \[4,5,6,-1,-2,-3\], got [json_encode(rotated2)]")
 	if(before_rotate ~! matrix(1,2,3,4,5,6))
 		CRASH("MATRIX_ROTATE modified the matrix it was given, without being given a MATRIX_MODIFY flag.")
 	matrix(before_rotate, 90, MATRIX_ROTATE | MATRIX_MODIFY)

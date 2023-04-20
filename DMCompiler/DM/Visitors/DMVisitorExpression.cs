@@ -5,6 +5,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
+using System.Linq;
 
 namespace DMCompiler.DM.Visitors {
     sealed class DMVisitorExpression : DMASTVisitor {
@@ -98,8 +99,11 @@ namespace DMCompiler.DM.Visitors {
                 case "args":
                     Result = new Expressions.Args(identifier.Location);
                     break;
-                case "opendream_procpath": // Our saner alternative to .....
-                    Result = new Expressions.OpenDreamProcpath(identifier.Location);
+                case "__TYPE__":
+                    Result = new Expressions.ProcOwnerType(identifier.Location);
+                    break;
+                case "__PROC__": // The saner alternative to .....
+                    Result = new Expressions.ProcType(identifier.Location);
                     break;
                 case "global":
                     Result = new Expressions.Global(identifier.Location);
@@ -190,7 +194,19 @@ namespace DMCompiler.DM.Visitors {
             // arglist hack
             if (procCall.Callable is DMASTCallableProcIdentifier ident) {
                 if (ident.Identifier == "arglist") {
-                    if (procCall.Parameters.Length != 1) throw new CompileErrorException(procCall.Location, "arglist must have 1 argument");
+                    switch (procCall.Parameters.Length) {
+                        case 0:
+                            DMCompiler.Emit(WarningCode.BadArgument, procCall.Location, "arglist() requires 1 argument");
+                            break;
+                        case 1:
+                            break;
+                        default:
+                            DMCompiler.Emit(
+                                WarningCode.TooManyArguments,
+                                procCall.Location,
+                                $"arglist() given {procCall.Parameters.Length} arguments, expecting 1");
+                            break;
+                    }
 
                     var expr = DMExpression.Create(_dmObject, _proc, procCall.Parameters[0].Value, _inferredPath);
                     Result = new Expressions.Arglist(procCall.Location, expr);
@@ -844,6 +860,11 @@ namespace DMCompiler.DM.Visitors {
         public void VisitInitial(DMASTInitial initial) {
             var expr = DMExpression.Create(_dmObject, _proc, initial.Expression, _inferredPath);
             Result = new Expressions.Initial(initial.Location, expr);
+        }
+
+        public void VisitNameof(DMASTNameof nameof) {
+            var expr = DMExpression.Create(_dmObject, _proc, nameof.Expression, _inferredPath);
+            Result = new Expressions.Nameof(nameof.Location, expr);
         }
 
         public void VisitIn(DMASTExpressionIn expressionIn) {

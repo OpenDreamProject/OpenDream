@@ -17,6 +17,7 @@ namespace OpenDreamRuntime.Procs {
         public int Line { get; }
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
 
+        public readonly IAtomManager AtomManager;
         public readonly IDreamManager DreamManager;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IDreamDebugManager DreamDebugManager;
@@ -25,7 +26,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
+        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
             : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
@@ -33,6 +34,7 @@ namespace OpenDreamRuntime.Procs {
             Line = json.Line;
             _maxStackSize = json.MaxStackSize;
 
+            AtomManager = atomManager;
             DreamManager = dreamManager;
             DreamMapManager = dreamMapManager;
             DreamDebugManager = dreamDebugManager;
@@ -184,6 +186,11 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall},
             {DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference},
             {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},
+            {DreamProcOpcode.BitShiftRightReference, DMOpcodeHandlers.BitShiftRightReference},
+            {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
+            {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
+            {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
         };
 
         private static readonly OpcodeHandler?[] _opcodeHandlers;
@@ -198,6 +205,9 @@ namespace OpenDreamRuntime.Procs {
         public int ArgumentCount;
         public string? CurrentSource;
         public int CurrentLine;
+        private readonly Stack<int> _catchPosition = new();
+        private readonly Stack<int> _catchVarIndex = new();
+        public const int NoTryCatchVar = -1;
         private Stack<IDreamValueEnumerator>? _enumeratorStack;
         public Stack<IDreamValueEnumerator> EnumeratorStack => _enumeratorStack ??= new(1);
 
@@ -273,7 +283,7 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        protected override ProcStatus InternalResume() {
+        public override ProcStatus Resume() {
             if (Instance?.Deleted == true) {
                 return ProcStatus.Returned;
             }
@@ -292,7 +302,18 @@ namespace OpenDreamRuntime.Procs {
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler is null)
                     throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
-                ProcStatus? status = handler.Invoke(this);
+
+                ProcStatus? status;
+                try {
+                    status = handler.Invoke(this);
+                } catch (Exception e) {
+                    if (!IsCatching())
+                        throw;
+
+                    CatchException(e);
+                    continue;
+                }
+
                 if (status != null) {
                     return status.Value;
                 }
@@ -336,6 +357,36 @@ namespace OpenDreamRuntime.Procs {
             return thread;
         }
 
+        public void StartTryBlock(int catchPosition, int catchVarIndex = NoTryCatchVar) {
+            _catchPosition.Push(catchPosition);
+            _catchVarIndex.Push(catchVarIndex);
+        }
+
+        public void EndTryBlock() {
+            _catchPosition.Pop();
+            _catchVarIndex.Pop();
+        }
+
+        public override bool IsCatching() => _catchPosition.Count > 0;
+
+        public override void CatchException(Exception exception) {
+            if (!IsCatching())
+                base.CatchException(exception);
+
+            Jump(_catchPosition.Pop());
+            var varIdx = _catchVarIndex.Pop();
+            if (varIdx != NoTryCatchVar) {
+                DreamValue value;
+
+                if (exception is DMThrowException throwException)
+                    value = throwException.Value;
+                else
+                    value = new DreamValue(exception.Message); // TODO: Probably need to create an /exception
+
+                _localVariables[varIdx] = value;
+            }
+        }
+
         public override void Dispose() {
             base.Dispose();
 
@@ -354,6 +405,9 @@ namespace OpenDreamRuntime.Procs {
 
             _dreamValuePool.Return(_localVariables);
             _localVariables = null;
+
+            _catchPosition.Clear();
+            _catchVarIndex.Clear();
 
             Pool.Push(this);
         }
@@ -535,7 +589,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Argument: return _localVariables[reference.Index];
                 case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Index];
                 case DMReference.Type.Args: {
-                    DreamList argsList = DreamList.Create(ArgumentCount);
+                    DreamList argsList = Proc.ObjectTree.CreateList(ArgumentCount);
 
                     for (int i = 0; i < ArgumentCount; i++) {
                         argsList.AddValue(_localVariables[i]);

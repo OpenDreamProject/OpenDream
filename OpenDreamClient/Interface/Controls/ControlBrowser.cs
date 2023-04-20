@@ -32,6 +32,7 @@ namespace OpenDreamClient.Interface.Controls
 
         [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
+        [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
         private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
@@ -56,17 +57,19 @@ namespace OpenDreamClient.Interface.Controls
         public override void Output(string value, string jsFunction) {
             if (jsFunction == null) return;
 
+            // Prepare the argument to be used in JS
             value = HttpUtility.UrlDecode(value);
-            value = value.Replace("\"", "\\\"");
-            _webView.ExecuteJavaScript(jsFunction + "(\"" + value + "\")");
+            value = HttpUtility.JavaScriptStringEncode(value);
+
+            // Insert the values directly into JS and execute it (what could go wrong??)
+            _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
         }
 
         public void SetFileSource(ResourcePath filepath, bool userData) {
             _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
         }
 
-        private void BeforeBrowseHandler(IBeforeBrowseContext context)
-        {
+        private void BeforeBrowseHandler(IBeforeBrowseContext context) {
             if (string.IsNullOrEmpty(_webView.Url))
                 return;
 
@@ -76,32 +79,42 @@ namespace OpenDreamClient.Interface.Controls
             if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
                 context.DoCancel();
 
+                if (newUri.Host == "winset") { // Embedded winset. Ex: usr << browse("<a href=\"byond://winset?command=.quit\">Quit</a>", "window=quitbutton")
+                    // Strip the question mark out before parsing
+                    var queryParams = HttpUtility.ParseQueryString(newUri.Query.Substring(1));
+
+                    // We need to extract the control element (if one was included)
+                    string? element = queryParams.Get("element");
+                    queryParams.Remove("element");
+
+                    // Reassemble the query params without element then convert to winset syntax
+                    var query = queryParams.ToString();
+                    query = query!.Replace('&', ';'); // TODO: More robust parsing
+
+                    // We can finally call winset
+                    _interfaceManager.WinSet(element, query);
+                    return;
+                }
+
                 var msg = new MsgTopic() { Query = newUri.Query };
                 _netManager.ClientSendMessage(msg);
             }
         }
 
-        private void RequestHandler(IRequestHandlerContext context)
-        {
+        private void RequestHandler(IRequestHandlerContext context) {
             Uri newUri = new Uri(context.Url);
 
-            if (newUri.Scheme == "usr")
-            {
+            if (newUri.Scheme == "usr") {
                 Stream stream;
                 HttpStatusCode status;
                 var path = new ResourcePath(newUri.AbsolutePath);
-                try
-                {
+                try {
                     stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
                     status = HttpStatusCode.OK;
-                }
-                catch (FileNotFoundException)
-                {
+                } catch (FileNotFoundException) {
                     stream = Stream.Null;
                     status = HttpStatusCode.NotFound;
-                }
-                catch (Exception e)
-                {
+                } catch (Exception e) {
                     _sawmill.Error($"Exception while loading file from usr://:\n{e}");
                     stream = Stream.Null;
                     status = HttpStatusCode.InternalServerError;

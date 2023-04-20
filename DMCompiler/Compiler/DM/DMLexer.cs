@@ -30,6 +30,11 @@ namespace DMCompiler.Compiler.DM {
             "..."
         };
 
+        private static readonly List<TokenType> ValidIdentifierComponents = new(2) {
+            TokenType.DM_Preproc_Identifier,
+            TokenType.DM_Preproc_Number
+        };
+
         // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
         private static readonly Dictionary<string, TokenType> Keywords = new(25) {
             { "null", TokenType.DM_Null },
@@ -51,6 +56,7 @@ namespace DMCompiler.Compiler.DM {
             { "as", TokenType.DM_As },
             { "set", TokenType.DM_Set },
             { "call", TokenType.DM_Call },
+            { "call_ext", TokenType.DM_Call},
             { "spawn", TokenType.DM_Spawn },
             { "goto", TokenType.DM_Goto },
             { "step", TokenType.DM_Step },
@@ -280,7 +286,7 @@ namespace DMCompiler.Compiler.DM {
                             //This is caused by preprocessor macros and escaped identifiers
                             do {
                                 identifierTextBuilder.Append(GetCurrent().Text);
-                            } while (Advance().Type == TokenType.DM_Preproc_Identifier && !AtEndOfSource);
+                            } while (ValidIdentifierComponents.Contains(Advance().Type) && !AtEndOfSource);
 
                             string identifierText = identifierTextBuilder.ToString();
                             if (Keywords.TryGetValue(identifierText, out TokenType keywordType)) {

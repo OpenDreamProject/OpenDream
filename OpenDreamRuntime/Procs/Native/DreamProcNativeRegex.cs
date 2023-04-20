@@ -33,7 +33,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 instance.SetVariable("index", new DreamValue(match.Index + 1));
                 instance.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = DreamList.Create(match.Groups.Count);
+                    DreamList groupList = DreamProcNativeRoot.ObjectTree.CreateList(match.Groups.Count);
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));
@@ -43,7 +43,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
 
                 if (dreamRegex.IsGlobal) {
-                    instance.SetVariable("next", new DreamValue(match.Index + match.Length));
+                    instance.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
                 }
 
                 return new DreamValue(match.Index + 1);

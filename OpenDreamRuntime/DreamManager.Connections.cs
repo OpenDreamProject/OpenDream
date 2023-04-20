@@ -1,5 +1,5 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
@@ -9,10 +9,8 @@ namespace OpenDreamRuntime {
     sealed partial class DreamManager {
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
-        private readonly Dictionary<IPlayerSession, DreamConnection> _connections = new();
-        private readonly Dictionary<DreamObject, DreamConnection> _clientToConnection = new();
+        private readonly Dictionary<NetUserId, DreamConnection> _connections = new();
 
-        public DreamConnection GetConnectionBySession(IPlayerSession session) => _connections[session];
         public IEnumerable<DreamConnection> Connections => _connections.Values;
 
         private void InitializeConnectionManager() {
@@ -30,6 +28,7 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgBrowse>();
             _netManager.RegisterNetMessage<MsgTopic>(RxTopic);
             _netManager.RegisterNetMessage<MsgWinSet>();
+            _netManager.RegisterNetMessage<MsgWinClone>();
             _netManager.RegisterNetMessage<MsgWinExists>();
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
@@ -58,10 +57,10 @@ namespace OpenDreamRuntime {
         }
 
         private DreamConnection ConnectionForChannel(INetChannel channel) {
-            return _connections[_playerManager.GetSessionByChannel(channel)];
+            return _connections[_playerManager.GetSessionByChannel(channel).UserId];
         }
 
-        private void OnPlayerStatusChanged(object sender, SessionStatusEventArgs e) {
+        private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
             switch (e.NewStatus) {
                 case SessionStatus.Connected:
                     var interfaceResource = _dreamResourceManager.LoadResource(_compiledJson.Interface);
@@ -72,52 +71,53 @@ namespace OpenDreamRuntime {
                     e.Session.ConnectedClient.SendMessage(msgLoadInterface);
                     break;
                 case SessionStatus.InGame: {
-                    var connection = new DreamConnection(e.Session);
-                    var client = _objectTree.CreateObject(_objectTree.Client);
-                    connection.ClientDreamObject = client;
+                    if (!_connections.TryGetValue(e.Session.UserId, out var connection)) {
+                        connection = new DreamConnection();
 
-                    _clientToConnection.Add(client, connection);
-                    _connections.Add(e.Session, connection);
-                    client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
+                        _connections.Add(e.Session.UserId, connection);
+                    }
 
+                    connection.HandleConnection(e.Session);
+                    break;
+                }
+                case SessionStatus.Disconnected: {
+                    DreamConnection connection = GetConnectionBySession(e.Session);
+
+                    connection.HandleDisconnection();
                     break;
                 }
             }
         }
 
         private void UpdateStat() {
-            foreach (var connection in _connections.Values)
-            {
+            foreach (var connection in _connections.Values) {
                 connection.UpdateStat();
             }
         }
 
-        public IPlayerSession GetSessionFromClient(DreamObject client) {
-            return _clientToConnection[client].Session;
+        public DreamConnection GetConnectionBySession(IPlayerSession session) {
+            return _connections[session.UserId];
         }
 
-        public DreamObject? GetClientFromMob(DreamObject mob) {
-            foreach (DreamObject client in _clientToConnection.Keys)
-            {
-                if (client.GetVariable("mob").GetValueAsDreamObject() == mob)
-                    return client;
+        public DreamConnection GetConnectionFromClient(DreamObject client) {
+            foreach (DreamConnection potentialConnection in Connections) {
+                if (potentialConnection.Client == client)
+                    return potentialConnection;
             }
 
-            return null;
+            throw new Exception($"Client {client} does not belong to a connection");
         }
 
-        public DreamConnection? GetConnectionFromMob(DreamObject mob) {
-            foreach (var connection in _connections.Values) {
-                if (connection.MobDreamObject == mob)
-                    return connection;
+        public bool TryGetConnectionFromMob(DreamObject mob, [NotNullWhen(true)] out DreamConnection? connection) {
+            foreach (DreamConnection potentialConnection in Connections) {
+                if (potentialConnection.Mob == mob) {
+                    connection = potentialConnection;
+                    return true;
+                }
             }
 
-            return null;
-        }
-
-        public DreamConnection? GetConnectionFromClient(DreamObject client) {
-            _clientToConnection.TryGetValue(client, out var connection);
-            return connection;
+            connection = null;
+            return false;
         }
     }
 }

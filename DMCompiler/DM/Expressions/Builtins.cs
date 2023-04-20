@@ -476,6 +476,19 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // nameof(x)
+    class Nameof : DMExpression {
+        DMExpression _expr;
+
+        public Nameof(Location location, DMExpression expr) : base(location) {
+            _expr = expr;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.PushString(_expr.GetNameof(dmObject, proc));
+        }
+    }
+
     // call(...)(...)
     class CallStatement : DMExpression {
         DMExpression _a; // Procref, Object, LibName
@@ -504,9 +517,25 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // opendream_procpath
-    class OpenDreamProcpath : DMExpression {
-        public OpenDreamProcpath(Location location)
+    // __TYPE__
+    class ProcOwnerType : DMExpression {
+        public ProcOwnerType(Location location)
+            : base(location)
+        {}
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            // BYOND returns null if this is called in a global proc
+            if (dmObject.Path == DreamPath.Root) {
+                proc.PushNull();
+            } else {
+                proc.PushType(dmObject.Id);
+            }
+        }
+    }
+
+    // __PROC__
+    class ProcType : DMExpression {
+        public ProcType(Location location)
             : base(location)
         {}
 

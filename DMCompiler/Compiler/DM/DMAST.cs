@@ -57,6 +57,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitProb(DMASTProb prob) { throw new NotImplementedException(); }
         public void VisitInput(DMASTInput input) { throw new NotImplementedException(); }
         public void VisitInitial(DMASTInitial initial) { throw new NotImplementedException(); }
+        public void VisitNameof(DMASTNameof nameof) { throw new NotImplementedException(); }
         public void VisitIsSaved(DMASTIsSaved isSaved) { throw new NotImplementedException(); }
         public void VisitIsType(DMASTIsType isType) { throw new NotImplementedException(); }
         public void VisitImplicitIsType(DMASTImplicitIsType isType) { throw new NotImplementedException(); }
@@ -259,6 +260,7 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    /// <remarks> Also includes proc overrides; see the <see cref="IsOverride"/> member. Verbs too.</remarks>
     public class DMASTProcDefinition : DMASTStatement {
         public DreamPath ObjectPath;
         public string Name;
@@ -960,6 +962,18 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitInitial(this);
+        }
+    }
+
+    public class DMASTNameof : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTNameof(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitNameof(this);
         }
     }
 

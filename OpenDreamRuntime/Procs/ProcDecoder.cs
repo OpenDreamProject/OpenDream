@@ -103,6 +103,8 @@ public struct ProcDecoder {
             case DreamProcOpcode.DivideReference:
             case DreamProcOpcode.BitXorReference:
             case DreamProcOpcode.ModulusReference:
+            case DreamProcOpcode.BitShiftLeftReference:
+            case DreamProcOpcode.BitShiftRightReference:
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
             case DreamProcOpcode.PopReference:
@@ -133,12 +135,16 @@ public struct ProcDecoder {
             case DreamProcOpcode.MassConcatenation:
             case DreamProcOpcode.JumpIfNull:
             case DreamProcOpcode.JumpIfNullNoPop:
+            case DreamProcOpcode.TryNoValue:
                 return (opcode, ReadInt());
 
             case DreamProcOpcode.JumpIfNullDereference:
             case DreamProcOpcode.JumpIfTrueReference:
             case DreamProcOpcode.JumpIfFalseReference:
                 return (opcode, ReadReference(), ReadInt());
+
+            case DreamProcOpcode.Try:
+                return (opcode, ReadInt(), ReadReference());
 
             case DreamProcOpcode.PushArguments: {
                 int argCount = ReadInt();
@@ -246,7 +252,10 @@ public struct ProcDecoder {
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
                     or DreamProcOpcode.JumpIfFalse
-                    or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                    or DreamProcOpcode.JumpIfTrue
+                    or DreamProcOpcode.TryNoValue, int jumpPosition):
+                return jumpPosition;
+            case (DreamProcOpcode.Try, int jumpPosition, DMReference dmReference):
                 return jumpPosition;
             case (DreamProcOpcode.Enumerate, DMReference reference, int jumpPosition):
                 return jumpPosition;

@@ -80,13 +80,17 @@ namespace DMCompiler.DM {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
+        public virtual string GetNameof(DMObject dmObject, DMProc proc) {
+            throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
+        }
+
         public virtual DreamPath? Path => null;
     }
 
     // (a, b, c, ...)
     // This isn't an expression, it's just a helper class for working with argument lists
     class ArgumentList {
-        (string Name, DMExpression Expr)[] Expressions;
+        public (string Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
         public Location Location;
 

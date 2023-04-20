@@ -136,19 +136,19 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/obj/item/I in world)</code>
     /// </summary>
     sealed class WorldContentsEnumerator : IDreamValueEnumerator {
-        private readonly IDreamMapManager _mapManager;
+        private readonly IAtomManager _atomManager;
         private readonly IDreamObjectTree.TreeEntry? _filterType;
         private int _current = -1;
 
-        public WorldContentsEnumerator(IDreamMapManager mapManager, IDreamObjectTree.TreeEntry? filterType) {
-            _mapManager = mapManager;
+        public WorldContentsEnumerator(IAtomManager atomManager, IDreamObjectTree.TreeEntry? filterType) {
+            _atomManager = atomManager;
             _filterType = filterType;
         }
 
         public DreamValue Current {
             get {
-                if (_current < _mapManager.AllAtoms.Count)
-                    return new(_mapManager.AllAtoms[_current]);
+                if (_current < _atomManager.AtomCount)
+                    return new(_atomManager.GetAtom(_current));
                 return DreamValue.Null;
             }
         }
@@ -156,11 +156,11 @@ namespace OpenDreamRuntime.Procs {
         public bool MoveNext() {
             do {
                 _current++;
-                if (_current >= _mapManager.AllAtoms.Count)
+                if (_current >= _atomManager.AtomCount)
                     return false;
 
                 if (_filterType != null) {
-                    if (_mapManager.AllAtoms[_current].IsSubtypeOf(_filterType))
+                    if (_atomManager.GetAtom(_current).IsSubtypeOf(_filterType))
                         return true;
                 } else {
                     return true;

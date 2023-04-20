@@ -1,5 +1,10 @@
 "a" = (/area,/turf)
+"b" = (/area,/turf/border)
 
 (1, 1, 1) = {"
-a
+bbbbb
+baaab
+baaab
+baaab
+bbbbb
 "}

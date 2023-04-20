@@ -44,6 +44,10 @@ namespace DMCompiler.DM.Expressions {
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Src;
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
+            return "src";
+        }
     }
 
     // usr
@@ -99,6 +103,10 @@ namespace DMCompiler.DM.Expressions {
             // This happens silently in BYOND
             DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a local variable returns the current value");
             EmitPushValue(dmObject, proc);
+        }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
+            return LocalVar.IsParameter ? proc.Parameters[LocalVar.Id] : proc.GetLocalVarName(LocalVar.Id);
         }
     }
 
@@ -158,6 +166,11 @@ namespace DMCompiler.DM.Expressions {
             // This happens silently in BYOND
             DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a global returns the current value");
             EmitPushValue(dmObject, proc);
+        }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
+            DMVariable global = DMObjectTree.Globals[Id];
+            return global.Name;
         }
 
         public override bool TryAsConstant(out Constant constant) {

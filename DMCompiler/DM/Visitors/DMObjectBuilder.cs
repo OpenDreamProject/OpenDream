@@ -15,14 +15,26 @@ namespace DMCompiler.DM.Visitors {
         /// Further, it just so happens to also act as a container that can enumerate all objects which were expecting a definition but never got one.
         /// </remarks>
         public static event EventHandler<DMVariable> VarDefined; // Fires if we define a new variable.
+        /// <summary>
+        /// A running collection of types that we need to find a definition for. <br/>
+        /// Comes up most especially when a var/some/type/x is defined before we know what /some/type even is. <br/>
+        /// The Location value can just be the first instance of this definition being promised, for errors' sake.
+        /// </summary>
+        public static Dictionary<DreamPath, Location> AwaitedObjectDefinitions = new();
+
+        /// <summary>
+        /// Similiar to <see cref="AwaitedObjectDefinitions"/> except for procs that are overridden before they are defined.
+        /// </summary>
+        public static Dictionary<string, DMObject> AwaitedProcDefinitions = new();
 
         public static void Reset() {
             DMObjectTree.Reset(); // Blank the object tree
             VarDefined = null;
+            AwaitedObjectDefinitions.Clear(); // Need to do this since this static is re-used during unit testing :^)
+            AwaitedProcDefinitions.Clear();
         }
         public static void BuildObjectTree(DMASTFile astFile) {
             Reset();
-
             ProcessFile(astFile); // generate it
 
             if (VarDefined != null) // This means some listeners are remaining, which means that variables were overridden but not defined! Bad!
@@ -39,6 +51,30 @@ namespace DMCompiler.DM.Visitors {
                             DMCompiler.Emit(WarningCode.DanglingOverride, varOverride.Location, $"Cannot override undefined var {varOverride.VarName}");
                         }
                     }
+                }
+            }
+
+            //Lets check in on all the types we found promised before and see if we actually got them. :^)
+            //Note: Dynamically removing types as we find them would've made the compiler 4x slower, per some tests I did.
+            //      It's much more performant to do it this way.
+            foreach(var pair in AwaitedObjectDefinitions) {
+                if(!DMObjectTree.TryGetTypeId(pair.Key,out var _))
+                    DMCompiler.Emit(WarningCode.DanglingVarType, pair.Value, $"Definition for path {pair.Key} not found");
+            }
+
+            //And now all the proc definitions we were promised
+            foreach (var pair in AwaitedProcDefinitions) {
+                if (pair.Value.IsRoot) { // Have to do this since DMObjectTree is what holds global procs, not the root DMObject, interestingly enough
+                    if(!DMObjectTree.SeenGlobalProcDefinition.Contains(pair.Key)) { // If we didn't see a definition for it :(
+                        int ID = DMObjectTree.GlobalProcs[pair.Key];
+                        DMProc proc = DMObjectTree.AllProcs[ID];
+                        DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for global proc {pair.Key} not found");
+                    }
+                    continue;
+                }
+                if (!pair.Value.HasProcDefined(pair.Key)) {
+                    DMProc proc = DMObjectTree.AllProcs[pair.Value.GetProcs(pair.Key)[0]];
+                    DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for proc {pair.Key} on type {pair.Value.Path} not found");
                 }
             }
 
@@ -128,6 +164,11 @@ namespace DMCompiler.DM.Visitors {
                 varObject.Variables[variable.Name] = variable;
             }
 
+            //Check if this var definition implies a type we don't know about yet
+            if(variable.Type != null && !DMObjectTree.TryGetTypeId(variable.Type.Value,out var _)) {
+                AwaitedObjectDefinitions.TryAdd(variable.Type.Value, varDefinition.Location);
+            }
+
             try {
                 SetVariableValue(varObject, ref variable, varDefinition.Value);
                 VarDefined?.Invoke(varObject, variable); // FIXME: God there HAS to be a better way of doing this
@@ -193,22 +234,40 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Name;
             try {
                 DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
-
-                if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                    throw new CompileErrorException(procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
+                bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
+                if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
+                    if(!dmObject.HasProcNoInheritence(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
+                        DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it");
+                        return; // TODO: Maybe fallthrough since this error is a little pedantic?
+                    }
+                    //Otherwise, it's ok
                 }
+                /*
+                    So the way that BYOND handles the distinction between definitions and overrides on the same type is kinda strange.
+                    There is NO visible dominance that one has over the other, except that the last one found is the first definition invoked when called.
 
-                DMProc proc;
+                    The only grammatical purpose the /proc/ phrase in one of the procs does,
+                    is to mark that this type should be the first one in its inheritence to have that proc defined.
+                    Nothing else.
+                */
+                if (procDefinition.IsOverride && !hasProc) // If an override for this proc was found before its definition
+                    AwaitedProcDefinitions.TryAdd(procName, dmObject); // Remember to check that we eventually found a definition, later :)
+
+                DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
 
                 if (procDefinition.ObjectPath == DreamPath.Root) {
-                    if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
-                        throw new CompileErrorException(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope");
+                    if(procDefinition.IsOverride) {
+                        DMCompiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");
+                        //Continue processing the proc anyhoo, just don't add it.
+                    } else {
+                        if (!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
+                            DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
+                            //Again, even though this is likely an error, process the statements anyways.
+                        } else {
+                            DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
+                        }
                     }
-
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
-                    DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                 } else {
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     dmObject.AddProc(procName, proc);
                 }
 
@@ -356,6 +415,7 @@ namespace DMCompiler.DM.Visitors {
                     "icon" => true,
                     "file" => true,
                     "sound" => true,
+                    "nameof" => true,
                     _ => false
                 },
 

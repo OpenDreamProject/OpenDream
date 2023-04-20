@@ -20,8 +20,7 @@ public sealed class SetupCompileDm {
             Files = new() { DmEnvironment }
         });
 
-        Assert.IsTrue(successfulCompile);
-        Assert.IsTrue(File.Exists(CompiledProject), "Failed to compile DM test project!");
+        Assert.IsTrue(successfulCompile && File.Exists(CompiledProject), "Failed to compile DM test project!");
     }
 
     [OneTimeTearDown]

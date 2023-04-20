@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -67,7 +67,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateList(DMProcState state) {
             int size = state.ReadInt();
-            var list = DreamList.Create(size);
+            var list = state.Proc.ObjectTree.CreateList(size);
 
             foreach (DreamValue value in state.PopCount(size)) {
                 list.AddValue(value);
@@ -79,7 +79,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? CreateAssociativeList(DMProcState state) {
             int size = state.ReadInt();
-            var list = DreamList.Create(size);
+            var list = state.Proc.ObjectTree.CreateList(size);
 
             ReadOnlySpan<DreamValue> popped = state.PopCount(size * 2);
             for (int i = 0; i < popped.Length; i += 2) {
@@ -96,7 +96,7 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IDreamMapManager mapManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
+        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IAtomManager atomManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
             if (!value.TryGetValueAsDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
@@ -105,7 +105,18 @@ namespace OpenDreamRuntime.Procs {
                     if (dreamObject.IsSubtypeOf(objectTree.Atom)) {
                         list = dreamObject.GetVariable("contents").GetValueAsDreamList();
                     } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
-                        return new WorldContentsEnumerator(mapManager, filterType);
+                        // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
+                        if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
+                            return new DreamObjectEnumerator(atomManager.Areas, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
+                            return new DreamObjectEnumerator(atomManager.Turfs, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Obj) == true) {
+                            return new DreamObjectEnumerator(atomManager.Objects, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Mob) == true) {
+                            return new DreamObjectEnumerator(atomManager.Mobs, filterType);
+                        }
+
+                        return new WorldContentsEnumerator(atomManager, filterType);
                     }
                 }
             }
@@ -113,7 +124,7 @@ namespace OpenDreamRuntime.Procs {
             if (list != null) {
                 // world.contents has its own special enumerator to prevent the huge copy
                 if (list is WorldContentsList)
-                    return new WorldContentsEnumerator(mapManager, filterType);
+                    return new WorldContentsEnumerator(atomManager, filterType);
 
                 var values = list.GetValues().ToArray();
 
@@ -121,12 +132,12 @@ namespace OpenDreamRuntime.Procs {
                     ? new DreamValueArrayEnumerator(values)
                     : new FilteredDreamValueArrayEnumerator(values, filterType);
             }
-
-            throw new Exception($"Value {value} is not a {objectTree.List}, {objectTree.Atom}, {objectTree.World}, or null");
+            // BYOND ignores all floats, strings, types, etc. here and just doesn't run the loop.
+            return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), null);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), null);
 
             state.EnumeratorStack.Push(enumerator);
             return null;
@@ -135,7 +146,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? CreateFilteredListEnumerator(DMProcState state) {
             var filterTypeId = state.ReadInt();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), filterType);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
 
             state.EnumeratorStack.Push(enumerator);
             return null;
@@ -153,7 +164,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Atom)) {
-                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.DreamMapManager, type));
+                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.AtomManager, type));
                 return null;
             }
 
@@ -388,7 +399,13 @@ namespace OpenDreamRuntime.Procs {
                         continue;
                     case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
                         // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
-                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var ordinalNumber)) {
+                        if (interps[prevInterpIndex].TryGetValueAsInteger(out var ordinalNumber)) {
+
+                            // For some mystical reason byond converts \th to integers
+                            // This is slightly hacky but the only reliable way I know how to replace the number
+                            // Need to call stringy to make sure its the right length to cut
+                            formattedString.Length -= interps[prevInterpIndex].Stringify().Length;
+                            formattedString.Append(ordinalNumber);
                             switch (ordinalNumber) {
                                 case 1:
                                     formattedString.Append("st");
@@ -436,6 +453,12 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                // Calling initial() on a null value just returns null
+                if (dreamObject == null) {
+                    state.Push(DreamValue.Null);
+                    return null;
+                }
+
                 state.Push(dreamObject.Initial(property));
                 return null;
             }
@@ -471,7 +494,8 @@ namespace OpenDreamRuntime.Procs {
                     if (listObject.IsSubtypeOf(state.Proc.ObjectTree.Atom) || listObject.IsSubtypeOf(state.Proc.ObjectTree.World)) {
                         list = listObject.GetVariable("contents").GetValueAsDreamList();
                     } else {
-                        throw new Exception($"Value {listObject} is not a {state.Proc.ObjectTree.List}, {state.Proc.ObjectTree.Atom}, or {state.Proc.ObjectTree.World}");
+                        // BYOND ignores all floats, strings, types, etc. here and just returns 0.
+                        state.Push(new DreamValue(0));
                     }
                 }
 
@@ -609,9 +633,8 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushGlobalVars(DMProcState state)
-        {
-            state.Push(new DreamValue(DreamGlobalVars.Create()));
+        public static ProcStatus? PushGlobalVars(DMProcState state) {
+            state.Push(new DreamValue(new DreamGlobalVars(state.Proc.ObjectTree.List.ObjectDefinition)));
             return null;
         }
         #endregion Values
@@ -662,7 +685,18 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
             DreamValue result;
-            if (first.TryGetValueAsDreamObject(out var firstObj)) {
+            if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)) {
+                // Implicitly create a new /icon and ICON_ADD blend it
+                // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
+                DreamObject iconObj = state.Proc.ObjectTree.CreateObject(state.Proc.ObjectTree.Icon);
+                var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
+                if (!state.Proc.DreamResourceManager.TryLoadIcon(first, out var from))
+                    throw new Exception($"Failed to create an icon from {from}");
+
+                icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+                DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
+                result = new DreamValue(iconObj);
+            } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
                     IDreamMetaObject metaObject = firstObj.ObjectDefinition.MetaObject;
 
@@ -677,17 +711,6 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     result = second;
                 }
-            } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Icon, out _)) {
-                // Implicitly create a new /icon and ICON_ADD blend it
-                // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
-                DreamObject iconObj = state.Proc.ObjectTree.CreateObject(state.Proc.ObjectTree.Icon);
-                var icon = DreamMetaObjectIcon.InitializeIcon(state.Proc.DreamResourceManager, iconObj);
-                if (!state.Proc.DreamResourceManager.TryLoadIcon(first, out var from))
-                    throw new Exception($"Failed to create an icon from {from}");
-
-                icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
-                DreamProcNativeIcon.Blend(icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
-                result = new DreamValue(iconObj);
             } else if (second != DreamValue.Null) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
@@ -743,7 +766,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
+                DreamList newList = state.Proc.ObjectTree.CreateList();
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
                     int len = list.GetLength();
@@ -837,6 +860,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    state.Push(new DreamValue(0));
+                    break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                     state.Push(new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger()));
                     break;
@@ -844,6 +870,27 @@ namespace OpenDreamRuntime.Procs {
                     throw new Exception($"Invalid bit shift left operation on {first} and {second}");
             }
 
+            return null;
+        }
+
+
+        public static ProcStatus? BitShiftLeftReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() << second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift left operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
             return null;
         }
 
@@ -862,11 +909,31 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? BitShiftRightReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue second = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference, peek: true);
+            DreamValue result;
+            switch (first.Type) {
+                case DreamValue.DreamValueType.DreamObject when first == DreamValue.Null:
+                    result = new DreamValue(0);
+                    break;
+                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
+                    result = new DreamValue(first.MustGetValueAsInteger() >> second.MustGetValueAsInteger());
+                    break;
+                default:
+                    throw new Exception($"Invalid bit shift right operation on {first} and {second}");
+            }
+            state.AssignReference(reference, result);
+            state.Push(result);
+            return null;
+        }
+
         public static ProcStatus? BitXor(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            state.Push(BitXorValues(first, second));
+            state.Push(BitXorValues(state.Proc.ObjectTree, first, second));
             return null;
         }
 
@@ -874,7 +941,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DMReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue result = BitXorValues(first, second);
+            DreamValue result = BitXorValues(state.Proc.ObjectTree, first, second);
 
             state.AssignReference(reference, result);
             state.Push(result);
@@ -1072,6 +1139,7 @@ namespace OpenDreamRuntime.Procs {
 
             switch (value.Type) {
                 case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.GetValueAsFloat())); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
                 default: throw new Exception("Invalid negate operation on " + value);
             }
 
@@ -1523,11 +1591,22 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Throw(DMProcState state) {
             DreamValue value = state.Pop();
 
-            if (value.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Exception, out DreamObject exception)) {
-                throw new CancellingRuntime($"'throw' thrown ({exception.GetVariable("name").GetValueAsString()})");
-            }
+            throw new DMThrowException(value);
+        }
 
-            throw new CancellingRuntime($"'throw' thrown ({value})");
+        public static ProcStatus? Try(DMProcState state) {
+            state.StartTryBlock(state.ReadInt(), state.ReadReference().Index);
+            return null;
+        }
+
+        public static ProcStatus? TryNoValue(DMProcState state) {
+            state.StartTryBlock(state.ReadInt());
+            return null;
+        }
+
+        public static ProcStatus? EndTry(DMProcState state) {
+            state.EndTryBlock();
+            return null;
         }
 
         public static ProcStatus? SwitchCase(DMProcState state) {
@@ -1619,7 +1698,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (a.TryGetValueAsDreamObject(out var dreamObject)) {
                 IDreamMetaObject? metaObject = dreamObject!.ObjectDefinition?.MetaObject;
 
-                metaObject?.OperatorOutput(a, b);
+                metaObject?.OperatorOutput(dreamObject, b);
             } else {
                 throw new NotImplementedException($"Unimplemented output operation between {a} and {b}");
             }
@@ -1684,8 +1763,8 @@ namespace OpenDreamRuntime.Procs {
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             IEnumerable<DreamConnection> clients;
-            if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Mob)) {
-                clients = new[] { state.DreamManager.GetConnectionFromMob(receiver) };
+            if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Mob) && state.DreamManager.TryGetConnectionFromMob(receiver, out var connection)) {
+                clients = new[] { connection };
             } else if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Client)) {
                 clients = new[] { state.DreamManager.GetConnectionFromClient(receiver) };
             } else if (receiver == state.DreamManager.WorldInstance) {
@@ -1759,7 +1838,7 @@ namespace OpenDreamRuntime.Procs {
 
             if (receiver == state.DreamManager.WorldInstance) {
                 //Same as "world << ..."
-                receiver.ObjectDefinition.MetaObject.OperatorOutput(new(receiver), message);
+                receiver.ObjectDefinition.MetaObject.OperatorOutput(receiver, message);
                 return null;
             }
 
@@ -1791,45 +1870,41 @@ namespace OpenDreamRuntime.Procs {
             DreamValue message, title, defaultValue;
 
             DreamValue firstArg = state.Pop();
-            if (firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Mob, out var recipientMob)) {
+            if (firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Mob, out var recipient) ||
+                firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Client, out recipient)) {
                 message = state.Pop();
                 title = state.Pop();
                 defaultValue = state.Pop();
             } else {
-                recipientMob = state.Usr;
+                recipient = state.Usr;
                 message = firstArg;
                 title = state.Pop();
                 defaultValue = state.Pop();
                 state.Pop(); //Fourth argument, should be null
             }
 
-            if (recipientMob == null) {
+            DreamConnection? connection = null;
+            if (recipient?.IsSubtypeOf(state.Proc.ObjectTree.Mob) == true)
+                state.Proc.DreamManager.TryGetConnectionFromMob(recipient, out connection);
+            else if (recipient?.IsSubtypeOf(state.Proc.ObjectTree.Client) == true)
+                connection = state.Proc.DreamManager.GetConnectionFromClient(recipient);
+
+            if (connection == null) {
                 state.Push(DreamValue.Null);
                 return null;
             }
 
-            if (recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Client, out var clientObject)) {
-                DreamConnection? connection = state.DreamManager.GetConnectionFromClient(clientObject);
-                if (connection == null) {
-                    state.Push(DreamValue.Null);
-                    return null;
-                }
-
-                Task<DreamValue> promptTask;
-                if (list.TryGetValueAsDreamList(out var valueList)) {
-                    promptTask = connection.PromptList(types, valueList, title.Stringify(), message.Stringify(), defaultValue);
-                } else {
-                    promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
-                }
-
-                // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
-                var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async _ => await promptTask);
-                state.Thread.PushProcState(waiter);
-                return ProcStatus.Called;
+            Task<DreamValue> promptTask;
+            if (list.TryGetValueAsDreamList(out var valueList)) {
+                promptTask = connection.PromptList(types, valueList, title.Stringify(), message.Stringify(), defaultValue);
+            } else {
+                promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
             }
 
-            state.Push(DreamValue.Null);
-            return null;
+            // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
+            var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async _ => await promptTask);
+            state.Thread.PushProcState(waiter);
+            return ProcStatus.Called;
         }
 
         public static ProcStatus? LocateCoord(DMProcState state)
@@ -1952,6 +2027,9 @@ namespace OpenDreamRuntime.Procs {
                     state.Push(value);
                     return null;
                 }
+
+                if (values.Count == 0)
+                    throw new Exception("pick() from empty list");
 
                 picked = values[state.DreamManager.Random.Next(0, values.Count)];
             } else {
@@ -2213,9 +2291,9 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static DreamValue BitXorValues(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsDreamList(out DreamList list)) {
-                DreamList newList = DreamList.Create();
+        private static DreamValue BitXorValues(IDreamObjectTree objectTree, DreamValue first, DreamValue second) {
+            if (first.TryGetValueAsDreamList(out var list)) {
+                DreamList newList = objectTree.CreateList();
                 List<DreamValue> values;
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {

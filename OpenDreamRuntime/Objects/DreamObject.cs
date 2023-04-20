@@ -37,7 +37,7 @@ namespace OpenDreamRuntime.Objects {
 
         public void Delete(IDreamManager manager) {
             if (Deleted) return;
-            ObjectDefinition?.MetaObject?.OnObjectDeleted(this);
+            ObjectDefinition.MetaObject?.OnObjectDeleted(this);
             Deleted = true;
             //we release all relevant information, making this a very tiny object
             _variables = null;
@@ -72,12 +72,12 @@ namespace OpenDreamRuntime.Objects {
 
         public DreamValue GetVariable(string name) {
             if(Deleted){
-                throw new Exception("Cannot read " + name + " on a deleted object");
+                throw new NullReferenceException("Cannot read " + name + " on a deleted object");
             }
             if (TryGetVariable(name, out DreamValue variableValue)) {
                 return variableValue;
             } else {
-                throw new Exception("Variable " + name + " doesn't exist");
+                throw new KeyNotFoundException("Variable " + name + " doesn't exist");
             }
         }
 
@@ -98,6 +98,7 @@ namespace OpenDreamRuntime.Objects {
             if(Deleted){
                 throw new Exception("Cannot try to get variable on a deleted object");
             }
+
             if ((_variables?.TryGetValue(name, out variableValue) is true) || ObjectDefinition.Variables.TryGetValue(name, out variableValue)) {
                 if (ObjectDefinition.MetaObject != null) variableValue = ObjectDefinition.MetaObject.OnVariableGet(this, name, variableValue);
 

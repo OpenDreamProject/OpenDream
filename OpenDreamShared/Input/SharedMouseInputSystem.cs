@@ -14,6 +14,8 @@ public class SharedMouseInputSystem : EntitySystem {
         public bool Shift { get; }
         public bool Ctrl { get; }
         public bool Alt { get; }
+        public int IconX { get; }
+        public int IconY { get; }
     }
 
     [Serializable, NetSerializable]
@@ -23,13 +25,17 @@ public class SharedMouseInputSystem : EntitySystem {
         public bool Shift { get; }
         public bool Ctrl { get; }
         public bool Alt { get; }
+        public int IconX { get; }
+        public int IconY { get; }
 
-        public EntityClickedEvent(EntityUid entityUid, ScreenLocation screenLoc, bool shift, bool ctrl, bool alt) {
+        public EntityClickedEvent(EntityUid entityUid, ScreenLocation screenLoc, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
             EntityUid = entityUid;
             ScreenLoc = screenLoc;
             Shift = shift;
             Ctrl = ctrl;
             Alt = alt;
+            IconX = iconPos.X;
+            IconY = iconPos.Y;
         }
     }
 
@@ -41,14 +47,18 @@ public class SharedMouseInputSystem : EntitySystem {
         public bool Shift { get; }
         public bool Ctrl { get; }
         public bool Alt { get; }
+        public int IconX { get; }
+        public int IconY { get; }
 
-        public TurfClickedEvent(Vector2i position, int z, ScreenLocation screenLoc, bool shift, bool ctrl, bool alt) {
+        public TurfClickedEvent(Vector2i position, int z, ScreenLocation screenLoc, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
             Position = position;
             Z = z;
             ScreenLoc = screenLoc;
             Shift = shift;
             Ctrl = ctrl;
             Alt = alt;
+            IconX = iconPos.X;
+            IconY = iconPos.Y;
         }
     }
 }

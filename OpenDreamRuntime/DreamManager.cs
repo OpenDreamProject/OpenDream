@@ -8,6 +8,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;

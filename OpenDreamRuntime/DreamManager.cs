@@ -260,7 +260,7 @@ namespace OpenDreamRuntime {
                         ? new DreamValue(_objectTree.Types[refId])
                         : DreamValue.Null;
                 case RefType.DreamResource:
-                    if (!_dreamResourceManager.TryGetResource(refId, out var resource))
+                    if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
                         return DreamValue.Null;
 
                     return new DreamValue(resource);

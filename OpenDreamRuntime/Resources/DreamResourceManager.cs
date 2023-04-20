@@ -80,10 +80,6 @@ namespace OpenDreamRuntime.Resources {
             return resource;
         }
 
-        public bool TryGetResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {
-            return _resourceCache.TryGetValue(resourceId, out resource);
-        }
-
         public bool TryLoadResource(int resourceId, [NotNullWhen(true)] out DreamResource? resource) {
             if (resourceId >= 0 && resourceId < _resourceCache.Count) {
                 resource = _resourceCache[resourceId];

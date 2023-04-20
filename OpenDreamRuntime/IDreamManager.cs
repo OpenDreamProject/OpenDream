@@ -49,6 +49,7 @@ namespace OpenDreamRuntime {
         DreamObject = 1,
         String = 2,
         DreamType = 3,
-        DreamResource = 4
+        DreamResource = 4,
+        DreamAppearance = 5
     }
 }

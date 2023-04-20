@@ -5,6 +5,7 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Json;
@@ -24,6 +25,9 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly ITaskManager _taskManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
+        private ServerAppearanceSystem? _appearanceSystem;
 
         public DreamObject WorldInstance { get; private set; }
         public Exception? LastDMException { get; set; }
@@ -206,6 +210,14 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsType(out var type)) {
                 refType = RefType.DreamType;
                 idx = type.Id;
+            } else if (value.TryGetValueAsAppearance(out var appearance)) {
+                refType = RefType.DreamAppearance;
+                _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+                uint? appearanceId = _appearanceSystem.GetAppearanceId(appearance);
+                if (appearanceId == null) {
+                    throw new Exception("Cannot create reference ID for an appearance that is not registered");
+                }
+                idx = (int)appearanceId;
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 // Bit of a hack. This should use a resource's ID once they are refactored to have them.
                 return $"{(int) RefType.DreamResource}{refRsc.ResourcePath}";

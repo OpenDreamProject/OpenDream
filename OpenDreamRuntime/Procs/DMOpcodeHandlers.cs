@@ -402,12 +402,18 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Initial(DMProcState state) {
             DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            if (!key.TryGetValueAsString(out string property)) {
+            if (!key.TryGetValueAsString(out var property)) {
                 throw new Exception("Invalid var for initial() call: " + key);
             }
 
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+            if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
+                // Calling initial() on a null value just returns null
+                if (dreamObject == null) {
+                    state.Push(DreamValue.Null);
+                    return null;
+                }
+
                 objectDefinition = dreamObject.ObjectDefinition;
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;

@@ -1482,7 +1482,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(invertableMatrix);
                 case MatrixOpcode.Rotate:
                     var angleArgument = firstArgument;
-                    if (firstArgument.TryGetValueAsDreamObjectOfType(ObjectTree.Matrix, out DreamObject? matrixToRotate)) {
+                    if (firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out DreamObject? matrixToRotate)) {
                         //We have a matrix to rotate, and an angle to rotate it by.
                         angleArgument = secondArgument;
                     }
@@ -1496,7 +1496,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     var rotationMatrix = DreamMetaObjectMatrix.MakeMatrix(state.ObjectTree, angleCos, angleSin, 0, -angleSin, angleCos, 0);
                     if (matrixToRotate == null) return new DreamValue(rotationMatrix);
                     if (!doModify)
-                        matrixToRotate = DreamMetaObjectMatrix.MatrixClone(ObjectTree, matrixToRotate);
+                        matrixToRotate = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, matrixToRotate);
                     DreamMetaObjectMatrix.MultiplyMatrix(matrixToRotate, rotationMatrix);
                     return new DreamValue(matrixToRotate);
                 case MatrixOpcode.Scale:

@@ -60,12 +60,13 @@ namespace OpenDreamClient.Interface.Controls {
                 if (verbCategory != PanelName)
                     continue;
 
-                InterfaceButton verbButton = new InterfaceButton() {
+                Button verbButton = new Button() {
                     Margin = new Thickness(2),
                     MinWidth = 100,
                     Text = verbName
                 };
 
+                verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
                 verbButton.OnPressed += _ => {
                     EntitySystem.Get<DreamCommandSystem>().RunCommand(verbId);
                 };

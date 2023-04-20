@@ -115,24 +115,50 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
     }
 
-    class DMMacroLine : DMMacro {
+    // __LINE__
+    sealed class DMMacroLine : DMMacro {
         public DMMacroLine() : base(null, null) { }
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
-            return new() {
+            return new(1) {
                 new Token(TokenType.DM_Preproc_Number, replacing.Location.Line.ToString(), replacing.Location, null)
             };
         }
     }
 
-    class DMMacroFile : DMMacro {
+    // __FILE__
+    sealed class DMMacroFile : DMMacro {
         public DMMacroFile() : base(null, null) { }
 
         public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
             string path = replacing.Location.SourceFile.Replace(@"\", @"\\"); //Escape any backwards slashes
 
-            return new() {
+            return new(1) {
                 new Token(TokenType.DM_Preproc_ConstantString, $"\"{path}\"", replacing.Location, path)
+            };
+        }
+    }
+
+    // DM_VERSION
+
+    sealed class DMMacroVersion : DMMacro {
+        public DMMacroVersion() : base(null, null) { }
+
+        public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
+            return new(1) {
+                new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMVersion, replacing.Location, null)
+            };
+        }
+    }
+
+    // DM_BUILD
+
+    sealed class DMMacroBuild : DMMacro {
+        public DMMacroBuild() : base(null, null) { }
+
+        public override List<Token> Expand(Token replacing, List<List<Token>> parameters) {
+            return new(1) {
+                new Token(TokenType.DM_Preproc_Number, DMCompiler.Settings.DMBuild, replacing.Location, null)
             };
         }
     }

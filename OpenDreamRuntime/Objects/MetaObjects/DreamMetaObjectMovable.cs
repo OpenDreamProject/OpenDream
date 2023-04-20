@@ -3,6 +3,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
 using Robust.Shared.Map;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     [Virtual]
@@ -26,6 +27,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            if (dreamObject.ObjectDefinition == _objectTree.Movable.ObjectDefinition)
+                _atomManager.Movables.Add(dreamObject);
+
             _atomManager.CreateMovableEntity(dreamObject); // TODO: Should probably be moved to earlier in init; before even <init> is called.
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
@@ -37,6 +41,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             DreamValue screenLocationValue = dreamObject.GetVariable("screen_loc");
             if (screenLocationValue != DreamValue.Null) UpdateScreenLocation(dreamObject, screenLocationValue);
+        }
+
+        public void OnObjectDeleted(DreamObject dreamObject) {
+            if (dreamObject.ObjectDefinition == _objectTree.Movable.ObjectDefinition)
+                _atomManager.Movables.RemoveSwap(_atomManager.Movables.IndexOf(dreamObject));
+
+            ParentType?.OnObjectDeleted(dreamObject);
         }
 
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {

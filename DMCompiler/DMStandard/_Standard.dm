@@ -109,6 +109,7 @@ proc/text2path(T)
 proc/time2text(timestamp, format)
 proc/trimtext(Text)
 proc/trunc(n)
+proc/turn(Dir, Angle)
 proc/typesof(Item1)
 proc/uppertext(T)
 proc/url_decode(UrlText)
@@ -176,50 +177,6 @@ proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE
 	CRASH("/walk_away() is not implemented")
-
-/proc/turn(Dir, Angle)
-	if (istype(Dir, /matrix))
-		var/matrix/copy = new(Dir)
-		return copy.Turn(Angle)
-
-	if (istype(Dir, /icon))
-		var/icon/copy = new(Dir)
-		return copy.Turn(Angle)
-
-	var/dirAngle = 0
-
-	switch (Dir)
-		if (EAST) dirAngle = 0
-		if (NORTHEAST) dirAngle = 45
-		if (NORTH) dirAngle = 90
-		if (NORTHWEST) dirAngle = 135
-		if (WEST) dirAngle = 180
-		if (SOUTHWEST) dirAngle = 225
-		if (SOUTH) dirAngle = 270
-		if (SOUTHEAST) dirAngle = 315
-		else
-			if (Angle != 0)
-				return pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
-			else if (!isnum(Dir))
-				CRASH("Invalid Dir \"[json_encode(Dir)]\"")
-			else
-				return Dir
-
-	dirAngle += trunc(Angle/45) * 45
-
-	dirAngle = dirAngle % 360
-	if(dirAngle < 0)
-		dirAngle = 360 + dirAngle
-
-	switch (dirAngle)
-		if (45) return NORTHEAST
-		if (90) return NORTH
-		if (135) return NORTHWEST
-		if (180) return WEST
-		if (225) return SOUTHWEST
-		if (270) return SOUTH
-		if (315) return SOUTHEAST
-		else return EAST
 
 proc/get_dist(atom/Loc1, atom/Loc2)
 	if (!istype(Loc1) || !istype(Loc2)) return 127

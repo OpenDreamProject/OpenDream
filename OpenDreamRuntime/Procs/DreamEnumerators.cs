@@ -115,24 +115,24 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/obj/item/I in world)</code>
     /// </summary>
     sealed class WorldContentsEnumerator : IDreamValueEnumerator {
-        private readonly IDreamMapManager _mapManager;
+        private readonly IAtomManager _atomManager;
         private readonly IDreamObjectTree.TreeEntry? _filterType;
         private int _current = -1;
 
-        public WorldContentsEnumerator(IDreamMapManager mapManager, IDreamObjectTree.TreeEntry? filterType) {
-            _mapManager = mapManager;
+        public WorldContentsEnumerator(IAtomManager atomManager, IDreamObjectTree.TreeEntry? filterType) {
+            _atomManager = atomManager;
             _filterType = filterType;
         }
 
         public bool Enumerate(DMProcState state, DMReference reference) {
             do {
                 _current++;
-                if (_current >= _mapManager.AllAtoms.Count) {
+                if (_current >= _atomManager.AtomCount) {
                     state.AssignReference(reference, DreamValue.Null);
                     return false;
                 }
 
-                DreamObject atom = _mapManager.AllAtoms[_current];
+                DreamObject atom = _atomManager.GetAtom(_current);
                 if (_filterType == null || atom.IsSubtypeOf(_filterType)) {
                     state.AssignReference(reference, new DreamValue(atom));
                     return true;

@@ -356,15 +356,22 @@ namespace DMCompiler {
     }
 
     public struct DMCompilerSettings {
-        public List<string> Files;
-        public bool SuppressUnimplementedWarnings;
-        public bool NoticesEnabled;
-        public bool DumpPreprocessor;
-        public bool NoStandard;
-        public bool Verbose;
-        public Dictionary<string, string> MacroDefines;
+        public List<string> Files = null;
+        public bool SuppressUnimplementedWarnings = false;
+        public bool NoticesEnabled = false;
+        public bool DumpPreprocessor = false;
+        public bool NoStandard = false;
+        public bool Verbose = false;
+        public Dictionary<string, string> MacroDefines = null;
         /// <summary> A user-provided pragma config file, if one was provided. </summary>
-        public string? PragmaFileOverride;
+        public string? PragmaFileOverride = null;
+
+        // These are the default DM_VERSION and DM_BUILD values. They're strings because that's what the preprocessor expects (seriously)
+        public string DMVersion = "514";
+        public string DMBuild = "1584";
+
+        public DMCompilerSettings() {
+        }
     }
 
     class DMCompilerConfiguration {

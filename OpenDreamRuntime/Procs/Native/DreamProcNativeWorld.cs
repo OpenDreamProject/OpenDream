@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Persist", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Clients", Type = DreamValue.DreamValueType.DreamObject)]
         public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.State state) {
-            var addr = state.Arguments.GetArgument(0, "Addr").Stringify();
+            var addr = state.GetArgument(0, "Addr").Stringify();
 
             if (!Uri.TryCreate(addr, UriKind.RelativeOrAbsolute, out var uri))
                 throw new ArgumentException("Unable to parse URI.");
@@ -23,7 +23,7 @@ namespace OpenDreamRuntime.Procs.Native {
             var client = new HttpClient();
             var response = await client.GetAsync(uri);
 
-            var list = DreamProcNativeRoot.ObjectTree.CreateList();
+            var list = state.ObjectTree.CreateList();
             foreach (var header in response.Headers) {
                 // TODO: How to handle headers with multiple values?
                 list.SetValue(new DreamValue(header.Key), new DreamValue(header.Value.First()));
@@ -38,10 +38,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("GetConfig")]
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
-        public static DreamValue NativeProc_GetConfig(DreamObject src, DreamObject usr, DreamProcArguments arguments)
-        {
-            arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            var param = arguments.GetArgument(1, "param");
+        public static DreamValue NativeProc_GetConfig(NativeProc.State state) {
+            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
+            var param = state.GetArgument(1, "param");
 
             switch (config_set) {
                 case "env":
@@ -69,11 +68,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("value", Type = DreamValue.DreamValueType.String)]
-        public static DreamValue NativeProc_SetConfig(DreamObject src, DreamObject usr, DreamProcArguments arguments)
-        {
-            arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            arguments.GetArgument(1, "param").TryGetValueAsString(out string param);
-            var value = arguments.GetArgument(2, "value");
+        public static DreamValue NativeProc_SetConfig(NativeProc.State state) {
+            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
+            state.GetArgument(1, "param").TryGetValueAsString(out string param);
+            var value = state.GetArgument(2, "value");
 
             switch (config_set) {
                 case "env":

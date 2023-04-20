@@ -7,18 +7,16 @@ using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeIcon {
-        public static IDreamObjectTree ObjectTree;
-
         [DreamProc("Width")]
-        public static DreamValue NativeProc_Width(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+        public static DreamValue NativeProc_Width(NativeProc.State state) {
+            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
 
             return new DreamValue(dreamIconObject.Width);
         }
 
         [DreamProc("Height")]
-        public static DreamValue NativeProc_Height(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+        public static DreamValue NativeProc_Height(NativeProc.State state) {
+            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
 
             return new DreamValue(dreamIconObject.Height);
         }
@@ -30,15 +28,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("frame", Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("moving", Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("delay", Type = DreamValue.DreamValueType.Float)]
-        public static DreamValue NativeProc_Insert(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_Insert(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            DreamValue newIcon = arguments.GetArgument(0, "new_icon");
-            DreamValue iconState = arguments.GetArgument(1, "icon_state");
-            DreamValue dir = arguments.GetArgument(2, "dir");
-            DreamValue frame = arguments.GetArgument(3, "frame");
-            DreamValue moving = arguments.GetArgument(4, "moving");
-            DreamValue delay = arguments.GetArgument(5, "delay");
+            DreamValue newIcon = state.GetArgument(0, "new_icon");
+            DreamValue iconState = state.GetArgument(1, "icon_state");
+            DreamValue dir = state.GetArgument(2, "dir");
+            DreamValue frame = state.GetArgument(3, "frame");
+            DreamValue moving = state.GetArgument(4, "moving");
+            DreamValue delay = state.GetArgument(5, "delay");
 
             // TODO: moving & delay
 
@@ -46,7 +44,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!resourceManager.TryLoadIcon(newIcon, out var iconRsc))
                 throw new Exception($"Cannot insert {newIcon}");
 
-            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
             iconObj.InsertStates(iconRsc, iconState, dir, frame); // TODO: moving & delay
             return DreamValue.Null;
         }
@@ -67,32 +65,32 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float, DefaultValue = (int)BlendType.Add)] // ICON_ADD
         [DreamProcParameter("x", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("y", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
-        public static DreamValue NativeProc_Blend(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_Blend(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            DreamValue icon = arguments.GetArgument(0, "icon");
-            DreamValue function = arguments.GetArgument(1, "function");
+            DreamValue icon = state.GetArgument(0, "icon");
+            DreamValue function = state.GetArgument(1, "function");
 
-            arguments.GetArgument(2, "x").TryGetValueAsInteger(out var x);
-            arguments.GetArgument(3, "y").TryGetValueAsInteger(out var y);
+            state.GetArgument(2, "x").TryGetValueAsInteger(out var x);
+            state.GetArgument(3, "y").TryGetValueAsInteger(out var y);
 
             if (!function.TryGetValueAsInteger(out var functionValue))
                 throw new Exception($"Invalid 'function' argument {function}");
 
-            Blend(DreamMetaObjectIcon.ObjectToDreamIcon[instance], icon, (BlendType)functionValue, x, y);
+            Blend(DreamMetaObjectIcon.ObjectToDreamIcon[state.Src], icon, (BlendType)functionValue, x, y);
             return DreamValue.Null;
         }
 
         [DreamProc("Scale")]
         [DreamProcParameter("width", Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("height", Type = DreamValue.DreamValueType.Float)]
-        public static DreamValue NativeProc_Scale(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
+        public static DreamValue NativeProc_Scale(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            arguments.GetArgument(0, "width").TryGetValueAsInteger(out var width);
-            arguments.GetArgument(1, "height").TryGetValueAsInteger(out var height);
+            state.GetArgument(0, "width").TryGetValueAsInteger(out var width);
+            state.GetArgument(1, "height").TryGetValueAsInteger(out var height);
 
-            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[instance];
+            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
             iconObj.Width = width;
             iconObj.Height = height;
             return DreamValue.Null;

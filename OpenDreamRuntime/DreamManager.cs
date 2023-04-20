@@ -266,6 +266,11 @@ namespace OpenDreamRuntime {
                         return _objectTree.Types.Length > refId
                             ? new DreamValue(_objectTree.Types[refId])
                             : DreamValue.Null;
+                    case RefType.DreamAppearance:
+                        _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+                        return _appearanceSystem.TryGetAppearance((uint)refId, out IconAppearance? appearance)
+                            ? new DreamValue(appearance)
+                            : DreamValue.Null;
                     default:
                         throw new Exception($"Invalid reference type for ref {refString}");
                 }

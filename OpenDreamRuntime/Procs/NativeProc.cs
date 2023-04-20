@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
@@ -76,6 +77,9 @@ namespace OpenDreamRuntime.Procs {
 
                 Pool.Push(this);
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public DreamValue GetArgument(int argumentPosition, string argumentName) => Arguments.GetArgument(argumentPosition, argumentName);
         }
 
         private readonly IDreamManager _dreamManager;

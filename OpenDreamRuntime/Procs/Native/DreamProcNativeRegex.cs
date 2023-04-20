@@ -14,9 +14,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Find(NativeProc.State state) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
-            DreamValue haystack = state.Arguments.GetArgument(0, "haystack");
-            int next = GetNext(state.Src, state.Arguments.GetArgument(1, "Start"), dreamRegex.IsGlobal);
-            int end = state.Arguments.GetArgument(2, "End").GetValueAsInteger();
+            DreamValue haystack = state.GetArgument(0, "haystack");
+            int next = GetNext(state.Src, state.GetArgument(1, "Start"), dreamRegex.IsGlobal);
+            int end = state.GetArgument(2, "End").GetValueAsInteger();
 
             state.Src.SetVariable("text", haystack);
 
@@ -121,10 +121,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
-            DreamValue haystack = state.Arguments.GetArgument(0, "haystack");
-            DreamValue replacement = state.Arguments.GetArgument(1, "replacement");
-            int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger();
-            int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger();
+            DreamValue haystack = state.GetArgument(0, "haystack");
+            DreamValue replacement = state.GetArgument(1, "replacement");
+            int start = state.GetArgument(2, "Start").GetValueAsInteger();
+            int end = state.GetArgument(3, "End").GetValueAsInteger();
 
             return await RegexReplace(state, state.Src, haystack, replacement, start, end);
         }

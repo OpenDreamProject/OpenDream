@@ -1,5 +1,4 @@
-﻿using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+﻿using OpenDreamRuntime.Objects.MetaObjects;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native;
@@ -13,8 +12,8 @@ public static class DreamProcNativeSavefile {
         // So this implements it just enough to get that working
 
         var savefile = DreamMetaObjectSavefile.ObjectToSavefile[state.Src];
-        DreamValue path = state.Arguments.GetArgument(0, "path");
-        DreamValue file = state.Arguments.GetArgument(1, "file");
+        DreamValue path = state.GetArgument(0, "path");
+        DreamValue file = state.GetArgument(1, "file");
 
         if (!path.TryGetValueAsString(out var pathStr) || file != DreamValue.Null) {
             throw new NotImplementedException("General support for ExportText() is not implemented");

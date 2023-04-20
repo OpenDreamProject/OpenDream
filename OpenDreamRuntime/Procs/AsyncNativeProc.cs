@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -170,6 +171,9 @@ namespace OpenDreamRuntime.Procs {
 
                 builder.Append($"{_proc}");
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public DreamValue GetArgument(int argumentPosition, string argumentName) => Arguments.GetArgument(argumentPosition, argumentName);
         }
 
         private readonly IDreamManager _dreamManager;

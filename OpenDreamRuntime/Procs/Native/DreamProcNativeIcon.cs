@@ -31,12 +31,12 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Insert(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            DreamValue newIcon = state.Arguments.GetArgument(0, "new_icon");
-            DreamValue iconState = state.Arguments.GetArgument(1, "icon_state");
-            DreamValue dir = state.Arguments.GetArgument(2, "dir");
-            DreamValue frame = state.Arguments.GetArgument(3, "frame");
-            DreamValue moving = state.Arguments.GetArgument(4, "moving");
-            DreamValue delay = state.Arguments.GetArgument(5, "delay");
+            DreamValue newIcon = state.GetArgument(0, "new_icon");
+            DreamValue iconState = state.GetArgument(1, "icon_state");
+            DreamValue dir = state.GetArgument(2, "dir");
+            DreamValue frame = state.GetArgument(3, "frame");
+            DreamValue moving = state.GetArgument(4, "moving");
+            DreamValue delay = state.GetArgument(5, "delay");
 
             // TODO: moving & delay
 
@@ -68,11 +68,11 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Blend(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            DreamValue icon = state.Arguments.GetArgument(0, "icon");
-            DreamValue function = state.Arguments.GetArgument(1, "function");
+            DreamValue icon = state.GetArgument(0, "icon");
+            DreamValue function = state.GetArgument(1, "function");
 
-            state.Arguments.GetArgument(2, "x").TryGetValueAsInteger(out var x);
-            state.Arguments.GetArgument(3, "y").TryGetValueAsInteger(out var y);
+            state.GetArgument(2, "x").TryGetValueAsInteger(out var x);
+            state.GetArgument(3, "y").TryGetValueAsInteger(out var y);
 
             if (!function.TryGetValueAsInteger(out var functionValue))
                 throw new Exception($"Invalid 'function' argument {function}");
@@ -87,8 +87,8 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Scale(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
-            state.Arguments.GetArgument(0, "width").TryGetValueAsInteger(out var width);
-            state.Arguments.GetArgument(1, "height").TryGetValueAsInteger(out var height);
+            state.GetArgument(0, "width").TryGetValueAsInteger(out var width);
+            state.GetArgument(1, "height").TryGetValueAsInteger(out var height);
 
             DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
             iconObj.Width = width;

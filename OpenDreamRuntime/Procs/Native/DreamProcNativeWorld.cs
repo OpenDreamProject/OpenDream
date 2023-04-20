@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Persist", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Clients", Type = DreamValue.DreamValueType.DreamObject)]
         public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.State state) {
-            var addr = state.Arguments.GetArgument(0, "Addr").Stringify();
+            var addr = state.GetArgument(0, "Addr").Stringify();
 
             if (!Uri.TryCreate(addr, UriKind.RelativeOrAbsolute, out var uri))
                 throw new ArgumentException("Unable to parse URI.");
@@ -39,8 +39,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
         public static DreamValue NativeProc_GetConfig(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            var param = state.Arguments.GetArgument(1, "param");
+            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
+            var param = state.GetArgument(1, "param");
 
             switch (config_set) {
                 case "env":
@@ -69,9 +69,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("value", Type = DreamValue.DreamValueType.String)]
         public static DreamValue NativeProc_SetConfig(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            state.Arguments.GetArgument(1, "param").TryGetValueAsString(out string param);
-            var value = state.Arguments.GetArgument(2, "value");
+            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
+            state.GetArgument(1, "param").TryGetValueAsString(out string param);
+            var value = state.GetArgument(2, "value");
 
             switch (config_set) {
                 case "env":

@@ -30,7 +30,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("abs")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_abs(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "A").TryGetValueAsFloat(out float number);
+            state.GetArgument(0, "A").TryGetValueAsFloat(out float number);
 
             return new DreamValue(Math.Abs(number));
         }
@@ -45,21 +45,21 @@ namespace OpenDreamRuntime.Procs.Native {
         public static async Task<DreamValue> NativeProc_alert(AsyncNativeProc.State state) {
             string message, title, button1, button2, button3;
 
-            DreamValue usrArgument = state.Arguments.GetArgument(0, "Usr");
+            DreamValue usrArgument = state.GetArgument(0, "Usr");
             if (usrArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Mob, out var usr) ||
                 usrArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Client, out usr)) {
-                message = state.Arguments.GetArgument(1, "Message").Stringify();
-                title = state.Arguments.GetArgument(2, "Title").Stringify();
-                button1 = state.Arguments.GetArgument(3, "Button1").Stringify();
-                button2 = state.Arguments.GetArgument(4, "Button2").Stringify();
-                button3 = state.Arguments.GetArgument(5, "Button3").Stringify();
+                message = state.GetArgument(1, "Message").Stringify();
+                title = state.GetArgument(2, "Title").Stringify();
+                button1 = state.GetArgument(3, "Button1").Stringify();
+                button2 = state.GetArgument(4, "Button2").Stringify();
+                button3 = state.GetArgument(5, "Button3").Stringify();
             } else { // Implicitly use usr, shift args over 1
                 usr = state.Usr;
                 message = usrArgument.Stringify();
-                title = state.Arguments.GetArgument(1, "Message").Stringify();
-                button1 = state.Arguments.GetArgument(2, "Title").Stringify();
-                button2 = state.Arguments.GetArgument(3, "Button1").Stringify();
-                button3 = state.Arguments.GetArgument(4, "Button2").Stringify();
+                title = state.GetArgument(1, "Message").Stringify();
+                button1 = state.GetArgument(2, "Title").Stringify();
+                button2 = state.GetArgument(3, "Button1").Stringify();
+                button3 = state.GetArgument(4, "Button2").Stringify();
             }
 
             DreamConnection? connection = null;
@@ -84,16 +84,16 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("flags", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_animate(NativeProc.State state) {
             // TODO: Leaving out the Object var adds a new step to the previous animation
-            if (!state.Arguments.GetArgument(0, "Object").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var obj))
+            if (!state.GetArgument(0, "Object").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var obj))
                 return DreamValue.Null;
             // TODO: Is this the correct behavior for invalid time?
-            if (!state.Arguments.GetArgument(0, "time").TryGetValueAsFloat(out float time))
+            if (!state.GetArgument(0, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
-            if (state.Arguments.GetArgument(0, "loop").TryGetValueAsInteger(out int loop))
+            if (state.GetArgument(0, "loop").TryGetValueAsInteger(out int loop))
                 return DreamValue.Null; // TODO: Looped animations are not implemented
-            if (state.Arguments.GetArgument(0, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
+            if (state.GetArgument(0, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
                 return DreamValue.Null; // TODO: Non-linear animation easing types are not implemented"
-            if (state.Arguments.GetArgument(0, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
+            if (state.GetArgument(0, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
                 return DreamValue.Null; // TODO: Animation flags are not implemented
 
             IAtomManager atomManager = IoCManager.Resolve<IAtomManager>();
@@ -133,7 +133,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("arccos")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_arccos(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "X").TryGetValueAsFloat(out float x);
+            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
             double acos = Math.Acos(x);
 
             return new DreamValue((float)(acos * 180 / Math.PI));
@@ -142,7 +142,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("arcsin")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_arcsin(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "X").TryGetValueAsFloat(out float x);
+            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
             double asin = Math.Asin(x);
 
             return new DreamValue((float)(asin * 180 / Math.PI));
@@ -151,7 +151,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("arctan")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_arctan(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "A").TryGetValueAsFloat(out float a);
+            state.GetArgument(0, "A").TryGetValueAsFloat(out float a);
             double atan = Math.Atan(a);
 
             return new DreamValue((float)(atan * 180 / Math.PI));
@@ -160,7 +160,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("ascii2text")]
         [DreamProcParameter("N", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_ascii2text(NativeProc.State state) {
-            DreamValue ascii = state.Arguments.GetArgument(0, "N");
+            DreamValue ascii = state.GetArgument(0, "N");
             if (!ascii.TryGetValueAsInteger(out int asciiValue))
                 throw new Exception($"{ascii} is not a number");
 
@@ -171,9 +171,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_block(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var start))
+            if (!state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var start))
                 return new DreamValue(state.ObjectTree.CreateList());
-            if (!state.Arguments.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var end))
+            if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var end))
                 return new DreamValue(state.ObjectTree.CreateList());
 
             start.GetVariable("x").TryGetValueAsInteger(out var x1);
@@ -210,7 +210,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("ceil")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_ceil(NativeProc.State state) {
-            DreamValue arg = state.Arguments.GetArgument(0, "A");
+            DreamValue arg = state.GetArgument(0, "A");
             if (arg.TryGetValueAsFloat(out float floatnum)) {
                 return new DreamValue(MathF.Ceiling(floatnum));
             }
@@ -220,7 +220,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("ckey")]
         [DreamProcParameter("Key", Type = DreamValueType.String)]
         public static DreamValue NativeProc_ckey(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Key").TryGetValueAsString(out var key))
+            if (!state.GetArgument(0, "Key").TryGetValueAsString(out var key))
             {
                 return DreamValue.Null;
             }
@@ -232,7 +232,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("ckeyEx")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         public static DreamValue NativeProc_ckeyEx(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Text").TryGetValueAsString(out var text))
+            if (!state.GetArgument(0, "Text").TryGetValueAsString(out var text))
             {
                 return DreamValue.Null;
             }
@@ -246,11 +246,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Low", Type = DreamValueType.Float)]
         [DreamProcParameter("High", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_clamp(NativeProc.State state) {
-            DreamValue value = state.Arguments.GetArgument(0, "Value");
+            DreamValue value = state.GetArgument(0, "Value");
 
-            if (!state.Arguments.GetArgument(1, "Low").TryGetValueAsFloat(out float lVal))
+            if (!state.GetArgument(1, "Low").TryGetValueAsFloat(out float lVal))
                 throw new Exception("Lower bound is not a number");
-            if (!state.Arguments.GetArgument(2, "High").TryGetValueAsFloat(out float hVal))
+            if (!state.GetArgument(2, "High").TryGetValueAsFloat(out float hVal))
                 throw new Exception("Upper bound is not a number");
 
             // BYOND supports switching low/high args around
@@ -303,11 +303,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_copytext(NativeProc.State state) {
-            state.Arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
+            state.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
-            if (!state.Arguments.GetArgument(0, "T").TryGetValueAsString(out string? text))
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out string? text))
                 return (end == 0) ? DreamValue.Null : new DreamValue("");
-            if (!state.Arguments.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
+            if (!state.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
                 return new DreamValue("");
 
             if (end <= 0) end += text.Length + 1;
@@ -324,11 +324,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_copytext_char(NativeProc.State state) {
-            state.Arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
+            state.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed
 
-            if (!state.Arguments.GetArgument(0, "T").TryGetValueAsString(out string? text))
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out string? text))
                 return (end == 0) ? DreamValue.Null : new DreamValue("");
-            if (!state.Arguments.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
+            if (!state.GetArgument(1, "Start").TryGetValueAsInteger(out int start)) //1-indexed
                 return new DreamValue("");
 
             StringInfo textElements = new StringInfo(text);
@@ -345,7 +345,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("cos")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_cos(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "X").TryGetValueAsFloat(out float x);
+            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
             double rad = x * (Math.PI / 180);
 
             return new DreamValue((float)Math.Cos(rad));
@@ -354,7 +354,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("CRASH")]
         [DreamProcParameter("msg", Type = DreamValueType.String)]
         public static DreamValue NativeProc_CRASH(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "msg").TryGetValueAsString(out var message);
+            state.GetArgument(0, "msg").TryGetValueAsString(out var message);
 
             throw new DMCrashRuntime(message ?? String.Empty);
         }
@@ -363,7 +363,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Src", Type = DreamValueType.String | DreamValueType.DreamResource)]
         [DreamProcParameter("Dst", Type = DreamValueType.String)]
         public static DreamValue NativeProc_fcopy(NativeProc.State state) {
-            var arg1 = state.Arguments.GetArgument(0, "Src");
+            var arg1 = state.GetArgument(0, "Src");
 
             string? src;
             if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
@@ -374,7 +374,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception($"Bad src file {arg1}");
             }
 
-            var arg2 = state.Arguments.GetArgument(1, "Dst");
+            var arg2 = state.GetArgument(1, "Dst");
             if (!arg2.TryGetValueAsString(out var dst)) {
                 throw new Exception($"Bad dst file {arg2}");
             }
@@ -385,7 +385,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fcopy_rsc")]
         [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_fcopy_rsc(NativeProc.State state) {
-            var arg1 = state.Arguments.GetArgument(0, "File");
+            var arg1 = state.GetArgument(0, "File");
 
             string filePath;
             if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
@@ -400,7 +400,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fdel")]
         [DreamProcParameter("File", Type = DreamValueType.String)]
         public static DreamValue NativeProc_fdel(NativeProc.State state) {
-            DreamValue file = state.Arguments.GetArgument(0, "File");
+            DreamValue file = state.GetArgument(0, "File");
 
             string filePath;
             if (file.TryGetValueAsDreamResource(out var resource)) {
@@ -422,7 +422,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fexists")]
         [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_fexists(NativeProc.State state) {
-            DreamValue file = state.Arguments.GetArgument(0, "File");
+            DreamValue file = state.GetArgument(0, "File");
 
             string filePath;
             if (file.TryGetValueAsDreamResource(out var rsc)) {
@@ -437,7 +437,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("file")]
         [DreamProcParameter("Path", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_file(NativeProc.State state) {
-            DreamValue path = state.Arguments.GetArgument(0, "Path");
+            DreamValue path = state.GetArgument(0, "Path");
 
             if (path.TryGetValueAsString(out var rscPath)) {
                 var resource = state.ResourceManager.LoadResource(rscPath);
@@ -455,7 +455,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("file2text")]
         [DreamProcParameter("File", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_file2text(NativeProc.State state) {
-            DreamValue file = state.Arguments.GetArgument(0, "File");
+            DreamValue file = state.GetArgument(0, "File");
             DreamResource resource;
 
 
@@ -491,7 +491,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("falloff", Type = DreamValueType.Float)]
         [DreamProcParameter("alpha", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_filter(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
+            if (!state.GetArgument(0, "type").TryGetValueAsString(out var filterTypeName))
                 return DreamValue.Null;
 
             Type? filterType = DreamFilter.GetType(filterTypeName);
@@ -524,11 +524,11 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_findtext(NativeProc.State state) {
             // TODO This is for handling nulls, check if it works right for other bad types
             int failCount = 0;
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
             {
                 failCount++;
             }
-            if (!state.Arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
             {
                 failCount++;
             }
@@ -537,8 +537,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
-            int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int start = state.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
             if (start > text.Length || start == 0) return new DreamValue(0);
 
@@ -568,11 +568,11 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_findtextEx(NativeProc.State state) {
             // TODO This is for handling nulls, check if it works right for other bad types
             int failCount = 0;
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
             {
                 failCount++;
             }
-            if (!state.Arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
             {
                 failCount++;
             }
@@ -581,8 +581,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
-            int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int start = state.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
             if (start <= 0 || start > text.Length || end < 0) return new DreamValue(0);
 
@@ -606,11 +606,11 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_findlasttext(NativeProc.State state) {
             // TODO This is for handling nulls, check if it works right for other bad types
             int failCount = 0;
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
             {
                 failCount++;
             }
-            if (!state.Arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
             {
                 failCount++;
             }
@@ -619,8 +619,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
-            int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int start = state.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -642,11 +642,11 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_findlasttextEx(NativeProc.State state) {
             // TODO This is for handling nulls, check if it works right for other bad types
             int failCount = 0;
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
             {
                 failCount++;
             }
-            if (!state.Arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
             {
                 failCount++;
             }
@@ -655,8 +655,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
-            int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int start = state.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -682,7 +682,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("flist")]
         [DreamProcParameter("Path", Type = DreamValueType.String)]
         public static DreamValue NativeProc_flist(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Path").TryGetValueAsString(out var path)) {
+            if (!state.GetArgument(0, "Path").TryGetValueAsString(out var path)) {
                 path = IoCManager.Resolve<DreamResourceManager>().RootPath + Path.DirectorySeparatorChar;
             }
 
@@ -698,7 +698,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("floor")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_floor(NativeProc.State state) {
-            DreamValue arg = state.Arguments.GetArgument(0, "A");
+            DreamValue arg = state.GetArgument(0, "A");
             if (arg.TryGetValueAsFloat(out float floatnum)) {
                 return new DreamValue(MathF.Floor(floatnum));
             }
@@ -708,7 +708,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("fract")]
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_fract(NativeProc.State state) {
-            DreamValue arg = state.Arguments.GetArgument(0, "n");
+            DreamValue arg = state.GetArgument(0, "n");
             if (arg.TryGetValueAsFloat(out float floatnum)) {
                 if(float.IsInfinity(floatnum)) {
                     return new DreamValue(0);
@@ -722,9 +722,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_get_dir(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Loc1").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc1))
+            if (!state.GetArgument(0, "Loc1").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc1))
                 return new DreamValue(0);
-            if (!state.Arguments.GetArgument(1, "Loc2").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc2))
+            if (!state.GetArgument(1, "Loc2").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc2))
                 return new DreamValue(0);
 
             loc1.GetVariable("z").TryGetValueAsInteger(out var z1);
@@ -759,10 +759,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Ref", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Dir", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_get_step(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Ref").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc))
+            if (!state.GetArgument(0, "Ref").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc))
                 return DreamValue.Null;
 
-            state.Arguments.GetArgument(1, "Dir").TryGetValueAsInteger(out var dir);
+            state.GetArgument(1, "Dir").TryGetValueAsInteger(out var dir);
             if (dir >= 16) // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
                 return DreamValue.Null;
 
@@ -797,7 +797,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             List<DreamValue> gradientList;
 
-            if (state.Arguments.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList? gradList)) {
+            if (state.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList? gradList)) {
                 gradientList = gradList.GetValues();
                 state.Arguments.TryGetPositionalArgument(1, out dreamIndex);
 
@@ -947,8 +947,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("File", Type = DreamValueType.String)]
         [DreamProcParameter("IsCreationTime", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_ftime(NativeProc.State state) {
-            DreamValue file = state.Arguments.GetArgument(0, "File");
-            DreamValue isCreationTime = state.Arguments.GetArgument(1, "IsCreationTime");
+            DreamValue file = state.GetArgument(0, "File");
+            DreamValue isCreationTime = state.GetArgument(1, "IsCreationTime");
 
             if (file.TryGetValueAsString(out var rscPath)) {
                 var fi = new FileInfo(rscPath);
@@ -964,9 +964,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("ProcName", Type = DreamValueType.String)]
         public static DreamValue NativeProc_hascall(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Object").TryGetValueAsDreamObject(out var obj))
+            if (!state.GetArgument(0, "Object").TryGetValueAsDreamObject(out var obj))
                 return new DreamValue(0);
-            if(!state.Arguments.GetArgument(1, "ProcName").TryGetValueAsString(out var procName))
+            if(!state.GetArgument(1, "ProcName").TryGetValueAsString(out var procName))
                 return new DreamValue(0);
 
             return new DreamValue(obj.ObjectDefinition.HasProc(procName) ? 1 : 0);
@@ -975,7 +975,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("html_decode")]
         [DreamProcParameter("HtmlText", Type = DreamValueType.String)]
         public static DreamValue NativeProc_html_decode(NativeProc.State state) {
-            string htmlText = state.Arguments.GetArgument(0, "HtmlText").Stringify();
+            string htmlText = state.GetArgument(0, "HtmlText").Stringify();
 
             return new DreamValue(HttpUtility.HtmlDecode(htmlText));
         }
@@ -983,7 +983,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("html_encode")]
         [DreamProcParameter("PlainText", Type = DreamValueType.String)]
         public static DreamValue NativeProc_html_encode(NativeProc.State state) {
-            string plainText = state.Arguments.GetArgument(0, "PlainText").Stringify();
+            string plainText = state.GetArgument(0, "PlainText").Stringify();
 
             return new DreamValue(HttpUtility.HtmlEncode(plainText));
         }
@@ -992,12 +992,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Icon", Type = DreamValueType.DreamResource)]
         [DreamProcParameter("mode", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_icon_states(NativeProc.State state) {
-            var mode = state.Arguments.GetArgument(1, "mode").GetValueAsInteger();
+            var mode = state.GetArgument(1, "mode").GetValueAsInteger();
             if (mode != 0) {
                 throw new NotImplementedException("Only mode 0 is implemented");
             }
 
-            var arg = state.Arguments.GetArgument(0, "Icon");
+            var arg = state.GetArgument(0, "Icon");
 
             if (arg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Icon, out var iconObj)) {
                 // Fast path for /icon, we don't need to generate the entire DMI
@@ -1039,7 +1039,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isfile")]
         [DreamProcParameter("File")]
         public static DreamValue NativeProc_isfile(NativeProc.State state) {
-            DreamValue file = state.Arguments.GetArgument(0, "File");
+            DreamValue file = state.GetArgument(0, "File");
 
             return new DreamValue((file.Type == DreamValueType.DreamResource) ? 1 : 0);
         }
@@ -1047,7 +1047,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isicon")]
         [DreamProcParameter("Icon")]
         public static DreamValue NativeProc_isicon(NativeProc.State state) {
-            DreamValue icon = state.Arguments.GetArgument(0, "Icon");
+            DreamValue icon = state.GetArgument(0, "Icon");
             if (icon.TryGetValueAsDreamObjectOfType(state.ObjectTree.Icon, out _))
                 return new DreamValue(1);
             else if (icon.TryGetValueAsDreamResource(out DreamResource resource)) {
@@ -1069,7 +1069,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isinf")]
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_isinf(NativeProc.State state) {
-            if(state.Arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+            if(state.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
                 return new DreamValue(float.IsInfinity(floatnum) ? 1 : 0);
             }
             return new DreamValue(0);
@@ -1078,7 +1078,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("islist")]
         [DreamProcParameter("Object")]
         public static DreamValue NativeProc_islist(NativeProc.State state) {
-            bool isList = state.Arguments.GetArgument(0, "Object").TryGetValueAsDreamList(out _);
+            bool isList = state.GetArgument(0, "Object").TryGetValueAsDreamList(out _);
             return new DreamValue(isList ? 1 : 0);
         }
 
@@ -1132,7 +1132,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isnan")]
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_isnan(NativeProc.State state) {
-            if (state.Arguments.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
+            if (state.GetArgument(0, "n").TryGetValueAsFloat(out float floatnum)) {
                 return new DreamValue(float.IsNaN(floatnum) ? 1 : 0);
             }
             return new DreamValue(0);
@@ -1141,7 +1141,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isnull")]
         [DreamProcParameter("Val")]
         public static DreamValue NativeProc_isnull(NativeProc.State state) {
-            DreamValue value = state.Arguments.GetArgument(0, "Val");
+            DreamValue value = state.GetArgument(0, "Val");
 
             return new DreamValue((value == DreamValue.Null) ? 1 : 0);
         }
@@ -1149,7 +1149,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("isnum")]
         [DreamProcParameter("Val")]
         public static DreamValue NativeProc_isnum(NativeProc.State state) {
-            DreamValue value = state.Arguments.GetArgument(0, "Val");
+            DreamValue value = state.GetArgument(0, "Val");
 
             return new DreamValue((value.Type == DreamValueType.Float) ? 1 : 0);
         }
@@ -1158,8 +1158,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Val")]
         [DreamProcParameter("Type", Type = DreamValueType.DreamType)]
         public static DreamValue NativeProc_ispath(NativeProc.State state) {
-            DreamValue value = state.Arguments.GetArgument(0, "Val");
-            DreamValue type = state.Arguments.GetArgument(1, "Type");
+            DreamValue value = state.GetArgument(0, "Val");
+            DreamValue type = state.GetArgument(1, "Type");
 
             if (value.TryGetValueAsType(out var valueType)) {
                 if (type.TryGetValueAsType(out var ancestor)) {
@@ -1175,7 +1175,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("istext")]
         [DreamProcParameter("Val")]
         public static DreamValue NativeProc_istext(NativeProc.State state) {
-            DreamValue value = state.Arguments.GetArgument(0, "Val");
+            DreamValue value = state.GetArgument(0, "Val");
 
             return new DreamValue((value.Type == DreamValueType.String) ? 1 : 0);
         }
@@ -1306,7 +1306,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("json_decode")]
         [DreamProcParameter("JSON", Type = DreamValueType.String)]
         public static DreamValue NativeProc_json_decode(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "JSON").TryGetValueAsString(out var jsonString)) {
+            if (!state.GetArgument(0, "JSON").TryGetValueAsString(out var jsonString)) {
                 throw new Exception("Unknown value");
             }
 
@@ -1323,7 +1323,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // "\"" instead of "\u0022"
             });
 
-            JsonEncode(jsonWriter, state.ObjectTree, state.Arguments.GetArgument(0, "Value"));
+            JsonEncode(jsonWriter, state.ObjectTree, state.GetArgument(0, "Value"));
             jsonWriter.Flush();
 
             return new DreamValue(Encoding.UTF8.GetString(stream.AsSpan()));
@@ -1345,7 +1345,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("E")]
         public static DreamValue NativeProc_length(NativeProc.State state)
         {
-            DreamValue value = state.Arguments.GetArgument(0, "E");
+            DreamValue value = state.GetArgument(0, "E");
             return _length(value, true);
         }
 
@@ -1353,14 +1353,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("E")]
         public static DreamValue NativeProc_length_char(NativeProc.State state)
         {
-            DreamValue value = state.Arguments.GetArgument(0, "E");
+            DreamValue value = state.GetArgument(0, "E");
             return _length(value, false);
         }
 
         [DreamProc("list2params")]
         [DreamProcParameter("List")]
         public static DreamValue NativeProc_list2params(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list))
+            if (!state.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list))
                 return new DreamValue(string.Empty);
 
             StringBuilder paramBuilder = new StringBuilder();
@@ -1386,8 +1386,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         [DreamProcParameter("Y")]
         public static DreamValue NativeProc_log(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            DreamValue yValue = state.Arguments.GetArgument(1, "Y");
+            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
+            DreamValue yValue = state.GetArgument(1, "Y");
 
             if (yValue != DreamValue.Null) {
                 yValue.TryGetValueAsFloat(out float y);
@@ -1401,7 +1401,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("lowertext")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_lowertext(NativeProc.State state) {
-            var arg = state.Arguments.GetArgument(0, "T");
+            var arg = state.GetArgument(0, "T");
             if (!arg.TryGetValueAsString(out var text))
             {
                 return arg;
@@ -1426,7 +1426,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     matrix.InitSpawn(state.Arguments);
                     return new DreamValue(matrix);
                 case 1: // Clone the matrix.
-                    var firstArg = state.Arguments.GetArgument(0, "a");
+                    var firstArg = state.GetArgument(0, "a");
                     if (!firstArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
                         throw new ArgumentException($"/matrix() called with invalid argument '{firstArg}'");
                     matrix = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, argObject);
@@ -1451,7 +1451,7 @@ namespace OpenDreamRuntime.Procs.Native {
              * So, here's that.
             */
             //First lets extract the opcode.
-            var opcodeArgument = state.Arguments.GetArgument(state.Arguments.ArgumentCount - 1, "opcode");
+            var opcodeArgument = state.GetArgument(state.Arguments.ArgumentCount - 1, "opcode");
             if (!opcodeArgument.TryGetValueAsInteger(out int opcodeArgumentValue))
                 throw new ArgumentException($"/matrix() override called with '{opcodeArgument}', expecting opcode");
             bool doModify = false; // A bool to represent the MATRIX_MODIFY flag
@@ -1463,8 +1463,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!Enum.IsDefined(opcode))
                 throw new ArgumentException($"/matrix() override called with invalid opcode '{opcodeArgumentValue}'");
             //Now do the transformation or whatever that's implied by the opcode.
-            var firstArgument = state.Arguments.GetArgument(0, "a");
-            var secondArgument = state.Arguments.GetArgument(1, "b");
+            var firstArgument = state.GetArgument(0, "a");
+            var secondArgument = state.GetArgument(1, "b");
             switch (opcode) {
                 case MatrixOpcode.Copy: // Clone the matrix. Basically a redundant version of matrix(m).
                     if (!firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
@@ -1504,8 +1504,8 @@ namespace OpenDreamRuntime.Procs.Native {
                         if (!secondArgument.TryGetValueAsFloat(out horizontalScale))
                             throw new ArgumentException($"/matrix() called with invalid scaling factor '{secondArgument}'");
                         if (state.Arguments.ArgumentCount == 4) {
-                            if (!state.Arguments.GetArgument(2, "c").TryGetValueAsFloat(out verticalScale))
-                                throw new ArgumentException($"/matrix() called with invalid scaling factor '{state.Arguments.GetArgument(2, "c")}'");
+                            if (!state.GetArgument(2, "c").TryGetValueAsFloat(out verticalScale))
+                                throw new ArgumentException($"/matrix() called with invalid scaling factor '{state.GetArgument(2, "c")}'");
                         } else {
                             verticalScale = horizontalScale;
                         }
@@ -1536,11 +1536,11 @@ namespace OpenDreamRuntime.Procs.Native {
                             translateMatrix = targetMatrix;
                         else
                             translateMatrix = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, targetMatrix);
-                        state.Arguments.GetArgument(1,"b").TryGetValueAsFloat(out float horizontalOffset);
+                        state.GetArgument(1,"b").TryGetValueAsFloat(out float horizontalOffset);
                         translateMatrix.GetVariable("c").TryGetValueAsFloat(out float oldXOffset);
                         translateMatrix.SetVariableValue("c", new(horizontalOffset + oldXOffset));
 
-                        state.Arguments.GetArgument(2, "c").TryGetValueAsFloat(out float verticalOffset);
+                        state.GetArgument(2, "c").TryGetValueAsFloat(out float verticalOffset);
                         translateMatrix.GetVariable("f").TryGetValueAsFloat(out float oldYOffset);
                         translateMatrix.SetVariableValue("f", new(verticalOffset + oldYOffset));
                         return new DreamValue(translateMatrix);
@@ -1550,7 +1550,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     if (!firstArgument.TryGetValueAsFloat(out horizontalShift))
                         throw new ArgumentException($"/matrix() called with invalid translation factor '{firstArgument}'");
                     if (state.Arguments.ArgumentCount == 3) {
-                        var secondArg = state.Arguments.GetArgument(1, "b");
+                        var secondArg = state.GetArgument(1, "b");
                         if (!secondArg.TryGetValueAsFloat(out verticalShift))
                             throw new ArgumentException($"/matrix() called with invalid translation factor '{secondArg}'");
                     } else {
@@ -1569,7 +1569,7 @@ namespace OpenDreamRuntime.Procs.Native {
             IEnumerator<DreamValue> values;
 
             if (state.Arguments.ArgumentCount == 1) {
-                DreamValue arg = state.Arguments.GetArgument(0, "A");
+                DreamValue arg = state.GetArgument(0, "A");
                 if (!arg.TryGetValueAsDreamList(out var list))
                     return arg;
 
@@ -1612,7 +1612,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.DreamResource)]
         public static DreamValue NativeProc_md5(NativeProc.State state) {
             if(state.Arguments.ArgumentCount > 1) throw new Exception("md5() only takes one argument");
-            DreamValue arg = state.Arguments.GetArgument(0, "T");
+            DreamValue arg = state.GetArgument(0, "T");
 
             byte[] bytes;
 
@@ -1643,7 +1643,7 @@ namespace OpenDreamRuntime.Procs.Native {
             IEnumerator<DreamValue> values;
 
             if (state.Arguments.ArgumentCount == 1) {
-                DreamValue arg = state.Arguments.GetArgument(0, "A");
+                DreamValue arg = state.GetArgument(0, "A");
                 if (!arg.TryGetValueAsDreamList(out var list))
                     return arg;
 
@@ -1682,17 +1682,17 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_nonspantext(NativeProc.State state)
         {
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
             {
                 return new DreamValue(0);
             }
 
-            if (!state.Arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles))
+            if (!state.GetArgument(1, "Needles").TryGetValueAsString(out var needles))
             {
                 return new DreamValue(1);
             }
 
-            int start = (int)state.Arguments.GetArgument(2, "Start").GetValueAsFloat();
+            int start = (int)state.GetArgument(2, "Start").GetValueAsFloat();
 
             if (start == 0 || start > text.Length) return new DreamValue(0);
 
@@ -1714,7 +1714,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Digits", Type = DreamValueType.Float)]
         [DreamProcParameter("Radix", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_num2text(NativeProc.State state) {
-            DreamValue number = state.Arguments.GetArgument(0, "N");
+            DreamValue number = state.GetArgument(0, "N");
 
             if (number.TryGetValueAsFloat(out float floatValue)) {
                 return new DreamValue(floatValue.ToString(CultureInfo.InvariantCulture));
@@ -1779,19 +1779,19 @@ namespace OpenDreamRuntime.Procs.Native {
 
             //Arguments are optional and can be passed in any order
             if (state.Arguments.ArgumentCount > 0) {
-                DreamValue firstArgument = state.Arguments.GetArgument(0, "Depth");
+                DreamValue firstArgument = state.GetArgument(0, "Depth");
 
                 if (firstArgument.Type == DreamValueType.DreamObject) {
                     center = firstArgument.GetValueAsDreamObject();
 
                     if (state.Arguments.ArgumentCount > 1) {
-                        depthValue = state.Arguments.GetArgument(1, "Center");
+                        depthValue = state.GetArgument(1, "Center");
                     }
                 } else {
                     depthValue = firstArgument;
 
                     if (state.Arguments.ArgumentCount > 1) {
-                        center = state.Arguments.GetArgument(1, "Center").GetValueAsDreamObject();
+                        center = state.GetArgument(1, "Center").GetValueAsDreamObject();
                     }
                 }
             }
@@ -1837,7 +1837,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("params2list")]
         [DreamProcParameter("Params", Type = DreamValueType.String)]
         public static DreamValue NativeProc_params2list(NativeProc.State state) {
-            DreamValue paramsValue = state.Arguments.GetArgument(0, "Params");
+            DreamValue paramsValue = state.GetArgument(0, "Params");
             DreamList result;
 
             if (paramsValue.TryGetValueAsString(out string paramsString)) {
@@ -1856,12 +1856,12 @@ namespace OpenDreamRuntime.Procs.Native {
             if (state.Arguments.ArgumentCount == 0) {
                 return new DreamValue(state.DreamManager.Random.NextSingle());
             } else if (state.Arguments.ArgumentCount == 1) {
-                state.Arguments.GetArgument(0, "L").TryGetValueAsInteger(out var high);
+                state.GetArgument(0, "L").TryGetValueAsInteger(out var high);
 
                 return new DreamValue(state.DreamManager.Random.Next(high+1)); // rand() is inclusive on both ends
             } else {
-                state.Arguments.GetArgument(0, "L").TryGetValueAsInteger(out var low);
-                state.Arguments.GetArgument(1, "H").TryGetValueAsInteger(out var high);
+                state.GetArgument(0, "L").TryGetValueAsInteger(out var low);
+                state.GetArgument(1, "H").TryGetValueAsInteger(out var high);
 
                 return new DreamValue(state.DreamManager.Random.Next(Math.Min(low, high), Math.Max(low, high)+1)); // rand() is inclusive on both ends
             }
@@ -1870,7 +1870,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("rand_seed")]
         [DreamProcParameter("Seed", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_rand_seed(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "Seed").TryGetValueAsInteger(out var seed);
+            state.GetArgument(0, "Seed").TryGetValueAsInteger(out var seed);
 
             state.DreamManager.Random = new Random(seed);
             return DreamValue.Null;
@@ -1917,7 +1917,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Object", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ref(NativeProc.State state)
         {
-            return new DreamValue(state.DreamManager.CreateRef(state.Arguments.GetArgument(0, "Object")));
+            return new DreamValue(state.DreamManager.CreateRef(state.GetArgument(0, "Object")));
         }
 
         [DreamProc("regex")]
@@ -1925,8 +1925,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("flags", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_regex(NativeProc.State state)
         {
-            var patternOrRegex = state.Arguments.GetArgument(0, "pattern");
-            var flags = state.Arguments.GetArgument(1, "flags");
+            var patternOrRegex = state.GetArgument(0, "pattern");
+            var flags = state.GetArgument(1, "flags");
             if (flags.TryGetValueAsInteger(out var specialMode) && patternOrRegex.TryGetValueAsString(out var text))
             {
                 switch(specialMode)
@@ -1949,11 +1949,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static async Task<DreamValue> NativeProc_replacetext(AsyncNativeProc.State state) {
-            DreamValue haystack = state.Arguments.GetArgument(0, "Haystack");
-            DreamValue needle = state.Arguments.GetArgument(1, "Needle");
-            DreamValue replacementArg = state.Arguments.GetArgument(2, "Replacement");
-            int start = state.Arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.Arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+            DreamValue haystack = state.GetArgument(0, "Haystack");
+            DreamValue needle = state.GetArgument(1, "Needle");
+            DreamValue replacementArg = state.GetArgument(2, "Replacement");
+            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
             if (needle.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out var regexObject)) {
                 // According to the docs, this is the same as /regex.Replace()
@@ -2015,10 +2015,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("B", Type = DreamValueType.Float)]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_rgb(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "R").TryGetValueAsInteger(out var r);
-            state.Arguments.GetArgument(1, "G").TryGetValueAsInteger(out var g);
-            state.Arguments.GetArgument(2, "B").TryGetValueAsInteger(out var b);
-            DreamValue aValue = state.Arguments.GetArgument(3, "A");
+            state.GetArgument(0, "R").TryGetValueAsInteger(out var r);
+            state.GetArgument(1, "G").TryGetValueAsInteger(out var g);
+            state.GetArgument(2, "B").TryGetValueAsInteger(out var b);
+            DreamValue aValue = state.GetArgument(3, "A");
 
             // TODO: There is a difference between passing null and not passing a fourth arg at all
             // Likely a compile-time difference
@@ -2035,13 +2035,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("color", Type = DreamValueType.String)]
         [DreamProcParameter("space", Type = DreamValueType.Float, DefaultValue = 0)] // Same value as COLORSPACE_RGB
         public static DreamValue NativeProc_rgb2num(NativeProc.State state) {
-            if(!state.Arguments.GetArgument(0, "color").TryGetValueAsString(out var color))
+            if(!state.GetArgument(0, "color").TryGetValueAsString(out var color))
             {
                 throw new Exception("bad color");
             }
 
-            if (!state.Arguments.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
-                throw new NotImplementedException($"Failed to parse colorspace {state.Arguments.GetArgument(1, "space")}");
+            if (!state.GetArgument(1, "space").TryGetValueAsInteger(out var space)) {
+                throw new NotImplementedException($"Failed to parse colorspace {state.GetArgument(1, "space")}");
             }
 
             if (!ColorHelpers.TryParseColor(color, out var c, defaultAlpha: null)) {
@@ -2095,14 +2095,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_replacetextEx(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
             {
                 return DreamValue.Null;
             }
 
-            var arg3 = state.Arguments.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
+            var arg3 = state.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
 
-            if (!state.Arguments.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
             {
                 if (!arg3)
                 {
@@ -2122,8 +2122,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(result.ToString());
             }
 
-            int start = state.Arguments.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.Arguments.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
             if (end == 0) {
                 end = text.Length + 1;
@@ -2136,12 +2136,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         [DreamProcParameter("B", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_round(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "A").TryGetValueAsFloat(out var a);
+            state.GetArgument(0, "A").TryGetValueAsFloat(out var a);
 
             if (state.Arguments.ArgumentCount == 1) {
                 return new DreamValue((float)Math.Floor(a));
             } else {
-                state.Arguments.GetArgument(1, "B").TryGetValueAsFloat(out var b);
+                state.GetArgument(1, "B").TryGetValueAsFloat(out var b);
 
                 return new DreamValue((float)Math.Round(a / b) * b);
             }
@@ -2155,7 +2155,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int sides;
             int modifier = 0;
             if (state.Arguments.ArgumentCount == 1) {
-                if(!state.Arguments.GetArgument(0, "ndice").TryGetValueAsString(out var diceInput))
+                if(!state.GetArgument(0, "ndice").TryGetValueAsString(out var diceInput))
                 {
                     return new DreamValue(1);
                 }
@@ -2171,7 +2171,7 @@ namespace OpenDreamRuntime.Procs.Native {
                             throw new Exception($"Invalid dice value: {diceInput}");
                     }
                 }
-            } else if (!state.Arguments.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !state.Arguments.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
+            } else if (!state.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !state.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
                 return new DreamValue(0);
             }
             float total = modifier; // Adds the modifier to start with
@@ -2186,7 +2186,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_sha1(NativeProc.State state)
         {
             if (state.Arguments.ArgumentCount > 1) throw new Exception("sha1() only takes one argument");
-            DreamValue arg = state.Arguments.GetArgument(0, "T");
+            DreamValue arg = state.GetArgument(0, "T");
             byte[] bytes;
 
             if (arg.TryGetValueAsDreamResource(out DreamResource resource)) {
@@ -2214,7 +2214,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Addr", Type = DreamValueType.String | DreamValueType.DreamObject)]
         [DreamProcParameter("Natural", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_shutdown(NativeProc.State state) {
-            DreamValue addrValue = state.Arguments.GetArgument(0, "Addr");
+            DreamValue addrValue = state.GetArgument(0, "Addr");
 
             if (addrValue == DreamValue.Null) {
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => {
@@ -2230,7 +2230,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("sin")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_sin(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "X").TryGetValueAsFloat(out var x);
+            state.GetArgument(0, "X").TryGetValueAsFloat(out var x);
             double rad = x * (Math.PI / 180);
 
             return new DreamValue((float)Math.Sin(rad));
@@ -2239,7 +2239,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("sleep")]
         [DreamProcParameter("Delay", Type = DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
-            state.Arguments.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
+            state.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
             int delayMilliseconds = (int)(delay * 100);
 
             // TODO: This may not be the proper behaviour, see https://www.byond.com/docs/ref/#/proc/sleep
@@ -2263,15 +2263,15 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_sorttext(NativeProc.State state)
         {
             string t2;
-            if (!state.Arguments.GetArgument(0, "T1").TryGetValueAsString(out var t1))
+            if (!state.GetArgument(0, "T1").TryGetValueAsString(out var t1))
             {
-                if (!state.Arguments.GetArgument(1, "T2").TryGetValueAsString(out _))
+                if (!state.GetArgument(1, "T2").TryGetValueAsString(out _))
                 {
                     return new DreamValue(0);
                 }
 
                 return new DreamValue(1);
-            } else if (!state.Arguments.GetArgument(1, "T2").TryGetValueAsString(out t2))
+            } else if (!state.GetArgument(1, "T2").TryGetValueAsString(out t2))
             {
                 return new DreamValue(-1);
             }
@@ -2286,15 +2286,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("T2", Type = DreamValueType.String)]
         public static DreamValue NativeProc_sorttextEx(NativeProc.State state) {
             string t2;
-            if (!state.Arguments.GetArgument(0, "T1").TryGetValueAsString(out var t1))
+            if (!state.GetArgument(0, "T1").TryGetValueAsString(out var t1))
             {
-                if (!state.Arguments.GetArgument(1, "T2").TryGetValueAsString(out _))
+                if (!state.GetArgument(1, "T2").TryGetValueAsString(out _))
                 {
                     return new DreamValue(0);
                 }
 
                 return new DreamValue(1);
-            } else if (!state.Arguments.GetArgument(1, "T2").TryGetValueAsString(out t2))
+            } else if (!state.GetArgument(1, "T2").TryGetValueAsString(out t2))
             {
                 return new DreamValue(-1);
             }
@@ -2310,9 +2310,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_spantext(NativeProc.State state) {
             //if any arguments are bad, return 0
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
-                !state.Arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
-                !state.Arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
+                !state.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
+                !state.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
                 start == 0) { // Start=0 is not valid
                 return new DreamValue(0);
             }
@@ -2339,9 +2339,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_spantext_char(NativeProc.State state) {
             //if any arguments are bad, return 0
-            if (!state.Arguments.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
-                !state.Arguments.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
-                !state.Arguments.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text) ||
+                !state.GetArgument(1, "Needles").TryGetValueAsString(out var needles) ||
+                !state.GetArgument(2, "Start").TryGetValueAsInteger(out var start) ||
                 start == 0) { // Start=0 is not valid
                 return new DreamValue(0);
             }
@@ -2397,10 +2397,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
         public static DreamValue NativeProc_splicetext(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);
-            state.Arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
-            state.Arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);
-            state.Arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
+            state.GetArgument(0, "Text").TryGetValueAsString(out var text);
+            state.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            state.GetArgument(2, "End").TryGetValueAsInteger(out var end);
+            state.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
 
             if(text == null)
                 if(String.IsNullOrEmpty(insertText))
@@ -2433,10 +2433,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
         [DreamProcParameter("Insert", Type = DreamValueType.String, DefaultValue = "")]
         public static DreamValue NativeProc_splicetext_char(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "Text").TryGetValueAsString(out var text);
-            state.Arguments.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
-            state.Arguments.GetArgument(2, "End").TryGetValueAsInteger(out var end);
-            state.Arguments.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
+            state.GetArgument(0, "Text").TryGetValueAsString(out var text);
+            state.GetArgument(1, "Start").TryGetValueAsInteger(out var start);
+            state.GetArgument(2, "End").TryGetValueAsInteger(out var end);
+            state.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
 
             if(text == null) //this is for BYOND compat, and causes the function to ignore start/end if text is null or empty
                 if(String.IsNullOrEmpty(insertText))
@@ -2471,11 +2471,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("Delimiter", Type = DreamValueType.String)]
         public static DreamValue NativeProc_splittext(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
+            if (!state.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
                 return new DreamValue(state.ObjectTree.CreateList());
             }
 
-            var arg2 = state.Arguments.GetArgument(1, "Delimiter");
+            var arg2 = state.GetArgument(1, "Delimiter");
             if (!arg2.TryGetValueAsString(out var delimiter)) {
                 if (!arg2.Equals(DreamValue.Null)) {
                     return new DreamValue(state.ObjectTree.CreateList());
@@ -2491,7 +2491,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("sqrt")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_sqrt(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "A").TryGetValueAsFloat(out var a);
+            state.GetArgument(0, "A").TryGetValueAsFloat(out var a);
 
             return new DreamValue((float)Math.Sqrt(a));
         }
@@ -2508,8 +2508,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Name")]
         [DreamProcParameter("Value")]
         public static DreamValue NativeProc_stat(NativeProc.State state) {
-            DreamValue name = state.Arguments.GetArgument(0, "Name");
-            DreamValue value = state.Arguments.GetArgument(1, "Value");
+            DreamValue name = state.GetArgument(0, "Name");
+            DreamValue value = state.GetArgument(1, "Value");
 
             if (state.DreamManager.TryGetConnectionFromMob(state.Usr, out var connection))
                 OutputToStatPanel(connection, name, value);
@@ -2522,9 +2522,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Name")]
         [DreamProcParameter("Value")]
         public static DreamValue NativeProc_statpanel(NativeProc.State state) {
-            string panel = state.Arguments.GetArgument(0, "Panel").GetValueAsString();
-            DreamValue name = state.Arguments.GetArgument(1, "Name");
-            DreamValue value = state.Arguments.GetArgument(2, "Value");
+            string panel = state.GetArgument(0, "Panel").GetValueAsString();
+            DreamValue name = state.GetArgument(1, "Name");
+            DreamValue value = state.GetArgument(2, "Value");
 
             if (state.DreamManager.TryGetConnectionFromMob(state.Usr, out var connection)) {
                 connection.SetOutputStatPanel(panel);
@@ -2541,7 +2541,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("tan")]
         [DreamProcParameter("X", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_tan(NativeProc.State state) {
-            state.Arguments.GetArgument(0, "X").TryGetValueAsFloat(out var x);
+            state.GetArgument(0, "X").TryGetValueAsFloat(out var x);
             double rad = x * (Math.PI / 180);
 
             return new DreamValue((float)Math.Tan(rad));
@@ -2551,12 +2551,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("pos", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_text2ascii(NativeProc.State state) {
-            if(!state.Arguments.GetArgument(0, "T").TryGetValueAsString(out var text))
+            if(!state.GetArgument(0, "T").TryGetValueAsString(out var text))
             {
                 return new DreamValue(0);
             }
 
-            state.Arguments.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
+            state.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
             if (pos == 0) pos = 1; //0 is same as 1
             else if (pos < 0) pos += text.Length + 1; //Wraps around
 
@@ -2571,12 +2571,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("T", Type = DreamValueType.String)]
         [DreamProcParameter("pos", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_text2ascii_char(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "T").TryGetValueAsString(out var text)) {
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text)) {
                 return new DreamValue(0);
             }
             StringInfo textElements = new StringInfo(text);
 
-            state.Arguments.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
+            state.GetArgument(1, "pos").TryGetValueAsInteger(out var pos); //1-indexed
             if (pos == 0) pos = 1; //0 is same as 1
             else if (pos < 0) pos += textElements.LengthInTextElements + 1; //Wraps around
 
@@ -2592,11 +2592,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         [DreamProcParameter("File", Type = DreamValueType.String)]
         public static DreamValue NativeProc_text2file(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
+            if (!state.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
                 text = string.Empty;
             }
 
-            if (!state.Arguments.GetArgument(1, "File").TryGetValueAsString(out var file)) {
+            if (!state.GetArgument(1, "File").TryGetValueAsString(out var file)) {
                 return new DreamValue(0);
             }
 
@@ -2607,10 +2607,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.Float | DreamValueType.DreamObject)]
         [DreamProcParameter("radix", Type = DreamValueType.Float, DefaultValue = 10)]
         public static DreamValue NativeProc_text2num(NativeProc.State state) {
-            DreamValue value = state.Arguments.GetArgument(0, "T");
+            DreamValue value = state.GetArgument(0, "T");
 
             if (value.TryGetValueAsString(out string text)) {
-                state.Arguments.GetArgument(1, "radix").TryGetValueAsInteger(out var radix);
+                state.GetArgument(1, "radix").TryGetValueAsInteger(out var radix);
                 if (radix < 2)
                     throw new Exception($"Invalid radix: {radix}");
 
@@ -2639,7 +2639,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_text2path(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "T").TryGetValueAsString(out var text)) {
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text)) {
                 return DreamValue.Null;
             }
 
@@ -2659,14 +2659,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("format", Type = DreamValueType.String)]
         [DreamProcParameter("timezone", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_time2text(NativeProc.State state) {
-            bool hasTimezoneOffset = state.Arguments.GetArgument(2, "timezone").TryGetValueAsFloat(out float timezoneOffset);
+            bool hasTimezoneOffset = state.GetArgument(2, "timezone").TryGetValueAsFloat(out float timezoneOffset);
 
-            if (!state.Arguments.GetArgument(0, "timestamp").TryGetValueAsFloat(out var timestamp)) {
+            if (!state.GetArgument(0, "timestamp").TryGetValueAsFloat(out var timestamp)) {
                 // TODO This copes with nulls and is a sane default, but BYOND has weird returns for strings and stuff
                 state.DreamManager.WorldInstance.GetVariable("timeofday").TryGetValueAsFloat(out timestamp);
             }
 
-            if (!state.Arguments.GetArgument(1, "format").TryGetValueAsString(out var format)) {
+            if (!state.GetArgument(1, "format").TryGetValueAsString(out var format)) {
                 format = "DDD MMM DD hh:mm:ss YYYY";
             }
 
@@ -2704,13 +2704,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("trimtext")]
         [DreamProcParameter("Text", Type = DreamValueType.String)]
         public static DreamValue NativeProc_trimtext(NativeProc.State state) {
-            return state.Arguments.GetArgument(0, "Text").TryGetValueAsString(out var val) ? new DreamValue(val.Trim()) : DreamValue.Null;
+            return state.GetArgument(0, "Text").TryGetValueAsString(out var val) ? new DreamValue(val.Trim()) : DreamValue.Null;
         }
 
         [DreamProc("trunc")]
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_trunc(NativeProc.State state) {
-            DreamValue arg = state.Arguments.GetArgument(0, "n");
+            DreamValue arg = state.GetArgument(0, "n");
             if (arg.TryGetValueAsFloat(out float floatnum)) {
                 return new DreamValue(MathF.Truncate(floatnum));
             }
@@ -2723,8 +2723,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dir", Type = DreamValueType.Float)]
         [DreamProcParameter("Angle", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_turn(NativeProc.State state) {
-            DreamValue dirArg = state.Arguments.GetArgument(0, "dir");
-            DreamValue angleArg = state.Arguments.GetArgument(1, "angle");
+            DreamValue dirArg = state.GetArgument(0, "dir");
+            DreamValue angleArg = state.GetArgument(1, "angle");
 
             // Handle an invalid angle, defaults to 0
             if (!angleArg.TryGetValueAsFloat(out float angle)) {
@@ -2859,11 +2859,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("uppertext")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
-        public static DreamValue NativeProc_uppertext(NativeProc.State state)
-        {
-            var arg = state.Arguments.GetArgument(0, "T");
-            if (!arg.TryGetValueAsString(out var text))
-            {
+        public static DreamValue NativeProc_uppertext(NativeProc.State state) {
+            var arg = state.GetArgument(0, "T");
+            if (!arg.TryGetValueAsString(out var text)) {
                 return arg;
             }
 
@@ -2873,8 +2871,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("url_decode")]
         [DreamProcParameter("UrlText", Type = DreamValueType.String)]
         public static DreamValue NativeProc_url_decode(NativeProc.State state) {
-            if (!state.Arguments.GetArgument(0, "UrlText").TryGetValueAsString(out var urlText))
-            {
+            if (!state.GetArgument(0, "UrlText").TryGetValueAsString(out var urlText)) {
                 return new DreamValue("");
             }
 
@@ -2885,8 +2882,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("PlainText", Type = DreamValueType.String)]
         [DreamProcParameter("format", Type = DreamValueType.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_url_encode(NativeProc.State state) {
-            string plainText = state.Arguments.GetArgument(0, "PlainText").Stringify();
-            state.Arguments.GetArgument(1, "format").TryGetValueAsInteger(out var format);
+            string plainText = state.GetArgument(0, "PlainText").Stringify();
+            state.GetArgument(1, "format").TryGetValueAsInteger(out var format);
             if (format != 0)
                 throw new NotImplementedException("Only format 0 is supported");
 
@@ -2953,19 +2950,19 @@ namespace OpenDreamRuntime.Procs.Native {
 
             //Arguments are optional and can be passed in any order
             if (state.Arguments.ArgumentCount > 0) {
-                DreamValue firstArgument = state.Arguments.GetArgument(0, "Depth");
+                DreamValue firstArgument = state.GetArgument(0, "Depth");
 
                 if (firstArgument.TryGetValueAsDreamObject(out var firstObj)) {
                     center = firstObj;
 
                     if (state.Arguments.ArgumentCount > 1) {
-                        depthValue = state.Arguments.GetArgument(1, "Center");
+                        depthValue = state.GetArgument(1, "Center");
                     }
                 } else {
                     depthValue = firstArgument;
 
                     if (state.Arguments.ArgumentCount > 1) {
-                        center = state.Arguments.GetArgument(1, "Center").GetValueAsDreamObject();
+                        center = state.GetArgument(1, "Center").GetValueAsDreamObject();
                     }
                 }
             }
@@ -3015,12 +3012,12 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("window_name", Type = DreamValueType.String)]
         [DreamProcParameter("clone_name", Type = DreamValueType.String)]
         public static DreamValue NativeProc_winclone(NativeProc.State state) {
-            if(!state.Arguments.GetArgument(1, "window_name").TryGetValueAsString(out var windowName))
+            if(!state.GetArgument(1, "window_name").TryGetValueAsString(out var windowName))
                 return DreamValue.Null;
-            if(!state.Arguments.GetArgument(2, "clone_name").TryGetValueAsString(out var cloneName))
+            if(!state.GetArgument(2, "clone_name").TryGetValueAsString(out var cloneName))
                 return DreamValue.Null;
 
-            DreamValue player = state.Arguments.GetArgument(0, "player");
+            DreamValue player = state.GetArgument(0, "player");
 
             DreamConnection? connection;
 
@@ -3040,8 +3037,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("player", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("control_id", Type = DreamValueType.String)]
         public static async Task<DreamValue> NativeProc_winexists(AsyncNativeProc.State state) {
-            DreamValue player = state.Arguments.GetArgument(0, "player");
-            if (!state.Arguments.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
+            DreamValue player = state.GetArgument(0, "player");
+            if (!state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId)) {
                 return new DreamValue("");
             }
 
@@ -3064,10 +3061,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("control_id", Type = DreamValueType.String)]
         [DreamProcParameter("params", Type = DreamValueType.String)]
         public static DreamValue NativeProc_winset(NativeProc.State state) {
-            DreamValue player = state.Arguments.GetArgument(0, "player");
-            DreamValue controlId = state.Arguments.GetArgument(1, "control_id");
+            DreamValue player = state.GetArgument(0, "player");
+            DreamValue controlId = state.GetArgument(1, "control_id");
             string winsetControlId = (controlId != DreamValue.Null) ? controlId.GetValueAsString() : null;
-            string winsetParams = state.Arguments.GetArgument(2, "params").GetValueAsString();
+            string winsetParams = state.GetArgument(2, "params").GetValueAsString();
 
             DreamConnection? connection = null;
             if (player.TryGetValueAsDreamObjectOfType(state.ObjectTree.Mob, out var mob)) {

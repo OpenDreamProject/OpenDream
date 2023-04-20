@@ -16,7 +16,7 @@ internal static class DreamProcNativeMatrix {
     [DreamProc("Multiply")]
     [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject | DreamValueType.Float)] // or "n"
     public static DreamValue NativeProc_Multiply(NativeProc.State state) {
-        DreamValue possibleMatrix = state.Arguments.GetArgument(0, "Matrix2");
+        DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var matrixArg)) {
             DreamMetaObjectMatrix.MultiplyMatrix(state.Src, matrixArg);
             return new DreamValue(state.Src);
@@ -41,8 +41,8 @@ internal static class DreamProcNativeMatrix {
     public static DreamValue NativeProc_Scale(NativeProc.State state) {
         float horizontalScale;
         float verticalScale;
-        state.Arguments.GetArgument(0, "x").TryGetValueAsFloat(out horizontalScale);
-        if (!state.Arguments.GetArgument(1, "y").TryGetValueAsFloat(out verticalScale))
+        state.GetArgument(0, "x").TryGetValueAsFloat(out horizontalScale);
+        if (!state.GetArgument(1, "y").TryGetValueAsFloat(out verticalScale))
             verticalScale = horizontalScale;
         DreamMetaObjectMatrix.ScaleMatrix(state.Src, horizontalScale, verticalScale);
         return new DreamValue(state.Src);
@@ -51,7 +51,7 @@ internal static class DreamProcNativeMatrix {
     [DreamProc("Turn")]
     [DreamProcParameter("angle", Type = DreamValueType.Float)]
     public static DreamValue NativeProc_Turn(NativeProc.State state) {
-        DreamValue angleArg = state.Arguments.GetArgument(0, "angle");
+        DreamValue angleArg = state.GetArgument(0, "angle");
         if (!angleArg.TryGetValueAsFloat(out float angle)) {
             return new DreamValue(state.Src); // Defaults to input on invalid angle
         }

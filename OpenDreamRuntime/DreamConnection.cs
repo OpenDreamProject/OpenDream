@@ -31,6 +31,13 @@ namespace OpenDreamRuntime {
             set {
                 DebugTools.Assert(value == null || value.IsSubtypeOf(_objectTree.Mob));
 
+                // The session's attached entity needs to be updated before verbs are updated
+                if (value != null) {
+                    Session!.AttachToEntity(_atomManager.GetMovableEntity(value));
+                } else {
+                    Session!.DetachFromEntity();
+                }
+
                 if (_mob != value) {
                     _mob?.SetVariableValue("ckey", DreamValue.Null);
                     _mob?.SetVariableValue("key", DreamValue.Null);
@@ -50,12 +57,6 @@ namespace OpenDreamRuntime {
                     }
 
                     UpdateAvailableVerbs();
-                }
-
-                if (_mob != null) {
-                    Session!.AttachToEntity(_atomManager.GetMovableEntity(_mob));
-                } else {
-                    Session!.DetachFromEntity();
                 }
             }
         }

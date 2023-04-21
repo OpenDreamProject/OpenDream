@@ -693,8 +693,11 @@ namespace OpenDreamRuntime.Procs {
 
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorAppend(first, second, state);
+
+                        ProcStatus? result = metaObject?.OperatorAppend(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects append will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -757,8 +760,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorIncrement(first, state);
+                        ProcStatus? result = metaObject?.OperatorIncrement(first, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -806,8 +811,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorDecrement(first, state);
+                        ProcStatus? result = metaObject?.OperatorDecrement(first, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1009,8 +1016,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorBitShiftLeftRef(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorBitShiftLeftRef(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1097,8 +1106,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorBitShiftRightRef(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorBitShiftRightRef(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1185,8 +1196,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorBitXorRef(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorBitXorRef(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1262,8 +1275,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorCombine(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorCombine(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1357,8 +1372,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorDivideRef(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorDivideRef(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1401,8 +1418,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorMask(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorMask(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1521,8 +1540,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorModulusRef(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorModulusRef(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1569,8 +1590,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorModulusModulusRef(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorModulusModulusRef(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1649,8 +1672,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorMultiplyRef(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorMultiplyRef(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }
@@ -1771,8 +1796,10 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.DreamObject: {
                     if(first.TryGetValueAsDreamObject(out DreamObject? obj)) {
                         IDreamMetaObject? metaObject = obj?.ObjectDefinition?.MetaObject;
-                        state.SetSubOpcode(DreamProcOpcode.Assign, reference);
-                        return metaObject?.OperatorRemove(first, second, state);
+                        ProcStatus? result = metaObject?.OperatorRemove(first, second, state);
+                        if(result != null) //we assume that built-in metaobjects will edit *in place*, otherwise we need the extra assign call
+                            state.SetSubOpcode(DreamProcOpcode.Assign, reference);
+                        return result;
                     }
                     break;
                 }

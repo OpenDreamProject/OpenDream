@@ -51,7 +51,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
         }
 
-        public void OperatorOutput(DreamObject a, DreamValue b) {
+        public ProcStatus? OperatorOutput(DreamValue a, DreamValue b, DMProcState state) {
             if (b.TryGetValueAsDreamObjectOfType(_objectTree.Sound, out _)) {
                 // Output the sound to every connection with a mob inside the area
                 foreach (var connection in _dreamManager.Connections) {
@@ -66,16 +66,16 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (!_dreamMapManager.TryGetCellFromTransform(mobTransform, out var cell))
                         continue;
 
-                    if (cell.Area != a)
+                    if (cell.Area != a.MustGetValueAsDreamObject())
                         continue;
 
                     connection.OutputDreamValue(b);
                 }
 
-                return;
             }
 
-            ParentType?.OperatorOutput(a, b);
+            state.Push(DreamValue.Null);
+            return null;
         }
     }
 }

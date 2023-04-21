@@ -7,6 +7,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
+using OpenDreamShared.Rendering;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Utility;
@@ -17,6 +18,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
         [ViewVariables] private readonly Dictionary<string, List<string>> _statPanels = new();
@@ -124,6 +126,15 @@ namespace OpenDreamRuntime {
                     // Don't send hidden verbs. Names starting with "." count as hidden.
                     if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||
                         verbName.StartsWith('.')) {
+                        continue;
+                    }
+
+                    // Don't send invisible verbs.
+                    sbyte seeVis = 127;
+                    if(_entityManager.TryGetComponent<DreamMobSightComponent>(Session?.AttachedEntity, out var mobSight)){
+                        seeVis = mobSight.SeeInvisibility;
+                    }
+                    if (proc.Invisibility > seeVis) {
                         continue;
                     }
 

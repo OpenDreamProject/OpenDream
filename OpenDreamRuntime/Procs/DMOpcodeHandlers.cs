@@ -74,7 +74,7 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IDreamMapManager mapManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
+        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IAtomManager atomManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
             if (!value.TryGetValueAsDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
@@ -85,12 +85,16 @@ namespace OpenDreamRuntime.Procs {
                     } else if (dreamObject.IsSubtypeOf(objectTree.World)) {
                         // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
                         if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
-                            return new DreamObjectEnumerator(mapManager.AllAreas, filterType);
+                            return new DreamObjectEnumerator(atomManager.Areas, filterType);
                         } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
-                            return new DreamObjectEnumerator(mapManager.AllTurfs, filterType);
+                            return new DreamObjectEnumerator(atomManager.Turfs, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Obj) == true) {
+                            return new DreamObjectEnumerator(atomManager.Objects, filterType);
+                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Mob) == true) {
+                            return new DreamObjectEnumerator(atomManager.Mobs, filterType);
                         }
 
-                        return new WorldContentsEnumerator(mapManager, filterType);
+                        return new WorldContentsEnumerator(atomManager, filterType);
                     }
                 }
             }
@@ -98,7 +102,7 @@ namespace OpenDreamRuntime.Procs {
             if (list != null) {
                 // world.contents has its own special enumerator to prevent the huge copy
                 if (list is WorldContentsList)
-                    return new WorldContentsEnumerator(mapManager, filterType);
+                    return new WorldContentsEnumerator(atomManager, filterType);
 
                 var values = list.GetValues().ToArray();
 
@@ -111,7 +115,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateListEnumerator(DMProcState state) {
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), null);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), null);
 
             state.EnumeratorStack.Push(enumerator);
             return null;
@@ -120,7 +124,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? CreateFilteredListEnumerator(DMProcState state) {
             var filterTypeId = state.ReadInt();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.DreamMapManager, state.Pop(), filterType);
+            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
 
             state.EnumeratorStack.Push(enumerator);
             return null;
@@ -138,7 +142,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Atom)) {
-                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.DreamMapManager, type));
+                state.EnumeratorStack.Push(new WorldContentsEnumerator(state.Proc.AtomManager, type));
                 return null;
             }
 
@@ -370,7 +374,13 @@ namespace OpenDreamRuntime.Procs {
                         continue;
                     case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
                         // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
-                        if (interps[prevInterpIndex].TryGetValueAsFloat(out var ordinalNumber)) {
+                        if (interps[prevInterpIndex].TryGetValueAsInteger(out var ordinalNumber)) {
+
+                            // For some mystical reason byond converts \th to integers
+                            // This is slightly hacky but the only reliable way I know how to replace the number
+                            // Need to call stringy to make sure its the right length to cut
+                            formattedString.Length -= interps[prevInterpIndex].Stringify().Length;
+                            formattedString.Append(ordinalNumber);
                             switch (ordinalNumber) {
                                 case 1:
                                     formattedString.Append("st");
@@ -406,12 +416,18 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Initial(DMProcState state) {
             DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            if (!key.TryGetValueAsString(out string property)) {
+            if (!key.TryGetValueAsString(out var property)) {
                 throw new Exception("Invalid var for initial() call: " + key);
             }
 
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject) && dreamObject != null) {
+            if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
+                // Calling initial() on a null value just returns null
+                if (dreamObject == null) {
+                    state.Push(DreamValue.Null);
+                    return null;
+                }
+
                 objectDefinition = dreamObject.ObjectDefinition;
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;
@@ -2311,8 +2327,8 @@ namespace OpenDreamRuntime.Procs {
             DreamObject receiver = state.Pop().GetValueAsDreamObject();
 
             IEnumerable<DreamConnection> clients;
-            if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Mob)) {
-                clients = new[] { state.DreamManager.GetConnectionFromMob(receiver) };
+            if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Mob) && state.DreamManager.TryGetConnectionFromMob(receiver, out var connection)) {
+                clients = new[] { connection };
             } else if (receiver.IsSubtypeOf(state.Proc.ObjectTree.Client)) {
                 clients = new[] { state.DreamManager.GetConnectionFromClient(receiver) };
             } else if (receiver == state.DreamManager.WorldInstance) {
@@ -2418,45 +2434,41 @@ namespace OpenDreamRuntime.Procs {
             DreamValue message, title, defaultValue;
 
             DreamValue firstArg = state.Pop();
-            if (firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Mob, out var recipientMob)) {
+            if (firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Mob, out var recipient) ||
+                firstArg.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Client, out recipient)) {
                 message = state.Pop();
                 title = state.Pop();
                 defaultValue = state.Pop();
             } else {
-                recipientMob = state.Usr;
+                recipient = state.Usr;
                 message = firstArg;
                 title = state.Pop();
                 defaultValue = state.Pop();
                 state.Pop(); //Fourth argument, should be null
             }
 
-            if (recipientMob == null) {
+            DreamConnection? connection = null;
+            if (recipient?.IsSubtypeOf(state.Proc.ObjectTree.Mob) == true)
+                state.Proc.DreamManager.TryGetConnectionFromMob(recipient, out connection);
+            else if (recipient?.IsSubtypeOf(state.Proc.ObjectTree.Client) == true)
+                connection = state.Proc.DreamManager.GetConnectionFromClient(recipient);
+
+            if (connection == null) {
                 state.Push(DreamValue.Null);
                 return null;
             }
 
-            if (recipientMob.GetVariable("client").TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Client, out var clientObject)) {
-                DreamConnection? connection = state.DreamManager.GetConnectionFromClient(clientObject);
-                if (connection == null) {
-                    state.Push(DreamValue.Null);
-                    return null;
-                }
-
-                Task<DreamValue> promptTask;
-                if (list.TryGetValueAsDreamList(out var valueList)) {
-                    promptTask = connection.PromptList(types, valueList, title.Stringify(), message.Stringify(), defaultValue);
-                } else {
-                    promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
-                }
-
-                // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
-                var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async _ => await promptTask);
-                state.Thread.PushProcState(waiter);
-                return ProcStatus.Called;
+            Task<DreamValue> promptTask;
+            if (list.TryGetValueAsDreamList(out var valueList)) {
+                promptTask = connection.PromptList(types, valueList, title.Stringify(), message.Stringify(), defaultValue);
+            } else {
+                promptTask = connection.Prompt(types, title.Stringify(), message.Stringify(), defaultValue.Stringify());
             }
 
-            state.Push(DreamValue.Null);
-            return null;
+            // Could use a better solution. Either no anonymous async native proc at all, or just a better way to call them.
+            var waiter = AsyncNativeProc.CreateAnonymousState(state.Thread, async _ => await promptTask);
+            state.Thread.PushProcState(waiter);
+            return ProcStatus.Called;
         }
 
         public static ProcStatus? LocateCoord(DMProcState state)

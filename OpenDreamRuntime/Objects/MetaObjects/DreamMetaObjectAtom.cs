@@ -23,11 +23,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            // Turfs can be new()ed multiple times, so let DreamMapManager handle it.
-            if (!dreamObject.IsSubtypeOf(_objectTree.Turf)) {
-                _mapManager.AllAtoms.Add(dreamObject);
-            }
-
             VerbLists[dreamObject] = new VerbsList(_objectTree, dreamObject);
             _filterLists[dreamObject] = new DreamFilterList(_objectTree.List.ObjectDefinition, dreamObject);
 
@@ -45,12 +40,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             _filterLists.Remove(dreamObject);
 
             _atomManager.DeleteMovableEntity(dreamObject);
-
-            // Replace our world.contents spot with the last so this doesn't mess with enumerators
-            // Results in a different order than BYOND, but nothing about our order resembles BYOND at all right now
-            // TODO: Handle this placing atoms earlier than an enumerator's index
-            int worldContentsIndex = _mapManager.AllAtoms.IndexOf(dreamObject);
-            _mapManager.AllAtoms.RemoveSwap(worldContentsIndex);
 
             _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
             _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
@@ -187,8 +176,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 overlay = new IconAppearance() {
                     IconState = iconState
                 };
+            } else if (_atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
+                overlay = overlayAppearance;
             } else {
-                overlay = _atomManager.CreateAppearanceFrom(value);
+                return new IconAppearance(); // Not a valid overlay, use a default appearance
             }
 
             if (overlay.Icon == null) {

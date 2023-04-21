@@ -1,11 +1,12 @@
-﻿using OpenDreamClient.Input.ContextMenu;
+﻿using JetBrains.Annotations;
+using OpenDreamClient.Input.ContextMenu;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
-using Robust.Client.Player;
 using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
@@ -15,9 +16,7 @@ namespace OpenDreamClient.Input {
     sealed class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
-        [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
 
@@ -48,14 +47,21 @@ namespace OpenDreamClient.Input {
             ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocPos.Y, 32); // TODO: icon_size other than 32
 
             MapCoordinates mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
-            EntityUid entity = GetEntityUnderMouse(viewport, screenLocPos, mapCoords);
+            RendererMetaData? entity = GetEntityUnderMouse(screenLocPos);
+            if (entity == null)
+                return false;
 
-            if (entity == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
+            if (entity.ClickUID == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
+                // Grid coordinates are half a meter off from entity coordinates
+                mapCoords = new MapCoordinates(mapCoords.Position + 0.5f, mapCoords.MapId);
+
                 if (_mapManager.TryFindGridAt(mapCoords, out var grid)){
                     Vector2i position = grid.CoordinatesToTile(mapCoords);
                     MapCoordinates worldPosition = grid.GridTileToWorld(position);
-                    RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc,  shift, ctrl, alt));
+                    Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
+                    RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc,  shift, ctrl, alt, turfIconPosition));
                 }
+
                 return true;
             }
 
@@ -76,26 +82,23 @@ namespace OpenDreamClient.Input {
                 return true;
             }
 
-            if (entity != EntityUid.Invalid) //atom was clicked, and it wasn't a right click
-                RaiseNetworkEvent(new EntityClickedEvent(entity, screenLoc, shift, ctrl, alt));
+            // TODO: Take icon transformations into account
+            Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
+            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, shift, ctrl, alt, iconPosition));
             return true;
         }
 
-        private EntityUid GetEntityUnderMouse(ScalingViewport viewport, Vector2 mousePos, MapCoordinates coords) {
-            EntityUid? entity = GetEntityOnScreen(mousePos, viewport);
-
-            return entity ?? EntityUid.Invalid;
-        }
-
-        private EntityUid? GetEntityOnScreen(Vector2 mousePos, ScalingViewport viewport) {
+        [CanBeNull]
+        private RendererMetaData GetEntityUnderMouse(Vector2 mousePos) {
             _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
             if(_dreamViewOverlay.MouseMap == null)
                 return null;
+
             Color lookupColor = _dreamViewOverlay.MouseMap.GetPixel((int)mousePos.X, (int)mousePos.Y);
-            if(!_dreamViewOverlay.MouseMapLookup.TryGetValue(lookupColor, out EntityUid result))
+            if(!_dreamViewOverlay.MouseMapLookup.TryGetValue(lookupColor, out var result))
                 return null;
+
             return result;
         }
-
     }
 }

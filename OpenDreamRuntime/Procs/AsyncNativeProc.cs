@@ -1,7 +1,9 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
@@ -16,6 +18,10 @@ namespace OpenDreamRuntime.Procs {
 
             private AsyncNativeProc? _proc;
             public override DreamProc? Proc => _proc;
+
+            public IDreamManager DreamManager => _proc._dreamManager;
+            public DreamResourceManager ResourceManager => _proc._resourceManager;
+            public IDreamObjectTree ObjectTree => _proc._objectTree;
 
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;
@@ -165,15 +171,26 @@ namespace OpenDreamRuntime.Procs {
 
                 builder.Append($"{_proc}");
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public DreamValue GetArgument(int argumentPosition, string argumentName) => Arguments.GetArgument(argumentPosition, argumentName);
         }
+
+        private readonly IDreamManager _dreamManager;
+        private readonly DreamResourceManager _resourceManager;
+        private readonly IDreamObjectTree _objectTree;
 
         private readonly Dictionary<string, DreamValue> _defaultArgumentValues;
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
-        public AsyncNativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility) {
+        public AsyncNativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, IDreamManager dreamManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
+            : base(owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
+
+            _dreamManager = dreamManager;
+            _resourceManager = resourceManager;
+            _objectTree = objectTree;
         }
 
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {

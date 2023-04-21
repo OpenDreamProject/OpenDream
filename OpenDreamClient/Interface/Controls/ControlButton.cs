@@ -4,16 +4,7 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls {
-    sealed class InterfaceButton : Button
-    {
-        public InterfaceButton()
-        {
-            Label.Margin = new Thickness(6, 0, 6, 2);
-        }
-    }
-
-    sealed class ControlButton : InterfaceControl
-    {
+    sealed class ControlButton : InterfaceControl {
         public const string StyleClassDMFButton = "DMFbutton";
 
         private Button _button;
@@ -21,10 +12,13 @@ namespace OpenDreamClient.Interface.Controls {
         public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
         protected override Control CreateUIElement() {
-            _button = new InterfaceButton();
+            _button = new Button() {
+                ClipText = true
+            };
+
             _button.OnPressed += OnButtonClick;
-            _button.ClipText = true;
-            _button.Label.AddStyleClass("DMFbutton");
+            _button.Label.Margin = new Thickness(0, -3, 0, 0);
+            _button.Label.AddStyleClass(StyleClassDMFButton);
 
             return _button;
         }

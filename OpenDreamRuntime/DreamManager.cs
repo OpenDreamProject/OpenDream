@@ -4,8 +4,8 @@ using System.Text.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Procs.Native;
+using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
@@ -26,6 +26,9 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly ITaskManager _taskManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
+        private ServerAppearanceSystem? _appearanceSystem;
 
         public DreamObject WorldInstance { get; private set; }
         public Exception? LastDMException { get; set; }
@@ -37,9 +40,8 @@ namespace OpenDreamRuntime {
         public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
         public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
-        public List<DreamObject> Mobs { get; set; } = new();
-        public List<DreamObject> Clients { get; set; } = new();
-        public List<DreamObject> Datums { get; set; } = new();
+        public HashSet<DreamObject> Clients { get; set; } = new();
+        public HashSet<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
 
@@ -149,6 +151,7 @@ namespace OpenDreamRuntime {
             _objectTree.SetMetaObject(_objectTree.Area, new DreamMetaObjectArea());
             _objectTree.SetMetaObject(_objectTree.Turf, new DreamMetaObjectTurf());
             _objectTree.SetMetaObject(_objectTree.Movable, new DreamMetaObjectMovable());
+            _objectTree.SetMetaObject(_objectTree.Obj, new DreamMetaObjectObj());
             _objectTree.SetMetaObject(_objectTree.Mob, new DreamMetaObjectMob());
             _objectTree.SetMetaObject(_objectTree.Image, new DreamMetaObjectImage());
             _objectTree.SetMetaObject(_objectTree.Icon, new DreamMetaObjectIcon());
@@ -208,9 +211,13 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsType(out var type)) {
                 refType = RefType.DreamType;
                 idx = type.Id;
+            } else if (value.TryGetValueAsAppearance(out var appearance)) {
+                refType = RefType.DreamAppearance;
+                _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+                idx = (int)_appearanceSystem.AddAppearance(appearance);
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
-                // Bit of a hack. This should use a resource's ID once they are refactored to have them.
-                return $"{(int) RefType.DreamResource}{refRsc.ResourcePath}";
+                refType = RefType.DreamResource;
+                idx = refRsc.Id;
             } else {
                 throw new NotImplementedException($"Ref for {value} is unimplemented");
             }
@@ -233,32 +240,37 @@ namespace OpenDreamRuntime {
             var typeId = (RefType) int.Parse(refString.Substring(0, 1));
             var untypedRefString = refString.Substring(1); // The ref minus its ref type prefix
 
-            if (typeId == RefType.DreamResource) {
-                // DreamResource refs are a little special and use their path instead of an id
-                return new DreamValue(_dreamResourceManager.LoadResource(untypedRefString));
-            } else {
-                refId = int.Parse(untypedRefString);
+            refId = int.Parse(untypedRefString);
 
-                switch (typeId) {
-                    case RefType.Null:
-                        return DreamValue.Null;
-                    case RefType.DreamObject:
-                        foreach (KeyValuePair<DreamObject, int> referenceIdPair in ReferenceIDs) {
-                            if (referenceIdPair.Value == refId) return new DreamValue(referenceIdPair.Key);
-                        }
+            switch (typeId) {
+                case RefType.Null:
+                    return DreamValue.Null;
+                case RefType.DreamObject:
+                    foreach (KeyValuePair<DreamObject, int> referenceIdPair in ReferenceIDs) {
+                        if (referenceIdPair.Value == refId) return new DreamValue(referenceIdPair.Key);
+                    }
 
+                    return DreamValue.Null;
+                case RefType.String:
+                    return _objectTree.Strings.Count > refId
+                        ? new DreamValue(_objectTree.Strings[refId])
+                        : DreamValue.Null;
+                case RefType.DreamType:
+                    return _objectTree.Types.Length > refId
+                        ? new DreamValue(_objectTree.Types[refId])
+                        : DreamValue.Null;
+                case RefType.DreamResource:
+                    if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
                         return DreamValue.Null;
-                    case RefType.String:
-                        return _objectTree.Strings.Count > refId
-                            ? new DreamValue(_objectTree.Strings[refId])
-                            : DreamValue.Null;
-                    case RefType.DreamType:
-                        return _objectTree.Types.Length > refId
-                            ? new DreamValue(_objectTree.Types[refId])
-                            : DreamValue.Null;
-                    default:
-                        throw new Exception($"Invalid reference type for ref {refString}");
-                }
+
+                    return new DreamValue(resource);
+                case RefType.DreamAppearance:
+                    _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+                    return _appearanceSystem.TryGetAppearance((uint)refId, out IconAppearance? appearance)
+                        ? new DreamValue(appearance)
+                        : DreamValue.Null;
+                default:
+                    throw new Exception($"Invalid reference type for ref {refString}");
             }
         }
 

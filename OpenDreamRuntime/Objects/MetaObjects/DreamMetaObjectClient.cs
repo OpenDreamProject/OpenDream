@@ -1,6 +1,5 @@
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
-using OpenDreamShared.Dream;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -30,11 +29,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             VerbLists.Add(dreamObject, new VerbsList(_objectTree, dreamObject));
 
             _dreamManager.Clients.Add(dreamObject);
-
-            ClientPerspective perspective = (ClientPerspective)dreamObject.GetVariable("perspective").GetValueAsInteger();
-            if (perspective != ClientPerspective.Mob) {
-                //Runtime.StateManager.AddClientPerspectiveDelta(connection.CKey, perspective);
-            }
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
@@ -47,35 +41,21 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
             switch (varName) {
-                case "eye": {
-                    string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
-                    DreamObject eye = value.GetValueAsDreamObject();
-
-                    //Runtime.StateManager.AddClientEyeIDDelta(ckey, eyeID);
-                    break;
-                }
-                case "perspective": {
-                    string ckey = dreamObject.GetVariable("ckey").GetValueAsString();
-
-                    //Runtime.StateManager.AddClientPerspectiveDelta(ckey, (ClientPerspective)variableValue.GetValueAsInteger());
-                    break;
-                }
                 case "mob": {
-                    DreamConnection connection = _dreamManager.GetConnectionFromClient(dreamObject);
+                    value.TryGetValueAsDreamObjectOfType(_objectTree.Mob, out var newMob);
 
-                    connection.MobDreamObject = value.GetValueAsDreamObject();
+                    _dreamManager.GetConnectionFromClient(dreamObject).Mob = newMob;
                     break;
                 }
                 case "screen": {
-                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out var oldList)) {
                         oldList.Cut();
                         oldList.ValueAssigned -= ScreenValueAssigned;
                         oldList.BeforeValueRemoved -= ScreenBeforeValueRemoved;
                         _screenListToClient.Remove(oldList);
                     }
 
-                    DreamList screenList;
-                    if (!value.TryGetValueAsDreamList(out screenList)) {
+                    if (!value.TryGetValueAsDreamList(out var screenList)) {
                         screenList = _objectTree.CreateList();
                     }
 
@@ -84,15 +64,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     _screenListToClient[screenList] = dreamObject;
                     break;
                 }
-                case "images":
-                {
+                case "images": {
                     //TODO properly implement this var
-                    if (oldValue.TryGetValueAsDreamList(out DreamList oldList)) {
+                    if (oldValue.TryGetValueAsDreamList(out var oldList)) {
                         oldList.Cut();
                     }
 
-                    DreamList imageList;
-                    if (!value.TryGetValueAsDreamList(out imageList)) {
+                    if (!value.TryGetValueAsDreamList(out var imageList)) {
                         imageList = _objectTree.CreateList();
                     }
 
@@ -113,17 +91,19 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 //TODO actually return the key
                 case "key":
                 case "ckey":
-                    return new(_dreamManager.GetSessionFromClient(dreamObject).Name);
+                    return new(_dreamManager.GetConnectionFromClient(dreamObject).Session!.Name);
+                case "mob":
+                    return new(_dreamManager.GetConnectionFromClient(dreamObject).Mob);
                 case "computer_id": // FIXME: This is not secure! Whenever RT implements a more robust (heh) method of uniquely identifying computers, replace this impl with that.
                     MD5 md5 = MD5.Create();
-                    /// <remarks>Check on <see cref="Robust.Shared.Network.NetUserData.HWId"/> if you want to seed from how RT does user identification.
-                    /// We don't use it here because it is probably not enough to ensure security, and (as of time of writing) only works on Windows machines.</remarks>
-                    byte[] brown = Encoding.UTF8.GetBytes(_dreamManager.GetSessionFromClient(dreamObject).Name);
+                    // Check on Robust.Shared.Network.NetUserData.HWId" if you want to seed from how RT does user identification.
+                    // We don't use it here because it is probably not enough to ensure security, and (as of time of writing) only works on Windows machines.
+                    byte[] brown = Encoding.UTF8.GetBytes(_dreamManager.GetConnectionFromClient(dreamObject).Session!.Name);
                     byte[] hash = md5.ComputeHash(brown);
                     string hashStr = BitConverter.ToString(hash).Replace("-", "").ToLower().Substring(0,15); // Extracting the first 15 digits to ensure it'll fit in a 64-bit number
                     return new(long.Parse(hashStr, System.Globalization.NumberStyles.HexNumber).ToString()); // Converts from hex to decimal. Output is in analogous format to BYOND's.
                 case "address":
-                    return new(_dreamManager.GetSessionFromClient(dreamObject).ConnectedClient.RemoteEndPoint.Address.ToString());
+                    return new(_dreamManager.GetConnectionFromClient(dreamObject).Session!.ConnectedClient.RemoteEndPoint.Address.ToString());
                 case "inactivity":
                     return new DreamValue(0);
                 case "timezone": {
@@ -132,14 +112,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new(0);
                 }
                 case "statpanel": {
-                    //DreamConnection connection = Runtime.Server.GetConnectionFromClient(dreamObject);
-                    //return new DreamValue(connection.SelectedStatPanel);
-                    return DreamValue.Null;
-                }
-                case "mob":
-                {
-                    var connection = _dreamManager.GetConnectionFromClient(dreamObject);
-                    return new DreamValue(connection.MobDreamObject);
+                    DreamConnection connection = _dreamManager.GetConnectionFromClient(dreamObject);
+
+                    return new DreamValue(connection.SelectedStatPanel);
                 }
                 case "connection":
                     return new DreamValue("seeker");
@@ -153,8 +128,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public ProcStatus? OperatorOutput(DreamValue a, DreamValue b, DMProcState state) {
-            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Client, out var client))
-                throw new ArgumentException($"Left-hand value was not the expected type {_objectTree.Client}");
+            if (!a.TryGetValueAsDreamObject(out var client))
+                throw new ArgumentException($"Left-hand value was not a DreamObject");
 
             DreamConnection connection = _dreamManager.GetConnectionFromClient(client);
             connection.OutputDreamValue(b);
@@ -167,8 +142,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return;
 
             var connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            if (connection == null)
-                return;
 
             _screenOverlaySystem?.AddScreenObject(connection, movable);
         }
@@ -178,8 +151,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 return;
 
             var connection = _dreamManager.GetConnectionFromClient(_screenListToClient[screenList]);
-            if (connection == null)
-                return;
 
             _screenOverlaySystem?.RemoveScreenObject(connection, movable);
         }

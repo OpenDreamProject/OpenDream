@@ -709,11 +709,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_fract(NativeProc.State state) {
             DreamValue arg = state.GetArgument(0, "n");
-            if (arg.TryGetValueAsFloat(out float floatnum)) {
-                if(float.IsInfinity(floatnum)) {
+            if (arg.TryGetValueAsFloat(out var floatNum)) {
+                if(float.IsInfinity(floatNum)) {
                     return new DreamValue(0);
                 }
-                return new DreamValue(floatnum - MathF.Truncate(floatnum));
+                if(float.IsNaN(floatNum)) {
+                    return arg;
+                }
+                return new DreamValue(floatNum - (int)floatNum);
             }
             return new DreamValue(0);
         }
@@ -2720,8 +2723,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("n", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_trunc(NativeProc.State state) {
             DreamValue arg = state.GetArgument(0, "n");
-            if (arg.TryGetValueAsFloat(out float floatnum)) {
-                return new DreamValue(MathF.Truncate(floatnum));
+            if (arg.TryGetValueAsFloat(out var floatNum)) {
+                if (float.IsInfinity(floatNum) || float.IsNaN(floatNum)) {
+                    return arg;
+                }
+                return new DreamValue((int)floatNum);
             }
             return new DreamValue(0);
         }

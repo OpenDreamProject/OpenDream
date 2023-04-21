@@ -39,6 +39,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
             if (varName == "key" || varName == "ckey") {
+                // TODO: make this work with ckeys too
                 if (_playerManager.TryGetSessionByUsername(value.GetValueAsString(), out var session)) {
                     var connection = _dreamManager.GetConnectionBySession(session);
 

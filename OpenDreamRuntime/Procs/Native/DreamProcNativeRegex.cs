@@ -10,7 +10,7 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRegex {
         [DreamProc("Find")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)]
+        [DreamProcParameter("start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)] // BYOND docs say these are uppercase, they're not
         [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Find(NativeProc.State state) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
@@ -130,12 +130,11 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Replace")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
-        [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)] // BYOND docs say these are uppercase, they're not
         [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
             DreamValue haystack = state.GetArgument(0, "haystack");
             DreamValue replacement = state.GetArgument(1, "replacement");
-            // BYOND documentation mentions these two argument names as being capitalized but they actually aren't 🙃
             int start = state.GetArgument(2, "start").GetValueAsInteger();
             int end = state.GetArgument(3, "end").GetValueAsInteger();
 

@@ -435,11 +435,9 @@ namespace OpenDreamRuntime {
 
                     return $"{owner.Path}{lastElement}";
                 case DreamValueType.DreamObject: {
-                    if (TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                        return dreamObject.GetDisplayName();
-                    }
+                    TryGetValueAsDreamObject(out var dreamObject);
 
-                    return String.Empty;
+                    return dreamObject?.GetDisplayName() ?? String.Empty;
                 }
                 case DreamValueType.Appearance:
                     return String.Empty;

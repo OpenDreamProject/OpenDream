@@ -9,6 +9,9 @@
 	result = R.Replace("foo foo", "bar", start=2)
 	ASSERT(result == "foo bar")
 
+	result = R.Replace("foo foo", "bar", 2)
+	ASSERT(result == "foo bar")
+
 	result = R.Replace("foo foo", /proc/bar, start=2)
 	ASSERT(result == "foo bar")
 
@@ -18,6 +21,9 @@
 	result = R.Replace("foo foo", "bar", start=6)
 	ASSERT(result == "foo foo")
 
+	result = R.Replace("foo foo", "bar", start=420)
+	ASSERT(result == "foo foo")
+
 	ASSERT(R.Find("foo foo", start=1) == 1)
 
 	ASSERT(R.Find("foo foo", start=2) == 5)
@@ -25,3 +31,5 @@
 	ASSERT(R.Find("foo foo", start=5) == 5)
 
 	ASSERT(R.Find("foo foo", start=6) == 0)
+
+	ASSERT(R.Find("foo foo", start=69) == 0)

@@ -4,7 +4,7 @@
 	for(var/key in a)
 		if(!b[key])
 			b[key] = list()
-		for(var/i in range(1,10))
+		for(var/i in 1 to 10)
 			b[key] += i
 
 	ASSERT(b["p"][5] == 5)

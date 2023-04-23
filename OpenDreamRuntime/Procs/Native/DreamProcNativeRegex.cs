@@ -10,13 +10,13 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRegex {
         [DreamProc("Find")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("Start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)]
+        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Find(NativeProc.State state) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
             DreamValue haystack = state.GetArgument(0, "haystack");
-            int next = GetNext(state.Src, state.GetArgument(1, "Start"), dreamRegex.IsGlobal);
-            int end = state.GetArgument(2, "End").GetValueAsInteger();
+            int next = GetNext(state.Src, state.GetArgument(1, "start"), dreamRegex.IsGlobal);
+            int end = state.GetArgument(2, "end").GetValueAsInteger();
 
             state.Src.SetVariable("text", haystack);
 
@@ -118,8 +118,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Replace")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
-        [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
             DreamValue haystack = state.GetArgument(0, "haystack");
             DreamValue replacement = state.GetArgument(1, "replacement");

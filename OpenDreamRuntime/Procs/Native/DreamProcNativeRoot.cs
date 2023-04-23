@@ -2724,7 +2724,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_trunc(NativeProc.State state) {
             DreamValue arg = state.GetArgument(0, "n");
             if (arg.TryGetValueAsFloat(out var floatNum)) {
-                if (float.IsInfinity(floatNum) || float.IsNaN(floatNum)) {
+                if (!float.IsFinite(floatNum)) {
                     return arg;
                 }
                 return new DreamValue((int)floatNum);

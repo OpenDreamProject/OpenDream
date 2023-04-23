@@ -6,7 +6,7 @@
 	var/result = R.Replace("foo foo", "bar", start=1)
 	ASSERT(result == "bar foo")
 
-	var/result = R.Replace("foo foo", "bar", start=2)
+	result = R.Replace("foo foo", "bar", start=2)
 	ASSERT(result == "foo bar")
 
 	result = R.Replace("foo foo", /proc/bar, start=2)

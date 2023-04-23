@@ -123,8 +123,9 @@ namespace OpenDreamRuntime.Procs.Native {
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
             DreamValue haystack = state.GetArgument(0, "haystack");
             DreamValue replacement = state.GetArgument(1, "replacement");
-            int start = state.GetArgument(2, "Start").GetValueAsInteger();
-            int end = state.GetArgument(3, "End").GetValueAsInteger();
+            // BYOND documentation mentions these two argument names as being capitalized but they actually aren't 🙃
+            int start = state.GetArgument(2, "start").GetValueAsInteger();
+            int end = state.GetArgument(3, "end").GetValueAsInteger();
 
             return await RegexReplace(state, state.Src, haystack, replacement, start, end);
         }

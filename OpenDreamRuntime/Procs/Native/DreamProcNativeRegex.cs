@@ -16,8 +16,6 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
             DreamValue haystack = state.GetArgument(0, "haystack");
 
-            state.Src.SetVariable("text", haystack);
-
             string haystackString;
             if (!haystack.TryGetValueAsString(out haystackString)) {
                 haystackString = String.Empty;
@@ -26,11 +24,12 @@ namespace OpenDreamRuntime.Procs.Native {
             int next = GetNext(state.Src, state.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
             int end = state.GetArgument(2, "end").GetValueAsInteger();
 
+            state.Src.SetVariable("text", haystack);
+
             if (end == 0) end = haystackString.Length;
             if (haystackString.Length <= next - 1) {
                 if (dreamRegex.IsGlobal) {
                     state.Src.SetVariable("next", DreamValue.Null);
-                    dreamRegex.LastHaystack = null;
                 }
                 return new DreamValue(0);
             }
@@ -51,14 +50,12 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 if (dreamRegex.IsGlobal) {
                     state.Src.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
-                    dreamRegex.LastHaystack = haystackString;
                 }
 
                 return new DreamValue(match.Index + 1);
             } else {
                 if (dreamRegex.IsGlobal) {
                     state.Src.SetVariable("next", DreamValue.Null);
-                    dreamRegex.LastHaystack = null;
                 }
                 return new DreamValue(0);
             }
@@ -86,10 +83,7 @@ namespace OpenDreamRuntime.Procs.Native {
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
             async Task<DreamValue> DoProcReplace(AsyncNativeProc.State state, DreamProc proc) {
-                if (regex.IsGlobal) {
-                    throw new NotImplementedException("Proc global regex replacements are not implemented");
-                }
-
+                
                 var match = regex.Regex.Match(haystackSubstring, Math.Clamp(start - 1, 0, haystackSubstring.Length));
                 var groups = match.Groups;
                 List<DreamValue> args = new List<DreamValue>(groups.Count);
@@ -137,9 +131,8 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal, string haystackString) {
-            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[regexInstance];
             if (startParam == DreamValue.Null) {
-                if (isGlobal && dreamRegex.LastHaystack == haystackString) {
+                if (isGlobal && regexInstance.GetVariable("text").TryGetValueAsString(out string? lastHaystack) && lastHaystack == haystackString) {
                     DreamValue nextVar = regexInstance.GetVariable("next");
 
                     return (nextVar != DreamValue.Null) ? nextVar.GetValueAsInteger() : 1;

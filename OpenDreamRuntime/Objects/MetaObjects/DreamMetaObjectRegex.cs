@@ -15,34 +15,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IoCManager.InjectDependencies(this);
         }
 
-        private sealed class LastHaystack {
-            public string? Value;
-        }
-
         public struct DreamRegex {
             public readonly Regex Regex;
             public readonly bool IsGlobal;
             
-            private readonly LastHaystack? _lastHaystack;
-
-            /// <summary>
-            /// The last haystack this regex was used to search on. Only valid for global regexes.
-            /// </summary>
-            public string? LastHaystack {
-                get => _lastHaystack?.Value;
-                set {
-                    if (_lastHaystack == null) {
-                        throw new InvalidOperationException("Cannot set LastHaystack on non-global regex");
-                    }
-
-                    _lastHaystack.Value = value;
-                }
-            }
-            
             public DreamRegex(Regex regex, bool isGlobal) {
                 Regex = regex;
                 IsGlobal = isGlobal;
-                _lastHaystack = isGlobal ? new LastHaystack() : null;
             }
         }
 

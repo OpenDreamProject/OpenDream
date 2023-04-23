@@ -26,7 +26,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (end == 0) end = haystackString.Length;
-            if (haystackString.Length == next - 1) return new DreamValue(0);
+            if (haystackString.Length <= next - 1) return new DreamValue(0);
 
             Match match = dreamRegex.Regex.Match(haystackString, Math.Clamp(next - 1, 0, haystackString.Length), end - next);
             if (match.Success) {

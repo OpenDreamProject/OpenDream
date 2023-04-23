@@ -1,0 +1,29 @@
+blend_mode none;
+light_mode unshaded;
+
+uniform highp float size; // TODO: Negative size creates an inset shadow
+uniform highp float offset;
+uniform highp float x;
+uniform highp float y;
+uniform highp vec4 shadow_color;
+
+void fragment() {
+    highp float shadow_blur_samples = pow(size * 2 + 1, 2);
+    highp vec4 texture_color = zTexture(UV);
+    highp vec2 ps = TEXTURE_PIXEL_SIZE;
+    highp vec2 shadow_uv = UV - (ps * vec2(x, -y)); // Y is up
+    
+    highp float sampled_shadow_alpha = 0;
+    for (highp float blur_x = -size; blur_x <= size; blur_x++) {
+        for (highp float blur_y = -size; blur_y <= size; blur_y++) {
+            vec2 blur_uv = shadow_uv + ps * vec2(blur_x, blur_y);
+            
+            sampled_shadow_alpha += zTexture(blur_uv).a / shadow_blur_samples;
+        }
+    }
+    
+    vec4 final_shadow_color = vec4(shadow_color.rgb, shadow_color.a * sampled_shadow_alpha);
+    
+    // Mix the shadow with the initial image based on the image's alpha
+    COLOR = final_shadow_color * (1 - texture_color.a) + texture_color * texture_color.a;
+}

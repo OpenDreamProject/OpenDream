@@ -139,10 +139,12 @@ sealed class DreamViewOverlay : Overlay {
             seeVis = mobSight.SeeInvisibility;
         }
 
+        int tValue = 0; //this exists purely because the tiebreaker var needs to exist somewhere, but it's set to 0 again before every unique call to ProcessIconComponents
+
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
-                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
+                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false, ref tValue));
         }
 
         //visible entities
@@ -158,7 +160,8 @@ sealed class DreamViewOverlay : Overlay {
                     continue;
                 if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
                     continue;
-                sprites.AddRange(ProcessIconComponents(sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
+                tValue = 0;
+                sprites.AddRange(ProcessIconComponents(sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false, ref tValue));
             }
         }
 
@@ -168,7 +171,8 @@ sealed class DreamViewOverlay : Overlay {
             if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
                 foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
                     MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
+                    tValue = 0;
+                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false, ref tValue));
                 }
         }
 
@@ -184,7 +188,8 @@ sealed class DreamViewOverlay : Overlay {
                 Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true));
+                        tValue = 0;
+                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true, ref tValue));
                     }
                 }
             }
@@ -310,7 +315,7 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
-    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0) {
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, ref int tieBreaker, RendererMetaData? parentIcon = null, bool keepTogether = false ) {
         if(icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return new List<RendererMetaData>(0);
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
@@ -411,28 +416,30 @@ sealed class DreamViewOverlay : Overlay {
         //dont forget the vis_flags
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
-        int underlayTiebreaker = -icon.Underlays.Count+tieBreaker;
         foreach (DreamIcon underlay in icon.Underlays) {
-            underlayTiebreaker--;
-
-            if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, underlayTiebreaker));
+            tieBreaker++;
+            if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) {//KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, false));
+            }
             else {
                 current.KeepTogetherGroup ??= new();
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, underlayTiebreaker));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, keepTogether));
             }
         }
 
+        tieBreaker++;
+        current.TieBreaker = tieBreaker;
+
+
         //overlays - colour, alpha, and transform are inherited, but filters aren't
-        int overlayTiebreaker = icon.Overlays.Count+tieBreaker;
         foreach (DreamIcon overlay in icon.Overlays) {
-            overlayTiebreaker++;
+            tieBreaker++;
 
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, overlayTiebreaker));
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current, false));
             else {
                 current.KeepTogetherGroup ??= new();
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, overlayTiebreaker));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current, keepTogether));
             }
         }
 

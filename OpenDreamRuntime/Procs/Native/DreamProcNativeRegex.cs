@@ -69,12 +69,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamRegex regex = DreamMetaObjectRegex.ObjectToDreamRegex[regexInstance];
 
             if (!haystack.TryGetValueAsString(out var haystackString)) {
-                if (haystack == DreamValue.Null) {
-                    return DreamValue.Null;
-                }
-
-                //TODO Check what actually happens
-                throw new ArgumentException("Bad regex haystack");
+                return DreamValue.Null;
             }
 
             string haystackSubstring = haystackString;

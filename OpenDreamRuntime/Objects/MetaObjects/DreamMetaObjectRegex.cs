@@ -15,9 +15,35 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             IoCManager.InjectDependencies(this);
         }
 
+        private sealed class LastHaystack {
+            public string? Value;
+        }
+
         public struct DreamRegex {
-            public Regex Regex;
-            public bool IsGlobal;
+            public readonly Regex Regex;
+            public readonly bool IsGlobal;
+            
+            private readonly LastHaystack? _lastHaystack;
+
+            /// <summary>
+            /// The last haystack this regex was used to search on. Only valid for global regexes.
+            /// </summary>
+            public string? LastHaystack {
+                get => _lastHaystack?.Value;
+                set {
+                    if (_lastHaystack == null) {
+                        throw new InvalidOperationException("Cannot set LastHaystack on non-global regex");
+                    }
+
+                    _lastHaystack.Value = value;
+                }
+            }
+            
+            public DreamRegex(Regex regex, bool isGlobal) {
+                Regex = regex;
+                IsGlobal = isGlobal;
+                _lastHaystack = isGlobal ? new LastHaystack() : null;
+            }
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -28,13 +54,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (pattern.TryGetValueAsDreamObjectOfType(_objectTree.Regex, out DreamObject copyFrom)) {
                 regex = ObjectToDreamRegex[copyFrom];
             } else if (pattern.TryGetValueAsString(out string patternString)) {
-                regex = new DreamRegex();
-
+                bool isGlobal = false;
                 RegexOptions options = RegexOptions.None;
                 if (flags.TryGetValueAsString(out string flagsString)) {
                     if (flagsString.Contains("i")) options |= RegexOptions.IgnoreCase;
                     if (flagsString.Contains("m")) options |= RegexOptions.Multiline;
-                    if (flagsString.Contains("g")) regex.IsGlobal = true;
+                    if (flagsString.Contains("g")) isGlobal = true;
                 }
 
                 // TODO Make this more Robust(TM)
@@ -50,7 +75,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     anyLetterIdx = patternString.IndexOf("\\l", nextIdx);
                 }
 
-                regex.Regex = new Regex(patternString, options);
+                regex = new DreamRegex(new Regex(patternString, options), isGlobal);
             } else {
                 throw new System.Exception("Invalid regex pattern " + pattern);
             }

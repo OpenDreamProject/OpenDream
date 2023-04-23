@@ -15,8 +15,6 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Find(NativeProc.State state) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
             DreamValue haystack = state.GetArgument(0, "haystack");
-            int next = GetNext(state.Src, state.GetArgument(1, "start"), dreamRegex.IsGlobal);
-            int end = state.GetArgument(2, "end").GetValueAsInteger();
 
             state.Src.SetVariable("text", haystack);
 
@@ -24,9 +22,18 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!haystack.TryGetValueAsString(out haystackString)) {
                 haystackString = String.Empty;
             }
+            
+            int next = GetNext(state.Src, state.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
+            int end = state.GetArgument(2, "end").GetValueAsInteger();
 
             if (end == 0) end = haystackString.Length;
-            if (haystackString.Length <= next - 1) return new DreamValue(0);
+            if (haystackString.Length <= next - 1) {
+                if (dreamRegex.IsGlobal) {
+                    state.Src.SetVariable("next", DreamValue.Null);
+                    dreamRegex.LastHaystack = null;
+                }
+                return new DreamValue(0);
+            }
 
             Match match = dreamRegex.Regex.Match(haystackString, Math.Clamp(next - 1, 0, haystackString.Length), end - next + 1);
             if (match.Success) {
@@ -44,10 +51,15 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 if (dreamRegex.IsGlobal) {
                     state.Src.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
+                    dreamRegex.LastHaystack = haystackString;
                 }
 
                 return new DreamValue(match.Index + 1);
             } else {
+                if (dreamRegex.IsGlobal) {
+                    state.Src.SetVariable("next", DreamValue.Null);
+                    dreamRegex.LastHaystack = null;
+                }
                 return new DreamValue(0);
             }
         }
@@ -130,9 +142,10 @@ namespace OpenDreamRuntime.Procs.Native {
             return await RegexReplace(state, state.Src, haystack, replacement, start, end);
         }
 
-        private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal) {
+        private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal, string haystackString) {
+            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[regexInstance];
             if (startParam == DreamValue.Null) {
-                if (isGlobal) {
+                if (isGlobal && dreamRegex.LastHaystack == haystackString) {
                     DreamValue nextVar = regexInstance.GetVariable("next");
 
                     return (nextVar != DreamValue.Null) ? nextVar.GetValueAsInteger() : 1;

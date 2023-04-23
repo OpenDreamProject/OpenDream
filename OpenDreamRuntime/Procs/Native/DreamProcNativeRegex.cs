@@ -83,7 +83,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     throw new NotImplementedException("Proc global regex replacements are not implemented");
                 }
 
-                var match = regex.Regex.Match(haystackSubstring);
+                var match = regex.Regex.Match(haystackSubstring, Math.Clamp(start - 1, 0, haystackSubstring.Length));
                 var groups = match.Groups;
                 List<DreamValue> args = new List<DreamValue>(groups.Count);
                 foreach (Group group in groups) {
@@ -106,7 +106,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamValue DoTextReplace(string replacement) {
                 string replaced = regex.Regex.Replace(haystackSubstring, replacement, regex.IsGlobal ? -1 : 1,
-                    start - 1);
+                    Math.Clamp(start - 1, 0, haystackSubstring.Length));
 
                 if (end != 0) replaced += haystackString.Substring(end - start + 1);
 

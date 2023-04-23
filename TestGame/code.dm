@@ -139,7 +139,7 @@
 				if("color")
 					src.filters = filter(type="color", color=list("#de0000","#000000","#00ad00"))
 				if("drop_shadow")
-                	src.filters = filter(type="drop_shadow", size=2)
+					src.filters = filter(type="drop_shadow", size=2)
 			usr << "Applied [selected] filter"
 
 	verb/toggle_see_invisibility()

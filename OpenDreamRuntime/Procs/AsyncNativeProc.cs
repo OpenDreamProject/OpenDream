@@ -53,7 +53,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
-                _callTcs = new();
+                _callTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
 
                 // The field may be mutated by SafeResume, so cache the task
@@ -63,7 +63,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             public Task<DreamValue> CallNoWait(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
-                _callTcs = new();
+                _callTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
                 _callProcNotify.WaitFor = false;
 
@@ -145,7 +145,7 @@ namespace OpenDreamRuntime.Procs {
                     var callResult = _callResult.Value;
                     _callTcs = null;
                     _callResult = null;
-
+                    
                     callTcs.SetResult(callResult);
                 }
 

@@ -145,7 +145,7 @@ namespace OpenDreamRuntime.Procs {
                     var callResult = _callResult.Value;
                     _callTcs = null;
                     _callResult = null;
-                    
+
                     callTcs.SetResult(callResult);
                 }
 

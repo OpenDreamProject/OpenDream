@@ -1,17 +1,17 @@
 ﻿/image
 	parent_type = /datum
 
-	var/alpha
+	var/alpha = 255
 	var/appearance
-	var/appearance_flags
+	var/appearance_flags = 0
 	var/blend_mode = 0
-	var/color
-	var/desc
+	var/color = null
+	var/desc = null
 	var/gender = "neuter" as opendream_unimplemented
 	var/infra_luminosity = 0 as opendream_unimplemented
 	var/invisibility as opendream_unimplemented
 	var/list/filters = list()
-	var/layer
+	var/layer = FLOAT_LAYER
 	var/luminosity = 0 as opendream_unimplemented
 	var/maptext = "i" as opendream_unimplemented
 	var/maptext_width = 32 as opendream_unimplemented
@@ -22,7 +22,7 @@
 	var/mouse_drag_pointer = 0 as opendream_unimplemented
 	var/mouse_drop_pointer = 1 as opendream_unimplemented
 	var/mouse_drop_zone = 0 as opendream_unimplemented
-	var/mouse_opacity
+	var/mouse_opacity = 1
 	var/name = "image"
 	var/opacity as opendream_unimplemented
 	var/list/overlays = list()
@@ -31,7 +31,7 @@
 	var/pixel_y = 0
 	var/pixel_w = 0 as opendream_unimplemented
 	var/pixel_z = 0 as opendream_unimplemented
-	var/plane
+	var/plane = FLOAT_PLANE
 	var/render_source
 	var/render_target
 	var/suffix as opendream_unimplemented

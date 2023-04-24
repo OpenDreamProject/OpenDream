@@ -162,7 +162,9 @@ namespace OpenDreamClient.Rendering {
         }
 
         private static int LayerSort(DreamIcon first, DreamIcon second) {
-            float diff = first.Appearance.Layer - second.Appearance.Layer;
+            //all negative values of layer are FLOAT_LAYER and should be sorted from smallest to largest
+            //all zero-positive values should be untouched and stable
+            float diff = Math.Min(first.Appearance.Layer,0) - Math.Min(second.Appearance.Layer, 0);
 
             if (diff < 0) return -1;
             else if (diff > 0) return 1;

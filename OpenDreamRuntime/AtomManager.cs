@@ -305,8 +305,10 @@ namespace OpenDreamRuntime {
                 update(appearance);
                 sprite.SetAppearance(appearance);
             } else if(atom.IsSubtypeOf(_objectTree.Image)) {
-               IconAppearance appearance = DreamMetaObjectImage.ObjectToAppearance[atom];
-               update(appearance);
+                if(!DreamMetaObjectImage.ObjectToAppearance.TryGetValue(atom, out IconAppearance appearance))
+                    return;
+                update(appearance);
+
             }
         }
 

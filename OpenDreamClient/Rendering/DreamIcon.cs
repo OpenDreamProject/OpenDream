@@ -161,6 +161,14 @@ namespace OpenDreamClient.Rendering {
             return appearance;
         }
 
+        private static int LayerSort(DreamIcon first, DreamIcon second) {
+            float diff = first.Appearance.Layer - second.Appearance.Layer;
+
+            if (diff < 0) return -1;
+            else if (diff > 0) return 1;
+            return 0;
+        }
+
         private void UpdateIcon() {
             if (Appearance == null) {
                 DMI = null;
@@ -194,6 +202,9 @@ namespace OpenDreamClient.Rendering {
 
                 Underlays.Add(underlay);
             }
+
+            Overlays.Sort(LayerSort);
+            Underlays.Sort(LayerSort);
         }
 
         private void CheckSizeChange() {

@@ -366,3 +366,28 @@
 	icon_state = "9"
 	plane = PLANE_hanoi_9
 	invisibility = 99		
+
+
+/obj/complex_overlay_test
+	icon = 'icons/hanoi.dmi'
+	icon_state = "5"
+
+	New()
+		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1")
+		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2")
+		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3")
+		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4")
+		var/image/six = image(icon = 'icons/hanoi.dmi', icon_state="6")
+		var/image/seven = image(icon = 'icons/hanoi.dmi', icon_state="7")
+		var/image/eight = image(icon = 'icons/hanoi.dmi', icon_state="8")
+		var/image/nine = image(icon = 'icons/hanoi.dmi', icon_state="9")
+
+		two.underlays += one
+		four.underlays += three
+		two.overlays += four
+		src.underlays += two
+		src.overlays += six
+		eight.underlays += seven
+		eight.overlays += nine
+		src.overlays += eight
+

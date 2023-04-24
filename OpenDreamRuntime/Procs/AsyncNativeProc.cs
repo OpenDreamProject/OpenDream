@@ -53,7 +53,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
-                _callTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
+                _callTcs = new();
                 _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
 
                 // The field may be mutated by SafeResume, so cache the task

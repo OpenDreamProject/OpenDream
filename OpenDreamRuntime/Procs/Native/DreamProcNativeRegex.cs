@@ -83,26 +83,33 @@ namespace OpenDreamRuntime.Procs.Native {
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
             async Task<DreamValue> DoProcReplace(AsyncNativeProc.State state, DreamProc proc) {
-                
-                var match = regex.Regex.Match(haystackSubstring, Math.Clamp(start - 1, 0, haystackSubstring.Length));
-                var groups = match.Groups;
-                List<DreamValue> args = new List<DreamValue>(groups.Count);
-                foreach (Group group in groups) {
-                    args.Add(new DreamValue(group.Value));
-                }
+                Match match;
+                var currentStart = start;
+                var currentHaystack = haystackSubstring;
+                do {
+                    match = regex.Regex.Match(currentHaystack,
+                        Math.Clamp(currentStart - 1, 0, currentHaystack.Length));
+                    if (!match.Success) break;
+                    
+                    var groups = match.Groups;
+                    List<DreamValue> args = new List<DreamValue>(groups.Count);
+                    foreach (Group group in groups) {
+                        args.Add(new DreamValue(group.Value));
+                    }
 
-                var result = await state.CallNoWait(proc, regexInstance, null, new DreamProcArguments(args));
+                    var result = await state.CallNoWait(proc, null, null, new DreamProcArguments(args));
 
-                if (result.TryGetValueAsString(out var replacement)) {
-                    return DoTextReplace(replacement);
-                }
+                    var replacement = result.Stringify();
+                    currentHaystack = regex.Regex.Replace(currentHaystack, replacement, 1,
+                        Math.Clamp(currentStart - 1, 0, currentHaystack.Length));
+                    currentStart = match.Index + replacement.Length + 1;
+                } while (regex.IsGlobal && match.Success);
 
-                //TODO Confirm this behavior
-                if (result == DreamValue.Null) {
-                    return new DreamValue(haystackSubstring);
-                }
+                var replaced = currentHaystack;
+                if (end != 0) replaced += haystackString.Substring(end - start + 1);
 
-                throw new ArgumentException("Replacement is not a string");
+                regexInstance.SetVariable("text", new DreamValue(replaced));
+                return new DreamValue(replaced);
             }
 
             DreamValue DoTextReplace(string replacement) {

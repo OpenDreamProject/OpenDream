@@ -359,8 +359,10 @@ sealed class DreamViewOverlay : Overlay {
             else
                 current.Plane = icon.Appearance.Plane;
 
-            if(icon.Appearance.Layer < 0) //FLOAT_LAYER
+            if(icon.Appearance.Layer < 0) {//FLOAT_LAYER
                 current.Layer = parentIcon.Layer;
+                current.FloatLayerValue = icon.Appearance.Layer;
+            }
             else
                 current.Layer = icon.Appearance.Layer;
         } else {
@@ -720,6 +722,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Vector2 Position;
     public int Plane; //true plane value may be different from appearance plane value, due to special flags
     public float Layer; //ditto for layer
+    public float FloatLayerValue; //FLOAT_LAYER basically sets a special internal ordering value, instead of modifying the layer value like FLOAT_PLANE
     public EntityUid UID;
     public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public Boolean IsScreen;
@@ -744,6 +747,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         Position = Vector2.Zero;
         Plane = 0;
         Layer = 0;
+        FloatLayerValue = 0;
         UID = EntityUid.Invalid;
         ClickUID = EntityUid.Invalid;
         IsScreen = false;
@@ -806,6 +810,16 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         val = this.Position.Y.CompareTo(other.Position.Y);
         if (val != 0) {
             return -val;
+        }
+        //FLOAT_LAYER parent always renders first
+        val = (this.FloatLayerValue == 0.0f).CompareTo(other.FloatLayerValue == 0.0f);
+        if (val != 0) {
+            return -val;
+        }
+        //FLOAT_LAYER's special sorting value
+        val = this.FloatLayerValue.CompareTo(other.FloatLayerValue);
+        if (val != 0) {
+            return val;
         }
         //Finally, tie-breaker - in BYOND, this is order of creation of the sprites
         //for us, we use EntityUID, with a tie-breaker (for underlays/overlays)

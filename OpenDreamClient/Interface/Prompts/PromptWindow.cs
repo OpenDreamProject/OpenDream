@@ -6,13 +6,12 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Network;
 
-namespace OpenDreamClient.Interface.Prompts
-{
-    public abstract class PromptWindow : OSWindow
-    {
+namespace OpenDreamClient.Interface.Prompts {
+    public abstract class PromptWindow : OSWindow {
         [Dependency] private readonly IClientNetManager _netManager = default!;
 
         protected readonly Control InputControl;
+        protected string DefaultButton;
 
         private BoxContainer _dockPanel;
 
@@ -20,8 +19,7 @@ namespace OpenDreamClient.Interface.Prompts
         private BoxContainer _buttonPanel;
         private bool _responseSent = false;
 
-        public PromptWindow(int promptId, String title, String message)
-        {
+        public PromptWindow(int promptId, String title, String message) {
             IoCManager.InjectDependencies(this);
 
             _promptId = promptId;
@@ -38,8 +36,7 @@ namespace OpenDreamClient.Interface.Prompts
             _buttonPanel.HorizontalAlignment = HAlignment.Right;
             _buttonPanel.VerticalAlignment = VAlignment.Bottom;
 
-            InputControl = new Control
-            {
+            InputControl = new Control {
                 VerticalExpand = true
             };
 
@@ -60,26 +57,24 @@ namespace OpenDreamClient.Interface.Prompts
             AddChild(_dockPanel);
         }
 
-        protected void CreateButton(string text, bool isDefault)
-        {
-            Button button = new Button()
-            {
+        protected void CreateButton(string text, bool isDefault) {
+            Button button = new Button() {
                 Margin = new Thickness(15, 0, 0, 0),
                 Children = { new Label { Text = text, Margin = new Thickness(5, 2, 5, 2) } }
-                /*IsDefault = isDefault*/
             };
+
+            if (isDefault)
+                DefaultButton = text;
 
             button.OnPressed += _ => ButtonClicked(text);
             _buttonPanel.Children.Add(button);
         }
 
-        protected virtual void ButtonClicked(string button)
-        {
+        protected virtual void ButtonClicked(string button) {
             Close();
         }
 
-        protected void FinishPrompt(DMValueType responseType, object value)
-        {
+        protected void FinishPrompt(DMValueType responseType, object value) {
             if (_responseSent) return;
             _responseSent = true;
 
@@ -92,15 +87,11 @@ namespace OpenDreamClient.Interface.Prompts
             _netManager.ClientSendMessage(msg);
         }
 
-        private void PromptWindow_Closing(CancelEventArgs e)
-        {
+        private void PromptWindow_Closing(CancelEventArgs e) {
             //Don't allow closing if there hasn't been a response to the prompt
-            if (!_responseSent)
-            {
+            if (!_responseSent) {
                 e.Cancel = true;
-            }
-            else
-            {
+            } else {
                 Owner = null;
             }
         }

@@ -89,6 +89,7 @@ namespace OpenDreamClient.Interface.Controls
 
                     // Reassemble the query params without element then convert to winset syntax
                     var query = queryParams.ToString();
+                    query = HttpUtility.UrlDecode(query);
                     query = query!.Replace('&', ';'); // TODO: More robust parsing
 
                     // We can finally call winset

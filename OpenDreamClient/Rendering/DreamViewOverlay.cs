@@ -820,7 +820,14 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         if (val != 0) {
             return val;
         }
-
+        //FLOAT_LAYER must be sorted local to the thing they're floating on, and since all overlays/underlays share their parent's UID, we
+        //can do that here.
+        if(this.MainIcon.Appearance?.Layer < 0 && other.MainIcon.Appearance?.Layer < 0){ //if these are FLOAT_LAYER, sort amongst them
+            val = this.MainIcon.Appearance.Layer.CompareTo(other.MainIcon.Appearance.Layer);
+            if (val != 0) {
+                return val;
+            }
+        }
         val = this.TieBreaker.CompareTo(other.TieBreaker);
         if (val != 0) {
             return val;

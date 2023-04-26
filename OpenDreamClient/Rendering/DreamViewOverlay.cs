@@ -621,10 +621,10 @@ sealed class DreamViewOverlay : Overlay {
 
         } else { //Slower path for filtered icons
             //first we do ping pong rendering for the multiple filters
+            // TODO: This should determine the size from the filters and their settings, not just double the original
             IRenderTexture ping = RentRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
-
 
             handle.RenderInRenderTarget(pong,
                 () => {

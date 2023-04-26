@@ -393,3 +393,28 @@
 		eight.overlays += nine
 		src.overlays += eight
 
+/obj/float_layer_test
+	icon = 'icons/hanoi.dmi'
+	icon_state = "5"
+
+	New()
+		var/image/zero = image(icon = 'icons/hanoi.dmi', icon_state="0", layer=FLOAT_LAYER-10)
+		var/image/one = image(icon = 'icons/hanoi.dmi', icon_state="1", layer=FLOAT_LAYER-9)
+		var/image/two = image(icon = 'icons/hanoi.dmi', icon_state="2", layer=FLOAT_LAYER-8)
+		var/image/three = image(icon = 'icons/hanoi.dmi', icon_state="3", layer=FLOAT_LAYER-7)
+		var/image/four = image(icon = 'icons/hanoi.dmi', icon_state="4", layer=FLOAT_LAYER-6)
+		var/image/six = image(icon = 'icons/hanoi.dmi', icon_state="6", layer=FLOAT_LAYER-5)
+		var/image/seven = image(icon = 'icons/hanoi.dmi', icon_state="7", layer=FLOAT_LAYER-4)
+		var/image/eight = image(icon = 'icons/hanoi.dmi', icon_state="8", layer=FLOAT_LAYER-3)
+		var/image/nine = image(icon = 'icons/hanoi.dmi', icon_state="9", layer=FLOAT_LAYER-2)
+
+		src.underlays += zero
+		src.underlays += one
+		src.underlays += two
+		src.underlays += three
+		src.underlays += four
+		src.overlays += six
+		src.overlays += seven
+		src.overlays += eight
+		src.overlays += nine
+		

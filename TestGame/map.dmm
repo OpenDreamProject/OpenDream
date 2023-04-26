@@ -35,6 +35,7 @@
 "I" = (/obj/plaque/color_matrix_test,/turf,/area)
 "J" = (/obj/order_test_target,/turf,/area)
 "K" = (/obj/complex_overlay_test,/turf,/area)
+"L" = (/obj/float_layer_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
@@ -57,7 +58,7 @@ baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
-bCJKaaaaaaaaaaaaaaaaab
+bCJKLaaaaaaaaaaaaaaaab
 bbbbbbbbbbbbbbbbbbbbbb
 "}
 

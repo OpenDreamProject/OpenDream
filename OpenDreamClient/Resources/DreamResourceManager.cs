@@ -114,27 +114,16 @@ namespace OpenDreamClient.Resources {
 
         public ResourcePath CreateCacheFile(string filename, string data)
         {
-            var path = _cacheDirectory / filename;
-            EnsureParentDirectoryExists(path);
+            var path = _cacheDirectory / new ResourcePath(filename).Filename;
             _resourceManager.UserData.WriteAllText(path, data);
             return new ResourcePath(filename);
         }
 
         public ResourcePath CreateCacheFile(string filename, byte[] data)
         {
-            var path = _cacheDirectory / filename;
-            EnsureParentDirectoryExists(path);
+            var path = _cacheDirectory / new ResourcePath(filename).Filename;
             _resourceManager.UserData.WriteAllBytes(path, data);
             return new ResourcePath(filename);
-        }
-
-        /// <summary>
-        /// Creates directory in which the file path is located if it doesn't exist.
-        /// </summary>
-        /// <param name="path"></param>
-        private void EnsureParentDirectoryExists(ResourcePath path) {
-            ResourcePath directoryPath = (path / "..").Clean();
-            _resourceManager.UserData.CreateDir(directoryPath);
         }
 
         private DreamResource GetCachedResource(int resourceId) {

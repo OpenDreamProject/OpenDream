@@ -473,7 +473,7 @@ namespace OpenDreamRuntime.Objects {
         public bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DreamProc? globalProc);
         public TreeEntry GetTreeEntry(DreamPath path);
         public TreeEntry GetTreeEntry(int typeId);
-        public bool TryGetTreeEntry(DreamPath path, out TreeEntry? treeEntry);
+        public bool TryGetTreeEntry(DreamPath path, [NotNullWhen(true)] out TreeEntry? treeEntry);
         public DreamObjectDefinition GetObjectDefinition(int typeId);
         public IEnumerable<TreeEntry> GetAllDescendants(TreeEntry treeEntry);
         public DreamValue GetDreamValueFromJsonElement(object value);

@@ -38,7 +38,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_RightShiftEquals,
             TokenType.DM_XorEquals,
             TokenType.DM_ModulusEquals,
-            TokenType.DM_ModulusModulusEquals
+            TokenType.DM_ModulusModulusEquals,
+            TokenType.DM_AssignInto
         };
 
         /// <remarks>This (and other similar TokenType[] sets here) is public because <see cref="DMPreprocessorParser"/> needs it.</remarks>
@@ -110,6 +111,44 @@ namespace DMCompiler.Compiler.DM {
         private static readonly TokenType[] ForSeparatorTypes = {
             TokenType.DM_Semicolon,
             TokenType.DM_Comma
+        };
+
+        private static readonly TokenType[] OperatorOverloadTypes = {
+            TokenType.DM_And,
+            TokenType.DM_AndEquals,
+            TokenType.DM_AssignInto,
+            TokenType.DM_Bar,
+            TokenType.DM_BarEquals,
+            TokenType.DM_DoubleSquareBracket,
+            TokenType.DM_DoubleSquareBracketEquals,
+            TokenType.DM_GreaterThan,
+            TokenType.DM_GreaterThanEquals,
+            TokenType.DM_RightShift,
+            TokenType.DM_RightShiftEquals,
+            TokenType.DM_LeftShift,
+            TokenType.DM_LeftShiftEquals,
+            TokenType.DM_LessThan,
+            TokenType.DM_LessThanEquals,
+            TokenType.DM_Minus,
+            TokenType.DM_MinusEquals,
+            TokenType.DM_MinusMinus,
+            TokenType.DM_Modulus,
+            TokenType.DM_ModulusEquals,
+            TokenType.DM_ModulusModulus,
+            TokenType.DM_ModulusModulusEquals,
+            TokenType.DM_Plus,
+            TokenType.DM_PlusEquals,
+            TokenType.DM_PlusPlus,
+            TokenType.DM_Slash,
+            TokenType.DM_SlashEquals,
+            TokenType.DM_Star,
+            TokenType.DM_StarEquals,
+            TokenType.DM_StarStar,
+            TokenType.DM_Tilde,
+            TokenType.DM_TildeEquals,
+            TokenType.DM_TildeExclamation,
+            TokenType.DM_Xor,
+            TokenType.DM_XorEquals,
         };
 
         public DMASTFile File() {
@@ -206,7 +245,15 @@ namespace DMCompiler.Compiler.DM {
                             procBlock = new DMASTProcBlockInner(loc, procStatement);
                         }
                     }
-
+                    if(_currentPath.LastElement.Contains("operator"))
+                    {
+                        List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
+                        Location tokenLoc = procBlock.Location;
+                        //add ". = src" as the first expression in the operator
+                        DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc, new DMASTAssign(tokenLoc,new DMASTCallableSelf(tokenLoc), new DMASTIdentifier(tokenLoc, "src")));
+                        procStatements.Insert(0, assignEqSrc);
+                        procBlock.Statements = procStatements.ToArray();
+                    }
                     statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                 }
 
@@ -319,6 +366,14 @@ namespace DMCompiler.Compiler.DM {
                     pathElement = PathElement();
 
                     if (pathElement != null) {
+                        if(pathElement == "operator")
+                        {
+                            Token operatorToken = Current();
+                            if(!Check(OperatorOverloadTypes))
+                                Error($"Invalid operator overload {operatorToken.PrintableText}");
+                            else
+                                pathElement+=operatorToken.PrintableText;
+                        }
                         pathElements.Add(pathElement);
                     }
                 }
@@ -348,7 +403,7 @@ namespace DMCompiler.Compiler.DM {
 
         public bool PathArray(ref DreamPath path, out DMASTExpression implied_value) {
             implied_value = null;
-            if (Current().Type == TokenType.DM_LeftBracket)
+            if (Current().Type == TokenType.DM_LeftBracket || Current().Type == TokenType.DM_DoubleSquareBracket)
             {
                 var loc = Current().Location;
                 // Trying to use path.IsDescendantOf(DreamPath.List) here doesn't work
@@ -360,18 +415,25 @@ namespace DMCompiler.Compiler.DM {
 
                 List<DMASTCallParameter> sizes = new(2); // Most common is 1D or 2D lists
 
-                while (Check(TokenType.DM_LeftBracket))
+                while (true)
                 {
-                    Whitespace();
-
-                    var size = Expression();
-                    if (size is not null)
+                    if(Check(TokenType.DM_DoubleSquareBracket))
+                        Whitespace();
+                    else if(Check(TokenType.DM_LeftBracket))
                     {
-                        sizes.Add(new DMASTCallParameter(size.Location, size));
-                    }
+                        Whitespace();
 
-                    ConsumeRightBracket();
-                    Whitespace();
+                        var size = Expression();
+                        if (size is not null)
+                        {
+                            sizes.Add(new DMASTCallParameter(size.Location, size));
+                        }
+
+                        ConsumeRightBracket();
+                        Whitespace();
+                    }
+                    else
+                        break;
                 }
 
                 if (sizes.Count > 0) {
@@ -1669,6 +1731,7 @@ namespace DMCompiler.Compiler.DM {
                             case TokenType.DM_XorEquals: return new DMASTXorAssign(token.Location, expression, value);
                             case TokenType.DM_ModulusEquals: return new DMASTModulusAssign(token.Location, expression, value);
                             case TokenType.DM_ModulusModulusEquals: return new DMASTModulusModulusAssign(token.Location, expression, value);
+                            case TokenType.DM_AssignInto: return new DMASTAssignInto(token.Location, expression, value);
                         }
                     } else {
                         Error("Expected a value");

@@ -109,6 +109,7 @@ namespace OpenDreamShared.Dream.Procs {
         Try = 0x66,
         TryNoValue = 0x67,
         EndTry = 0x68,
+        AssignInto = 0x69, //nice
     }
 
     public enum DreamProcOpcodeParameterType {

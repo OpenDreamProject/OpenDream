@@ -29,6 +29,19 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? AssignInto(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            DreamValue value = state.Pop();
+            DreamValue first = state.GetReferenceValue(reference);
+
+            //TODO call operator:= for DreamObjects
+            state.AssignReference(reference, value);
+            state.Push(value);
+
+            return null;
+        }
+
+
         public static ProcStatus? CreateList(DMProcState state) {
             int size = state.ReadInt();
             var list = state.Proc.ObjectTree.CreateList(size);

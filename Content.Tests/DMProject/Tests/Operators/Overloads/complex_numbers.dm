@@ -27,7 +27,7 @@
 		else
 			return new /datum/complex((src.a * C.a) - (src.b * C.b), (src.a * C.b) + (src.b * C.a))
 
-/*	proc/operator[](index) 
+	proc/operator[](index) 
 		switch(index)
 			if(1)
 				return src.a
@@ -35,7 +35,7 @@
 				return src.b
 			else
 				throw EXCEPTION("Invalid index on complex number")
-*/
+
 
 	proc/operator&(datum/complex/C)
 		return new /datum/complex(src.a & C.a, src.b & C.b)

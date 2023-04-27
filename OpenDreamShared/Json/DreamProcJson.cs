@@ -6,6 +6,7 @@ namespace OpenDreamShared.Json {
     public sealed class ProcDefinitionJson {
         public int OwningTypeId { get; set; }
         public string Name { get; set; }
+        public bool IsVerb { get; set; }
         public int MaxStackSize { get; set; }
         public List<ProcArgumentJson> Arguments { get; set; }
         public List<LocalVariableJson> Locals { get; set; }

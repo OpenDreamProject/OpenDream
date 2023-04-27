@@ -2648,19 +2648,52 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_text2path(NativeProc.State state) {
-            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text)) {
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text) || text.Length == 0) {
                 return DreamValue.Null;
             }
 
             DreamPath path = new DreamPath(text);
-            if (path.FindElement("proc") != -1 || path.FindElement("verb") != -1)
-                throw new NotImplementedException("text2path() for procs is not implemented");
 
-            if (state.ObjectTree.TryGetTreeEntry(path, out var type)) {
-                return new DreamValue(type);
-            } else {
-                return DreamValue.Null;
+            bool isVerb = false;
+            
+            int procElementIndex = path.FindElement("proc");
+            if (procElementIndex == -1) {
+                procElementIndex = path.FindElement("verb");
+                if (procElementIndex != -1)
+                    isVerb = true;
             }
+
+            bool isProcPath = procElementIndex != -1;
+
+            string? procName = null;
+            if (isProcPath) {
+                // we strip the leading slash here
+                procName = path.FromElements(procElementIndex + 1).ToString()[1..];
+
+                if (procElementIndex == 0) { // global procs
+                    if (state.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
+                        return new DreamValue(globalProc);
+                    else
+                        return DreamValue.Null;
+                }
+            }
+
+            DreamPath typePath = isProcPath ? path.FromElements(0, procElementIndex) : path;
+
+            if (!state.ObjectTree.TryGetTreeEntry(typePath, out var type) || type == state.ObjectTree.Root)
+                return DreamValue.Null;
+
+            if (!isProcPath || procName == null)
+                return new DreamValue(type);
+
+            // not using TryGetProc because that includes overrides
+            if (type.ObjectDefinition.Procs.TryGetValue(procName, out int procId)) {
+                DreamProc proc = state.ObjectTree.Procs[procId];
+                if (proc.IsVerb == isVerb)
+                    return new DreamValue(proc);
+            }
+
+            return DreamValue.Null;
         }
 
         [DreamProc("time2text")]

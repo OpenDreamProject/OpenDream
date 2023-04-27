@@ -82,7 +82,6 @@ namespace OpenDreamRuntime {
 
         public override string ToString() {
             var procElement = (SuperProc == null) ? (IsVerb ? "verb/" : "proc/") : String.Empty; // Has "proc/" only if it's not an override
-            // TODO: "verb/" proc element
 
             return OwningType == DreamPath.Root ? $"/{procElement}{Name}" : $"{OwningType}/{procElement}{Name}";
         }

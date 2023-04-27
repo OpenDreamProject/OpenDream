@@ -15,7 +15,7 @@
 	for(var/i in 1 to n)
 		if(prob(p))
 			count++
-	ASSERT(count > 0 && count < n / 50)
+	ASSERT(count > 0 && count < n / 100 / 2)
 
 	p = 100
 	count = 0

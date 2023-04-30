@@ -60,6 +60,7 @@ namespace OpenDreamRuntime.Procs {
             public override ProcStatus Resume() {
                 Result = _proc._handler.Invoke(this);
 
+                Arguments.Dispose();
                 return ProcStatus.Returned;
             }
 
@@ -70,9 +71,11 @@ namespace OpenDreamRuntime.Procs {
             public override void Dispose() {
                 base.Dispose();
 
+                Arguments.Dispose();
+                Arguments = null!;
+
                 Src = null!;
                 Usr = null!;
-                Arguments = default;
                 _proc = null!;
 
                 Pool.Push(this);
@@ -105,16 +108,7 @@ namespace OpenDreamRuntime.Procs {
 
         public override State CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
             if (_defaultArgumentValues != null) {
-                var newNamedArguments = arguments.NamedArguments;
-                foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
-
-                    if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
-                        newNamedArguments ??= new();
-                        newNamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
-                    }
-                }
-                arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
+                arguments.SetDefaults(ArgumentNames, _defaultArgumentValues);
             }
 
             if (!State.Pool.TryPop(out var state)) {

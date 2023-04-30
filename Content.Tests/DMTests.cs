@@ -123,7 +123,7 @@ namespace Content.Tests
 
             DreamThread.Run("RunTest", async (state) => {
                 if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc? proc)) {
-                    callTask = state.Call(proc, null, null, new DreamProcArguments(null));
+                    callTask = state.Call(proc, null, null);
                     retValue = await callTask;
                     return DreamValue.Null;
                 } else {

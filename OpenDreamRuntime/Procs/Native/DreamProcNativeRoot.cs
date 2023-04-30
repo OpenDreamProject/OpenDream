@@ -789,6 +789,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("gradient")]
         [DreamProcParameter("A", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("index", Type = DreamValueType.Float)]
+        // TODO Fix this as part of removing named args from DreamProcArguments
+        // Probably gonna have to make this an opcode due to its weird argument handling
         public static DreamValue NativeProc_gradient(NativeProc.State state) {
             // We dont want keyword arguments screwing with this
             DreamValue dreamIndex;
@@ -799,16 +801,17 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (state.GetArgument(0, "A").TryGetValueAsDreamList(out DreamList? gradList)) {
                 gradientList = gradList.GetValues();
-                state.Arguments.TryGetPositionalArgument(1, out dreamIndex);
+                dreamIndex = state.GetArgument(1, "index");
 
                 DreamValue dictSpace = gradList.GetValue(new("space"));
                 dictSpace.TryGetValueAsInteger(out colorSpace);
             } else {
-                if (!state.Arguments.TryGetNamedArgument("index", out dreamIndex)) {
-                    state.Arguments.TryGetPositionalArgument(state.Arguments.OrderedArgumentCount - 1, out dreamIndex);
-                    state.Arguments.OrderedArguments?.Pop();
-                }
                 gradientList = state.Arguments.GetAllArguments();
+
+                if (!state.Arguments.TryGetNamedArgument("index", out dreamIndex)) {
+                    dreamIndex = state.GetArgument(state.Arguments.OrderedArgumentCount - 1, "index");
+                    // TODO state.Arguments.OrderedArguments?.Pop();
+                }
             }
 
             if (!dreamIndex.TryGetValueAsFloat(out float index)) {

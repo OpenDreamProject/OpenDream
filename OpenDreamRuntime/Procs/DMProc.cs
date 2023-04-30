@@ -10,7 +10,7 @@ using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 
 namespace OpenDreamRuntime.Procs {
-    sealed class DMProc : DreamProc {
+    public sealed class DMProc : DreamProc {
         public readonly byte[] Bytecode;
 
         public string? Source { get; }
@@ -72,7 +72,7 @@ namespace OpenDreamRuntime.Procs {
         }
     }
 
-    sealed class DMProcState : ProcState {
+    public sealed class DMProcState : ProcState {
         delegate ProcStatus? OpcodeHandler(DMProcState state);
 
         public static readonly Stack<DMProcState> Pool = new();
@@ -258,7 +258,7 @@ namespace OpenDreamRuntime.Procs {
             //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
             //Positional arguments
             for (int i = 0; i < ArgumentCount; i++) {
-                _localVariables[i] = (i < arguments.OrderedArguments?.Count) ? arguments.OrderedArguments[i] : DreamValue.Null;
+                _localVariables[i] = arguments.GetArgument(i);
             }
 
             //Named arguments
@@ -272,6 +272,9 @@ namespace OpenDreamRuntime.Procs {
                     _localVariables[argumentIndex] = argumentValue;
                 }
             }
+
+            // Immediately dispose the arguments object; it's no longer needed
+            arguments.Dispose();
         }
 
         public override ProcStatus Resume() {
@@ -414,10 +417,6 @@ namespace OpenDreamRuntime.Procs {
 
         public void Push(DreamValue value) {
             _stack[_stackIndex++] = value;
-        }
-
-        public void Push(DreamProcArguments value) {
-            _stack[_stackIndex++] = new DreamValue(value);
         }
 
         public DreamValue Pop() {

@@ -67,7 +67,7 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     var proc = _objectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
-                    var initProcState = proc.CreateState(Thread, src, _usr, new(null));
+                    var initProcState = proc.CreateState(Thread, src, _usr, new());
                     Thread.PushProcState(initProcState);
                     return ProcStatus.Called;
                 }

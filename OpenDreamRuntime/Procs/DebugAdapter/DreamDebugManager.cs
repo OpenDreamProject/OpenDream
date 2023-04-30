@@ -726,15 +726,9 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandProcArguments(RequestVariables req, DreamProcArguments procArgs) {
-        if (procArgs.OrderedArguments != null) {
-            foreach (var (i, arg) in procArgs.OrderedArguments.Select((x, i) => (i, x))) {
-                yield return DescribeValue(i.ToString(), arg);
-            }
-        }
-        if (procArgs.NamedArguments != null) {
-            foreach (var (name, arg) in procArgs.NamedArguments) {
-                yield return DescribeValue(name, arg);
-            }
+        int i = 0;
+        foreach (var arg in procArgs.GetAllArguments()) {
+            yield return DescribeValue((i++).ToString(), arg);
         }
     }
 
@@ -834,7 +828,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 }
 
-internal interface IDreamDebugManager {
+public interface IDreamDebugManager {
     public void Initialize(int port);
     public void Update();
     public void Shutdown();

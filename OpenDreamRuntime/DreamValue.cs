@@ -85,7 +85,7 @@ namespace OpenDreamRuntime {
 
         public DreamValue(DreamProcArguments value) {
             Type = DreamValueType.ProcArguments;
-            _refValue = value; // TODO: Remove this boxing. DreamValue probably shouldn't be holding proc args in the first place.
+            _refValue = value;
         }
 
         public DreamValue(object value) {
@@ -393,18 +393,18 @@ namespace OpenDreamRuntime {
 
         public bool IsTruthy() {
             switch (Type) {
-                case DreamValue.DreamValueType.DreamObject:
+                case DreamValueType.DreamObject:
                     return _refValue != null && ((DreamObject) _refValue).Deleted == false;
-                case DreamValue.DreamValueType.DreamResource:
-                case DreamValue.DreamValueType.DreamType:
-                case DreamValue.DreamValueType.DreamProc:
-                case DreamValue.DreamValueType.ProcStub:
-                case DreamValue.DreamValueType.VerbStub:
-                case DreamValue.DreamValueType.Appearance:
+                case DreamValueType.DreamResource:
+                case DreamValueType.DreamType:
+                case DreamValueType.DreamProc:
+                case DreamValueType.ProcStub:
+                case DreamValueType.VerbStub:
+                case DreamValueType.Appearance:
                     return true;
-                case DreamValue.DreamValueType.Float:
+                case DreamValueType.Float:
                     return _floatValue != 0;
-                case DreamValue.DreamValueType.String:
+                case DreamValueType.String:
                     return (string) _refValue != "";
                 default:
                     throw new NotImplementedException($"Truthy evaluation for {this} is not implemented");

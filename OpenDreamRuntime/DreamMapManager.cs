@@ -264,7 +264,7 @@ namespace OpenDreamRuntime {
                         for (int y = 1; y <= Size.Y; y++) {
                             Vector2i pos = (x, y);
 
-                            SetTurf(pos, level, _defaultTurf.ObjectDefinition, new(null));
+                            SetTurf(pos, level, _defaultTurf.ObjectDefinition, new());
                         }
                     }
                 }
@@ -323,7 +323,7 @@ namespace OpenDreamRuntime {
                             var objDef = CreateMapObjectDefinition(mapObject);
                             var obj = new DreamObject(objDef);
 
-                            obj.InitSpawn(new DreamProcArguments(new() { new DreamValue(turf) }));
+                            obj.InitSpawn(new(new[] { new DreamValue(turf) }));
                         }
                     }
 

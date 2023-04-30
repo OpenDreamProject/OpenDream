@@ -462,12 +462,14 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushArgumentList(DMProcState state) {
+            DreamProcArguments arguments;
+
             if (state.Pop().TryGetValueAsDreamList(out var argList)) {
                 List<DreamValue> ordered = new();
                 Dictionary<string, DreamValue> named = new();
                 foreach (DreamValue value in argList.GetValues()) {
                     if (argList.ContainsKey(value)) { //Named argument
-                        if (value.TryGetValueAsString(out string name)) {
+                        if (value.TryGetValueAsString(out var name)) {
                             named.Add(name, argList.GetValue(value));
                         } else {
                             throw new Exception("List contains a non-string key, and cannot be used as an arglist");
@@ -476,11 +478,13 @@ namespace OpenDreamRuntime.Procs {
                         ordered.Add(value);
                     }
                 }
-                state.Push(new DreamProcArguments(ordered, named));
+
+                arguments = new DreamProcArguments(ordered.ToArray(), named);
             } else {
-                state.Push(new DreamProcArguments());
+                arguments = new DreamProcArguments();
             }
 
+            state.Push(new(arguments));
             return null;
         }
 
@@ -488,28 +492,9 @@ namespace OpenDreamRuntime.Procs {
             int argumentCount = state.ReadInt();
             int namedCount = state.ReadInt();
             int unnamedCount = argumentCount - namedCount;
-            DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(unnamedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
-            ReadOnlySpan<DreamValue> argumentValues = argumentCount > 0 ? state.PopCount(argumentCount) : null;
+            var arguments = DreamProcArguments.FromDMProcState(state, unnamedCount, namedCount);
 
-            for (int i = 0; i < argumentCount; i++) {
-                DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)state.ReadByte();
-
-                switch (argumentType) {
-                    case DreamProcOpcodeParameterType.Named: {
-                        string argumentName = state.ReadString();
-
-                        arguments.NamedArguments![argumentName] = argumentValues[i];
-                        break;
-                    }
-                    case DreamProcOpcodeParameterType.Unnamed:
-                        arguments.OrderedArguments!.Add(argumentValues[i]);
-                        break;
-                    default:
-                        throw new Exception("Invalid argument type (" + argumentType + ")");
-                }
-            }
-
-            state.Push(arguments);
+            state.Push(new(arguments));
             return null;
         }
 
@@ -557,9 +542,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? PushProcArguments(DMProcState state) {
-            List<DreamValue> args = new(state.GetArguments().ToArray());
+            DreamValue[] args = state.GetArguments().ToArray();
 
-            state.Push(new DreamProcArguments(args));
+            state.Push(new(new DreamProcArguments(args)));
             return null;
         }
 
@@ -1393,7 +1378,7 @@ namespace OpenDreamRuntime.Procs {
                         argV.Fill(0);
                         try {
                             for (var i = 0; i < argV.Length; i++) {
-                                var arg = arguments.OrderedArguments[i].Stringify();
+                                var arg = arguments.GetArgument(i).Stringify();
                                 argV[i] = Marshal.StringToCoTaskMemUTF8(arg);
                             }
 

@@ -85,12 +85,12 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 var match = regex.Regex.Match(haystackSubstring);
                 var groups = match.Groups;
-                List<DreamValue> args = new List<DreamValue>(groups.Count);
-                foreach (Group group in groups) {
-                    args.Add(new DreamValue(group.Value));
+                var args = new DreamValue[groups.Count];
+                for (int i = 0; i < groups.Count; i++) {
+                    args[i] = new DreamValue(groups[i].Value);
                 }
 
-                var result = await state.CallNoWait(proc, regexInstance, null, new DreamProcArguments(args));
+                var result = await state.CallNoWait(proc, regexInstance, null, args);
 
                 if (result.TryGetValueAsString(out var replacement)) {
                     return DoTextReplace(replacement);

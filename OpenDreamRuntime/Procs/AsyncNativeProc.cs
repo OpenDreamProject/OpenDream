@@ -52,9 +52,9 @@ namespace OpenDreamRuntime.Procs {
                 Thread.Resume();
             }
 
-            public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+            public Task<DreamValue> Call(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
                 _callTcs = new();
-                _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
+                _callProcNotify = proc.CreateState(Thread, src, usr, new DreamProcArguments(arguments));
 
                 // The field may be mutated by SafeResume, so cache the task
                 var callTcs = _callTcs;
@@ -62,9 +62,9 @@ namespace OpenDreamRuntime.Procs {
                 return callTcs.Task;
             }
 
-            public Task<DreamValue> CallNoWait(DreamProc proc, DreamObject src, DreamObject usr, DreamProcArguments arguments) {
+            public Task<DreamValue> CallNoWait(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
                 _callTcs = new();
-                _callProcNotify = proc.CreateState(Thread, src, usr, arguments);
+                _callProcNotify = proc.CreateState(Thread, src, usr, new DreamProcArguments(arguments));
                 _callProcNotify.WaitFor = false;
 
                 // The field may be mutated by SafeResume, so cache the task
@@ -90,9 +90,11 @@ namespace OpenDreamRuntime.Procs {
                 _scheduleCancellationToken?.Dispose();
                 _scheduleCancellationToken = null;
 
+                Arguments.Dispose();
+                Arguments = null!;
+
                 Src = null!;
                 Usr = null!;
-                Arguments = default;
                 _proc = null!;
                 _taskFunc = null!;
                 _task = null;
@@ -195,16 +197,7 @@ namespace OpenDreamRuntime.Procs {
 
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
             if (_defaultArgumentValues != null) {
-                var newNamedArguments = arguments.NamedArguments;
-                foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
-
-                    if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
-                        newNamedArguments ??= new();
-                        newNamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
-                    }
-                }
-                arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
+                arguments.SetDefaults(ArgumentNames, _defaultArgumentValues);
             }
 
             if (!State.Pool.TryPop(out var state)) {
@@ -220,7 +213,7 @@ namespace OpenDreamRuntime.Procs {
                 state = new State();
             }
 
-            state.Initialize(null, taskFunc, thread, null, null, new DreamProcArguments(null));
+            state.Initialize(null, taskFunc, thread, null, null, new DreamProcArguments());
             return state;
         }
     }

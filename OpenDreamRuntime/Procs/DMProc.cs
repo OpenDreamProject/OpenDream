@@ -547,6 +547,12 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     break;
+                case DMReference.Type.Usr:
+                    //TODO: usr can be assigned to non-DreamObject values
+                    if (!value.TryGetValueAsDreamObject(out Usr)) {
+                        throw new Exception($"Cannot assign usr to {value}");
+                    }
+                    break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)

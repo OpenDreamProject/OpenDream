@@ -9,6 +9,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Random;
 
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
@@ -1945,7 +1946,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue P = state.Pop();
 
             if (P.TryGetValueAsFloat(out float probability)) {
-                int result = (state.DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0;
+                int result = (state.DreamManager.Random.Prob(probability / 100)) ? 1 : 0;
 
                 state.Push(new DreamValue(result));
             } else {

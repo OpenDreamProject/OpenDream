@@ -245,7 +245,7 @@ namespace DMCompiler.Compiler.DM {
                             procBlock = new DMASTProcBlockInner(loc, procStatement);
                         }
                     }
-                    if(_currentPath.LastElement.Contains("operator"))
+                    if(path.IsOperator)
                     {
                         List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                         Location tokenLoc = procBlock.Location;
@@ -361,7 +361,7 @@ namespace DMCompiler.Compiler.DM {
             string pathElement = PathElement();
             if (pathElement != null) {
                 List<string> pathElements = new() { pathElement };
-
+                bool operatorFlag = false;
                 while (pathElement != null && Check(TokenType.DM_Slash)) {
                     pathElement = PathElement();
 
@@ -371,14 +371,16 @@ namespace DMCompiler.Compiler.DM {
                             Token operatorToken = Current();
                             if(!Check(OperatorOverloadTypes))
                                 Error($"Invalid operator overload {operatorToken.PrintableText}");
-                            else
+                            else {
+                                operatorFlag = true;
                                 pathElement+=operatorToken.PrintableText;
+                            }
                         }
                         pathElements.Add(pathElement);
                     }
                 }
 
-                return new DMASTPath(firstToken.Location, new DreamPath(pathType, pathElements.ToArray()));
+                return new DMASTPath(firstToken.Location, new DreamPath(pathType, pathElements.ToArray()), operatorFlag);
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
 

@@ -249,5 +249,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             }
             return DreamValue.False; // This will never be true, because reaching this line means b is not a matrix, while a will always be.
         }
+
+        public DreamValue OperatorNotEquivalent(DreamValue a, DreamValue b) {
+            if(OperatorEquivalent(a,b) == DreamValue.True)
+                return DreamValue.False;
+            else
+                return DreamValue.True;
+        }
     }
 }

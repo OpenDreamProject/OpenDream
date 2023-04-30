@@ -5,6 +5,7 @@ using Robust.Client.Input;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Players;
+using Robust.Shared.Utility;
 using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace OpenDreamClient.Interface;
@@ -47,6 +48,179 @@ public sealed class InterfaceMacroSet : InterfaceElement {
     }
 }
 
+struct ParsedKeybind {
+    public bool Up;
+    public bool Rep;
+    public bool Shift;
+    public bool Ctrl;
+    public bool Alt;
+    public bool IsAny;
+    public Key? Key;
+
+    private static Dictionary<string, Key> keyNameToKey = new Dictionary<string, Key>() {
+        {"A", Keyboard.Key.A},
+        {"B", Keyboard.Key.B},
+        {"C", Keyboard.Key.C},
+        {"D", Keyboard.Key.D},
+        {"E", Keyboard.Key.E},
+        {"F", Keyboard.Key.F},
+        {"G", Keyboard.Key.G},
+        {"H", Keyboard.Key.H},
+        {"I", Keyboard.Key.I},
+        {"J", Keyboard.Key.J},
+        {"K", Keyboard.Key.K},
+        {"L", Keyboard.Key.L},
+        {"M", Keyboard.Key.M},
+        {"N", Keyboard.Key.N},
+        {"O", Keyboard.Key.O},
+        {"P", Keyboard.Key.P},
+        {"Q", Keyboard.Key.Q},
+        {"R", Keyboard.Key.R},
+        {"S", Keyboard.Key.S},
+        {"T", Keyboard.Key.T},
+        {"U", Keyboard.Key.U},
+        {"V", Keyboard.Key.V},
+        {"W", Keyboard.Key.W},
+        {"X", Keyboard.Key.X},
+        {"Y", Keyboard.Key.Y},
+        {"Z", Keyboard.Key.Z},
+        {"0", Keyboard.Key.Num0},
+        {"1", Keyboard.Key.Num1},
+        {"2", Keyboard.Key.Num2},
+        {"3", Keyboard.Key.Num3},
+        {"4", Keyboard.Key.Num4},
+        {"5", Keyboard.Key.Num5},
+        {"6", Keyboard.Key.Num6},
+        {"7", Keyboard.Key.Num7},
+        {"8", Keyboard.Key.Num8},
+        {"9", Keyboard.Key.Num9},
+        {"F1", Keyboard.Key.F1},
+        {"F2", Keyboard.Key.F2},
+        {"F3", Keyboard.Key.F3},
+        {"F4", Keyboard.Key.F4},
+        {"F5", Keyboard.Key.F5},
+        {"F6", Keyboard.Key.F6},
+        {"F7", Keyboard.Key.F7},
+        {"F8", Keyboard.Key.F8},
+        {"F9", Keyboard.Key.F9},
+        {"F10", Keyboard.Key.F10},
+        {"F11", Keyboard.Key.F11},
+        {"F12", Keyboard.Key.F12},
+        {"F13", Keyboard.Key.F13},
+        {"F14", Keyboard.Key.F14},
+        {"F15", Keyboard.Key.F15},
+        {"NUMPAD0", Keyboard.Key.NumpadNum0},
+        {"NUMPAD1", Keyboard.Key.NumpadNum1},
+        {"NUMPAD2", Keyboard.Key.NumpadNum2},
+        {"NUMPAD3", Keyboard.Key.NumpadNum3},
+        {"NUMPAD4", Keyboard.Key.NumpadNum4},
+        {"NUMPAD5", Keyboard.Key.NumpadNum5},
+        {"NUMPAD6", Keyboard.Key.NumpadNum6},
+        {"NUMPAD7", Keyboard.Key.NumpadNum7},
+        {"NUMPAD8", Keyboard.Key.NumpadNum8},
+        {"NUMPAD9", Keyboard.Key.NumpadNum9},
+        {"NORTH", Keyboard.Key.Up},
+        {"SOUTH", Keyboard.Key.Down},
+        {"EAST", Keyboard.Key.Right},
+        {"WEST", Keyboard.Key.Left},
+        {"NORTHWEST", Keyboard.Key.Home},
+        {"SOUTHWEST", Keyboard.Key.End},
+        {"NORTHEAST", Keyboard.Key.PageUp},
+        {"SOUTHEAST", Keyboard.Key.PageDown},
+        //{"CENTER", Keyboard.Key.Clear},
+        {"RETURN", Keyboard.Key.Return},
+        {"ESCAPE", Keyboard.Key.Escape},
+        {"TAB", Keyboard.Key.Tab},
+        {"SPACE", Keyboard.Key.Space},
+        {"BACK", Keyboard.Key.BackSpace},
+        {"INSERT", Keyboard.Key.Insert},
+        {"DELETE", Keyboard.Key.Delete},
+        {"PAUSE", Keyboard.Key.Pause},
+        //{"SNAPSHOT", Keyboard.Key.PrintScreen},
+        {"LWIN", Keyboard.Key.LSystem},
+        {"RWIN", Keyboard.Key.RSystem},
+        //{"APPS", Keyboard.Key.Apps},
+        {"MULTIPLY", Keyboard.Key.NumpadMultiply},
+        {"ADD", Keyboard.Key.NumpadAdd},
+        {"SUBTRACT", Keyboard.Key.NumpadSubtract},
+        {"DIVIDE", Keyboard.Key.NumpadDivide},
+        {";", Keyboard.Key.SemiColon},
+        //TODO: Right shift/ctrl/alt
+        {"SHIFT", Keyboard.Key.Shift},
+        {"CTRL", Keyboard.Key.Control},
+        {"ALT", Keyboard.Key.Alt},
+    };
+
+    private static Dictionary<Key, String> keyToKeyName;
+
+    public static Key KeyNameToKey(string key) {
+        if (keyNameToKey.TryGetValue(key, out Key result)) {
+            return result;
+        } else {
+            return Keyboard.Key.Unknown;
+        }
+    }
+
+    [CanBeNull]
+    public static string KeyToKeyName(Key key) {
+        if (keyToKeyName == null) {
+            keyToKeyName = new Dictionary<Key, string>();
+            foreach (KeyValuePair<string, Key> entry in keyNameToKey) {
+                keyToKeyName[entry.Value] = entry.Key;
+            }
+        }
+
+        if (keyToKeyName.TryGetValue(key, out string result)) {
+            return result;
+        } else {
+            return null;
+        }
+    }
+
+    public static ParsedKeybind Parse(string keybind) {
+        ParsedKeybind parsed = new ParsedKeybind();
+
+        bool foundKey = false;
+        string[] parts = keybind.ToUpperInvariant().Split('+');
+        foreach (string part in parts) {
+            switch (part) {
+                case "UP":
+                    parsed.Up = true;
+                    break;
+                case "REP":
+                    parsed.Rep = true;
+                    break;
+                case "SHIFT":
+                    parsed.Shift = true;
+                    break;
+                case "CTRL":
+                    parsed.Ctrl = true;
+                    break;
+                case "ALT":
+                    parsed.Alt = true;
+                    break;
+                default:
+                    if (foundKey) {
+                        throw new Exception($"Duplicate key in keybind: {part}");
+                    }
+                    if (part == "ANY") {
+                        parsed.IsAny = true;
+                    } else {
+                        parsed.Key = KeyNameToKey(part);
+                        if (parsed.Key == Keyboard.Key.Unknown) {
+                            throw new Exception($"Invalid keybind part: {part}");
+                        }
+                    }
+
+                    foundKey = true;
+                    break;
+            }
+        }
+
+        return parsed;
+    }
+}
+
 public sealed class InterfaceMacro : InterfaceElement {
     public string Id => MacroDescriptor.Id;
     public string Command => MacroDescriptor.Id;
@@ -57,25 +231,62 @@ public sealed class InterfaceMacro : InterfaceElement {
 
     private readonly bool _isRepeating;
     private readonly bool _isRelease;
+    private readonly bool _isAny;
 
     public InterfaceMacro(string contextName, MacroDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager, IInputCmdContext inputContext) : base(descriptor) {
         _entitySystemManager = entitySystemManager;
 
         BoundKeyFunction function = new BoundKeyFunction($"{contextName}_{Id}");
-        KeyBindingRegistration binding = CreateMacroBinding(function, Name.ToUpperInvariant());
-
-        if (binding == null)
+        ParsedKeybind parsedKeybind;
+        
+        try {
+            parsedKeybind = ParsedKeybind.Parse(Name);
+        } catch (Exception e) {
+            Logger.Warning($"Invalid keybind for macro {Id}: {e.Message}");
             return;
+        }
 
-        _isRepeating = Name.Contains("+REP");
-        _isRelease = Name.Contains("+UP");
+        _isRepeating = parsedKeybind.Rep;
+        _isRelease = parsedKeybind.Up;
+        _isAny = parsedKeybind.IsAny;
+
+        if (_isAny && (parsedKeybind.Shift || parsedKeybind.Ctrl || parsedKeybind.Alt || parsedKeybind.Rep))
+            throw new Exception("ANY can only be combined with the +UP modifier");
 
         if (_isRepeating && _isRelease)
             throw new Exception("A macro cannot be both +REP and +UP");
 
+        if (_isAny) {
+            inputManager.FirstChanceOnKeyEvent += FirstChanceKeyHandler;
+            return;
+        }
+
+        KeyBindingRegistration binding = CreateMacroBinding(function, parsedKeybind);
+
+        if (binding == null)
+            return;
+
         inputContext.AddFunction(function);
         inputManager.RegisterBinding(in binding);
         inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease, outsidePrediction: false));
+    }
+
+    private void FirstChanceKeyHandler(KeyEventArgs args, KeyEventType type) {
+        if (!_isAny)
+            return;
+        if ((type != KeyEventType.Up && _isRelease) || (type != KeyEventType.Down && !_isRelease))
+            return;
+        if (string.IsNullOrEmpty(Command))
+            return;
+        
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+            string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
+            if (keyName == null)
+                return;
+            string command = Command.Replace("[[*]]", keyName);
+            commandSystem.RunCommand(command);
+            args.Handle();
+        }
     }
 
     private void OnMacroPress([CanBeNull] ICommonSession session) {
@@ -106,119 +317,19 @@ public sealed class InterfaceMacro : InterfaceElement {
         }
     }
 
-    private static KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, string macroName) {
-        macroName = macroName.Replace("+UP", String.Empty);
-        macroName = macroName.Replace("+REP", String.Empty);
-        macroName = macroName.Replace("SHIFT+", String.Empty);
-        macroName = macroName.Replace("CTRL+", String.Empty);
-        macroName = macroName.Replace("ALT+", String.Empty);
-
-        //TODO: modifiers
-        var key = KeyNameToKey(macroName);
-        if (key == Key.Unknown) {
-            Logger.Warning($"Unknown key: {macroName}");
+    private static KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {
+        if (keybind.Key == null) {
+            Logger.Warning($"Invalid keybind: {keybind}");
             return null;
         }
 
         return new KeyBindingRegistration() {
-            BaseKey = key,
-            Function = function
+            BaseKey = keybind.Key.Value,
+            Function = function,
+            Mod1 = keybind.Shift ? Key.Shift : Key.Unknown,
+            Mod2 = keybind.Ctrl ? Key.Control : Key.Unknown,
+            Mod3 = keybind.Alt ? Key.Alt : Key.Unknown,
         };
     }
 
-    private static Key KeyNameToKey(string keyName) {
-        return keyName.ToUpper() switch {
-            "A" => Key.A,
-            "B" => Key.B,
-            "C" => Key.C,
-            "D" => Key.D,
-            "E" => Key.E,
-            "F" => Key.F,
-            "G" => Key.G,
-            "H" => Key.H,
-            "I" => Key.I,
-            "J" => Key.J,
-            "K" => Key.K,
-            "L" => Key.L,
-            "M" => Key.M,
-            "N" => Key.N,
-            "O" => Key.O,
-            "P" => Key.P,
-            "Q" => Key.Q,
-            "R" => Key.R,
-            "S" => Key.S,
-            "T" => Key.T,
-            "U" => Key.U,
-            "V" => Key.V,
-            "W" => Key.W,
-            "X" => Key.X,
-            "Y" => Key.Y,
-            "Z" => Key.Z,
-            "0" => Key.Num0,
-            "1" => Key.Num1,
-            "2" => Key.Num2,
-            "3" => Key.Num3,
-            "4" => Key.Num4,
-            "5" => Key.Num5,
-            "6" => Key.Num6,
-            "7" => Key.Num7,
-            "8" => Key.Num8,
-            "9" => Key.Num9,
-            "F1" => Key.F1,
-            "F2" => Key.F2,
-            "F3" => Key.F3,
-            "F4" => Key.F4,
-            "F5" => Key.F5,
-            "F6" => Key.F6,
-            "F7" => Key.F7,
-            "F8" => Key.F8,
-            "F9" => Key.F9,
-            "F10" => Key.F10,
-            "F11" => Key.F11,
-            "F12" => Key.F12,
-            "F13" => Key.F13,
-            "F14" => Key.F14,
-            "F15" => Key.F15,
-            "NUMPAD0" => Key.NumpadNum0,
-            "NUMPAD1" => Key.NumpadNum1,
-            "NUMPAD2" => Key.NumpadNum2,
-            "NUMPAD3" => Key.NumpadNum3,
-            "NUMPAD4" => Key.NumpadNum4,
-            "NUMPAD5" => Key.NumpadNum5,
-            "NUMPAD6" => Key.NumpadNum6,
-            "NUMPAD7" => Key.NumpadNum7,
-            "NUMPAD8" => Key.NumpadNum8,
-            "NUMPAD9" => Key.NumpadNum9,
-            "NORTH" => Key.Up,
-            "SOUTH" => Key.Down,
-            "EAST" => Key.Right,
-            "WEST" => Key.Left,
-            "NORTHWEST" => Key.Home,
-            "SOUTHWEST" => Key.End,
-            "NORTHEAST" => Key.PageUp,
-            "SOUTHEAST" => Key.PageDown,
-            //"CENTER" => Key.Clear,
-            "RETURN" => Key.Return,
-            "ESCAPE" => Key.Escape,
-            "TAB" => Key.Tab,
-            "SPACE" => Key.Space,
-            "BACK" => Key.BackSpace,
-            "INSERT" => Key.Insert,
-            "DELETE" => Key.Delete,
-            "PAUSE" => Key.Pause,
-            //"SNAPSHOT" => Key.PrintScreen,
-            "LWIN" => Key.LSystem,
-            "RWIN" => Key.RSystem,
-            //"APPS" => Key.Apps,
-            "MULTIPLY" => Key.NumpadMultiply,
-            "ADD" => Key.NumpadAdd,
-            "SUBTRACT" => Key.NumpadSubtract,
-            "DIVIDE" => Key.NumpadDivide,
-            //TODO: Right shift/ctrl/alt
-            "SHIFT" => Key.Shift,
-            "CTRL" => Key.Control,
-            "ALT" => Key.Alt,
-            _ => Key.Unknown
-        };
-    }
 }

@@ -73,7 +73,6 @@ namespace DMCompiler.Compiler.DM {
         public void VisitArctan2(DMASTArctan2 atan) { throw new NotImplementedException(); }
         public void VisitSqrt(DMASTSqrt sqrt) { throw new NotImplementedException(); }
         public void VisitLog(DMASTLog log) { throw new NotImplementedException(); }
-
         public void VisitAbs(DMASTAbs abs) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }

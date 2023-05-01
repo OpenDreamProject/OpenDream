@@ -24,12 +24,11 @@ namespace OpenDreamRuntime {
             DreamObject = 8,
             DreamType = 16,
             DreamProc = 32,
-            ProcArguments = 64,
-            Appearance = 128,
+            Appearance = 64,
 
             // Special types for representing /datum/proc paths
-            ProcStub = 256,
-            VerbStub = 512
+            ProcStub = 128,
+            VerbStub = 256
         }
 
         public static readonly DreamValue Null = new DreamValue((DreamObject?) null);
@@ -83,11 +82,6 @@ namespace OpenDreamRuntime {
             _refValue = appearance;
         }
 
-        public DreamValue(DreamProcArguments value) {
-            Type = DreamValueType.ProcArguments;
-            _refValue = value;
-        }
-
         public DreamValue(object value) {
             if (value is int intValue) {
                 _floatValue = intValue;
@@ -105,7 +99,6 @@ namespace OpenDreamRuntime {
                 DreamObject => DreamValueType.DreamObject,
                 IDreamObjectTree.TreeEntry => DreamValueType.DreamType,
                 DreamProc => DreamValueType.DreamProc,
-                DreamProcArguments => DreamValueType.ProcArguments,
                 _ => throw new ArgumentException($"Invalid DreamValue value ({value}, {value.GetType()})")
             };
         }
@@ -127,6 +120,8 @@ namespace OpenDreamRuntime {
         public override string ToString() {
             if (Type == DreamValueType.Float)
                 return _floatValue.ToString();
+            else if (Type == 0)
+                return "<Uninitialized DreamValue>";
             else if (_refValue == null) {
                 return "null";
             } else if (Type == DreamValueType.String) {
@@ -350,25 +345,6 @@ namespace OpenDreamRuntime {
                 type = null;
 
                 return false;
-            }
-        }
-
-        public bool TryGetValueAsProcArguments(out DreamProcArguments args) {
-            if (Type == DreamValueType.ProcArguments) {
-                args = (DreamProcArguments) _refValue;
-
-                return true;
-            }
-
-            args = default;
-            return false;
-        }
-
-        public DreamProcArguments MustGetValueAsProcArguments() {
-            try {
-                return (DreamProcArguments) _refValue;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException($"Value {this} was not the expected type of ProcArguments");
             }
         }
 

@@ -24,7 +24,7 @@ namespace DMCompiler.DM.Expressions {
             } else if (DMObjectTree.TryGetGlobalProc(_identifier, out DMProc globalProc)) {
                 return (DMReference.CreateGlobalProc(globalProc.Id), false);
             }
-            
+
             DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
             //Just... pretend there is one for the sake of argument.
             return (DMReference.CreateSrcProc(_identifier), false);
@@ -101,8 +101,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x(y, z, ...)
     sealed class ProcCall : DMExpression {
-        DMExpression _target;
-        ArgumentList _arguments;
+        private readonly DMExpression _target;
+        private readonly ArgumentList _arguments;
 
         public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
             _target = target;
@@ -125,25 +125,25 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
 
+            DMCallArgumentsType argumentsType;
+            int argumentStackSize;
+            if (_arguments.Length == 0 && _target is ProcSuper) {
+                argumentsType = DMCallArgumentsType.FromProcArguments;
+                argumentStackSize = 0;
+            } else {
+                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc);
+            }
+
             (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);
 
             if (conditional) {
                 var skipLabel = proc.NewLabelName();
+
                 proc.JumpIfNullDereference(procRef, skipLabel);
-                if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
-                } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                }
-                proc.Call(procRef);
+                proc.Call(procRef, argumentsType, argumentStackSize);
                 proc.AddLabel(skipLabel);
             } else {
-                if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
-                } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                }
-                proc.Call(procRef);
+                proc.Call(procRef, argumentsType, argumentStackSize);
             }
         }
 
@@ -159,7 +159,7 @@ namespace DMCompiler.DM.Expressions {
                     switch(_arguments.Length) {
                         case 0:
                         case 1: // NOTE: 'case 1' also ends up referring to the arglist situation. FIXME: Make this lint work for that, too?
-                        case 6: 
+                        case 6:
                             break; // Normal cases
                         case 2:
                         case 3: // These imply that they're trying to use the undocumented matrix signatures.

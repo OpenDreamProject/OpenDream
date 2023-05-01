@@ -150,7 +150,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateObject(DMProcState state) {
-            DreamProcArguments arguments = state.PopArguments();
+            var argumentInfo = state.ReadProcArguments();
             var val = state.Pop();
             if (!val.TryGetValueAsType(out var objectType)) {
                 if (val.TryGetValueAsString(out var pathString)) {
@@ -162,11 +162,14 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            DreamObjectDefinition objectDef = objectType.ObjectDefinition;
+            var objectDef = objectType.ObjectDefinition;
+            var proc = objectDef.GetProc("New");
+            var arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
+
             if (objectDef.IsSubtypeOf(state.Proc.ObjectTree.Turf)) {
                 // Turfs are special. They're never created outside of map initialization
                 // So instead this will replace an existing turf's type and return that same turf
-                DreamValue loc = arguments.GetArgument(0, "loc");
+                DreamValue loc = arguments.GetArgument(0);
                 if (!loc.TryGetValueAsDreamObjectOfType(state.Proc.ObjectTree.Turf, out var turf))
                     throw new Exception($"Invalid turf loc {loc}");
 
@@ -461,43 +464,6 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? PushArgumentList(DMProcState state) {
-            DreamProcArguments arguments;
-
-            if (state.Pop().TryGetValueAsDreamList(out var argList)) {
-                List<DreamValue> ordered = new();
-                Dictionary<string, DreamValue> named = new();
-                foreach (DreamValue value in argList.GetValues()) {
-                    if (argList.ContainsKey(value)) { //Named argument
-                        if (value.TryGetValueAsString(out var name)) {
-                            named.Add(name, argList.GetValue(value));
-                        } else {
-                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
-                        }
-                    } else { //Ordered argument
-                        ordered.Add(value);
-                    }
-                }
-
-                arguments = new DreamProcArguments(ordered.ToArray(), named);
-            } else {
-                arguments = new DreamProcArguments();
-            }
-
-            state.Push(new(arguments));
-            return null;
-        }
-
-        public static ProcStatus? PushArguments(DMProcState state) {
-            int argumentCount = state.ReadInt();
-            int namedCount = state.ReadInt();
-            int unnamedCount = argumentCount - namedCount;
-            var arguments = DreamProcArguments.FromDMProcState(state, unnamedCount, namedCount);
-
-            state.Push(new(arguments));
-            return null;
-        }
-
         public static ProcStatus? PushFloat(DMProcState state) {
             float value = state.ReadFloat();
 
@@ -538,13 +504,6 @@ namespace OpenDreamRuntime.Procs {
             var owner = state.Proc.ObjectTree.GetTreeEntry(ownerTypeId);
 
             state.Push(DreamValue.CreateVerbStub(owner));
-            return null;
-        }
-
-        public static ProcStatus? PushProcArguments(DMProcState state) {
-            DreamValue[] args = state.GetArguments().ToArray();
-
-            state.Push(new(new DreamProcArguments(args)));
             return null;
         }
 
@@ -1280,7 +1239,7 @@ namespace OpenDreamRuntime.Procs {
         #region Flow
         public static ProcStatus? Call(DMProcState state) {
             DMReference procRef = state.ReadReference();
-            DreamProcArguments arguments = state.PopArguments();
+            var argumentInfo = state.ReadProcArguments();
 
             DreamObject instance;
             DreamProc proc;
@@ -1327,12 +1286,13 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception($"Invalid proc reference type {procRef.RefType}");
             }
 
+            DreamProcArguments arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }
 
         public static ProcStatus? CallStatement(DMProcState state) {
-            DreamProcArguments arguments = state.PopArguments();
+            var argumentsInfo = state.ReadProcArguments();
             DreamValue source = state.Pop();
 
             switch (source.Type) {
@@ -1352,15 +1312,20 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     if (proc != null) {
+                        DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
                         state.Call(proc, dreamObject, arguments);
                         return ProcStatus.Called;
                     }
 
                     throw new Exception($"Invalid proc ({procId})");
                 }
-                case DreamValue.DreamValueType.DreamProc:
-                    state.Call(source.MustGetValueAsProc(), state.Instance, arguments);
+                case DreamValue.DreamValueType.DreamProc: {
+                    var proc = source.MustGetValueAsProc();
+
+                    DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
+                    state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
+                }
                 case DreamValue.DreamValueType.String:
                     unsafe {
                         if(!source.TryGetValueAsString(out var dllName))
@@ -1371,10 +1336,12 @@ namespace OpenDreamRuntime.Procs {
                             throw new Exception($"{popProc} is not a valid proc name");
                         }
 
+                        DreamProcArguments arguments = state.PopProcArguments(null, argumentsInfo.Type, argumentsInfo.StackSize);
+
                         // DLL Invoke
                         var entryPoint = DllHelper.ResolveDllTarget(state.Proc.DreamResourceManager, dllName, procName);
 
-                        Span<nint> argV = stackalloc nint[arguments.ArgumentCount];
+                        Span<nint> argV = stackalloc nint[arguments.Count];
                         argV.Fill(0);
                         try {
                             for (var i = 0; i < argV.Length; i++) {
@@ -1383,9 +1350,9 @@ namespace OpenDreamRuntime.Procs {
                             }
 
                             byte* ret;
-                            if (arguments.ArgumentCount > 0) {
+                            if (arguments.Count > 0) {
                                 fixed (nint* ptr = &argV[0]) {
-                                    ret = entryPoint(arguments.ArgumentCount, (byte**)ptr);
+                                    ret = entryPoint(arguments.Count, (byte**)ptr);
                                 }
                             } else {
                                 ret = entryPoint(0, (byte**)0);
@@ -1890,10 +1857,8 @@ namespace OpenDreamRuntime.Procs {
                 DreamValue value = state.Pop();
 
                 List<DreamValue> values;
-                if (value.TryGetValueAsDreamList(out DreamList list)) {
+                if (value.TryGetValueAsDreamList(out var list)) {
                     values = list.GetValues();
-                } else if (value.TryGetValueAsProcArguments(out var args)) {
-                    values = args.GetAllArguments();
                 } else {
                     state.Push(value);
                     return null;

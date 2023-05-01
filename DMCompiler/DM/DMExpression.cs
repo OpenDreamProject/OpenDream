@@ -1,9 +1,9 @@
+using System;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
-using System.Collections.Generic;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {
@@ -27,7 +27,7 @@ namespace DMCompiler.DM {
 
         public Location Location;
 
-        public DMExpression(Location location) {
+        protected DMExpression(Location location) {
             Location = location;
         }
 
@@ -43,7 +43,7 @@ namespace DMCompiler.DM {
         }
 
         public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant constant) {
-            var expr = Create(dmObject, proc, expression, null);
+            var expr = Create(dmObject, proc, expression);
             return expr.TryAsConstant(out constant);
         }
 
@@ -79,14 +79,17 @@ namespace DMCompiler.DM {
     // (a, b, c, ...)
     // This isn't an expression, it's just a helper class for working with argument lists
     class ArgumentList {
-        public (string Name, DMExpression Expr)[] Expressions;
+        public readonly (string Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
         public Location Location;
+
+        // Whether or not this has named arguments
+        private readonly bool _isKeyed;
 
         public ArgumentList(Location location, DMObject dmObject, DMProc proc, DMASTCallParameter[] arguments, DreamPath? inferredPath = null) {
             Location = location;
             if (arguments == null) {
-                Expressions = new (string, DMExpression)[0];
+                Expressions = Array.Empty<(string, DMExpression)>();
                 return;
             }
 
@@ -121,40 +124,42 @@ namespace DMCompiler.DM {
                         break;
                 }
 
+                if (name != null)
+                    _isKeyed = true;
+
                 Expressions[argIndex] = (name, value);
             }
         }
 
-        public void EmitPushArguments(DMObject dmObject, DMProc proc) {
+        public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc) {
             if (Expressions.Length == 0) {
-                proc.PushArguments(0);
-                return;
+                return (DMCallArgumentsType.None, 0);
             }
 
-            if (Expressions[0].Name == null && Expressions[0].Expr is Expressions.Arglist arglist) {
-                if (Expressions.Length != 1) {
-                    DMCompiler.Emit(WarningCode.ArglistOnlyArgument, Location, "arglist expression should be the only argument");
-                }
+            if (Expressions[0].Expr is Expressions.Arglist arglist) {
+                if (Expressions[0].Name != null)
+                    DMCompiler.Emit(WarningCode.BadArgument, arglist.Location, "arglist cannot be a named argument");
 
                 arglist.EmitPushArglist(dmObject, proc);
-                return;
+                return (DMCallArgumentsType.FromArgumentList, 1);
             }
 
-            List<DreamProcOpcodeParameterType> parameterTypes = new List<DreamProcOpcodeParameterType>();
-            List<string> parameterNames = new List<string>();
-
+            // TODO: Named arguments must come after all ordered arguments
+            int stackCount = 0;
             foreach ((string name, DMExpression expr) in Expressions) {
-                expr.EmitPushValue(dmObject, proc);
-
-                if (name != null) {
-                    parameterTypes.Add(DreamProcOpcodeParameterType.Named);
-                    parameterNames.Add(name);
-                } else {
-                    parameterTypes.Add(DreamProcOpcodeParameterType.Unnamed);
+                if (_isKeyed) {
+                    if (name != null) {
+                        proc.PushString(name);
+                    } else {
+                        proc.PushNull();
+                    }
                 }
+
+                expr.EmitPushValue(dmObject, proc);
+                stackCount += _isKeyed ? 2 : 1;
             }
 
-            proc.PushArguments(Expressions.Length, parameterTypes.ToArray(), parameterNames.ToArray());
+            return (_isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
         }
     }
 }

@@ -323,7 +323,7 @@ namespace OpenDreamRuntime {
                             var objDef = CreateMapObjectDefinition(mapObject);
                             var obj = new DreamObject(objDef);
 
-                            obj.InitSpawn(new(new[] { new DreamValue(turf) }));
+                            obj.InitSpawn(new(new DreamValue(turf)));
                         }
                     }
 

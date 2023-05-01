@@ -128,13 +128,11 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Combine, DMOpcodeHandlers.Combine},
             {DreamProcOpcode.CreateObject, DMOpcodeHandlers.CreateObject},
             {DreamProcOpcode.BooleanOr, DMOpcodeHandlers.BooleanOr},
-            {DreamProcOpcode.PushArgumentList, DMOpcodeHandlers.PushArgumentList},
             {DreamProcOpcode.CompareGreaterThanOrEqual, DMOpcodeHandlers.CompareGreaterThanOrEqual},
             {DreamProcOpcode.SwitchCase, DMOpcodeHandlers.SwitchCase},
             {DreamProcOpcode.Mask, DMOpcodeHandlers.Mask},
             {DreamProcOpcode.Error, DMOpcodeHandlers.Error},
             {DreamProcOpcode.IsInList, DMOpcodeHandlers.IsInList},
-            {DreamProcOpcode.PushArguments, DMOpcodeHandlers.PushArguments},
             {DreamProcOpcode.PushFloat, DMOpcodeHandlers.PushFloat},
             {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
             {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
@@ -149,7 +147,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DebugSource, DMOpcodeHandlers.DebugSource},
             {DreamProcOpcode.DebugLine, DMOpcodeHandlers.DebugLine},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
-            {DreamProcOpcode.PushProcArguments, DMOpcodeHandlers.PushProcArguments},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
             {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},
@@ -248,33 +245,16 @@ namespace OpenDreamRuntime.Procs {
             _proc = proc;
             Instance = instance;
             Usr = usr;
-            ArgumentCount = Math.Max(arguments.ArgumentCount, _proc.ArgumentNames?.Count ?? 0);
+            ArgumentCount = Math.Max(arguments.Count, _proc.ArgumentNames?.Count ?? 0);
             CurrentSource = _proc.Source;
             CurrentLine = _proc.Line;
             _localVariables = _dreamValuePool.Rent(256);
             _stack = _dreamValuePool.Rent(maxStackSize);
             _firstResume = true;
 
-            //TODO: Positional arguments must precede all named arguments, this needs to be enforced somehow
-            //Positional arguments
             for (int i = 0; i < ArgumentCount; i++) {
                 _localVariables[i] = arguments.GetArgument(i);
             }
-
-            //Named arguments
-            if (arguments.NamedArguments != null) {
-                foreach ((string argumentName, DreamValue argumentValue) in arguments.NamedArguments) {
-                    int argumentIndex = _proc.ArgumentNames?.IndexOf(argumentName) ?? -1;
-                    if (argumentIndex == -1) {
-                        throw new Exception($"Invalid argument name \"{argumentName}\"");
-                    }
-
-                    _localVariables[argumentIndex] = argumentValue;
-                }
-            }
-
-            // Immediately dispose the arguments object; it's no longer needed
-            arguments.Dispose();
         }
 
         public override ProcStatus Resume() {
@@ -406,10 +386,6 @@ namespace OpenDreamRuntime.Procs {
             Pool.Push(this);
         }
 
-        public Span<DreamValue> GetArguments() {
-            return _localVariables.AsSpan(0, ArgumentCount);
-        }
-
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
@@ -438,8 +414,99 @@ namespace OpenDreamRuntime.Procs {
             return _stack[_stackIndex - 1];
         }
 
-        public DreamProcArguments PopArguments() {
-            return Pop().MustGetValueAsProcArguments();
+        /// <summary>
+        /// Pops arguments off the stack and returns them in DreamProcArguments
+        /// </summary>
+        /// <param name="proc">The target proc we're calling. If null, an external DLL call is assumed.</param>
+        /// <param name="argumentsType">The source of the arguments</param>
+        /// <param name="argumentStackSize">The amount of items the arguments have on the stack</param>
+        /// <returns></returns>
+        public DreamProcArguments PopProcArguments(DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
+            switch (argumentsType) {
+                case DMCallArgumentsType.None:
+                    return new DreamProcArguments();
+                case DMCallArgumentsType.FromProcArguments:
+                    return new DreamProcArguments(_localVariables.AsSpan(0, ArgumentCount));
+                case DMCallArgumentsType.FromStack: {
+                    var stack = PopCount(argumentStackSize);
+
+                    return new DreamProcArguments(stack);
+                }
+                case DMCallArgumentsType.FromStackKeyed: {
+                    if (argumentStackSize % 2 != 0)
+                        throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));
+                    if (proc == null)
+                        throw new Exception("Cannot use named arguments in an external DLL call");
+
+                    var stack = PopCount(argumentStackSize);
+                    var argumentCount = argumentStackSize / 2;
+                    var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
+
+                    for (int i = 0; i < arguments.Length; i++) {
+                        if (i >= argumentCount) {
+                            if (arguments[i] == default)
+                                arguments[i] = DreamValue.Null; // We're beyond the given arguments and this value wasn't previously set, make it null
+
+                            continue;
+                        }
+
+                        var key = stack[i*2];
+                        var value = stack[i*2+1];
+
+                        if (key == DreamValue.Null) {
+                            arguments[i] = value;
+                        } else {
+                            string argumentName = key.MustGetValueAsString();
+                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                            if (argumentIndex == -1)
+                                throw new Exception($"{proc} has no argument named {argumentName}");
+
+                            arguments[i] = DreamValue.Null;
+                            arguments[argumentIndex] = value;
+                        }
+                    }
+
+                    return new DreamProcArguments(arguments);
+                }
+                case DMCallArgumentsType.FromArgumentList: {
+                    if (proc == null)
+                        throw new Exception("Cannot use an arglist in an external DLL call");
+                    if (!Pop().TryGetValueAsDreamList(out var argList))
+                        return new DreamProcArguments(); // Using a non-list gives you no arguments
+
+                    var listValues = argList.GetValues();
+                    var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
+                    for (int i = 0; i < arguments.Length; i++) {
+                        if (i >= listValues.Count) {
+                            if (arguments[i] == default)
+                                arguments[i] = DreamValue.Null; // We're beyond the given arguments and this value wasn't previously set, make it null
+
+                            continue;
+                        }
+
+                        var value = listValues[i];
+
+                        if (argList.ContainsKey(value)) { //Named argument
+                            if (!value.TryGetValueAsString(out var argumentName))
+                                throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+
+                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                            if (argumentIndex == -1)
+                                throw new Exception($"{proc} has no argument named {argumentName}");
+
+                            arguments[i] = DreamValue.Null;
+                            arguments[argumentIndex] = argList.GetValue(value);
+                        } else { //Ordered argument
+                            // TODO: Verify ordered args precede all named args
+                            arguments[i] = value;
+                        }
+                    }
+
+                    return new DreamProcArguments(arguments);
+                }
+                default:
+                    throw new Exception($"Invalid arguments type {argumentsType}");
+            }
         }
         #endregion
 
@@ -488,6 +555,10 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: return DMReference.ListIndex;
                 default: throw new Exception($"Invalid reference type {refType}");
             }
+        }
+
+        public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
+            return ((DMCallArgumentsType) ReadByte(), ReadInt());
         }
         #endregion
 

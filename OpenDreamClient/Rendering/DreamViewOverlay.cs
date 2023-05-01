@@ -85,12 +85,9 @@ sealed class DreamViewOverlay : Overlay {
         ClearRenderTarget(_mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
         //Main drawing of sprites happens here
-        try
-        {
+        try {
             DrawAll(args, eye.Value);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Logger.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
 

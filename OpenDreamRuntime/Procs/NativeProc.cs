@@ -37,7 +37,10 @@ namespace OpenDreamRuntime.Procs {
 
             public DreamObject? Src;
             public DreamObject? Usr;
-            public DreamProcArguments Arguments;
+
+            public DreamProcArguments Arguments => new(_arguments.AsSpan(0, _argumentCount));
+            private readonly DreamValue[] _arguments = new DreamValue[128];
+            private int _argumentCount;
 
             private NativeProc _proc = default!;
             public override NativeProc Proc => _proc;
@@ -54,13 +57,13 @@ namespace OpenDreamRuntime.Procs {
                 _proc = proc;
                 Src = src;
                 Usr = usr;
-                Arguments = arguments;
+                arguments.Values.CopyTo(_arguments);
+                _argumentCount = arguments.Count;
             }
 
             public override ProcStatus Resume() {
                 Result = _proc._handler.Invoke(this);
 
-                Arguments.Dispose();
                 return ProcStatus.Returned;
             }
 
@@ -71,9 +74,7 @@ namespace OpenDreamRuntime.Procs {
             public override void Dispose() {
                 base.Dispose();
 
-                Arguments.Dispose();
-                Arguments = null!;
-
+                _argumentCount = 0;
                 Src = null!;
                 Usr = null!;
                 _proc = null!;
@@ -82,7 +83,12 @@ namespace OpenDreamRuntime.Procs {
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public DreamValue GetArgument(int argumentPosition, string argumentName) => Arguments.GetArgument(argumentPosition, argumentName);
+            public DreamValue GetArgument(int argumentPosition, string argumentName) {
+                if (argumentPosition < _argumentCount && _arguments[argumentPosition] != DreamValue.Null)
+                    return _arguments[argumentPosition];
+
+                return _proc._defaultArgumentValues?.TryGetValue(argumentName, out var argValue) == true ? argValue : DreamValue.Null;
+            }
         }
 
         private readonly IDreamManager _dreamManager;
@@ -91,7 +97,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly DreamResourceManager _resourceManager;
         private readonly IDreamObjectTree _objectTree;
 
-        private readonly Dictionary<string, DreamValue> _defaultArgumentValues;
+        private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly HandlerFn _handler;
 
         public NativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
@@ -107,10 +113,6 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public override State CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-            if (_defaultArgumentValues != null) {
-                arguments.SetDefaults(ArgumentNames, _defaultArgumentValues);
-            }
-
             if (!State.Pool.TryPop(out var state)) {
                 state = new State();
             }

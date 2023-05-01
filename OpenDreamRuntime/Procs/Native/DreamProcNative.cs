@@ -144,6 +144,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Insert);
             objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Blend);
             objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Scale);
+            objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Turn);
 
             objectTree.SetNativeProc(objectTree.Savefile, DreamProcNativeSavefile.NativeProc_ExportText);
             objectTree.SetNativeProc(objectTree.Savefile, DreamProcNativeSavefile.NativeProc_Flush);

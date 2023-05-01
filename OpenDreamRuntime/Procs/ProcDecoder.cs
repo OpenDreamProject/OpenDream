@@ -89,7 +89,6 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushFloat:
                 return (opcode, ReadFloat());
 
-            case DreamProcOpcode.Call:
             case DreamProcOpcode.Assign:
             case DreamProcOpcode.Append:
             case DreamProcOpcode.Remove:
@@ -109,6 +108,13 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.Input:
                 return (opcode, ReadReference(), ReadReference());
+
+            case DreamProcOpcode.CallStatement:
+            case DreamProcOpcode.CreateObject:
+                return (opcode, (DMCallArgumentsType)ReadByte(), ReadInt());
+
+            case DreamProcOpcode.Call:
+                return (opcode, ReadReference(), (DMCallArgumentsType)ReadByte(), ReadInt());
 
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
@@ -138,20 +144,6 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.Try:
                 return (opcode, ReadInt(), ReadReference());
-
-            case DreamProcOpcode.PushArguments: {
-                int argCount = ReadInt();
-                int namedCount = ReadInt();
-                string[] names = new string[argCount];
-
-                for (int i = 0; i < argCount; i++) {
-                    if (ReadParameterType() == DreamProcOpcodeParameterType.Named) {
-                        names[i] = ReadString();
-                    }
-                }
-
-                return (opcode, argCount, namedCount, names);
-            }
 
             default:
                 return ValueTuple.Create(opcode);
@@ -213,15 +205,6 @@ public struct ProcDecoder {
 
             case (DreamProcOpcode.PushType, int type):
                 text.Append(getTypePath(type));
-                break;
-
-            case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
-                text.Append(argCount);
-                for (int i = 0; i < argCount; i++) {
-                    text.Append(' ');
-                    text.Append(names[i] ?? "-");
-                }
-
                 break;
 
             default:

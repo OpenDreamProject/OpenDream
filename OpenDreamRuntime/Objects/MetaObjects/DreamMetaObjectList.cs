@@ -16,12 +16,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
             // Named arguments are ignored
-            if (creationArguments.OrderedArgumentCount == 1 && creationArguments.GetArgument(0).TryGetValueAsInteger(out int size)) {
+            if (creationArguments.Count == 1 && creationArguments.GetArgument(0).TryGetValueAsInteger(out int size)) {
                 ((DreamList)dreamObject).Resize(size);
-            } else if (creationArguments.OrderedArgumentCount > 1) {
+            } else if (creationArguments.Count > 1) {
                 DreamList[] lists = { (DreamList)dreamObject };
 
-                int dimensions = creationArguments.OrderedArgumentCount;
+                int dimensions = creationArguments.Count;
                 for (int argIndex = 0; argIndex < dimensions; argIndex++) {
                     DreamValue arg = creationArguments.GetArgument(argIndex);
                     arg.TryGetValueAsInteger(out size);

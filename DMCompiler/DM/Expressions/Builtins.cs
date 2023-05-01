@@ -28,66 +28,67 @@ namespace DMCompiler.DM.Expressions {
 
     // arglist(...)
     class Arglist : DMExpression {
-        DMExpression _expr;
+        private readonly DMExpression _expr;
 
         public Arglist(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "invalid use of arglist");
+            DMCompiler.Emit(WarningCode.BadExpression, Location, "invalid use of arglist");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.PushArgumentList();
         }
     }
 
     // new x (...)
     class New : DMExpression {
-        DMExpression Expr;
-        ArgumentList Arguments;
+        private readonly DMExpression _expr;
+        private readonly ArgumentList _arguments;
 
         public New(Location location, DMExpression expr, ArgumentList arguments) : base(location) {
-            Expr = expr;
-            Arguments = arguments;
+            _expr = expr;
+            _arguments = arguments;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            Expr.EmitPushValue(dmObject, proc);
-            Arguments.EmitPushArguments(dmObject, proc);
-            proc.CreateObject();
+            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+
+            _expr.EmitPushValue(dmObject, proc);
+            proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
     }
 
     // new /x/y/z (...)
     class NewPath : DMExpression {
-        DreamPath TargetPath;
-        ArgumentList Arguments;
+        private readonly DreamPath _type;
+        private readonly ArgumentList _arguments;
 
-        public NewPath(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
-            TargetPath = targetPath;
-            Arguments = arguments;
+        public NewPath(Location location, DreamPath type, ArgumentList arguments) : base(location) {
+            _type = type;
+            _arguments = arguments;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (!DMObjectTree.TryGetTypeId(TargetPath, out var typeId)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {TargetPath} does not exist");
+            if (!DMObjectTree.TryGetTypeId(_type, out var typeId)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_type} does not exist");
 
                 return;
             }
 
+            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+
             proc.PushType(typeId);
-            Arguments.EmitPushArguments(dmObject, proc);
-            proc.CreateObject();
+            proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
     }
 
     // locate()
     class LocateInferred : DMExpression {
-        DreamPath _path;
-        DMExpression _container;
+        private readonly DreamPath _path;
+        private readonly DMExpression _container;
 
         public LocateInferred(Location location, DreamPath path, DMExpression container) : base(location) {
             _path = path;
@@ -120,8 +121,8 @@ namespace DMCompiler.DM.Expressions {
 
     // locate(x)
     class Locate : DMExpression {
-        DMExpression _path;
-        DMExpression _container;
+        private readonly DMExpression _path;
+        private readonly DMExpression _container;
 
         public Locate(Location location, DMExpression path, DMExpression container) : base(location) {
             _path = path;
@@ -148,7 +149,7 @@ namespace DMCompiler.DM.Expressions {
 
     // locate(x, y, z)
     class LocateCoordinates : DMExpression {
-        DMExpression _x, _y, _z;
+        private readonly DMExpression _x, _y, _z;
 
         public LocateCoordinates(Location location, DMExpression x, DMExpression y, DMExpression z) : base(location) {
             _x = x;
@@ -169,8 +170,8 @@ namespace DMCompiler.DM.Expressions {
     // pick(x, y)
     class Pick : DMExpression {
         public struct PickValue {
-            public DMExpression Weight;
-            public DMExpression Value;
+            public readonly DMExpression Weight;
+            public readonly DMExpression Value;
 
             public PickValue(DMExpression weight, DMExpression value) {
                 Weight = weight;
@@ -178,7 +179,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        PickValue[] _values;
+        private readonly PickValue[] _values;
 
         public Pick(Location location, PickValue[] values) : base(location) {
             _values = values;
@@ -207,14 +208,12 @@ namespace DMCompiler.DM.Expressions {
 
                 proc.PickWeighted(_values.Length);
             } else {
-                foreach (PickValue pickValue in _values)
-                {
-                    if (pickValue.Value is Arglist args)
-                    {
+                foreach (PickValue pickValue in _values) {
+                    if (pickValue.Value is Arglist args) {
+                        // This will just push a list which pick() accepts
+                        // Really hacky and won't verify that the value is actually a list
                         args.EmitPushArglist(dmObject, proc);
-                    }
-                    else
-                    {
+                    } else {
                         pickValue.Value.EmitPushValue(dmObject, proc);
                     }
                 }
@@ -226,30 +225,28 @@ namespace DMCompiler.DM.Expressions {
 
     // addtext(...)
     // https://www.byond.com/docs/ref/#/proc/addtext
-    class AddText : DMExpression
-    {
-        readonly DMExpression[] parameters;
-        public AddText(Location location, DMExpression[] paras) : base(location)
-        {
-            parameters = paras;
+    class AddText : DMExpression {
+        readonly DMExpression[] _parameters;
+
+        public AddText(Location location, DMExpression[] paras) : base(location) {
+            _parameters = paras;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc)
-        {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             //We don't have to do any checking of our parameters since that was already done by VisitAddText(), hopefully. :)
 
             //Push addtext's arguments
-            foreach (DMExpression parameter in parameters) {
+            foreach (DMExpression parameter in _parameters) {
                 parameter.EmitPushValue(dmObject, proc);
             }
 
-            proc.MassConcatenation(parameters.Length);
+            proc.MassConcatenation(_parameters.Length);
         }
     }
 
     // prob(P)
     class Prob : DMExpression {
-        public DMExpression P;
+        public readonly DMExpression P;
 
         public Prob(Location location, DMExpression p) : base(location) {
             P = p;
@@ -263,7 +260,7 @@ namespace DMCompiler.DM.Expressions {
 
     // issaved(x)
     class IsSaved : DMExpression {
-        DMExpression _expr;
+        private readonly DMExpression _expr;
 
         public IsSaved(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -292,8 +289,8 @@ namespace DMCompiler.DM.Expressions {
 
     // istype(x, y)
     class IsType : DMExpression {
-        DMExpression _expr;
-        DMExpression _path;
+        private readonly DMExpression _expr;
+        private readonly DMExpression _path;
 
         public IsType(Location location, DMExpression expr, DMExpression path) : base(location) {
             _expr = expr;
@@ -309,8 +306,8 @@ namespace DMCompiler.DM.Expressions {
 
     // istype(x)
     class IsTypeInferred : DMExpression {
-        DMExpression _expr;
-        DreamPath _path;
+        private readonly DMExpression _expr;
+        private readonly DreamPath _path;
 
         public IsTypeInferred(Location location, DMExpression expr, DreamPath path) : base(location) {
             _expr = expr;
@@ -400,7 +397,7 @@ namespace DMCompiler.DM.Expressions {
 
     // newlist(...)
     class NewList : DMExpression {
-        DMExpression[] _parameters;
+        private readonly DMExpression[] _parameters;
 
         public NewList(Location location, DMExpression[] parameters) : base(location) {
             _parameters = parameters;
@@ -409,8 +406,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             foreach (DMExpression parameter in _parameters) {
                 parameter.EmitPushValue(dmObject, proc);
-                proc.PushArguments(0);
-                proc.CreateObject();
+                proc.CreateObject(DMCallArgumentsType.None, 0);
             }
 
             proc.CreateList(_parameters.Length);
@@ -463,7 +459,7 @@ namespace DMCompiler.DM.Expressions {
 
     // initial(x)
     class Initial : DMExpression {
-        DMExpression _expr;
+        private readonly DMExpression _expr;
 
         public Initial(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -481,7 +477,7 @@ namespace DMCompiler.DM.Expressions {
 
     // nameof(x)
     class Nameof : DMExpression {
-        DMExpression _expr;
+        private readonly DMExpression _expr;
 
         public Nameof(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -494,9 +490,9 @@ namespace DMCompiler.DM.Expressions {
 
     // call(...)(...)
     class CallStatement : DMExpression {
-        DMExpression _a; // Procref, Object, LibName
-        DMExpression _b; // ProcName, FuncName
-        ArgumentList _procArgs;
+        private readonly DMExpression _a; // Procref, Object, LibName
+        private readonly DMExpression _b; // ProcName, FuncName
+        private readonly ArgumentList _procArgs;
 
         public CallStatement(Location location, DMExpression a, ArgumentList procArgs) : base(location) {
             _a = a;
@@ -510,13 +506,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_b != null) {
-                _b.EmitPushValue(dmObject, proc);
-            }
+            var argumentInfo = _procArgs.EmitArguments(dmObject, proc);
 
+            _b?.EmitPushValue(dmObject, proc);
             _a.EmitPushValue(dmObject, proc);
-            _procArgs.EmitPushArguments(dmObject, proc);
-            proc.CallStatement();
+            proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize);
         }
     }
 

@@ -360,10 +360,8 @@ namespace DMCompiler.DM {
                     throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
                 }
 
-                PushFloat(-1);
-                DreamProcOpcodeParameterType[] arr = {DreamProcOpcodeParameterType.Unnamed};
-                PushArguments(1, arr, null);
-                Call(DMReference.CreateGlobalProc(sleepProc.Id));
+                PushFloat(-1); // argument given to sleep()
+                Call(DMReference.CreateGlobalProc(sleepProc.Id), DMCallArgumentsType.FromStack, 1);
             }
         }
 
@@ -490,58 +488,13 @@ namespace DMCompiler.DM {
             }
         }
 
-        public void ContinueIfFalse() {
-            if (_loopStack?.TryPeek(out var peek) ?? false)
-            {
-                JumpIfFalse(peek + "_continue");
-            }
-            else
-            {
-                DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
-            }
-        }
-
         public void Goto(string label) {
             Jump(label + "_codelabel");
         }
 
-        public void Pop()
-        {
+        public void Pop() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Pop);
-        }
-
-        public void PushProcArguments() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushProcArguments);
-        }
-
-        public void PushArgumentList() {
-            WriteOpcode(DreamProcOpcode.PushArgumentList);
-        }
-
-        public void PushArguments(int argumentCount, DreamProcOpcodeParameterType[] parameterTypes = null, string[] parameterNames = null) {
-            ShrinkStack(argumentCount - 1); //Pops argumentCount, pushes 1
-            WriteOpcode(DreamProcOpcode.PushArguments);
-            WriteInt(argumentCount);
-            WriteInt(parameterNames?.Length ?? 0);
-
-            if (argumentCount > 0) {
-                if (parameterTypes == null || parameterTypes.Length != argumentCount) {
-                    throw new CompileAbortException("Length of parameter types does not match the argument count");
-                }
-
-                int namedParameterIndex = 0;
-                foreach (DreamProcOpcodeParameterType parameterType in parameterTypes) {
-                    _bytecodeWriter.Write((byte)parameterType);
-
-                    if (parameterType == DreamProcOpcodeParameterType.Named) {
-                        if (parameterNames == null)
-                            throw new CompileAbortException("parameterNames was null while parameterTypes was:" + parameterTypes);
-                        WriteString(parameterNames[namedParameterIndex++]);
-                    }
-                }
-            }
         }
 
         public void BooleanOr(string endLabel) {
@@ -590,14 +543,20 @@ namespace DMCompiler.DM {
             WriteLabel(label);
         }
 
-        public void Call(DMReference reference) {
+        public void Call(DMReference reference, DMCallArgumentsType argumentsType, int argumentStackSize) {
+            ShrinkStack(argumentStackSize - 1); // Pops all arguments, pushes return value
             WriteOpcode(DreamProcOpcode.Call);
             WriteReference(reference);
+            WriteByte((byte)argumentsType);
+            WriteInt(argumentStackSize);
         }
 
-        public void CallStatement() {
-            ShrinkStack(1); //Either shrinks the stack by 1 or 2. Assume 1.
+        public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize) {
+            //Shrinks the stack by argumentStackSize. Could also shrink it by argumentStackSize+1, but assume not.
+            ShrinkStack(argumentStackSize);
             WriteOpcode(DreamProcOpcode.CallStatement);
+            WriteByte((byte)argumentsType);
+            WriteInt(argumentStackSize);
         }
 
         public void Prompt(DMValueType types) {
@@ -625,9 +584,11 @@ namespace DMCompiler.DM {
             WriteReference(reference);
         }
 
-        public void CreateObject() {
-            ShrinkStack(1);
+        public void CreateObject(DMCallArgumentsType argumentsType, int argumentStackSize) {
+            ShrinkStack(argumentStackSize); // Pops type and arguments, pushes new object
             WriteOpcode(DreamProcOpcode.CreateObject);
+            WriteByte((byte)argumentsType);
+            WriteInt(argumentStackSize);
         }
 
         public void DeleteObject() {
@@ -1040,7 +1001,7 @@ namespace DMCompiler.DM {
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
             if (_currentStackSize < 0 && !_negativeStackSizeError) {
                 _negativeStackSizeError = true;
-                DMCompiler.ForcedError(Location, $"Negative stack size");
+                DMCompiler.ForcedError(Location, "Negative stack size");
             }
         }
     }

@@ -289,7 +289,7 @@ public sealed class InterfaceMacro : InterfaceElement {
                 return;
             string command = Command.Replace("[[*]]", keyName);
             commandSystem.RunCommand(command);
-            args.Handle();
+            // args.Handle() omitted on purpose, in BYOND both the "specific" keybind and the ANY keybind are triggered
         }
     }
 

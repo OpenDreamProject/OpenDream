@@ -202,9 +202,6 @@ struct ParsedKeybind {
                     parsed.Alt = true;
                     break;
                 default:
-                    if (foundKey) {
-                        throw new Exception($"Duplicate key in keybind: {part}");
-                    }
                     if (part == "ANY") {
                         parsed.IsAny = true;
                     } else {
@@ -214,6 +211,9 @@ struct ParsedKeybind {
                         }
                     }
 
+                    if (foundKey) {
+                        throw new Exception($"Duplicate key in keybind: {part}");
+                    }
                     foundKey = true;
                     break;
             }

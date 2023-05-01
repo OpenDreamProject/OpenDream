@@ -282,6 +282,12 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
         if (string.IsNullOrEmpty(Command))
             return;
+        if (_uiManager.KeyboardFocused != null) {
+            // don't trigger  macros if we're typing somewhere
+            // Ideally this would be way more robust and would instead go through the RT keybind pipeline, most importantly passing through control.KeyBindDown.
+            // However, currently it all seems to be internal, protected or protected internal so no luck. 
+            return;
+        }
         
         if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
             string? keyName = ParsedKeybind.KeyToKeyName(args.Key);

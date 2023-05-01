@@ -109,6 +109,17 @@ namespace OpenDreamShared.Dream.Procs {
         Try = 0x66,
         TryNoValue = 0x67,
         EndTry = 0x68,
+        Sin = 0x69,
+        Cos = 0x6A,
+        Tan = 0x6B,
+        Arcsin = 0x6C,
+        Arccos = 0x6D,
+        Arctan = 0x6E,
+        Arctan2 = 0x6F,
+        Sqrt = 0x70,
+        Log = 0x71,
+        LogE = 0x72,
+        Abs = 0x73,
     }
 
     public enum DreamProcOpcodeParameterType {

@@ -182,6 +182,17 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
             {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
+            {DreamProcOpcode.Sin, DMOpcodeHandlers.Sin},
+            {DreamProcOpcode.Cos, DMOpcodeHandlers.Cos},
+            {DreamProcOpcode.Tan, DMOpcodeHandlers.Tan},
+            {DreamProcOpcode.Arcsin, DMOpcodeHandlers.Arcsin},
+            {DreamProcOpcode.Arccos, DMOpcodeHandlers.Arccos},
+            {DreamProcOpcode.Arctan, DMOpcodeHandlers.Arctan},
+            {DreamProcOpcode.Arctan2, DMOpcodeHandlers.Arctan2},
+            {DreamProcOpcode.Sqrt, DMOpcodeHandlers.Sqrt},
+            {DreamProcOpcode.Log, DMOpcodeHandlers.Log},
+            {DreamProcOpcode.LogE, DMOpcodeHandlers.LogE},
+            {DreamProcOpcode.Abs, DMOpcodeHandlers.Abs},
         };
 
         private static readonly OpcodeHandler?[] _opcodeHandlers;

@@ -1496,6 +1496,156 @@ namespace OpenDreamRuntime.Procs {
             state.EndTryBlock();
             return null;
         }
+        
+        public static ProcStatus? Sin(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Sin(value.MustGetValueAsFloat() / 180 * MathF.PI))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Sin(0.0f))); break;
+                default: throw new Exception("Invalid argument type for sin");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Cos(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Cos(value.MustGetValueAsFloat() / 180 * MathF.PI))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Cos(0.0f))); break;
+                default: throw new Exception("Invalid argument type for cos");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Tan(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Tan(value.MustGetValueAsFloat() / 180 * MathF.PI))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Tan(0.0f))); break;
+                default: throw new Exception("Invalid argument type for tan");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Arcsin(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Asin(value.MustGetValueAsFloat()) / Math.PI * 180))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Asin(0.0f))); break;
+                default: throw new Exception("Invalid argument type for arcsin");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Arccos(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Acos(value.MustGetValueAsFloat()) / Math.PI * 180))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Acos(0.0f))); break;
+                default: throw new Exception("Invalid argument type for arccos");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Arctan(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Atan(value.MustGetValueAsFloat()) / Math.PI * 180))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Atan(0.0f))); break;
+                default: throw new Exception("Invalid argument type for arctan");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Arctan2(DMProcState state) {
+            DreamValue y = state.Pop();
+            DreamValue x = state.Pop();
+
+            var yValue = 0.0f;
+
+            switch (y.Type) {
+                case DreamValue.DreamValueType.Float: yValue = y.MustGetValueAsFloat(); break;
+                case DreamValue.DreamValueType.DreamObject when y == DreamValue.Null: yValue = 0.0f; break;
+                default: throw new Exception("Invalid argument type for arctan2");
+            }
+
+            switch (x.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Atan2(yValue, x.MustGetValueAsFloat()) / Math.PI * 180))); break;
+                case DreamValue.DreamValueType.DreamObject when x == DreamValue.Null: state.Push(new DreamValue(MathF.Atan2(yValue, 0.0f))); break;
+                default: throw new Exception("Invalid argument type for arctan2");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Sqrt(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Sqrt(value.MustGetValueAsFloat()))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Sqrt(0.0f))); break;
+                default: throw new Exception("Invalid argument type for sqrt");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Log(DMProcState state) {
+            DreamValue baseValue = state.Pop();
+            DreamValue value = state.Pop();
+
+            float baseValueFloat = 0.0f;
+
+            switch (baseValue.Type) {
+                case DreamValue.DreamValueType.Float: baseValueFloat = baseValue.MustGetValueAsFloat(); break;
+                case DreamValue.DreamValueType.DreamObject when baseValue == DreamValue.Null: baseValueFloat = 0.0f; break;
+                default: throw new Exception("Invalid argument type for log");
+            }
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Log(value.MustGetValueAsFloat(), baseValueFloat))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Log(0.0f, baseValueFloat))); break;
+                default: throw new Exception("Invalid argument type for log");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? LogE(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Log(value.MustGetValueAsFloat()))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Log(0.0f))); break;
+                default: throw new Exception("Invalid argument type for loge");
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? Abs(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            switch (value.Type) {
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Abs(value.MustGetValueAsFloat()))); break;
+                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
+                default: throw new Exception("Invalid argument type for abs");
+            }
+
+            return null;
+        }
 
         public static ProcStatus? SwitchCase(DMProcState state) {
             int casePosition = state.ReadInt();

@@ -814,6 +814,52 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CompareLessThanOrEqual);
         }
 
+        public void Sin() {
+            WriteOpcode(DreamProcOpcode.Sin);
+        }
+
+        public void Cos() {
+            WriteOpcode(DreamProcOpcode.Cos);
+        }
+
+        public void Tan() {
+            WriteOpcode(DreamProcOpcode.Tan);
+        }
+
+        public void Arcsin() {
+            WriteOpcode(DreamProcOpcode.Arcsin);
+        }
+
+        public void Arccos() {
+            WriteOpcode(DreamProcOpcode.Arccos);
+        }
+
+        public void Arctan() {
+            WriteOpcode(DreamProcOpcode.Arctan);
+        }
+
+        public void Arctan2() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.Arctan2);
+        }
+
+        public void Sqrt() {
+            WriteOpcode(DreamProcOpcode.Sqrt);
+        }
+
+        public void Log() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.Log);
+        }
+
+        public void LogE() {
+            WriteOpcode(DreamProcOpcode.LogE);
+        }
+
+        public void Abs() {
+            WriteOpcode(DreamProcOpcode.Abs);
+        }
+
         public void PushFloat(float value) {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushFloat);

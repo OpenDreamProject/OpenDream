@@ -2,6 +2,7 @@
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Input;
+using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Players;
@@ -276,7 +277,7 @@ public sealed class InterfaceMacro : InterfaceElement {
     }
 
     private void FirstChanceKeyHandler(KeyEventArgs args, KeyEventType type) {
-        if (!_isAny)
+        if (!_isAny) // this is where we handle only the ANY macros
             return;
         if ((type != KeyEventType.Up && _isRelease) || (type != KeyEventType.Down && !_isRelease))
             return;

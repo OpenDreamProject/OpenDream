@@ -30,6 +30,7 @@ namespace OpenDreamClient.Interface {
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IInputManager _inputManager = default!;
+        [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -476,7 +477,7 @@ namespace OpenDreamClient.Interface {
         private void LoadDescriptor(ElementDescriptor descriptor) {
             switch (descriptor) {
                 case MacroSetDescriptor macroSetDescriptor:
-                    InterfaceMacroSet macroSet = new(macroSetDescriptor, _entitySystemManager, _inputManager);
+                    InterfaceMacroSet macroSet = new(macroSetDescriptor, _entitySystemManager, _inputManager, _uiManager);
 
                     MacroSets.Add(macroSet.Name, macroSet);
                     break;

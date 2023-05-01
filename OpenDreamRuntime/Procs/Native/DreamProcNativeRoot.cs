@@ -88,6 +88,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("dir", Type = DreamValueType.Float)]
         [DreamProcParameter("alpha", Type = DreamValueType.Float)]
         [DreamProcParameter("transform", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("color", Type = DreamValueType.String | DreamValueType.DreamObject)]
         public static DreamValue NativeProc_animate(NativeProc.State state) {
             // TODO: Leaving out the Object var adds a new step to the previous animation
             if (!state.GetArgument(0, "Object").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var obj))

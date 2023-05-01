@@ -1,4 +1,3 @@
-using System;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;

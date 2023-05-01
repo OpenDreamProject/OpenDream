@@ -10,6 +10,7 @@
 	var/log_test = log(10)
 	var/log10_test = log(10, 100)
 	var/arctan2_test = arctan(1, 3)
+	var/abs_test = abs(-213)
 
 /proc/RunTest()
 	var/break_const_eval = null
@@ -47,3 +48,6 @@
 
 	ASSERT(d.arctan2_test == arctan(break_const_eval || 1, 3))
 	ASSERT(d.arctan2_test == 71.5650482177734375)
+
+	ASSERT(d.abs_test == abs(break_const_eval || -213))
+	ASSERT(d.abs_test == 213)

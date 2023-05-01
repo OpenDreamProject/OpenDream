@@ -416,6 +416,14 @@ namespace DMCompiler.DM.Visitors {
                     "file" => true,
                     "sound" => true,
                     "nameof" => true,
+                    "sqrt" => true,
+                    "sin" => true,
+                    "cos" => true,
+                    "tan" => true,
+                    "arcsin" => true,
+                    "arccos" => true,
+                    "arctan" => true,
+                    "log" => true,
                     _ => false
                 },
 

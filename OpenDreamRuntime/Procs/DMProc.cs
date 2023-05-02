@@ -442,14 +442,8 @@ namespace OpenDreamRuntime.Procs {
                     var argumentCount = argumentStackSize / 2;
                     var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
 
-                    for (int i = 0; i < arguments.Length; i++) {
-                        if (i >= argumentCount) {
-                            if (arguments[i] == default)
-                                arguments[i] = DreamValue.Null; // We're beyond the given arguments and this value wasn't previously set, make it null
-
-                            continue;
-                        }
-
+                    Array.Fill(arguments, DreamValue.Null);
+                    for (int i = 0; i < argumentCount; i++) {
                         var key = stack[i*2];
                         var value = stack[i*2+1];
 
@@ -461,8 +455,6 @@ namespace OpenDreamRuntime.Procs {
                             if (argumentIndex == -1)
                                 throw new Exception($"{proc} has no argument named {argumentName}");
 
-                            if (arguments[i] == default)
-                                arguments[i] = DreamValue.Null;
                             arguments[argumentIndex] = value;
                         }
                     }
@@ -477,14 +469,9 @@ namespace OpenDreamRuntime.Procs {
 
                     var listValues = argList.GetValues();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
-                    for (int i = 0; i < arguments.Length; i++) {
-                        if (i >= listValues.Count) {
-                            if (arguments[i] == default)
-                                arguments[i] = DreamValue.Null; // We're beyond the given arguments and this value wasn't previously set, make it null
 
-                            continue;
-                        }
-
+                    Array.Fill(arguments, DreamValue.Null);
+                    for (int i = 0; i < listValues.Count; i++) {
                         var value = listValues[i];
 
                         if (argList.ContainsKey(value)) { //Named argument
@@ -495,8 +482,6 @@ namespace OpenDreamRuntime.Procs {
                             if (argumentIndex == -1)
                                 throw new Exception($"{proc} has no argument named {argumentName}");
 
-                            if (arguments[i] == default)
-                                arguments[i] = DreamValue.Null;
                             arguments[argumentIndex] = argList.GetValue(value);
                         } else { //Ordered argument
                             // TODO: Verify ordered args precede all named args

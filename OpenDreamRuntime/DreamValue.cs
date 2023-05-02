@@ -455,8 +455,7 @@ namespace OpenDreamRuntime {
                 case DreamValueType.Float:
                     return _floatValue == other._floatValue;
                 // Ensure deleted DreamObjects are made null
-                case DreamValueType.DreamObject:
-                {
+                case DreamValueType.DreamObject: {
                     if ((_refValue as DreamObject)?.Deleted == true)
                         _refValue = null;
                     if ((other._refValue as DreamObject)?.Deleted == true)

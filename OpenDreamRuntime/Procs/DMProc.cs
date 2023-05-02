@@ -335,6 +335,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             builder.Append(Proc.Name);
+            builder.Append(':');
+            builder.Append(CurrentLine);
         }
 
         public void Jump(int position) {

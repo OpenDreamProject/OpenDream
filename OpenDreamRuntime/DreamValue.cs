@@ -5,6 +5,7 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using OpenDreamRuntime.Procs;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown;
@@ -424,11 +425,11 @@ namespace OpenDreamRuntime {
         public override bool Equals(object? obj) => obj is DreamValue other && Equals(other);
 
         public bool Equals(DreamValue other) {
-                // Ensure deleted DreamObjects are made null
-                    if ((_refValue as DreamObject)?.Deleted == true)
-                        _refValue = null;
-                    if ((other._refValue as DreamObject)?.Deleted == true)
-                        other._refValue = null;
+            // Ensure deleted DreamObjects are made null
+            if ((_refValue as DreamObject)?.Deleted == true)
+                _refValue = null;
+            if ((other._refValue as DreamObject)?.Deleted == true)
+                other._refValue = null;
 
             if (Type != other.Type) return false;
             if (Type == DreamValueType.Float) return _floatValue == other._floatValue;

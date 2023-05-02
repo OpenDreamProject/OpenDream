@@ -1036,7 +1036,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("pixel_y", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_image(NativeProc.State state) {
             DreamObject imageObject = state.ObjectTree.CreateObject(state.ObjectTree.Image);
-            imageObject.InitSpawn(state.Arguments);
+            imageObject.InitSpawn(state.Arguments); // TODO: Don't create another thread
             return new DreamValue(imageObject);
         }
 

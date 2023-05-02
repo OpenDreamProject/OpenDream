@@ -461,7 +461,8 @@ namespace OpenDreamRuntime.Procs {
                             if (argumentIndex == -1)
                                 throw new Exception($"{proc} has no argument named {argumentName}");
 
-                            arguments[i] = DreamValue.Null;
+                            if (arguments[i] == default)
+                                arguments[i] = DreamValue.Null;
                             arguments[argumentIndex] = value;
                         }
                     }
@@ -494,7 +495,8 @@ namespace OpenDreamRuntime.Procs {
                             if (argumentIndex == -1)
                                 throw new Exception($"{proc} has no argument named {argumentName}");
 
-                            arguments[i] = DreamValue.Null;
+                            if (arguments[i] == default)
+                                arguments[i] = DreamValue.Null;
                             arguments[argumentIndex] = argList.GetValue(value);
                         } else { //Ordered argument
                             // TODO: Verify ordered args precede all named args

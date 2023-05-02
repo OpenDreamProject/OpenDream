@@ -450,8 +450,7 @@ namespace OpenDreamRuntime {
 
         public bool Equals(DreamValue other) {
             if (Type != other.Type) return false;
-            switch (Type)
-            {
+            switch (Type) {
                 case DreamValueType.Float:
                     return _floatValue == other._floatValue;
                 // Ensure deleted DreamObjects are made null

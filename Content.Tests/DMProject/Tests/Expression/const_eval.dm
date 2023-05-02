@@ -26,7 +26,9 @@
 	ASSERT(d.costest == -0.544639050960540771484375)
 
 	ASSERT(d.tantest == tan(break_const_eval || 123))
-	ASSERT(d.tantest == -1.539865016937255859375)
+	if (d.tantest != -1.539865016937255859375)
+		CRASH("tantest error: [d.tantest - (-1.539865016937255859375)]")
+	// ASSERT(d.tantest == -1.539865016937255859375)
 
 	ASSERT(d.sqrttest == sqrt(break_const_eval || 123))
 	ASSERT(d.sqrttest == 11.0905361175537109375)

@@ -38,7 +38,6 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ftime);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_dir);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_step);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_gradient);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hascall);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_html_encode);

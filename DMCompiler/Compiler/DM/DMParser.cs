@@ -2363,6 +2363,12 @@ namespace DMCompiler.Compiler.DM {
                             return new DMASTLocate(identifier.Location, type, container);
                         }
                     }
+                    case "gradient": {
+                        if (callParameters.Length < 2)
+                            Error("gradient() requires at least 2 arguments");
+
+                        return new DMASTGradient(identifier.Location, callParameters);
+                    }
                     default: return new DMASTProcCall(identifier.Location, new DMASTCallableProcIdentifier(identifier.Location, identifier.Identifier), callParameters);
                 }
             }

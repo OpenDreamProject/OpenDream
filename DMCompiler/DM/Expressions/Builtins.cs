@@ -165,6 +165,22 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // gradient(Gradient, index)
+    // gradient(Item1, Item2, ..., index)
+    class Gradient : DMExpression {
+        private readonly ArgumentList _arguments;
+
+        public Gradient(Location location, ArgumentList arguments) : base(location) {
+            _arguments = arguments;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            var argInfo = _arguments.EmitArguments(dmObject, proc);
+
+            proc.Gradient(argInfo.Type, argInfo.StackSize);
+        }
+    }
+
     // pick(prob(50);x, prob(200);y)
     // pick(50;x, 200;y)
     // pick(x, y)

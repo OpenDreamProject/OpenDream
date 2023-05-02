@@ -873,6 +873,13 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.LocateCoord);
         }
 
+        public void Gradient(DMCallArgumentsType argumentsType, int argumentStackSize) {
+            ShrinkStack(argumentStackSize - 1); // Pops arguments, pushes gradient result
+            WriteOpcode(DreamProcOpcode.Gradient);
+            WriteByte((byte)argumentsType);
+            WriteInt(argumentStackSize);
+        }
+
         public void PickWeighted(int count) {
             ShrinkStack(count * 2 - 1);
             WriteOpcode(DreamProcOpcode.PickWeighted);

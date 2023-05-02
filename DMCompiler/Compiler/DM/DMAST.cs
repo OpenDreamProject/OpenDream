@@ -62,6 +62,7 @@ namespace DMCompiler.Compiler.DM {
         public void VisitImplicitIsType(DMASTImplicitIsType isType) { throw new NotImplementedException(); }
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) { throw new NotImplementedException(); }
         public void VisitLocate(DMASTLocate locate) { throw new NotImplementedException(); }
+        public void VisitGradient(DMASTGradient gradient) { throw new NotImplementedException(); }
         public void VisitPick(DMASTPick pick) { throw new NotImplementedException(); }
         public void VisitCall(DMASTCall call) { throw new NotImplementedException(); }
         public void VisitAssign(DMASTAssign assign) { throw new NotImplementedException(); }
@@ -1033,6 +1034,18 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitLocate(this);
+        }
+    }
+
+    public class DMASTGradient : DMASTExpression {
+        public readonly DMASTCallParameter[] Parameters;
+
+        public DMASTGradient(Location location, DMASTCallParameter[] parameters) : base(location) {
+            Parameters = parameters;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitGradient(this);
         }
     }
 

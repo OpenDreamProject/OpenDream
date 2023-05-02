@@ -179,6 +179,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
             {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
+            {DreamProcOpcode.Gradient, DMOpcodeHandlers.Gradient}
         };
 
         private static readonly OpcodeHandler?[] _opcodeHandlers;
@@ -417,7 +418,7 @@ namespace OpenDreamRuntime.Procs {
         /// <summary>
         /// Pops arguments off the stack and returns them in DreamProcArguments
         /// </summary>
-        /// <param name="proc">The target proc we're calling. If null, an external DLL call is assumed.</param>
+        /// <param name="proc">The target proc we're calling. If null, named args or arglist() cannot be used.</param>
         /// <param name="argumentsType">The source of the arguments</param>
         /// <param name="argumentStackSize">The amount of items the arguments have on the stack</param>
         /// <returns></returns>
@@ -436,7 +437,7 @@ namespace OpenDreamRuntime.Procs {
                     if (argumentStackSize % 2 != 0)
                         throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));
                     if (proc == null)
-                        throw new Exception("Cannot use named arguments in an external DLL call");
+                        throw new Exception("Cannot use named arguments here");
 
                     var stack = PopCount(argumentStackSize);
                     var argumentCount = argumentStackSize / 2;
@@ -463,7 +464,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMCallArgumentsType.FromArgumentList: {
                     if (proc == null)
-                        throw new Exception("Cannot use an arglist in an external DLL call");
+                        throw new Exception("Cannot use an arglist here");
                     if (!Pop().TryGetValueAsDreamList(out var argList))
                         return new DreamProcArguments(); // Using a non-list gives you no arguments
 

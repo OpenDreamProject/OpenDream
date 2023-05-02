@@ -565,6 +565,12 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Locate(locate.Location, pathExpr, container);
         }
 
+        public void VisitGradient(DMASTGradient gradient) {
+            var args = new ArgumentList(gradient.Location, _dmObject, _proc, gradient.Parameters);
+
+            Result = new Gradient(gradient.Location, args);
+        }
+
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) {
             var _x = DMExpression.Create(_dmObject, _proc, locateCoordinates.X, _inferredPath);
             var _y = DMExpression.Create(_dmObject, _proc, locateCoordinates.Y, _inferredPath);

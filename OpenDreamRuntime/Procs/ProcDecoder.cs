@@ -25,10 +25,6 @@ public struct ProcDecoder {
         return (DreamProcOpcode) ReadByte();
     }
 
-    public DreamProcOpcodeParameterType ReadParameterType() {
-        return (DreamProcOpcodeParameterType) ReadByte();
-    }
-
     public int ReadInt() {
         int value = BitConverter.ToInt32(Bytecode, Offset);
         Offset += 4;

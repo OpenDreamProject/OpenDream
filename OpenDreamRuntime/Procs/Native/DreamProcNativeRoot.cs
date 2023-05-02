@@ -27,14 +27,6 @@ namespace OpenDreamRuntime.Procs.Native {
     /// like filter(), matrix(), etc.
     /// </remarks>
     static class DreamProcNativeRoot {
-        [DreamProc("abs")]
-        [DreamProcParameter("A", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_abs(NativeProc.State state) {
-            state.GetArgument(0, "A").TryGetValueAsFloat(out float number);
-
-            return new DreamValue(Math.Abs(number));
-        }
-
         [DreamProc("alert")]
         [DreamProcParameter("Usr", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Message", Type = DreamValueType.String)]
@@ -118,43 +110,6 @@ namespace OpenDreamRuntime.Procs.Native {
             });
 
             return DreamValue.Null;
-        }
-
-        /* NOTE ABOUT THE TRIG FUNCTIONS:
-         * If you have a sharp eye, you may notice that our trigonometry functions make use of the *double*-precision versions of those functions,
-         * even though this is a single-precision language.
-         *
-         * DO NOT replace them with the single-precision ones in MathF!!!
-         *
-         * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
-         * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
-         */
-
-        [DreamProc("arccos")]
-        [DreamProcParameter("X", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_arccos(NativeProc.State state) {
-            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            double acos = Math.Acos(x);
-
-            return new DreamValue((float)(acos * 180 / Math.PI));
-        }
-
-        [DreamProc("arcsin")]
-        [DreamProcParameter("X", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_arcsin(NativeProc.State state) {
-            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            double asin = Math.Asin(x);
-
-            return new DreamValue((float)(asin * 180 / Math.PI));
-        }
-
-        [DreamProc("arctan")]
-        [DreamProcParameter("A", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_arctan(NativeProc.State state) {
-            state.GetArgument(0, "A").TryGetValueAsFloat(out float a);
-            double atan = Math.Atan(a);
-
-            return new DreamValue((float)(atan * 180 / Math.PI));
         }
 
         [DreamProc("ascii2text")]
@@ -340,15 +295,6 @@ namespace OpenDreamRuntime.Procs.Native {
             else if (start < 0) start += textElements.LengthInTextElements + 1;
 
             return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
-        }
-
-        [DreamProc("cos")]
-        [DreamProcParameter("X", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_cos(NativeProc.State state) {
-            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            double rad = x * (Math.PI / 180);
-
-            return new DreamValue((float)Math.Cos(rad));
         }
 
         [DreamProc("CRASH")]
@@ -1382,22 +1328,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(paramBuilder.ToString());
         }
 
-        [DreamProc("log")]
-        [DreamProcParameter("X", Type = DreamValueType.Float)]
-        [DreamProcParameter("Y")]
-        public static DreamValue NativeProc_log(NativeProc.State state) {
-            state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            DreamValue yValue = state.GetArgument(1, "Y");
-
-            if (yValue != DreamValue.Null) {
-                yValue.TryGetValueAsFloat(out float y);
-
-                return new DreamValue((float)Math.Log(y, x));
-            } else {
-                return new DreamValue(Math.Log(x));
-            }
-        }
-
         [DreamProc("lowertext")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_lowertext(NativeProc.State state) {
@@ -2236,15 +2166,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
-        [DreamProc("sin")]
-        [DreamProcParameter("X", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_sin(NativeProc.State state) {
-            state.GetArgument(0, "X").TryGetValueAsFloat(out var x);
-            double rad = x * (Math.PI / 180);
-
-            return new DreamValue((float)Math.Sin(rad));
-        }
-
         [DreamProc("sleep")]
         [DreamProcParameter("Delay", Type = DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
@@ -2497,14 +2418,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(list);
         }
 
-        [DreamProc("sqrt")]
-        [DreamProcParameter("A", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_sqrt(NativeProc.State state) {
-            state.GetArgument(0, "A").TryGetValueAsFloat(out var a);
-
-            return new DreamValue((float)Math.Sqrt(a));
-        }
-
         private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
             if (name != DreamValue.Null) {
                 connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
@@ -2545,15 +2458,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return DreamValue.False;
-        }
-
-        [DreamProc("tan")]
-        [DreamProcParameter("X", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_tan(NativeProc.State state) {
-            state.GetArgument(0, "X").TryGetValueAsFloat(out var x);
-            double rad = x * (Math.PI / 180);
-
-            return new DreamValue((float)Math.Tan(rad));
         }
 
         [DreamProc("text2ascii")]

@@ -515,17 +515,15 @@ namespace DMCompiler.DM.Visitors {
                 string endLabel2 = _proc.NewLabelName();
 
                 DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
-                _proc.Enumerate();
-                _proc.AssignPop(outputRef);
+                _proc.Enumerate(outputRef);
                 _proc.Jump(endLabel2);
 
                 _proc.AddLabel(endLabel);
-                _proc.Enumerate();
+                _proc.EnumerateNoAssign();
                 _proc.AddLabel(endLabel2);
             } else {
                 DMReference outputRef = lValue.EmitReference(_dmObject, _proc, null);
-                _proc.Enumerate();
-                _proc.AssignPop(outputRef);
+                _proc.Enumerate(outputRef);
             }
         }
 

@@ -92,7 +92,6 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.Call:
             case DreamProcOpcode.Assign:
-            case DreamProcOpcode.AssignPop:
             case DreamProcOpcode.Append:
             case DreamProcOpcode.Remove:
             case DreamProcOpcode.Combine:
@@ -113,7 +112,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.Input:
                 return (opcode, ReadReference(), ReadReference());
 
-            case DreamProcOpcode.Enumerate:
+            case DreamProcOpcode.EnumerateNoAssign:
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
             case DreamProcOpcode.CreateFilteredListEnumerator:
@@ -141,6 +140,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.JumpIfNullDereference:
             case DreamProcOpcode.JumpIfTrueReference:
             case DreamProcOpcode.JumpIfFalseReference:
+            case DreamProcOpcode.Enumerate:
                 return (opcode, ReadReference(), ReadInt());
 
             case DreamProcOpcode.Try:

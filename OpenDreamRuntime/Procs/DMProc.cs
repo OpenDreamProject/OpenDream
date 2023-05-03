@@ -185,12 +185,12 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DereferenceIndex, DMOpcodeHandlers.DereferenceIndex},
             {DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall},
             {DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference},
-            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
             {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},
             {DreamProcOpcode.BitShiftRightReference, DMOpcodeHandlers.BitShiftRightReference},
             {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
             {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
+            {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign}
         };
 
         private static readonly OpcodeHandler?[] _opcodeHandlers;

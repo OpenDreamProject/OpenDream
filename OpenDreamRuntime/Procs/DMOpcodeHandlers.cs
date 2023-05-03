@@ -57,14 +57,6 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-        public static ProcStatus? AssignPop(DMProcState state) {
-            DMReference reference = state.ReadReference();
-            DreamValue value = state.Pop();
-
-            state.AssignReference(reference, value);
-            return null;
-        }
-
         public static ProcStatus? CreateList(DMProcState state) {
             int size = state.ReadInt();
             var list = state.Proc.ObjectTree.CreateList(size);
@@ -224,14 +216,21 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Enumerate(DMProcState state) {
             IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
+            DMReference outputRef = state.ReadReference();
             int jumpToIfFailure = state.ReadInt();
-            bool successfulEnumeration = enumerator.MoveNext();
 
-            if (successfulEnumeration) {
-                state.Push(enumerator.Current);
-            } else {
+            if (!enumerator.Enumerate(state, outputRef))
                 state.Jump(jumpToIfFailure);
-            }
+
+            return null;
+        }
+
+        public static ProcStatus? EnumerateNoAssign(DMProcState state) {
+            IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
+            int jumpToIfFailure = state.ReadInt();
+
+            if (!enumerator.Enumerate(state, null))
+                state.Jump(jumpToIfFailure);
 
             return null;
         }

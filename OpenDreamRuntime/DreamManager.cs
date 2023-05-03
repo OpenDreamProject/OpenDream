@@ -38,7 +38,6 @@ namespace OpenDreamRuntime {
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
         public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
-        public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
         public HashSet<DreamObject> Datums { get; set; } = new();

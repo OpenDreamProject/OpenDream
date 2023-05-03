@@ -16,10 +16,6 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Mobs { get; } = new();
         public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
 
-        //TODO: Maybe turn these into a special DreamList, similar to DreamListVars?
-        public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; } = new();
-        public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
-
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
@@ -64,7 +60,7 @@ namespace OpenDreamRuntime {
             sprite.SetAppearance(CreateAppearanceFromDefinition(atom.ObjectDefinition));
 
             if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
-                atom.GetVariable("desc").TryGetValueAsString(out string desc);
+                atom.GetVariable("desc").TryGetValueAsString(out var desc);
                 metaData.EntityName = atom.GetDisplayName();
                 metaData.EntityDescription = desc;
             }
@@ -434,9 +430,6 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Objects { get; }
         public List<DreamObject> Mobs { get; }
         public int AtomCount { get; }
-
-        public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
-        public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 
         public DreamObject GetAtom(int index);
 

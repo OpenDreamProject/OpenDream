@@ -9,6 +9,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Random;
 
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
@@ -1651,9 +1652,9 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (client != null) {
-                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
+                DreamConnection? connection = state.DreamManager.GetConnectionFromClient(client);
 
-                connection.BrowseResource(file, (filename != DreamValue.Null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
+                connection?.BrowseResource(file, (filename != DreamValue.Null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
             }
 
             return null;
@@ -1690,11 +1691,10 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (client != null) {
-                DreamConnection connection = state.DreamManager.GetConnectionFromClient(client);
-                if (!message.TryGetValueAsString(out var messageStr) && message != DreamValue.Null)
-                    throw new Exception($"Invalid output() message {message}");
+                DreamConnection? connection = state.DreamManager.GetConnectionFromClient(client);
+                string messageStr = message.Stringify();
 
-                connection.OutputControl(messageStr, control);
+                connection?.OutputControl(messageStr, control);
             }
 
             // TODO: When errors are more strict (or a setting for it added), a null client should error
@@ -1962,7 +1962,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue P = state.Pop();
 
             if (P.TryGetValueAsFloat(out float probability)) {
-                int result = (state.DreamManager.Random.Next(0, 100) <= probability) ? 1 : 0;
+                int result = (state.DreamManager.Random.Prob(probability / 100)) ? 1 : 0;
 
                 state.Push(new DreamValue(result));
             } else {

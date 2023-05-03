@@ -3,7 +3,6 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
@@ -63,17 +62,17 @@ namespace DMCompiler.DM.Expressions {
 
     // new /x/y/z (...)
     class NewPath : DMExpression {
-        private readonly DreamPath _type;
+        private readonly DreamPath _targetPath;
         private readonly ArgumentList _arguments;
 
-        public NewPath(Location location, DreamPath type, ArgumentList arguments) : base(location) {
-            _type = type;
+        public NewPath(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
+            _targetPath = targetPath;
             _arguments = arguments;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (!DMObjectTree.TryGetTypeId(_type, out var typeId)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_type} does not exist");
+            if (!DMObjectTree.TryGetTypeId(_targetPath, out var typeId)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_targetPath} does not exist");
 
                 return;
             }
@@ -88,9 +87,9 @@ namespace DMCompiler.DM.Expressions {
     // locate()
     class LocateInferred : DMExpression {
         private readonly DreamPath _path;
-        private readonly DMExpression _container;
+        private readonly DMExpression? _container;
 
-        public LocateInferred(Location location, DreamPath path, DMExpression container) : base(location) {
+        public LocateInferred(Location location, DreamPath path, DMExpression? container) : base(location) {
             _path = path;
             _container = container;
         }
@@ -122,9 +121,9 @@ namespace DMCompiler.DM.Expressions {
     // locate(x)
     class Locate : DMExpression {
         private readonly DMExpression _path;
-        private readonly DMExpression _container;
+        private readonly DMExpression? _container;
 
-        public Locate(Location location, DMExpression path, DMExpression container) : base(location) {
+        public Locate(Location location, DMExpression path, DMExpression? container) : base(location) {
             _path = path;
             _container = container;
         }
@@ -186,10 +185,10 @@ namespace DMCompiler.DM.Expressions {
     // pick(x, y)
     class Pick : DMExpression {
         public struct PickValue {
-            public readonly DMExpression Weight;
+            public readonly DMExpression? Weight;
             public readonly DMExpression Value;
 
-            public PickValue(DMExpression weight, DMExpression value) {
+            public PickValue(DMExpression? weight, DMExpression value) {
                 Weight = weight;
                 Value = value;
             }
@@ -242,7 +241,7 @@ namespace DMCompiler.DM.Expressions {
     // addtext(...)
     // https://www.byond.com/docs/ref/#/proc/addtext
     class AddText : DMExpression {
-        readonly DMExpression[] _parameters;
+        private readonly DMExpression[] _parameters;
 
         public AddText(Location location, DMExpression[] paras) : base(location) {
             _parameters = paras;
@@ -283,8 +282,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            switch (_expr)
-            {
+            switch (_expr) {
                 case Field field:
                     field.EmitPushIsSaved(proc);
                     return;
@@ -345,10 +343,10 @@ namespace DMCompiler.DM.Expressions {
 
     // list(...)
     class List : DMExpression {
-        private readonly (DMExpression Key, DMExpression Value)[] _values;
+        private readonly (DMExpression? Key, DMExpression Value)[] _values;
         private readonly bool _isAssociative;
 
-        public List(Location location, (DMExpression Key, DMExpression Value)[] values) : base(location) {
+        public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
             _values = values;
 
             _isAssociative = false;
@@ -380,9 +378,9 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override bool TryAsJsonRepresentation(out object json) {
-            List<object> list = new();
-            Dictionary<string, object> associatedValues = new();
+        public override bool TryAsJsonRepresentation(out object? json) {
+            List<object?> list = new();
+            Dictionary<string, object?> associatedValues = new();
 
             foreach (var value in _values) {
                 if (!value.Value.TryAsJsonRepresentation(out var jsonValue)) {
@@ -428,7 +426,7 @@ namespace DMCompiler.DM.Expressions {
             proc.CreateList(_parameters.Length);
         }
 
-        public override bool TryAsJsonRepresentation(out object json) {
+        public override bool TryAsJsonRepresentation(out object? json) {
             json = null;
             DMCompiler.UnimplementedWarning(Location, "DMM overrides for newlist() are not implemented");
             return true; //TODO
@@ -439,10 +437,10 @@ namespace DMCompiler.DM.Expressions {
     class Input : DMExpression {
         private readonly DMExpression[] _arguments;
         private readonly DMValueType _types;
-        [CanBeNull] private readonly DMExpression _list;
+        private readonly DMExpression? _list;
 
         public Input(Location location, DMExpression[] arguments, DMValueType types,
-            [CanBeNull] DMExpression list) : base(location) {
+            DMExpression? list) : base(location) {
             if (arguments.Length is 0 or > 4) {
                 throw new CompileErrorException(location, "input() must have 1 to 4 arguments");
             }
@@ -507,7 +505,7 @@ namespace DMCompiler.DM.Expressions {
     // call(...)(...)
     class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
-        private readonly DMExpression _b; // ProcName, FuncName
+        private readonly DMExpression? _b; // ProcName, FuncName
         private readonly ArgumentList _procArgs;
 
         public CallStatement(Location location, DMExpression a, ArgumentList procArgs) : base(location) {

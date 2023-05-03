@@ -7,14 +7,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     class DMProc {
         public class LocalVariable {
-            public int Id;
-            public bool IsParameter;
+            public readonly int Id;
+            public readonly bool IsParameter;
             public DreamPath? Type;
 
             public LocalVariable(int id, bool isParameter, DreamPath? type) {
@@ -25,7 +24,7 @@ namespace DMCompiler.DM {
         }
 
         public class LocalConstVariable : LocalVariable {
-            public Expressions.Constant Value;
+            public readonly Expressions.Constant Value;
 
             public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
                 Value = value;
@@ -33,49 +32,51 @@ namespace DMCompiler.DM {
         }
 
         private class DMProcScope {
-            public Dictionary<string, LocalVariable> LocalVariables = new();
-            public DMProcScope ParentScope;
+            public readonly Dictionary<string, LocalVariable> LocalVariables = new();
+            public readonly DMProcScope? ParentScope;
 
             public DMProcScope() { }
 
-            public DMProcScope(DMProcScope parentScope) {
+            public DMProcScope(DMProcScope? parentScope) {
                 ParentScope = parentScope;
             }
         }
 
-        public MemoryStream Bytecode = new MemoryStream();
+        public MemoryStream Bytecode = new();
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
-        public Location Location = Location.Unknown;
+        public Location Location;
         public ProcAttributes Attributes;
-        public string Name { get => _astDefinition?.Name ?? "<init>"; }
+        public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 
-        [CanBeNull] public string VerbName;
-        [CanBeNull] public string VerbCategory = string.Empty;
-        [CanBeNull] public string VerbDesc;
+        public string? VerbName;
+        public string? VerbCategory = string.Empty;
+        public string? VerbDesc;
         public sbyte? Invisibility;
 
         private DMObject _dmObject;
-        private DMASTProcDefinition _astDefinition = null;
-        private BinaryWriter _bytecodeWriter = null;
+        private DMASTProcDefinition? _astDefinition;
+        private BinaryWriter _bytecodeWriter;
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
-        [CanBeNull] private Stack<string> _loopStack = null;
+        private Stack<string>? _loopStack = null;
         private Stack<DMProcScope> _scopes = new();
         private Dictionary<string, LocalVariable> _parameters = new();
-        private int _labelIdCounter = 0;
-        private int _maxStackSize = 0;
-        private int _currentStackSize = 0;
-        private bool _negativeStackSizeError = false;
+        private int _labelIdCounter;
+        private int _maxStackSize;
+        private int _currentStackSize;
+        private bool _negativeStackSizeError;
 
         private List<LocalVariableJson> _localVariableNames = new();
-        private int _localVariableIdCounter = 0;
+        private int _localVariableIdCounter;
+
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
             return _localVariableIdCounter++;
         }
+
         private void DeallocLocalVariables(int amount) {
             if (amount > 0) {
                 _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Remove = amount });
@@ -83,8 +84,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DMProc(int id, DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
-        {
+        public DMProc(int id, DMObject dmObject, DMASTProcDefinition? astDefinition) {
             Id = id;
             _dmObject = dmObject;
             _astDefinition = astDefinition;
@@ -96,8 +96,8 @@ namespace DMCompiler.DM {
 
         public void Compile() {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
-            if (_astDefinition is not null) // It's null for initialization procs
-            {
+
+            if (_astDefinition is not null) { // It's null for initialization procs
                 foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
                     AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
                 }
@@ -114,8 +114,7 @@ namespace DMCompiler.DM {
             procDefinition.Source = _astDefinition?.Location.SourceFile?.Replace("\\", "/");
             procDefinition.Line = _astDefinition?.Location.Line ?? 0;
 
-            if ((Attributes & ProcAttributes.None) != ProcAttributes.None)
-            {
+            if ((Attributes & ProcAttributes.None) != ProcAttributes.None) {
                 procDefinition.Attributes = Attributes;
             }
 
@@ -187,13 +186,6 @@ namespace DMCompiler.DM {
             return null;
         }
 
-        public DMVariable GetGlobalVariable(string name)
-        {
-            int? id = GetGlobalVariableId(name);
-
-            return (id == null) ? null : DMObjectTree.Globals[id.Value];
-        }
-
         public void AddParameter(string name, DMValueType valueType, DreamPath? type) {
             Parameters.Add(name);
             ParameterTypes.Add(valueType);
@@ -244,14 +236,15 @@ namespace DMCompiler.DM {
             return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
         }
 
-        public LocalVariable GetLocalVariable(string name) {
-            if (_parameters.TryGetValue(name, out LocalVariable parameter)) {
+        public LocalVariable? GetLocalVariable(string name) {
+            if (_parameters.TryGetValue(name, out var parameter)) {
                 return parameter;
             }
 
-            DMProcScope scope = _scopes.Peek();
+            DMProcScope? scope = _scopes.Peek();
             while (scope != null) {
-                if (scope.LocalVariables.TryGetValue(name, out LocalVariable localVariable)) return localVariable;
+                if (scope.LocalVariables.TryGetValue(name, out var localVariable))
+                    return localVariable;
 
                 scope = scope.ParentScope;
             }
@@ -260,7 +253,7 @@ namespace DMCompiler.DM {
         }
 
         public DMReference GetLocalVariableReference(string name) {
-            LocalVariable local = GetLocalVariable(name);
+            LocalVariable? local = GetLocalVariable(name);
 
             return local.IsParameter ? DMReference.CreateArgument(local.Id) : DMReference.CreateLocal(local.Id);
         }
@@ -356,7 +349,7 @@ namespace DMCompiler.DM {
             // TODO This seems like a bad way to handle background, doesn't it?
 
             if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
-                if (!DMObjectTree.TryGetGlobalProc("sleep", out DMProc sleepProc)) {
+                if (!DMObjectTree.TryGetGlobalProc("sleep", out var sleepProc)) {
                     throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
                 }
 
@@ -429,17 +422,12 @@ namespace DMCompiler.DM {
             WriteLabel(jumpTo);
         }
 
-        public void Break(DMASTIdentifier label = null) {
-            if (label is not null)
-            {
+        public void Break(DMASTIdentifier? label = null) {
+            if (label is not null) {
                 Jump(label.Identifier + "_end");
-            }
-            else if (_loopStack?.TryPeek(out var peek) ?? false)
-            {
+            } else if (_loopStack?.TryPeek(out var peek) ?? false) {
                 Jump(peek + "_end");
-            }
-            else
-            {
+            } else {
                 DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
             }
         }
@@ -452,37 +440,31 @@ namespace DMCompiler.DM {
             }
         }
 
-        public void Continue(DMASTIdentifier label = null) {
+        public void Continue(DMASTIdentifier? label = null) {
             // TODO: Clean up this godawful label handling
-            if (label is not null)
-            {
+            if (label is not null) {
                 var codeLabel = label.Identifier + "_codelabel";
-                if (!_labels.ContainsKey(codeLabel))
-                {
+                if (!_labels.ContainsKey(codeLabel)) {
                     DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Unknown label {label.Identifier}");
                 }
+
                 var labelList = _labels.Keys.ToList();
                 var continueLabel = string.Empty;
-                for (var i = labelList.IndexOf(codeLabel) + 1; i < labelList.Count; i++)
-                {
-                    if(labelList[i].EndsWith("_start"))
-                    {
+                for (var i = labelList.IndexOf(codeLabel) + 1; i < labelList.Count; i++) {
+                    if (labelList[i].EndsWith("_start")) {
                         continueLabel = labelList[i].Replace("_start", "_continue");
                         break;
                     }
                 }
+
                 BackgroundSleep();
                 Jump(continueLabel);
-            }
-            else
-            {
+            } else {
                 BackgroundSleep();
-                if (_loopStack?.TryPeek(out var peek) ?? false)
-                {
+
+                if (_loopStack?.TryPeek(out var peek) ?? false) {
                     Jump(peek + "_continue");
-                }
-                else
-                {
+                } else {
                     DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
                 }
             }

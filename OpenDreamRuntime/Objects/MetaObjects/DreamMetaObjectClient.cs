@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public static readonly Dictionary<DreamObject, ClientScreenList> ScreenLists = new();
         public static readonly Dictionary<DreamObject, VerbsList> VerbLists = new();
 
-        private readonly ServerScreenOverlaySystem _screenOverlaySystem;
+        private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
 
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamManager _dreamManager = default!;
@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamMetaObjectClient() {
             IoCManager.InjectDependencies(this);
 
-            _screenOverlaySystem = _entitySystemManager.GetEntitySystem<ServerScreenOverlaySystem>();
+            _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {

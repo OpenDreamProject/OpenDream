@@ -13,7 +13,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
-        private ServerAppearanceSystem? _appearanceSystem;
+        private readonly ServerAppearanceSystem? _appearanceSystem;
 
         private readonly Dictionary<DreamObject, DreamFilterList> _filterLists = new();
         private readonly Dictionary<DreamObject, DreamOverlaysList> _overlayLists = new();
@@ -21,13 +21,15 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
         public DreamMetaObjectAtom() {
             IoCManager.InjectDependencies(this);
+
+            _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             VerbLists[dreamObject] = new VerbsList(_objectTree, dreamObject);
             _filterLists[dreamObject] = new DreamFilterList(_objectTree.List.ObjectDefinition, dreamObject);
-            _overlayLists[dreamObject] = new DreamOverlaysList(_objectTree.List.ObjectDefinition, dreamObject, false);
-            _underlayLists[dreamObject] = new DreamOverlaysList(_objectTree.List.ObjectDefinition, dreamObject, true);
+            _overlayLists[dreamObject] = new DreamOverlaysList(_objectTree.List.ObjectDefinition, dreamObject, _appearanceSystem, false);
+            _underlayLists[dreamObject] = new DreamOverlaysList(_objectTree.List.ObjectDefinition, dreamObject, _appearanceSystem, true);
 
             // TODO: These should use their own special list types
             dreamObject.SetVariableValue("vis_locs", new(_objectTree.CreateList()));

@@ -339,19 +339,19 @@ namespace OpenDreamRuntime.Objects {
 
     // atom.overlays or atom.underlays list
     // Operates on an atom's appearance
-    public sealed class DreamOverlaysList : DreamList {
+    sealed class DreamOverlaysList : DreamList {
         [Robust.Shared.IoC.Dependency] private readonly IAtomManager _atomManager = default!;
         [Robust.Shared.IoC.Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        private readonly ServerAppearanceSystem _appearanceSystem;
+        private readonly ServerAppearanceSystem? _appearanceSystem;
 
         private readonly DreamObject _atom;
         private readonly bool _isUnderlays;
 
-        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, bool isUnderlays) : base(listDef, 0) {
+        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
             IoCManager.InjectDependencies(this);
-            _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
 
             _atom = atom;
+            _appearanceSystem = appearanceSystem;
             _isUnderlays = isUnderlays;
         }
 
@@ -374,6 +374,9 @@ namespace OpenDreamRuntime.Objects {
             if (overlayIndex > overlaysList.Count)
                 throw new Exception($"Atom only has {overlaysList.Count} {(_isUnderlays ? "underlay" : "overlay")}(s), cannot index {overlayIndex}");
 
+            if (_appearanceSystem == null)
+                return DreamValue.Null;
+
             uint overlayId = GetOverlaysList(appearance)[overlayIndex - 1];
             IconAppearance overlayAppearance = _appearanceSystem.MustGetAppearance(overlayId);
             return new DreamValue(overlayAppearance);
@@ -384,6 +387,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override void AddValue(DreamValue value) {
+            if (_appearanceSystem == null)
+                return;
+
             _atomManager.UpdateAppearance(_atom, appearance => {
                 IconAppearance overlayAppearance = CreateOverlayAppearance(value);
 
@@ -392,6 +398,9 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override void RemoveValue(DreamValue value) {
+            if (_appearanceSystem == null)
+                return;
+
             _atomManager.UpdateAppearance(_atom, appearance => {
                 IconAppearance overlayAppearance = CreateOverlayAppearance(value);
 
@@ -530,12 +539,12 @@ namespace OpenDreamRuntime.Objects {
     // client.screen list
     public sealed class ClientScreenList : DreamList {
         private readonly IDreamObjectTree _objectTree;
-        private readonly ServerScreenOverlaySystem _screenOverlaySystem;
+        private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
 
         private readonly DreamConnection _connection;
         private readonly List<DreamValue> _screenObjects = new();
 
-        public ClientScreenList(IDreamObjectTree objectTree, ServerScreenOverlaySystem screenOverlaySystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
+        public ClientScreenList(IDreamObjectTree objectTree, ServerScreenOverlaySystem? screenOverlaySystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
             _objectTree = objectTree;
             _screenOverlaySystem = screenOverlaySystem;
 
@@ -557,7 +566,7 @@ namespace OpenDreamRuntime.Objects {
             if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
                 return;
 
-            _screenOverlaySystem.AddScreenObject(_connection, movable);
+            _screenOverlaySystem?.AddScreenObject(_connection, movable);
             _screenObjects.Add(value);
         }
 
@@ -565,7 +574,7 @@ namespace OpenDreamRuntime.Objects {
             if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
                 return;
 
-            _screenOverlaySystem.RemoveScreenObject(_connection, movable);
+            _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
             _screenObjects.Remove(value);
         }
 
@@ -576,7 +585,7 @@ namespace OpenDreamRuntime.Objects {
                 if (!_screenObjects[i].TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
                     continue;
 
-                _screenOverlaySystem.RemoveScreenObject(_connection, movable);
+                _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
             }
 
             _screenObjects.RemoveRange(start - 1, end - start);

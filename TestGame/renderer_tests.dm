@@ -303,6 +303,13 @@
 		new /obj/order_test_item/render_seven(locate(1,1,1))
 		new /obj/order_test_item/eight(src.loc)
 
+/obj/order_test_target
+	icon = 'icons/hanoi.dmi'
+	icon_state = "target"
+	name = "Render order test target"
+	desc = "This is what the render order test should look like. If it doesn't, it's wrong."
+	layer = OBJ_LAYER
+	plane = PLANE_hanoi_0
 
 /obj/order_test_item
 	icon = 'icons/hanoi.dmi'

@@ -374,7 +374,7 @@ sealed class DreamViewOverlay : Overlay {
         //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
         //SO IT TURNS OUT EFFECTS_LAYER IS JUST A LIE *scream
         //and BACKGROUND_LAYER is basically the same behaviour as FLOAT_PLANE
-        if(current.Layer > 20000){
+        if(current.Layer >= 20000){
             current.Layer -= 40000;
             current.IsScreen = false; //BACKGROUND_LAYER renders behind everything on that plane
         }
@@ -613,10 +613,10 @@ sealed class DreamViewOverlay : Overlay {
 
         } else { //Slower path for filtered icons
             //first we do ping pong rendering for the multiple filters
+            // TODO: This should determine the size from the filters and their settings, not just double the original
             IRenderTexture ping = RentRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
-
 
             handle.RenderInRenderTarget(pong,
                 () => {

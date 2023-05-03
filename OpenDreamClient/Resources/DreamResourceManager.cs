@@ -56,7 +56,7 @@ namespace OpenDreamClient.Resources {
         }
 
         private void RxBrowseResource(MsgBrowseResource message) {
-            _resourceManager.UserData.WriteAllBytes(_cacheDirectory / message.Filename, message.Data);
+            CreateCacheFile(message.Filename, message.Data);
         }
 
         private void RxResource(MsgResource message) {
@@ -114,14 +114,16 @@ namespace OpenDreamClient.Resources {
 
         public ResourcePath CreateCacheFile(string filename, string data)
         {
-            var path = _cacheDirectory / filename;
+            // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
+            var path = _cacheDirectory / new ResourcePath(filename).Filename;
             _resourceManager.UserData.WriteAllText(path, data);
             return new ResourcePath(filename);
         }
 
         public ResourcePath CreateCacheFile(string filename, byte[] data)
         {
-            var path = _cacheDirectory / filename;
+            // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
+            var path = _cacheDirectory / new ResourcePath(filename).Filename;
             _resourceManager.UserData.WriteAllBytes(path, data);
             return new ResourcePath(filename);
         }

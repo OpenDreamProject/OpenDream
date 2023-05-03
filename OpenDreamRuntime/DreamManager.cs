@@ -221,8 +221,8 @@ namespace OpenDreamRuntime {
                 _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
                 idx = (int)_appearanceSystem.AddAppearance(appearance);
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
-                // Bit of a hack. This should use a resource's ID once they are refactored to have them.
-                return $"{(int) RefType.DreamResource}{refRsc.ResourcePath}";
+                refType = RefType.DreamResource;
+                idx = refRsc.Id;
             } else {
                 throw new NotImplementedException($"Ref for {value} is unimplemented");
             }
@@ -245,37 +245,37 @@ namespace OpenDreamRuntime {
             var typeId = (RefType) int.Parse(refString.Substring(0, 1));
             var untypedRefString = refString.Substring(1); // The ref minus its ref type prefix
 
-            if (typeId == RefType.DreamResource) {
-                // DreamResource refs are a little special and use their path instead of an id
-                return new DreamValue(_dreamResourceManager.LoadResource(untypedRefString));
-            } else {
-                refId = int.Parse(untypedRefString);
+            refId = int.Parse(untypedRefString);
 
-                switch (typeId) {
-                    case RefType.Null:
-                        return DreamValue.Null;
-                    case RefType.DreamObject:
-                        foreach (KeyValuePair<DreamObject, int> referenceIdPair in ReferenceIDs) {
-                            if (referenceIdPair.Value == refId) return new DreamValue(referenceIdPair.Key);
-                        }
+            switch (typeId) {
+                case RefType.Null:
+                    return DreamValue.Null;
+                case RefType.DreamObject:
+                    foreach (KeyValuePair<DreamObject, int> referenceIdPair in ReferenceIDs) {
+                        if (referenceIdPair.Value == refId) return new DreamValue(referenceIdPair.Key);
+                    }
 
+                    return DreamValue.Null;
+                case RefType.String:
+                    return _objectTree.Strings.Count > refId
+                        ? new DreamValue(_objectTree.Strings[refId])
+                        : DreamValue.Null;
+                case RefType.DreamType:
+                    return _objectTree.Types.Length > refId
+                        ? new DreamValue(_objectTree.Types[refId])
+                        : DreamValue.Null;
+                case RefType.DreamResource:
+                    if (!_dreamResourceManager.TryLoadResource(refId, out var resource))
                         return DreamValue.Null;
-                    case RefType.String:
-                        return _objectTree.Strings.Count > refId
-                            ? new DreamValue(_objectTree.Strings[refId])
-                            : DreamValue.Null;
-                    case RefType.DreamType:
-                        return _objectTree.Types.Length > refId
-                            ? new DreamValue(_objectTree.Types[refId])
-                            : DreamValue.Null;
-                    case RefType.DreamAppearance:
-                        _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearance((uint)refId, out IconAppearance? appearance)
-                            ? new DreamValue(appearance)
-                            : DreamValue.Null;
-                    default:
-                        throw new Exception($"Invalid reference type for ref {refString}");
-                }
+
+                    return new DreamValue(resource);
+                case RefType.DreamAppearance:
+                    _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+                    return _appearanceSystem.TryGetAppearance((uint)refId, out IconAppearance? appearance)
+                        ? new DreamValue(appearance)
+                        : DreamValue.Null;
+                default:
+                    throw new Exception($"Invalid reference type for ref {refString}");
             }
         }
 

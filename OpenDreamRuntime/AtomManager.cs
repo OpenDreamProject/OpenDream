@@ -213,8 +213,9 @@ namespace OpenDreamRuntime {
                 case "icon":
                     if (appearance.Icon == null)
                         return DreamValue.Null;
+                    if (!_resourceManager.TryLoadResource(appearance.Icon.Value, out var iconResource))
+                        return DreamValue.Null;
 
-                    var iconResource = _resourceManager.GetResource(appearance.Icon.Value);
                     return new(iconResource);
                 case "icon_state":
                     if (appearance.IconState == null)

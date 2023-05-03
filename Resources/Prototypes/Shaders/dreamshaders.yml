@@ -111,13 +111,13 @@
 - type: shader
   id: drop_shadow
   kind: source
-  path: "/Shaders/empty.swsl"
+  path: "/Shaders/drop_shadow.swsl"
   params:
-    x: 0
-    y: 0
-    size: 0 
+    x: 1
+    y: -1
+    size: 1
     offset: 0
-    color: 0
+    shadow_color: "#00000080"
 
 - type: shader
   id: layer

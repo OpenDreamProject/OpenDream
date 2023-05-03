@@ -1,4 +1,5 @@
-﻿using Robust.Shared.Analyzers;
+﻿using System;
+using Robust.Shared.Analyzers;
 using System.Collections.Generic;
 using System.IO;
 
@@ -12,10 +13,10 @@ namespace OpenDreamShared.Compiler {
 
         protected Queue<Token> _pendingTokenQueue = new();
 
-        private IEnumerator<SourceType> _sourceEnumerator = null;
+        private IEnumerator<SourceType> _sourceEnumerator;
         private SourceType _current;
 
-        public Lexer(string sourceName, IEnumerable<SourceType> source) {
+        protected Lexer(string sourceName, IEnumerable<SourceType> source) {
             CurrentLocation = new Location(sourceName, 1, 0);
             SourceName = sourceName;
             Source = source;
@@ -40,14 +41,14 @@ namespace OpenDreamShared.Compiler {
         }
 
         protected virtual Token ParseNextToken() {
-            return CreateToken(TokenType.Unknown, GetCurrent().ToString());
+            return CreateToken(TokenType.Unknown, GetCurrent()?.ToString() ?? String.Empty);
         }
 
-        protected Token CreateToken(TokenType type, string text, object value = null) {
+        protected Token CreateToken(TokenType type, string text, object? value = null) {
             return new Token(type, text, CurrentLocation, value);
         }
 
-        protected Token CreateToken(TokenType type, char text, object value = null) {
+        protected Token CreateToken(TokenType type, char text, object? value = null) {
             return CreateToken(type, char.ToString(text), value);
         }
 
@@ -84,7 +85,7 @@ namespace OpenDreamShared.Compiler {
             switch (c) {
                 case '\n': token = CreateToken(TokenType.Newline, c); Advance(); break;
                 case '\0': token = CreateToken(TokenType.EndOfFile, c); Advance(); break;
-                default: token = null; break;
+                default: token = CreateToken(TokenType.Unknown, c); break;
             }
 
             return token;

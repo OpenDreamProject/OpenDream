@@ -279,7 +279,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         inputManager.RegisterBinding(in binding);
         inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease, outsidePrediction: false));
     }
-
+    
     private void FirstChanceKeyHandler(KeyEventArgs args, KeyEventType type) {
         if (_inputManager.Contexts.ActiveContext != _inputContext) // don't trigger macro if we're not in the right context / macro set
             return;
@@ -306,7 +306,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         }
     }
 
-    private void OnMacroPress([CanBeNull] ICommonSession session) {
+    private void OnMacroPress(ICommonSession? session) {
         if (String.IsNullOrEmpty(Command))
             return;
         if (_isRelease)
@@ -321,7 +321,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         }
     }
 
-    private void OnMacroRelease([CanBeNull] ICommonSession session) {
+    private void OnMacroRelease(ICommonSession? session) {
         if (String.IsNullOrEmpty(Command))
             return;
 

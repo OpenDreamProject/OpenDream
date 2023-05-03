@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 
@@ -5,18 +6,17 @@ namespace DMCompiler.DM.Expressions {
     abstract class UnaryOp : DMExpression {
         protected DMExpression Expr { get; }
 
-        public UnaryOp(Location location, DMExpression expr) : base(location) {
+        protected UnaryOp(Location location, DMExpression expr) : base(location) {
             Expr = expr;
         }
     }
 
     // -x
     class Negate : UnaryOp {
-        public Negate(Location location, DMExpression expr)
-            : base(location, expr)
-        {}
+        public Negate(Location location, DMExpression expr) : base(location, expr) {
+        }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!Expr.TryAsConstant(out constant)) return false;
 
             constant = constant.Negate();
@@ -31,11 +31,10 @@ namespace DMCompiler.DM.Expressions {
 
     // !x
     class Not : UnaryOp {
-        public Not(Location location, DMExpression expr)
-            : base(location, expr)
-        {}
+        public Not(Location location, DMExpression expr) : base(location, expr) {
+        }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!Expr.TryAsConstant(out constant)) return false;
 
             constant = constant.Not();
@@ -50,11 +49,10 @@ namespace DMCompiler.DM.Expressions {
 
     // ~x
     class BinaryNot : UnaryOp {
-        public BinaryNot(Location location, DMExpression expr)
-            : base(location, expr)
-        {}
+        public BinaryNot(Location location, DMExpression expr) : base(location, expr) {
+        }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!Expr.TryAsConstant(out constant)) return false;
 
             constant = constant.BinaryNot();
@@ -68,10 +66,10 @@ namespace DMCompiler.DM.Expressions {
     }
 
     abstract class AssignmentUnaryOp : UnaryOp {
-        public AssignmentUnaryOp(Location location, DMExpression expr)
-            : base(location, expr) { }
+        protected AssignmentUnaryOp(Location location, DMExpression expr) : base(location, expr) {
+        }
 
-        public abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference);
+        protected abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference);
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMReference reference, bool conditional) = Expr.EmitReference(dmObject, proc);
@@ -90,11 +88,10 @@ namespace DMCompiler.DM.Expressions {
 
     // ++x
     class PreIncrement : AssignmentUnaryOp {
-        public PreIncrement(Location location, DMExpression expr)
-            : base(location, expr)
-        {}
+        public PreIncrement(Location location, DMExpression expr) : base(location, expr) {
+        }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
             proc.PushFloat(1);
             proc.Append(reference);
         }
@@ -102,11 +99,10 @@ namespace DMCompiler.DM.Expressions {
 
     // x++
     class PostIncrement : AssignmentUnaryOp {
-        public PostIncrement(Location location, DMExpression expr)
-            : base(location, expr)
-        {}
+        public PostIncrement(Location location, DMExpression expr) : base(location, expr) {
+        }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
             proc.Increment(reference);
         }
     }
@@ -114,10 +110,10 @@ namespace DMCompiler.DM.Expressions {
     // --x
     class PreDecrement : AssignmentUnaryOp {
         public PreDecrement(Location location, DMExpression expr)
-            : base(location, expr)
-        {}
+            : base(location, expr) {
+        }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
             proc.PushFloat(1);
             proc.Remove(reference);
         }
@@ -126,10 +122,10 @@ namespace DMCompiler.DM.Expressions {
     // x--
     class PostDecrement : AssignmentUnaryOp {
         public PostDecrement(Location location, DMExpression expr)
-            : base(location, expr)
-        {}
+            : base(location, expr) {
+        }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
             proc.Decrement(reference);
         }
     }

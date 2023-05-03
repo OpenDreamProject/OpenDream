@@ -74,7 +74,7 @@ namespace OpenDreamClient.Interface.Prompts {
             Close();
         }
 
-        protected void FinishPrompt(DMValueType responseType, object value) {
+        protected void FinishPrompt(DMValueType responseType, object? value) {
             if (_responseSent) return;
             _responseSent = true;
 

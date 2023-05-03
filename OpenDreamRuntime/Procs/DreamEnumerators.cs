@@ -73,8 +73,6 @@ namespace OpenDreamRuntime.Procs {
 
         public bool Enumerate(DMProcState state, DMReference? reference) {
             _current++;
-            if (_current >= _dreamValueArray.Length)
-                return false;
 
             bool success = _current < _dreamValueArray.Length;
             if (reference != null)

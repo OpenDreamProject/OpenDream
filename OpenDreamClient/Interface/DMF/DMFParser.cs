@@ -209,8 +209,7 @@ public sealed class DMFParser : Parser<char> {
                 valueText += attributeValue.Text;
                 if (!Check(TokenType.DMF_Value) && !Check(TokenType.DMF_Attribute))
                     Error($"Invalid attribute value ({valueText})");
-            }
-            else if (!Check(TokenType.DMF_Value))
+            } else if (!Check(TokenType.DMF_Value))
                 Error($"Invalid attribute value ({valueText})");
 
             Newline();

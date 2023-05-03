@@ -232,6 +232,8 @@ public sealed class InterfaceMacro : InterfaceElement {
 
     private readonly IEntitySystemManager _entitySystemManager;
     private readonly IUserInterfaceManager _uiManager;
+    private readonly IInputCmdContext _inputContext;
+    private readonly IInputManager _inputManager;
 
     private readonly bool _isRepeating;
     private readonly bool _isRelease;
@@ -240,6 +242,8 @@ public sealed class InterfaceMacro : InterfaceElement {
     public InterfaceMacro(string contextName, MacroDescriptor descriptor, IEntitySystemManager entitySystemManager, IInputManager inputManager, IInputCmdContext inputContext, IUserInterfaceManager uiManager) : base(descriptor) {
         _entitySystemManager = entitySystemManager;
         _uiManager = uiManager;
+        _inputContext = inputContext;
+        _inputManager = inputManager;
 
         BoundKeyFunction function = new BoundKeyFunction($"{contextName}_{Id}");
         ParsedKeybind parsedKeybind;
@@ -270,13 +274,15 @@ public sealed class InterfaceMacro : InterfaceElement {
 
         if (binding == null)
             return;
-
+        
         inputContext.AddFunction(function);
         inputManager.RegisterBinding(in binding);
         inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease, outsidePrediction: false));
     }
 
     private void FirstChanceKeyHandler(KeyEventArgs args, KeyEventType type) {
+        if (_inputManager.Contexts.ActiveContext != _inputContext) // don't trigger macro if we're not in the right context / macro set
+            return;
         if (!_isAny) // this is where we handle only the ANY macros
             return;
         if ((type != KeyEventType.Up && _isRelease) || (type != KeyEventType.Down && !_isRelease))

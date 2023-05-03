@@ -77,7 +77,7 @@ public sealed class InterfaceMenu : InterfaceElement {
     public sealed class MenuElement : InterfaceElement {
         public readonly List<MenuElement> Children = new();
 
-        private MenuElementDescriptor MenuElementDescriptor => (ElementDescriptor as MenuElementDescriptor);
+        private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
         public string Category => MenuElementDescriptor.Category;
         public string Command => MenuElementDescriptor.Command;
 

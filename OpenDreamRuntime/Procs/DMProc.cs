@@ -324,6 +324,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             builder.Append(Proc.Name);
+            builder.Append(':');
+            builder.Append(CurrentLine);
         }
 
         public void Jump(int position) {
@@ -545,6 +547,12 @@ namespace OpenDreamRuntime.Procs {
                         throw new Exception($"Cannot assign src to {value}");
                     }
 
+                    break;
+                case DMReference.Type.Usr:
+                    //TODO: usr can be assigned to non-DreamObject values
+                    if (!value.TryGetValueAsDreamObject(out Usr)) {
+                        throw new Exception($"Cannot assign usr to {value}");
+                    }
                     break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();

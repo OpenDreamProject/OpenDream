@@ -81,14 +81,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void LoadAreasAndTurfs(List<DreamMapJson> maps) {
-            if (maps.Count == 0) throw new ArgumentException("No maps were given");
-            if (maps.Count > 1) {
-                Logger.Warning("Loading more than one map is not implemented, skipping additional maps");
-            }
-
-            DreamMapJson map = maps[0];
-
+        public void LoadAreasAndTurfs(DreamMapJson map) {
             Size = new Vector2i(map.MaxX, map.MaxY);
             SetZLevels(map.MaxZ);
 
@@ -97,7 +90,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void InitializeAtoms(List<DreamMapJson> maps) {
+        public void InitializeAtoms(DreamMapJson map) {
             // Call New() on all /area in this particular order, each with waitfor=FALSE
             var seenAreas = new HashSet<DreamObject>();
             for (var z = 1; z <= Levels; ++z) {
@@ -129,7 +122,6 @@ namespace OpenDreamRuntime {
             }
 
             // new() up /objs and /mobs from compiled-in maps
-            DreamMapJson map = maps[0];
             foreach (MapBlockJson block in map.Blocks) {
                 LoadMapObjectsAndMobs(block, map.CellDefinitions);
             }
@@ -394,8 +386,8 @@ namespace OpenDreamRuntime {
         public int Levels { get; }
 
         public void Initialize();
-        public void LoadAreasAndTurfs(List<DreamMapJson> maps);
-        public void InitializeAtoms(List<DreamMapJson> maps);
+        public void LoadAreasAndTurfs(DreamMapJson map);
+        public void InitializeAtoms(DreamMapJson map);
         public void UpdateTiles();
 
         public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments);

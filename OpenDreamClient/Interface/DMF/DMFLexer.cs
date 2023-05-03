@@ -14,7 +14,7 @@ public sealed class DMFLexer : TextLexer {
     protected override Token ParseNextToken() {
         Token token = base.ParseNextToken();
 
-        if (token == null) {
+        if (token.Type == TokenType.Unknown) {
             char c = GetCurrent();
 
             switch (c) {

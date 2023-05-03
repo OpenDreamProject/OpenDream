@@ -4,6 +4,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {
@@ -42,19 +43,19 @@ namespace DMCompiler.DM {
             expr.EmitPushValue(dmObject, proc);
         }
 
-        public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant constant) {
-            var expr = Create(dmObject, proc, expression, null);
+        public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {
+            var expr = Create(dmObject, proc, expression);
             return expr.TryAsConstant(out constant);
         }
 
         // Attempt to convert this expression into a Constant expression
-        public virtual bool TryAsConstant(out Expressions.Constant constant) {
+        public virtual bool TryAsConstant([NotNullWhen(true)] out Expressions.Constant? constant) {
             constant = null;
             return false;
         }
 
         // Attempt to create a json-serializable version of this expression
-        public virtual bool TryAsJsonRepresentation(out object json) {
+        public virtual bool TryAsJsonRepresentation(out object? json) {
             json = null;
             return false;
         }
@@ -79,25 +80,25 @@ namespace DMCompiler.DM {
     // (a, b, c, ...)
     // This isn't an expression, it's just a helper class for working with argument lists
     class ArgumentList {
-        public (string Name, DMExpression Expr)[] Expressions;
+        public (string? Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
         public Location Location;
 
-        public ArgumentList(Location location, DMObject dmObject, DMProc proc, DMASTCallParameter[] arguments, DreamPath? inferredPath = null) {
+        public ArgumentList(Location location, DMObject dmObject, DMProc proc, DMASTCallParameter[]? arguments, DreamPath? inferredPath = null) {
             Location = location;
             if (arguments == null) {
-                Expressions = new (string, DMExpression)[0];
+                Expressions = new (string?, DMExpression)[0];
                 return;
             }
 
-            Expressions = new (string, DMExpression)[arguments.Length];
+            Expressions = new (string?, DMExpression)[arguments.Length];
 
             int idx = 0;
             foreach(var arg in arguments) {
                 var value = DMExpression.Create(dmObject, proc, arg.Value, inferredPath);
                 var key = (arg.Key != null) ? DMExpression.Create(dmObject, proc, arg.Key, inferredPath) : null;
                 int argIndex = idx++;
-                string name = null;
+                string? name = null;
 
                 switch (key) {
                     case Expressions.String keyStr:
@@ -143,7 +144,7 @@ namespace DMCompiler.DM {
             List<DreamProcOpcodeParameterType> parameterTypes = new List<DreamProcOpcodeParameterType>();
             List<string> parameterNames = new List<string>();
 
-            foreach ((string name, DMExpression expr) in Expressions) {
+            foreach ((string? name, DMExpression expr) in Expressions) {
                 expr.EmitPushValue(dmObject, proc);
 
                 if (name != null) {

@@ -69,7 +69,7 @@ namespace OpenDreamRuntime {
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
-            _dreamMapManager.InitializeAtoms(_compiledJson.Maps);
+            _dreamMapManager.InitializeAtoms(_compiledJson.Maps![0]);
 
             // Call world.New()
             WorldInstance.SpawnProc("New");
@@ -98,6 +98,11 @@ namespace OpenDreamRuntime {
             DreamCompiledJson? json = JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
             if (json == null)
                 return false;
+
+            if (json.Maps == null || json.Maps.Count == 0) throw new ArgumentException("No maps were given");
+            if (json.Maps.Count > 1) {
+                Logger.Warning("Loading more than one map is not implemented, skipping additional maps");
+            }
 
             _compiledJson = json;
             _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
@@ -132,7 +137,7 @@ namespace OpenDreamRuntime {
             Globals[0] = new DreamValue(WorldInstance);
 
             // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
-            _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps);
+            _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps[0]);
 
             return true;
         }

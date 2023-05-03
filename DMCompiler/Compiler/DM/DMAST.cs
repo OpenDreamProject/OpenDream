@@ -130,7 +130,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public abstract class DMASTNode : ASTNode<DMASTVisitor> {
-        public DMASTNode(Location location) {
+        protected DMASTNode(Location location) {
             Location = location;
         }
 
@@ -140,15 +140,15 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public abstract class DMASTStatement : DMASTNode {
-        public DMASTStatement(Location location)
-            : base(location)
-        {}
+        protected DMASTStatement(Location location) : base(location) {
+        }
     }
 
     public abstract class DMASTProcStatement : DMASTNode {
-        public DMASTProcStatement(Location location)
-            : base(location)
-        {}
+        protected DMASTProcStatement(Location location)
+            : base(location) {
+        }
+
         /// <returns>
         /// Returns true if this statement is either T or an aggregation of T (stored by an <see cref="DMASTAggregate{T}"/> instance). False otherwise.
         /// </returns>
@@ -158,9 +158,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public abstract class DMASTExpression : DMASTNode {
-        public DMASTExpression(Location location)
-            : base(location)
-        {}
+        protected DMASTExpression(Location location) : base(location) {
+        }
 
         public virtual IEnumerable<DMASTExpression> Leaves() {
             yield break;
@@ -168,9 +167,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public abstract class DMASTExpressionConstant : DMASTExpression {
-        public DMASTExpressionConstant(Location location)
-            : base(location)
-        {
+        protected DMASTExpressionConstant(Location location) : base(location) {
         }
     }
 
@@ -178,11 +175,9 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTFile : DMASTNode {
-        public DMASTBlockInner BlockInner;
+        public readonly DMASTBlockInner BlockInner;
 
-        public DMASTFile(Location location, DMASTBlockInner blockInner)
-            : base(location)
-        {
+        public DMASTFile(Location location, DMASTBlockInner blockInner) : base(location) {
             BlockInner = blockInner;
         }
 
@@ -192,11 +187,9 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTBlockInner : DMASTNode {
-        public DMASTStatement[] Statements;
+        public readonly DMASTStatement[] Statements;
 
-        public DMASTBlockInner(Location location, DMASTStatement[] statements)
-            : base(location)
-        {
+        public DMASTBlockInner(Location location, DMASTStatement[] statements) : base(location) {
             Statements = statements;
         }
 
@@ -206,38 +199,35 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcBlockInner : DMASTNode {
-        public DMASTProcStatement[] Statements;
+        public readonly DMASTProcStatement[] Statements;
+
         /// <remarks>
         /// SetStatements is held separately because all set statements need to be, to borrow cursed JS terms, "hoisted" to the top of the block, before anything else.<br/>
         /// This isn't SPECIFICALLY a <see cref="DMASTProcStatementSet"/> array because some of these may be DMASTAggregate instances.
         /// </remarks>
-        public DMASTProcStatement[] SetStatements;
+        public readonly DMASTProcStatement[] SetStatements;
 
         /// <summary> Initializes an empty block. </summary>
-        public DMASTProcBlockInner(Location location) : base(location)
-        {
+        public DMASTProcBlockInner(Location location) : base(location) {
             Statements = Array.Empty<DMASTProcStatement>();
             SetStatements = Array.Empty<DMASTProcStatement>();
         }
+
         /// <summary> Initializes a block with only one statement (which may be a <see cref="DMASTProcStatementSet"/> :o) </summary>
-        public DMASTProcBlockInner(Location location, DMASTProcStatement statement) : base(location)
-        {
+        public DMASTProcBlockInner(Location location, DMASTProcStatement statement) : base(location) {
             if (statement.IsAggregateOr<DMASTProcStatementSet>()) { // If this is a Set statement or a set of Set statements
                 Statements = Array.Empty<DMASTProcStatement>();
-                SetStatements = new DMASTProcStatement[] { statement };
+                SetStatements = new[] { statement };
             } else {
-                Statements = new DMASTProcStatement[] { statement };
+                Statements = new[] { statement };
                 SetStatements = Array.Empty<DMASTProcStatement>();
             }
         }
-        public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements, DMASTProcStatement[] setStatements)
-            : base(location)
-        {
+
+        public DMASTProcBlockInner(Location location, DMASTProcStatement[] statements, DMASTProcStatement[]? setStatements)
+            : base(location) {
             Statements = statements;
-            if (setStatements is null)
-                SetStatements = Array.Empty<DMASTProcStatement>();
-            else
-                SetStatements = setStatements;
+            SetStatements = setStatements ?? Array.Empty<DMASTProcStatement>();
         }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -250,10 +240,9 @@ namespace DMCompiler.Compiler.DM {
         /// That includes any inherited pathing from being tabbed into a different, base definition.
         /// </summary>
         public DreamPath Path;
-        public DMASTBlockInner InnerBlock;
+        public readonly DMASTBlockInner? InnerBlock;
 
-        public DMASTObjectDefinition(Location location, DreamPath path, DMASTBlockInner innerBlock) : base(location)
-        {
+        public DMASTObjectDefinition(Location location, DreamPath path, DMASTBlockInner? innerBlock) : base(location) {
             Path = path;
             InnerBlock = innerBlock;
         }
@@ -265,15 +254,14 @@ namespace DMCompiler.Compiler.DM {
 
     /// <remarks> Also includes proc overrides; see the <see cref="IsOverride"/> member. Verbs too.</remarks>
     public class DMASTProcDefinition : DMASTStatement {
-        public DreamPath ObjectPath;
-        public string Name;
-        public bool IsOverride = false;
-        public bool IsVerb = false;
-        public DMASTDefinitionParameter[] Parameters;
-        public DMASTProcBlockInner Body;
+        public readonly DreamPath ObjectPath;
+        public readonly string Name;
+        public readonly bool IsOverride;
+        public readonly bool IsVerb;
+        public readonly DMASTDefinitionParameter[] Parameters;
+        public readonly DMASTProcBlockInner? Body;
 
-        public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner body) : base(location)
-        {
+        public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner? body) : base(location) {
             int procElementIndex = path.FindElement("proc");
 
             if (procElementIndex == -1) {
@@ -300,8 +288,7 @@ namespace DMCompiler.Compiler.DM {
     public class DMASTPath : DMASTNode {
         public DreamPath Path;
 
-        public DMASTPath(Location location, DreamPath path) : base(location)
-        {
+        public DMASTPath(Location location, DreamPath path) : base(location) {
             Path = path;
         }
 
@@ -312,23 +299,24 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTObjectVarDefinition : DMASTStatement {
         /// <summary>The path of the object that we are a property of.</summary>
-        public DreamPath ObjectPath { get => _varDecl.ObjectPath; }
+        public DreamPath ObjectPath => _varDecl.ObjectPath;
+
         /// <summary>The actual type of the variable itself.</summary>
-        public DreamPath? Type { get => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath; }
-        public string Name { get => _varDecl.VarName; }
+        public DreamPath? Type => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath;
+
+        public string Name => _varDecl.VarName;
         public DMASTExpression Value;
 
-        private ObjVarDeclInfo _varDecl;
+        private readonly ObjVarDeclInfo _varDecl;
 
-        public bool IsStatic { get => _varDecl.IsStatic; }
-        public bool IsGlobal { get => _varDecl.IsStatic; }  // TODO: Standardize our phrasing in the codebase. Are we calling these Statics or Globals?
-        public bool IsConst { get => _varDecl.IsConst; }
-        public bool IsTmp { get => _varDecl.IsTmp; }
+        public bool IsStatic => _varDecl.IsStatic;
+        public bool IsGlobal => _varDecl.IsStatic; // TODO: Standardize our phrasing in the codebase. Are we calling these Statics or Globals?
+        public bool IsConst => _varDecl.IsConst;
+        public bool IsTmp => _varDecl.IsTmp;
 
-        public DMValueType ValType;
+        public readonly DMValueType ValType;
 
-        public DMASTObjectVarDefinition(Location location, DreamPath path, DMASTExpression value, DMValueType valType = DMValueType.Anything) : base(location)
-        {
+        public DMASTObjectVarDefinition(Location location, DreamPath path, DMASTExpression value, DMValueType valType = DMValueType.Anything) : base(location) {
             _varDecl = new ObjVarDeclInfo(path);
             Value = value;
             ValType = valType;
@@ -340,7 +328,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTMultipleObjectVarDefinitions : DMASTStatement {
-        public DMASTObjectVarDefinition[] VarDefinitions;
+        public readonly DMASTObjectVarDefinition[] VarDefinitions;
 
         public DMASTMultipleObjectVarDefinitions(Location location, DMASTObjectVarDefinition[] varDefinitions) : base(location) {
             VarDefinitions = varDefinitions;
@@ -352,8 +340,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTObjectVarOverride : DMASTStatement {
-        public DreamPath ObjectPath;
-        public string VarName;
+        public readonly DreamPath ObjectPath;
+        public readonly string VarName;
         public DMASTExpression Value;
 
         public DMASTObjectVarOverride(Location location, DreamPath path, DMASTExpression value) : base(location) {
@@ -380,7 +368,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementVarDeclaration : DMASTProcStatement {
-        public DMASTExpression Value;
+        public DMASTExpression? Value;
 
         public DreamPath? Type => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath;
         public string Name => _varDecl.VarName;
@@ -389,7 +377,7 @@ namespace DMCompiler.Compiler.DM {
 
         private readonly ProcVarDeclInfo _varDecl;
 
-        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression value) : base(location) {
+        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression? value) : base(location) {
             _varDecl = new ProcVarDeclInfo(path.Path);
             Value = value;
         }
@@ -413,15 +401,15 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            foreach (DMASTProcStatement statement in Statements)
+            foreach (T statement in Statements)
                 statement.Visit(visitor);
         }
     }
 
     public class DMASTProcStatementReturn : DMASTProcStatement {
-        public DMASTExpression Value;
+        public DMASTExpression? Value;
 
-        public DMASTProcStatementReturn(Location location, DMASTExpression value) : base(location) {
+        public DMASTProcStatementReturn(Location location, DMASTExpression? value) : base(location) {
             Value = value;
         }
 
@@ -430,33 +418,32 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public class DMASTProcStatementBreak : DMASTProcStatement
-    {
-        public DMASTIdentifier Label;
+    public class DMASTProcStatementBreak : DMASTProcStatement {
+        public readonly DMASTIdentifier? Label;
 
-        public DMASTProcStatementBreak(Location location, DMASTIdentifier label = null) : base(location)
-        {
+        public DMASTProcStatementBreak(Location location, DMASTIdentifier? label = null) : base(location) {
             Label = label;
         }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementBreak(this);
         }
     }
 
     public class DMASTProcStatementContinue : DMASTProcStatement {
-        public DMASTIdentifier Label;
+        public readonly DMASTIdentifier? Label;
 
-        public DMASTProcStatementContinue(Location location, DMASTIdentifier label = null) : base(location)
-        {
+        public DMASTProcStatementContinue(Location location, DMASTIdentifier? label = null) : base(location) {
             Label = label;
         }
+
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementContinue(this);
         }
     }
 
     public class DMASTProcStatementGoto : DMASTProcStatement {
-        public DMASTIdentifier Label;
+        public readonly DMASTIdentifier Label;
 
         public DMASTProcStatementGoto(Location location, DMASTIdentifier label) : base(location) {
             Label = label;
@@ -468,10 +455,10 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementLabel : DMASTProcStatement {
-        public string Name;
-        public DMASTProcBlockInner Body;
+        public readonly string Name;
+        public readonly DMASTProcBlockInner? Body;
 
-        public DMASTProcStatementLabel(Location location, string name, DMASTProcBlockInner body) : base(location) {
+        public DMASTProcStatementLabel(Location location, string name, DMASTProcBlockInner? body) : base(location) {
             Name = name;
             Body = body;
         }
@@ -494,9 +481,9 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementSet : DMASTProcStatement {
-        public string Attribute;
-        public DMASTExpression Value;
-        public bool WasInKeyword; // Marks whether this was a "set x in y" expression, or a "set x = y" one
+        public readonly string Attribute;
+        public readonly DMASTExpression Value;
+        public readonly bool WasInKeyword; // Marks whether this was a "set x in y" expression, or a "set x = y" one
 
         public DMASTProcStatementSet(Location location, string attribute, DMASTExpression value, bool wasInKeyword) : base(location) {
             Attribute = attribute;
@@ -511,7 +498,7 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcStatementSpawn : DMASTProcStatement {
         public DMASTExpression Delay;
-        public DMASTProcBlockInner Body;
+        public readonly DMASTProcBlockInner Body;
 
         public DMASTProcStatementSpawn(Location location, DMASTExpression delay, DMASTProcBlockInner body) : base(location) {
             Delay = delay;
@@ -525,10 +512,10 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcStatementIf : DMASTProcStatement {
         public DMASTExpression Condition;
-        public DMASTProcBlockInner Body;
-        public DMASTProcBlockInner ElseBody;
+        public readonly DMASTProcBlockInner Body;
+        public readonly DMASTProcBlockInner? ElseBody;
 
-        public DMASTProcStatementIf(Location location, DMASTExpression condition, DMASTProcBlockInner body, DMASTProcBlockInner elseBody = null) : base(location) {
+        public DMASTProcStatementIf(Location location, DMASTExpression condition, DMASTProcBlockInner body, DMASTProcBlockInner? elseBody = null) : base(location) {
             Condition = condition;
             Body = body;
             ElseBody = elseBody;
@@ -540,11 +527,11 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementFor : DMASTProcStatement {
-        public DMASTExpression Expression1, Expression2, Expression3;
+        public DMASTExpression? Expression1, Expression2, Expression3;
         public DMValueType? DMTypes;
-        public DMASTProcBlockInner Body;
+        public readonly DMASTProcBlockInner Body;
 
-        public DMASTProcStatementFor(Location location, DMASTExpression expr1, DMASTExpression expr2, DMASTExpression expr3, DMValueType? dmTypes, DMASTProcBlockInner body) : base(location) {
+        public DMASTProcStatementFor(Location location, DMASTExpression? expr1, DMASTExpression? expr2, DMASTExpression? expr3, DMValueType? dmTypes, DMASTProcBlockInner body) : base(location) {
             Expression1 = expr1;
             Expression2 = expr2;
             Expression3 = expr3;
@@ -558,7 +545,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementInfLoop : DMASTProcStatement {
-        public DMASTProcBlockInner Body;
+        public readonly DMASTProcBlockInner Body;
 
         public DMASTProcStatementInfLoop(Location location, DMASTProcBlockInner body) : base(location){
             Body = body;
@@ -571,7 +558,7 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcStatementWhile : DMASTProcStatement {
         public DMASTExpression Conditional;
-        public DMASTProcBlockInner Body;
+        public readonly DMASTProcBlockInner Body;
 
         public DMASTProcStatementWhile(Location location, DMASTExpression conditional, DMASTProcBlockInner body) : base(location) {
             Conditional = conditional;
@@ -585,7 +572,7 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcStatementDoWhile : DMASTProcStatement {
         public DMASTExpression Conditional;
-        public DMASTProcBlockInner Body;
+        public readonly DMASTProcBlockInner Body;
 
         public DMASTProcStatementDoWhile(Location location, DMASTExpression conditional, DMASTProcBlockInner body) : base(location) {
             Conditional = conditional;
@@ -599,7 +586,7 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTProcStatementSwitch : DMASTProcStatement {
         public class SwitchCase {
-            public DMASTProcBlockInner Body;
+            public readonly DMASTProcBlockInner Body;
 
             protected SwitchCase(DMASTProcBlockInner body) {
                 Body = body;
@@ -611,7 +598,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public class SwitchCaseValues : SwitchCase {
-            public DMASTExpression[] Values;
+            public readonly DMASTExpression[] Values;
 
             public SwitchCaseValues(DMASTExpression[] values, DMASTProcBlockInner body) : base(body) {
                 Values = values;
@@ -619,7 +606,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression Value;
-        public SwitchCase[] Cases;
+        public readonly SwitchCase[] Cases;
 
         public DMASTProcStatementSwitch(Location location, DMASTExpression value, SwitchCase[] cases) : base(location) {
             Value = value;
@@ -706,11 +693,11 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcStatementTryCatch : DMASTProcStatement {
-        public DMASTProcBlockInner TryBody;
-        public DMASTProcBlockInner CatchBody;
-        public DMASTProcStatement CatchParameter;
-        public DMASTProcStatementTryCatch(Location location, DMASTProcBlockInner tryBody, DMASTProcBlockInner catchBody, DMASTProcStatement catchParameter) : base(location)
-        {
+        public readonly DMASTProcBlockInner TryBody;
+        public readonly DMASTProcBlockInner? CatchBody;
+        public readonly DMASTProcStatement? CatchParameter;
+
+        public DMASTProcStatementTryCatch(Location location, DMASTProcBlockInner tryBody, DMASTProcBlockInner? catchBody, DMASTProcStatement? catchParameter) : base(location) {
             TryBody = tryBody;
             CatchBody = catchBody;
             CatchParameter = catchParameter;
@@ -734,7 +721,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTIdentifier : DMASTExpression {
-        public string Identifier;
+        public readonly string Identifier;
 
         public DMASTIdentifier(Location location, string identifier) : base(location) {
             Identifier = identifier;
@@ -746,7 +733,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTIdentifierWrapped : DMASTExpression {
-        public DMASTIdentifier Identifier;
+        public readonly DMASTIdentifier Identifier;
 
         public DMASTIdentifierWrapped(Location location, DMASTIdentifier identifier) : base(location) {
             Identifier = identifier;
@@ -758,7 +745,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTGlobalIdentifier : DMASTExpression {
-        public string Identifier;
+        public readonly string Identifier;
 
         public DMASTGlobalIdentifier(Location location, string identifier) : base(location) {
             Identifier = identifier;
@@ -770,7 +757,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTConstantInteger : DMASTExpressionConstant {
-        public int Value;
+        public readonly int Value;
 
         public DMASTConstantInteger(Location location, int value) : base(location) {
             Value = value;
@@ -782,7 +769,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTConstantFloat : DMASTExpressionConstant {
-        public float Value;
+        public readonly float Value;
 
         public DMASTConstantFloat(Location location, float value) : base(location) {
             Value = value;
@@ -794,7 +781,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTConstantString : DMASTExpressionConstant {
-        public string Value;
+        public readonly string Value;
 
         public DMASTConstantString(Location location, string value) : base(location) {
             Value = value;
@@ -806,7 +793,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTConstantResource : DMASTExpressionConstant {
-        public string Path;
+        public readonly string Path;
 
         public DMASTConstantResource(Location location, string path) : base(location) {
             Path = path;
@@ -827,7 +814,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTConstantPath : DMASTExpressionConstant {
-        public DMASTPath Value;
+        public readonly DMASTPath Value;
 
         public DMASTConstantPath(Location location, DMASTPath value) : base(location) {
             Value = value;
@@ -839,8 +826,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTUpwardPathSearch : DMASTExpressionConstant {
-        public DMASTExpressionConstant Path;
-        public DMASTPath Search;
+        public readonly DMASTExpressionConstant Path;
+        public readonly DMASTPath Search;
 
         public DMASTUpwardPathSearch(Location location, DMASTExpressionConstant path, DMASTPath search) : base(location) {
             Path = path;
@@ -866,10 +853,10 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTStringFormat : DMASTExpression {
-        public string Value;
-        public DMASTExpression[] InterpolatedValues;
+        public readonly string Value;
+        public readonly DMASTExpression?[] InterpolatedValues;
 
-        public DMASTStringFormat(Location location, string value, DMASTExpression[] interpolatedValues) : base(location) {
+        public DMASTStringFormat(Location location, string value, DMASTExpression?[] interpolatedValues) : base(location) {
             Value = value;
             InterpolatedValues = interpolatedValues;
         }
@@ -880,7 +867,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTList : DMASTExpression {
-        public DMASTCallParameter[] Values;
+        public readonly DMASTCallParameter[] Values;
 
         public DMASTList(Location location, DMASTCallParameter[] values) : base(location) {
             Values = values;
@@ -892,7 +879,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTAddText : DMASTExpression {
-        public DMASTCallParameter[] Parameters;
+        public readonly DMASTCallParameter[] Parameters;
 
         public DMASTAddText(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
@@ -915,27 +902,24 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public class DMASTNewList : DMASTExpression
-    {
-        public DMASTCallParameter[] Parameters;
+    public class DMASTNewList : DMASTExpression {
+        public readonly DMASTCallParameter[] Parameters;
 
-        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location)
-        {
+        public DMASTNewList(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
         }
 
-        public override void Visit(DMASTVisitor visitor)
-        {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitNewList(this);
         }
     }
 
     public class DMASTInput : DMASTExpression {
-        public DMASTCallParameter[] Parameters;
+        public readonly DMASTCallParameter[] Parameters;
         public DMValueType? Types;
-        public DMASTExpression List;
+        public readonly DMASTExpression? List;
 
-        public DMASTInput(Location location, DMASTCallParameter[] parameters, DMValueType? types, DMASTExpression list) : base(location) {
+        public DMASTInput(Location location, DMASTCallParameter[] parameters, DMValueType? types, DMASTExpression? list) : base(location) {
             Parameters = parameters;
             Types = types;
             List = list;
@@ -947,7 +931,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTInitial : DMASTExpression {
-        public DMASTExpression Expression;
+        public readonly DMASTExpression Expression;
 
         public DMASTInitial(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
@@ -971,7 +955,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTIsSaved : DMASTExpression {
-        public DMASTExpression Expression;
+        public readonly DMASTExpression Expression;
 
         public DMASTIsSaved(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
@@ -983,8 +967,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTIsType : DMASTExpression {
-        public DMASTExpression Value;
-        public DMASTExpression Type;
+        public readonly DMASTExpression Value;
+        public readonly DMASTExpression Type;
 
         public DMASTIsType(Location location, DMASTExpression value, DMASTExpression type) : base(location) {
             Value = value;
@@ -997,7 +981,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTImplicitIsType : DMASTExpression {
-        public DMASTExpression Value;
+        public readonly DMASTExpression Value;
 
         public DMASTImplicitIsType(Location location, DMASTExpression value) : base(location) {
             Value = value;
@@ -1009,7 +993,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTLocateCoordinates : DMASTExpression {
-        public DMASTExpression X, Y, Z;
+        public readonly DMASTExpression X, Y, Z;
 
         public DMASTLocateCoordinates(Location location, DMASTExpression x, DMASTExpression y, DMASTExpression z) : base(location) {
             X = x;
@@ -1023,10 +1007,10 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTLocate : DMASTExpression {
-        public DMASTExpression Expression;
-        public DMASTExpression Container;
+        public readonly DMASTExpression? Expression;
+        public readonly DMASTExpression? Container;
 
-        public DMASTLocate(Location location, DMASTExpression expression, DMASTExpression container) : base(location) {
+        public DMASTLocate(Location location, DMASTExpression? expression, DMASTExpression? container) : base(location) {
             Expression = expression;
             Container = container;
         }
@@ -1038,16 +1022,16 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTPick : DMASTExpression {
         public struct PickValue {
-            public DMASTExpression Weight;
-            public DMASTExpression Value;
+            public readonly DMASTExpression? Weight;
+            public readonly DMASTExpression Value;
 
-            public PickValue(DMASTExpression weight, DMASTExpression value) {
+            public PickValue(DMASTExpression? weight, DMASTExpression value) {
                 Weight = weight;
                 Value = value;
             }
         }
 
-        public PickValue[] Values;
+        public readonly PickValue[] Values;
 
         public DMASTPick(Location location, PickValue[] values) : base(location) {
             Values = values;
@@ -1059,7 +1043,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTCall : DMASTExpression {
-        public DMASTCallParameter[] CallParameters, ProcParameters;
+        public readonly DMASTCallParameter[] CallParameters, ProcParameters;
 
         public DMASTCall(Location location, DMASTCallParameter[] callParameters, DMASTCallParameter[] procParameters) : base(location) {
             CallParameters = callParameters;
@@ -1087,7 +1071,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTVarDeclExpression : DMASTExpression {
-        public DMASTPath DeclPath;
+        public readonly DMASTPath DeclPath;
 
         public DMASTVarDeclExpression(Location location, DMASTPath path) : base(location) {
             DeclPath = path;
@@ -1099,8 +1083,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTNewPath : DMASTExpression {
-        public DMASTPath Path;
-        public DMASTCallParameter[] Parameters;
+        public readonly DMASTPath Path;
+        public readonly DMASTCallParameter[] Parameters;
 
         public DMASTNewPath(Location location, DMASTPath path, DMASTCallParameter[] parameters) : base(location) {
             Path = path;
@@ -1113,8 +1097,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTNewIdentifier : DMASTExpression {
-        public DMASTIdentifier Identifier;
-        public DMASTCallParameter[] Parameters;
+        public readonly DMASTIdentifier Identifier;
+        public readonly DMASTCallParameter[] Parameters;
 
         public DMASTNewIdentifier(Location location, DMASTIdentifier identifier, DMASTCallParameter[] parameters) : base(location) {
             Identifier = identifier;
@@ -1127,8 +1111,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTNewDereference : DMASTExpression {
-        public DMASTDereference Dereference;
-        public DMASTCallParameter[] Parameters;
+        public readonly DMASTDereference Dereference;
+        public readonly DMASTCallParameter[] Parameters;
 
         public DMASTNewDereference(Location location, DMASTDereference dereference, DMASTCallParameter[] parameters) : base(location) {
             Dereference = dereference;
@@ -1141,8 +1125,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTNewListIndex : DMASTExpression {
-            public DMASTListIndex ListIdx;
-            public DMASTCallParameter[] Parameters;
+            public readonly DMASTListIndex ListIdx;
+            public readonly DMASTCallParameter[] Parameters;
 
             public DMASTNewListIndex(Location location, DMASTListIndex listIdx, DMASTCallParameter[] parameters) : base(location) {
                 ListIdx = listIdx;
@@ -1155,7 +1139,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
     public class DMASTNewInferred : DMASTExpression {
-        public DMASTCallParameter[] Parameters;
+        public readonly DMASTCallParameter[] Parameters;
 
         public DMASTNewInferred(Location location, DMASTCallParameter[] parameters) : base(location) {
             Parameters = parameters;
@@ -1224,7 +1208,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTEquivalent : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTEquivalent(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1239,7 +1223,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTNotEquivalent : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTNotEquivalent(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1359,7 +1343,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTModulusModulus : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTModulusModulus(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1419,7 +1403,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTPreIncrement : DMASTExpression {
-        public DMASTExpression Expression;
+        public readonly DMASTExpression Expression;
 
         public DMASTPreIncrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
@@ -1433,7 +1417,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTPreDecrement : DMASTExpression {
-        public DMASTExpression Expression;
+        public readonly DMASTExpression Expression;
 
         public DMASTPreDecrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
@@ -1447,7 +1431,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTPostIncrement : DMASTExpression {
-        public DMASTExpression Expression;
+        public readonly DMASTExpression Expression;
 
         public DMASTPostIncrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
@@ -1461,7 +1445,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTPostDecrement : DMASTExpression {
-        public DMASTExpression Expression;
+        public readonly DMASTExpression Expression;
 
         public DMASTPostDecrement(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;
@@ -1475,7 +1459,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTTernary : DMASTExpression {
-        public DMASTExpression A, B, C;
+        public readonly DMASTExpression A, B, C;
 
         public DMASTTernary(Location location, DMASTExpression a, DMASTExpression b, DMASTExpression c) : base(location) {
             A = a;
@@ -1550,7 +1534,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTLogicalAndAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTLogicalAndAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1564,7 +1548,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTLogicalOrAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTLogicalOrAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1578,7 +1562,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTMultiplyAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTMultiplyAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1592,7 +1576,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTDivideAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTDivideAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1606,7 +1590,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTLeftShiftAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTLeftShiftAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1620,7 +1604,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTRightShiftAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTRightShiftAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1634,7 +1618,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTXorAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTXorAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1648,7 +1632,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTModulusAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTModulusAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1662,7 +1646,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTModulusModulusAssign : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTModulusModulusAssign(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1717,7 +1701,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTBinaryXor : DMASTExpression {
-        public DMASTExpression A, B;
+        public readonly DMASTExpression A, B;
 
         public DMASTBinaryXor(Location location, DMASTExpression a, DMASTExpression b) : base(location) {
             A = a;
@@ -1786,8 +1770,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTExpressionIn : DMASTExpression {
-        public DMASTExpression Value;
-        public DMASTExpression List;
+        public readonly DMASTExpression Value;
+        public readonly DMASTExpression List;
 
         public DMASTExpressionIn(Location location, DMASTExpression value, DMASTExpression list) : base(location) {
             Value = value;
@@ -1805,14 +1789,15 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression Value;
         public DMASTExpression StartRange;
         public DMASTExpression EndRange;
-        public DMASTExpression Step;
+        public readonly DMASTExpression? Step;
 
-        public DMASTExpressionInRange(Location location, DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange, DMASTExpression step = null) : base(location) {
+        public DMASTExpressionInRange(Location location, DMASTExpression value, DMASTExpression startRange, DMASTExpression endRange, DMASTExpression? step = null) : base(location) {
             Value = value;
             StartRange = startRange;
             EndRange = endRange;
             Step = step;
         }
+
         public override IEnumerable<DMASTExpression> Leaves() { yield return Value; yield return StartRange; yield return EndRange; }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -1823,7 +1808,7 @@ namespace DMCompiler.Compiler.DM {
     public class DMASTListIndex : DMASTExpression {
         public DMASTExpression Expression;
         public DMASTExpression Index;
-        public bool Conditional;
+        public readonly bool Conditional;
 
         public DMASTListIndex(Location location, DMASTExpression expression, DMASTExpression index, bool conditional) : base(location) {
             Expression = expression;
@@ -1838,8 +1823,8 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTProcCall : DMASTExpression {
-        public DMASTCallable Callable;
-        public DMASTCallParameter[] Parameters;
+        public readonly DMASTCallable Callable;
+        public readonly DMASTCallParameter[] Parameters;
 
         public DMASTProcCall(Location location, DMASTCallable callable, DMASTCallParameter[] parameters) : base(location) {
             Callable = callable;
@@ -1853,9 +1838,9 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTCallParameter : DMASTNode {
         public DMASTExpression Value;
-        public DMASTExpression Key;
+        public readonly DMASTExpression? Key;
 
-        public DMASTCallParameter(Location location, DMASTExpression value, DMASTExpression key = null) : base(location) {
+        public DMASTCallParameter(Location location, DMASTExpression value, DMASTExpression? key = null) : base(location) {
             Value = value;
             Key = key;
         }
@@ -1866,15 +1851,15 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTDefinitionParameter : DMASTNode {
-        public DreamPath? ObjectType { get => _paramDecl.IsList ? DreamPath.List : _paramDecl.TypePath; }
-        public string Name { get => _paramDecl.VarName; }
-        public DMASTExpression Value;
-        public DMValueType Type;
+        public DreamPath? ObjectType => _paramDecl.IsList ? DreamPath.List : _paramDecl.TypePath;
+        public string Name => _paramDecl.VarName;
+        public DMASTExpression? Value;
+        public readonly DMValueType Type;
         public DMASTExpression PossibleValues;
 
-        private ProcParameterDeclInfo _paramDecl;
+        private readonly ProcParameterDeclInfo _paramDecl;
 
-        public DMASTDefinitionParameter(Location location, DMASTPath astPath, DMASTExpression value, DMValueType type, DMASTExpression possibleValues) : base(location) {
+        public DMASTDefinitionParameter(Location location, DMASTPath astPath, DMASTExpression? value, DMValueType type, DMASTExpression possibleValues) : base(location) {
             _paramDecl = new ProcParameterDeclInfo(astPath.Path);
 
             Value = value;
@@ -1893,10 +1878,10 @@ namespace DMCompiler.Compiler.DM {
             Search,
         }
 
-        public DMASTExpression Expression;
-        public string Property;
+        public readonly DMASTExpression Expression;
+        public readonly string Property;
         public DereferenceType Type;
-        public bool Conditional;
+        public readonly bool Conditional;
 
         public DMASTDereference(Location location, DMASTExpression expression, string property, DereferenceType type, bool conditional) : base(location) {
             Expression = expression;
@@ -1919,7 +1904,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTCallableProcIdentifier : DMASTExpression, DMASTCallable {
-        public string Identifier;
+        public readonly string Identifier;
 
         public DMASTCallableProcIdentifier(Location location, string identifier) : base(location) {
             Identifier = identifier;
@@ -1945,15 +1930,13 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public class DMASTCallableGlobalProc : DMASTExpression, DMASTCallable {
-        public string Identifier;
+        public readonly string Identifier;
 
-        public DMASTCallableGlobalProc(Location location, string identifier) : base(location)
-        {
+        public DMASTCallableGlobalProc(Location location, string identifier) : base(location) {
             Identifier = identifier;
         }
 
-        public override void Visit(DMASTVisitor visitor)
-        {
+        public override void Visit(DMASTVisitor visitor) {
             visitor.VisitCallableGlobalProc(this);
         }
     }

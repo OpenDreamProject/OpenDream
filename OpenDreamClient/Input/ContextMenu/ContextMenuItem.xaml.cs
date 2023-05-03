@@ -14,8 +14,8 @@ namespace OpenDreamClient.Input.ContextMenu {
 
         private readonly IUserInterfaceManager _uiManager;
 
-        [CanBeNull] private readonly MetaDataComponent _entityMetaData;
-        [CanBeNull] private VerbMenuPopup _currentVerbMenu;
+        private readonly MetaDataComponent? _entityMetaData;
+        private VerbMenuPopup? _currentVerbMenu;
 
         public ContextMenuItem(IUserInterfaceManager uiManager, IEntityManager entityManager, EntityUid entity) {
             IoCManager.InjectDependencies(this);

@@ -1,4 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
@@ -393,8 +396,10 @@ namespace OpenDreamRuntime {
 
         public bool IsTruthy() {
             switch (Type) {
-                case DreamValue.DreamValueType.DreamObject:
-                    return _refValue != null && ((DreamObject) _refValue).Deleted == false;
+                case DreamValue.DreamValueType.DreamObject: {
+                    Debug.Assert(_refValue is DreamObject, "Failed to cast a DreamValue's DreamObject");
+                    return _refValue != null && Unsafe.As<DreamObject>(_refValue).Deleted == false;
+                }
                 case DreamValue.DreamValueType.DreamResource:
                 case DreamValue.DreamValueType.DreamType:
                 case DreamValue.DreamValueType.DreamProc:
@@ -405,7 +410,8 @@ namespace OpenDreamRuntime {
                 case DreamValue.DreamValueType.Float:
                     return _floatValue != 0;
                 case DreamValue.DreamValueType.String:
-                    return (string) _refValue != "";
+                    Debug.Assert(_refValue is string, "Failed to cast a DreamValueType.String as a string");
+                    return Unsafe.As<string>(_refValue) != "";
                 default:
                     throw new NotImplementedException($"Truthy evaluation for {this} is not implemented");
             }
@@ -455,9 +461,11 @@ namespace OpenDreamRuntime {
                     return _floatValue == other._floatValue;
                 // Ensure deleted DreamObjects are made null
                 case DreamValueType.DreamObject: {
-                    if ((_refValue as DreamObject)?.Deleted == true)
+                    Debug.Assert(_refValue is DreamObject or null, "Failed to cast _refValue to DreamObject");
+                    Debug.Assert(other._refValue is DreamObject or null, "Failed to cast other._refValue to DreamObject");
+                    if (_refValue != null && Unsafe.As<DreamObject>(_refValue).Deleted)
                         _refValue = null;
-                    if ((other._refValue as DreamObject)?.Deleted == true)
+                    if (other._refValue != null && Unsafe.As<DreamObject>(other._refValue).Deleted)
                         other._refValue = null;
                     break;
                 }

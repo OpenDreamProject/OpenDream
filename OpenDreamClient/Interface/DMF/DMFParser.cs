@@ -203,12 +203,18 @@ public sealed class DMFParser : Parser<char> {
             }
 
             Token attributeValue = Current();
-            if (!Check(TokenType.DMF_Value))
-                Error($"Invalid attribute value ({attributeValue.Text})");
+            string valueText = attributeValue.Text;
+            if (Check(TokenType.DMF_Period)) { // hidden verbs start with a period
+                attributeValue = Current();
+                valueText += attributeValue.Text;
+                if (!Check(TokenType.DMF_Value) && !Check(TokenType.DMF_Attribute))
+                    Error($"Invalid attribute value ({valueText})");
+            } else if (!Check(TokenType.DMF_Value))
+                Error($"Invalid attribute value ({valueText})");
 
             Newline();
             key = attributeToken.Text;
-            token = attributeValue.Text;
+            token = valueText;
             return true;
         }
 

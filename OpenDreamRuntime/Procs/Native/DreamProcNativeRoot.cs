@@ -2035,7 +2035,7 @@ namespace OpenDreamRuntime.Procs.Native {
             b = Math.Clamp(b, 0, 255);
 
             // TODO: There is a difference between passing null and not passing a fourth arg at all
-            // Happens at runtime too 🙃
+            // Likely a compile-time difference
             if (aValue == DreamValue.Null) {
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}");
             } else {

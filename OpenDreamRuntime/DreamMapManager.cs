@@ -142,7 +142,7 @@ namespace OpenDreamRuntime {
                 DreamMetaObjectTurf.TurfContentsLists.Add(cell.Turf, new TurfContentsList(_objectTree.List.ObjectDefinition, _objectTree, cell));
             }
 
-            IconAppearance turfAppearance = _atomManager.CreateAppearanceFromDefinition(cell.Turf.ObjectDefinition);
+            IconAppearance turfAppearance = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);
             SetTurfAppearance(cell.Turf, turfAppearance);
 
             cell.Turf.InitSpawn(creationArguments);

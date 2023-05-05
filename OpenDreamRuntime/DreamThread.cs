@@ -159,7 +159,7 @@ namespace OpenDreamRuntime {
         public virtual void Cancel() {}
 
         public virtual void Dispose() {
-            Thread = null;
+            Thread = null!;
             Result = DreamValue.Null;
             WaitFor = true;
         }
@@ -196,9 +196,9 @@ namespace OpenDreamRuntime {
             Name = name;
         }
 
-        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, DreamProcArguments? arguments) {
+        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
             var context = new DreamThread(proc.ToString());
-            var state = proc.CreateState(context, src, usr, arguments ?? new DreamProcArguments(null));
+            var state = proc.CreateState(context, src, usr, new DreamProcArguments(arguments));
             context.PushProcState(state);
             return context.Resume();
         }

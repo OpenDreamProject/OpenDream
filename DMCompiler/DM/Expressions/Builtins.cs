@@ -34,12 +34,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "invalid use of arglist");
+            DMCompiler.Emit(WarningCode.BadExpression, Location, "invalid use of arglist");
         }
 
         public void EmitPushArglist(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.PushArgumentList();
         }
     }
 
@@ -54,9 +53,10 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+
             _expr.EmitPushValue(dmObject, proc);
-            _arguments.EmitPushArguments(dmObject, proc);
-            proc.CreateObject();
+            proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
     }
 
@@ -77,9 +77,10 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
+            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+
             proc.PushType(typeId);
-            _arguments.EmitPushArguments(dmObject, proc);
-            proc.CreateObject();
+            proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
     }
 
@@ -163,6 +164,22 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // gradient(Gradient, index)
+    // gradient(Item1, Item2, ..., index)
+    class Gradient : DMExpression {
+        private readonly ArgumentList _arguments;
+
+        public Gradient(Location location, ArgumentList arguments) : base(location) {
+            _arguments = arguments;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            var argInfo = _arguments.EmitArguments(dmObject, proc);
+
+            proc.Gradient(argInfo.Type, argInfo.StackSize);
+        }
+    }
+
     // pick(prob(50);x, prob(200);y)
     // pick(50;x, 200;y)
     // pick(x, y)
@@ -208,6 +225,8 @@ namespace DMCompiler.DM.Expressions {
             } else {
                 foreach (PickValue pickValue in _values) {
                     if (pickValue.Value is Arglist args) {
+                        // This will just push a list which pick() accepts
+                        // Really hacky and won't verify that the value is actually a list
                         args.EmitPushArglist(dmObject, proc);
                     } else {
                         pickValue.Value.EmitPushValue(dmObject, proc);
@@ -401,8 +420,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             foreach (DMExpression parameter in _parameters) {
                 parameter.EmitPushValue(dmObject, proc);
-                proc.PushArguments(0);
-                proc.CreateObject();
+                proc.CreateObject(DMCallArgumentsType.None, 0);
             }
 
             proc.CreateList(_parameters.Length);
@@ -473,7 +491,7 @@ namespace DMCompiler.DM.Expressions {
 
     // nameof(x)
     class Nameof : DMExpression {
-        DMExpression _expr;
+        private readonly DMExpression _expr;
 
         public Nameof(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -502,13 +520,11 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_b != null) {
-                _b.EmitPushValue(dmObject, proc);
-            }
+            var argumentInfo = _procArgs.EmitArguments(dmObject, proc);
 
+            _b?.EmitPushValue(dmObject, proc);
             _a.EmitPushValue(dmObject, proc);
-            _procArgs.EmitPushArguments(dmObject, proc);
-            proc.CallStatement();
+            proc.CallStatement(argumentInfo.Type, argumentInfo.StackSize);
         }
     }
 

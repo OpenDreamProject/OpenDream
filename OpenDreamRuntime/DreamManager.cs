@@ -120,7 +120,7 @@ namespace OpenDreamRuntime {
             WorldInstance = _objectTree.CreateObject(_objectTree.World);
 
             // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.
-            WorldInstance.InitSpawn(new DreamProcArguments());
+            WorldInstance.InitSpawn(new());
 
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
                 Globals.Clear();

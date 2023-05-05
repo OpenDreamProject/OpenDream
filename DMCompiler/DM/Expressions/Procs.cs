@@ -123,25 +123,25 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
 
+            DMCallArgumentsType argumentsType;
+            int argumentStackSize;
+            if (_arguments.Length == 0 && _target is ProcSuper) {
+                argumentsType = DMCallArgumentsType.FromProcArguments;
+                argumentStackSize = 0;
+            } else {
+                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc);
+            }
+
             (DMReference procRef, bool conditional) = _target.EmitReference(dmObject, proc);
 
             if (conditional) {
                 var skipLabel = proc.NewLabelName();
+
                 proc.JumpIfNullDereference(procRef, skipLabel);
-                if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
-                } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                }
-                proc.Call(procRef);
+                proc.Call(procRef, argumentsType, argumentStackSize);
                 proc.AddLabel(skipLabel);
             } else {
-                if (_arguments.Length == 0 && _target is ProcSuper) {
-                    proc.PushProcArguments();
-                } else {
-                    _arguments.EmitPushArguments(dmObject, proc);
-                }
-                proc.Call(procRef);
+                proc.Call(procRef, argumentsType, argumentStackSize);
             }
         }
 

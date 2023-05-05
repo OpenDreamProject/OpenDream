@@ -37,11 +37,14 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         /// <returns>A clone of the given matrix.</returns>
         public static DreamObject MatrixClone(IDreamObjectTree ObjectTree, DreamObject matrix) {
             var newMatrix = ObjectTree.CreateObject(matrix.ObjectDefinition.TreeEntry);
-            var args = new List<DreamValue>(6);
+            var args = new DreamValue[6];
+
+            int i = 0;
             foreach(float f in EnumerateMatrix(matrix)) {
-                args.Add(new DreamValue(f));
+                args[i++] = new DreamValue(f);
             }
-            newMatrix.InitSpawn(new Procs.DreamProcArguments(args));
+
+            newMatrix.InitSpawn(new(args));
             return newMatrix;
         }
 

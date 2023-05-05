@@ -107,6 +107,7 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.CallStatement:
             case DreamProcOpcode.CreateObject:
+            case DreamProcOpcode.Gradient:
                 return (opcode, (DMCallArgumentsType)ReadByte(), ReadInt());
 
             case DreamProcOpcode.Call:

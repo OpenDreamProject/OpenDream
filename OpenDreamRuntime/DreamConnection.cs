@@ -219,7 +219,7 @@ namespace OpenDreamRuntime {
                 src = _dreamManager.LocateRef(srcRef);
             }
 
-            Client?.SpawnProc("Topic", Mob, new(pTopic.Query), new(hrefList), src);
+            Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);
         }
 
 

@@ -119,8 +119,10 @@ namespace OpenDreamShared.Dream {
             do {
                 char c = i < coordinate.Length ? coordinate[i] : '\0';
                 i++;
+                if (c is ' ' or '\t')
+                    continue;
 
-                if (c >= '0' && c <= '9' || currentNumber != string.Empty && (c == '.' || c == ':') || (currentNumber == string.Empty || currentNumber.EndsWith(":")) && c is '-' or ' ' or '\t') {
+                if (c >= '0' && c <= '9' || currentNumber != string.Empty && (c == '.' || c == ':') || (currentNumber == string.Empty || currentNumber.EndsWith(":")) && c is '-') {
                     currentNumber += c;
                 } else {
                     if (currentNumber == string.Empty) throw new Exception("Expected a number in screen_loc");
@@ -128,7 +130,7 @@ namespace OpenDreamShared.Dream {
                     string[] numberSplit = currentNumber.Split(":");
                     if (numberSplit.Length > 2) throw new Exception("Invalid number in screen_loc");
 
-                    operations.Add((currentOperation, float.Parse(numberSplit[0].Trim(), CultureInfo.InvariantCulture), numberSplit.Length == 2 ? int.Parse(numberSplit[1].Trim()) : 0));
+                    operations.Add((currentOperation, float.Parse(numberSplit[0], CultureInfo.InvariantCulture), numberSplit.Length == 2 ? int.Parse(numberSplit[1]) : 0));
                     currentOperation = c.ToString();
                     currentNumber = String.Empty;
                 }

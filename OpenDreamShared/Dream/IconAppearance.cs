@@ -4,13 +4,12 @@ using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class IconAppearance : IEquatable<IconAppearance> {
         [ViewVariables] public int? Icon;
-        [ViewVariables] [CanBeNull] public string IconState;
+        [ViewVariables] public string? IconState;
         [ViewVariables] public AtomDirection Direction = AtomDirection.South;
         [ViewVariables] public bool InheritsDirection = true; // Inherits direction when used as an overlay
         [ViewVariables] public Vector2i PixelOffset;
@@ -34,8 +33,8 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
-        [ViewVariables] [CanBeNull] public string RenderSource;
-        [ViewVariables] [CanBeNull] public string RenderTarget;
+        [ViewVariables] public string? RenderSource;
+        [ViewVariables] public string? RenderTarget;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();

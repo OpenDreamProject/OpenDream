@@ -16,6 +16,7 @@ namespace OpenDreamClient.Interface.Prompts
                 IsValid = static str => float.TryParse(str, out float _),
             };
 
+            _numberInput.OnTextEntered += NumberInput_TextEntered;
             SetPromptControl(_numberInput);
         }
 
@@ -25,6 +26,10 @@ namespace OpenDreamClient.Interface.Prompts
             }
 
             FinishPrompt(DMValueType.Num, num);
+        }
+
+        private void NumberInput_TextEntered(LineEdit.LineEditEventArgs obj) {
+            ButtonClicked(DefaultButton);
         }
     }
 }

@@ -14,10 +14,15 @@ sealed class TextPrompt : InputWindow {
             VerticalAlignment = VAlignment.Top
         };
 
+        _textEdit.OnTextEntered += TextEdit_TextEntered;
         SetPromptControl(_textEdit);
     }
 
     protected override void OkButtonClicked() {
         FinishPrompt(DMValueType.Text, _textEdit.Text);
+    }
+
+    private void TextEdit_TextEntered(LineEdit.LineEditEventArgs e) {
+        ButtonClicked(DefaultButton);
     }
 }

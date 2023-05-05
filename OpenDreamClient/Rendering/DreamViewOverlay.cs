@@ -1,5 +1,4 @@
-﻿using JetBrains.Annotations;
-using Robust.Client.Graphics;
+﻿using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
@@ -85,12 +84,9 @@ sealed class DreamViewOverlay : Overlay {
         ClearRenderTarget(_mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
         //Main drawing of sprites happens here
-        try
-        {
+        try {
             DrawAll(args, eye.Value);
-        }
-        catch (Exception e)
-        {
+        } catch (Exception e) {
             Logger.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
 
@@ -375,7 +371,7 @@ sealed class DreamViewOverlay : Overlay {
         //special handling for EFFECTS_LAYER and BACKGROUND_LAYER
         //SO IT TURNS OUT EFFECTS_LAYER IS JUST A LIE *scream
         //and BACKGROUND_LAYER is basically the same behaviour as FLOAT_PLANE
-        if(current.Layer > 20000){
+        if(current.Layer >= 20000){
             current.Layer -= 40000;
             current.IsScreen = false; //BACKGROUND_LAYER renders behind everything on that plane
         }
@@ -614,10 +610,10 @@ sealed class DreamViewOverlay : Overlay {
 
         } else { //Slower path for filtered icons
             //first we do ping pong rendering for the multiple filters
+            // TODO: This should determine the size from the filters and their settings, not just double the original
             IRenderTexture ping = RentRenderTarget(frame.Size * 2);
             IRenderTexture pong = RentRenderTarget(frame.Size * 2);
             IRenderTexture tmpHolder;
-
 
             handle.RenderInRenderTarget(pong,
                 () => {
@@ -722,20 +718,20 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public float Layer; //ditto for layer
     public EntityUid UID;
     public EntityUid ClickUID; //the UID of the object clicks on this should be passed to (ie, for overlays)
-    public Boolean IsScreen;
+    public bool IsScreen;
     public int TieBreaker; //Used for biasing render order (ie, for overlays)
     public Color ColorToApply;
     public ColorMatrix ColorMatrixToApply;
     public float AlphaToApply;
     public Matrix3 TransformToApply;
-    [CanBeNull] public String RenderSource;
-    [CanBeNull] public String RenderTarget;
+    public string? RenderSource;
+    public string? RenderTarget;
     public List<RendererMetaData>? KeepTogetherGroup;
     public AppearanceFlags AppearanceFlags;
     public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
 
-    public RendererMetaData(){
+    public RendererMetaData() {
         Reset();
     }
 

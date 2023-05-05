@@ -3,8 +3,7 @@ using Lidgren.Network;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 
-namespace OpenDreamShared.Network.Messages
-{
+namespace OpenDreamShared.Network.Messages {
     public sealed class MsgSound : NetMessage {
         public enum FormatType : byte {
             Ogg,

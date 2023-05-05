@@ -423,7 +423,7 @@ namespace OpenDreamRuntime.Procs {
         /// <param name="proc">The target proc we're calling. If null, named args or arglist() cannot be used.</param>
         /// <param name="argumentsType">The source of the arguments</param>
         /// <param name="argumentStackSize">The amount of items the arguments have on the stack</param>
-        /// <returns></returns>
+        /// <returns>The arguments in a DreamProcArguments struct</returns>
         public DreamProcArguments PopProcArguments(DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
             switch (argumentsType) {
                 case DMCallArgumentsType.None:

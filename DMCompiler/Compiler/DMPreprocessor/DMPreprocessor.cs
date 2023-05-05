@@ -754,6 +754,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         parameters.Add(currentParameter);
                         currentParameter = new List<Token>();
                         parameterToken = GetNextToken(true);
+                        while(parameterToken.Type == TokenType.Newline) {
+                            currentParameter.Add(new Token(TokenType.DM_Preproc_LineSplice, "", parameterToken.Location, null));
+                            parameterToken = GetNextToken(true);
+                        }
                         continue;
                     case TokenType.DM_Preproc_Punctuator_LeftParenthesis:
                         parenthesisNesting++;

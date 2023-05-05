@@ -2331,6 +2331,9 @@ namespace DMCompiler.Compiler.DM {
                             return new DMASTLocate(identifier.Location, type, container);
                         }
                     }
+                    case "gradient": {
+                        return new DMASTGradient(identifier.Location, callParameters);
+                    }
                     default: return new DMASTProcCall(identifier.Location, new DMASTCallableProcIdentifier(identifier.Location, identifier.Identifier), callParameters);
                 }
             }

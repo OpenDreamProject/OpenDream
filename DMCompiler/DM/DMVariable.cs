@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
@@ -38,7 +39,7 @@ namespace DMCompiler.DM {
             return clone;
         }
 
-        public bool TryAsJsonRepresentation(out object valueJson) {
+        public bool TryAsJsonRepresentation([NotNullWhen(true)] out object? valueJson) {
             return Value.TryAsJsonRepresentation(out valueJson);
         }
     }

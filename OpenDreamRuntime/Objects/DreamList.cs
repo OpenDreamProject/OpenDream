@@ -24,27 +24,32 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Create a new DreamList using an existing list of values (does not copy them)
         /// </summary>
-        protected DreamList(DreamObjectDefinition listDef, List<DreamValue> values) : base(listDef) {
+        private DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
             _values = values;
+            _associativeValues = associativeValues;
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
             if (start == 0) ++start; //start being 0 and start being 1 are equivalent
-            if (end > _values.Count + 1) throw new Exception("list index out of bounds");
-            if (end == 0) end = _values.Count + 1;
 
-            DreamList copy = new(ObjectDefinition, end);
+            var values = GetValues();
+            if (end > values.Count + 1 || start > values.Count + 1) throw new Exception("list index out of bounds");
+            if (end == 0) end = values.Count + 1;
+            if (end <= start)
+                return new(ObjectDefinition, 0);
 
-            for (int i = start; i < end; i++) {
-                DreamValue value = _values[i - 1];
+            List<DreamValue> copyValues = values.GetRange(start - 1, end - start);
 
-                copy._values.Add(value);
-                if (ContainsKey(value)) {
-                    copy.SetValue(value, _associativeValues[value]);
+            Dictionary<DreamValue, DreamValue>? associativeValues = null;
+            if (_associativeValues != null) {
+                associativeValues = new(end - start);
+                foreach (var key in copyValues) {
+                    if (_associativeValues.TryGetValue(key, out var value))
+                        associativeValues[key] = value;
                 }
             }
 
-            return copy;
+            return new(ObjectDefinition, copyValues, associativeValues);
         }
 
         /// <summary>
@@ -161,7 +166,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public DreamList Union(DreamList other) {
-            DreamList newList = new DreamList(ObjectDefinition, _values.Union(other.GetValues()).ToList());
+            DreamList newList = new DreamList(ObjectDefinition, _values.Union(other.GetValues()).ToList(), null);
             foreach ((DreamValue key, DreamValue value) in other.GetAssociativeValues()) {
                 newList.SetValue(key, value);
             }

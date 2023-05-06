@@ -151,7 +151,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 case "transform":
                     // Clone the matrix
                     DreamObject matrix = _objectTree.CreateObject(_objectTree.Matrix);
-                    matrix.InitSpawn(new DreamProcArguments(new() { value }));
+                    matrix.InitSpawn(new(value));
 
                     return new DreamValue(matrix);
                 case "verbs":

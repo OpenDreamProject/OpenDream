@@ -19,14 +19,14 @@ public sealed class MacroSetDescriptor : ElementDescriptor {
     }
 
     public override MacroDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
-        var macro = serializationManager.Read<MacroDescriptor>(attributes);
+        var macro = serializationManager.Read<MacroDescriptor>(attributes, notNullableOverride: true);
 
         _macros.Add(macro);
         return macro;
     }
 
     public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
-        var copy = serializationManager.CreateCopy(this);
+        var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
         copy._name = name;
         return copy;

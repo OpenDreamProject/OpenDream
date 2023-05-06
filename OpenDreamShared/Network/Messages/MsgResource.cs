@@ -1,4 +1,5 @@
-﻿using Lidgren.Network;
+﻿using System;
+using Lidgren.Network;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 
@@ -8,7 +9,7 @@ public sealed class MsgResource : NetMessage {
     public override NetDeliveryMethod DeliveryMethod => NetDeliveryMethod.ReliableUnordered;
 
     public int ResourceId;
-    public byte[] ResourceData;
+    public byte[] ResourceData = Array.Empty<byte>();
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         ResourceId = buffer.ReadInt32();

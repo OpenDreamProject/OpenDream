@@ -40,19 +40,19 @@ public sealed class DMFParser : Parser<char> {
         bool parsing = true;
         while (parsing) {
             try {
-                WindowDescriptor windowDescriptor = Window();
+                WindowDescriptor? windowDescriptor = Window();
                 if (windowDescriptor != null) {
                     windowDescriptors.Add(windowDescriptor);
                     Newline();
                 }
 
-                MacroSetDescriptor macroSet = MacroSet();
+                MacroSetDescriptor? macroSet = MacroSet();
                 if (macroSet != null) {
                     macroSetDescriptors.Add(macroSet);
                     Newline();
                 }
 
-                MenuDescriptor menu = Menu();
+                MenuDescriptor? menu = Menu();
                 if (menu != null) {
                     menuDescriptors.Add(menu);
                     Newline();
@@ -79,7 +79,7 @@ public sealed class DMFParser : Parser<char> {
         return new InterfaceDescriptor(windowDescriptors, macroSetDescriptors, menuDescriptors);
     }
 
-    public WindowDescriptor Window() {
+    public WindowDescriptor? Window() {
         if (Check(TokenType.DMF_Window)) {
             Token windowNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a window name");
@@ -115,7 +115,7 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public MacroSetDescriptor MacroSet() {
+    public MacroSetDescriptor? MacroSet() {
         if (Check(TokenType.DMF_Macro)) {
             Token macroSetNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a macro set name");
@@ -146,7 +146,7 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public MenuDescriptor Menu() {
+    public MenuDescriptor? Menu() {
         if (Check(TokenType.DMF_Menu)) {
             Token menuNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a menu name");
@@ -178,7 +178,7 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public bool TryGetAttribute(out string element, [NotNullWhen(true)] out string key, [NotNullWhen(true)] out string token) {
+    public bool TryGetAttribute(out string? element, [NotNullWhen(true)] out string? key, [NotNullWhen(true)] out string? token) {
         element = null;
         key = null;
         token = null;

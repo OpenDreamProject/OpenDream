@@ -24,7 +24,7 @@ namespace OpenDreamClient.Interface.Controls {
             return _textBox;
         }
 
-        public override void Output(string value, string data) {
+        public override void Output(string value, string? data) {
             var msg = new FormattedMessage(2);
             msg.PushColor(Color.Black);
             msg.AddText(value.Replace("\t", "        "));

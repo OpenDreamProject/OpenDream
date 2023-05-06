@@ -287,7 +287,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         // TODO Move this to an appropriate location
-        static public IEnumerable<DMASTProcStatement> GetStatements(DMASTProcBlockInner block) {
+        public static IEnumerable<DMASTProcStatement> GetStatements(DMASTProcBlockInner block) {
             foreach (var stmt in block.Statements) {
                 yield return stmt;
                 List<DMASTProcBlockInner?> recurse;

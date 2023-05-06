@@ -7,7 +7,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
-    class StringFormat : DMExpression {
+    sealed class StringFormat : DMExpression {
         string Value { get; }
         DMExpression[] Expressions { get; }
 
@@ -26,7 +26,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // arglist(...)
-    class Arglist : DMExpression {
+    sealed class Arglist : DMExpression {
         private readonly DMExpression _expr;
 
         public Arglist(Location location, DMExpression expr) : base(location) {
@@ -43,7 +43,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new x (...)
-    class New : DMExpression {
+    sealed class New : DMExpression {
         private readonly DMExpression _expr;
         private readonly ArgumentList _arguments;
 
@@ -61,7 +61,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    class NewPath : DMExpression {
+    sealed class NewPath : DMExpression {
         private readonly DreamPath _targetPath;
         private readonly ArgumentList _arguments;
 
@@ -85,7 +85,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // locate()
-    class LocateInferred : DMExpression {
+    sealed class LocateInferred : DMExpression {
         private readonly DreamPath _path;
         private readonly DMExpression? _container;
 
@@ -119,7 +119,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // locate(x)
-    class Locate : DMExpression {
+    sealed class Locate : DMExpression {
         private readonly DMExpression _path;
         private readonly DMExpression? _container;
 
@@ -147,7 +147,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // locate(x, y, z)
-    class LocateCoordinates : DMExpression {
+    sealed class LocateCoordinates : DMExpression {
         private readonly DMExpression _x, _y, _z;
 
         public LocateCoordinates(Location location, DMExpression x, DMExpression y, DMExpression z) : base(location) {
@@ -166,7 +166,7 @@ namespace DMCompiler.DM.Expressions {
 
     // gradient(Gradient, index)
     // gradient(Item1, Item2, ..., index)
-    class Gradient : DMExpression {
+    sealed class Gradient : DMExpression {
         private readonly ArgumentList _arguments;
 
         public Gradient(Location location, ArgumentList arguments) : base(location) {
@@ -183,7 +183,7 @@ namespace DMCompiler.DM.Expressions {
     // pick(prob(50);x, prob(200);y)
     // pick(50;x, 200;y)
     // pick(x, y)
-    class Pick : DMExpression {
+    sealed class Pick : DMExpression {
         public struct PickValue {
             public readonly DMExpression? Weight;
             public readonly DMExpression Value;
@@ -240,7 +240,7 @@ namespace DMCompiler.DM.Expressions {
 
     // addtext(...)
     // https://www.byond.com/docs/ref/#/proc/addtext
-    class AddText : DMExpression {
+    sealed class AddText : DMExpression {
         private readonly DMExpression[] _parameters;
 
         public AddText(Location location, DMExpression[] paras) : base(location) {
@@ -260,7 +260,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // prob(P)
-    class Prob : DMExpression {
+    sealed class Prob : DMExpression {
         public readonly DMExpression P;
 
         public Prob(Location location, DMExpression p) : base(location) {
@@ -274,7 +274,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // issaved(x)
-    class IsSaved : DMExpression {
+    sealed class IsSaved : DMExpression {
         private readonly DMExpression _expr;
 
         public IsSaved(Location location, DMExpression expr) : base(location) {
@@ -302,7 +302,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // istype(x, y)
-    class IsType : DMExpression {
+    sealed class IsType : DMExpression {
         private readonly DMExpression _expr;
         private readonly DMExpression _path;
 
@@ -319,7 +319,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // istype(x)
-    class IsTypeInferred : DMExpression {
+    sealed class IsTypeInferred : DMExpression {
         private readonly DMExpression _expr;
         private readonly DreamPath _path;
 
@@ -342,7 +342,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // list(...)
-    class List : DMExpression {
+    sealed class List : DMExpression {
         private readonly (DMExpression? Key, DMExpression Value)[] _values;
         private readonly bool _isAssociative;
 
@@ -410,7 +410,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // newlist(...)
-    class NewList : DMExpression {
+    sealed class NewList : DMExpression {
         private readonly DMExpression[] _parameters;
 
         public NewList(Location location, DMExpression[] parameters) : base(location) {
@@ -434,7 +434,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // input(...)
-    class Input : DMExpression {
+    sealed class Input : DMExpression {
         private readonly DMExpression[] _arguments;
         private readonly DMValueType _types;
         private readonly DMExpression? _list;
@@ -472,7 +472,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // initial(x)
-    class Initial : DMExpression {
+    sealed class Initial : DMExpression {
         private readonly DMExpression _expr;
 
         public Initial(Location location, DMExpression expr) : base(location) {
@@ -490,7 +490,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // nameof(x)
-    class Nameof : DMExpression {
+    sealed class Nameof : DMExpression {
         private readonly DMExpression _expr;
 
         public Nameof(Location location, DMExpression expr) : base(location) {
@@ -503,7 +503,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // call(...)(...)
-    class CallStatement : DMExpression {
+    sealed class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
         private readonly DMExpression? _b; // ProcName, FuncName
         private readonly ArgumentList _procArgs;
@@ -529,7 +529,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // __TYPE__
-    class ProcOwnerType : DMExpression {
+    sealed class ProcOwnerType : DMExpression {
         public ProcOwnerType(Location location)
             : base(location)
         {}
@@ -545,7 +545,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // __PROC__
-    class ProcType : DMExpression {
+    sealed class ProcType : DMExpression {
         public ProcType(Location location)
             : base(location)
         {}

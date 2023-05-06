@@ -2,8 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.Text;
 using OpenDreamShared.Compiler;
+using Robust.Shared.Analyzers;
 
 namespace DMCompiler.Compiler.DMPreprocessor {
+    [Virtual]
     class DMMacro {
         private readonly List<string> _parameters;
         private readonly List<Token> _tokens;

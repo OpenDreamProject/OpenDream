@@ -2,7 +2,7 @@ using DMCompiler.Compiler.DM;
 using System;
 
 namespace DMCompiler.DM.Visitors {
-    public class DMASTSimplifier : DMASTVisitor {
+    public sealed class DMASTSimplifier : DMASTVisitor {
         public void SimplifyAST(DMASTNode ast) {
             ast.Visit(this);
         }

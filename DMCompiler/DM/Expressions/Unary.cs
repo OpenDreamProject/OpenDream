@@ -12,7 +12,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // -x
-    class Negate : UnaryOp {
+    sealed class Negate : UnaryOp {
         public Negate(Location location, DMExpression expr) : base(location, expr) {
         }
 
@@ -30,7 +30,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // !x
-    class Not : UnaryOp {
+    sealed class Not : UnaryOp {
         public Not(Location location, DMExpression expr) : base(location, expr) {
         }
 
@@ -48,7 +48,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // ~x
-    class BinaryNot : UnaryOp {
+    sealed class BinaryNot : UnaryOp {
         public BinaryNot(Location location, DMExpression expr) : base(location, expr) {
         }
 
@@ -87,7 +87,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // ++x
-    class PreIncrement : AssignmentUnaryOp {
+    sealed class PreIncrement : AssignmentUnaryOp {
         public PreIncrement(Location location, DMExpression expr) : base(location, expr) {
         }
 
@@ -98,7 +98,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x++
-    class PostIncrement : AssignmentUnaryOp {
+    sealed class PostIncrement : AssignmentUnaryOp {
         public PostIncrement(Location location, DMExpression expr) : base(location, expr) {
         }
 
@@ -108,7 +108,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // --x
-    class PreDecrement : AssignmentUnaryOp {
+    sealed class PreDecrement : AssignmentUnaryOp {
         public PreDecrement(Location location, DMExpression expr)
             : base(location, expr) {
         }
@@ -120,7 +120,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x--
-    class PostDecrement : AssignmentUnaryOp {
+    sealed class PostDecrement : AssignmentUnaryOp {
         public PostDecrement(Location location, DMExpression expr)
             : base(location, expr) {
         }

@@ -16,6 +16,8 @@
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
   </ItemGroup>
 
+  <Import Project="..\RobustToolbox\MSBuild\Robust.Analyzers.targets" />
+
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
     <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>

@@ -6,9 +6,11 @@ using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using DereferenceType = DMCompiler.Compiler.DM.DMASTDereference.DereferenceType;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Analyzers;
 using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
+    [Virtual]
     public partial class DMParser : Parser<Token> {
 
         private DreamPath _currentPath = DreamPath.Root;

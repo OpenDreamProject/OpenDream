@@ -8,7 +8,7 @@ using OpenDreamShared.Dream.Procs;
 using System.Diagnostics;
 
 namespace DMCompiler.DM.Visitors {
-    class DMProcBuilder {
+    sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 

@@ -75,7 +75,7 @@ namespace DMCompiler.DM.Expressions {
         public Local(Location location, DMProc.LocalVariable localVar)
             : base(location, localVar.Type) {
             LocalVar = localVar;
-            ValType = DMValueType.Anything; // TODO: Var static typing
+            ValType = LocalVar.ValType; // TODO: Var static typing
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
@@ -146,9 +146,10 @@ namespace DMCompiler.DM.Expressions {
     class GlobalField : LValue {
         int Id { get; }
 
-        public GlobalField(Location location, DreamPath? path, int id)
+        public GlobalField(Location location, DreamPath? path, int id, DMValueType valType)
             : base(location, path) {
             Id = id;
+            ValType = valType;
         }
 
         public void EmitPushIsSaved(DMProc proc) {

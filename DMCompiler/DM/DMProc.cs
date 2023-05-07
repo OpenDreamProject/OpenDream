@@ -15,19 +15,22 @@ namespace DMCompiler.DM {
             public readonly int Id;
             public readonly bool IsParameter;
             public DreamPath? Type;
+            public DMValueType ValType;
 
-            public LocalVariable(int id, bool isParameter, DreamPath? type) {
+            public LocalVariable(int id, bool isParameter, DreamPath? type, DMValueType valType) {
                 Id = id;
                 IsParameter = isParameter;
                 Type = type;
+                ValType = valType;
             }
         }
 
         public class LocalConstVariable : LocalVariable {
             public readonly Expressions.Constant Value;
 
-            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
+            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type, value.ValType) {
                 Value = value;
+                ValType = Value.ValType;
             }
         }
 
@@ -124,7 +127,7 @@ namespace DMCompiler.DM {
             if (type == DMValueType.Anything)
             {
                 //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub."));
-                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub.");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub.");
             }
             else if ((ReturnTypes & type) == 0)
             {
@@ -137,7 +140,7 @@ namespace DMCompiler.DM {
                     //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {type}, expected {ReturnTypes}"));
                 }*/
 
-                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{Name}(): Invalid return type {type}, expected {ReturnTypes}");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }
 
@@ -228,7 +231,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
-                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type));
+                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type, DMValueType.Anything)); // TODO: Param static typing
             }
         }
 
@@ -255,12 +258,12 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public bool TryAddLocalVariable(string name, DreamPath? type) {
+        public bool TryAddLocalVariable(string name, DreamPath? type, DMValueType valType) {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type, valType));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {

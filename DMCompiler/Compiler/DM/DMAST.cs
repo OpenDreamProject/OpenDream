@@ -261,8 +261,9 @@ namespace DMCompiler.Compiler.DM {
         public readonly bool IsVerb;
         public readonly DMASTDefinitionParameter[] Parameters;
         public readonly DMASTProcBlockInner? Body;
+        public DMValueType ReturnTypes;
 
-        public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner? body) : base(location) {
+        public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner? body, DMValueType returnType) : base(location) {
             int procElementIndex = path.FindElement("proc");
 
             if (procElementIndex == -1) {
@@ -278,6 +279,7 @@ namespace DMCompiler.Compiler.DM {
             Name = path.LastElement;
             Parameters = parameters;
             Body = body;
+            ReturnTypes = returnType;
         }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -372,15 +374,17 @@ namespace DMCompiler.Compiler.DM {
         public DMASTExpression? Value;
 
         public DreamPath? Type => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath;
+        public DMValueType ValType = DMValueType.Anything;
         public string Name => _varDecl.VarName;
         public bool IsGlobal => _varDecl.IsStatic;
         public bool IsConst => _varDecl.IsConst;
 
         private readonly ProcVarDeclInfo _varDecl;
 
-        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression? value) : base(location) {
+        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression? value, DMValueType valType) : base(location) {
             _varDecl = new ProcVarDeclInfo(path.Path);
             Value = value;
+            ValType = valType;
         }
 
         public override void Visit(DMASTVisitor visitor) {

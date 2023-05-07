@@ -192,6 +192,16 @@ namespace DMCompiler.Compiler.DM {
                     ConsumeRightParenthesis();
                     Whitespace();
 
+                    // Proc return type
+                    var types = DMValueType.Anything;
+                    var setsType = false;
+                    if (Current().Type == TokenType.DM_As)
+                    {
+                        types = AsTypes()!.Value;
+                        setsType = true;
+                    }
+                    Whitespace();
+
                     DMASTProcBlockInner? procBlock = ProcBlock();
                     if (procBlock is null) {
                         DMASTProcStatement? procStatement = ProcStatement();
@@ -201,7 +211,11 @@ namespace DMCompiler.Compiler.DM {
                         }
                     }
 
-                    statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
+                    statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock, types);
+                    if (setsType && statement is DMASTProcDefinition proc && proc.IsOverride)
+                    {
+                        Error("Cannot set return type on a proc override");
+                    }
                 }
 
                 //Object definition
@@ -726,9 +740,9 @@ namespace DMCompiler.Compiler.DM {
                     if (value == null) Error("Expected an expression");
                 }
 
-                AsTypes();
+                var valType = AsTypes() ?? DMValueType.Anything;
 
-                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value));
+                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
                     Whitespace();
                     varPath = Path();

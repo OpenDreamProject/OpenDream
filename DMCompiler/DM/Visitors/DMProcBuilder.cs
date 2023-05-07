@@ -335,7 +335,7 @@ namespace DMCompiler.DM.Visitors {
 
                 successful = _proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
-                successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type);
+                successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType);
             }
 
             if (!successful) {
@@ -350,7 +350,16 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
-                DMExpression.Emit(_dmObject, _proc, statement.Value);
+                var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
+                if (_proc.ReturnTypes != DMValueType.Anything && expr.Path == DreamPath.List)
+                {
+                    //Program.Error(new CompilerError(null, $"{_proc.Path}.{_proc.Name}(): Invalid return type List, expected {_proc.ReturnTypes}"));
+                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{_proc.Name}(): Invalid return type List, expected {_proc.ReturnTypes}");
+                }
+                else
+                {
+                    _proc.ValidateReturnType(expr.ValType);
+                }
             } else {
                 _proc.PushReferenceValue(DMReference.Self); //Default return value
             }
@@ -392,7 +401,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.StartScope();
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
-                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null));
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
                 }
 
                 var initializer = statementFor.Expression1 != null ? DMExpression.Create(_dmObject, _proc, statementFor.Expression1) : null;
@@ -854,7 +863,7 @@ namespace DMCompiler.DM.Visitors {
             if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
 
-                if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
+                if (!_proc.TryAddLocalVariable(param.Name, param.Type, param.ValType)) {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
 

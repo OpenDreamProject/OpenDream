@@ -44,10 +44,12 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitConstantResource(DMASTConstantResource constant) {
             Result = new Expressions.Resource(constant.Location, constant.Path);
+            //TODO result type
         }
 
         public void VisitConstantPath(DMASTConstantPath constant) {
             Result = new Expressions.Path(constant.Location, _dmObject, constant.Value.Path);
+            //TODO result type
         }
 
         public void VisitUpwardPathSearch(DMASTUpwardPathSearch constant) {
@@ -87,6 +89,7 @@ namespace DMCompiler.DM.Visitors {
             {
                 case "src":
                     Result = new Expressions.Src(identifier.Location, _dmObject.Path);
+                    Result.ValType = Result.ValType == DMValueType.Anything ? GetATOMType(_dmObject.Path) : Result.ValType;
                     break;
                 case "usr":
                     Result = new Expressions.Usr(identifier.Location);
@@ -109,26 +112,55 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     int? procGlobalId = _proc?.GetGlobalVariableId(name);
-                    if (procGlobalId != null)
-                    {
-                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
+                    if (procGlobalId != null) {
+                        var global = DMObjectTree.Globals[procGlobalId.Value];
+                        Result = new Expressions.GlobalField(identifier.Location, global.Type, procGlobalId.Value, global.ValType);
                         return;
                     }
 
                     var field = _dmObject?.GetVariable(name);
                     if (field != null && _scopeMode == "normal") {
                         Result = new Expressions.Field(identifier.Location, field);
+                        Result.ValType = field.Value.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.Value.ValType;
                         return;
                     }
 
                     int? globalId = _dmObject?.GetGlobalVariableId(name);
                     if (globalId != null) {
-                        Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                        var global = DMObjectTree.Globals[globalId.Value];
+                        Result = new Expressions.GlobalField(identifier.Location, global.Type, globalId.Value, global.ValType);
                         return;
                     }
 
                     throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
                 }
+            }
+
+            DMValueType GetATOMType(DreamPath? type)
+            {
+                if (type is null)
+                {
+                    return DMValueType.Anything;
+                }
+                var dmType = DMObjectTree.GetDMObject(type.Value, false);
+                if (dmType.IsSubtypeOf(DreamPath.Obj))
+                {
+                    return DMValueType.Obj;
+                }
+                if (dmType.IsSubtypeOf(DreamPath.Mob))
+                {
+                    return DMValueType.Mob;
+                }
+                if (dmType.IsSubtypeOf(DreamPath.Turf))
+                {
+                    return DMValueType.Turf;
+                }
+                if (dmType.IsSubtypeOf(DreamPath.Area))
+                {
+                    return DMValueType.Area;
+                }
+
+                return DMValueType.Anything;
             }
         }
 
@@ -145,7 +177,8 @@ namespace DMCompiler.DM.Visitors {
 
             int? globalId = _dmObject?.GetGlobalVariableId(name);
             if (globalId != null) {
-                Result = new Expressions.GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                var global = DMObjectTree.Globals[globalId.Value];
+                Result = new Expressions.GlobalField(globalIdentifier.Location, global.Type, globalId.Value, global.ValType);
                 return;
             } else if (name == "vars")
             {
@@ -162,6 +195,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitCallableSuper(DMASTCallableSuper super) {
             Result = new Expressions.ProcSuper(super.Location);
+            Result.ValType = _proc.ReturnTypes;
         }
 
         public void VisitCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier) {
@@ -475,7 +509,7 @@ namespace DMCompiler.DM.Visitors {
                     var globalId = dmObject.GetGlobalVariableId(dereference.Property);
                     if (globalId != null) {
                         property = DMObjectTree.Globals[globalId.Value];
-                        Result = new Expressions.GlobalField(dereference.Location, property.Type, globalId.Value);
+                        Result = new Expressions.GlobalField(dereference.Location, property.Type, globalId.Value, property.ValType);
                     }
                 }
 

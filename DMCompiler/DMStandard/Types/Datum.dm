@@ -4,7 +4,7 @@
 
 	var/list/vars
 
-	var/tag
+	var/tag as text|null
 
 	proc/New()
 

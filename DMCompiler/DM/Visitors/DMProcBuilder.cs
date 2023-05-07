@@ -318,6 +318,9 @@ namespace DMCompiler.DM.Visitors {
             if (varDeclaration.Value != null) {
                 try {
                     value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
+                    if (varDeclaration.ValType != DMValueType.Anything && !varDeclaration.ValType.HasFlag(value.ValType)) {
+                        DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
+                    }
                 } catch (CompileErrorException e) {
                     DMCompiler.Emit(e.Error);
                     value = new Expressions.Null(varDeclaration.Location);
@@ -353,7 +356,6 @@ namespace DMCompiler.DM.Visitors {
                 var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
                 if (_proc.ReturnTypes != DMValueType.Anything && expr.Path == DreamPath.List)
                 {
-                    //Program.Error(new CompilerError(null, $"{_proc.Path}.{_proc.Name}(): Invalid return type List, expected {_proc.ReturnTypes}"));
                     DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{_proc.Name}(): Invalid return type List, expected {_proc.ReturnTypes}");
                 }
                 else

@@ -8,14 +8,14 @@
 	var/statpanel
 	var/default_verb_category = "Commands"
 
-	var/tag
+	var/tag as text|null
 	var/type = /client
 
 	var/mob/mob
 	var/atom/eye
 	var/lazy_eye = 0 as opendream_unimplemented
-	var/perspective = MOB_PERSPECTIVE
-	var/view
+	var/perspective = MOB_PERSPECTIVE as num
+	var/view = 5 as num|text // This should actually default to world.view which is 5 by default, but /shrug
 	var/pixel_x = 0 as opendream_unimplemented
 	var/pixel_y = 0 as opendream_unimplemented
 	var/pixel_z = 0 as opendream_unimplemented
@@ -26,12 +26,12 @@
 	var/byond_version = DM_VERSION
 	var/byond_build = DM_BUILD
 
-	var/address
+	var/address = "" as text|null
 	var/inactivity = 0 as opendream_unimplemented
-	var/key
-	var/ckey
-	var/connection
-	var/computer_id = 0
+	var/key = "" as text
+	var/ckey = "" as text
+	var/connection = "" as text
+	var/computer_id = "0" as text
 	var/tick_lag = 0 as opendream_unimplemented
 
 	var/timezone

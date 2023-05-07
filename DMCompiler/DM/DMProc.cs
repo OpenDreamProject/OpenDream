@@ -126,20 +126,10 @@ namespace DMCompiler.DM {
 
             if (type == DMValueType.Anything)
             {
-                //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub."));
                 DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub.");
             }
             else if ((ReturnTypes & type) == 0)
             {
-                /*if (type.Equals(DMValueType.Unsafe))
-                {
-                    //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type of a local var, add 'unsafe' to the proc return types"));
-                }
-                else
-                {
-                    //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {type}, expected {ReturnTypes}"));
-                }*/
-
                 DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }

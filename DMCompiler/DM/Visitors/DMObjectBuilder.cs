@@ -380,7 +380,7 @@ namespace DMCompiler.DM.Visitors {
             {
                 DMCompiler.Emit(WarningCode.WriteToConstant, value.Location, $"Var {variable.Name} is a native read-only value which cannot be modified");
             }
-            SetVariableValue(currentObject, ref variable, value);
+            SetVariableValue(currentObject, ref variable, value, true);
         }
 
         /// <summary>
@@ -388,10 +388,15 @@ namespace DMCompiler.DM.Visitors {
         /// </summary>
         /// <param name="variable">This parameter may be modified if a new variable had to be instantiated in the case of an override.</param>
         /// <exception cref="CompileErrorException"></exception>
-        private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value) {
+        private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value, bool isOverride = false) {
             DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
             DMVisitorExpression._scopeMode = "normal";
+
+            // TODO Clean this up?
+            if (variable.ValType != DMValueType.Anything && variable.ValType != DMValueType.Unimplemented && variable.ValType != DMValueType.CompiletimeReadonly && !variable.ValType.HasFlag(expression.ValType)) {
+                DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type {expression.ValType}, expected {variable.ValType}");
+            }
 
             if (expression.TryAsConstant(out var constant)) {
                 variable = variable.WriteToValue(constant);

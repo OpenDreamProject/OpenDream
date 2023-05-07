@@ -140,6 +140,10 @@ namespace DMCompiler.DM.Expressions {
             constant = null;
             return false;
         }
+
+        public override string ToString() {
+            return Variable.Name;
+        }
     }
 
     // Id of global field

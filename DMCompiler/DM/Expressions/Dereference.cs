@@ -120,6 +120,19 @@ namespace DMCompiler.DM.Expressions {
             var procId = dmObject.GetProcs(_field)?[^1];
             return (dmObject, procId is null ? null : DMObjectTree.AllProcs[procId.Value]);
         }
+
+        public DMValueType GetReturnType()
+        {
+            if (_expr.Path == null)
+            {
+                return DMValueType.Anything;
+            }
+
+            DMObject? dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);
+            var type = dmObject?.GetReturnType(_field) ?? DMValueType.Anything;
+
+            return type;
+        }
     }
 
     // x[y]

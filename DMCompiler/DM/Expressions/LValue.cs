@@ -48,8 +48,9 @@ namespace DMCompiler.DM.Expressions {
     // usr
     class Usr : LValue {
         public Usr(Location location)
-            : base(location, DreamPath.Mob)
-        {}
+            : base(location, DreamPath.Mob) {
+            ValType = DMValueType.Mob; //According to the docs, Usr is a mob
+        }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
             return (DMReference.Usr, false);
@@ -74,6 +75,7 @@ namespace DMCompiler.DM.Expressions {
         public Local(Location location, DMProc.LocalVariable localVar)
             : base(location, localVar.Type) {
             LocalVar = localVar;
+            ValType = DMValueType.Anything; // TODO: Var static typing
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {

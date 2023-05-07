@@ -50,6 +50,7 @@ namespace DMCompiler.DM {
         public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
+        public DMValueType ReturnTypes;
 
         public string? VerbName;
         public string? VerbCategory = string.Empty;
@@ -88,6 +89,7 @@ namespace DMCompiler.DM {
             Id = id;
             _dmObject = dmObject;
             _astDefinition = astDefinition;
+            ReturnTypes |= _astDefinition?.ReturnTypes ?? DMValueType.Anything;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
@@ -103,6 +105,39 @@ namespace DMCompiler.DM {
                 }
 
                 new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
+            }
+        }
+
+        public void ValidateReturnType(DMValueType type)
+        {
+            if (ReturnTypes == DMValueType.Anything)
+            {
+                return;
+            }
+
+            if ((ReturnTypes & DMValueType.Color) != 0 || (ReturnTypes & DMValueType.File) != 0 || (ReturnTypes & DMValueType.Message) != 0)
+            {
+                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "Color, Message, and File return types are currently unsupported.");
+                return;
+            }
+
+            if (type == DMValueType.Anything)
+            {
+                //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub."));
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub.");
+            }
+            else if ((ReturnTypes & type) == 0)
+            {
+                /*if (type.Equals(DMValueType.Unsafe))
+                {
+                    //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Cannot determine return type of a local var, add 'unsafe' to the proc return types"));
+                }
+                else
+                {
+                    //Program.Error(new CompilerError(null, $"{Path}.{Name}(): Invalid return type {type}, expected {ReturnTypes}"));
+                }*/
+
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }
 

@@ -219,6 +219,8 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        // TODO: Stopped at DMObjectBuilder.cs
+
         private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject currentObject) {
             string procName = procDefinition.Name;
             try {

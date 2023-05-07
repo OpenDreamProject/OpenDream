@@ -28,6 +28,8 @@ namespace DMCompiler.DM {
 
         public Location Location;
 
+        public DMValueType ValType = DMValueType.Anything;
+
         protected DMExpression(Location location) {
             Location = location;
         }
@@ -38,9 +40,10 @@ namespace DMCompiler.DM {
             return instance.Result;
         }
 
-        public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+        public static DMExpression Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             var expr = Create(dmObject, proc, expression, inferredPath);
             expr.EmitPushValue(dmObject, proc);
+            return expr;
         }
 
         public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {

@@ -4,6 +4,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -100,7 +101,9 @@ namespace DMCompiler.DM.Expressions {
 
     // null
     class Null : Constant {
-        public Null(Location location) : base(location) { }
+        public Null(Location location) : base(location) {
+            ValType = DMValueType.Null;
+        }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
@@ -148,10 +151,12 @@ namespace DMCompiler.DM.Expressions {
 
         public Number(Location location, int value) : base(location) {
             Value = value;
+            ValType = DMValueType.Num;
         }
 
         public Number(Location location, float value) : base(location) {
             Value = value;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -322,6 +327,7 @@ namespace DMCompiler.DM.Expressions {
 
         public String(Location location, string value) : base(location) {
             Value = value;
+            ValType = DMValueType.Text;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

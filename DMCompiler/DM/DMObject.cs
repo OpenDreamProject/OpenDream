@@ -198,6 +198,12 @@ namespace DMCompiler.DM {
             return (id == null) ? null : DMObjectTree.Globals[id.Value];
         }
 
+        public DMValueType GetReturnType(string name)
+        {
+            var procId = GetProcs(name)?[^1];
+            return procId is null ? DMValueType.Anything : DMObjectTree.AllProcs[procId.Value].ReturnTypes;
+        }
+
         public void CreateInitializationProc() {
             if (InitializationProcExpressions.Count > 0 && InitializationProc == null) {
                 var init = DMObjectTree.CreateDMProc(this, null);

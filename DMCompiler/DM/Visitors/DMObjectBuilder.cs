@@ -242,8 +242,27 @@ namespace DMCompiler.DM.Visitors {
                     is to mark that this type should be the first one in its inheritence to have that proc defined.
                     Nothing else.
                 */
-                if (procDefinition.IsOverride && !hasProc) // If an override for this proc was found before its definition
-                    AwaitedProcDefinitions.TryAdd(procName, dmObject); // Remember to check that we eventually found a definition, later :)
+                if (procDefinition.IsOverride) {
+                    if (!hasProc) { // If an override for this proc was found before its definition
+                        // TODO: Awaited proc definitions don't enforce proc static typing
+                        AwaitedProcDefinitions.TryAdd(procName, dmObject); // Remember to check that we eventually found a definition, later :)
+                    } else {
+                        var procId = dmObject.GetProcs(procName)?[^1];
+                        var parentProc = procId is null ? null : DMObjectTree.AllProcs[procId.Value];
+                        if (parentProc is not null)
+                        {
+                            if (procDefinition.ReturnTypes == DMValueType.Anything)
+                            {
+                                procDefinition.ReturnTypes = parentProc.ReturnTypes;
+                            }
+                            if (parentProc.ReturnTypes != procDefinition.ReturnTypes)
+                            {
+                                // TODO: Make this a unique pragma?
+                                DMCompiler.Emit(WarningCode.InvalidReturnType, procDefinition.Location, $"{procDefinition.ObjectPath}.{procName}() cannot override return type {parentProc.ReturnTypes} of parent proc {parentProc.Name}()");
+                            }
+                        };
+                    }
+                }
 
                 DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
 

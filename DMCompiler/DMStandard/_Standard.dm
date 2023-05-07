@@ -3,123 +3,123 @@
 /var/world/world = null
 
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
-proc/abs(A)
-proc/addtext(...)
-proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3)
-proc/animate(Object, time, loop, easing, flags)
-proc/arccos(X)
-proc/arcsin(X)
-proc/arctan(A)
-proc/ascii2text(N)
+proc/abs(A) as num
+proc/addtext(...) as text
+proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
+proc/animate(Object, time, loop, easing, flags) as null
+proc/arccos(X) as num
+proc/arcsin(X) as num
+proc/arctan(A) as num
+proc/ascii2text(N) as text
 proc/block(var/atom/Start, var/atom/End)
-proc/ceil(A)
-proc/ckey(Key)
-proc/ckeyEx(Text)
-proc/clamp(Value, Low, High)
-proc/cmptext(T1)
-proc/copytext(T, Start = 1, End = 0)
-proc/copytext_char(T,Start=1,End=0)
-proc/cos(X)
-proc/CRASH(msg)
-proc/fcopy(Src, Dst)
+proc/ceil(A) as num
+proc/ckey(Key) as text
+proc/ckeyEx(Text) as text
+proc/clamp(Value, Low, High) as num
+proc/cmptext(T1) as num
+proc/copytext(T, Start = 1, End = 0) as text
+proc/copytext_char(T,Start=1,End=0) as text
+proc/cos(X) as num
+proc/CRASH(msg) as null
+proc/fcopy(Src, Dst) as num
 proc/fcopy_rsc(File)
-proc/fdel(File)
-proc/fexists(File)
+proc/fdel(File) as num
+proc/fexists(File) as num
 proc/file(Path)
-proc/file2text(File)
+proc/file2text(File) as text
 proc/filter(type, ...)
-proc/findtext(Haystack, Needle, Start = 1, End = 0)
-proc/findtextEx(Haystack, Needle, Start = 1, End = 0)
-proc/findlasttext(Haystack, Needle, Start = 1, End = 0)
-proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0)
-proc/flick(Icon, Object)
+proc/findtext(Haystack, Needle, Start = 1, End = 0) as num
+proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num
+proc/findlasttext(Haystack, Needle, Start = 1, End = 0) as num
+proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0) as num
+proc/flick(Icon, Object) as null
 proc/flist(Path)
-proc/floor(A)
-proc/fract(n)
+proc/floor(A) as num
+proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0)
-proc/get_dir(atom/Loc1, atom/Loc2)
-proc/get_step(atom/Ref, Dir)
+proc/get_dir(atom/Loc1, atom/Loc2) as num
+proc/get_step(atom/Ref, Dir) as turf
 proc/gradient(A, index)
-proc/hascall(Object, ProcName)
-proc/html_decode(HtmlText)
-proc/html_encode(PlainText)
+proc/hascall(Object, ProcName) as num
+proc/html_decode(HtmlText) as text
+proc/html_encode(PlainText) as text
 proc/icon_states(Icon, mode = 0)
 proc/image(icon, loc, icon_state, layer, dir, pixel_x, pixel_y)
 proc/isarea(Loc1)
-proc/isfile(File)
-proc/isicon(Icon)
-proc/isinf(n)
-proc/islist(Object)
-proc/isloc(Loc1)
-proc/ismob(Loc1)
-proc/ismovable(Loc1)
-proc/isnan(n)
-proc/isnull(Val)
-proc/isnum(Val)
-proc/ispath(Val, Type)
-proc/istext(Val)
-proc/isturf(Loc1)
-proc/json_decode(JSON)
-proc/json_encode(Value)
-proc/length(E)
-proc/length_char(E)
-proc/list2params(List)
-proc/log(X, Y)
-proc/lowertext(T)
-proc/max(A)
-proc/md5(T)
-proc/min(A)
-proc/nonspantext(Haystack, Needles, Start = 1)
-proc/num2text(N, Digits, Radix)
+proc/isfile(File) as num
+proc/isicon(Icon) as num
+proc/isinf(n) as num
+proc/islist(Object) as num
+proc/isloc(Loc1) as num
+proc/ismob(Loc1) as num
+proc/ismovable(Loc1) as num
+proc/isnan(n) as num
+proc/isnull(Val) as num
+proc/isnum(Val) as num
+proc/ispath(Val, Type) as num
+proc/istext(Val) as num
+proc/isturf(Loc1) as num
+proc/json_decode(JSON) as text
+proc/json_encode(Value) as text
+proc/length(E) as num
+proc/length_char(E) as num
+proc/list2params(List) as text
+proc/log(X, Y) as num
+proc/lowertext(T) as text
+proc/max(A) as num
+proc/md5(T) as text
+proc/min(A) as num
+proc/nonspantext(Haystack, Needles, Start = 1) as text
+proc/num2text(N, Digits, Radix) as text
 proc/orange(Dist = 5, Center = usr)
 proc/oview(Dist = 5, Center = usr)
 proc/oviewers(Depth = 5, Center = usr)
 proc/params2list(Params)
-proc/rand(L, H)
-proc/rand_seed(Seed)
+proc/rand(L, H) as num
+proc/rand_seed(Seed) as null
 proc/range(Dist, Center)
-proc/ref(Object)
-proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0)
-proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0)
-proc/rgb(R, G, B, A)
+proc/ref(Object) as text
+proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text
+proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text
+proc/rgb(R, G, B, A) as text
 proc/rgb2num(color, space = COLORSPACE_RGB)
-proc/roll(ndice = 1, sides)
-proc/round(A, B)
-proc/sha1(input)
-proc/shutdown(Addr,Natural = 0)
-proc/sin(X)
-proc/sleep(Delay)
-proc/sorttext(T1, T2)
-proc/sorttextEx(T1, T2)
+proc/roll(ndice = 1, sides) as num
+proc/round(A, B) as num
+proc/sha1(input) as text
+proc/shutdown(Addr,Natural = 0) as null
+proc/sin(X) as num
+proc/sleep(Delay) as null
+proc/sorttext(T1, T2) as num
+proc/sorttextEx(T1, T2) as num
 proc/sound(file, repeat = 0, wait, channel, volume)
-proc/spantext(Haystack,Needles,Start=1)
-proc/spantext_char(Haystack,Needles,Start=1)
-proc/splicetext(Text, Start = 1, End = 0, Insert = "")
-proc/splicetext_char(Text, Start = 1, End = 0, Insert = "")
+proc/spantext(Haystack,Needles,Start=1) as text
+proc/spantext_char(Haystack,Needles,Start=1) as text
+proc/splicetext(Text, Start = 1, End = 0, Insert = "") as text
+proc/splicetext_char(Text, Start = 1, End = 0, Insert = "") as text
 proc/splittext(Text, Delimiter)
-proc/sqrt(A)
-proc/stat(Name, Value)
-proc/statpanel(Panel, Name, Value)
-proc/tan(X)
-proc/text2ascii(T, pos = 1)
-proc/text2ascii_char(T, pos = 1)
+proc/sqrt(A) as num
+proc/stat(Name, Value) as null
+proc/statpanel(Panel, Name, Value) as num
+proc/tan(X) as num
+proc/text2ascii(T, pos = 1) as text
+proc/text2ascii_char(T, pos = 1) as text
 proc/text2file(Text, File)
-proc/text2num(T, radix = 10)
+proc/text2num(T, radix = 10) as num
 proc/text2path(T)
-proc/time2text(timestamp, format)
-proc/trimtext(Text)
-proc/trunc(n)
-proc/turn(Dir, Angle)
+proc/time2text(timestamp, format) as text
+proc/trimtext(Text) as text
+proc/trunc(n) as num
+proc/turn(Dir, Angle) as num
 proc/typesof(Item1)
-proc/uppertext(T)
-proc/url_decode(UrlText)
-proc/url_encode(PlainText, format = 0)
+proc/uppertext(T) as text
+proc/url_decode(UrlText) as text
+proc/url_encode(PlainText, format = 0) as text
 proc/view(Dist = 5, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 proc/winclone(player, window_name, clone_name)
-proc/winexists(player, control_id)
+proc/winexists(player, control_id) as text
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"
@@ -145,6 +145,8 @@ proc/winset(player, control_id, params)
 #include "Types\Atoms\Obj.dm"
 #include "Types\Atoms\Turf.dm"
 #include "UnsortedAdditions.dm"
+
+// TODO: Nothing below this line has had its return type declared
 
 proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 	set opendream_unimplemented = TRUE

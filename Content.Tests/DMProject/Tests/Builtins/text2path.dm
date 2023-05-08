@@ -19,6 +19,8 @@
 	ASSERT(text2path("/datum/subtype/bar") == null)
 	ASSERT(text2path("/datum/subtype/proc/bar") == null)
 	ASSERT(text2path("") == null)
+	ASSERT(text2path("    ") == null)
+	ASSERT(text2path("complete nonsense") == null)
 	ASSERT(text2path("/") == null)
 	ASSERT(text2path("/proc/invalid") == null)
 	ASSERT(text2path("/datum/proc/fooverb") == null)

@@ -744,9 +744,9 @@ namespace DMCompiler.DM.Expressions {
 
     class Log : DMExpression {
         DMExpression _expr;
-        [CanBeNull] DMExpression _baseExpr;
+        DMExpression? _baseExpr;
 
-        public Log(Location location, DMExpression expr, [CanBeNull] DMExpression baseExpr) : base(location) {
+        public Log(Location location, DMExpression expr, DMExpression? baseExpr) : base(location) {
             _expr = expr;
             _baseExpr = baseExpr;
         }

@@ -120,12 +120,7 @@ namespace OpenDreamShared.Dream.Procs {
         Log = 0x71,
         LogE = 0x72,
         Abs = 0x73,
-    }
-
-    public enum DreamProcOpcodeParameterType {
-        Named = 0xFC,
-        Unnamed = 0xFD
-        Gradient = 0x69
+        Gradient = 0x74
     }
 
     /// <summary>

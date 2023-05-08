@@ -2670,7 +2670,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 procName = path.LastElement;
 
                 if (procElementIndex == 0) { // global procs
-                    if (state.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
+                    if (procName != null && state.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
                         return new DreamValue(globalProc);
                     else
                         return DreamValue.Null;

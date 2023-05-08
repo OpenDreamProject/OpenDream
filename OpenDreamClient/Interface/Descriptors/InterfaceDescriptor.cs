@@ -15,9 +15,9 @@ public sealed class InterfaceDescriptor {
         MenuDescriptors = menuDescriptors;
     }
 
-    public ElementDescriptor GetElementDescriptor(string name) {
+    public ElementDescriptor? GetElementDescriptor(string name) {
         return WindowDescriptors.Concat<ElementDescriptor>(MacroSetDescriptors)
-            .Concat(MenuDescriptors).First(descriptor => descriptor.Name == name);
+            .Concat(MenuDescriptors).FirstOrDefault(descriptor => descriptor.Name == name);
     }
 }
 
@@ -39,7 +39,7 @@ public class ElementDescriptor {
         protected init => _type = value;
     }
 
-    public virtual ElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
+    public virtual ElementDescriptor? CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
         throw new InvalidOperationException($"{this} cannot create a child descriptor");
     }
 

@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
@@ -7,14 +8,12 @@ namespace DMCompiler.DM.Expressions {
     // x.y.z
     class Dereference : LValue {
         // Kind of a lazy port
-        DMExpression _expr;
         public readonly string PropertyName;
-        bool _conditional;
+        private readonly bool _conditional;
 
-        public override DreamPath? Path => _path;
-        DreamPath? _path;
+        public override DreamPath? Path { get; }
 
-        internal DMExpression Expr => _expr;
+        internal DMExpression Expr { get; }
 
         public static bool DirectConvertable(DMExpression expr, DMASTDereference astNode) {
             switch (astNode.Expression) {
@@ -27,7 +26,7 @@ namespace DMCompiler.DM.Expressions {
                 case DMASTBinaryAnd:
                     return true;
                 case DMASTDereference deref when expr is Dereference _deref:
-                    return DirectConvertable(_deref._expr, deref);
+                    return DirectConvertable(_deref.Expr, deref);
                 default: return false;
             }
         }
@@ -35,41 +34,38 @@ namespace DMCompiler.DM.Expressions {
         public Dereference(Location location, DreamPath? path, DMExpression expr, bool conditional, string propertyName)
             : base(location, null)
         {
-            _expr = expr;
+            Expr = expr;
             _conditional = conditional;
             PropertyName = propertyName;
-            _path = path;
+            Path = path;
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
+            Expr.EmitPushValue(dmObject, proc);
             proc.PushString(PropertyName);
             proc.Initial();
         }
 
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
+            Expr.EmitPushValue(dmObject, proc);
             proc.PushString(PropertyName);
             proc.IsSaved();
         }
 
         public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
+            Expr.EmitPushValue(dmObject, proc);
             return (DMReference.CreateField(PropertyName), _conditional);
         }
 
-        public override bool TryAsConstant(out Constant constant)
-        {
-            if(_expr.Path is not null)
-            {
-                var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if(Expr.Path is not null) {
+                var obj = DMObjectTree.GetDMObject(Expr.Path.GetValueOrDefault());
                 var variable = obj.GetVariable(PropertyName);
-                if (variable != null)
-                {
+                if (variable != null) {
                     if(variable.IsConst)
                         return variable.Value.TryAsConstant(out constant);
-                    if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
-                    {
+
+                    if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
                         variable.Value.TryAsConstant(out constant);
                         return true; // MUST be true.
                     }
@@ -84,9 +80,9 @@ namespace DMCompiler.DM.Expressions {
     // x.y.z()
     class DereferenceProc : DMExpression {
         // Kind of a lazy port
-        DMExpression _expr;
-        bool _conditional;
-        string _field;
+        private readonly DMExpression _expr;
+        private readonly bool _conditional;
+        private readonly string _field;
 
         public DereferenceProc(Location location, DMExpression expr, DMASTDereferenceProc astNode) : base(location) {
             _expr = expr;
@@ -117,7 +113,7 @@ namespace DMCompiler.DM.Expressions {
             return (DMReference.CreateProc(_field), _conditional);
         }
 
-        public (DMObject ProcOwner, DMProc Proc) GetProc() {
+        public (DMObject? ProcOwner, DMProc? Proc) GetProc() {
             if (_expr.Path == null) return (null, null);
 
             DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value);
@@ -128,13 +124,12 @@ namespace DMCompiler.DM.Expressions {
 
     // x[y]
     class ListIndex : LValue {
-        DMExpression _expr;
-        DMExpression _index;
-        bool _conditional;
+        private readonly DMExpression _expr;
+        private readonly DMExpression _index;
+        private readonly bool _conditional;
 
         public ListIndex(Location location, DMExpression expr, DMExpression index, DreamPath? path, bool conditional)
-            : base(location, path)
-        {
+            : base(location, path) {
             _expr = expr;
             _index = index;
             _conditional = conditional;

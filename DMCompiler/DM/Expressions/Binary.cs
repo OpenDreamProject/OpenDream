@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -7,7 +8,7 @@ namespace DMCompiler.DM.Expressions {
         protected DMExpression LHS { get; }
         protected DMExpression RHS { get; }
 
-        public BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : base(location) {
+        protected BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : base(location) {
             LHS = lhs;
             RHS = rhs;
         }
@@ -19,7 +20,7 @@ namespace DMCompiler.DM.Expressions {
         public Add(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -41,7 +42,7 @@ namespace DMCompiler.DM.Expressions {
         public Subtract(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -63,7 +64,7 @@ namespace DMCompiler.DM.Expressions {
         public Multiply(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -85,7 +86,7 @@ namespace DMCompiler.DM.Expressions {
         public Divide(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -107,7 +108,7 @@ namespace DMCompiler.DM.Expressions {
         public Modulo(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -129,7 +130,7 @@ namespace DMCompiler.DM.Expressions {
         public ModuloModulo(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -151,7 +152,7 @@ namespace DMCompiler.DM.Expressions {
         public Power(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -173,7 +174,7 @@ namespace DMCompiler.DM.Expressions {
         public LeftShift(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -195,7 +196,7 @@ namespace DMCompiler.DM.Expressions {
         public RightShift(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -217,7 +218,7 @@ namespace DMCompiler.DM.Expressions {
         public BinaryAnd(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -239,7 +240,7 @@ namespace DMCompiler.DM.Expressions {
         public BinaryXor(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -261,7 +262,7 @@ namespace DMCompiler.DM.Expressions {
         public BinaryOr(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
@@ -332,8 +333,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, lhs, rhs) { }
 
 
-        public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
             }
@@ -360,8 +361,8 @@ namespace DMCompiler.DM.Expressions {
             proc.GreaterThanOrEqual();
         }
 
-        public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
             }
@@ -383,8 +384,8 @@ namespace DMCompiler.DM.Expressions {
             proc.LessThan();
         }
 
-        public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
             }
@@ -405,8 +406,8 @@ namespace DMCompiler.DM.Expressions {
             proc.LessThanOrEqual();
         }
 
-        public override bool TryAsConstant(out Constant constant) {
-            if (!LHS.TryAsConstant(out Constant lhs) || !RHS.TryAsConstant(out Constant rhs)) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
                 constant = null;
                 return false;
             }
@@ -421,7 +422,7 @@ namespace DMCompiler.DM.Expressions {
         public Or(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
                 constant = lhs;
                 return true;
@@ -451,7 +452,7 @@ namespace DMCompiler.DM.Expressions {
         public And(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {
                 constant = lhs;
                 return true;

@@ -140,16 +140,13 @@ namespace OpenDreamRuntime.Objects {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
-        public DreamValue SpawnProc(string procName, DreamProcArguments arguments, DreamObject? usr = null) {
+        public DreamValue SpawnProc(string procName, DreamObject? usr = null, params DreamValue[] arguments) {
             if(Deleted){
                 throw new Exception("Cannot spawn proc on a deleted object");
             }
+
             var proc = GetProc(procName);
             return DreamThread.Run(proc, this, usr, arguments);
-        }
-
-        public DreamValue SpawnProc(string procName, DreamObject? usr = null) {
-            return SpawnProc(procName, new DreamProcArguments(null), usr);
         }
 
         /// <returns>true if \proper noun formatting should be used, false if \improper</returns>

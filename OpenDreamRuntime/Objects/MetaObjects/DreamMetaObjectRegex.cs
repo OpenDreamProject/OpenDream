@@ -1,6 +1,5 @@
 ﻿using System.Text.RegularExpressions;
 using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.MetaObjects {
     sealed class DreamMetaObjectRegex : IDreamMetaObject {
@@ -26,23 +25,23 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            DreamValue pattern = creationArguments.GetArgument(0, "pattern");
-            DreamValue flags = creationArguments.GetArgument(1, "flags");
+            DreamValue pattern = creationArguments.GetArgument(0);
+            DreamValue flags = creationArguments.GetArgument(1);
             DreamRegex regex;
 
-            if (pattern.TryGetValueAsDreamObjectOfType(_objectTree.Regex, out DreamObject copyFrom)) {
+            if (pattern.TryGetValueAsDreamObjectOfType(_objectTree.Regex, out var copyFrom)) {
                 regex = ObjectToDreamRegex[copyFrom];
-            } else if (pattern.TryGetValueAsString(out string patternString)) {
+            } else if (pattern.TryGetValueAsString(out var patternString)) {
                 bool isGlobal = false;
                 RegexOptions options = RegexOptions.None;
-                if (flags.TryGetValueAsString(out string flagsString)) {
+                if (flags.TryGetValueAsString(out var flagsString)) {
                     if (flagsString.Contains("i")) options |= RegexOptions.IgnoreCase;
                     if (flagsString.Contains("m")) options |= RegexOptions.Multiline;
                     if (flagsString.Contains("g")) isGlobal = true;
                 }
 
                 // TODO Make this more Robust(TM)
-                var anyLetterIdx = patternString.IndexOf("\\l"); // From the ref: \l = Any letter A through Z, case-insensitive
+                var anyLetterIdx = patternString.IndexOf("\\l", StringComparison.InvariantCulture); // From the ref: \l = Any letter A through Z, case-insensitive
                 while (anyLetterIdx >= 0) {
                     if (anyLetterIdx == 0 || patternString[anyLetterIdx - 1] != '\\') { // TODO Need to make this handle an arbitrary number of escape chars
                             patternString = patternString.Remove(anyLetterIdx, 2).Insert(anyLetterIdx, "[A-Za-z]");
@@ -51,12 +50,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     var nextIdx = anyLetterIdx + 1;
                     if(nextIdx >= patternString.Length) break;
 
-                    anyLetterIdx = patternString.IndexOf("\\l", nextIdx);
+                    anyLetterIdx = patternString.IndexOf("\\l", nextIdx, StringComparison.InvariantCulture);
                 }
 
                 regex = new DreamRegex(new Regex(patternString, options), isGlobal);
             } else {
-                throw new System.Exception("Invalid regex pattern " + pattern);
+                throw new Exception("Invalid regex pattern " + pattern);
             }
 
             ObjectToDreamRegex.Add(dreamObject, regex);

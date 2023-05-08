@@ -24,6 +24,7 @@ namespace Content.Tests
     [TestFixture]
     public sealed class DMTests : ContentUnitTest {
         public const string TestProject = "DMProject";
+        public const string MapFile = "map.dmm";
         public const string InitializeEnvironment = "./environment.dme";
 
         [Dependency] private readonly IDreamManager _dreamMan = default!;
@@ -57,7 +58,7 @@ namespace Content.Tests
 
         private static string? Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
-                Files = new() { sourceFile }
+                Files = new() { sourceFile, MapFile }
             });
 
             return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;
@@ -123,7 +124,7 @@ namespace Content.Tests
 
             DreamThread.Run("RunTest", async (state) => {
                 if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc? proc)) {
-                    callTask = state.Call(proc, null, null, new DreamProcArguments(null));
+                    callTask = state.Call(proc, null, null);
                     retValue = await callTask;
                     return DreamValue.Null;
                 } else {

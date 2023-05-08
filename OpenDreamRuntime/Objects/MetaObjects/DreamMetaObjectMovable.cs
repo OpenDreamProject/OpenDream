@@ -34,7 +34,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-            DreamValue locArgument = creationArguments.GetArgument(0, "loc");
+            DreamValue locArgument = creationArguments.GetArgument(0);
             if (locArgument.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out _)) {
                 dreamObject.SetVariable("loc", locArgument); //loc is set before /New() is ever called
             }

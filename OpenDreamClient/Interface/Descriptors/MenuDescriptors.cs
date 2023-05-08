@@ -19,14 +19,14 @@ public sealed class MenuDescriptor : ElementDescriptor {
     }
 
     public override MenuElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
-        var menuElement = serializationManager.Read<MenuElementDescriptor>(attributes);
+        var menuElement = serializationManager.Read<MenuElementDescriptor>(attributes, notNullableOverride: true);
 
         _elements.Add(menuElement);
         return menuElement;
     }
 
     public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
-        var copy = serializationManager.CreateCopy(this);
+        var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
         copy._name = name;
         return copy;
@@ -49,13 +49,14 @@ public sealed class MenuElementDescriptor : ElementDescriptor {
     public bool CanCheck { get; init; }
 
     public MenuElementDescriptor WithCategory(ISerializationManager serialization, string category) {
-        var copy = serialization.CreateCopy(this);
+        var copy = serialization.CreateCopy(this, notNullableOverride: true);
+
         copy._category = category;
         return copy;
     }
 
     // Menu elements can have other menu elements as children
     public override MenuElementDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
-        return serializationManager.Read<MenuElementDescriptor>(attributes);
+        return serializationManager.Read<MenuElementDescriptor>(attributes, notNullableOverride: true);
     }
 }

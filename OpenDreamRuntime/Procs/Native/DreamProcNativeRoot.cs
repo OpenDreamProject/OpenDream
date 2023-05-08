@@ -2648,7 +2648,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_text2path(NativeProc.State state) {
-            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text) || text.Length == 0) {
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text) || string.IsNullOrWhiteSpace(text)) {
                 return DreamValue.Null;
             }
 

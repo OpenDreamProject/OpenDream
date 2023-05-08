@@ -1885,10 +1885,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("B", Type = DreamValueType.Float)]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_rgb(NativeProc.State state) {
+            // TODO: accept lowercase named arguments here too
             state.GetArgument(0, "R").TryGetValueAsInteger(out var r);
             state.GetArgument(1, "G").TryGetValueAsInteger(out var g);
             state.GetArgument(2, "B").TryGetValueAsInteger(out var b);
             DreamValue aValue = state.GetArgument(3, "A");
+
+            r = Math.Clamp(r, 0, 255);
+            g = Math.Clamp(g, 0, 255);
+            b = Math.Clamp(b, 0, 255);
 
             // TODO: There is a difference between passing null and not passing a fourth arg at all
             // Likely a compile-time difference
@@ -1896,6 +1901,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}");
             } else {
                 aValue.TryGetValueAsInteger(out var a);
+                a = Math.Clamp(a, 0, 255);
 
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}{a:X2}");
             }

@@ -2667,8 +2667,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             string? procName = null;
             if (isProcPath) {
-                // we strip the leading slash here
-                procName = path.FromElements(procElementIndex + 1).ToString()[1..];
+                procName = path.LastElement;
 
                 if (procElementIndex == 0) { // global procs
                     if (state.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)

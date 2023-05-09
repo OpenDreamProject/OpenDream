@@ -5,6 +5,7 @@ using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Serialization.Manager;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
@@ -225,8 +226,8 @@ namespace OpenDreamRuntime.Objects {
 
     // global.vars list
     sealed class DreamGlobalVars : DreamList {
-        [Robust.Shared.IoC.Dependency] private readonly IDreamManager _dreamMan = default!;
-        [Robust.Shared.IoC.Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
         public override bool IsAssociative =>
             true; // We don't use the associative array but, yes, we behave like an associative list
@@ -345,8 +346,7 @@ namespace OpenDreamRuntime.Objects {
     // atom.overlays or atom.underlays list
     // Operates on an atom's appearance
     sealed class DreamOverlaysList : DreamList {
-        [Robust.Shared.IoC.Dependency] private readonly IAtomManager _atomManager = default!;
-        [Robust.Shared.IoC.Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private readonly IAtomManager _atomManager = default!;
         private readonly ServerAppearanceSystem? _appearanceSystem;
 
         private readonly DreamObject _atom;
@@ -450,9 +450,9 @@ namespace OpenDreamRuntime.Objects {
     // atom.filters list
     // Operates on an atom's appearance
     public sealed class DreamFilterList : DreamList {
-        [Robust.Shared.IoC.Dependency] private readonly IDreamObjectTree _objectTree = default!;
-        [Robust.Shared.IoC.Dependency] private readonly IAtomManager _atomManager = default!;
-        [Robust.Shared.IoC.Dependency] private readonly ISerializationManager _serializationManager = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly IAtomManager _atomManager = default!;
+        [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
         private readonly DreamObject _atom;
 

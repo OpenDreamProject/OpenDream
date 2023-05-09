@@ -1885,10 +1885,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("B", Type = DreamValueType.Float)]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_rgb(NativeProc.State state) {
+            // TODO: accept lowercase named arguments here too
             state.GetArgument(0, "R").TryGetValueAsInteger(out var r);
             state.GetArgument(1, "G").TryGetValueAsInteger(out var g);
             state.GetArgument(2, "B").TryGetValueAsInteger(out var b);
             DreamValue aValue = state.GetArgument(3, "A");
+
+            r = Math.Clamp(r, 0, 255);
+            g = Math.Clamp(g, 0, 255);
+            b = Math.Clamp(b, 0, 255);
 
             // TODO: There is a difference between passing null and not passing a fourth arg at all
             // Likely a compile-time difference
@@ -1896,6 +1901,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}");
             } else {
                 aValue.TryGetValueAsInteger(out var a);
+                a = Math.Clamp(a, 0, 255);
 
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}{a:X2}");
             }
@@ -2509,19 +2515,51 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_text2path(NativeProc.State state) {
-            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text)) {
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text) || string.IsNullOrWhiteSpace(text)) {
                 return DreamValue.Null;
             }
 
             DreamPath path = new DreamPath(text);
-            if (path.FindElement("proc") != -1 || path.FindElement("verb") != -1)
-                throw new NotImplementedException("text2path() for procs is not implemented");
 
-            if (state.ObjectTree.TryGetTreeEntry(path, out var type)) {
-                return new DreamValue(type);
-            } else {
-                return DreamValue.Null;
+            bool isVerb = false;
+            
+            int procElementIndex = path.FindElement("proc");
+            if (procElementIndex == -1) {
+                procElementIndex = path.FindElement("verb");
+                if (procElementIndex != -1)
+                    isVerb = true;
             }
+
+            bool isProcPath = procElementIndex != -1;
+
+            string? procName = null;
+            if (isProcPath) {
+                procName = path.LastElement;
+
+                if (procElementIndex == 0) { // global procs
+                    if (procName != null && state.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
+                        return new DreamValue(globalProc);
+                    else
+                        return DreamValue.Null;
+                }
+            }
+
+            DreamPath typePath = isProcPath ? path.FromElements(0, procElementIndex) : path;
+
+            if (!state.ObjectTree.TryGetTreeEntry(typePath, out var type) || type == state.ObjectTree.Root)
+                return DreamValue.Null;
+
+            if (!isProcPath || procName == null)
+                return new DreamValue(type);
+
+            // not using TryGetProc because that includes overrides
+            if (type.ObjectDefinition.Procs.TryGetValue(procName, out int procId)) {
+                DreamProc proc = state.ObjectTree.Procs[procId];
+                if (proc.IsVerb == isVerb)
+                    return new DreamValue(proc);
+            }
+
+            return DreamValue.Null;
         }
 
         [DreamProc("time2text")]

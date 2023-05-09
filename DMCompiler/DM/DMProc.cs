@@ -47,6 +47,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public Location Location;
         public ProcAttributes Attributes;
+        public bool IsVerb = false;
         public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
@@ -111,6 +112,7 @@ namespace DMCompiler.DM {
 
             procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
+            procDefinition.IsVerb = IsVerb;
             procDefinition.Source = _astDefinition?.Location.SourceFile?.Replace("\\", "/");
             procDefinition.Line = _astDefinition?.Location.Line ?? 0;
 

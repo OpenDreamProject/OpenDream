@@ -2092,9 +2092,16 @@ namespace OpenDreamRuntime.Procs {
                         default: return false;
                     }
                 }
+                case DreamValue.DreamValueType.Appearance: {
+                    if (!second.TryGetValueAsAppearance(out var secondValue))
+                        return false;
+
+                    IconAppearance firstValue = first.MustGetValueAsAppearance();
+                    return firstValue.Equals(secondValue);
+                }
             }
 
-            throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
+            throw new NotImplementedException($"Equal comparison for {first} and {second} is not implemented");
         }
 
         private static bool IsEquivalent(DreamValue first, DreamValue second) {

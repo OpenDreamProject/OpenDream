@@ -389,6 +389,17 @@ namespace OpenDreamRuntime.Procs {
             Pool.Push(this);
         }
 
+        public ReadOnlySpan<DreamValue> GetArguments() {
+            return _localVariables.AsSpan(0, ArgumentCount);
+        }
+
+        public void SetArgument(int id, DreamValue value) {
+            if (id < 0 || id >= ArgumentCount)
+                throw new IndexOutOfRangeException($"Given argument id ({id}) was out of range");
+
+            _localVariables[id] = value;
+        }
+        
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
@@ -429,7 +440,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMCallArgumentsType.None:
                     return new DreamProcArguments();
                 case DMCallArgumentsType.FromProcArguments:
-                    return new DreamProcArguments(_localVariables.AsSpan(0, ArgumentCount));
+                    return new DreamProcArguments(GetArguments());
                 case DMCallArgumentsType.FromStack: {
                     var stack = PopCount(argumentStackSize);
 
@@ -595,7 +606,7 @@ namespace OpenDreamRuntime.Procs {
         public void AssignReference(DMReference reference, DreamValue value) {
             switch (reference.RefType) {
                 case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: _localVariables[reference.Index] = value; break;
+                case DMReference.Type.Argument: SetArgument(reference.Index, value); break;
                 case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Index] = value; break;
                 case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
                 case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
@@ -647,27 +658,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
                 case DMReference.Type.Argument: return _localVariables[reference.Index];
                 case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Index];
-                case DMReference.Type.Args: {
-                    DreamList argsList = Proc.ObjectTree.CreateList(ArgumentCount);
-
-                    for (int i = 0; i < ArgumentCount; i++) {
-                        argsList.AddValue(_localVariables[i]);
-                    }
-
-                    argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
-                        if (!key.TryGetValueAsInteger(out int argIndex)) {
-                            throw new Exception($"Cannot index args with {key}");
-                        }
-
-                        if (argIndex > ArgumentCount) {
-                            throw new Exception($"Args index {argIndex} is too large");
-                        }
-
-                        _localVariables[argIndex - 1] = value;
-                    };
-
-                    return new(argsList);
-                }
+                case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
 
@@ -678,6 +669,11 @@ namespace OpenDreamRuntime.Procs {
                         return fieldValue;
                     } else if (owner.TryGetValueAsProc(out var ownerProc)) {
                         return ownerProc.GetField(reference.Name);
+                    } else if (owner.TryGetValueAsAppearance(out var appearance)) {
+                        if (!Proc.AtomManager.IsValidAppearanceVar(reference.Name))
+                            throw new Exception($"Invalid appearance var \"{reference.Name}\"");
+
+                        return Proc.AtomManager.GetAppearanceVar(appearance, reference.Name);
                     } else {
                         throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
                     }

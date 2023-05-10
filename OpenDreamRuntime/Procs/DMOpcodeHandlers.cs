@@ -13,34 +13,6 @@ using Robust.Shared.Random;
 
 namespace OpenDreamRuntime.Procs {
     static class DMOpcodeHandlers {
-        #region Helpers
-        private static void PushListGet(DMProcState state, DreamValue obj, DreamValue index) {
-            if (obj.TryGetValueAsDreamList(out var listObj)) {
-                state.Push(listObj.GetValue(index));
-                return;
-            }
-
-            if (obj.TryGetValueAsString(out string? strValue)) {
-                if (!index.TryGetValueAsInteger(out int strIndex))
-                    throw new Exception($"Attempted to index string with {index}");
-
-                char c = strValue[strIndex - 1];
-                state.Push(new DreamValue(Convert.ToString(c)));
-                return;
-            }
-
-            if (obj.TryGetValueAsDreamObject(out var dreamObject)) {
-                IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                if (metaObject != null) {
-                    state.Push(metaObject.OperatorIndex(dreamObject!, index));
-                    return;
-                }
-            }
-
-            throw new Exception($"Cannot get index {index} of {obj}");
-        }
-        #endregion
-
         #region Values
         public static ProcStatus? PushReferenceValue(DMProcState state) {
             DMReference reference = state.ReadReference();
@@ -447,7 +419,7 @@ namespace OpenDreamRuntime.Procs {
 
             // number indices always perform a normal list access here
             if (key.TryGetValueAsInteger(out _)) {
-                PushListGet(state, owner, key);
+                state.Push(state.GetIndex(owner, key));
                 return null;
             }
 
@@ -2144,12 +2116,11 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-
-
         public static ProcStatus? DereferenceIndex(DMProcState state) {
             DreamValue index = state.Pop();
             DreamValue obj = state.Pop();
-            PushListGet(state, obj, index);
+
+            state.Push(state.GetIndex(obj, index));
             return null;
         }
 

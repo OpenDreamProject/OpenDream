@@ -83,12 +83,11 @@ namespace DMCompiler.DM.Visitors {
             DMCompiler.Emit(WarningCode.BadExpression, voidNode.Location, "Attempt to use a void expression");
             Result = new Expressions.Null(voidNode.Location);
         }
-        public void VisitIdentifier(DMASTIdentifier identifier)
-        {
+
+        public void VisitIdentifier(DMASTIdentifier identifier) {
             var name = identifier.Identifier;
 
-            switch (name)
-            {
+            switch (name) {
                 case "src":
                     Result = new Expressions.Src(identifier.Location, _dmObject.Path);
                     break;
@@ -107,8 +106,7 @@ namespace DMCompiler.DM.Visitors {
                 case "global":
                     Result = new Expressions.Global(identifier.Location);
                     break;
-                default:
-                {
+                default: {
                     DMProc.LocalVariable localVar = _proc?.GetLocalVariable(name);
                     if (localVar != null && _scopeMode == "normal") {
                         Result = new Expressions.Local(identifier.Location, localVar);
@@ -116,8 +114,7 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     int? procGlobalId = _proc?.GetGlobalVariableId(name);
-                    if (procGlobalId != null)
-                    {
+                    if (procGlobalId != null) {
                         Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
                         return;
                     }

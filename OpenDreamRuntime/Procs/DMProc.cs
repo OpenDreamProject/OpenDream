@@ -613,25 +613,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference, peek);
 
-                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                        return listObj.GetValue(index);
-                    }
-
-                    if (indexing.TryGetValueAsString(out string? strValue)) {
-                        if (!index.TryGetValueAsInteger(out int strIndex))
-                            throw new Exception($"Attempted to index string with {index}");
-
-                        char c = strValue[strIndex - 1];
-                        return new DreamValue(Convert.ToString(c));
-                    }
-
-                    if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                        IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                            return metaObject.OperatorIndex(dreamObject, index);
-                    }
-
-                    throw new Exception($"Cannot get index {index} of {indexing}");
+                    return GetIndex(indexing, index);
                 }
                 default: throw new Exception($"Cannot get value of reference type {reference.RefType}");
             }
@@ -676,6 +658,28 @@ namespace OpenDreamRuntime.Procs {
             }
 
             throw new Exception($"Cannot get field \"{field}\" from {owner}");
+        }
+
+        public DreamValue GetIndex(DreamValue indexing, DreamValue index) {
+            if (indexing.TryGetValueAsDreamList(out var listObj)) {
+                return listObj.GetValue(index);
+            }
+
+            if (indexing.TryGetValueAsString(out string? strValue)) {
+                if (!index.TryGetValueAsInteger(out int strIndex))
+                    throw new Exception($"Attempted to index string with {index}");
+
+                char c = strValue[strIndex - 1];
+                return new DreamValue(Convert.ToString(c));
+            }
+
+            if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
+                IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
+                if (metaObject != null)
+                    return metaObject.OperatorIndex(dreamObject, index);
+            }
+
+            throw new Exception($"Cannot get index {index} of {indexing}");
         }
         #endregion References
 

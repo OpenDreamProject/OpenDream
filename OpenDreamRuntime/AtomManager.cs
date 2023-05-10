@@ -5,6 +5,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 
 namespace OpenDreamRuntime {
@@ -27,6 +28,7 @@ namespace OpenDreamRuntime {
         private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
         private ServerAppearanceSystem? _appearanceSystem;
+        private TransformSystem? _transformSystem;
 
         public DreamObject GetAtom(int index) {
             if (index < Areas.Count)
@@ -427,6 +429,31 @@ namespace OpenDreamRuntime {
             _definitionAppearanceCache.Add(def, appearance);
             return appearance;
         }
+
+        public (int X, int Y, int Z) GetAtomPosition(DreamObject atom) {
+            if (atom.IsSubtypeOf(_objectTree.Movable)) {
+                if (!_entitySystemManager.TryGetEntitySystem(out _transformSystem))
+                    return (0, 0, 0);
+
+                var entity = GetMovableEntity(atom);
+                if (!_transformSystem.TryGetMapOrGridCoordinates(entity, out var coordinates))
+                    return (0, 0, 0);
+
+                return ((int)coordinates.Value.X, (int)coordinates.Value.Y, (int)coordinates.Value.GetMapId(_entityManager));
+            } else if (atom.IsSubtypeOf(_objectTree.Turf)) {
+                var position = _dreamMapManager.GetTurfPosition(atom);
+
+                return (position.Pos.X, position.Pos.Y, position.Level.Z);
+            } else if (atom.IsSubtypeOf(_objectTree.Area)) {
+                atom.GetVariable("x").TryGetValueAsInteger(out var x);
+                atom.GetVariable("y").TryGetValueAsInteger(out var y);
+                atom.GetVariable("z").TryGetValueAsInteger(out var z);
+
+                return (x, y, z);
+            }
+
+            throw new Exception($"Cannot get the position of {atom}");
+        }
     }
 
     public interface IAtomManager {
@@ -458,5 +485,7 @@ namespace OpenDreamRuntime {
         public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
         public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def);
+
+        public (int X, int Y, int Z) GetAtomPosition(DreamObject atom);
     }
 }

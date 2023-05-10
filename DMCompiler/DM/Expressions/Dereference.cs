@@ -29,25 +29,23 @@ namespace DMCompiler.DM.Expressions {
             public DreamPath? Path;
         }
 
-        DMExpression _expression;
-        Operation[] _operations;
+        private readonly DMExpression _expression;
+        private readonly Operation[] _operations;
 
         public override DreamPath? Path { get; }
-
-        public override DreamPath? NestedPath => _nestedPath;
-        DreamPath? _nestedPath;
+        public override DreamPath? NestedPath { get; }
 
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
             _expression = expression;
             _operations = operations;
-            _path = path;
+            Path = path;
 
             if (_operations.Length == 0) {
-                throw new System.InvalidOperationException("deref expression has no operations");
+                throw new InvalidOperationException("deref expression has no operations");
             }
 
-            _nestedPath = _operations[^1].Path;
+            NestedPath = _operations[^1].Path;
         }
 
         private void ShortCircuitHandler(DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -88,17 +86,19 @@ namespace DMCompiler.DM.Expressions {
                     break;
 
                 case DMASTDereference.OperationKind.Call:
-                case DMASTDereference.OperationKind.CallSearch:
-                    operation.Parameters.EmitPushArguments(dmObject, proc);
-                    proc.DereferenceCall(operation.Identifier);
+                case DMASTDereference.OperationKind.CallSearch: {
+                    var (argumentsType, argumentStackSize) = operation.Parameters.EmitArguments(dmObject, proc);
+                    proc.DereferenceCall(operation.Identifier, argumentsType, argumentStackSize);
                     break;
+                }
 
                 case DMASTDereference.OperationKind.CallSafe:
-                case DMASTDereference.OperationKind.CallSafeSearch:
+                case DMASTDereference.OperationKind.CallSafeSearch: {
                     ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                    operation.Parameters.EmitPushArguments(dmObject, proc);
-                    proc.DereferenceCall(operation.Identifier);
+                    var (argumentsType, argumentStackSize) = operation.Parameters.EmitArguments(dmObject, proc);
+                    proc.DereferenceCall(operation.Identifier, argumentsType, argumentStackSize);
                     break;
+                }
 
                 case DMASTDereference.OperationKind.Invalid:
                 default:

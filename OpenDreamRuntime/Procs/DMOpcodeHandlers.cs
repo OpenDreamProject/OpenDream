@@ -521,59 +521,6 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
-
-        public static ProcStatus? PushArgumentList(DMProcState state) {
-            if (state.Pop().TryGetValueAsDreamList(out var argList)) {
-                List<DreamValue> ordered = new();
-                Dictionary<string, DreamValue> named = new();
-                foreach (DreamValue value in argList.GetValues()) {
-                    if (argList.ContainsKey(value)) { //Named argument
-                        if (value.TryGetValueAsString(out string name)) {
-                            named.Add(name, argList.GetValue(value));
-                        } else {
-                            throw new Exception("List contains a non-string key, and cannot be used as an arglist");
-                        }
-                    } else { //Ordered argument
-                        ordered.Add(value);
-                    }
-                }
-                state.Push(new DreamProcArguments(ordered, named));
-            } else {
-                state.Push(new DreamProcArguments());
-            }
-
-            return null;
-        }
-
-        public static ProcStatus? PushArguments(DMProcState state) {
-            int argumentCount = state.ReadInt();
-            int namedCount = state.ReadInt();
-            int unnamedCount = argumentCount - namedCount;
-            DreamProcArguments arguments = new DreamProcArguments(unnamedCount > 0 ? new List<DreamValue>(unnamedCount) : null, namedCount > 0 ? new Dictionary<string, DreamValue>(namedCount) : null);
-            ReadOnlySpan<DreamValue> argumentValues = argumentCount > 0 ? state.PopCount(argumentCount) : null;
-
-            for (int i = 0; i < argumentCount; i++) {
-                DreamProcOpcodeParameterType argumentType = (DreamProcOpcodeParameterType)state.ReadByte();
-
-                switch (argumentType) {
-                    case DreamProcOpcodeParameterType.Named: {
-                        string argumentName = state.ReadString();
-
-                        arguments.NamedArguments![argumentName] = argumentValues[i];
-                        break;
-                    }
-                    case DreamProcOpcodeParameterType.Unnamed:
-                        arguments.OrderedArguments!.Add(argumentValues[i]);
-                        break;
-                    default:
-                        throw new Exception("Invalid argument type (" + argumentType + ")");
-                }
-            }
-
-            state.Push(arguments);
-            return null;
-        }
-
         public static ProcStatus? PushFloat(DMProcState state) {
             float value = state.ReadFloat();
 
@@ -1576,14 +1523,9 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? DereferenceField(DMProcState state) {
             string name = state.ReadString();
-            DreamValue obj = state.Pop();
+            DreamValue owner = state.Pop();
 
-            if (!obj.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                throw new Exception($"Cannot get field \"{name}\" from {obj}");
-            if (!ownerObj.TryGetVariable(name, out var fieldValue))
-                throw new Exception($"Type {obj.Type} has no field called \"{name}\"");
-
-            state.Push(fieldValue);
+            state.Push(state.DereferenceField(owner, name));
             return null;
         }
 
@@ -2213,13 +2155,16 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? DereferenceCall(DMProcState state) {
             string name = state.ReadString();
-            DreamProcArguments arguments = state.PopArguments();
+            var argumentInfo = state.ReadProcArguments();
+            var argumentValues = state.PopCount(argumentInfo.StackSize);
             DreamValue obj = state.Pop();
 
             if (!obj.TryGetValueAsDreamObject(out var instance) || instance == null)
                 throw new Exception($"Cannot dereference proc \"{name}\" from {obj}");
             if (!instance.TryGetProc(name, out var proc))
                 throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{name}\"");
+
+            var arguments = state.CreateProcArguments(argumentValues, proc, argumentInfo.Type, argumentInfo.StackSize);
 
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;

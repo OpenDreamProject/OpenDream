@@ -77,8 +77,10 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushResource:
             case DreamProcOpcode.DebugSource:
             case DreamProcOpcode.DereferenceField:
-            case DreamProcOpcode.DereferenceCall:
                 return (opcode, ReadString());
+
+            case DreamProcOpcode.DereferenceCall:
+                return (opcode, ReadString(), (DMCallArgumentsType)ReadByte(), ReadInt());
 
             case DreamProcOpcode.Prompt:
                 return (opcode, ReadValueType());

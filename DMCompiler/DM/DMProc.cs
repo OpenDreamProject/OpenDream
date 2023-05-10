@@ -495,39 +495,6 @@ namespace DMCompiler.DM {
             WriteReference(reference, false);
         }
 
-        public void PushProcArguments() {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushProcArguments);
-        }
-
-        public void PushArgumentList() {
-            WriteOpcode(DreamProcOpcode.PushArgumentList);
-        }
-
-        public void PushArguments(int argumentCount, DreamProcOpcodeParameterType[] parameterTypes = null, string[] parameterNames = null) {
-            ShrinkStack(argumentCount - 1); //Pops argumentCount, pushes 1
-            WriteOpcode(DreamProcOpcode.PushArguments);
-            WriteInt(argumentCount);
-            WriteInt(parameterNames?.Length ?? 0);
-
-            if (argumentCount > 0) {
-                if (parameterTypes == null || parameterTypes.Length != argumentCount) {
-                    throw new CompileAbortException("Length of parameter types does not match the argument count");
-                }
-
-                int namedParameterIndex = 0;
-                foreach (DreamProcOpcodeParameterType parameterType in parameterTypes) {
-                    _bytecodeWriter.Write((byte)parameterType);
-
-                    if (parameterType == DreamProcOpcodeParameterType.Named) {
-                        if (parameterNames == null)
-                            throw new CompileAbortException("parameterNames was null while parameterTypes was:" + parameterTypes);
-                        WriteString(parameterNames[namedParameterIndex++]);
-                    }
-                }
-            }
-        }
-
         public void BooleanOr(string endLabel) {
             ShrinkStack(1); //Either shrinks the stack 1 or 0. Assume 1.
             WriteOpcode(DreamProcOpcode.BooleanOr);
@@ -607,10 +574,12 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.DereferenceIndex);
         }
 
-        public void DereferenceCall(string field) {
-            ShrinkStack(1);
+        public void DereferenceCall(string field, DMCallArgumentsType argumentsType, int argumentStackSize) {
+            ShrinkStack(argumentStackSize); // Pops proc owner and arguments, pushes result
             WriteOpcode(DreamProcOpcode.DereferenceCall);
             WriteString(field);
+            WriteByte((byte)argumentsType);
+            WriteInt(argumentStackSize);
         }
 
         public void Call(DMReference reference, DMCallArgumentsType argumentsType, int argumentStackSize) {

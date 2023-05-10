@@ -13,7 +13,7 @@ namespace OpenDreamClient.Interface.Controls {
         public Vector2i? Anchor1 => ControlDescriptor.Anchor1;
         public Vector2i? Anchor2 => ControlDescriptor.Anchor2;
 
-        protected ControlDescriptor ControlDescriptor => ElementDescriptor as ControlDescriptor;
+        protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
 
         private readonly ControlWindow _window;
 
@@ -58,7 +58,7 @@ namespace OpenDreamClient.Interface.Controls {
             //UIControl.IsEnabled = !_controlDescriptor.IsDisabled;
         }
 
-        public virtual void Output(string value, string data) {
+        public virtual void Output(string value, string? data) {
 
         }
     }

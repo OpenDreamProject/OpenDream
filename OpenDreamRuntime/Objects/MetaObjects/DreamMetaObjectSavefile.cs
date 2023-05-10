@@ -52,8 +52,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            string filename = creationArguments.GetArgument(0, "filename").GetValueAsString();
-            DreamValue timeout = creationArguments.GetArgument(1, "timeout"); //TODO: timeout
+            string filename = creationArguments.GetArgument(0).GetValueAsString();
+            DreamValue timeout = creationArguments.GetArgument(1); //TODO: timeout
 
             DreamResource resource = _resourceManager.LoadResource(filename);
             Savefile savefile = new Savefile(resource);
@@ -121,7 +121,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (!index.TryGetValueAsString(out string? entryName)) throw new Exception($"Invalid savefile index {index}");
 
             savefile.CurrentDir[entryName] = value;
-            savefile.Flush(); //TODO: Don't flush after every change
         }
     }
 }

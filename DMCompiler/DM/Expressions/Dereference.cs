@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
@@ -31,8 +32,7 @@ namespace DMCompiler.DM.Expressions {
         DMExpression _expression;
         Operation[] _operations;
 
-        public override DreamPath? Path => _path;
-        DreamPath? _path;
+        public override DreamPath? Path { get; }
 
         public override DreamPath? NestedPath => _nestedPath;
         DreamPath? _nestedPath;

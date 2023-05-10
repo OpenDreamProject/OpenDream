@@ -5,13 +5,12 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
-using System.Linq;
 
 namespace DMCompiler.DM.Visitors {
     sealed class DMVisitorExpression : DMASTVisitor {
-        DMObject _dmObject { get; }
-        DMProc _proc { get; }
-        DreamPath? _inferredPath { get; }
+        private readonly DMObject _dmObject;
+        private readonly DMProc _proc;
+        private readonly DreamPath? _inferredPath;
         internal DMExpression Result { get; private set; }
 
         // NOTE This needs to be turned into a Stack of modes if more complicated scope changes are added in the future
@@ -222,8 +221,7 @@ namespace DMCompiler.DM.Visitors {
         public void VisitAssign(DMASTAssign assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.NestedPath);
-            if(lhs.TryAsConstant(out var _))
-            {
+            if(lhs.TryAsConstant(out _)) {
                 DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
             }
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
@@ -738,6 +736,7 @@ namespace DMCompiler.DM.Visitors {
                 if (_inferredPath == null) {
                     throw new CompileErrorException(locate.Location, "inferred locate requires a type");
                 }
+
                 Result = new Expressions.LocateInferred(locate.Location, _inferredPath.Value, container);
                 return;
             }
@@ -746,11 +745,17 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Locate(locate.Location, pathExpr, container);
         }
 
+        public void VisitGradient(DMASTGradient gradient) {
+            var args = new ArgumentList(gradient.Location, _dmObject, _proc, gradient.Parameters);
+
+            Result = new Gradient(gradient.Location, args);
+        }
+
         public void VisitLocateCoordinates(DMASTLocateCoordinates locateCoordinates) {
-            var _x = DMExpression.Create(_dmObject, _proc, locateCoordinates.X, _inferredPath);
-            var _y = DMExpression.Create(_dmObject, _proc, locateCoordinates.Y, _inferredPath);
-            var _z = DMExpression.Create(_dmObject, _proc, locateCoordinates.Z, _inferredPath);
-            Result = new Expressions.LocateCoordinates(locateCoordinates.Location, _x, _y, _z);
+            var x = DMExpression.Create(_dmObject, _proc, locateCoordinates.X, _inferredPath);
+            var y = DMExpression.Create(_dmObject, _proc, locateCoordinates.Y, _inferredPath);
+            var z = DMExpression.Create(_dmObject, _proc, locateCoordinates.Z, _inferredPath);
+            Result = new Expressions.LocateCoordinates(locateCoordinates.Location, x, y, z);
         }
 
         public void VisitIsSaved(DMASTIsSaved isSaved) {
@@ -775,14 +780,14 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void VisitList(DMASTList list) {
-            (DMExpression Key, DMExpression Value)[] values = Array.Empty<(DMExpression, DMExpression)>();
+            (DMExpression? Key, DMExpression Value)[] values = Array.Empty<(DMExpression?, DMExpression)>();
 
             if (list.Values != null) {
-                values = new (DMExpression, DMExpression)[list.Values.Length];
+                values = new (DMExpression?, DMExpression)[list.Values.Length];
 
                 for (int i = 0; i < list.Values.Length; i++) {
                     DMASTCallParameter value = list.Values[i];
-                    DMExpression key = (value.Key != null) ? DMExpression.Create(_dmObject, _proc, value.Key) : null;
+                    DMExpression? key = (value.Key != null) ? DMExpression.Create(_dmObject, _proc, value.Key) : null;
                     DMExpression listValue = DMExpression.Create(_dmObject, _proc, value.Value);
 
                     values[i] = (key, listValue);
@@ -836,7 +841,7 @@ namespace DMCompiler.DM.Visitors {
                 arguments[i] = DMExpression.Create(_dmObject, _proc, parameter.Value);
             }
 
-            DMExpression list = null;
+            DMExpression? list = null;
             if (input.List != null) {
                 list = DMExpression.Create(_dmObject, _proc, input.List);
 
@@ -884,7 +889,7 @@ namespace DMCompiler.DM.Visitors {
             Expressions.Pick.PickValue[] pickValues = new Expressions.Pick.PickValue[pick.Values.Length];
             for (int i = 0; i < pickValues.Length; i++) {
                 DMASTPick.PickValue pickValue = pick.Values[i];
-                DMExpression weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
+                DMExpression? weight = (pickValue.Weight != null) ? DMExpression.Create(_dmObject, _proc, pickValue.Weight) : null;
                 DMExpression value = DMExpression.Create(_dmObject, _proc, pickValue.Value);
 
                 if (weight is Expressions.Prob prob) // pick(prob(50);x, prob(200);y) format

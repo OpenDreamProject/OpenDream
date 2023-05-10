@@ -1,5 +1,5 @@
-﻿using Lidgren.Network;
-using OpenDreamShared.Dream.Procs;
+﻿using System;
+using Lidgren.Network;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 
@@ -9,11 +9,11 @@ public sealed class MsgPromptList : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     public int PromptId;
-    public string Title;
-    public string Message;
-    public string DefaultValue;
+    public string Title = String.Empty;
+    public string Message = String.Empty;
+    public string DefaultValue = String.Empty;
     public bool CanCancel;
-    public string[] Values;
+    public string[] Values = Array.Empty<string>();
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         PromptId = buffer.ReadVariableInt32();

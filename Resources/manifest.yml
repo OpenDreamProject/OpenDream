@@ -4,3 +4,4 @@ assemblyPrefix: OpenDream
 windowIconSet: /OpenDream/Logo/icon
 splashLogo: /OpenDream/Logo/logo.png
 defaultWindowTitle: OpenDream
+multiWindow: true

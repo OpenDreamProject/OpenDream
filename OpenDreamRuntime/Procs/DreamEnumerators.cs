@@ -2,7 +2,7 @@
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
-    internal interface IDreamValueEnumerator {
+    public interface IDreamValueEnumerator {
         public bool Enumerate(DMProcState state, DMReference? reference);
     }
 

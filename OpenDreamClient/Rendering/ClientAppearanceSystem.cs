@@ -138,6 +138,11 @@ namespace OpenDreamClient.Rendering {
                     case DreamFilterDisplace displace:
                         break;
                     case DreamFilterDropShadow dropShadow:
+                        instance.SetParameter("size", dropShadow.Size);
+                        instance.SetParameter("x", dropShadow.X);
+                        instance.SetParameter("y", dropShadow.Y);
+                        instance.SetParameter("shadow_color", dropShadow.Color);
+                        // TODO: offset
                         break;
                     case DreamFilterLayer layer:
                         break;

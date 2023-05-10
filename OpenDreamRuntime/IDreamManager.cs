@@ -17,7 +17,6 @@ namespace OpenDreamRuntime {
 
         public List<DreamValue> Globals { get; }
         public IReadOnlyList<string> GlobalNames { get; }
-        public Dictionary<DreamObject, DreamList> AreaContents { get; set; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; }
         public HashSet<DreamObject> Clients { get; set; }
         public HashSet<DreamObject> Datums { get; set; }
@@ -49,6 +48,7 @@ namespace OpenDreamRuntime {
         DreamObject = 1,
         String = 2,
         DreamType = 3,
-        DreamResource = 4
+        DreamResource = 4,
+        DreamAppearance = 5
     }
 }

@@ -40,7 +40,7 @@ internal static class DreamProcNativeHelpers {
         }
         int WidthRange = (distance.Width - 1) >> 1; // TODO: Make rectangles work.
         int HeightRange = (distance.Height - 1) >> 1;
-        int donutCount = Math.Max(WidthRange, HeightRange); 
+        int donutCount = Math.Max(WidthRange, HeightRange);
         for(int d = 1; d <= donutCount; d++) { // for each donut
             int sideLength = d + d + 1;
             //The left column
@@ -91,15 +91,15 @@ internal static class DreamProcNativeHelpers {
     /// If a range argument is passed, like "11x4", then THAT is what we have to deal with.
     /// </remarks>
     /// <returns>The center (which may not be the turf), the distance along the x-axis, and the distance along the y-axis to iterate.</returns>
-    static public (DreamObject, ViewRange) ResolveViewArguments(DreamObject usr, DreamProcArguments arguments) {
-        if(arguments.ArgumentCount == 0) {
+    public static (DreamObject, ViewRange) ResolveViewArguments(DreamObject usr, DreamProcArguments arguments) {
+        if(arguments.Count == 0) {
             return (usr, new ViewRange(5,5));
         }
+
         ViewRange range = new ViewRange(5,5);
         DreamObject center = usr;
 
-        var args = arguments.GetAllArguments();
-        foreach(var arg in args) {
+        foreach (var arg in arguments.Values) {
             if(arg.TryGetValueAsDreamObject(out var centerObject)) {
                 center = centerObject;
             } else if(arg.TryGetValueAsInteger(out int distValue)) {
@@ -110,7 +110,7 @@ internal static class DreamProcNativeHelpers {
                 throw new Exception($"Invalid argument: {arg}");
             }
         }
-            
+
         return (center, range);
     }
 
@@ -121,25 +121,25 @@ internal static class DreamProcNativeHelpers {
     /// <see langword="TODO:"/> This proc is DEFINITELY incomplete. <br/>
     /// </remarks>
     /// <returns>True if observer can see obj. False if not.</returns>
-    static public bool IsObjectVisible(DreamObject obj, DreamObject observer) {
+    public static bool IsObjectVisible(IDreamObjectTree objectTree, DreamObject obj, DreamObject observer) {
         if(obj == observer) // Not proven to be true, but makes intuitive sense.
             return true;
 
-        if(!obj.IsSubtypeOf(DreamProcNativeRoot.ObjectTree.Atom)) {
+        if(!obj.IsSubtypeOf(objectTree.Atom)) {
             return false; // Can't see datums and nulls n stuff, I THINK???
         }
-            
+
         // https://www.byond.com/docs/ref/#/atom/var/invisibility
-        if (obj.TryGetVariable("invisiblity", out DreamValue invisibility)) {
-            if(invisibility.TryGetValueAsFloat(out float invisibilityValue)) {
+        if (obj.TryGetVariable("invisibility", out DreamValue invisibility)) {
+            if(invisibility.TryGetValueAsInteger(out int invisibilityValue)) {
                 // Ref says: "A value of 101 is absolutely invisible, no matter what"
-                if(invisibilityValue == 101f) {
+                if(invisibilityValue == 101) {
                     return false;
                 }
                 // Ref:
                 // "This determines the object's level of invisibility."
                 // "The corresponding mob variable see_invisible controls the maximum level of invisibility that the mob may see."
-                if(observer.IsSubtypeOf(DreamProcNativeRoot.ObjectTree.Mob)) {
+                if(observer.IsSubtypeOf(objectTree.Mob)) {
                     if(observer.TryGetVariable("see_invisible",out var maxInvisibility)) {
                         if(maxInvisibility.TryGetValueAsFloat(out float maxInvisibilityValue)) {
                             if(maxInvisibilityValue < invisibilityValue) {

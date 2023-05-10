@@ -4,10 +4,10 @@ using Robust.Server.GameStates;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime.Rendering {
-    sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
-        [Dependency] IAtomManager _atomManager = default!;
+    public sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
+        [Dependency] private readonly IAtomManager _atomManager = default!;
 
-        private Dictionary<IPlayerSession, HashSet<EntityUid>> _sessionToScreenObjects = new();
+        private readonly Dictionary<IPlayerSession, HashSet<EntityUid>> _sessionToScreenObjects = new();
 
         public override void Initialize() {
             SubscribeLocalEvent<ExpandPvsEvent>(HandleExpandPvsEvent);

@@ -33,6 +33,7 @@
 "G" = (/obj/button/color_matrix_test,/turf,/area)
 "H" = (/obj/plaque/color_test,/turf,/area)
 "I" = (/obj/plaque/color_matrix_test,/turf,/area)
+"J" = (/obj/order_test_target,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
@@ -55,7 +56,7 @@ baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
-bCaaaaaaaaaaaaaaaaaaab
+bCJaaaaaaaaaaaaaaaaaab
 bbbbbbbbbbbbbbbbbbbbbb
 "}
 

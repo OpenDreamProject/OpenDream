@@ -6,6 +6,7 @@ namespace OpenDreamShared.Json {
     public sealed class ProcDefinitionJson {
         public int OwningTypeId { get; set; }
         public string Name { get; set; }
+        public bool IsVerb { get; set; }
         public int MaxStackSize { get; set; }
         public List<ProcArgumentJson> Arguments { get; set; }
         public List<LocalVariableJson> Locals { get; set; }
@@ -14,9 +15,9 @@ namespace OpenDreamShared.Json {
         public int Line { get; set; }
         public byte[] Bytecode { get; set; }
 
-        [CanBeNull] public string VerbName { get; set; }
-        [CanBeNull] public string VerbCategory { get; set; } = null;
-        [CanBeNull] public string VerbDesc { get; set; }
+        public string? VerbName { get; set; }
+        public string? VerbCategory { get; set; } = null;
+        public string? VerbDesc { get; set; }
         public sbyte? Invisibility { get; set; }
     }
 

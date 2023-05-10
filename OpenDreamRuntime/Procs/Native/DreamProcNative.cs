@@ -1,18 +1,8 @@
 ﻿using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Resources;
 
 namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNative {
         public static void SetupNativeProcs(IDreamObjectTree objectTree) {
-            DreamProcNativeRoot.AtomManager = IoCManager.Resolve<IAtomManager>();
-            DreamProcNativeRoot.DreamManager = IoCManager.Resolve<IDreamManager>();
-            DreamProcNativeRoot.ResourceManager = IoCManager.Resolve<DreamResourceManager>();
-            DreamProcNativeRoot.MapManager = IoCManager.Resolve<IDreamMapManager>();
-            DreamProcNativeRoot.ObjectTree = objectTree;
-
-            DreamProcNativeIcon.ObjectTree = objectTree;
-            DreamProcNativeMatrix.ObjectTree = objectTree;
-
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_alert);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_animate);
@@ -48,7 +38,6 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ftime);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_dir);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_get_step);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_gradient);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_hascall);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_html_decode);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_html_encode);
@@ -154,6 +143,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Insert);
             objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Blend);
             objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Scale);
+            objectTree.SetNativeProc(objectTree.Icon, DreamProcNativeIcon.NativeProc_Turn);
 
             objectTree.SetNativeProc(objectTree.Savefile, DreamProcNativeSavefile.NativeProc_ExportText);
             objectTree.SetNativeProc(objectTree.Savefile, DreamProcNativeSavefile.NativeProc_Flush);

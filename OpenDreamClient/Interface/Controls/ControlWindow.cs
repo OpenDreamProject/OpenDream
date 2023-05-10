@@ -18,11 +18,11 @@ namespace OpenDreamClient.Interface.Controls {
 
         public InterfaceMacroSet Macro => _dreamInterface.MacroSets[WindowDescriptor.Macro];
 
-        private WindowDescriptor WindowDescriptor => (ElementDescriptor as WindowDescriptor);
+        private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
         private Control _menuContainer = default!;
         private LayoutContainer _canvas = default!;
-        private readonly List<(OSWindow osWindow, IClydeWindow clydeWindow)> _openWindows = new();
+        private readonly List<(OSWindow? osWindow, IClydeWindow? clydeWindow)> _openWindows = new();
 
         public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
             IoCManager.InjectDependencies(this);
@@ -32,10 +32,7 @@ namespace OpenDreamClient.Interface.Controls {
             // Don't call base.UpdateElementDescriptor();
 
             _menuContainer.RemoveAllChildren();
-            if (WindowDescriptor.Menu != null) {
-                _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu,
-                    out InterfaceMenu menu);
-
+            if (WindowDescriptor.Menu != null && _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
                 _menuContainer.AddChild(menu.MenuBar);
                 _menuContainer.Visible = true;
             } else {
@@ -63,7 +60,7 @@ namespace OpenDreamClient.Interface.Controls {
                 window.SetHeight = window.MaxHeight;
             window.Closing += _ => {
                 // A window can have a command set to be run when it's closed
-                if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+                if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
                     commandSystem.RunCommand(WindowDescriptor.OnClose);
                 }
 
@@ -148,7 +145,7 @@ namespace OpenDreamClient.Interface.Controls {
             }
         }
 
-        private void UpdateWindowAttributes((OSWindow osWindow, IClydeWindow clydeWindow) windowRoot) {
+        private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
             // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
             var (osWindow, clydeWindow) = windowRoot;
 
@@ -156,7 +153,7 @@ namespace OpenDreamClient.Interface.Controls {
             if (osWindow != null) osWindow.Title = title;
             else if (clydeWindow != null) clydeWindow.Title = title;
 
-            WindowRoot root = null;
+            WindowRoot? root = null;
             if (osWindow?.Window != null)
                 root = _uiMgr.GetWindowRoot(osWindow.Window);
             else if (clydeWindow != null)

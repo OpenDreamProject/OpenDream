@@ -1,5 +1,7 @@
 ﻿using OpenDreamShared.Dream.Procs;
+using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface.Prompts;
 
@@ -25,6 +27,7 @@ sealed class ListPrompt : InputWindow {
         }
 
         if (!foundDefault) _itemList[0].Selected = true;
+        _itemList.OnKeyBindDown += ItemList_KeyBindDown;
         SetPromptControl(_itemList, grabKeyboard: false);
     }
 
@@ -38,5 +41,12 @@ sealed class ListPrompt : InputWindow {
         }
 
         // Prompt is not finished if nothing was selected
+    }
+
+    private void ItemList_KeyBindDown(GUIBoundKeyEventArgs e) {
+        if (e.Function == EngineKeyFunctions.TextSubmit) {
+            e.Handle();
+            ButtonClicked(DefaultButton);
+        }
     }
 }

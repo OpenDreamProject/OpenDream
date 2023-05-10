@@ -19,12 +19,12 @@ namespace DMCompiler.DM.Visitors {
         /// This behaviour is nonsense but for harsh parity we sometimes may need to carry it out to hold up a codebase; <br/>
         /// Yogstation (at time of writing) actually errors on OD if we don't implement this.
         /// </summary>
-        private Constant? previousSetStatementValue;
+        private Constant? _previousSetStatementValue;
 
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
             _proc = proc;
-            previousSetStatementValue = null; // Intentional; marks that we've never seen one before and should just error like normal people.
+            _previousSetStatementValue = null; // Intentional; marks that we've never seen one before and should just error like normal people.
         }
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
@@ -163,8 +163,8 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
             _proc.AddLabel(statementLabel.Name + "_codelabel");
-            if (statementLabel.Body is not null)
-            {
+
+            if (statementLabel.Body is not null) {
                 _proc.StartScope();
                 {
                     ProcessBlockInner(statementLabel.Body);
@@ -178,25 +178,29 @@ namespace DMCompiler.DM.Visitors {
             _proc.Break(statementBreak.Label);
         }
 
-        public void ProcessStatementSet(DMASTProcStatementSet statementSet)
-        {
+        public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
             var attribute = statementSet.Attribute.ToLower();
+
             // TODO deal with "src"
             if(attribute == "src") {
                 DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
                 return;
             }
+
             if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
                 bool didError = DMCompiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
                 if (didError) // if this is an error
                     return; // don't do the cursed thing
-                // oh no.
-                if (previousSetStatementValue is null)
-                    throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
-                constant = previousSetStatementValue;
+
+                constant = _previousSetStatementValue;
             } else {
-                previousSetStatementValue = constant;
+                _previousSetStatementValue = constant;
             }
+
+            // oh no.
+            if (constant is null)
+                throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
+
             // Check if it was 'set x in y' or whatever
             // (which is illegal for everything except setting src to something)
             if (statementSet.WasInKeyword) {
@@ -414,7 +418,7 @@ namespace DMCompiler.DM.Visitors {
                             break;
                         }
                         case DMASTExpressionInRange exprRange: {
-                            DMASTVarDeclExpression decl = exprRange.Value as DMASTVarDeclExpression;
+                            DMASTVarDeclExpression? decl = exprRange.Value as DMASTVarDeclExpression;
                             decl ??= exprRange.Value is DMASTAssign assign
                                 ? assign.Expression as DMASTVarDeclExpression
                                 : null;
@@ -479,7 +483,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void ProcessStatementForStandard(DMExpression initializer, DMExpression comparator, DMExpression incrementor, DMASTProcBlockInner body) {
+        public void ProcessStatementForStandard(DMExpression? initializer, DMExpression? comparator, DMExpression? incrementor, DMASTProcBlockInner body) {
             _proc.StartScope();
             {
                 if (initializer != null) {
@@ -572,7 +576,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void ProcessStatementForType(DMExpression initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
+        public void ProcessStatementForType(DMExpression? initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
             if (type == null) {
                 // This shouldn't happen, just to be safe
                 DMCompiler.ForcedError(initializer.Location,
@@ -614,7 +618,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void ProcessStatementForRange(DMExpression initializer, DMExpression outputVar, DMExpression start, DMExpression end, DMExpression step, DMASTProcBlockInner body) {
+        public void ProcessStatementForRange(DMExpression? initializer, DMExpression outputVar, DMExpression start, DMExpression end, DMExpression? step, DMASTProcBlockInner body) {
             start.EmitPushValue(_dmObject, _proc);
             end.EmitPushValue(_dmObject, _proc);
             if (step != null) {
@@ -708,7 +712,7 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             string endLabel = _proc.NewLabelName();
             List<(string CaseLabel, DMASTProcBlockInner CaseBody)> valueCases = new();
-            DMASTProcBlockInner defaultCaseBody = null;
+            DMASTProcBlockInner? defaultCaseBody = null;
 
             DMExpression.Emit(_dmObject, _proc, statementSwitch.Value);
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
@@ -717,7 +721,7 @@ namespace DMCompiler.DM.Visitors {
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
                         Constant GetCaseValue(DMASTExpression expression) {
-                            Constant constant = null;
+                            Constant? constant = null;
 
                             try {
                                 if (!DMExpression.TryConstant(_dmObject, _proc, expression, out constant))
@@ -869,12 +873,13 @@ namespace DMCompiler.DM.Visitors {
             string catchLabel = _proc.NewLabelName();
             string endLabel = _proc.NewLabelName();
 
-            if (tryCatch.CatchParameter != null)
-            {
+            if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
+
                 if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
+
                 _proc.StartTry(catchLabel, _proc.GetLocalVariableReference(param.Name));
             } else {
                 _proc.StartTryNoValue(catchLabel);

@@ -1,4 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
@@ -24,12 +27,11 @@ namespace OpenDreamRuntime {
             DreamObject = 8,
             DreamType = 16,
             DreamProc = 32,
-            ProcArguments = 64,
-            Appearance = 128,
+            Appearance = 64,
 
             // Special types for representing /datum/proc paths
-            ProcStub = 256,
-            VerbStub = 512
+            ProcStub = 128,
+            VerbStub = 256
         }
 
         public static readonly DreamValue Null = new DreamValue((DreamObject?) null);
@@ -83,11 +85,6 @@ namespace OpenDreamRuntime {
             _refValue = appearance;
         }
 
-        public DreamValue(DreamProcArguments value) {
-            Type = DreamValueType.ProcArguments;
-            _refValue = value; // TODO: Remove this boxing. DreamValue probably shouldn't be holding proc args in the first place.
-        }
-
         public DreamValue(object value) {
             if (value is int intValue) {
                 _floatValue = intValue;
@@ -105,7 +102,6 @@ namespace OpenDreamRuntime {
                 DreamObject => DreamValueType.DreamObject,
                 IDreamObjectTree.TreeEntry => DreamValueType.DreamType,
                 DreamProc => DreamValueType.DreamProc,
-                DreamProcArguments => DreamValueType.ProcArguments,
                 _ => throw new ArgumentException($"Invalid DreamValue value ({value}, {value.GetType()})")
             };
         }
@@ -127,6 +123,8 @@ namespace OpenDreamRuntime {
         public override string ToString() {
             if (Type == DreamValueType.Float)
                 return _floatValue.ToString();
+            else if (Type == 0)
+                return "<Uninitialized DreamValue>";
             else if (_refValue == null) {
                 return "null";
             } else if (Type == DreamValueType.String) {
@@ -353,25 +351,6 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public bool TryGetValueAsProcArguments(out DreamProcArguments args) {
-            if (Type == DreamValueType.ProcArguments) {
-                args = (DreamProcArguments) _refValue;
-
-                return true;
-            }
-
-            args = default;
-            return false;
-        }
-
-        public DreamProcArguments MustGetValueAsProcArguments() {
-            try {
-                return (DreamProcArguments) _refValue;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException($"Value {this} was not the expected type of ProcArguments");
-            }
-        }
-
         public bool TryGetValueAsAppearance([NotNullWhen(true)] out IconAppearance? args) {
             if (Type == DreamValueType.Appearance) {
                 args = (IconAppearance) _refValue!;
@@ -393,19 +372,22 @@ namespace OpenDreamRuntime {
 
         public bool IsTruthy() {
             switch (Type) {
-                case DreamValue.DreamValueType.DreamObject:
-                    return _refValue != null && ((DreamObject) _refValue).Deleted == false;
-                case DreamValue.DreamValueType.DreamResource:
-                case DreamValue.DreamValueType.DreamType:
-                case DreamValue.DreamValueType.DreamProc:
-                case DreamValue.DreamValueType.ProcStub:
-                case DreamValue.DreamValueType.VerbStub:
-                case DreamValue.DreamValueType.Appearance:
+                case DreamValue.DreamValueType.DreamObject: {
+                    Debug.Assert(_refValue is DreamObject, "Failed to cast a DreamValue's DreamObject");
+                    return _refValue != null && Unsafe.As<DreamObject>(_refValue).Deleted == false;
+                }
+                case DreamValueType.DreamResource:
+                case DreamValueType.DreamType:
+                case DreamValueType.DreamProc:
+                case DreamValueType.ProcStub:
+                case DreamValueType.VerbStub:
+                case DreamValueType.Appearance:
                     return true;
-                case DreamValue.DreamValueType.Float:
+                case DreamValueType.Float:
                     return _floatValue != 0;
                 case DreamValue.DreamValueType.String:
-                    return (string) _refValue != "";
+                    Debug.Assert(_refValue is string, "Failed to cast a DreamValueType.String as a string");
+                    return Unsafe.As<string>(_refValue) != "";
                 default:
                     throw new NotImplementedException($"Truthy evaluation for {this} is not implemented");
             }
@@ -435,11 +417,9 @@ namespace OpenDreamRuntime {
 
                     return $"{owner.Path}{lastElement}";
                 case DreamValueType.DreamObject: {
-                    if (TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-                        return dreamObject.GetDisplayName();
-                    }
+                    TryGetValueAsDreamObject(out var dreamObject);
 
-                    return String.Empty;
+                    return dreamObject?.GetDisplayName() ?? String.Empty;
                 }
                 case DreamValueType.Appearance:
                     return String.Empty;
@@ -451,14 +431,22 @@ namespace OpenDreamRuntime {
         public override bool Equals(object? obj) => obj is DreamValue other && Equals(other);
 
         public bool Equals(DreamValue other) {
-            // Ensure deleted DreamObjects are made null
-            if ((_refValue as DreamObject)?.Deleted == true)
-                _refValue = null;
-            if ((other._refValue as DreamObject)?.Deleted == true)
-                other._refValue = null;
-
             if (Type != other.Type) return false;
-            if (Type == DreamValueType.Float) return _floatValue == other._floatValue;
+            switch (Type) {
+                case DreamValueType.Float:
+                    return _floatValue == other._floatValue;
+                // Ensure deleted DreamObjects are made null
+                case DreamValueType.DreamObject: {
+                    Debug.Assert(_refValue is DreamObject or null, "Failed to cast _refValue to DreamObject");
+                    Debug.Assert(other._refValue is DreamObject or null, "Failed to cast other._refValue to DreamObject");
+                    if (_refValue != null && Unsafe.As<DreamObject>(_refValue).Deleted)
+                        _refValue = null;
+                    if (other._refValue != null && Unsafe.As<DreamObject>(other._refValue).Deleted)
+                        other._refValue = null;
+                    break;
+                }
+            }
+
             if (_refValue == null) return other._refValue == null;
 
             return _refValue.Equals(other._refValue);

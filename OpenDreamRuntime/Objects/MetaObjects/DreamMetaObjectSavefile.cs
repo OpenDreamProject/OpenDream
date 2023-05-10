@@ -121,7 +121,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (!index.TryGetValueAsString(out string? entryName)) throw new Exception($"Invalid savefile index {index}");
 
             savefile.CurrentDir[entryName] = value;
-            savefile.Flush(); //TODO: Don't flush after every change
         }
     }
 }

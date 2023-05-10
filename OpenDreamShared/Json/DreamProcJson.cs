@@ -8,12 +8,12 @@ namespace OpenDreamShared.Json {
         public string Name { get; set; }
         public bool IsVerb { get; set; }
         public int MaxStackSize { get; set; }
-        public List<ProcArgumentJson> Arguments { get; set; }
+        public List<ProcArgumentJson>? Arguments { get; set; }
         public List<LocalVariableJson> Locals { get; set; }
         public ProcAttributes Attributes { get; set; } = ProcAttributes.None;
         public string Source { get; set; }
         public int Line { get; set; }
-        public byte[] Bytecode { get; set; }
+        public byte[]? Bytecode { get; set; }
 
         public string? VerbName { get; set; }
         public string? VerbCategory { get; set; } = null;

@@ -69,20 +69,15 @@ namespace DMCompiler.DM.Expressions {
         protected AssignmentUnaryOp(Location location, DMExpression expr) : base(location, expr) {
         }
 
-        protected abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference);
+        protected abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel);
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            (DMReference reference, bool conditional) = Expr.EmitReference(dmObject, proc);
+            string endLabel = proc.NewLabelName();
 
-            if (conditional) {
-                string skipLabel = proc.NewLabelName();
+            DMReference reference = Expr.EmitReference(dmObject, proc, endLabel);
+            EmitOp(dmObject, proc, reference, endLabel);
 
-                proc.JumpIfNullDereference(reference, skipLabel);
-                EmitOp(dmObject, proc, reference);
-                proc.AddLabel(skipLabel);
-            } else {
-                EmitOp(dmObject, proc, reference);
-            }
+            proc.AddLabel(endLabel);
         }
     }
 
@@ -91,7 +86,7 @@ namespace DMCompiler.DM.Expressions {
         public PreIncrement(Location location, DMExpression expr) : base(location, expr) {
         }
 
-        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.PushFloat(1);
             proc.Append(reference);
         }
@@ -102,7 +97,7 @@ namespace DMCompiler.DM.Expressions {
         public PostIncrement(Location location, DMExpression expr) : base(location, expr) {
         }
 
-        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.Increment(reference);
         }
     }
@@ -113,7 +108,7 @@ namespace DMCompiler.DM.Expressions {
             : base(location, expr) {
         }
 
-        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.PushFloat(1);
             proc.Remove(reference);
         }
@@ -125,7 +120,7 @@ namespace DMCompiler.DM.Expressions {
             : base(location, expr) {
         }
 
-        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.Decrement(reference);
         }
     }

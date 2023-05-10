@@ -222,6 +222,14 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception($"Invalid var index {key}");
             }
         }
+
+        public override DreamValue Initial(string name) {
+            return _dreamObject.Initial(name);
+        }
+
+        public override bool IsSaved(string name) {
+            return _dreamObject.IsSaved(name);
+        }
     }
 
     // global.vars list

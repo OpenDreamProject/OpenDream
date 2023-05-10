@@ -500,20 +500,15 @@ namespace DMCompiler.DM.Expressions {
         /// </summary>
         /// <remarks>You should always make use of the reference argument, unless you totally override AssignmentBinaryOp's EmitPushValue method.</remarks>
         /// <param name="reference">A reference to the LHS emitted via <see cref="DMExpression.EmitReference(DMObject, DMProc)"/></param>
-        public abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference);
+        public abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel);
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            (DMReference reference, bool conditional) = LHS.EmitReference(dmObject, proc);
+            string endLabel = proc.NewLabelName();
 
-            if (conditional) {
-                string nullSkipLabel = proc.NewLabelName();
+            DMReference reference = LHS.EmitReference(dmObject, proc, endLabel);
+            EmitOp(dmObject, proc, reference, endLabel);
 
-                proc.JumpIfNullDereference(reference, nullSkipLabel);
-                EmitOp(dmObject, proc, reference);
-                proc.AddLabel(nullSkipLabel);
-            } else {
-                EmitOp(dmObject, proc, reference);
-            }
+            proc.AddLabel(endLabel);
         }
     }
 
@@ -524,7 +519,7 @@ namespace DMCompiler.DM.Expressions {
         public Assignment(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
         }
@@ -535,7 +530,7 @@ namespace DMCompiler.DM.Expressions {
         public Append(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Append(reference);
         }
@@ -546,7 +541,7 @@ namespace DMCompiler.DM.Expressions {
         public Combine(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Combine(reference);
         }
@@ -557,7 +552,7 @@ namespace DMCompiler.DM.Expressions {
         public Remove(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Remove(reference);
         }
@@ -568,7 +563,7 @@ namespace DMCompiler.DM.Expressions {
         public Mask(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Mask(reference);
         }
@@ -578,22 +573,10 @@ namespace DMCompiler.DM.Expressions {
     class LogicalAndAssign : AssignmentBinaryOp {
         public LogicalAndAssign(Location location, DMExpression lhs, DMExpression rhs) : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            string skipLabel = proc.NewLabelName();
-            string endLabel = proc.NewLabelName();
-
-            proc.PushReferenceValue(reference);
-            proc.JumpIfFalse(skipLabel);
-
-            LHS.EmitReference(dmObject, proc);
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
+            proc.JumpIfFalseReference(reference, endLabel);
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
-            proc.Jump(endLabel);
-
-            proc.AddLabel(skipLabel);
-            var (ref2, _) = LHS.EmitReference(dmObject, proc);
-            proc.PushReferenceValue(ref2);
-            proc.AddLabel(endLabel);
         }
     }
 
@@ -601,22 +584,10 @@ namespace DMCompiler.DM.Expressions {
     class LogicalOrAssign : AssignmentBinaryOp {
         public LogicalOrAssign(Location location, DMExpression lhs, DMExpression rhs) : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
-            string skipLabel = proc.NewLabelName();
-            string endLabel = proc.NewLabelName();
-
-            proc.PushReferenceValue(reference);
-            proc.JumpIfTrue(skipLabel);
-
-            LHS.EmitReference(dmObject, proc);
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
+            proc.JumpIfTrueReference(reference, endLabel);
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
-            proc.Jump(endLabel);
-
-            proc.AddLabel(skipLabel);
-            var (ref2, _) = LHS.EmitReference(dmObject, proc);
-            proc.PushReferenceValue(ref2);
-            proc.AddLabel(endLabel);
         }
     }
 
@@ -625,7 +596,7 @@ namespace DMCompiler.DM.Expressions {
         public MultiplyAssign(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.MultiplyReference(reference);
         }
@@ -636,7 +607,7 @@ namespace DMCompiler.DM.Expressions {
         public DivideAssign(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.DivideReference(reference);
         }
@@ -647,7 +618,7 @@ namespace DMCompiler.DM.Expressions {
         public LeftShiftAssign(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.BitShiftLeftReference(reference);
         }
@@ -658,7 +629,7 @@ namespace DMCompiler.DM.Expressions {
         public RightShiftAssign(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.BitShiftRightReference(reference);
         }
@@ -669,7 +640,7 @@ namespace DMCompiler.DM.Expressions {
         public XorAssign(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.BinaryXorReference(reference);
         }
@@ -680,7 +651,7 @@ namespace DMCompiler.DM.Expressions {
         public ModulusAssign(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.ModulusReference(reference);
         }
@@ -691,7 +662,7 @@ namespace DMCompiler.DM.Expressions {
         public ModulusModulusAssign(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.ModulusModulusReference(reference);
         }

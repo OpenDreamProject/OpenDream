@@ -118,20 +118,6 @@ namespace DMCompiler.DM.Expressions {
             proc.AddLabel(endLabel);
         }
 
-        public DMValueType GetReturnType()
-        {
-            if (_expr.Path == null)
-            {
-                return DMValueType.Anything;
-            }
-
-            DMObject? dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);
-            var type = dmObject?.GetReturnType(_field) ?? DMValueType.Anything;
-
-            return type;
-        }
-    }
-
         public override bool CanReferenceShortCircuit() {
             foreach (var operation in _operations) {
                 switch (operation.Kind) {

@@ -115,16 +115,7 @@ namespace DMCompiler.DM.Expressions {
         public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
             _target = target;
             _arguments = arguments;
-            switch (_target)
-            {
-                case DereferenceProc derefTarget:
-                    ValType = derefTarget.GetReturnType();
-                    break;
-                case ProcCall:
-                case ProcSuper:
-                    ValType = _target.ValType;
-                    break;
-            }
+            ValType = _target.ValType;
         }
 
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
@@ -137,10 +128,6 @@ namespace DMCompiler.DM.Expressions {
                 case GlobalProc procTarget: {
                     ValType = procTarget.GetReturnType();
                     return (null, procTarget.GetProc());
-                }
-                case DereferenceProc derefTarget: {
-                    ValType = derefTarget.GetReturnType();
-                    return derefTarget.GetProc();
                 }
                 default:
                     return (null, null);

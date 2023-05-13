@@ -542,7 +542,7 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     var property = DMObjectTree.Globals[globalId.Value];
-                    expr = new GlobalField(expr.Location, property.Type, globalId.Value);
+                    expr = new GlobalField(expr.Location, property.Type, globalId.Value, property.ValType);
 
                     var newOperationCount = operations.Length - 1;
                     if (newOperationCount == 0) {
@@ -630,7 +630,7 @@ namespace DMCompiler.DM.Visitors {
                                 if (globalId != null) {
                                     property = DMObjectTree.Globals[globalId.Value];
 
-                                    expr = new GlobalField(expr.Location, property.Type, globalId.Value);
+                                    expr = new GlobalField(expr.Location, property.Type, globalId.Value, property.ValType);
 
                                     var newOperationCount = operations.Length - i - 1;
                                     if (newOperationCount == 0) {

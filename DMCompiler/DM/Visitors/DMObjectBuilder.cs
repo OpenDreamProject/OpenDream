@@ -266,6 +266,8 @@ namespace DMCompiler.DM.Visitors {
 
                 DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
 
+                proc.IsVerb = procDefinition.IsVerb;
+
                 if (procDefinition.ObjectPath == DreamPath.Root) {
                     if(procDefinition.IsOverride) {
                         DMCompiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");

@@ -738,29 +738,24 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!state.GetArgument(1, "Loc2").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc2))
                 return new DreamValue(0);
 
-            loc1.GetVariable("z").TryGetValueAsInteger(out var z1);
-            loc2.GetVariable("z").TryGetValueAsInteger(out var z2);
-            if (z1 != z2) // They must be on the same z-level
+            var loc1Pos = state.AtomManager.GetAtomPosition(loc1);
+            var loc2Pos = state.AtomManager.GetAtomPosition(loc2);
+
+            if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
                 return new DreamValue(0);
-
-            loc1.GetVariable("x").TryGetValueAsInteger(out var x1);
-            loc1.GetVariable("y").TryGetValueAsInteger(out var y1);
-
-            loc2.GetVariable("x").TryGetValueAsInteger(out var x2);
-            loc2.GetVariable("y").TryGetValueAsInteger(out var y2);
 
             int direction = 0;
 
             // East or West
-            if (x2 < x1)
+            if (loc2Pos.X < loc1Pos.X)
                 direction |= (int)AtomDirection.West;
-            else if (x2 > x1)
+            else if (loc2Pos.X > loc1Pos.X)
                 direction |= (int)AtomDirection.East;
 
             // North or South
-            if (y2 < y1)
+            if (loc2Pos.Y < loc1Pos.Y)
                 direction |= (int) AtomDirection.South;
-            else if (y2 > y1)
+            else if (loc2Pos.Y > loc1Pos.Y)
                 direction |= (int) AtomDirection.North;
 
             return new DreamValue(direction);
@@ -777,23 +772,21 @@ namespace OpenDreamRuntime.Procs.Native {
             if (dir >= 16) // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
                 return DreamValue.Null;
 
-            loc.GetVariable("x").TryGetValueAsInteger(out var x);
-            loc.GetVariable("y").TryGetValueAsInteger(out var y);
-            loc.GetVariable("z").TryGetValueAsInteger(out var z);
+            var locPos = state.AtomManager.GetAtomPosition(loc);
 
             if (dir > 0) {
                 if ((dir & (int) AtomDirection.North) == (int) AtomDirection.North)
-                    y += 1;
+                    locPos.Y += 1;
                 if ((dir & (int) AtomDirection.South) == (int) AtomDirection.South) // A dir of NORTH | SOUTH will cancel out
-                    y -= 1;
+                    locPos.Y -= 1;
 
                 if ((dir & (int) AtomDirection.East) == (int) AtomDirection.East)
-                    x += 1;
+                    locPos.X += 1;
                 if ((dir & (int) AtomDirection.West) == (int) AtomDirection.West) // A dir of EAST | WEST will cancel out
-                    x -= 1;
+                    locPos.X -= 1;
             }
 
-            state.MapManager.TryGetTurfAt((x, y), z, out var turf);
+            state.MapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
             return new DreamValue(turf);
         }
 
@@ -1622,14 +1615,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
             foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-                if(!DreamProcNativeHelpers.IsObjectVisible(state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+                if(!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
                     continue;
                 }
                 view.AddValue(new DreamValue(turf));
                 if(turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
                     foreach (DreamValue content in contentsList.GetValues()) {
-                        if (content.TryGetValueAsDreamObject(out DreamObject contentObject)) {
-                            if (!DreamProcNativeHelpers.IsObjectVisible(state.ObjectTree, contentObject, center)) {
+                        if (content.TryGetValueAsDreamObject(out var contentObject)) {
+                            if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
                                 continue;
                             }
                         }
@@ -1668,16 +1661,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamList view = state.ObjectTree.CreateList();
             int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
-            int centerX = center.GetVariable("x").GetValueAsInteger();
-            int centerY = center.GetVariable("y").GetValueAsInteger();
+            var centerPos = state.AtomManager.GetAtomPosition(center);
 
             foreach (DreamObject mob in state.AtomManager.Mobs) {
-                int mobX = mob.GetVariable("x").GetValueAsInteger();
-                int mobY = mob.GetVariable("y").GetValueAsInteger();
+                var mobPos = state.AtomManager.GetAtomPosition(mob);
 
-                if (mobX == centerX && mobY == centerY) continue;
+                if (mobPos.X == centerPos.X && mobPos.Y == centerPos.Y) continue;
 
-                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+                if (Math.Abs(centerPos.X - mobPos.X) <= depth && Math.Abs(centerPos.Y - mobPos.Y) <= depth) {
                     view.AddValue(new DreamValue(mob));
                 }
             }
@@ -1885,10 +1876,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("B", Type = DreamValueType.Float)]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_rgb(NativeProc.State state) {
+            // TODO: accept lowercase named arguments here too
             state.GetArgument(0, "R").TryGetValueAsInteger(out var r);
             state.GetArgument(1, "G").TryGetValueAsInteger(out var g);
             state.GetArgument(2, "B").TryGetValueAsInteger(out var b);
             DreamValue aValue = state.GetArgument(3, "A");
+
+            r = Math.Clamp(r, 0, 255);
+            g = Math.Clamp(g, 0, 255);
+            b = Math.Clamp(b, 0, 255);
 
             // TODO: There is a difference between passing null and not passing a fourth arg at all
             // Likely a compile-time difference
@@ -1896,6 +1892,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}");
             } else {
                 aValue.TryGetValueAsInteger(out var a);
+                a = Math.Clamp(a, 0, 255);
 
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}{a:X2}");
             }
@@ -2509,19 +2506,51 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueType.String)]
         public static DreamValue NativeProc_text2path(NativeProc.State state) {
-            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text)) {
+            if (!state.GetArgument(0, "T").TryGetValueAsString(out var text) || string.IsNullOrWhiteSpace(text)) {
                 return DreamValue.Null;
             }
 
             DreamPath path = new DreamPath(text);
-            if (path.FindElement("proc") != -1 || path.FindElement("verb") != -1)
-                throw new NotImplementedException("text2path() for procs is not implemented");
 
-            if (state.ObjectTree.TryGetTreeEntry(path, out var type)) {
-                return new DreamValue(type);
-            } else {
-                return DreamValue.Null;
+            bool isVerb = false;
+
+            int procElementIndex = path.FindElement("proc");
+            if (procElementIndex == -1) {
+                procElementIndex = path.FindElement("verb");
+                if (procElementIndex != -1)
+                    isVerb = true;
             }
+
+            bool isProcPath = procElementIndex != -1;
+
+            string? procName = null;
+            if (isProcPath) {
+                procName = path.LastElement;
+
+                if (procElementIndex == 0) { // global procs
+                    if (procName != null && state.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
+                        return new DreamValue(globalProc);
+                    else
+                        return DreamValue.Null;
+                }
+            }
+
+            DreamPath typePath = isProcPath ? path.FromElements(0, procElementIndex) : path;
+
+            if (!state.ObjectTree.TryGetTreeEntry(typePath, out var type) || type == state.ObjectTree.Root)
+                return DreamValue.Null;
+
+            if (!isProcPath || procName == null)
+                return new DreamValue(type);
+
+            // not using TryGetProc because that includes overrides
+            if (type.ObjectDefinition.Procs.TryGetValue(procName, out int procId)) {
+                DreamProc proc = state.ObjectTree.Procs[procId];
+                if (proc.IsVerb == isVerb)
+                    return new DreamValue(proc);
+            }
+
+            return DreamValue.Null;
         }
 
         [DreamProc("time2text")]
@@ -2767,12 +2796,12 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
             //Have to include centre
-            if(DreamProcNativeHelpers.IsObjectVisible(state.ObjectTree, center, center)) // NOTE: I think this is always true, but I'm not 100% sure.
+            if(DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, center, center)) // NOTE: I think this is always true, but I'm not 100% sure.
                 view.AddValue(new DreamValue(center));
             if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
                 foreach (DreamValue content in centerContentsList.GetValues()) {
-                    if (content.TryGetValueAsDreamObject(out DreamObject contentObject)) {
-                        if (!DreamProcNativeHelpers.IsObjectVisible(state.ObjectTree, contentObject, center)) {
+                    if (content.TryGetValueAsDreamObject(out var contentObject)) {
+                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
                             continue;
                         }
                     }
@@ -2791,14 +2820,14 @@ namespace OpenDreamRuntime.Procs.Native {
             }
             //and then everything else
             foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-                if (!DreamProcNativeHelpers.IsObjectVisible(state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+                if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
                     continue;
                 }
                 view.AddValue(new DreamValue(turf));
                 if (turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
                     foreach (DreamValue content in contentsList.GetValues()) {
-                        if (content.TryGetValueAsDreamObject(out DreamObject contentObject)) {
-                            if (!DreamProcNativeHelpers.IsObjectVisible(state.ObjectTree, contentObject, center)) {
+                        if (content.TryGetValueAsDreamObject(out var contentObject)) {
+                            if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
                                 continue;
                             }
                         }

@@ -1,6 +1,7 @@
 
 /proc/RunTest()
 	var/savefile/S = new("savefile.sav")
+	var/savefile/S2 = null
 	var/V
 
 	// Indexing the object to write/read the savefile
@@ -13,5 +14,8 @@
 	S["DEF"] << 10
 	S["DEF"] >> V
 	ASSERT(V == 10)
+
+	// Shouldn't evaluate CRASH
+	S2?["ABC"] << CRASH("rhs should not evaluate due to null-conditional")
 
 	fdel("savefile.sav")

@@ -3,7 +3,6 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
-using Robust.Shared.Analyzers;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -12,7 +11,6 @@ using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     sealed class DMProc {
-        [Virtual]
         public class LocalVariable {
             public readonly int Id;
             public readonly bool IsParameter;

@@ -7,7 +7,6 @@ using System.Reflection;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Compiler;
-using Robust.Shared.Analyzers;
 
 namespace DMCompiler.Compiler.DM {
 
@@ -108,7 +107,6 @@ namespace DMCompiler.Compiler.DM {
 
         }
 
-        [Virtual]
         public class ObjectPrinter {
             public List<Type> tostring_types = new() {
                 typeof(string),

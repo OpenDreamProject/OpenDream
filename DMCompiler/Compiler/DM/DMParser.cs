@@ -7,10 +7,8 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Analyzers;
 using String = System.String;
-using Robust.Shared.Utility;
 
 namespace DMCompiler.Compiler.DM {
-    [Virtual]
     public partial class DMParser : Parser<Token> {
 
         private DreamPath _currentPath = DreamPath.Root;

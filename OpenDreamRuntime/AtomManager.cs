@@ -432,14 +432,14 @@ namespace OpenDreamRuntime {
 
         public (int X, int Y, int Z) GetAtomPosition(DreamObject atom) {
             if (atom.IsSubtypeOf(_objectTree.Movable)) {
-                if (!_entitySystemManager.TryGetEntitySystem(out _transformSystem))
+                if (_transformSystem == null && !_entitySystemManager.TryGetEntitySystem(out _transformSystem))
                     return (0, 0, 0);
 
                 var entity = GetMovableEntity(atom);
-                if (!_transformSystem.TryGetMapOrGridCoordinates(entity, out var coordinates))
-                    return (0, 0, 0);
+                var transform = _entityManager.GetComponent<TransformComponent>(entity);
+                var worldPosition = _transformSystem.GetWorldPosition(transform);
 
-                return ((int)coordinates.Value.X, (int)coordinates.Value.Y, (int)coordinates.Value.GetMapId(_entityManager));
+                return ((int)worldPosition.X, (int)worldPosition.Y, (int)transform.MapID);
             } else if (atom.IsSubtypeOf(_objectTree.Turf)) {
                 var position = _dreamMapManager.GetTurfPosition(atom);
 

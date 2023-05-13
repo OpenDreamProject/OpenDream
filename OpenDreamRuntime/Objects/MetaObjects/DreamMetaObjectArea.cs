@@ -13,6 +13,8 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         [Dependency] private readonly IEntityManager _entityManager = default!;
         private readonly EntityQuery<TransformComponent> _transformQuery;
 
+        public static readonly Dictionary<DreamObject, AreaContentsList> AreaContentsLists = new();
+
         public DreamMetaObjectArea() {
             IoCManager.InjectDependencies(this);
 
@@ -20,32 +22,22 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
-            DreamList contents = _objectTree.CreateList();
-
-            contents.ValueAssigned += (_, _, value) => {
-                if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turf))
-                    return;
-
-                (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
-                level.SetArea(pos, dreamObject);
-            };
-
+            AreaContentsLists.Add(dreamObject, new AreaContentsList(_objectTree, _dreamMapManager, dreamObject));
             _atomManager.Areas.Add(dreamObject);
-            _dreamManager.AreaContents.Add(dreamObject, contents);
 
             ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
         public void OnObjectDeleted(DreamObject dreamObject) {
+            AreaContentsLists.Remove(dreamObject);
             _atomManager.Areas.RemoveSwap(_atomManager.Areas.IndexOf(dreamObject));
-            _dreamManager.AreaContents.Remove(dreamObject);
 
             ParentType?.OnObjectDeleted(dreamObject);
         }
 
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             if (varName == "contents") {
-                return new DreamValue(_dreamManager.AreaContents[dreamObject]);
+                return new DreamValue(AreaContentsLists[dreamObject]);
             } else {
                 return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }

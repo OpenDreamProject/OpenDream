@@ -1,18 +1,16 @@
 using System.Linq;
+using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Serialization.Manager;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Objects {
-    delegate void DreamListValueAssignedEventHandler(DreamList list, DreamValue key, DreamValue value);
-    delegate void DreamListBeforeValueRemovedEventHandler(DreamList list, DreamValue key, DreamValue value);
-
     [Virtual]
     public class DreamList : DreamObject {
-        internal event DreamListValueAssignedEventHandler? ValueAssigned;
-        internal event DreamListBeforeValueRemovedEventHandler? BeforeValueRemoved;
-
-        private List<DreamValue> _values;
+        private readonly List<DreamValue> _values;
         private Dictionary<DreamValue, DreamValue>? _associativeValues;
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
@@ -74,8 +72,6 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
-            ValueAssigned?.Invoke(this, key, value);
-
             if (key.TryGetValueAsInteger(out int keyInteger)) {
                 if (allowGrowth && keyInteger == _values.Count + 1) {
                     _values.Add(value);
@@ -90,12 +86,10 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public void RemoveValue(DreamValue value) {
+        public virtual void RemoveValue(DreamValue value) {
             int valueIndex = _values.LastIndexOf(value);
 
             if (valueIndex != -1) {
-                BeforeValueRemoved?.Invoke(this, new DreamValue(valueIndex), _values[valueIndex]);
-
                 _associativeValues?.Remove(value);
                 _values.RemoveAt(valueIndex);
             }
@@ -103,8 +97,6 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual void AddValue(DreamValue value) {
             _values.Add(value);
-
-            ValueAssigned?.Invoke(this, new DreamValue(_values.Count), value);
         }
 
         //Does not include associations
@@ -128,12 +120,6 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual void Cut(int start = 1, int end = 0) {
             if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
-
-            if (BeforeValueRemoved != null) {
-                for (int i = end - 1; i >= start; i--) {
-                    BeforeValueRemoved.Invoke(this, new DreamValue(i), _values[i - 1]);
-                }
-            }
 
             _values.RemoveRange(start - 1, end - start);
         }
@@ -235,6 +221,14 @@ namespace OpenDreamRuntime.Objects {
             } else {
                 throw new Exception($"Invalid var index {key}");
             }
+        }
+
+        public override DreamValue Initial(string name) {
+            return _dreamObject.Initial(name);
+        }
+
+        public override bool IsSaved(string name) {
+            return _dreamObject.IsSaved(name);
         }
     }
 
@@ -357,6 +351,110 @@ namespace OpenDreamRuntime.Objects {
         }
     }
 
+    // atom.overlays or atom.underlays list
+    // Operates on an atom's appearance
+    sealed class DreamOverlaysList : DreamList {
+        [Dependency] private readonly IAtomManager _atomManager = default!;
+        private readonly ServerAppearanceSystem? _appearanceSystem;
+
+        private readonly DreamObject _atom;
+        private readonly bool _isUnderlays;
+
+        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
+            IoCManager.InjectDependencies(this);
+
+            _atom = atom;
+            _appearanceSystem = appearanceSystem;
+            _isUnderlays = isUnderlays;
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            _atomManager.UpdateAppearance(_atom, appearance => {
+                List<uint> overlaysList = GetOverlaysList(appearance);
+                int count = overlaysList.Count + 1;
+                if (end == 0 || end > count) end = count;
+
+                overlaysList.RemoveRange(start - 1, end - start);
+            });
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var overlayIndex) || overlayIndex < 1)
+                throw new Exception($"Invalid index into {(_isUnderlays ? "underlays" : "overlays")} list: {key}");
+
+            IconAppearance appearance = GetAppearance();
+            List<uint> overlaysList = GetOverlaysList(appearance);
+            if (overlayIndex > overlaysList.Count)
+                throw new Exception($"Atom only has {overlaysList.Count} {(_isUnderlays ? "underlay" : "overlay")}(s), cannot index {overlayIndex}");
+
+            if (_appearanceSystem == null)
+                return DreamValue.Null;
+
+            uint overlayId = GetOverlaysList(appearance)[overlayIndex - 1];
+            IconAppearance overlayAppearance = _appearanceSystem.MustGetAppearance(overlayId);
+            return new DreamValue(overlayAppearance);
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception($"Cannot write to an index of an {(_isUnderlays ? "underlays" : "overlays")} list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            if (_appearanceSystem == null)
+                return;
+
+            _atomManager.UpdateAppearance(_atom, appearance => {
+                IconAppearance overlayAppearance = CreateOverlayAppearance(value);
+
+                GetOverlaysList(appearance).Add(_appearanceSystem.AddAppearance(overlayAppearance));
+            });
+        }
+
+        public override void RemoveValue(DreamValue value) {
+            if (_appearanceSystem == null)
+                return;
+
+            _atomManager.UpdateAppearance(_atom, appearance => {
+                IconAppearance overlayAppearance = CreateOverlayAppearance(value);
+
+                GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance));
+            });
+        }
+
+        public override int GetLength() {
+            return GetOverlaysList(GetAppearance()).Count;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private List<uint> GetOverlaysList(IconAppearance appearance) =>
+            _isUnderlays ? appearance.Underlays : appearance.Overlays;
+
+        private IconAppearance GetAppearance() {
+            IconAppearance? appearance = _atomManager.MustGetAppearance(_atom);
+            if (appearance == null)
+                throw new Exception("Atom has no appearance");
+
+            return appearance;
+        }
+
+        private IconAppearance CreateOverlayAppearance(DreamValue value) {
+            IconAppearance overlay;
+
+            if (value.TryGetValueAsString(out var iconState)) {
+                overlay = new IconAppearance() {
+                    IconState = iconState
+                };
+            } else if (_atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
+                overlay = overlayAppearance;
+            } else {
+                return new IconAppearance(); // Not a valid overlay, use a default appearance
+            }
+
+            overlay.Icon ??= GetAppearance().Icon;
+            return overlay;
+        }
+    }
+
     // atom.filters list
     // Operates on an atom's appearance
     public sealed class DreamFilterList : DreamList {
@@ -387,12 +485,10 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void SetFilter(int index, DreamFilter filter) {
-            IconAppearance appearance = GetAppearance();
-            if (index < 1 || index > appearance.Filters.Count)
-                throw new Exception($"Cannot index {index} on filter list");
-
-
             _atomManager.UpdateAppearance(_atom, appearance => {
+                if (index < 1 || index > appearance.Filters.Count)
+                    throw new Exception($"Cannot index {index} on filter list");
+
                 DreamFilter oldFilter = appearance.Filters[index - 1];
 
                 DreamMetaObjectFilter.FilterAttachedTo.Remove(oldFilter);
@@ -450,6 +546,66 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception("Atom has no appearance");
 
             return appearance;
+        }
+    }
+
+    // client.screen list
+    public sealed class ClientScreenList : DreamList {
+        private readonly IDreamObjectTree _objectTree;
+        private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
+
+        private readonly DreamConnection _connection;
+        private readonly List<DreamValue> _screenObjects = new();
+
+        public ClientScreenList(IDreamObjectTree objectTree, ServerScreenOverlaySystem? screenOverlaySystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
+            _objectTree = objectTree;
+            _screenOverlaySystem = screenOverlaySystem;
+
+            _connection = connection;
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var screenIndex) || screenIndex < 1 || screenIndex > _screenObjects.Count)
+                throw new Exception($"Invalid index into screen list: {key}");
+
+            return _screenObjects[screenIndex - 1];
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot write to an index of a screen list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+                return;
+
+            _screenOverlaySystem?.AddScreenObject(_connection, movable);
+            _screenObjects.Add(value);
+        }
+
+        public override void RemoveValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+                return;
+
+            _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
+            _screenObjects.Remove(value);
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            if (end == 0 || end > _screenObjects.Count + 1) end = _screenObjects.Count + 1;
+
+            for (int i = start - 1; i < end - 1; i++) {
+                if (!_screenObjects[i].TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+                    continue;
+
+                _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
+            }
+
+            _screenObjects.RemoveRange(start - 1, end - start);
+        }
+
+        public override int GetLength() {
+            return _screenObjects.Count;
         }
     }
 
@@ -544,6 +700,117 @@ namespace OpenDreamRuntime.Objects {
 
         public override int GetLength() {
             return _cell.Movables.Count;
+        }
+    }
+
+    // area.contents list
+    public sealed class AreaContentsList : DreamList {
+        private readonly IDreamObjectTree _objectTree;
+        private readonly IDreamMapManager _dreamMapManager;
+
+        private readonly DreamObject _area;
+        private readonly List<DreamValue> _turfs = new();
+
+        public AreaContentsList(IDreamObjectTree objectTree, IDreamMapManager dreamMapManager, DreamObject area) : base(
+            objectTree.List.ObjectDefinition, 0) {
+            _objectTree = objectTree;
+            _dreamMapManager = dreamMapManager;
+
+            _area = area;
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var index))
+                throw new Exception($"Invalid index into area contents list: {key}");
+            if (index < 1 || index > _turfs.Count)
+                throw new Exception($"Out of bounds index on turf contents list: {index}");
+
+            return _turfs[index - 1];
+        }
+
+        public override List<DreamValue> GetValues() {
+            return _turfs;
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot set an index of area contents list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turf))
+                throw new Exception($"Cannot add {value} to area contents");
+
+            (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
+            level.SetArea(pos, _area);
+
+            // TODO: Actually keep track of every turf in an area, not just which ones have been added by DM through .contents
+            _turfs.Add(value);
+        }
+
+        public override void RemoveValue(DreamValue value) {
+            // TODO
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            // TODO
+        }
+
+        public override int GetLength() {
+            return _turfs.Count;
+        }
+    }
+
+    // proc args list
+    sealed class ProcArgsList : DreamList {
+        private readonly DMProcState _state;
+
+        public ProcArgsList(DreamObjectDefinition listDef, DMProcState state) : base(listDef, 0) {
+            _state = state;
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var index))
+                throw new Exception($"Invalid index into args list: {key}");
+            if (index < 1 || index > _state.ArgumentCount)
+                throw new Exception($"Out of bounds index on args list: {index}");
+
+            return _state.GetArguments()[index - 1];
+        }
+
+        // TODO: This would preferably be an IEnumerable<> method. Probably as part of #985.
+        public override List<DreamValue> GetValues() {
+            List<DreamValue> values = new(_state.ArgumentCount);
+
+            foreach (DreamValue value in _state.GetArguments()) {
+                values.Add(value);
+            }
+
+            return values;
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            if (!key.TryGetValueAsInteger(out var index))
+                throw new Exception($"Invalid index into args list: {key}");
+            if (index < 1 || index > _state.ArgumentCount)
+                throw new Exception($"Out of bounds index on args list: {index}");
+
+            _state.SetArgument(index - 1, value);
+        }
+
+        public override void AddValue(DreamValue value) {
+            throw new Exception("Cannot add new values to args list");
+        }
+
+        public override void RemoveValue(DreamValue value) {
+            throw new Exception("Cannot remove values to args list");
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            throw new Exception("Cannot cut args list");
+        }
+
+        public override int GetLength() {
+            return _state.ArgumentCount;
         }
     }
 }

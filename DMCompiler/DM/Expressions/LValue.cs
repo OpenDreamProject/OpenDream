@@ -12,21 +12,26 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            (DMReference reference, bool conditional) = EmitReference(dmObject, proc);
+            string endLabel = proc.NewLabelName();
 
-            if (conditional) {
-                string skipLabel = proc.NewLabelName();
+            DMReference reference = EmitReference(dmObject, proc, endLabel);
+            proc.PushReferenceValue(reference);
 
-                proc.JumpIfNullDereference(reference, skipLabel);
-                proc.PushReferenceValue(reference);
-                proc.AddLabel(skipLabel);
-            } else {
-                proc.PushReferenceValue(reference);
-            }
+            proc.AddLabel(endLabel);
         }
 
         public virtual void EmitPushInitial(DMObject dmObject, DMProc proc) {
             throw new CompileErrorException(Location, $"Can't get initial value of {this}");
+        }
+    }
+
+    // global
+    class Global : LValue {
+        public Global(Location location)
+            : base(location, null) { }
+
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            throw new CompileErrorException(Location, $"attempt to use `global` as a reference");
         }
     }
 
@@ -36,8 +41,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, path)
         {}
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.Src, false);
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            return DMReference.Src;
         }
 
         public override string GetNameof(DMObject dmObject, DMProc proc) {
@@ -51,8 +56,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, DreamPath.Mob)
         {}
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.Usr, false);
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            return DMReference.Usr;
         }
     }
 
@@ -62,8 +67,8 @@ namespace DMCompiler.DM.Expressions {
             : base(location, DreamPath.List)
         {}
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.Args, false);
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            return DMReference.Args;
         }
     }
 
@@ -76,11 +81,11 @@ namespace DMCompiler.DM.Expressions {
             LocalVar = localVar;
         }
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             if (LocalVar.IsParameter) {
-                return (DMReference.CreateArgument(LocalVar.Id), false);
+                return DMReference.CreateArgument(LocalVar.Id);
             } else {
-                return (DMReference.CreateLocal(LocalVar.Id), false);
+                return DMReference.CreateLocal(LocalVar.Id);
             }
         }
 
@@ -126,8 +131,8 @@ namespace DMCompiler.DM.Expressions {
             proc.IsSaved();
         }
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.CreateSrcField(Variable.Name), false);
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            return DMReference.CreateSrcField(Variable.Name);
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -153,8 +158,8 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, "issaved() on globals is unimplemented");
         }
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            return (DMReference.CreateGlobal(Id), false);
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            return DMReference.CreateGlobal(Id);
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {

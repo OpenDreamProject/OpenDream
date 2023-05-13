@@ -49,6 +49,7 @@ namespace DMCompiler.DM {
         public List<DMValueType> ParameterTypes = new();
         public Location Location;
         public ProcAttributes Attributes;
+        public bool IsVerb = false;
         public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
@@ -113,6 +114,7 @@ namespace DMCompiler.DM {
 
             procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
+            procDefinition.IsVerb = IsVerb;
             procDefinition.Source = _astDefinition?.Location.SourceFile?.Replace("\\", "/");
             procDefinition.Line = _astDefinition?.Location.Line ?? 0;
 
@@ -305,10 +307,19 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
 
-        public void Enumerate(DMReference output) {
+        public void Enumerate(DMReference reference) {
             if (_loopStack?.TryPeek(out var peek) ?? false) {
                 WriteOpcode(DreamProcOpcode.Enumerate);
-                WriteReference(output);
+                WriteReference(reference);
+                WriteLabel($"{peek}_end");
+            } else {
+                DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
+            }
+        }
+
+        public void EnumerateNoAssign() {
+            if (_loopStack?.TryPeek(out var peek) ?? false) {
+                WriteOpcode(DreamProcOpcode.EnumerateNoAssign);
                 WriteLabel($"{peek}_end");
             } else {
                 DMCompiler.ForcedError(Location, "Cannot peek empty loop stack");
@@ -481,6 +492,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Pop);
         }
 
+        public void PopReference(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.PopReference);
+            WriteReference(reference, false);
+        }
+
         public void BooleanOr(string endLabel) {
             ShrinkStack(1); //Either shrinks the stack 1 or 0. Assume 1.
             WriteOpcode(DreamProcOpcode.BooleanOr);
@@ -525,6 +541,47 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.JumpIfNullDereference);
             WriteReference(reference, affectStack: false);
             WriteLabel(label);
+        }
+
+        public void JumpIfNull(string label) {
+            // Conditionally pops one value
+            WriteOpcode(DreamProcOpcode.JumpIfNull);
+            WriteLabel(label);
+        }
+
+        public void JumpIfNullNoPop(string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfNullNoPop);
+            WriteLabel(label);
+        }
+
+        public void JumpIfTrueReference(DMReference reference, string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfTrueReference);
+            WriteReference(reference, affectStack: false);
+            WriteLabel(label);
+        }
+
+        public void JumpIfFalseReference(DMReference reference, string label) {
+            WriteOpcode(DreamProcOpcode.JumpIfFalseReference);
+            WriteReference(reference, affectStack: false);
+            WriteLabel(label);
+        }
+
+        public void DereferenceField(string field) {
+            WriteOpcode(DreamProcOpcode.DereferenceField);
+            WriteString(field);
+        }
+
+        public void DereferenceIndex() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.DereferenceIndex);
+        }
+
+        public void DereferenceCall(string field, DMCallArgumentsType argumentsType, int argumentStackSize) {
+            ShrinkStack(argumentStackSize); // Pops proc owner and arguments, pushes result
+            WriteOpcode(DreamProcOpcode.DereferenceCall);
+            WriteString(field);
+            WriteByte((byte)argumentsType);
+            WriteInt(argumentStackSize);
         }
 
         public void Call(DMReference reference, DMCallArgumentsType argumentsType, int argumentStackSize) {
@@ -956,7 +1013,6 @@ namespace DMCompiler.DM {
                     break;
 
                 case DMReference.Type.Field:
-                case DMReference.Type.Proc:
                     WriteString(reference.Name);
                     ShrinkStack(affectStack ? 1 : 0);
                     break;

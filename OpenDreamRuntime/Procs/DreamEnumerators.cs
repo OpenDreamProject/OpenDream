@@ -3,7 +3,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public interface IDreamValueEnumerator {
-        public bool Enumerate(DMProcState state, DMReference reference);
+        public bool Enumerate(DMProcState state, DMReference? reference);
     }
 
     /// <summary>
@@ -21,12 +21,12 @@ namespace OpenDreamRuntime.Procs {
             _step = step;
         }
 
-        public bool Enumerate(DMProcState state, DMReference reference) {
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             _current += _step;
 
             bool successful = (_step > 0) ? _current <= _end : _current >= _end;
-            if (successful) // Only assign if it was successful
-                state.AssignReference(reference, new DreamValue(_current));
+            if (successful && reference != null) // Only assign if it was successful
+                state.AssignReference(reference.Value, new DreamValue(_current));
 
             return successful;
         }
@@ -44,7 +44,7 @@ namespace OpenDreamRuntime.Procs {
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference reference) {
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             bool success = _dreamObjectEnumerator.MoveNext();
             if (_filterType != null) {
                 while (success && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
@@ -53,7 +53,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             // Assign regardless of success
-            state.AssignReference(reference, new DreamValue(_dreamObjectEnumerator.Current));
+            if (reference != null)
+                state.AssignReference(reference.Value, new DreamValue(_dreamObjectEnumerator.Current));
             return success;
         }
     }
@@ -70,11 +71,12 @@ namespace OpenDreamRuntime.Procs {
             _dreamValueArray = dreamValueArray;
         }
 
-        public bool Enumerate(DMProcState state, DMReference reference) {
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             _current++;
 
             bool success = _current < _dreamValueArray.Length;
-            state.AssignReference(reference, success ? _dreamValueArray[_current] : DreamValue.Null); // Assign regardless of success
+            if (reference != null)
+                state.AssignReference(reference.Value, success ? _dreamValueArray[_current] : DreamValue.Null); // Assign regardless of success
             return success;
         }
     }
@@ -93,17 +95,19 @@ namespace OpenDreamRuntime.Procs {
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference reference) {
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             do {
                 _current++;
                 if (_current >= _dreamValueArray.Length) {
-                    state.AssignReference(reference, DreamValue.Null);
+                    if (reference != null)
+                        state.AssignReference(reference.Value, DreamValue.Null);
                     return false;
                 }
 
                 DreamValue value = _dreamValueArray[_current];
                 if (value.TryGetValueAsDreamObjectOfType(_filterType, out _)) {
-                    state.AssignReference(reference, value);
+                    if (reference != null)
+                        state.AssignReference(reference.Value, value);
                     return true;
                 }
             } while (true);
@@ -124,17 +128,19 @@ namespace OpenDreamRuntime.Procs {
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference reference) {
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             do {
                 _current++;
                 if (_current >= _atomManager.AtomCount) {
-                    state.AssignReference(reference, DreamValue.Null);
+                    if (reference != null)
+                        state.AssignReference(reference.Value, DreamValue.Null);
                     return false;
                 }
 
                 DreamObject atom = _atomManager.GetAtom(_current);
                 if (_filterType == null || atom.IsSubtypeOf(_filterType)) {
-                    state.AssignReference(reference, new DreamValue(atom));
+                    if (reference != null)
+                        state.AssignReference(reference.Value, new DreamValue(atom));
                     return true;
                 }
             } while (true);

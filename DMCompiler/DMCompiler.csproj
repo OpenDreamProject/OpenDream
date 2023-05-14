@@ -3,27 +3,24 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net7.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <Configurations>Debug;Release;Tools</Configurations>
+    <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
+
+  <ItemGroup>
+    <DMStandard Include="DMStandard\**" />
+  </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <DMStandard Include="DMStandard\**"/>
-  </ItemGroup>
-
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
-    <Copy
-      SourceFiles="@(DMStandard)"
-      DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
   <Target Name="CopyDMStandardOnPublish" AfterTargets="Publish">
-    <Copy
-      SourceFiles="@(DMStandard)"
-      DestinationFiles="@(DMStandard->'$(PublishDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(PublishDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
 
 

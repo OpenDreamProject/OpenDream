@@ -20,8 +20,7 @@ public record DreamFilter {
     [ViewVariables, DataField("type")]
     public string FilterType;
 
-    [CanBeNull]
-    public static Type GetType(string filterType) {
+    public static Type? GetType(string filterType) {
         return filterType switch {
             "alpha" => typeof(DreamFilterAlpha),
             "angular_blur" => typeof(DreamFilterAngularBlur),
@@ -47,9 +46,9 @@ public record DreamFilter {
 public sealed record DreamFilterAlpha : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
-    //[ViewVariables, DataField("icon")] public object Icon; // Icon type?
-    [ViewVariables, DataField("render_source")] public string RenderSource; // String that will require special processing
-    [ViewVariables, DataField("flags")] public float Flags;
+    [ViewVariables, DataField("icon")] public int Icon; // Icon resource ID
+    [ViewVariables, DataField("render_source")] public string RenderSource; // String that gets special processing in the render loop
+    [ViewVariables, DataField("flags")] public short Flags;
 }
 
 [Serializable, NetSerializable]
@@ -74,7 +73,7 @@ public sealed record DreamFilterBlur : DreamFilter {
 
 [Serializable, NetSerializable]
 public sealed record DreamFilterColor : DreamFilter {
-    //[ViewVariables, DataField("color", required: true)] public object Color; // Color matrix TODO
+    [ViewVariables, DataField("color", required: true)] public ColorMatrix Color;
     [ViewVariables, DataField("space")] public float Space; // Default is FILTER_COLOR_RGB = 0
 }
 

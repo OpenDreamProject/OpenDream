@@ -27,7 +27,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
 
-            if (token == null) {
+            if (token.Type == TokenType.Unknown) {
                 char c = GetCurrent();
 
                 switch (c) {
@@ -280,14 +280,22 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         }
 
                         if (isLong) {
+                            bool nextCharCanTerm = false;
                             do {
                                 c = Advance();
 
-                                textBuilder.Append(c);
-                                if (c == '"') {
-                                    c = Advance();
-                                    if (c == '}') break;
+
+                                if(nextCharCanTerm && c == '}')
+                                    break;
+                                else {
+                                    textBuilder.Append(c);
+                                    nextCharCanTerm = false;
                                 }
+
+
+                                if (c == '"')
+                                    nextCharCanTerm = true;
+
                             } while (!AtEndOfSource);
                         } else {
                             while (c != delimiter && c != '\n' && !AtEndOfSource) {

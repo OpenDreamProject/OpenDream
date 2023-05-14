@@ -1,6 +1,6 @@
 ﻿/client
-	var/list/verbs = list()
-	var/list/screen = list()
+	var/list/verbs = null
+	var/list/screen = null
 	var/list/images = list() as opendream_unimplemented
 	var/list/vars
 
@@ -13,6 +13,7 @@
 
 	var/mob/mob
 	var/atom/eye
+	var/lazy_eye = 0 as opendream_unimplemented
 	var/perspective = MOB_PERSPECTIVE
 	var/view
 	var/pixel_x = 0 as opendream_unimplemented
@@ -48,7 +49,16 @@
 
 	proc/New(TopicData)
 		view = world.view
-		mob = new world.mob(null)
+
+		// Search every mob for one with our ckey
+		for (var/mob/M in world)
+			if (M.key == key)
+				mob = M
+				break
+
+		if (mob == null) // No existing mob, create a default one
+			mob = new world.mob(locate(1,1,1)) // TODO: Find nearest non-dense turf
+
 		return mob
 
 	proc/Del()

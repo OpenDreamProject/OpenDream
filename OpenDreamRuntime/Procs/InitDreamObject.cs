@@ -29,13 +29,15 @@ namespace OpenDreamRuntime.Procs {
 
             _dreamObject = dreamObject;
             _usr = usr;
-            _arguments = arguments;
+            arguments.Values.CopyTo(_arguments);
+            _argumentCount = arguments.Count;
             _stage = Stage.Init;
         }
 
         private DreamObject _dreamObject;
         private DreamObject? _usr;
-        private DreamProcArguments _arguments;
+        private readonly DreamValue[] _arguments = new DreamValue[256];
+        private int _argumentCount;
         private Stage _stage = Stage.Init;
 
         public override DreamProc? Proc => null;
@@ -49,12 +51,12 @@ namespace OpenDreamRuntime.Procs {
 
             _dreamObject = null!;
             _usr = null;
-            _arguments = default;
+            _argumentCount = 0;
 
             Pool.Push(this);
         }
 
-        protected override ProcStatus InternalResume() {
+        public override ProcStatus Resume() {
             var src = _dreamObject;
 
             switch_start:
@@ -67,7 +69,7 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     var proc = _objectTree.Procs[src.ObjectDefinition.InitializationProc.Value];
-                    var initProcState = proc.CreateState(Thread, src, _usr, new(null));
+                    var initProcState = proc.CreateState(Thread, src, _usr, new());
                     Thread.PushProcState(initProcState);
                     return ProcStatus.Called;
                 }
@@ -79,7 +81,7 @@ namespace OpenDreamRuntime.Procs {
                         goto switch_start;
                     }
 
-                    _dreamObject.ObjectDefinition.MetaObject.OnObjectCreated(_dreamObject, _arguments);
+                    _dreamObject.ObjectDefinition.MetaObject.OnObjectCreated(_dreamObject, new DreamProcArguments(_arguments.AsSpan(0, _argumentCount)));
 
                     if (!_dreamMan.Initialized) {
                         // Suppress all New() calls during /world/<init>() and map loading.
@@ -88,7 +90,7 @@ namespace OpenDreamRuntime.Procs {
 
                     if (src.ObjectDefinition.MetaObject.ShouldCallNew) {
                         var newProc = src.GetProc("New");
-                        var newProcState = newProc.CreateState(Thread, src, _usr, _arguments);
+                        var newProcState = newProc.CreateState(Thread, src, _usr, new DreamProcArguments(_arguments.AsSpan(0, _argumentCount)));
                         Thread.PushProcState(newProcState);
                         return ProcStatus.Called;
                     }

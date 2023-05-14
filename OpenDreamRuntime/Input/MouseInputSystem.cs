@@ -1,7 +1,6 @@
 ﻿using System.Collections.Specialized;
 using System.Web;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs;
 using OpenDreamShared.Input;
 using Robust.Server.Player;
 
@@ -34,26 +33,27 @@ namespace OpenDreamRuntime.Input {
 
         private void HandleAtomClick(IAtomClickedEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {
             IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
-            var client = _dreamManager.GetConnectionBySession(session).ClientDreamObject;
+            var connection = _dreamManager.GetConnectionBySession(session);
+            var usr = connection.Mob;
 
-            client.GetVariable("mob").TryGetValueAsDreamObject(out var usr);
-            client.SpawnProc("Click", ConstructClickArguments(atom, e), usr: usr);
+            connection.Client?.SpawnProc("Click", usr: usr, ConstructClickArguments(atom, e));
         }
 
-        private DreamProcArguments ConstructClickArguments(DreamObject atom, IAtomClickedEvent e) {
+        private DreamValue[] ConstructClickArguments(DreamObject atom, IAtomClickedEvent e) {
             NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
             if (e.Shift) paramsBuilder.Add("shift", "1");
             if (e.Ctrl) paramsBuilder.Add("ctrl", "1");
             if (e.Alt) paramsBuilder.Add("alt", "1");
             paramsBuilder.Add("screen-loc", e.ScreenLoc.ToString());
-            //TODO: "icon-x", "icon-y"
+            paramsBuilder.Add("icon-x", e.IconX.ToString());
+            paramsBuilder.Add("icon-y", e.IconY.ToString());
 
-            return new DreamProcArguments(new() {
+            return new[] {
                 new DreamValue(atom),
                 DreamValue.Null,
                 DreamValue.Null,
                 new DreamValue(paramsBuilder.ToString())
-            });
+            };
         }
     }
 }

@@ -24,18 +24,15 @@ namespace OpenDreamClient.Input {
                     break;
 
                 case ".winset":
-                    string winsetParams = command.Substring(verb.Length + 1);
+                    // Everything after .winset, excluding the space and quotes
+                    string winsetParams = command.Substring(verb.Length + 2, command.Length - verb.Length - 3);
 
                     _interfaceManager.WinSet(null, winsetParams);
                     break;
 
                 default: {
-                    if (split.Length > 1)
-                    {
-                        Logger.ErrorS("opendream.commands", "Verb argument parsing is not implemented yet.");
-                        return;
-                    }
-
+                    // Send the entire command to the server.
+                    // It has more info about argument types so it can parse it better than we can.
                     RaiseNetworkEvent(new CommandEvent(command));
                     break;
                 }

@@ -7,21 +7,29 @@ using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
+using OpenDreamShared.Rendering;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.GameObjects;
 using Robust.Shared.IoC;
 using Robust.Shared.Timing;
+
+// Disables warnings about using the constraint model; May need to be updated.
+#pragma warning disable NUnit2002 // We use Assert.IsFalse
+#pragma warning disable NUnit2003 // We use Assert.IsTrue
+#pragma warning disable NUnit2010 // We do not use the constraint model
+#pragma warning disable NUnit2017 // We use Assert.IsNull
 
 namespace Content.Tests
 {
     [TestFixture]
     public sealed class DMTests : ContentUnitTest {
         public const string TestProject = "DMProject";
+        public const string MapFile = "map.dmm";
         public const string InitializeEnvironment = "./environment.dme";
 
-        private IDreamManager _dreamMan;
-        private IDreamObjectTree _objectTree;
-        private ITaskManager _taskManager;
+        [Dependency] private readonly IDreamManager _dreamMan = default!;
+        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly ITaskManager _taskManager = default!;
 
         [Flags]
         public enum DMTestFlags {
@@ -33,34 +41,30 @@ namespace Content.Tests
             NoReturn = 16,      // Shouldn't return (aka stopped by a stack-overflow or runtimes)
         }
 
+        private void OnException(object? sender, Exception exception) => TestContext.WriteLine(exception);
+
         [OneTimeSetUp]
-        public void OneTimeSetup()
-        {
-            _taskManager = IoCManager.Resolve<ITaskManager>();
+        public void OneTimeSetup() {
+            IoCManager.InjectDependencies(this);
             _taskManager.Initialize();
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.RegisterClass<DMISpriteComponent>();
+            componentFactory.RegisterClass<DreamMobSightComponent>(); //wow this is terrible TODO figure out why this is necessary
             componentFactory.GenerateNetIds();
-            _dreamMan = IoCManager.Resolve<IDreamManager>();
-            _objectTree = IoCManager.Resolve<IDreamObjectTree>();
             Compile(InitializeEnvironment);
             _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
             _dreamMan.OnException += OnException;
         }
 
-        private void OnException(object sender, Exception e) {
-            TestContext.WriteLine(e.ToString());
-        }
-
-        public string Compile(string sourceFile) {
+        private static string? Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
-                Files = new() { sourceFile }
+                Files = new() { sourceFile, MapFile }
             });
 
             return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;
         }
 
-        public void Cleanup(string compiledFile) {
+        private static void Cleanup(string? compiledFile) {
             if (!File.Exists(compiledFile))
                 return;
 
@@ -71,7 +75,7 @@ namespace Content.Tests
         public void TestFiles(string sourceFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
             try {
-                string compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
+                string? compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
                 if (testFlags.HasFlag(DMTestFlags.CompileError)) {
                     Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
                     Cleanup(compiledFile);
@@ -94,14 +98,15 @@ namespace Content.Tests
                     Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
                 } else {
                     if (exception != null)
-                        Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception.Message}\"");
+                        Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception}\"");
                     else
                         Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
                 }
 
                 if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
-                    returned.Value.TryGetValueAsInteger(out int returnInt);
-                    Assert.IsTrue(returnInt != 0, "Test was expected to return TRUE");
+                    Assert.That(returned.HasValue, Is.True);
+                    int returnInt = returned.Value.MustGetValueAsInteger();
+                    Assert.IsTrue(returnInt == 1, "Test was expected to return TRUE");
                 }
 
                 Cleanup(compiledFile);
@@ -114,13 +119,13 @@ namespace Content.Tests
         private (bool Success, DreamValue? Returned, Exception? except) RunTest() {
             var prev = _dreamMan.LastDMException;
 
-            DreamValue? result = null;
-            Task<DreamValue> callTask = null;
+            DreamValue? retValue = null;
+            Task<DreamValue> callTask = null!;
 
             DreamThread.Run("RunTest", async (state) => {
-                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc proc)) {
-                    callTask = state.Call(proc, null, null, new DreamProcArguments(null));
-                    result = await callTask;
+                if (_objectTree.TryGetGlobalProc("RunTest", out DreamProc? proc)) {
+                    callTask = state.Call(proc, null, null);
+                    retValue = await callTask;
                     return DreamValue.Null;
                 } else {
                     Assert.Fail($"No global proc named RunTest");
@@ -142,10 +147,7 @@ namespace Content.Tests
             }
 
             bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
-            if (retSuccess)
-                return (retSuccess, result, null);
-            else
-                return (false, result, _dreamMan.LastDMException);
+            return (retSuccess, retValue, _dreamMan.LastDMException);
         }
 
         private static IEnumerable<object[]> GetTests()
@@ -153,7 +155,7 @@ namespace Content.Tests
             Directory.SetCurrentDirectory(TestProject);
 
             foreach (string sourceFile in Directory.GetFiles("Tests", "*.dm", SearchOption.AllDirectories)) {
-                string sourceFile2 = sourceFile.Substring("Tests/".Length);
+                string sourceFile2 = sourceFile["Tests/".Length..];
                 DMTestFlags testFlags = GetDMTestFlags(sourceFile);
                 if (testFlags.HasFlag(DMTestFlags.Ignore))
                     continue;
@@ -169,8 +171,9 @@ namespace Content.Tests
             DMTestFlags testFlags = DMTestFlags.NoError;
 
             using (StreamReader reader = new StreamReader(sourceFile)) {
-                string firstLine = reader.ReadLine();
-
+                string? firstLine = reader.ReadLine();
+                if (firstLine == null)
+                    return testFlags;
                 if (firstLine.Contains("IGNORE", StringComparison.InvariantCulture))
                     testFlags |= DMTestFlags.Ignore;
                 if (firstLine.Contains("COMPILE ERROR", StringComparison.InvariantCulture))

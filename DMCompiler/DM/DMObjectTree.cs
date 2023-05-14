@@ -16,10 +16,15 @@ namespace DMCompiler.DM {
         //TODO: These don't belong in the object tree
         public static List<DMVariable> Globals = new();
         public static Dictionary<string, int> GlobalProcs = new();
+        /// <summary>
+        /// Used to keep track of when we see a /proc/foo() or whatever, so that duplicates or missing definitions can be discovered,
+        /// even as GlobalProcs keeps clobbering old global proc overrides/definitions.
+        /// </summary>
+        public static HashSet<string> SeenGlobalProcDefinition = new();
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
-        public static DMObject Root => GetDMObject(DreamPath.Root);
+        public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
@@ -40,6 +45,7 @@ namespace DMCompiler.DM {
 
             Globals.Clear();
             GlobalProcs.Clear();
+            SeenGlobalProcDefinition.Clear();
             StringTable.Clear();
             StringToStringID.Clear();
 
@@ -47,26 +53,26 @@ namespace DMCompiler.DM {
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;
             _dmProcIdCounter = 0;
-            GlobalInitProc = new(-1, GetDMObject(DreamPath.Root), null);
+            GlobalInitProc = new(-1, Root, null);
         }
 
-        public static DMProc CreateDMProc(DMObject dmObject, [CanBeNull] DMASTProcDefinition astDefinition)
-        {
+        public static DMProc CreateDMProc(DMObject dmObject, DMASTProcDefinition? astDefinition) {
             DMProc dmProc = new DMProc(_dmProcIdCounter++, dmObject, astDefinition);
             AllProcs.Add(dmProc);
 
             return dmProc;
         }
 
-        public static DMObject GetDMObject(DreamPath path, bool createIfNonexistent = true) {
+        [ContractAnnotation("createIfNonexistent:true => notnull")]
+        public static DMObject? GetDMObject(DreamPath path, bool createIfNonexistent = true) {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             }
             if (!createIfNonexistent) return null;
 
-            DMObject parent = null;
+            DMObject? parent = null;
             if (path.Elements.Length > 1) {
-                parent = GetDMObject(path.FromElements(0, -2), true); // Create all parent classes as dummies, if we're being dummy-created too
+                parent = GetDMObject(path.FromElements(0, -2)); // Create all parent classes as dummies, if we're being dummy-created too
             } else if (path.Elements.Length == 1) {
                 switch (path.LastElement) {
                     case "client":
@@ -90,11 +96,12 @@ namespace DMCompiler.DM {
             return dmObject;
         }
 
-        public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] [CanBeNull] out DMProc proc) {
+        public static bool TryGetGlobalProc(string name, [NotNullWhen(true)] out DMProc? proc) {
             proc = null;
             return GlobalProcs.TryGetValue(name, out var id) && AllProcs.TryGetValue(id, out proc);
         }
 
+        /// <returns>True if the path exists, false if not. Keep in mind though that we may just have not found this object path yet while walking in ObjectBuilder.</returns>
         public static bool TryGetTypeId(DreamPath path, out int typeId) {
             return _pathToTypeId.TryGetValue(path, out typeId);
         }
@@ -102,7 +109,7 @@ namespace DMCompiler.DM {
         // TODO: This is all so snowflake and needs redone
         public static DreamPath? UpwardSearch(DreamPath path, DreamPath search) {
             bool requireProcElement = search.Type == DreamPath.PathType.Absolute;
-            string searchingProcName = null;
+            string? searchingProcName = null;
 
             int procElement = path.FindElement("proc");
             if (procElement == -1) procElement = path.FindElement("verb");
@@ -160,7 +167,7 @@ namespace DMCompiler.DM {
         }
 
         public static void AddGlobalProc(string name, int id) {
-            GlobalProcs.Add(name, id);
+            GlobalProcs[name] = id; // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
         }
 
         public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {
@@ -176,7 +183,6 @@ namespace DMCompiler.DM {
         public static void CreateGlobalInitProc() {
             if (_globalInitAssigns.Count == 0) return;
 
-            DMObject root = GetDMObject(DreamPath.Root);
             foreach (var globals in _globalInitAssigns.Values) {
                 foreach (var assign in globals) {
                     try {
@@ -184,7 +190,8 @@ namespace DMCompiler.DM {
                             GlobalInitProc.DebugSource(assign.Value.Location.SourceFile);
                             GlobalInitProc.DebugLine(line);
                         }
-                        assign.Value.EmitPushValue(root, GlobalInitProc);
+
+                        assign.Value.EmitPushValue(Root, GlobalInitProc);
                         GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
                     } catch (CompileErrorException e) {
                         DMCompiler.Emit(e.Error);

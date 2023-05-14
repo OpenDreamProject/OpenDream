@@ -1,4 +1,5 @@
-﻿using Robust.Shared.Serialization.Manager;
+﻿using JetBrains.Annotations;
+using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
 
@@ -7,45 +8,50 @@ namespace OpenDreamClient.Interface.Descriptors;
 [Virtual]
 public class ControlDescriptor : ElementDescriptor {
     [DataField("pos")]
-    public Vector2i? Pos = null;
+    public Vector2i? Pos;
     [DataField("size")]
-    public Vector2i? Size = null;
+    public Vector2i? Size;
     [DataField("anchor1")]
-    public Vector2i? Anchor1 = null;
+    public Vector2i? Anchor1;
     [DataField("anchor2")]
-    public Vector2i? Anchor2 = null;
+    public Vector2i? Anchor2;
     [DataField("background-color")]
-    public Color? BackgroundColor = null;
+    public Color? BackgroundColor;
     [DataField("is-visible")]
     public bool IsVisible = true;
     [DataField("is-default")]
-    public bool IsDefault = false;
+    public bool IsDefault;
     [DataField("is-disabled")]
-    public bool IsDisabled = false;
+    public bool IsDisabled;
 }
 
 public sealed class WindowDescriptor : ControlDescriptor {
     [DataField("is-pane")]
-    public bool IsPane = false;
+    public bool IsPane;
     [DataField("icon")]
-    public string Icon = null;
+    public string? Icon;
     [DataField("menu")]
-    public string Menu = null;
+    public string? Menu;
     [DataField("title")]
-    public string Title = null;
+    public string? Title;
+    [DataField("macro")]
+    public string? Macro { get; init; }
+    [DataField("on-close")]
+    public string? OnClose { get; init; }
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 
-    public WindowDescriptor(string name, List<ControlDescriptor> controlDescriptors = null) {
+    public WindowDescriptor(string name, List<ControlDescriptor>? controlDescriptors = null) {
         ControlDescriptors = controlDescriptors ?? new();
         Name = name;
     }
 
+    [UsedImplicitly]
     public WindowDescriptor() {
-
+        ControlDescriptors = new();
     }
 
-    public override ControlDescriptor CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
+    public override ControlDescriptor? CreateChildDescriptor(ISerializationManager serializationManager, MappingDataNode attributes) {
         if (!attributes.TryGet("type", out var elementType) || elementType is not ValueDataNode elementTypeValue)
             return null;
 
@@ -54,12 +60,12 @@ public sealed class WindowDescriptor : ControlDescriptor {
             attributes["name"] = new ValueDataNode(Name);
 
             // Read the attributes into this descriptor
-            serializationManager.Read(attributes, instanceProvider: () => this);
+            serializationManager.Read(attributes, notNullableOverride: true, instanceProvider: () => this);
             return this;
         }
 
 
-        Type descriptorType = elementTypeValue.Value switch {
+        Type? descriptorType = elementTypeValue.Value switch {
             "MAP" => typeof(ControlDescriptorMap),
             "CHILD" => typeof(ControlDescriptorChild),
             "OUTPUT" => typeof(ControlDescriptorOutput),
@@ -76,19 +82,36 @@ public sealed class WindowDescriptor : ControlDescriptor {
         if (descriptorType == null)
             return null;
 
-        ControlDescriptor child = (ControlDescriptor) serializationManager.Read(descriptorType, attributes);
+        var child = (ControlDescriptor?) serializationManager.Read(descriptorType, attributes);
+        if (child == null)
+            return null;
+
         ControlDescriptors.Add(child);
         return child;
+    }
+
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+        var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
+
+        copy._name = name;
+        return copy;
+    }
+
+    public WindowDescriptor WithVisible(ISerializationManager serializationManager, bool visible) {
+        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Name);
+
+        copy.IsVisible = visible;
+        return copy;
     }
 }
 
 public sealed class ControlDescriptorChild : ControlDescriptor {
     [DataField("left")]
-    public string Left = null;
+    public string? Left;
     [DataField("right")]
-    public string Right = null;
+    public string? Right;
     [DataField("is-vert")]
-    public bool IsVert = false;
+    public bool IsVert;
 }
 
 public sealed class ControlDescriptorInput : ControlDescriptor {
@@ -96,9 +119,9 @@ public sealed class ControlDescriptorInput : ControlDescriptor {
 
 public sealed class ControlDescriptorButton : ControlDescriptor {
     [DataField("text")]
-    public string Text = null;
+    public string? Text;
     [DataField("command")]
-    public string Command = null;
+    public string? Command;
 }
 
 public sealed class ControlDescriptorOutput : ControlDescriptor {
@@ -115,7 +138,7 @@ public sealed class ControlDescriptorBrowser : ControlDescriptor {
 
 public sealed class ControlDescriptorLabel : ControlDescriptor {
     [DataField("text")]
-    public string Text = null;
+    public string? Text;
 }
 
 public sealed class ControlDescriptorGrid : ControlDescriptor {

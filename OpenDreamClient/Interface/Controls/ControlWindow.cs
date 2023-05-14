@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Input;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -7,6 +8,7 @@ namespace OpenDreamClient.Interface.Controls {
     public sealed class ControlWindow : InterfaceControl {
         [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
         // Just like in win32 (which is definitely what this is inspired by let's be real),
@@ -14,11 +16,13 @@ namespace OpenDreamClient.Interface.Controls {
 
         public readonly List<InterfaceControl> ChildControls = new();
 
-        private WindowDescriptor WindowDescriptor => (ElementDescriptor as WindowDescriptor);
+        public InterfaceMacroSet Macro => _dreamInterface.MacroSets[WindowDescriptor.Macro];
+
+        private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
         private Control _menuContainer = default!;
         private LayoutContainer _canvas = default!;
-        private readonly List<(OSWindow osWindow, IClydeWindow clydeWindow)> _openWindows = new();
+        private readonly List<(OSWindow? osWindow, IClydeWindow? clydeWindow)> _openWindows = new();
 
         public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
             IoCManager.InjectDependencies(this);
@@ -28,10 +32,7 @@ namespace OpenDreamClient.Interface.Controls {
             // Don't call base.UpdateElementDescriptor();
 
             _menuContainer.RemoveAllChildren();
-            if (WindowDescriptor.Menu != null) {
-                _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu,
-                    out InterfaceMenu menu);
-
+            if (WindowDescriptor.Menu != null && _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
                 _menuContainer.AddChild(menu.MenuBar);
                 _menuContainer.Visible = true;
             } else {
@@ -40,6 +41,10 @@ namespace OpenDreamClient.Interface.Controls {
 
             foreach (var window in _openWindows) {
                 UpdateWindowAttributes(window);
+            }
+
+            if (WindowDescriptor.IsDefault) {
+                Macro.SetActive();
             }
         }
 
@@ -53,7 +58,14 @@ namespace OpenDreamClient.Interface.Controls {
                 window.SetWidth = window.MaxWidth;
             if (ControlDescriptor.Size?.Y == 0)
                 window.SetHeight = window.MaxHeight;
-            window.Closing += _ => { _openWindows.Remove((window, null)); };
+            window.Closing += _ => {
+                // A window can have a command set to be run when it's closed
+                if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
+                    commandSystem.RunCommand(WindowDescriptor.OnClose);
+                }
+
+                _openWindows.Remove((window, null));
+            };
 
             _openWindows.Add((window, null));
             UpdateWindowAttributes((window, null));
@@ -133,7 +145,7 @@ namespace OpenDreamClient.Interface.Controls {
             }
         }
 
-        private void UpdateWindowAttributes((OSWindow osWindow, IClydeWindow clydeWindow) windowRoot) {
+        private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
             // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
             var (osWindow, clydeWindow) = windowRoot;
 
@@ -141,7 +153,7 @@ namespace OpenDreamClient.Interface.Controls {
             if (osWindow != null) osWindow.Title = title;
             else if (clydeWindow != null) clydeWindow.Title = title;
 
-            WindowRoot root = null;
+            WindowRoot? root = null;
             if (osWindow?.Window != null)
                 root = _uiMgr.GetWindowRoot(osWindow.Window);
             else if (clydeWindow != null)

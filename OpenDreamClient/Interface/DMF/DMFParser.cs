@@ -9,8 +9,27 @@ namespace OpenDreamClient.Interface.DMF;
 public sealed class DMFParser : Parser<char> {
     private readonly ISerializationManager _serializationManager;
 
+    private readonly TokenType[] _attributeTokenTypes = {
+        TokenType.DMF_Attribute,
+        TokenType.DMF_Macro,
+        TokenType.DMF_Menu
+    };
+
     public DMFParser(DMFLexer lexer, ISerializationManager serializationManager) : base(lexer) {
         _serializationManager = serializationManager;
+    }
+
+    /// <summary>
+    /// Parse the command used in a global winset()
+    /// </summary>
+    public List<DMFWinSet> GlobalWinSet() {
+        List<DMFWinSet> winSets = new();
+
+        while (TryGetAttribute(out var element, out var key, out var attribute)) {
+            winSets.Add(new(element, key, attribute));
+        }
+
+        return winSets;
     }
 
     public InterfaceDescriptor Interface() {
@@ -21,19 +40,19 @@ public sealed class DMFParser : Parser<char> {
         bool parsing = true;
         while (parsing) {
             try {
-                WindowDescriptor windowDescriptor = Window();
+                WindowDescriptor? windowDescriptor = Window();
                 if (windowDescriptor != null) {
                     windowDescriptors.Add(windowDescriptor);
                     Newline();
                 }
 
-                MacroSetDescriptor macroSet = MacroSet();
+                MacroSetDescriptor? macroSet = MacroSet();
                 if (macroSet != null) {
                     macroSetDescriptors.Add(macroSet);
                     Newline();
                 }
 
-                MenuDescriptor menu = Menu();
+                MenuDescriptor? menu = Menu();
                 if (menu != null) {
                     menuDescriptors.Add(menu);
                     Newline();
@@ -60,7 +79,7 @@ public sealed class DMFParser : Parser<char> {
         return new InterfaceDescriptor(windowDescriptors, macroSetDescriptors, menuDescriptors);
     }
 
-    public WindowDescriptor Window() {
+    public WindowDescriptor? Window() {
         if (Check(TokenType.DMF_Window)) {
             Token windowNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a window name");
@@ -96,7 +115,7 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public MacroSetDescriptor MacroSet() {
+    public MacroSetDescriptor? MacroSet() {
         if (Check(TokenType.DMF_Macro)) {
             Token macroSetNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a macro set name");
@@ -127,7 +146,7 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public MenuDescriptor Menu() {
+    public MenuDescriptor? Menu() {
         if (Check(TokenType.DMF_Menu)) {
             Token menuNameToken = Current();
             Consume(TokenType.DMF_Value, "Expected a menu name");
@@ -159,12 +178,24 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public bool TryGetAttribute([NotNullWhen(true)] out string key, [NotNullWhen(true)] out string token) {
+    public bool TryGetAttribute(out string? element, [NotNullWhen(true)] out string? key, [NotNullWhen(true)] out string? token) {
+        element = null;
         key = null;
         token = null;
         Token attributeToken = Current();
 
-        if (Check(new[] { TokenType.DMF_Attribute, TokenType.DMF_Macro, TokenType.DMF_Menu })) {
+        if (Check(_attributeTokenTypes)) {
+            if (Check(TokenType.DMF_Period)) { // element.attribute=value
+                element = attributeToken.Text;
+                attributeToken = Current();
+
+                if (!Check(_attributeTokenTypes)) {
+                    Error("Expected attribute name");
+
+                    return false;
+                }
+            }
+
             if (!Check(TokenType.DMF_Equals)) {
                 ReuseToken(attributeToken);
 
@@ -172,12 +203,18 @@ public sealed class DMFParser : Parser<char> {
             }
 
             Token attributeValue = Current();
-            if (!Check(TokenType.DMF_Value))
-                Error($"Invalid attribute value ({attributeValue.Text})");
+            string valueText = attributeValue.Text;
+            if (Check(TokenType.DMF_Period)) { // hidden verbs start with a period
+                attributeValue = Current();
+                valueText += attributeValue.Text;
+                if (!Check(TokenType.DMF_Value) && !Check(TokenType.DMF_Attribute))
+                    Error($"Invalid attribute value ({valueText})");
+            } else if (!Check(TokenType.DMF_Value))
+                Error($"Invalid attribute value ({valueText})");
 
             Newline();
             key = attributeToken.Text;
-            token = attributeValue.Text;
+            token = valueText;
             return true;
         }
 
@@ -187,8 +224,14 @@ public sealed class DMFParser : Parser<char> {
     public MappingDataNode Attributes() {
         var node = new MappingDataNode();
 
-        while (TryGetAttribute(out var key, out var value)) {
-            if (value == "none") continue;
+        while (TryGetAttribute(out var element, out var key, out var value)) {
+            if (element != null) {
+                Error($"Element name \"{element}\" is not valid here");
+                continue;
+            }
+
+            if (value == "none")
+                continue;
 
             node.Add(key, value);
         }

@@ -53,8 +53,7 @@ namespace OpenDreamShared.Dream {
             get {
                 if (_pathString != null) return _pathString;
 
-                _pathString = Type switch
-                {
+                _pathString = Type switch {
                     PathType.Absolute => "/",
                     PathType.DownwardSearch => ":",
                     PathType.UpwardSearch => ".",
@@ -72,11 +71,11 @@ namespace OpenDreamShared.Dream {
         public PathType Type;
 
         private string[] _elements;
-        private string _pathString;
+        private string? _pathString;
 
         public DreamPath(string path) {
             Type = PathType.Absolute;
-            _elements = null;
+            _elements = Array.Empty<string>(); // Set in SetFromString()
             _pathString = null;
 
             SetFromString(path);
@@ -95,8 +94,7 @@ namespace OpenDreamShared.Dream {
             string[] tempElements = rawPath.Split('/', StringSplitOptions.RemoveEmptyEntries);
             bool skipFirstChar = false;
 
-            switch (pathTypeChar)
-            {
+            switch (pathTypeChar) {
                 case '/':
                     Type = PathType.Absolute;
                     // No need to skip the first char, as it will end up as an empty entry in tempElements
@@ -114,8 +112,7 @@ namespace OpenDreamShared.Dream {
                     break;
             }
 
-            if (skipFirstChar)
-            {
+            if (skipFirstChar) {
                 // Skip the '/', ':' or '.' if needed
                 tempElements[0] = tempElements[0][1..];
             }
@@ -196,7 +193,7 @@ namespace OpenDreamShared.Dream {
             return PathString;
         }
 
-        public override bool Equals(object obj) => obj is DreamPath other && Equals(other);
+        public override bool Equals(object? obj) => obj is DreamPath other && Equals(other);
 
         public bool Equals(DreamPath other) {
             if (other.Elements.Length != Elements.Length) return false;
@@ -221,10 +218,8 @@ namespace OpenDreamShared.Dream {
 
         public static bool operator !=(DreamPath lhs, DreamPath rhs) => !(lhs == rhs);
 
-        private void Normalize(bool canHaveEmptyEntries)
-        {
-            if (canHaveEmptyEntries && _elements.Contains(""))
-            {
+        private void Normalize(bool canHaveEmptyEntries) {
+            if (canHaveEmptyEntries && _elements.Contains("")) {
                 // Slow path :(
                 _elements = _elements.Where(el => !string.IsNullOrEmpty(el)).ToArray();
             }
@@ -232,15 +227,11 @@ namespace OpenDreamShared.Dream {
             var writeIdx = Array.IndexOf(_elements, "..");
             if (writeIdx == -1) return;
 
-            for (var i = writeIdx; i < _elements.Length; i++)
-            {
+            for (var i = writeIdx; i < _elements.Length; i++) {
                 var elem = _elements[i];
-                if (elem == "..")
-                {
+                if (elem == "..") {
                     writeIdx -= 1;
-                }
-                else
-                {
+                } else {
                     _elements[writeIdx] = elem;
                     writeIdx += 1;
                 }

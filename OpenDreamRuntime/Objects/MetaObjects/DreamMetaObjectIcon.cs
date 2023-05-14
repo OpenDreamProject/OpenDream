@@ -1,9 +1,5 @@
-using System.IO;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Resources;
-using ParsedDMIDescription = OpenDreamShared.Resources.DMIParser.ParsedDMIDescription;
 
 namespace OpenDreamRuntime.Objects.MetaObjects;
 
@@ -12,7 +8,6 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
     public IDreamMetaObject? ParentType { get; set; }
 
     [Dependency] private readonly DreamResourceManager _rscMan = default!;
-    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
 
     public DreamMetaObjectIcon() {
         IoCManager.InjectDependencies(this);
@@ -24,11 +19,11 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
         ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
         // TODO confirm BYOND behavior of invalid args for icon, dir, and frame
-        DreamValue icon = creationArguments.GetArgument(0, "icon");
-        DreamValue state = creationArguments.GetArgument(1, "icon_state");
-        DreamValue dir = creationArguments.GetArgument(2, "dir");
-        DreamValue frame = creationArguments.GetArgument(3, "frame");
-        DreamValue moving = creationArguments.GetArgument(4, "moving");
+        DreamValue icon = creationArguments.GetArgument(0);
+        DreamValue state = creationArguments.GetArgument(1);
+        DreamValue dir = creationArguments.GetArgument(2);
+        DreamValue frame = creationArguments.GetArgument(3);
+        DreamValue moving = creationArguments.GetArgument(4);
 
         var dreamIcon = InitializeIcon(_rscMan, dreamObject);
 
@@ -71,5 +66,17 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
 
         ObjectToDreamIcon.Add(icon, dreamIcon);
         return dreamIcon;
+    }
+
+    public static DreamObject CloneIcon(IDreamObjectTree objectTree, DreamObject icon) {
+        // var newIcon = objectTree.CreateObject(icon.ObjectDefinition.TreeEntry);
+        // newIcon.InitSpawn(new Procs.DreamProcArguments(args));
+        //TODO: actually clone the icon
+        return icon;
+    }
+
+    public static DreamIcon TurnIcon(DreamIcon icon, float angle) {
+        //TODO: actually rotate the icon clockwise x degrees
+        return icon;
     }
 }

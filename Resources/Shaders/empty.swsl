@@ -1,3 +1,5 @@
+blend_mode none;
+light_mode unshaded;
 uniform highp float size;
 uniform highp float x;
 uniform highp float y;   
@@ -16,3 +18,7 @@ uniform highp float radius;
 uniform highp float falloff;
 uniform highp float alpha;
 uniform highp float space;
+
+void fragment() {
+    COLOR = zTexture(UV);
+}

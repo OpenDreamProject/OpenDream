@@ -19,12 +19,12 @@ namespace DMCompiler.DM.Visitors {
         /// This behaviour is nonsense but for harsh parity we sometimes may need to carry it out to hold up a codebase; <br/>
         /// Yogstation (at time of writing) actually errors on OD if we don't implement this.
         /// </summary>
-        private Constant? previousSetStatementValue;
+        private Constant? _previousSetStatementValue;
 
         public DMProcBuilder(DMObject dmObject, DMProc proc) {
             _dmObject = dmObject;
             _proc = proc;
-            previousSetStatementValue = null; // Intentional; marks that we've never seen one before and should just error like normal people.
+            _previousSetStatementValue = null; // Intentional; marks that we've never seen one before and should just error like normal people.
         }
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
@@ -163,8 +163,8 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
             _proc.AddLabel(statementLabel.Name + "_codelabel");
-            if (statementLabel.Body is not null)
-            {
+
+            if (statementLabel.Body is not null) {
                 _proc.StartScope();
                 {
                     ProcessBlockInner(statementLabel.Body);
@@ -178,25 +178,29 @@ namespace DMCompiler.DM.Visitors {
             _proc.Break(statementBreak.Label);
         }
 
-        public void ProcessStatementSet(DMASTProcStatementSet statementSet)
-        {
+        public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
             var attribute = statementSet.Attribute.ToLower();
+
             // TODO deal with "src"
             if(attribute == "src") {
                 DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
                 return;
             }
+
             if (!DMExpression.TryConstant(_dmObject, _proc, statementSet.Value, out var constant)) { // If this set statement's rhs is not constant
                 bool didError = DMCompiler.Emit(WarningCode.InvalidSetStatement, statementSet.Location, $"'{attribute}' attribute should be a constant");
                 if (didError) // if this is an error
                     return; // don't do the cursed thing
-                // oh no.
-                if (previousSetStatementValue is null)
-                    throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
-                constant = previousSetStatementValue;
+
+                constant = _previousSetStatementValue;
             } else {
-                previousSetStatementValue = constant;
+                _previousSetStatementValue = constant;
             }
+
+            // oh no.
+            if (constant is null)
+                throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
+
             // Check if it was 'set x in y' or whatever
             // (which is illegal for everything except setting src to something)
             if (statementSet.WasInKeyword) {
@@ -414,7 +418,7 @@ namespace DMCompiler.DM.Visitors {
                             break;
                         }
                         case DMASTExpressionInRange exprRange: {
-                            DMASTVarDeclExpression decl = exprRange.Value as DMASTVarDeclExpression;
+                            DMASTVarDeclExpression? decl = exprRange.Value as DMASTVarDeclExpression;
                             decl ??= exprRange.Value is DMASTAssign assign
                                 ? assign.Expression as DMASTVarDeclExpression
                                 : null;
@@ -434,7 +438,7 @@ namespace DMCompiler.DM.Visitors {
                                 ? DMExpression.Create(_dmObject, _proc, exprRange.Step)
                                 : new Number(exprRange.Location, 1);
 
-                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            ProcessStatementForRange(null, outputVar, start, end, step, statementFor.Body);
                             break;
                         }
                         case DMASTVarDeclExpression vd: {
@@ -479,7 +483,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void ProcessStatementForStandard(DMExpression initializer, DMExpression comparator, DMExpression incrementor, DMASTProcBlockInner body) {
+        public void ProcessStatementForStandard(DMExpression? initializer, DMExpression? comparator, DMExpression? incrementor, DMASTProcBlockInner body) {
             _proc.StartScope();
             {
                 if (initializer != null) {
@@ -507,6 +511,24 @@ namespace DMCompiler.DM.Visitors {
                 _proc.LoopEnd();
             }
             _proc.EndScope();
+        }
+
+        public void ProcessLoopAssignment(LValue lValue) {
+            if (lValue.CanReferenceShortCircuit()) {
+                string endLabel = _proc.NewLabelName();
+                string endLabel2 = _proc.NewLabelName();
+
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
+                _proc.Enumerate(outputRef);
+                _proc.Jump(endLabel2);
+
+                _proc.AddLabel(endLabel);
+                _proc.EnumerateNoAssign();
+                _proc.AddLabel(endLabel2);
+            } else {
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, null);
+                _proc.Enumerate(outputRef);
+            }
         }
 
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
@@ -542,8 +564,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (lValue != null) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     }
 
                     ProcessBlockInner(body);
@@ -555,7 +576,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void ProcessStatementForType(DMExpression initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
+        public void ProcessStatementForType(DMExpression? initializer, DMExpression outputVar, DreamPath? type, DMASTProcBlockInner body) {
             if (type == null) {
                 // This shouldn't happen, just to be safe
                 DMCompiler.ForcedError(initializer.Location,
@@ -583,8 +604,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -598,7 +618,7 @@ namespace DMCompiler.DM.Visitors {
             _proc.DestroyEnumerator();
         }
 
-        public void ProcessStatementForRange(DMExpression initializer, DMExpression outputVar, DMExpression start, DMExpression end, DMExpression step, DMASTProcBlockInner body) {
+        public void ProcessStatementForRange(DMExpression? initializer, DMExpression outputVar, DMExpression start, DMExpression end, DMExpression? step, DMASTProcBlockInner body) {
             start.EmitPushValue(_dmObject, _proc);
             end.EmitPushValue(_dmObject, _proc);
             if (step != null) {
@@ -621,8 +641,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -693,7 +712,7 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementSwitch(DMASTProcStatementSwitch statementSwitch) {
             string endLabel = _proc.NewLabelName();
             List<(string CaseLabel, DMASTProcBlockInner CaseBody)> valueCases = new();
-            DMASTProcBlockInner defaultCaseBody = null;
+            DMASTProcBlockInner? defaultCaseBody = null;
 
             DMExpression.Emit(_dmObject, _proc, statementSwitch.Value);
             foreach (DMASTProcStatementSwitch.SwitchCase switchCase in statementSwitch.Cases) {
@@ -702,7 +721,7 @@ namespace DMCompiler.DM.Visitors {
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
                         Constant GetCaseValue(DMASTExpression expression) {
-                            Constant constant = null;
+                            Constant? constant = null;
 
                             try {
                                 if (!DMExpression.TryConstant(_dmObject, _proc, expression, out constant))
@@ -809,10 +828,11 @@ namespace DMCompiler.DM.Visitors {
                 // An LValue on the left needs a special opcode so that its reference can be used
                 // This allows for special operations like "savefile[...] << ..."
 
-                (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+                string endLabel = _proc.NewLabelName();
+                DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
                 right.EmitPushValue(_dmObject, _proc);
-
                 _proc.OutputReference(leftRef);
+                _proc.AddLabel(endLabel);
             } else {
                 left.EmitPushValue(_dmObject, _proc);
                 right.EmitPushValue(_dmObject, _proc);
@@ -837,31 +857,40 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
-            (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+            string rightEndLabel = _proc.NewLabelName();
+            string leftEndLabel = _proc.NewLabelName();
+            DMReference rightRef = right.EmitReference(_dmObject, _proc, rightEndLabel, DMExpression.ShortCircuitMode.PopNull);
+            DMReference leftRef = left.EmitReference(_dmObject, _proc, leftEndLabel, DMExpression.ShortCircuitMode.PopNull);
 
             _proc.Input(leftRef, rightRef);
+
+            _proc.AddLabel(leftEndLabel);
+            _proc.PopReference(rightRef);
+            _proc.AddLabel(rightEndLabel);
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {
             string catchLabel = _proc.NewLabelName();
             string endLabel = _proc.NewLabelName();
 
-            _proc.StartScope();
-            ProcessBlockInner(tryCatch.TryBody);
-            _proc.EndScope();
-            _proc.Jump(endLabel);
-
-            if (tryCatch.CatchParameter != null)
-            {
-                //TODO set the value to what is thrown in try
+            if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
+
                 if (!_proc.TryAddLocalVariable(param.Name, param.Type)) {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
+
+                _proc.StartTry(catchLabel, _proc.GetLocalVariableReference(param.Name));
+            } else {
+                _proc.StartTryNoValue(catchLabel);
             }
 
-            //TODO make catching actually work
+            _proc.StartScope();
+            ProcessBlockInner(tryCatch.TryBody);
+            _proc.EndScope();
+            _proc.EndTry();
+            _proc.Jump(endLabel);
+
             _proc.AddLabel(catchLabel);
             if (tryCatch.CatchBody != null) {
                 _proc.StartScope();
@@ -873,8 +902,6 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementThrow(DMASTProcStatementThrow statement) {
-            //TODO proper value handling and catching
-
             DMExpression.Emit(_dmObject, _proc, statement.Value);
             _proc.Throw();
         }

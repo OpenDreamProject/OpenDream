@@ -2,7 +2,7 @@
 	var/screen_loc
 
 	var/animate_movement = FORWARD_STEPS as opendream_unimplemented
-	var/list/locs = list() as opendream_unimplemented
+	var/list/locs = null as opendream_unimplemented
 	var/glide_size as opendream_unimplemented
 	var/step_size as opendream_unimplemented
 	var/bound_x as opendream_unimplemented
@@ -28,7 +28,7 @@
 			return FALSE
 		// Ensure the atoms on the turf also permit this exit
 		for (var/atom/movable/exiting in loc)
-			if (!exiting.Exit(src, NewLoc))
+			if (!exiting.Uncross(src))
 				return FALSE
 
 		if (NewLoc.Enter(src, loc))
@@ -37,20 +37,18 @@
 			var/area/newarea = NewLoc.loc
 			loc = NewLoc
 
-			// First, call Exited() on the old location
+			// First, call Exited() on the old area
 			if (newarea != oldarea)
 				oldarea.Exited(src, loc)
 
-			// Second, call Exited() and Uncrossed() on the old turf and its contents
+			// Second, call Exited() on the old turf and Uncrossed() on its contents
 			oldloc.Exited(src, loc)
 			for (var/atom/movable/uncrossed in oldloc)
-				uncrossed.Exited(src, loc)
 				uncrossed.Uncrossed(src)
 
-			// Third, call Entered() and Crossed() on the new turf and its contents
+			// Third, call Entered() on the new turf and Crossed() on its contents
 			loc.Entered(src, oldloc)
 			for (var/atom/movable/crossed in loc)
-				crossed.Entered(src, oldloc)
 				crossed.Crossed(src)
 
 			// Fourth, call Entered() on the new area

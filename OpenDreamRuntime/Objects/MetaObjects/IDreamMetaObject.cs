@@ -17,7 +17,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) =>
             ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
 
-        public void OperatorOutput(DreamValue a, DreamValue b) {
+        public void OperatorOutput(DreamObject a, DreamValue b) {
             if (ParentType == null)
                 throw new InvalidOperationException($"Cannot output {b} to {a}");
 

@@ -1,7 +1,6 @@
 ﻿using JetBrains.Annotations;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
-using Robust.Client.Graphics;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
 
@@ -15,7 +14,7 @@ namespace OpenDreamClient.Rendering {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;
-        [CanBeNull] private EntityLookupSystem _lookupSystem;
+        private EntityLookupSystem? _lookupSystem;
 
         public DMISpriteComponent() {
             Icon.SizeChanged += OnIconSizeChanged;
@@ -35,9 +34,8 @@ namespace OpenDreamClient.Rendering {
             return Icon.GetWorldAABB(transform.Position);
         }
 
-        public bool IsVisible(bool checkWorld = true, [CanBeNull] IMapManager mapManager = null) {
-            if (Icon?.DMI == null) return false;
-            if (Icon.Appearance.Invisibility > 0) return false; //TODO: mob.see_invisibility
+        public bool IsVisible(bool checkWorld = true, IMapManager? mapManager = null, int seeInvis = 0) {
+            if (Icon.Appearance?.Invisibility > seeInvis) return false;
 
             if (checkWorld) {
                 //Only render movables not inside another movable's contents (parented to the grid)
@@ -51,37 +49,6 @@ namespace OpenDreamClient.Rendering {
             }
 
             return true;
-        }
-
-        public bool CheckClickWorld(Vector2 worldPos) {
-            if (!IsVisible()) return false;
-
-            switch (Icon.Appearance.MouseOpacity) {
-                case MouseOpacity.Opaque: return true;
-                case MouseOpacity.Transparent: return false;
-                case MouseOpacity.PixelOpaque: {
-                    if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
-                        return false;
-
-                    return Icon.CheckClickWorld(transform.WorldPosition, worldPos);
-                }
-                default: throw new InvalidOperationException("Invalid mouse_opacity");
-            }
-        }
-
-        public bool CheckClickScreen(Vector2 screenPos, Vector2 mousePos) {
-            if (!IsVisible(checkWorld: false)) return false;
-            if (Icon.Appearance.MouseOpacity == MouseOpacity.Transparent) return false;
-
-            Vector2 size = Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter * (ScreenLocation.RepeatX, ScreenLocation.RepeatY);
-            Box2 iconBox = Box2.FromDimensions(screenPos, size);
-            if (!iconBox.Contains(mousePos)) return false;
-
-            switch (Icon.Appearance.MouseOpacity) {
-                case MouseOpacity.Opaque: return true;
-                case MouseOpacity.PixelOpaque: return Icon.CheckClickScreen(screenPos, mousePos);
-                default: throw new InvalidOperationException("Invalid mouse_opacity");
-            }
         }
 
         private void OnIconSizeChanged() {

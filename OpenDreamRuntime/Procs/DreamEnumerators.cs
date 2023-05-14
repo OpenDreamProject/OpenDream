@@ -1,10 +1,9 @@
 ﻿using OpenDreamRuntime.Objects;
+using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
-    internal interface IDreamValueEnumerator {
-        public DreamValue Current { get; }
-
-        public bool MoveNext();
+    public interface IDreamValueEnumerator {
+        public bool Enumerate(DMProcState state, DMReference? reference);
     }
 
     /// <summary>
@@ -12,8 +11,6 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/i in 1 to 10 step 2)</code>
     /// </summary>
     sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
-        public DreamValue Current => new DreamValue(_current);
-
         private float _current;
         private readonly float _end;
         private readonly float _step;
@@ -24,10 +21,14 @@ namespace OpenDreamRuntime.Procs {
             _step = step;
         }
 
-        public bool MoveNext() {
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             _current += _step;
 
-            return (_step > 0) ? _current <= _end : _current >= _end;
+            bool successful = (_step > 0) ? _current <= _end : _current >= _end;
+            if (successful && reference != null) // Only assign if it was successful
+                state.AssignReference(reference.Value, new DreamValue(_current));
+
+            return successful;
         }
     }
 
@@ -35,8 +36,6 @@ namespace OpenDreamRuntime.Procs {
     /// Enumerates over an IEnumerable of DreamObjects, possibly filtering for a certain type
     /// </summary>
     sealed class DreamObjectEnumerator : IDreamValueEnumerator {
-        public DreamValue Current => new DreamValue(_dreamObjectEnumerator.Current);
-
         private readonly IEnumerator<DreamObject> _dreamObjectEnumerator;
         private readonly IDreamObjectTree.TreeEntry? _filterType;
 
@@ -45,15 +44,18 @@ namespace OpenDreamRuntime.Procs {
             _filterType = filterType;
         }
 
-        public bool MoveNext() {
-            bool hasNext = _dreamObjectEnumerator.MoveNext();
+        public bool Enumerate(DMProcState state, DMReference? reference) {
+            bool success = _dreamObjectEnumerator.MoveNext();
             if (_filterType != null) {
-                while (hasNext && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
-                    hasNext = _dreamObjectEnumerator.MoveNext();
+                while (success && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
+                    success = _dreamObjectEnumerator.MoveNext();
                 }
             }
 
-            return hasNext;
+            // Assign regardless of success
+            if (reference != null)
+                state.AssignReference(reference.Value, new DreamValue(_dreamObjectEnumerator.Current));
+            return success;
         }
     }
 
@@ -62,32 +64,20 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/i in list(1, 2, 3))</code>
     /// </summary>
     sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
-        private readonly DreamValue[]? _dreamValueArray;
+        private readonly DreamValue[] _dreamValueArray;
         private int _current = -1;
 
-        public DreamValueArrayEnumerator(DreamValue[]? dreamValueArray) {
+        public DreamValueArrayEnumerator(DreamValue[] dreamValueArray) {
             _dreamValueArray = dreamValueArray;
         }
 
-        public DreamValue Current {
-            get {
-                if (_dreamValueArray == null)
-                    return DreamValue.Null;
-                if (_current < _dreamValueArray.Length)
-                    return _dreamValueArray[_current];
-                return DreamValue.Null;
-            }
-        }
-
-        public bool MoveNext() {
-            if (_dreamValueArray == null)
-                return false;
-
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             _current++;
-            if (_current >= _dreamValueArray.Length)
-                return false;
 
-            return true;
+            bool success = _current < _dreamValueArray.Length;
+            if (reference != null)
+                state.AssignReference(reference.Value, success ? _dreamValueArray[_current] : DreamValue.Null); // Assign regardless of success
+            return success;
         }
     }
 
@@ -96,37 +86,30 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/obj/item/I in contents)</code>
     /// </summary>
     sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
-        private readonly DreamValue[]? _dreamValueArray;
+        private readonly DreamValue[] _dreamValueArray;
         private readonly IDreamObjectTree.TreeEntry _filterType;
         private int _current = -1;
 
-        public FilteredDreamValueArrayEnumerator(DreamValue[]? dreamValueArray, IDreamObjectTree.TreeEntry filterType) {
+        public FilteredDreamValueArrayEnumerator(DreamValue[] dreamValueArray, IDreamObjectTree.TreeEntry filterType) {
             _dreamValueArray = dreamValueArray;
             _filterType = filterType;
         }
 
-        public DreamValue Current {
-            get {
-                if (_dreamValueArray == null)
-                    return DreamValue.Null;
-                if (_current < _dreamValueArray.Length)
-                    return _dreamValueArray[_current];
-                return DreamValue.Null;
-            }
-        }
-
-        public bool MoveNext() {
-            if (_dreamValueArray == null)
-                return false;
-
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             do {
                 _current++;
-                if (_current >= _dreamValueArray.Length)
+                if (_current >= _dreamValueArray.Length) {
+                    if (reference != null)
+                        state.AssignReference(reference.Value, DreamValue.Null);
                     return false;
+                }
 
                 DreamValue value = _dreamValueArray[_current];
-                if (value.TryGetValueAsDreamObjectOfType(_filterType, out _))
+                if (value.TryGetValueAsDreamObjectOfType(_filterType, out _)) {
+                    if (reference != null)
+                        state.AssignReference(reference.Value, value);
                     return true;
+                }
             } while (true);
         }
     }
@@ -136,33 +119,28 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/obj/item/I in world)</code>
     /// </summary>
     sealed class WorldContentsEnumerator : IDreamValueEnumerator {
-        private readonly IDreamMapManager _mapManager;
+        private readonly IAtomManager _atomManager;
         private readonly IDreamObjectTree.TreeEntry? _filterType;
         private int _current = -1;
 
-        public WorldContentsEnumerator(IDreamMapManager mapManager, IDreamObjectTree.TreeEntry? filterType) {
-            _mapManager = mapManager;
+        public WorldContentsEnumerator(IAtomManager atomManager, IDreamObjectTree.TreeEntry? filterType) {
+            _atomManager = atomManager;
             _filterType = filterType;
         }
 
-        public DreamValue Current {
-            get {
-                if (_current < _mapManager.AllAtoms.Count)
-                    return new(_mapManager.AllAtoms[_current]);
-                return DreamValue.Null;
-            }
-        }
-
-        public bool MoveNext() {
+        public bool Enumerate(DMProcState state, DMReference? reference) {
             do {
                 _current++;
-                if (_current >= _mapManager.AllAtoms.Count)
+                if (_current >= _atomManager.AtomCount) {
+                    if (reference != null)
+                        state.AssignReference(reference.Value, DreamValue.Null);
                     return false;
+                }
 
-                if (_filterType != null) {
-                    if (_mapManager.AllAtoms[_current].IsSubtypeOf(_filterType))
-                        return true;
-                } else {
+                DreamObject atom = _atomManager.GetAtom(_current);
+                if (_filterType == null || atom.IsSubtypeOf(_filterType)) {
+                    if (reference != null)
+                        state.AssignReference(reference.Value, new DreamValue(atom));
                     return true;
                 }
             } while (true);

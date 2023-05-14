@@ -12,13 +12,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)]
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
-        public static DreamValue NativeProc_Find(DreamObject instance, DreamObject usr, DreamProcArguments arguments) {
-            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[instance];
-            DreamValue haystack = arguments.GetArgument(0, "haystack");
-            int next = GetNext(instance, arguments.GetArgument(1, "Start"), dreamRegex.IsGlobal);
-            int end = arguments.GetArgument(2, "End").GetValueAsInteger();
+        public static DreamValue NativeProc_Find(NativeProc.State state) {
+            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
+            DreamValue haystack = state.GetArgument(0, "haystack");
+            int next = GetNext(state.Src, state.GetArgument(1, "Start"), dreamRegex.IsGlobal);
+            int end = state.GetArgument(2, "End").GetValueAsInteger();
 
-            instance.SetVariable("text", haystack);
+            state.Src.SetVariable("text", haystack);
 
             string haystackString;
             if (!haystack.TryGetValueAsString(out haystackString)) {
@@ -30,20 +30,20 @@ namespace OpenDreamRuntime.Procs.Native {
 
             Match match = dreamRegex.Regex.Match(haystackString, next - 1, end - next);
             if (match.Success) {
-                instance.SetVariable("index", new DreamValue(match.Index + 1));
-                instance.SetVariable("match", new DreamValue(match.Value));
+                state.Src.SetVariable("index", new DreamValue(match.Index + 1));
+                state.Src.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = DreamList.Create(match.Groups.Count);
+                    DreamList groupList = state.ObjectTree.CreateList(match.Groups.Count);
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));
                     }
 
-                    instance.SetVariable("group", new DreamValue(groupList));
+                    state.Src.SetVariable("group", new DreamValue(groupList));
                 }
 
                 if (dreamRegex.IsGlobal) {
-                    instance.SetVariable("next", new DreamValue(match.Index + match.Length));
+                    state.Src.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
                 }
 
                 return new DreamValue(match.Index + 1);
@@ -85,12 +85,12 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 var match = regex.Regex.Match(haystackSubstring);
                 var groups = match.Groups;
-                List<DreamValue> args = new List<DreamValue>(groups.Count);
-                foreach (Group group in groups) {
-                    args.Add(new DreamValue(group.Value));
+                var args = new DreamValue[groups.Count];
+                for (int i = 0; i < groups.Count; i++) {
+                    args[i] = new DreamValue(groups[i].Value);
                 }
 
-                var result = await state.CallNoWait(proc, regexInstance, null, new DreamProcArguments(args));
+                var result = await state.CallNoWait(proc, regexInstance, null, args);
 
                 if (result.TryGetValueAsString(out var replacement)) {
                     return DoTextReplace(replacement);
@@ -121,10 +121,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
         [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
-            DreamValue haystack = state.Arguments.GetArgument(0, "haystack");
-            DreamValue replacement = state.Arguments.GetArgument(1, "replacement");
-            int start = state.Arguments.GetArgument(2, "Start").GetValueAsInteger();
-            int end = state.Arguments.GetArgument(3, "End").GetValueAsInteger();
+            DreamValue haystack = state.GetArgument(0, "haystack");
+            DreamValue replacement = state.GetArgument(1, "replacement");
+            int start = state.GetArgument(2, "Start").GetValueAsInteger();
+            int end = state.GetArgument(3, "End").GetValueAsInteger();
 
             return await RegexReplace(state, state.Src, haystack, replacement, start, end);
         }

@@ -4,14 +4,13 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls {
-    sealed class ControlOutput : InterfaceControl {
+    public sealed class ControlOutput : InterfaceControl {
         private OutputPanel _textBox;
         //private Border _border;
 
         public ControlOutput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
-        protected override Control CreateUIElement()
-        {
+        protected override Control CreateUIElement() {
             _textBox = new OutputPanel();
 
             /*
@@ -25,8 +24,7 @@ namespace OpenDreamClient.Interface.Controls {
             return _textBox;
         }
 
-        public override void Output(string value, string data)
-        {
+        public override void Output(string value, string? data) {
             var msg = new FormattedMessage(2);
             msg.PushColor(Color.Black);
             msg.AddText(value.Replace("\t", "        "));

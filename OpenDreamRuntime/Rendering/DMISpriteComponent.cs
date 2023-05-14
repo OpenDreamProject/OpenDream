@@ -16,7 +16,7 @@ namespace OpenDreamRuntime.Rendering {
         private ScreenLocation? _screenLocation;
 
         [ViewVariables]
-        public IconAppearance? Appearance => (_appearanceId != null) ? EntitySystem.Get<ServerAppearanceSystem>().GetAppearance(_appearanceId.Value) : null;
+        public IconAppearance? Appearance => (_appearanceId != null) ? EntitySystem.Get<ServerAppearanceSystem>().MustGetAppearance(_appearanceId.Value) : null;
 
         private uint? _appearanceId;
 

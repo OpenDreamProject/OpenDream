@@ -5,9 +5,9 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
+using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
     /// <remarks>
@@ -18,7 +18,7 @@ namespace DMCompiler.DM {
     class DMObject {
         public int Id;
         public DreamPath Path;
-        public DMObject Parent;
+        public DMObject? Parent;
         public Dictionary<string, List<int>> Procs = new();
         public Dictionary<string, DMVariable> Variables = new();
         /// <summary> It's OK if the override var is not literally the exact same object as what it overrides. </summary>
@@ -28,14 +28,14 @@ namespace DMCompiler.DM {
         public List<DMExpression> InitializationProcExpressions = new();
         public int? InitializationProc;
 
-        private bool IsRoot => Path == DreamPath.Root;
-        [CanBeNull] private List<DMProc> _verbs;
+        public bool IsRoot => Path == DreamPath.Root;
 
         // Statements waiting for LateVarDef event to happen
         public Dictionary<string, List<DMASTStatement>> danglingStatementsByUndefinedNames = new();
         private bool _isSubscribedToVarDef = false;
+        private List<DMProc>? _verbs;
 
-        public DMObject(int id, DreamPath path, DMObject parent) {
+        public DMObject(int id, DreamPath path, DMObject? parent) {
             Id = id;
             Path = path;
             Parent = parent;
@@ -49,12 +49,12 @@ namespace DMCompiler.DM {
 
         private void HandleLateVarDef(object sender, DMVariable varDefined)
         {
-            DMObject maybeAncestor = (DMObject)sender;
+            DMObject? maybeAncestor = sender as DMObject;
+            if (maybeAncestor == null)
+                return;
 
-            if (danglingStatementsByUndefinedNames.ContainsKey(varDefined.Name))
-            {
-                foreach (DMASTStatement statement in danglingStatementsByUndefinedNames[varDefined.Name].ToList())
-                {
+            if (danglingStatementsByUndefinedNames.ContainsKey(varDefined.Name)) {
+                foreach (DMASTStatement statement in danglingStatementsByUndefinedNames[varDefined.Name].ToList()) {
                     if (statement is DMASTObjectVarOverride && !IsSubtypeOf(maybeAncestor.Path)) // Resolves the ambiguous var override
                         continue;
                     DMObjectBuilder.ProcessStatement(statement);
@@ -64,8 +64,7 @@ namespace DMCompiler.DM {
                     danglingStatementsByUndefinedNames.Remove(varDefined.Name);
             }
 
-            if (danglingStatementsByUndefinedNames.Count == 0)
-            {
+            if (danglingStatementsByUndefinedNames.Count == 0) {
                 DMObjectBuilder.VarDefined -= this.HandleLateVarDef;
                 _isSubscribedToVarDef = false;
             }
@@ -90,10 +89,11 @@ namespace DMCompiler.DM {
         /// Note that this DOES NOT query our <see cref= "GlobalVariables" />. <br/>
         /// <see langword="TODO:"/> Make this (and other things) match the nomenclature of <see cref="HasLocalVariable"/>
         /// </remarks>
-        public DMVariable GetVariable(string name) {
-            if (Variables.TryGetValue(name, out DMVariable variable)) {
+        public DMVariable? GetVariable(string name) {
+            if (Variables.TryGetValue(name, out var variable)) {
                 return variable;
             }
+
             return Parent?.GetVariable(name);
         }
 
@@ -130,8 +130,29 @@ namespace DMCompiler.DM {
             return Parent?.HasProc(name) ?? false;
         }
 
-        [CanBeNull]
-        public List<int> GetProcs(string name) {
+        public bool HasProcNoInheritence(string name) {
+            return Procs.ContainsKey(name);
+        }
+
+        /// <summary>
+        /// Slightly more nuanced than HasProc, makes sure that one of the DMProcs we have in this hierarchy is the original definition.
+        /// </summary>
+        /// <returns>True if we could find a definition, false if not.</returns>
+        public bool HasProcDefined(string name) {
+            if(Procs.TryGetValue(name, out var IDList)) {
+                // You'd expect us to be able to just index into the first entry,
+                // but, no, it can seriously be in {override, override, definition, override} order
+                foreach (int ID in IDList) {
+                    DMProc proc = DMObjectTree.AllProcs[ID];
+                    if((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
+                        return true;
+                    }
+                }
+            }
+            return Parent?.HasProcDefined(name) ?? false;
+        }
+
+        public List<int>? GetProcs(string name) {
             return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
         }
 
@@ -169,10 +190,9 @@ namespace DMCompiler.DM {
             if (InitializationProcExpressions.Count > 0 && InitializationProc == null) {
                 var init = DMObjectTree.CreateDMProc(this, null);
                 InitializationProc = init.Id;
-                init.PushArguments(0);
-                init.Call(DMReference.SuperProc);
+                init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
 
-                string lastSource = null;
+                string? lastSource = null;
                 foreach (DMExpression expression in InitializationProcExpressions) {
                     try {
                         if (expression.Location.Line is int line) {

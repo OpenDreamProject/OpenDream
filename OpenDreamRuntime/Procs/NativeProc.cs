@@ -1,12 +1,14 @@
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class NativeProc : DreamProc {
-        public delegate DreamValue HandlerFn(DreamObject? src, DreamObject usr, DreamProcArguments arguments);
+        public delegate DreamValue HandlerFn(State state);
 
         public static (string, Dictionary<string, DreamValue>, List<String>) GetNativeInfo(Delegate func) {
             List<Attribute> attributes = new(func.GetInvocationList()[0].Method.GetCustomAttributes());
@@ -35,70 +37,82 @@ namespace OpenDreamRuntime.Procs {
 
             public DreamObject? Src;
             public DreamObject? Usr;
-            public DreamProcArguments Arguments;
 
-            private NativeProc? _proc;
-            public override NativeProc? Proc => _proc;
+            public DreamProcArguments Arguments => new(_arguments.AsSpan(0, _argumentCount));
+            private readonly DreamValue[] _arguments = new DreamValue[128];
+            private int _argumentCount;
 
-            public void Initialize(NativeProc? proc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            private NativeProc _proc = default!;
+            public override NativeProc Proc => _proc;
+
+            public IDreamManager DreamManager => _proc._dreamManager;
+            public IAtomManager AtomManager => _proc._atomManager;
+            public IDreamMapManager MapManager => _proc._mapManager;
+            public DreamResourceManager ResourceManager => _proc._resourceManager;
+            public IDreamObjectTree ObjectTree => _proc._objectTree;
+
+            public void Initialize(NativeProc proc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
                 base.Initialize(thread, true);
 
                 _proc = proc;
                 Src = src;
                 Usr = usr;
-                Arguments = arguments;
+                arguments.Values.CopyTo(_arguments);
+                _argumentCount = arguments.Count;
             }
 
-            protected override ProcStatus InternalResume() {
-                Result = _proc.Handler.Invoke(Src, Usr, Arguments);
+            public override ProcStatus Resume() {
+                Result = _proc._handler.Invoke(this);
 
                 return ProcStatus.Returned;
             }
 
             public override void AppendStackFrame(StringBuilder builder) {
-                if (_proc == null) {
-                    builder.Append("<anonymous proc>");
-                    return;
-                }
-
                 builder.Append($"{_proc.Name}");
             }
 
             public override void Dispose() {
                 base.Dispose();
 
+                _argumentCount = 0;
                 Src = null!;
                 Usr = null!;
-                Arguments = default;
                 _proc = null!;
 
                 Pool.Push(this);
             }
+
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            public DreamValue GetArgument(int argumentPosition, string argumentName) {
+                if (argumentPosition < _argumentCount && _arguments[argumentPosition] != DreamValue.Null)
+                    return _arguments[argumentPosition];
+
+                return _proc._defaultArgumentValues?.TryGetValue(argumentName, out var argValue) == true ? argValue : DreamValue.Null;
+            }
         }
 
-        private Dictionary<string, DreamValue> _defaultArgumentValues;
-        public HandlerFn Handler { get; }
+        private readonly IDreamManager _dreamManager;
+        private readonly IAtomManager _atomManager;
+        private readonly IDreamMapManager _mapManager;
+        private readonly DreamResourceManager _resourceManager;
+        private readonly IDreamObjectTree _objectTree;
 
-        public NativeProc(DreamPath owningType, string name, DreamProc superProc, List<String> argumentNames, List<DMValueType> argumentTypes, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility)
-            : base(owningType, name, superProc, ProcAttributes.None, argumentNames, argumentTypes, verbName, verbCategory, verbDesc, invisibility) {
+        private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
+        private readonly HandlerFn _handler;
+
+        public NativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
+            : base(owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
-            Handler = handler;
+            _handler = handler;
+
+            _dreamManager = dreamManager;
+            _atomManager = atomManager;
+            _mapManager = mapManager;
+            _resourceManager = resourceManager;
+            _objectTree = objectTree;
         }
 
         public override State CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-            if (_defaultArgumentValues != null) {
-                var newNamedArguments = arguments.NamedArguments;
-                foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
-
-                    if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
-                        newNamedArguments ??= new();
-                        newNamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
-                    }
-                }
-                arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
-            }
-
             if (!State.Pool.TryPop(out var state)) {
                 state = new State();
             }

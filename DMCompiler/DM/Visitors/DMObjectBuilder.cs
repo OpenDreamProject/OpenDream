@@ -4,6 +4,7 @@ using OpenDreamShared.Dream;
 using System;
 using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
+using Robust.Shared.Utility;
 
 namespace DMCompiler.DM.Visitors {
     static class DMObjectBuilder {
@@ -14,36 +15,71 @@ namespace DMCompiler.DM.Visitors {
         /// <remarks>
         /// Further, it just so happens to also act as a container that can enumerate all objects which were expecting a definition but never got one.
         /// </remarks>
-        public static event EventHandler<DMVariable> VarDefined; // Fires if we define a new variable.
+        public static event EventHandler<DMVariable>? VarDefined; // Fires if we define a new variable.
+
+        /// <summary>
+        /// A running collection of types that we need to find a definition for. <br/>
+        /// Comes up most especially when a var/some/type/x is defined before we know what /some/type even is. <br/>
+        /// The Location value can just be the first instance of this definition being promised, for errors' sake.
+        /// </summary>
+        public static Dictionary<DreamPath, Location> AwaitedObjectDefinitions = new();
+
+        /// <summary>
+        /// Similiar to <see cref="AwaitedObjectDefinitions"/> except for procs that are overridden before they are defined.
+        /// </summary>
+        public static Dictionary<string, DMObject> AwaitedProcDefinitions = new();
 
         public static void Reset() {
             DMObjectTree.Reset(); // Blank the object tree
             VarDefined = null;
+            AwaitedObjectDefinitions.Clear(); // Need to do this since this static is re-used during unit testing :^)
+            AwaitedProcDefinitions.Clear();
         }
+
         public static void BuildObjectTree(DMASTFile astFile) {
             Reset();
-
             ProcessFile(astFile); // generate it
 
-            if (VarDefined != null) // This means some listeners are remaining, which means that variables were overridden but not defined! Bad!
-            {
-                foreach(var method in VarDefined.GetInvocationList()) // For every object listening
-                {
+            if (VarDefined != null) { // This means some listeners are remaining, which means that variables were overridden but not defined! Bad!
+                foreach(var method in VarDefined.GetInvocationList()) { // For every object listening
                     object? obj = method.Target;
                     DMObject? realObj = (DMObject?)obj;
                     if (realObj == null)
                         continue;
 
-                    foreach (var (undefinedName, danglingStatements) in realObj.danglingStatementsByUndefinedNames)
-                    {
-                        foreach (var danglingStatement in danglingStatements)
-                        {
+                    foreach (var (undefinedName, danglingStatements) in realObj.danglingStatementsByUndefinedNames) {
+                        foreach (var danglingStatement in danglingStatements) {
                             if (danglingStatement is DMASTObjectVarOverride)
                                 DMCompiler.Emit(WarningCode.DanglingOverride, danglingStatement.Location, $"Cannot override undefined var \"{undefinedName}\"");
                             else
                                 DMCompiler.Emit(new CompilerEmission(ErrorLevel.Error, danglingStatement.Location, $"Unknown identifier \"{undefinedName}\""));
                         }
                     }
+                }
+            }
+
+            //Lets check in on all the types we found promised before and see if we actually got them. :^)
+            //Note: Dynamically removing types as we find them would've made the compiler 4x slower, per some tests I did.
+            //      It's much more performant to do it this way.
+            foreach(var pair in AwaitedObjectDefinitions) {
+                if(!DMObjectTree.TryGetTypeId(pair.Key,out var _))
+                    DMCompiler.Emit(WarningCode.DanglingVarType, pair.Value, $"Definition for path {pair.Key} not found");
+            }
+
+            //And now all the proc definitions we were promised
+            foreach (var pair in AwaitedProcDefinitions) {
+                if (pair.Value.IsRoot) { // Have to do this since DMObjectTree is what holds global procs, not the root DMObject, interestingly enough
+                    if(!DMObjectTree.SeenGlobalProcDefinition.Contains(pair.Key)) { // If we didn't see a definition for it :(
+                        int ID = DMObjectTree.GlobalProcs[pair.Key];
+                        DMProc proc = DMObjectTree.AllProcs[ID];
+                        DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for global proc {pair.Key} not found");
+                    }
+                    continue;
+                }
+
+                if (!pair.Value.HasProcDefined(pair.Key)) {
+                    DMProc proc = DMObjectTree.AllProcs[pair.Value.GetProcs(pair.Key)[0]];
+                    DMCompiler.Emit(WarningCode.DanglingOverride, proc.Location, $"Definition for proc {pair.Key} on type {pair.Value.Path} not found");
                 }
             }
 
@@ -101,17 +137,15 @@ namespace DMCompiler.DM.Visitors {
         }
 
         private static void ProcessVarDefinition(DMASTObjectVarDefinition varDefinition) {
-            DMVariable variable = null;
+            DMVariable? variable = null;
             DMObject varObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath);
+
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
             //Lets check if we're duplicating a definition, first.
-            if (varObject.HasGlobalVariable(varDefinition.Name))
-            {
+            if (varObject.HasGlobalVariable(varDefinition.Name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, $"Duplicate definition of static var \"{varDefinition.Name}\"");
                 variable = varObject.GetGlobalVariable(varDefinition.Name);
-            }
-            else if (varObject.HasLocalVariable(varDefinition.Name))
-            {
+            } else if (varObject.HasLocalVariable(varDefinition.Name)) {
                 if(!DoesDefineSnowflakeVars(varDefinition, varObject))
                     DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\"");
                 variable = varObject.GetVariable(varDefinition.Name);
@@ -146,6 +180,11 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            //Check if this var definition implies a type we don't know about yet
+            if(variable.Type != null && !DMObjectTree.TryGetTypeId(variable.Type.Value,out var _)) {
+                AwaitedObjectDefinitions.TryAdd(variable.Type.Value, varDefinition.Location);
+            }
+
             try {
                 SetVariableValue(varObject, ref variable, varDefinition.Location, expression);
                 VarDefined?.Invoke(varObject, variable); // FIXME: God there HAS to be a better way of doing this
@@ -157,48 +196,41 @@ namespace DMCompiler.DM.Visitors {
         private static void ProcessVarOverride(DMASTObjectVarOverride varOverride) {
             DMObject varObject = DMObjectTree.GetDMObject(varOverride.ObjectPath);
 
-            try
-            {
-                switch (varOverride.VarName) // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
-                {
-                    case "parent_type":
-                    {
-                        DMASTConstantPath parentType = varOverride.Value as DMASTConstantPath;
+            try {
+                switch (varOverride.VarName) { // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
+                    case "parent_type": {
+                        DMASTConstantPath? parentType = varOverride.Value as DMASTConstantPath;
 
                         if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
                         varObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
                         return;
                     }
-                    case "tag":
-                    {
-                        if(varObject.IsSubtypeOf(DreamPath.Datum))
-                        {
+                    case "tag": {
+                        if(varObject.IsSubtypeOf(DreamPath.Datum)) {
                             throw new CompileErrorException(varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");
                         }
+
                         break;
                     }
                 }
-                DMVariable variable;
-                if (varObject.HasLocalVariable(varOverride.VarName))
-                {
+
+                DMVariable? variable;
+                if (varObject.HasLocalVariable(varOverride.VarName)) {
                     variable = varObject.GetVariable(varOverride.VarName);
-                }
-                else if (varObject.HasGlobalVariable(varOverride.VarName)) {
+                } else if (varObject.HasGlobalVariable(varOverride.VarName)) {
                     variable = varObject.GetGlobalVariable(varOverride.VarName);
                     DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
-                }
-                else // So this is an awkward point where we have to be a little bit silly.
-                {
+                } else { // So this is an awkward point where we have to be a little bit silly.
                     //So, this override cannot be emitted until we know what the heck the DMVariable is supposed to be.
                     //To do that, we are now going to cache this var override and wait for our parent class to be defined, so we can know wtf it is and resume!
-                    if(varObject.Path == DreamPath.Root) // As per DM, we should just error out if a root global var is overwritten before it is defined.
-                    {
+                    if(varObject.Path == DreamPath.Root) { // As per DM, we should just error out if a root global var is overwritten before it is defined.
                         DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location, $"var \"{varOverride.VarName}\" is not declared");
                         return; // don't do the fancy event stuff if we're root
                     }
                     varObject.WaitForLateVarDefinition(varOverride.VarName, varOverride);
                     return;
                 }
+
                 OverrideVariableValue(varObject, ref variable, varOverride.Value);
                 varObject.VariableOverrides[variable.Name] = variable;
             } catch (UnknownIdentifierException e) {
@@ -213,22 +245,43 @@ namespace DMCompiler.DM.Visitors {
             string procName = procDefinition.Name;
             try {
                 DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
-
-                if (!procDefinition.IsOverride && dmObject.HasProc(procName)) {
-                    throw new CompileErrorException(procDefinition.Location, $"Type {dmObject.Path} already has a proc named \"{procName}\"");
+                bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
+                if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
+                    if(!dmObject.HasProcNoInheritence(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
+                        DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it");
+                        return; // TODO: Maybe fallthrough since this error is a little pedantic?
+                    }
+                    //Otherwise, it's ok
                 }
 
-                DMProc proc;
+                /*
+                    So the way that BYOND handles the distinction between definitions and overrides on the same type is kinda strange.
+                    There is NO visible dominance that one has over the other, except that the last one found is the first definition invoked when called.
+
+                    The only grammatical purpose the /proc/ phrase in one of the procs does,
+                    is to mark that this type should be the first one in its inheritence to have that proc defined.
+                    Nothing else.
+                */
+                if (procDefinition.IsOverride && !hasProc) // If an override for this proc was found before its definition
+                    AwaitedProcDefinitions.TryAdd(procName, dmObject); // Remember to check that we eventually found a definition, later :)
+
+                DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
+
+                proc.IsVerb = procDefinition.IsVerb;
 
                 if (procDefinition.ObjectPath == DreamPath.Root) {
-                    if (DMObjectTree.TryGetGlobalProc(procDefinition.Name, out _)) {
-                        throw new CompileErrorException(procDefinition.Location, $"proc {procDefinition.Name} is already defined in global scope");
+                    if(procDefinition.IsOverride) {
+                        DMCompiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");
+                        //Continue processing the proc anyhoo, just don't add it.
+                    } else {
+                        if (!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
+                            DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
+                            //Again, even though this is likely an error, process the statements anyways.
+                        } else {
+                            DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
+                        }
                     }
-
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
-                    DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                 } else {
-                    proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
                     dmObject.AddProc(procName, proc);
                 }
 
@@ -261,7 +314,7 @@ namespace DMCompiler.DM.Visitors {
         static public IEnumerable<DMASTProcStatement> GetStatements(DMASTProcBlockInner block) {
             foreach (var stmt in block.Statements) {
                 yield return stmt;
-                List<DMASTProcBlockInner> recurse;
+                List<DMASTProcBlockInner?> recurse;
                 switch (stmt) {
                     case DMASTProcStatementSpawn ps: recurse = new() { ps.Body }; break;
                     case DMASTProcStatementIf ps: recurse = new() { ps.Body, ps.ElseBody }; break;
@@ -280,6 +333,7 @@ namespace DMCompiler.DM.Visitors {
                     case DMASTProcStatementTryCatch ps: recurse = new() { ps.TryBody, ps.CatchBody }; break;
                     default: recurse = new(); break;
                 }
+
                 foreach (var subblock in recurse) {
                     if (subblock == null) { continue; }
                     foreach (var substmt in GetStatements(subblock)) {
@@ -294,9 +348,7 @@ namespace DMCompiler.DM.Visitors {
         /// A snowflake helper proc which determines whether the given definition would be a duplication definition of global.vars.<br/>
         /// It exists because global.vars is not a "real" global but rather a construct indirectly implemented via PushGlobals et al.
         /// </summary>
-        private static bool DoesOverrideGlobalVars(DMASTObjectVarDefinition varDefinition)
-        {
-            if (varDefinition == null) return false;
+        private static bool DoesOverrideGlobalVars(DMASTObjectVarDefinition varDefinition) {
             return varDefinition.IsStatic && varDefinition.Name == "vars" && varDefinition.ObjectPath == DreamPath.Root;
         }
 
@@ -306,11 +358,10 @@ namespace DMCompiler.DM.Visitors {
         /// </summary>
         private static bool DoesDefineSnowflakeVars(DMASTObjectVarDefinition varDefinition, DMObject varObject) {
             if (DMCompiler.Settings.NoStandard == false)
-                if (varDefinition != null)
-                    if (varDefinition.Name == "vars")
-                        if (varDefinition.ObjectPath == DreamPath.World || varDefinition.ObjectPath == DreamPath.Client)
-                            if (varObject.IsSubtypeOf(DreamPath.Datum))
-                                return true;
+                if (varDefinition.Name == "vars")
+                    if (varDefinition.ObjectPath == DreamPath.World || varDefinition.ObjectPath == DreamPath.Client)
+                        if (varObject.IsSubtypeOf(DreamPath.Datum))
+                            return true;
             return false;
         }
 
@@ -368,6 +419,7 @@ namespace DMCompiler.DM.Visitors {
         private static bool IsValidRighthandSide(DMObject currentObject, DMVariable variable, DMExpression expression) {
             if (variable.IsGlobal) // Have to back out early like this because if we are a static set by a ProcCall, it might be underdefined right now (and so error in the switch)
                 return true;
+
             return expression switch {
                 //TODO: A better way of handling procs evaluated at compile time
                 Expressions.ProcCall procCall => procCall.GetTargetProc(currentObject).Proc?.Name switch {
@@ -377,6 +429,7 @@ namespace DMCompiler.DM.Visitors {
                     "icon" => true,
                     "file" => true,
                     "sound" => true,
+                    "nameof" => true,
                     _ => false
                 },
 

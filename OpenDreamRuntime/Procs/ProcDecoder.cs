@@ -25,10 +25,6 @@ public struct ProcDecoder {
         return (DreamProcOpcode) ReadByte();
     }
 
-    public DreamProcOpcodeParameterType ReadParameterType() {
-        return (DreamProcOpcodeParameterType) ReadByte();
-    }
-
     public int ReadInt() {
         int value = BitConverter.ToInt32(Bytecode, Offset);
         Offset += 4;
@@ -60,7 +56,6 @@ public struct ProcDecoder {
             case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(ReadInt());
             case DMReference.Type.Field: return DMReference.CreateField(ReadString());
             case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
-            case DMReference.Type.Proc: return DMReference.CreateProc(ReadString());
             case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(ReadString());
             case DMReference.Type.Src: return DMReference.Src;
             case DMReference.Type.Self: return DMReference.Self;
@@ -81,7 +76,11 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushString:
             case DreamProcOpcode.PushResource:
             case DreamProcOpcode.DebugSource:
+            case DreamProcOpcode.DereferenceField:
                 return (opcode, ReadString());
+
+            case DreamProcOpcode.DereferenceCall:
+                return (opcode, ReadString(), (DMCallArgumentsType)ReadByte(), ReadInt());
 
             case DreamProcOpcode.Prompt:
                 return (opcode, ReadValueType());
@@ -89,7 +88,6 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushFloat:
                 return (opcode, ReadFloat());
 
-            case DreamProcOpcode.Call:
             case DreamProcOpcode.Assign:
             case DreamProcOpcode.Append:
             case DreamProcOpcode.Remove:
@@ -101,13 +99,25 @@ public struct ProcDecoder {
             case DreamProcOpcode.DivideReference:
             case DreamProcOpcode.BitXorReference:
             case DreamProcOpcode.ModulusReference:
+            case DreamProcOpcode.BitShiftLeftReference:
+            case DreamProcOpcode.BitShiftRightReference:
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
+            case DreamProcOpcode.PopReference:
                 return (opcode, ReadReference());
 
             case DreamProcOpcode.Input:
                 return (opcode, ReadReference(), ReadReference());
 
+            case DreamProcOpcode.CallStatement:
+            case DreamProcOpcode.CreateObject:
+            case DreamProcOpcode.Gradient:
+                return (opcode, (DMCallArgumentsType)ReadByte(), ReadInt());
+
+            case DreamProcOpcode.Call:
+                return (opcode, ReadReference(), (DMCallArgumentsType)ReadByte(), ReadInt());
+
+            case DreamProcOpcode.EnumerateNoAssign:
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
             case DreamProcOpcode.CreateFilteredListEnumerator:
@@ -127,25 +137,19 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushVerbStub:
             case DreamProcOpcode.DebugLine:
             case DreamProcOpcode.MassConcatenation:
+            case DreamProcOpcode.JumpIfNull:
+            case DreamProcOpcode.JumpIfNullNoPop:
+            case DreamProcOpcode.TryNoValue:
                 return (opcode, ReadInt());
 
-            case DreamProcOpcode.Enumerate:
             case DreamProcOpcode.JumpIfNullDereference:
+            case DreamProcOpcode.JumpIfTrueReference:
+            case DreamProcOpcode.JumpIfFalseReference:
+            case DreamProcOpcode.Enumerate:
                 return (opcode, ReadReference(), ReadInt());
 
-            case DreamProcOpcode.PushArguments: {
-                int argCount = ReadInt();
-                int namedCount = ReadInt();
-                string[] names = new string[argCount];
-
-                for (int i = 0; i < argCount; i++) {
-                    if (ReadParameterType() == DreamProcOpcodeParameterType.Named) {
-                        names[i] = ReadString();
-                    }
-                }
-
-                return (opcode, argCount, namedCount, names);
-            }
+            case DreamProcOpcode.Try:
+                return (opcode, ReadInt(), ReadReference());
 
             default:
                 return ValueTuple.Create(opcode);
@@ -209,15 +213,6 @@ public struct ProcDecoder {
                 text.Append(getTypePath(type));
                 break;
 
-            case (DreamProcOpcode.PushArguments, int argCount, int namedCount, string[] names):
-                text.Append(argCount);
-                for (int i = 0; i < argCount; i++) {
-                    text.Append(' ');
-                    text.Append(names[i] ?? "-");
-                }
-
-                break;
-
             default:
                 for (int i = 1; i < instruction.Length; ++i) {
                     text.Append(instruction[i]);
@@ -239,7 +234,10 @@ public struct ProcDecoder {
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
                     or DreamProcOpcode.JumpIfFalse
-                    or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                    or DreamProcOpcode.JumpIfTrue
+                    or DreamProcOpcode.TryNoValue, int jumpPosition):
+                return jumpPosition;
+            case (DreamProcOpcode.Try, int jumpPosition, DMReference dmReference):
                 return jumpPosition;
             case (DreamProcOpcode.Enumerate, DMReference reference, int jumpPosition):
                 return jumpPosition;

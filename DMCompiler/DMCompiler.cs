@@ -86,9 +86,8 @@ namespace DMCompiler {
             return successfulCompile;
         }
 
-        [CanBeNull]
-        private static DMPreprocessor Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
-            DMPreprocessor build() {
+        private static DMPreprocessor? Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
+            DMPreprocessor? build() {
                 DMPreprocessor preproc = new DMPreprocessor(true);
                 if (macroDefines != null) {
                     foreach (var (key, value) in macroDefines) {
@@ -147,7 +146,7 @@ namespace DMCompiler {
 
         private static bool Compile(IEnumerable<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
-            DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
+            DMParser dmParser = new DMParser(dmLexer);
 
             VerbosePrint("Parsing");
             DMASTFile astFile = dmParser.File();
@@ -185,8 +184,8 @@ namespace DMCompiler {
                     ++ErrorCount;
                     break;
             }
+
             Console.WriteLine(emission);
-            return;
         }
 
         /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
@@ -207,7 +206,7 @@ namespace DMCompiler {
 
         /// <inheritdoc cref="ForcedError(string)"/>
         public static void ForcedError(Location loc, string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Error, loc, message).ToString());
             ErrorCount++;
         }
 
@@ -216,13 +215,13 @@ namespace DMCompiler {
         /// Completely ignores the warning configuration. Use wisely!
         /// </summary>
         public static void ForcedWarning(string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, Location.Internal, message).ToString());
             WarningCount++;
         }
 
         /// <inheritdoc cref="ForcedWarning(string)"/>
         public static void ForcedWarning(Location loc, string message) {
-            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message));
+            Console.WriteLine(new CompilerEmission(ErrorLevel.Warning, loc, message).ToString());
             WarningCount++;
         }
 
@@ -271,13 +270,15 @@ namespace DMCompiler {
         }
 
         private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
-            DreamCompiledJson compiledDream = new DreamCompiledJson();
-            compiledDream.Strings = DMObjectTree.StringTable;
-            compiledDream.Maps = maps;
-            compiledDream.Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile);
             var jsonRep = DMObjectTree.CreateJsonRepresentation();
-            compiledDream.Types = jsonRep.Item1;
-            compiledDream.Procs = jsonRep.Item2;
+            DreamCompiledJson compiledDream = new DreamCompiledJson {
+                Strings = DMObjectTree.StringTable,
+                Maps = maps,
+                Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
+                Types = jsonRep.Item1,
+                Procs = jsonRep.Item2
+            };
+
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {
@@ -303,17 +304,21 @@ namespace DMCompiler {
             }
 
             if (DMObjectTree.GlobalProcs.Count > 0) {
-                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToList();
+                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToArray();
             }
 
             // Successful serialization
             if (ErrorCount == 0) {
-                var outputFileHandle = File.Create(outputFile);
+                using var outputFileHandle = File.Create(outputFile);
 
-                JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
-                outputFileHandle.Close();
-                return $"Saved to {outputFile}";
+                try {
+                    JsonSerializer.Serialize(outputFileHandle, compiledDream,
+                        new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
+
+                    return $"Saved to {outputFile}";
+                } catch (Exception e) {
+                    Console.WriteLine($"Failed to save to {outputFile}: {e.Message}");
+                }
             }
 
             return string.Empty;
@@ -351,15 +356,22 @@ namespace DMCompiler {
     }
 
     public struct DMCompilerSettings {
-        public List<string> Files;
-        public bool SuppressUnimplementedWarnings;
-        public bool NoticesEnabled;
-        public bool DumpPreprocessor;
-        public bool NoStandard;
-        public bool Verbose;
-        public Dictionary<string, string> MacroDefines;
+        public List<string> Files = null;
+        public bool SuppressUnimplementedWarnings = false;
+        public bool NoticesEnabled = false;
+        public bool DumpPreprocessor = false;
+        public bool NoStandard = false;
+        public bool Verbose = false;
+        public Dictionary<string, string> MacroDefines = null;
         /// <summary> A user-provided pragma config file, if one was provided. </summary>
-        public string? PragmaFileOverride;
+        public string? PragmaFileOverride = null;
+
+        // These are the default DM_VERSION and DM_BUILD values. They're strings because that's what the preprocessor expects (seriously)
+        public string DMVersion = "514";
+        public string DMBuild = "1584";
+
+        public DMCompilerSettings() {
+        }
     }
 
     class DMCompilerConfiguration {

@@ -71,7 +71,7 @@ namespace OpenDreamRuntime {
                     return new DreamValue(VerbName);
                 case "category":
                     return new DreamValue(VerbCategory);
-                case "description":
+                case "desc":
                     return new DreamValue(VerbDesc);
                 case "invisibility":
                     return new DreamValue(Invisibility);

@@ -11,4 +11,4 @@ var/const/late_defined_const = 1
 /proc/RunTest()
 	var/obj/TestObj/o = new
 	ASSERT(o.const_var == 2)
-    ASSERT(global_list[1] == 1)
+	ASSERT(global_list[1] == 1)

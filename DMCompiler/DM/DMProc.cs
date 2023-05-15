@@ -31,8 +31,26 @@ namespace DMCompiler.DM {
             }
         }
 
+        public class CodeLabel {
+            private static int idCounter = 0;
+            public readonly int Id;
+            public readonly string Name;
+            public readonly long ByteOffset;
+
+            public string LabelName => $"{Name}_{Id}_codelabel";
+
+            public CodeLabel(string name, long offset){
+                Id = idCounter;
+                Name = name;
+                ByteOffset = offset;
+
+                idCounter += 1;
+            }
+        }
+
         private class DMProcScope {
             public readonly Dictionary<string, LocalVariable> LocalVariables = new();
+            public readonly Dictionary<string, CodeLabel> LocalCodeLabels = new();
             public readonly DMProcScope? ParentScope;
 
             public DMProcScope() { }
@@ -211,6 +229,26 @@ namespace DMCompiler.DM {
 
             _unresolvedLabels.Clear();
             _bytecodeWriter.Seek(0, SeekOrigin.End);
+        }
+
+        public bool TryAddCodeLabel(string name) {
+            if (_scopes.Peek().LocalCodeLabels.ContainsKey(name)) {
+                DMCompiler.Emit(WarningCode.DuplicateVariable, Location, $"A label with the name \"{name}\" already exists");
+                return false;
+            }
+
+            return _scopes.Peek().LocalCodeLabels.TryAdd(name, new CodeLabel(name, Bytecode.Position));
+        }
+
+        public CodeLabel? GetCodeLabel(string name) {
+            DMProcScope? scope = _scopes.Peek();
+            while (scope != null) {
+                if (scope.LocalCodeLabels.TryGetValue(name, out var localCodeLabel))
+                    return localCodeLabel;
+
+                scope = scope.ParentScope;
+            }
+            return null;
         }
 
         public void AddLabel(string name) {
@@ -482,7 +520,8 @@ namespace DMCompiler.DM {
         }
 
         public void Goto(string label) {
-            Jump(label + "_codelabel");
+            CodeLabel? codeLabel = GetCodeLabel(label);
+            Jump(codeLabel?.LabelName ?? label + "_codelabel");
         }
 
         public void Pop() {

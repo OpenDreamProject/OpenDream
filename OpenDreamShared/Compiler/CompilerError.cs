@@ -6,8 +6,7 @@ namespace OpenDreamShared.Compiler {
     /// <remarks>
     /// All values should be unique.
     /// </remarks>
-    public enum WarningCode
-    {
+    public enum WarningCode {
         // 0 - 999 are reserved for giving codes to fatal errors which cannot reasonably be demoted to a warning/notice/disable.
         Unknown = 0,
         BadToken = 1,
@@ -26,6 +25,7 @@ namespace OpenDreamShared.Compiler {
         HardConstContext = 500,
         WriteToConstant = 501,
         InvalidInclusion = 900,
+
         // 1000 - 1999 are reserved for preprocessor configuration.
         FileAlreadyIncluded = 1000,
         MissingIncludedFile = 1001,
@@ -49,6 +49,8 @@ namespace OpenDreamShared.Compiler {
         InvalidSetStatement = 2302,
         InvalidOverride = 2303,
         DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
+        MissingInterpolatedExpression = 2500, // A text macro is missing a required interpolated expression
+
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,
 

@@ -15,7 +15,7 @@ namespace DMCompiler.DM {
     /// but rather stores the compile-time information necessary to describe a certain object definition, <br/>
     /// including its procs, vars, path, parent, etc.
     /// </remarks>
-    class DMObject {
+    sealed class DMObject {
         public int Id;
         public DreamPath Path;
         public DMObject? Parent;

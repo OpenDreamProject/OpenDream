@@ -264,12 +264,12 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 case "desc":
+                    // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
                     if (constant is not Expressions.String descStr) {
                         throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
                     }
 
                     _proc.VerbDesc = descStr.Value;
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set desc is not implemented");
                     break;
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs

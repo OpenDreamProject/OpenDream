@@ -47,7 +47,7 @@ namespace DMCompiler.DM.Visitors {
                     if (realObj == null)
                         continue;
 
-                    foreach (var (undefinedName, danglingStatements) in realObj.danglingStatementsByUndefinedNames) {
+                    foreach (var (undefinedName, danglingStatements) in realObj.DanglingStatementsByUndefinedNames) {
                         foreach (var danglingStatement in danglingStatements) {
                             if (danglingStatement is DMASTObjectVarOverride)
                                 DMCompiler.Emit(WarningCode.DanglingOverride, danglingStatement.Location, $"Cannot override undefined var \"{undefinedName}\"");
@@ -149,9 +149,7 @@ namespace DMCompiler.DM.Visitors {
                 if(!DoesDefineSnowflakeVars(varDefinition, varObject))
                     DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, $"Duplicate definition of var \"{varDefinition.Name}\"");
                 variable = varObject.GetVariable(varDefinition.Name);
-            }
-            else if (varDefinition.IsStatic && DoesOverrideGlobalVars(varDefinition))
-            {
+            } else if (varDefinition.IsStatic && DoesOverrideGlobalVars(varDefinition)) { // static TODO: Fix this else-if chaining once _currentObject is refactored out of DMObjectBuilder.
                 DMCompiler.Emit(WarningCode.DuplicateVariable, varDefinition.Location, "Duplicate definition of global.vars");
                 //We can't salvage any part of this definition, since global.vars doesn't technically even exist, so lets just return
                 return;
@@ -161,17 +159,17 @@ namespace DMCompiler.DM.Visitors {
             try {
                 DMVisitorExpression._scopeMode = varDefinition.IsGlobal ? "static" : "normal";
                 expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null, varDefinition.Value, varDefinition.Type);
-                DMVisitorExpression._scopeMode = "normal";
             } catch (UnknownIdentifierException e) {
                 varObject.WaitForLateVarDefinition(e.IdentifierName, varDefinition);
                 return;
             } catch (CompileErrorException e) {
                 DMCompiler.Emit(e.Error);
                 return;
+            } finally {
+                DMVisitorExpression._scopeMode = "normal";
             }
 
-            if (variable is null)
-            {
+            if (variable is null) {
                 if (varDefinition.IsStatic) {
                     variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
                 } else {

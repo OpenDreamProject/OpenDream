@@ -1340,7 +1340,7 @@ namespace DMCompiler.Compiler.DM {
                     tryBody = new DMASTProcBlockInner(loc,statement);
                 }
 
-                Newline();
+                BracketWhitespace();
                 Consume(TokenType.DM_Catch, "Expected catch");
                 Whitespace();
 

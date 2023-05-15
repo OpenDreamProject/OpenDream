@@ -99,7 +99,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // null
-    class Null : Constant {
+    sealed class Null : Constant {
         public Null(Location location) : base(location) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -143,7 +143,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // 4.0, -4.0
-    class Number : Constant {
+    sealed class Number : Constant {
         public float Value { get; }
 
         public Number(Location location, int value) : base(location) {
@@ -317,7 +317,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // "abc"
-    class String : Constant {
+    sealed class String : Constant {
         public string Value { get; }
 
         public String(Location location, string value) : base(location) {
@@ -345,7 +345,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // 'abc'
-    class Resource : Constant {
+    sealed class Resource : Constant {
         string Value { get; }
 
         public Resource(Location location, string value) : base(location) {
@@ -369,7 +369,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // /a/b/c
-    class Path : Constant {
+    sealed class Path : Constant {
         public DreamPath Value { get; }
 
         /// <summary>

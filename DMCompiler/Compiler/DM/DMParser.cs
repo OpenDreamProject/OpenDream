@@ -6,7 +6,6 @@ using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using String = System.String;
-using Robust.Shared.Utility;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {

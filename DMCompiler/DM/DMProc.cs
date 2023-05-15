@@ -10,7 +10,7 @@ using System.Linq;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
-    class DMProc {
+    sealed class DMProc {
         public class LocalVariable {
             public readonly int Id;
             public readonly bool IsParameter;
@@ -23,7 +23,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        public class LocalConstVariable : LocalVariable {
+        public sealed class LocalConstVariable : LocalVariable {
             public readonly Expressions.Constant Value;
 
             public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {

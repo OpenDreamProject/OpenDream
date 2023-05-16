@@ -74,7 +74,7 @@ namespace OpenDreamRuntime {
                 case "description":
                     return new DreamValue(VerbDesc);
                 case "invisibility":
-                    return new DreamValue(Invisibility);
+                    return new DreamValue((int)Invisibility);
                 default:
                     throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
             }

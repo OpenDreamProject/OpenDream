@@ -2522,7 +2522,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamPath path = new DreamPath(text);
 
             bool isVerb = false;
-            
+
             int procElementIndex = path.FindElement("proc");
             if (procElementIndex == -1) {
                 procElementIndex = path.FindElement("verb");
@@ -2643,7 +2643,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if (dirArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Icon, out var icon)) {
                 // Clone icon here since it's specified to return a new one
                 DreamObject clonedIcon = DreamMetaObjectIcon.CloneIcon(state.ObjectTree, icon);
-                return DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, state.Usr, angle);
+
+                DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, state.Usr, angle);
+                return new(clonedIcon);
             }
 
             // If Dir is actually a matrix, call /matrix.Turn

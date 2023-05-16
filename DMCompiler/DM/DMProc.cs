@@ -528,7 +528,14 @@ namespace DMCompiler.DM {
 
         public void Break(DMASTIdentifier? label = null) {
             if (label is not null) {
-                Jump(label.Identifier + "_end");
+                var codeLabel = (
+                    GetCodeLabel(label.Identifier)?.LabelName ??
+                    label.Identifier + "_codelabel"
+                );
+                if (!_labels.ContainsKey(codeLabel)) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, label.Location, $"Unknown label {label.Identifier}");
+                }
+                Jump(codeLabel + "_end");
             } else if (_loopStack?.TryPeek(out var peek) ?? false) {
                 Jump(peek + "_end");
             } else {

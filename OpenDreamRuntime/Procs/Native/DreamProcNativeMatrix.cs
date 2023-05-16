@@ -4,6 +4,20 @@ using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native;
 internal static class DreamProcNativeMatrix {
+
+    [DreamProc("Add")]
+    [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject)]
+    public static DreamValue NativeProc_Add(NativeProc.State state) {
+        DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
+        if (possibleMatrix.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var matrixArg)) {
+            DreamMetaObjectMatrix.AddMatrix(state.Src, matrixArg);
+            return new DreamValue(state.Src);
+        }
+        // On invalid input, throw runtime
+        throw new Exception($"Invalid matrix for addition: {possibleMatrix.ToString()}");
+    }
+
+
     [DreamProc("Invert")]
     public static DreamValue NativeProc_Invert(NativeProc.State state) {
         if (!DreamMetaObjectMatrix.TryInvert(state.Src)) {
@@ -46,6 +60,18 @@ internal static class DreamProcNativeMatrix {
             verticalScale = horizontalScale;
         DreamMetaObjectMatrix.ScaleMatrix(state.Src, horizontalScale, verticalScale);
         return new DreamValue(state.Src);
+    }
+
+    [DreamProc("Subtract")]
+    [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject)]
+    public static DreamValue NativeProc_Subtract(NativeProc.State state) {
+        DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
+        if (possibleMatrix.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var matrixArg)) {
+            DreamMetaObjectMatrix.SubtractMatrix(state.Src, matrixArg);
+            return new DreamValue(state.Src);
+        }
+        // On invalid input, throw runtime
+        throw new Exception($"Invalid matrix for subtraction: {possibleMatrix.ToString()}");
     }
 
     [DreamProc("Turn")]

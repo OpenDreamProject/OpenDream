@@ -162,8 +162,7 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
-            _proc.TryAddCodeLabel(statementLabel.Name);
-            var codeLabel = _proc.GetCodeLabel(statementLabel.Name);
+            var codeLabel = _proc.TryAddCodeLabel(statementLabel.Name);
             var labelName = codeLabel?.LabelName ?? statementLabel.Name;
 
             _proc.AddLabel(labelName);

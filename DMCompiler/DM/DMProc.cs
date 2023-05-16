@@ -31,11 +31,27 @@ namespace DMCompiler.DM {
             }
         }
 
+        private struct CodeLabelReference {
+            public readonly string Identifier;
+            public readonly string Placeholder;
+            public readonly Location Location;
+            public readonly DMProcScope Scope;
+
+            public CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
+                Identifier = identifier;
+                Placeholder = placeholder;
+                Scope = scope;
+                Location = location;
+            }
+        }
+
         public class CodeLabel {
             private static int idCounter = 0;
             public readonly int Id;
             public readonly string Name;
             public readonly long ByteOffset;
+
+            public int ReferencedCount = 0;
 
             public string LabelName => $"{Name}_{Id}_codelabel";
 
@@ -69,6 +85,7 @@ namespace DMCompiler.DM {
         public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
+        public List<CodeLabel> CodeLabels = new();
 
         public string? VerbName;
         public string? VerbCategory = string.Empty;
@@ -78,6 +95,7 @@ namespace DMCompiler.DM {
         private DMObject _dmObject;
         private DMASTProcDefinition? _astDefinition;
         private BinaryWriter _bytecodeWriter;
+        private Stack<CodeLabelReference> _pendingLabelReferences = new();
         private Dictionary<string, long> _labels = new();
         private List<(long Position, string LabelName)> _unresolvedLabels = new();
         private Stack<string>? _loopStack = null;
@@ -217,7 +235,39 @@ namespace DMCompiler.DM {
             }
         }
 
+        public void ResolveCodeLabelReferences() {
+            while(_pendingLabelReferences.Count > 0) {
+                CodeLabelReference reference = _pendingLabelReferences.Pop();
+                CodeLabel? label = GetCodeLabel(reference.Identifier, reference.Scope);
+
+                // Failed to find the label in the given context
+                if(label == null) {
+                    DMCompiler.Emit(
+                        WarningCode.ItemDoesntExist,
+                        reference.Location,
+                        $"Invalid label \"{reference.Identifier}\""
+                    );
+                    continue;
+                }
+
+                // Found it.
+                _labels.Add(reference.Placeholder, label.ByteOffset);
+                label.ReferencedCount += 1;
+
+                // I was thinking about going through to replace all the placeholers
+                // with the actual label.LabelName, but it means I need to modify
+                // _unresolvedLabels, being a list of tuple objects. Fuck that noise
+            }
+
+            // TODO: Implement "unused label" like in BYOND DM, use label.ReferencedCount to figure out
+            // foreach (CodeLabel codeLabel in CodeLabels) {
+            //  ...
+            // }
+        }
+
         public void ResolveLabels() {
+            ResolveCodeLabelReferences();
+
             foreach ((long Position, string LabelName) unresolvedLabel in _unresolvedLabels) {
                 if (_labels.TryGetValue(unresolvedLabel.LabelName, out long labelPosition)) {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
@@ -231,22 +281,27 @@ namespace DMCompiler.DM {
             _bytecodeWriter.Seek(0, SeekOrigin.End);
         }
 
-        public bool TryAddCodeLabel(string name) {
+        public string MakePlaceholderLabel() => $"PLACEHOLDER_{_pendingLabelReferences.Count}_LABEL";
+
+        public CodeLabel? TryAddCodeLabel(string name) {
             if (_scopes.Peek().LocalCodeLabels.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, Location, $"A label with the name \"{name}\" already exists");
-                return false;
+                return null;
             }
 
-            return _scopes.Peek().LocalCodeLabels.TryAdd(name, new CodeLabel(name, Bytecode.Position));
+            CodeLabel label = new CodeLabel(name, Bytecode.Position);
+            CodeLabels.Add(label); // For later static analysis
+            _scopes.Peek().LocalCodeLabels.Add(name, label);
+            return label;
         }
 
-        public CodeLabel? GetCodeLabel(string name) {
-            DMProcScope? scope = _scopes.Peek();
-            while (scope != null) {
-                if (scope.LocalCodeLabels.TryGetValue(name, out var localCodeLabel))
+        private CodeLabel? GetCodeLabel(string name, DMProcScope? scope = null) {
+            DMProcScope? _scope = scope ?? _scopes.Peek();
+            while (_scope != null) {
+                if (_scope.LocalCodeLabels.TryGetValue(name, out var localCodeLabel))
                     return localCodeLabel;
 
-                scope = scope.ParentScope;
+                _scope = _scope.ParentScope;
             }
             return null;
         }
@@ -492,6 +547,7 @@ namespace DMCompiler.DM {
         public void Continue(DMASTIdentifier? label = null) {
             // TODO: Clean up this godawful label handling
             if (label is not null) {
+                // Also, labelled loops always need the label declared first, so stick it like this way
                 var codeLabel = (
                     GetCodeLabel(label.Identifier)?.LabelName ??
                     label.Identifier + "_codelabel"
@@ -523,8 +579,14 @@ namespace DMCompiler.DM {
         }
 
         public void Goto(string label) {
-            CodeLabel? codeLabel = GetCodeLabel(label);
-            Jump(codeLabel?.LabelName ?? label + "_codelabel");
+            var placeholder = MakePlaceholderLabel();
+            _pendingLabelReferences.Push(new CodeLabelReference(
+                label,
+                placeholder,
+                Location,
+                _scopes.Peek()
+            ));
+            Jump(placeholder);
         }
 
         public void Pop() {

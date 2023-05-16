@@ -285,6 +285,8 @@ namespace OpenDreamRuntime.Procs {
 
             int interpCount = state.ReadInt();
 
+            StringFormatEncoder.FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
+
             ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
             int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
             int prevInterpIndex = -1; // If we find a suffix macro, this is what it points to (treating -1 as a 'null' state here)
@@ -298,6 +300,7 @@ namespace OpenDreamRuntime.Procs {
                 switch (formatType) {
                     //Interp values
                     case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                        // TODO: use postPrefix for \th interpolation
                         formattedString.Append(interps[nextInterpIndex].Stringify());
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
@@ -313,6 +316,18 @@ namespace OpenDreamRuntime.Procs {
                     {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                             formattedString.Append(dreamObject.GetNameUnformatted());
+                        }
+
+                        if(postPrefix != null) { // Cursed Hack
+                            switch(postPrefix) {
+                                case StringFormatEncoder.FormatSuffix.LowerRoman:
+                                    ToRoman(ref formattedString, interps, nextInterpIndex, false);
+                                    continue;
+                                case StringFormatEncoder.FormatSuffix.UpperRoman:
+                                    ToRoman(ref formattedString, interps, nextInterpIndex, true);
+                                    continue;
+                                default: continue;
+                            }
                         }
                         //Things that aren't objects just print nothing in this case
                         prevInterpIndex = nextInterpIndex;
@@ -425,12 +440,10 @@ namespace OpenDreamRuntime.Procs {
                         }
                         continue;
                     case StringFormatEncoder.FormatSuffix.LowerRoman:
-                        formattedString.Length -= interpLen;
-                        ToRoman(ref formattedString, interps, nextInterpIndex, false);
+                        postPrefix = formatType;
                         continue;
                     case StringFormatEncoder.FormatSuffix.UpperRoman:
-                        formattedString.Length -= interpLen;
-                        ToRoman(ref formattedString, interps, nextInterpIndex, true);
+                        postPrefix = formatType;
                         continue;
                     default:
                         if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {

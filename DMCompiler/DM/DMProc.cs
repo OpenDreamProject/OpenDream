@@ -245,7 +245,12 @@ namespace DMCompiler.DM {
                     DMCompiler.Emit(
                         WarningCode.ItemDoesntExist,
                         reference.Location,
-                        $"Invalid label \"{reference.Identifier}\""
+                        $"Label \"{reference.Identifier}\" unreachable from scope or does not exist"
+                    );
+                    // Not cleaning away the placeholder will emit another compiler error
+                    // let's not do that
+                    _unresolvedLabels.RemoveAt(
+                        _unresolvedLabels.FindIndex(((long Position, string LabelName)o) => o.LabelName == reference.Placeholder)
                     );
                     continue;
                 }
@@ -273,7 +278,7 @@ namespace DMCompiler.DM {
                     _bytecodeWriter.Seek((int)unresolvedLabel.Position, SeekOrigin.Begin);
                     WriteInt((int)labelPosition);
                 } else {
-                    DMCompiler.Emit(WarningCode.BadLabel, Location, "Invalid label \"" + unresolvedLabel.LabelName + "\"");
+                    DMCompiler.Emit(WarningCode.BadLabel, Location, "Label \"" + unresolvedLabel.LabelName + "\" could not be resolved");
                 }
             }
 

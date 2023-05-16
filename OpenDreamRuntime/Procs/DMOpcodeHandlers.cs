@@ -254,6 +254,31 @@ namespace OpenDreamRuntime.Procs {
             }
 
         }
+
+        private static void ToRoman(ref StringBuilder formattedString, ReadOnlySpan<DreamValue> interps, int nextInterpIndex, bool upperCase) {
+            char[] arr;
+            if(upperCase) {
+                arr = new char[] { 'M', 'D', 'C', 'L', 'X', 'V', 'I' };
+            } else {
+                arr = new char[] { 'm', 'd', 'c', 'l', 'x', 'v', 'i' };
+            }
+
+            int[] numArr = new int[] { 1000, 500, 100, 50, 10, 5, 1 };
+
+            if(!interps[nextInterpIndex].TryGetValueAsInteger(out int value)) {
+                return;
+            }
+
+            var i = 0;
+            while(value != 0) {
+                if(value >= numArr[i]) {
+                    value -= numArr[i];
+                    formattedString.Append(arr[i]);
+                } else {
+                    i++;
+                }
+            }
+        }
         public static ProcStatus? FormatString(DMProcState state) {
             string unformattedString = state.ReadString();
             StringBuilder formattedString = new StringBuilder();
@@ -398,6 +423,14 @@ namespace OpenDreamRuntime.Procs {
                         } else {
                             formattedString.Append("th");
                         }
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.LowerRoman:
+                        formattedString.Length -= interpLen;
+                        ToRoman(ref formattedString, interps, nextInterpIndex, false);
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.UpperRoman:
+                        formattedString.Length -= interpLen;
+                        ToRoman(ref formattedString, interps, nextInterpIndex, true);
                         continue;
                     default:
                         if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {

@@ -193,6 +193,14 @@ namespace DMCompiler.Compiler.DM {
                                         else
                                             stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.Improper));
                                         break;
+                                    case "roman":
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerRoman));
+                                        break;
+                                    case "Roman":
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperRoman));
+                                        break;
 
                                     case "ref":
                                         // usedPrefixMacro = true; -- while ref is indeed a prefix macro, it DOES NOT ERROR if it fails to find what it's supposed to /ref.

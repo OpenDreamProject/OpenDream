@@ -492,9 +492,12 @@ namespace DMCompiler.DM {
         public void Continue(DMASTIdentifier? label = null) {
             // TODO: Clean up this godawful label handling
             if (label is not null) {
-                var codeLabel = label.Identifier + "_codelabel";
+                var codeLabel = (
+                    GetCodeLabel(label.Identifier)?.LabelName ??
+                    label.Identifier + "_codelabel"
+                );
                 if (!_labels.ContainsKey(codeLabel)) {
-                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Unknown label {label.Identifier}");
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, label.Location, $"Unknown label {label.Identifier}");
                 }
 
                 var labelList = _labels.Keys.ToList();

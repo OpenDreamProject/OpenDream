@@ -29,15 +29,6 @@
 			src.f = f
 
 	proc/Add(matrix/Matrix2)
-		if(!istype(Matrix2))
-			CRASH("Invalid matrix")
-		a += Matrix2.a
-		b += Matrix2.b
-		c += Matrix2.c
-		d += Matrix2.d
-		e += Matrix2.e
-		f += Matrix2.f
-		return src
 
 	proc/Invert()
 
@@ -46,15 +37,6 @@
 	proc/Scale(x, y)
 
 	proc/Subtract(matrix/Matrix2)
-		if(!istype(Matrix2))
-			CRASH("Invalid matrix")
-		a -= Matrix2.a
-		b -= Matrix2.b
-		c -= Matrix2.c
-		d -= Matrix2.d
-		e -= Matrix2.e
-		f -= Matrix2.f
-		return src
 
 	proc/Translate(x, y = x)
 		c += x

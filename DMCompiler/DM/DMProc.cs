@@ -585,12 +585,12 @@ namespace DMCompiler.DM {
             }
         }
 
-        public void Goto(string label) {
+        public void Goto(DMASTIdentifier label) {
             var placeholder = MakePlaceholderLabel();
             _pendingLabelReferences.Push(new CodeLabelReference(
-                label,
+                label.Identifier,
                 placeholder,
-                Location,
+                label.Location,
                 _scopes.Peek()
             ));
             Jump(placeholder);

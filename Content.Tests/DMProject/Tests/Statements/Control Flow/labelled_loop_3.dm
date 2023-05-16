@@ -2,7 +2,7 @@
 //# issue 360
 
 /proc/RunTest()
-	var/total = 7
+	var/total = 0
 	outer:
 		for (var/i in list(1,100))
 			for(;;)

@@ -239,6 +239,232 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorMultiply(a, b);
         }
 
+        /// <summary> Adds the second given matrix to the first given matrix. </summary>
+        /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if either matrix has non-float members.</exception>
+        public static void AddMatrix(DreamObject lMatrix, DreamObject rMatrix) {
+            float lA;
+            float lB;
+            float lC;
+            float lD;
+            float lE;
+            float lF;
+            float rA;
+            float rB;
+            float rC;
+            float rD;
+            float rE;
+            float rF;
+            try {
+                lA = lMatrix.GetVariable("a").MustGetValueAsFloat();
+                lB = lMatrix.GetVariable("b").MustGetValueAsFloat();
+                lC = lMatrix.GetVariable("c").MustGetValueAsFloat();
+                lD = lMatrix.GetVariable("d").MustGetValueAsFloat();
+                lE = lMatrix.GetVariable("e").MustGetValueAsFloat();
+                lF = lMatrix.GetVariable("f").MustGetValueAsFloat();
+                rA = rMatrix.GetVariable("a").MustGetValueAsFloat();
+                rB = rMatrix.GetVariable("b").MustGetValueAsFloat();
+                rC = rMatrix.GetVariable("c").MustGetValueAsFloat();
+                rD = rMatrix.GetVariable("d").MustGetValueAsFloat();
+                rE = rMatrix.GetVariable("e").MustGetValueAsFloat();
+                rF = rMatrix.GetVariable("f").MustGetValueAsFloat();
+            } catch (InvalidCastException) {
+                throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be added.");
+            }
+            lMatrix.SetVariableValue("a", new DreamValue(lA + rA));
+            lMatrix.SetVariableValue("b", new DreamValue(lB + rB));
+            lMatrix.SetVariableValue("c", new DreamValue(lC + rC));
+            lMatrix.SetVariableValue("d", new DreamValue(lD + rD));
+            lMatrix.SetVariableValue("e", new DreamValue(lE + rE));
+            lMatrix.SetVariableValue("f", new DreamValue(lF + rF));
+        }
+
+    public DreamValue OperatorAdd(DreamValue a, DreamValue b) {
+            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject left))
+                throw new ArgumentException($"Invalid matrix {a}");
+
+            left.GetVariable("a").TryGetValueAsFloat(out float lA);
+            left.GetVariable("b").TryGetValueAsFloat(out float lB);
+            left.GetVariable("c").TryGetValueAsFloat(out float lC);
+            left.GetVariable("d").TryGetValueAsFloat(out float lD);
+            left.GetVariable("e").TryGetValueAsFloat(out float lE);
+            left.GetVariable("f").TryGetValueAsFloat(out float lF);
+
+            if (b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject right)) {
+                right.GetVariable("a").TryGetValueAsFloat(out float rA);
+                right.GetVariable("b").TryGetValueAsFloat(out float rB);
+                right.GetVariable("c").TryGetValueAsFloat(out float rC);
+                right.GetVariable("d").TryGetValueAsFloat(out float rD);
+                right.GetVariable("e").TryGetValueAsFloat(out float rE);
+                right.GetVariable("f").TryGetValueAsFloat(out float rF);
+
+                DreamObject output = MakeMatrix(_objectTree,
+                    lA + rA, // a
+                    lB + rB, // b
+                    lC + rC, // c
+                    lD + rD, // d
+                    lE + rE, // e
+                    lF + rF  // f
+                );
+
+                return new DreamValue(output);
+            }
+
+            if (ParentType == null)
+                throw new InvalidOperationException($"Addition cannot be done between {a} and {b}");
+
+            return ParentType.OperatorAdd(a, b);
+        }
+
+    public DreamValue OperatorAppend(DreamValue a, DreamValue b) {
+        if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject left))
+            throw new ArgumentException($"Invalid matrix {a}");
+
+        left.GetVariable("a").TryGetValueAsFloat(out float lA);
+        left.GetVariable("b").TryGetValueAsFloat(out float lB);
+        left.GetVariable("c").TryGetValueAsFloat(out float lC);
+        left.GetVariable("d").TryGetValueAsFloat(out float lD);
+        left.GetVariable("e").TryGetValueAsFloat(out float lE);
+        left.GetVariable("f").TryGetValueAsFloat(out float lF);
+
+        if (b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject right)) {
+            right.GetVariable("a").TryGetValueAsFloat(out float rA);
+            right.GetVariable("b").TryGetValueAsFloat(out float rB);
+            right.GetVariable("c").TryGetValueAsFloat(out float rC);
+            right.GetVariable("d").TryGetValueAsFloat(out float rD);
+            right.GetVariable("e").TryGetValueAsFloat(out float rE);
+            right.GetVariable("f").TryGetValueAsFloat(out float rF);
+
+            left.SetVariableValue("a", new DreamValue(lA + rA));
+            left.SetVariableValue("b", new DreamValue(lB + rB));
+            left.SetVariableValue("c", new DreamValue(lC + rC));
+            left.SetVariableValue("d", new DreamValue(lD + rD));
+            left.SetVariableValue("e", new DreamValue(lE + rE));
+            left.SetVariableValue("f", new DreamValue(lF + rF));
+
+            return a;
+        }
+
+        if (ParentType == null)
+            throw new InvalidOperationException($"Cannot append {b} to {a}");
+
+        return ParentType.OperatorAppend(a, b);
+    }
+
+        /// <summary> Subtracts the second given matrix from the first given matrix. </summary>
+        /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if either matrix has non-float members.</exception>
+        public static void SubtractMatrix(DreamObject lMatrix, DreamObject rMatrix) {
+            float lA;
+            float lB;
+            float lC;
+            float lD;
+            float lE;
+            float lF;
+            float rA;
+            float rB;
+            float rC;
+            float rD;
+            float rE;
+            float rF;
+            try {
+                lA = lMatrix.GetVariable("a").MustGetValueAsFloat();
+                lB = lMatrix.GetVariable("b").MustGetValueAsFloat();
+                lC = lMatrix.GetVariable("c").MustGetValueAsFloat();
+                lD = lMatrix.GetVariable("d").MustGetValueAsFloat();
+                lE = lMatrix.GetVariable("e").MustGetValueAsFloat();
+                lF = lMatrix.GetVariable("f").MustGetValueAsFloat();
+                rA = rMatrix.GetVariable("a").MustGetValueAsFloat();
+                rB = rMatrix.GetVariable("b").MustGetValueAsFloat();
+                rC = rMatrix.GetVariable("c").MustGetValueAsFloat();
+                rD = rMatrix.GetVariable("d").MustGetValueAsFloat();
+                rE = rMatrix.GetVariable("e").MustGetValueAsFloat();
+                rF = rMatrix.GetVariable("f").MustGetValueAsFloat();
+            } catch (InvalidCastException) {
+                throw new InvalidOperationException($"Invalid matrices '{lMatrix}' and '{rMatrix}' cannot be subtracted.");
+            }
+            lMatrix.SetVariableValue("a", new DreamValue(lA - rA));
+            lMatrix.SetVariableValue("b", new DreamValue(lB - rB));
+            lMatrix.SetVariableValue("c", new DreamValue(lC - rC));
+            lMatrix.SetVariableValue("d", new DreamValue(lD - rD));
+            lMatrix.SetVariableValue("e", new DreamValue(lE - rE));
+            lMatrix.SetVariableValue("f", new DreamValue(lF - rF));
+        }
+
+        public DreamValue OperatorSubtract(DreamValue a, DreamValue b) {
+            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject left))
+                throw new ArgumentException($"Invalid matrix {a}");
+
+            left.GetVariable("a").TryGetValueAsFloat(out float lA);
+            left.GetVariable("b").TryGetValueAsFloat(out float lB);
+            left.GetVariable("c").TryGetValueAsFloat(out float lC);
+            left.GetVariable("d").TryGetValueAsFloat(out float lD);
+            left.GetVariable("e").TryGetValueAsFloat(out float lE);
+            left.GetVariable("f").TryGetValueAsFloat(out float lF);
+
+            if (b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject right)) {
+                right.GetVariable("a").TryGetValueAsFloat(out float rA);
+                right.GetVariable("b").TryGetValueAsFloat(out float rB);
+                right.GetVariable("c").TryGetValueAsFloat(out float rC);
+                right.GetVariable("d").TryGetValueAsFloat(out float rD);
+                right.GetVariable("e").TryGetValueAsFloat(out float rE);
+                right.GetVariable("f").TryGetValueAsFloat(out float rF);
+
+                DreamObject output = MakeMatrix(_objectTree,
+                    lA - rA, // a
+                    lB - rB, // b
+                    lC - rC, // c
+                    lD - rD, // d
+                    lE - rE, // e
+                    lF - rF  // f
+                );
+
+                return new DreamValue(output);
+            }
+
+            if (ParentType == null)
+                throw new InvalidOperationException($"Subtraction cannot be done between {a} and {b}");
+
+            return ParentType.OperatorSubtract(a, b);
+        }
+
+
+        public DreamValue OperatorRemove(DreamValue a, DreamValue b) {
+            if (!a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject left))
+                throw new ArgumentException($"Invalid matrix {a}");
+
+            left.GetVariable("a").TryGetValueAsFloat(out float lA);
+            left.GetVariable("b").TryGetValueAsFloat(out float lB);
+            left.GetVariable("c").TryGetValueAsFloat(out float lC);
+            left.GetVariable("d").TryGetValueAsFloat(out float lD);
+            left.GetVariable("e").TryGetValueAsFloat(out float lE);
+            left.GetVariable("f").TryGetValueAsFloat(out float lF);
+
+            if (b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject right)) {
+                right.GetVariable("a").TryGetValueAsFloat(out float rA);
+                right.GetVariable("b").TryGetValueAsFloat(out float rB);
+                right.GetVariable("c").TryGetValueAsFloat(out float rC);
+                right.GetVariable("d").TryGetValueAsFloat(out float rD);
+                right.GetVariable("e").TryGetValueAsFloat(out float rE);
+                right.GetVariable("f").TryGetValueAsFloat(out float rF);
+
+                left.SetVariableValue("a", new DreamValue(lA - rA));
+                left.SetVariableValue("b", new DreamValue(lB - rB));
+                left.SetVariableValue("c", new DreamValue(lC - rC));
+                left.SetVariableValue("d", new DreamValue(lD - rD));
+                left.SetVariableValue("e", new DreamValue(lE - rE));
+                left.SetVariableValue("f", new DreamValue(lF - rF));
+
+                return a;
+            }
+
+            if (ParentType == null)
+                throw new InvalidOperationException($"Cannot remove {b} from {a}");
+
+            return ParentType.OperatorRemove(a, b);
+        }
+
+
         public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? right)) {
                 const string elements = "abcdef";

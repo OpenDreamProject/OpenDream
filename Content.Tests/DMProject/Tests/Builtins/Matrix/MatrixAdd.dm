@@ -16,4 +16,4 @@
 	M += N
 
 	if(M ~! matrix(22,26,30,34,38,42))
-		CRASH("Unexpected matrix/OperatorAdd result: [json_encode(M)]")
+		CRASH("Unexpected matrix/OperatorAppend result: [json_encode(M)]")

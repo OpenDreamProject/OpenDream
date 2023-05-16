@@ -322,12 +322,13 @@ namespace OpenDreamRuntime.Procs {
                             switch(postPrefix) {
                                 case StringFormatEncoder.FormatSuffix.LowerRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, false);
-                                    continue;
+                                    break;
                                 case StringFormatEncoder.FormatSuffix.UpperRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, true);
-                                    continue;
-                                default: continue;
+                                    break;
+                                default: break;
                             }
+                            postPrefix = null;
                         }
                         //Things that aren't objects just print nothing in this case
                         prevInterpIndex = nextInterpIndex;

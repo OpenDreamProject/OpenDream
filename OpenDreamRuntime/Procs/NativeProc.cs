@@ -23,9 +23,16 @@ namespace OpenDreamRuntime.Procs {
 
                 argumentNames.Add(parameterAttribute.Name);
                 if (parameterAttribute.DefaultValue != default) {
-                    if (defaultArgumentValues == null) defaultArgumentValues = new Dictionary<string, DreamValue>();
+                    defaultArgumentValues ??= new Dictionary<string, DreamValue>(1);
+                    DreamValue defaultValue = parameterAttribute.DefaultValue switch {
+                        // These are the only types you should be able to set in an attribute
+                        int intValue => new(intValue),
+                        float floatValue => new(floatValue),
+                        string stringValue => new(stringValue),
+                        _ => throw new Exception($"Invalid default value {parameterAttribute.DefaultValue}")
+                    };
 
-                    defaultArgumentValues.Add(parameterAttribute.Name, new DreamValue(parameterAttribute.DefaultValue));
+                    defaultArgumentValues.Add(parameterAttribute.Name, defaultValue);
                 }
             }
 

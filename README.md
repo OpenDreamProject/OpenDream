@@ -2,7 +2,7 @@
 
 **OpenDream** is a C# project that aims to compile games made in the [DM language], and run them.
 
-**This project is currently in early stages.** Expect bugs, missing features, and a lack of quality-of-life enhancements.
+**This project is currently in early stages.** Expect bugs, missing features, and a lack of quality-of-life enhancements. Set your expectations accordingly.
 
 All parts of OpenDream should work fine on Windows and Linux, though the latter is not used as much and therefore isn't as thoroughly tested.
 

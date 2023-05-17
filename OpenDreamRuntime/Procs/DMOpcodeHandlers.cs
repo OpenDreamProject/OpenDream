@@ -265,14 +265,31 @@ namespace OpenDreamRuntime.Procs {
 
             int[] numArr = new int[] { 1000, 500, 100, 50, 10, 5, 1 };
 
-            if(!interps[nextInterpIndex].TryGetValueAsInteger(out int value)) {
+            if(!interps[nextInterpIndex].TryGetValueAsFloat(out float value)) {
                 return;
             }
 
+            if(float.IsNaN(value)) {
+                formattedString.Append('�'); //fancy-ish way to represent
+                return;
+            }
+
+            if(value < 0) {
+                formattedString.Append('-');
+                value = MathF.Abs(value);
+            }
+
+            if (float.IsInfinity(value)) {
+                formattedString.Append('∞');
+                return;
+            }
+
+            var intValue = (int)value;
             var i = 0;
-            while(value != 0) {
-                if(value >= numArr[i]) {
-                    value -= numArr[i];
+
+            while (intValue != 0) {
+                if(intValue >= numArr[i]) {
+                    intValue -= numArr[i];
                     formattedString.Append(arr[i]);
                 } else {
                     i++;
@@ -318,6 +335,7 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append(dreamObject.GetNameUnformatted());
                         }
 
+                        // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
                         if(postPrefix != null) { // Cursed Hack
                             switch(postPrefix) {
                                 case StringFormatEncoder.FormatSuffix.LowerRoman:

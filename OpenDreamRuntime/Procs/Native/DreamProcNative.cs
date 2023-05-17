@@ -135,6 +135,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Multiply);
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Scale);
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Subtract);
+            objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Translate);
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Turn);
 
             objectTree.SetNativeProc(objectTree.Regex, DreamProcNativeRegex.NativeProc_Find);

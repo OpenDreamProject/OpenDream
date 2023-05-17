@@ -50,8 +50,8 @@ internal static class DreamProcNativeMatrix {
     }
 
     [DreamProc("Scale")]
-    [DreamProcParameter("x")]
-    [DreamProcParameter("y")]
+    [DreamProcParameter("x", Type = DreamValueType.Float)]
+    [DreamProcParameter("y", Type = DreamValueType.Float)]
     public static DreamValue NativeProc_Scale(NativeProc.State state) {
         float horizontalScale;
         float verticalScale;
@@ -72,6 +72,35 @@ internal static class DreamProcNativeMatrix {
         }
         // On invalid input, throw runtime
         throw new Exception($"Invalid matrix for subtraction: {possibleMatrix.ToString()}");
+    }
+
+
+    [DreamProc("Translate")]
+    [DreamProcParameter("x", Type = DreamValueType.Float)]
+    [DreamProcParameter("y", Type = DreamValueType.Float)]
+    public static DreamValue NativeProc_Translate(NativeProc.State state) {
+        DreamValue xArgument = state.GetArgument(0, "x");
+        if (xArgument.Equals(DreamValue.Null) || !xArgument.TryGetValueAsFloat(out float xTranslation)) {
+            xTranslation = 0; // Defaults to 0 on an invalid value or a passed null
+        }
+
+        float yTranslation;
+        // If y is null or not provided, use the value of x. If it is otherwise invalid, treat it as 0.
+        DreamValue yArgument = state.GetArgument(1, "y");
+        if (yArgument.Equals(DreamValue.Null)) { // Omitted or passed null
+            yTranslation = xTranslation;
+        } else if (!yArgument.TryGetValueAsFloat(out yTranslation)) { // An otherwise invalid value
+            yTranslation = 0;
+        }
+
+        // Avoid translating
+        if (xTranslation == 0 && yTranslation == 0) {
+            return new DreamValue(state.Src);
+        }
+
+        DreamMetaObjectMatrix.TranslateMatrix(state.Src, xTranslation, yTranslation);
+
+        return new DreamValue(state.Src);
     }
 
     [DreamProc("Turn")]

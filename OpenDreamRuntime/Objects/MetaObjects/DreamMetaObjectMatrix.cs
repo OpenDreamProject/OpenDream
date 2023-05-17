@@ -464,6 +464,17 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             return ParentType.OperatorRemove(a, b);
         }
 
+        /// <summary> Translates a given matrix by the two translation factors given.</summary>
+        /// <remarks> Note that this does use <see cref="DreamObject.SetVariableValue"/>.</remarks>
+        /// <exception cref="InvalidOperationException">Thrown if the matrix has non-float members.</exception>
+        public static void TranslateMatrix(DreamObject matrix, float x, float y) {
+            try {
+                matrix.SetVariableValue("c", new DreamValue(matrix.GetVariable("c").MustGetValueAsFloat() + x));
+                matrix.SetVariableValue("f", new DreamValue(matrix.GetVariable("f").MustGetValueAsFloat() + y));
+            } catch(InvalidCastException) { // If any of these MustGet()s fail, try to give a more descriptive runtime
+                throw new InvalidOperationException($"Invalid matrix '{matrix}' cannot be scaled");
+            }
+        }
 
         public DreamValue OperatorEquivalent(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? left) && b.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out DreamObject? right)) {

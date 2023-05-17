@@ -39,8 +39,6 @@
 	proc/Subtract(matrix/Matrix2)
 
 	proc/Translate(x, y = x)
-		c += x
-		f += y
 
 	proc/Turn(angle)
 

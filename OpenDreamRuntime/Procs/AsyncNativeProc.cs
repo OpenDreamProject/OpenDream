@@ -66,7 +66,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             public Task<DreamValue> CallNoWait(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
-                _callTcs = new();
+                _callTcs = new(TaskCreationOptions.RunContinuationsAsynchronously);
                 _callProcNotify = proc.CreateState(Thread, src, usr, new DreamProcArguments(arguments));
                 _callProcNotify.WaitFor = false;
 

@@ -19,14 +19,14 @@
 			src.name = pattern
 			src.flags = flags
 
-	proc/Find(haystack, Start = 1, End = 0)
+	proc/Find(haystack, start = 1, end = 0)
 
-	proc/Find_char(haystack, Start = 1, End = 0)
+	proc/Find_char(haystack, start = 1, end = 0)
 		set opendream_unimplemented = TRUE
 
-	proc/Replace(haystack, replacement, Start = 1, End = 0)
+	proc/Replace(haystack, replacement, start = 1, end = 0)
 
-	proc/Replace_char(haystack, replacement, Start = 1, End = 0)
+	proc/Replace_char(haystack, replacement, start = 1, end = 0)
 		set opendream_unimplemented = TRUE
 		return haystack
 

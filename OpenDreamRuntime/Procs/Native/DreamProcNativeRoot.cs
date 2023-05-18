@@ -177,22 +177,55 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(Convert.ToChar(asciiValue).ToString());
         }
 
+        // the block call w/ coords is 515 so it's infinitely more likely that named arguments have been used for the older turf-style one
+        // and we don't really support having
         [DreamProc("block")]
-        [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
-        [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Start", Type = DreamValueType.DreamObject | DreamValueType.Float)]
+        [DreamProcParameter("End", Type = DreamValueType.DreamObject | DreamValueType.Float)]
+        [DreamProcParameter("StartZ", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndX", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndY", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndZ", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_block(NativeProc.State state) {
-            if (!state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var start))
-                return new DreamValue(state.ObjectTree.CreateList());
-            if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var end))
-                return new DreamValue(state.ObjectTree.CreateList());
+            int x1;
+            int y1;
+            int z1;
+            int x2;
+            int y2;
+            int z2;
+            if (state.Arguments.Count <= 2) { // Is this the turf-style call?
+                if (!state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var start))
+                    return new DreamValue(state.ObjectTree.CreateList());
+                if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var end))
+                    return new DreamValue(state.ObjectTree.CreateList());
 
-            start.GetVariable("x").TryGetValueAsInteger(out var x1);
-            start.GetVariable("y").TryGetValueAsInteger(out var y1);
-            start.GetVariable("z").TryGetValueAsInteger(out var z1);
+                start.GetVariable("x").TryGetValueAsInteger(out x1);
+                start.GetVariable("y").TryGetValueAsInteger(out y1);
+                start.GetVariable("z").TryGetValueAsInteger(out z1);
 
-            end.GetVariable("x").TryGetValueAsInteger(out var x2);
-            end.GetVariable("y").TryGetValueAsInteger(out var y2);
-            end.GetVariable("z").TryGetValueAsInteger(out var z2);
+                end.GetVariable("x").TryGetValueAsInteger(out x2);
+                end.GetVariable("y").TryGetValueAsInteger(out y2);
+                end.GetVariable("z").TryGetValueAsInteger(out z2);
+            } else { // coordinate-style
+                if (!state.GetArgument(0, "StartX").TryGetValueAsInteger(out x1)) {
+                    x1 = 1; // First three default to 1 when passed null or invalid
+                }
+                if (!state.GetArgument(1, "StartY").TryGetValueAsInteger(out y1)) {
+                    y1 = 1;
+                }
+                if (!state.GetArgument(2, "StartZ").TryGetValueAsInteger(out z1)) {
+                    z1 = 1;
+                }
+                if (!state.GetArgument(3, "EndX").TryGetValueAsInteger(out x2)) {
+                    x2 = x1; // Last three default to the start coords if null or invalid
+                }
+                if (!state.GetArgument(4, "EndY").TryGetValueAsInteger(out y2)) {
+                    y2 = y1;
+                }
+                if (!state.GetArgument(5, "EndZ").TryGetValueAsInteger(out z2)) {
+                    z2 = z1;
+                }
+            }
 
             int startX = Math.Min(x1, x2);
             int startY = Math.Min(y1, y2);

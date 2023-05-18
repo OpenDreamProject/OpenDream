@@ -26,6 +26,7 @@
 /world/New()
 	..()
 	test_world_init()
+	test_block()
 	test_color_matrix()
 	test_range()
 	world.log << "IntegrationTests successful, /world/New() exiting..."

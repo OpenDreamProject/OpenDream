@@ -177,8 +177,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(Convert.ToChar(asciiValue).ToString());
         }
 
-        // the block call w/ coords is 515 so it's infinitely more likely that named arguments have been used for the older turf-style one
-        // and we don't really support having
         [DreamProc("block")]
         [DreamProcParameter("Start", Type = DreamValueType.DreamObject | DreamValueType.Float)]
         [DreamProcParameter("End", Type = DreamValueType.DreamObject | DreamValueType.Float)]

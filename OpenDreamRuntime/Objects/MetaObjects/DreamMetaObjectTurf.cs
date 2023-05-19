@@ -4,6 +4,7 @@
         public IDreamMetaObject? ParentType { get; set; }
 
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IAtomManager _atomManager = default!;
 
         public static readonly Dictionary<DreamObject, TurfContentsList> TurfContentsLists = new();
 
@@ -34,15 +35,11 @@
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
                 case "x":
+                    return new(_atomManager.GetAtomPosition(dreamObject).X);
                 case "y":
-                case "z": {
-                    (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(dreamObject);
-
-                    int coord = varName == "x" ? pos.X :
-                                varName == "y" ? pos.Y :
-                                level.Z;
-                    return new(coord);
-                }
+                    return new(_atomManager.GetAtomPosition(dreamObject).Y);
+                case "z":
+                    return new(_atomManager.GetAtomPosition(dreamObject).Z);
                 case "loc":
                     return new(_dreamMapManager.GetAreaAt(dreamObject));
                 case "contents":

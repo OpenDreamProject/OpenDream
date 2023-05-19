@@ -86,9 +86,8 @@ namespace DMCompiler {
             return successfulCompile;
         }
 
-        [CanBeNull]
-        private static DMPreprocessor Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
-            DMPreprocessor build() {
+        private static DMPreprocessor? Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
+            DMPreprocessor? build() {
                 DMPreprocessor preproc = new DMPreprocessor(true);
                 if (macroDefines != null) {
                     foreach (var (key, value) in macroDefines) {
@@ -147,7 +146,7 @@ namespace DMCompiler {
 
         private static bool Compile(IEnumerable<Token> preprocessedTokens) {
             DMLexer dmLexer = new DMLexer(null, preprocessedTokens);
-            DMParser dmParser = new DMParser(dmLexer, !Settings.SuppressUnimplementedWarnings);
+            DMParser dmParser = new DMParser(dmLexer);
 
             VerbosePrint("Parsing");
             DMASTFile astFile = dmParser.File();
@@ -271,13 +270,15 @@ namespace DMCompiler {
         }
 
         private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
-            DreamCompiledJson compiledDream = new DreamCompiledJson();
-            compiledDream.Strings = DMObjectTree.StringTable;
-            compiledDream.Maps = maps;
-            compiledDream.Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile);
             var jsonRep = DMObjectTree.CreateJsonRepresentation();
-            compiledDream.Types = jsonRep.Item1;
-            compiledDream.Procs = jsonRep.Item2;
+            DreamCompiledJson compiledDream = new DreamCompiledJson {
+                Strings = DMObjectTree.StringTable,
+                Maps = maps,
+                Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
+                Types = jsonRep.Item1,
+                Procs = jsonRep.Item2
+            };
+
             if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
             if (DMObjectTree.Globals.Count > 0) {
@@ -303,7 +304,7 @@ namespace DMCompiler {
             }
 
             if (DMObjectTree.GlobalProcs.Count > 0) {
-                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToList();
+                compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToArray();
             }
 
             // Successful serialization

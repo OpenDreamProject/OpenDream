@@ -5,7 +5,7 @@ using OpenDreamShared.Dream;
 namespace DMCompiler.Compiler.DM
 {
 
-    public class VarDeclInfo
+    public abstract class VarDeclInfo
     {
         public DreamPath? TypePath;
         public string VarName;
@@ -17,7 +17,7 @@ namespace DMCompiler.Compiler.DM
         public bool IsList;
     }
 
-    public class ProcVarDeclInfo : VarDeclInfo
+    public sealed class ProcVarDeclInfo : VarDeclInfo
     {
         public ProcVarDeclInfo(DreamPath path)
         {
@@ -61,7 +61,7 @@ namespace DMCompiler.Compiler.DM
         }
     }
 
-    public class ObjVarDeclInfo : VarDeclInfo
+    public sealed class ObjVarDeclInfo : VarDeclInfo
     {
         public DreamPath ObjectPath;
         public bool IsTmp;
@@ -120,7 +120,7 @@ namespace DMCompiler.Compiler.DM
         }
     }
 
-    public class ProcParameterDeclInfo : VarDeclInfo {
+    public sealed class ProcParameterDeclInfo : VarDeclInfo {
         public ProcParameterDeclInfo(DreamPath path) {
             string[] elements = path.Elements;
             var readIdx = 0;

@@ -679,7 +679,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     private Variable DescribeValue(string name, DreamValue value) {
         var varDesc = new Variable { Name = name };
         varDesc.Value = value.ToString();
-        if (value.TryGetValueAsDreamList(out var list) && list != null) {
+        if (value.TryGetValueAsDreamList(out var list)) {
             if (list.GetLength() > 0) {
                 varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));
                 varDesc.IndexedVariables = list.GetLength() * (list.IsAssociative ? 2 : 1);
@@ -687,8 +687,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
         } else if (value.TryGetValueAsDreamObject(out var obj) && obj != null) {
             varDesc.VariablesReference = AllocVariableRef(req => ExpandObject(req, obj));
             varDesc.NamedVariables = obj.ObjectDefinition?.Variables.Count;
-        } else if (value.TryGetValueAsProcArguments(out var procArgs)) {
-            varDesc.VariablesReference = AllocVariableRef(req => ExpandProcArguments(req, procArgs));
         }
         return varDesc;
     }
@@ -722,19 +720,6 @@ sealed class DreamDebugManager : IDreamDebugManager {
                 };
             }
             yield return described;
-        }
-    }
-
-    private IEnumerable<Variable> ExpandProcArguments(RequestVariables req, DreamProcArguments procArgs) {
-        if (procArgs.OrderedArguments != null) {
-            foreach (var (i, arg) in procArgs.OrderedArguments.Select((x, i) => (i, x))) {
-                yield return DescribeValue(i.ToString(), arg);
-            }
-        }
-        if (procArgs.NamedArguments != null) {
-            foreach (var (name, arg) in procArgs.NamedArguments) {
-                yield return DescribeValue(name, arg);
-            }
         }
     }
 
@@ -834,7 +819,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 }
 
-internal interface IDreamDebugManager {
+public interface IDreamDebugManager {
     public void Initialize(int port);
     public void Update();
     public void Shutdown();

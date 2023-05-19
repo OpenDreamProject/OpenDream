@@ -3,18 +3,16 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls {
-    sealed class ControlChild : InterfaceControl
-    {
+    sealed class ControlChild : InterfaceControl {
         // todo: robust needs GridSplitter.
         // and a non-shit grid control.
 
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
 
         private SplitContainer _grid;
-        private ControlWindow _leftElement, _rightElement;
+        private ControlWindow? _leftElement, _rightElement;
 
-        public ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window)
-        {
+        public ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) {
         }
 
         protected override Control CreateUIElement() {
@@ -28,8 +26,8 @@ namespace OpenDreamClient.Interface.Controls {
 
             ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)ElementDescriptor;
 
-            _grid.Children.Remove(_leftElement?.UIElement);
-            _grid.Children.Remove(_rightElement?.UIElement);
+            if (_leftElement != null) _grid.Children.Remove(_leftElement.UIElement);
+            if (_rightElement != null) _grid.Children.Remove(_rightElement.UIElement);
 
             if (!String.IsNullOrEmpty(controlDescriptor.Left)) {
                 _leftElement = _dreamInterface.Windows[controlDescriptor.Left];

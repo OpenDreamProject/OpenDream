@@ -3,21 +3,19 @@ using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Text.RegularExpressions;
-using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]
     public sealed class ScreenLocation {
-        [CanBeNull] public string MapControl;
+        public string? MapControl;
         public int X, Y;
         public int PixelOffsetX, PixelOffsetY;
-        public ScreenLocation Range;
+        public ScreenLocation? Range;
 
         public int RepeatX => Range?.X - X + 1 ?? 1;
         public int RepeatY => Range?.Y - Y + 1 ?? 1;
 
-        public ScreenLocation(int x, int y, int pixelOffsetX, int pixelOffsetY, ScreenLocation range = null) {
+        public ScreenLocation(int x, int y, int pixelOffsetX, int pixelOffsetY, ScreenLocation? range = null) {
             X = x;
             Y = y;
             PixelOffsetX = pixelOffsetX;
@@ -50,9 +48,9 @@ namespace OpenDreamShared.Dream {
             return $"{mapControl}{X}:{PixelOffsetX},{Y}:{PixelOffsetY}";
         }
 
-        private static (string MapControl, int X, int Y, int PixelOffsetX, int PixelOffsetY, ScreenLocation Range) ParseScreenLoc(string screenLoc) {
+        private static (string? MapControl, int X, int Y, int PixelOffsetX, int PixelOffsetY, ScreenLocation? Range) ParseScreenLoc(string screenLoc) {
             string[] rangeSplit = screenLoc.Split(" TO ");
-            ScreenLocation range = rangeSplit.Length > 1 ? new ScreenLocation(rangeSplit[1]) : null;
+            ScreenLocation? range = rangeSplit.Length > 1 ? new ScreenLocation(rangeSplit[1]) : null;
 
             string[] coordinateSplit = rangeSplit[0].Split(",");
 
@@ -67,7 +65,7 @@ namespace OpenDreamShared.Dream {
 
             string horizontal = ReplaceMacros(coordinateSplit[0], false);
             string vertical = ReplaceMacros(coordinateSplit[1], false);
-            (string mapControl, horizontal) = ParseSecondaryMapControl(horizontal);
+            (string? mapControl, horizontal) = ParseSecondaryMapControl(horizontal);
 
             (int x, int pixelOffsetX) = ParseScreenLocCoordinate(horizontal);
             (int y, int pixelOffsetY) = ParseScreenLocCoordinate(vertical);
@@ -101,7 +99,7 @@ namespace OpenDreamShared.Dream {
             return coordinate;
         }
 
-        private static (string SecondaryMapControl, string Other) ParseSecondaryMapControl(string coordinate) {
+        private static (string? SecondaryMapControl, string Other) ParseSecondaryMapControl(string coordinate) {
             if (char.IsLetter(coordinate, 0)) { // If it starts with a letter then treat it as a map control
                 string[] split = coordinate.Split(':', 2);
                 if (split.Length != 2)
@@ -114,15 +112,17 @@ namespace OpenDreamShared.Dream {
         }
 
         private static (int Coordinate, int PixelOffset) ParseScreenLocCoordinate(string coordinate) {
-            List<(string Operation, float Number, int PixelOffset)> operations = new();
-            string currentOperation = null;
+            List<(string? Operation, float Number, int PixelOffset)> operations = new();
+            string? currentOperation = null;
             string currentNumber = string.Empty;
             int i = 0;
             do {
                 char c = i < coordinate.Length ? coordinate[i] : '\0';
                 i++;
+                if (c is ' ' or '\t')
+                    continue;
 
-                if (c >= '0' && c <= '9' || currentNumber != string.Empty && (c == '.' || c == ':') || (currentNumber == string.Empty || currentNumber.EndsWith(":")) && c is '-' or ' ' or '\t') {
+                if (c >= '0' && c <= '9' || currentNumber != string.Empty && (c == '.' || c == ':') || (currentNumber == string.Empty || currentNumber.EndsWith(":")) && c is '-') {
                     currentNumber += c;
                 } else {
                     if (currentNumber == string.Empty) throw new Exception("Expected a number in screen_loc");
@@ -130,7 +130,7 @@ namespace OpenDreamShared.Dream {
                     string[] numberSplit = currentNumber.Split(":");
                     if (numberSplit.Length > 2) throw new Exception("Invalid number in screen_loc");
 
-                    operations.Add((currentOperation, float.Parse(numberSplit[0].Trim(), CultureInfo.InvariantCulture), numberSplit.Length == 2 ? int.Parse(numberSplit[1].Trim()) : 0));
+                    operations.Add((currentOperation, float.Parse(numberSplit[0], CultureInfo.InvariantCulture), numberSplit.Length == 2 ? int.Parse(numberSplit[1]) : 0));
                     currentOperation = c.ToString();
                     currentNumber = String.Empty;
                 }
@@ -138,7 +138,7 @@ namespace OpenDreamShared.Dream {
 
             float coordinateResult = 0.0f;
             int pixelOffsetResult = 0;
-            foreach ((string Operation, float Number, int PixelOffset) operation in operations) {
+            foreach ((string? Operation, float Number, int PixelOffset) operation in operations) {
                 pixelOffsetResult += operation.PixelOffset;
 
                 switch (operation.Operation) {

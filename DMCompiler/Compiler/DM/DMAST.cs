@@ -645,9 +645,12 @@ namespace DMCompiler.Compiler.DM {
     //TODO: This can probably be replaced with a DreamPath nullable
     public sealed class DMASTPath : DMASTNode {
         public DreamPath Path;
+        public bool IsOperator = false;
 
-        public DMASTPath(Location location, DreamPath path) : base(location) {
+        public DMASTPath(Location location, DreamPath path, bool operatorFlag = false) : base(location)
+        {
             Path = path;
+            IsOperator = operatorFlag;
         }
 
         public override void Visit(DMASTVisitor visitor) {

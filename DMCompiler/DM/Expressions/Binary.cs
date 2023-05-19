@@ -531,7 +531,7 @@ namespace DMCompiler.DM.Expressions {
         public AssignmentInto(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
-        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference) {
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.AssignInto(reference);
         }

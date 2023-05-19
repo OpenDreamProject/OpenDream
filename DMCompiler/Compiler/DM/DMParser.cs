@@ -250,7 +250,9 @@ namespace DMCompiler.Compiler.DM {
                         //add ". = src" as the first expression in the operator
                         DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc, new DMASTAssign(tokenLoc,new DMASTCallableSelf(tokenLoc), new DMASTIdentifier(tokenLoc, "src")));
                         procStatements.Insert(0, assignEqSrc);
-                        procBlock.Statements = procStatements.ToArray();
+
+                        procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
+
                     }
                     statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                 }

@@ -250,6 +250,10 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitAssignInto(DMASTAssignInto assign) {
+            throw new NotImplementedException();
+        }
+
         public void VisitVarDeclExpression(DMASTVarDeclExpression vardecl) {
             throw new NotImplementedException();
         }

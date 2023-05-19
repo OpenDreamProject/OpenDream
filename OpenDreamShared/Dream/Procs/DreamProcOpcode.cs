@@ -104,17 +104,6 @@ namespace OpenDreamShared.Dream.Procs {
         ModulusModulusReference = 0x61,
         PushProcStub = 0x62,
         PushVerbStub = 0x63,
-        BitShiftLeftReference = 0x64,
-        BitShiftRightReference = 0x65,
-        Try = 0x66,
-        TryNoValue = 0x67,
-        EndTry = 0x68,
-        AssignInto = 0x69, //nice
-    }
-
-    public enum DreamProcOpcodeParameterType {
-        Named = 0xFC,
-        Unnamed = 0xFD,
         JumpIfNull = 0x64,
         JumpIfNullNoPop = 0x65,
         JumpIfTrueReference = 0x66,
@@ -130,7 +119,8 @@ namespace OpenDreamShared.Dream.Procs {
         TryNoValue = 0x70,
         EndTry = 0x71,
         EnumerateNoAssign = 0x72,
-        Gradient = 0x73
+        Gradient = 0x73,
+        AssignInto = 0x74,
     }
 
     /// <summary>

@@ -32,7 +32,7 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
     public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
         ParentType?.OnObjectCreated(dreamObject, creationArguments);
 
-        DreamValue icon = creationArguments.GetArgument(0, "icon");
+        DreamValue icon = creationArguments.GetArgument(0);
         if (!_atomManager.TryCreateAppearanceFrom(icon, out var appearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
             appearance = new IconAppearance();
@@ -41,14 +41,14 @@ sealed class DreamMetaObjectImage : IDreamMetaObject {
         }
 
         int argIndex = 1;
-        DreamValue loc = creationArguments.GetArgument(1, "loc");
+        DreamValue loc = creationArguments.GetArgument(1);
         if (loc.Type == DreamValue.DreamValueType.DreamObject) { // If it's not a DreamObject, it's actually icon_state and not loc
             dreamObject.SetVariableValue("loc", loc);
             argIndex = 2;
         }
 
         foreach (string argName in IconCreationArgs) {
-            var arg = creationArguments.GetArgument(argIndex++, argName);
+            var arg = creationArguments.GetArgument(argIndex++);
             if (arg == DreamValue.Null)
                 continue;
 

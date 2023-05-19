@@ -5,6 +5,7 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 
 namespace OpenDreamRuntime {
@@ -16,10 +17,6 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Mobs { get; } = new();
         public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
 
-        //TODO: Maybe turn these into a special DreamList, similar to DreamListVars?
-        public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; } = new();
-        public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; } = new();
-
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
@@ -28,8 +25,10 @@ namespace OpenDreamRuntime {
 
         private readonly Dictionary<DreamObject, EntityUid> _atomToEntity = new();
         private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
+        private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
         private ServerAppearanceSystem? _appearanceSystem;
+        private TransformSystem? _transformSystem;
 
         public DreamObject GetAtom(int index) {
             if (index < Areas.Count)
@@ -61,10 +60,10 @@ namespace OpenDreamRuntime {
             entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
-            sprite.SetAppearance(CreateAppearanceFromDefinition(atom.ObjectDefinition));
+            sprite.SetAppearance(GetAppearanceFromDefinition(atom.ObjectDefinition));
 
             if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
-                atom.GetVariable("desc").TryGetValueAsString(out string desc);
+                atom.GetVariable("desc").TryGetValueAsString(out var desc);
                 metaData.EntityName = atom.GetDisplayName();
                 metaData.EntityDescription = desc;
             }
@@ -341,7 +340,7 @@ namespace OpenDreamRuntime {
             }
 
             if (value.TryGetValueAsType(out var copyFromType)) {
-                appearance = CreateAppearanceFromDefinition(copyFromType.ObjectDefinition);
+                appearance = GetAppearanceFromDefinition(copyFromType.ObjectDefinition);
                 return true;
             }
 
@@ -363,8 +362,10 @@ namespace OpenDreamRuntime {
         }
 
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
-            IconAppearance appearance = new IconAppearance();
+            if (TryGetAppearance(atom, out var appearance))
+                return new(appearance); // Just return a copy
 
+            appearance = new IconAppearance();
             SetAppearanceVar(appearance, "icon", atom.GetVariable("icon"));
             SetAppearanceVar(appearance, "icon_state", atom.GetVariable("icon_state"));
             SetAppearanceVar(appearance, "color", atom.GetVariable("color"));
@@ -389,8 +390,9 @@ namespace OpenDreamRuntime {
             return appearance;
         }
 
-        public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def) {
-            IconAppearance appearance = new IconAppearance();
+        public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def) {
+            if (_definitionAppearanceCache.TryGetValue(def, out var appearance))
+                return appearance;
 
             def.TryGetVariable("icon", out var iconVar);
             def.TryGetVariable("icon_state", out var stateVar);
@@ -408,6 +410,7 @@ namespace OpenDreamRuntime {
             def.TryGetVariable("blend_mode", out var blendModeVar);
             def.TryGetVariable("appearance_flags", out var appearanceFlagsVar);
 
+            appearance = new IconAppearance();
             SetAppearanceVar(appearance, "icon", iconVar);
             SetAppearanceVar(appearance, "icon_state", stateVar);
             SetAppearanceVar(appearance, "color", colorVar);
@@ -428,7 +431,33 @@ namespace OpenDreamRuntime {
                 appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
             }
 
+            _definitionAppearanceCache.Add(def, appearance);
             return appearance;
+        }
+
+        public (int X, int Y, int Z) GetAtomPosition(DreamObject atom) {
+            if (atom.IsSubtypeOf(_objectTree.Movable)) {
+                if (_transformSystem == null && !_entitySystemManager.TryGetEntitySystem(out _transformSystem))
+                    return (0, 0, 0);
+
+                var entity = GetMovableEntity(atom);
+                var transform = _entityManager.GetComponent<TransformComponent>(entity);
+                var worldPosition = _transformSystem.GetWorldPosition(transform);
+
+                return ((int)worldPosition.X, (int)worldPosition.Y, (int)transform.MapID);
+            } else if (atom.IsSubtypeOf(_objectTree.Turf)) {
+                var position = _dreamMapManager.GetTurfPosition(atom);
+
+                return (position.Pos.X, position.Pos.Y, position.Level.Z);
+            } else if (atom.IsSubtypeOf(_objectTree.Area)) {
+                atom.GetVariable("x").TryGetValueAsInteger(out var x);
+                atom.GetVariable("y").TryGetValueAsInteger(out var y);
+                atom.GetVariable("z").TryGetValueAsInteger(out var z);
+
+                return (x, y, z);
+            }
+
+            throw new Exception($"Cannot get the position of {atom}");
         }
     }
 
@@ -439,9 +468,6 @@ namespace OpenDreamRuntime {
         public List<DreamObject> Objects { get; }
         public List<DreamObject> Mobs { get; }
         public int AtomCount { get; }
-
-        public Dictionary<DreamList, DreamObject> OverlaysListToAtom { get; }
-        public Dictionary<DreamList, DreamObject> UnderlaysListToAtom { get; }
 
         public DreamObject GetAtom(int index);
 
@@ -463,6 +489,8 @@ namespace OpenDreamRuntime {
         public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
         public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
         public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
-        public IconAppearance CreateAppearanceFromDefinition(DreamObjectDefinition def);
+        public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def);
+
+        public (int X, int Y, int Z) GetAtomPosition(DreamObject atom);
     }
 }

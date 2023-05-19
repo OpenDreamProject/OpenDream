@@ -1,9 +1,10 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x ? y : z
-    class Ternary : DMExpression {
-        DMExpression _a, _b, _c;
+    sealed class Ternary : DMExpression {
+        private readonly DMExpression _a, _b, _c;
 
         public Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : base(location) {
             _a = a;
@@ -11,7 +12,7 @@ namespace DMCompiler.DM.Expressions {
             _c = c;
         }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_a.TryAsConstant(out var a)) {
                 constant = null;
                 return false;
@@ -39,9 +40,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // var in x to y
-    class InRange : DMExpression
-    {
-        DMExpression _var, _start, _end;
+    sealed class InRange : DMExpression {
+        private readonly DMExpression _var, _start, _end;
 
         public InRange(Location location, DMExpression var, DMExpression start, DMExpression end) : base(location) {
             _var = var;

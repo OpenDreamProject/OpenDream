@@ -52,14 +52,14 @@ namespace OpenDreamShared.Dream.Procs {
         Combine = 0x2D,
         CreateObject = 0x2E,
         BooleanOr = 0x2F,
-        PushArgumentList = 0x30,
+        //0x30
         CompareGreaterThanOrEqual = 0x31,
         SwitchCase = 0x32,
         Mask = 0x33,
         //0x34
         Error = 0x35,
         IsInList = 0x36,
-        PushArguments = 0x37,
+        //0x37
         PushFloat = 0x38,
         ModulusReference = 0x39,
         CreateListEnumerator = 0x3A,
@@ -74,7 +74,7 @@ namespace OpenDreamShared.Dream.Procs {
         DebugSource = 0x43,
         DebugLine = 0x44,
         Prompt = 0x45,
-        PushProcArguments = 0x46,
+        //0x46
         Initial = 0x47,
         //0x48
         IsType = 0x49,
@@ -104,23 +104,28 @@ namespace OpenDreamShared.Dream.Procs {
         ModulusModulusReference = 0x61,
         PushProcStub = 0x62,
         PushVerbStub = 0x63,
-        BitShiftLeftReference = 0x64,
-        BitShiftRightReference = 0x65,
-        Try = 0x66,
-        TryNoValue = 0x67,
-        EndTry = 0x68,
-    }
-
-    public enum DreamProcOpcodeParameterType {
-        Named = 0xFC,
-        Unnamed = 0xFD
+        JumpIfNull = 0x64,
+        JumpIfNullNoPop = 0x65,
+        JumpIfTrueReference = 0x66,
+        JumpIfFalseReference = 0x67,
+        DereferenceField = 0x68,
+        DereferenceIndex = 0x69,
+        DereferenceCall = 0x6A,
+        PopReference = 0x6B,
+        //0x6C
+        BitShiftLeftReference = 0x6D,
+        BitShiftRightReference = 0x6E,
+        Try = 0x6F,
+        TryNoValue = 0x70,
+        EndTry = 0x71,
+        EnumerateNoAssign = 0x72,
+        Gradient = 0x73
     }
 
     /// <summary>
     /// Handles how we write format data into our strings.
     /// </summary>
-    public static class StringFormatEncoder
-    {
+    public static class StringFormatEncoder {
         /// <summary>
         /// This is the upper byte of the 2-byte markers we use for storing formatting data within our UTF16 strings.<br/>
         /// </summary>
@@ -140,8 +145,7 @@ namespace OpenDreamShared.Dream.Procs {
         /// <remarks>
         /// <see langword="DO NOT CAST TO CHAR!"/> This requires FormatPrefix to be added to it in order to be a useful formatting character!!
         /// </remarks>
-        public enum FormatSuffix : UInt16
-        {
+        public enum FormatSuffix : UInt16 {
             //States that Interpolated values can have (the [] thingies)
             StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary
             StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
@@ -166,6 +170,9 @@ namespace OpenDreamShared.Dream.Procs {
             Proper,                   //String represents a proper noun
             Improper,                 //String represents an improper noun
 
+            LowerRoman,               //i, ii, iii, iv, v
+            UpperRoman,               //I, II, III, IV, V
+
             OrdinalIndicator,        //1st, 2nd, 3rd, 4th, ...
             PluralSuffix,            //-s suffix at the end of a plural noun
 
@@ -187,14 +194,12 @@ namespace OpenDreamShared.Dream.Procs {
         public static FormatSuffix InterpolationDefault => FormatSuffix.StringifyWithArticle;
 
         /// <returns>The UTF16 character we should be actually storing to articulate this format marker.</returns>
-        public static char Encode(FormatSuffix suffix)
-        {
+        public static char Encode(FormatSuffix suffix) {
             return (char)(FormatPrefix | ((UInt16)suffix));
         }
 
         /// <returns>true if the input character was actually a formatting codepoint. false if not.</returns>
-        public static bool Decode(char c, [NotNullWhen(true)] out FormatSuffix? suffix)
-        {
+        public static bool Decode(char c, [NotNullWhen(true)] out FormatSuffix? suffix) {
             UInt16 bytes = c; // this is an implicit reinterpret_cast, in C++ lingo
             suffix = null;
             if((bytes & FormatPrefix) != FormatPrefix)
@@ -202,23 +207,21 @@ namespace OpenDreamShared.Dream.Procs {
             suffix = (FormatSuffix)(bytes & 0x00FF); // 0xFFab & 0x00FF == 0x00ab
             return true;
         }
-        public static bool Decode(char c)
-        {
+
+        public static bool Decode(char c) {
             UInt16 bytes = c;
             return (bytes & FormatPrefix) == FormatPrefix; // Could also check that the lower byte is a valid enum but... ehhhhh
         }
 
         /// <returns>true if argument is a marker for an interpolated value, one of them [] things. false if not.</returns>
-        public static bool IsInterpolation(FormatSuffix suffix)
-        {
+        public static bool IsInterpolation(FormatSuffix suffix) {
             //This logic requires that all the interpolated-value enums keep separated from the others.
             //I'd write some type-engine code to catch a discrepancy in that but alas, this language is just not OOPy enough.
             return suffix <= FormatSuffix.ReferenceOfValue;
         }
 
-        /// <returns>A new verison of the string, with all formatting characters removed.</returns>
-        public static string RemoveFormatting(string input)
-        {
+        /// <returns>A new version of the string, with all formatting characters removed.</returns>
+        public static string RemoveFormatting(string input) {
             StringBuilder ret = new StringBuilder(input.Length); // Trying to keep it to one malloc here
             foreach(char c in input)
             {
@@ -254,6 +257,27 @@ namespace OpenDreamShared.Dream.Procs {
         CompiletimeReadonly = 0x4000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
     }
 
+    /// <summary>
+    /// An operand given to opcodes that call a proc with arguments.
+    /// Determines where the arguments come from.
+    /// </summary>
+    public enum DMCallArgumentsType {
+        // There are no arguments
+        None,
+
+        // The arguments are stored on the stack
+        FromStack,
+
+        // Also stored on the stack, but every arg has a key associated with it (named arguments)
+        FromStackKeyed,
+
+        // Arguments are provided from a list on the top of the stack ( arglist() )
+        FromArgumentList,
+
+        // Same arguments as the ones given to the proc doing the calling (implicit ..() arguments)
+        FromProcArguments
+    }
+
     public struct DMReference {
         public static readonly DMReference Src = new() { RefType = Type.Src };
         public static readonly DMReference Self = new() { RefType = Type.Self };
@@ -273,7 +297,6 @@ namespace OpenDreamShared.Dream.Procs {
             Global,
             Field,
             SrcField,
-            Proc,
             GlobalProc,
             SrcProc,
             SuperProc
@@ -311,10 +334,6 @@ namespace OpenDreamShared.Dream.Procs {
             return new DMReference() { RefType = Type.SrcField, Name = fieldName };
         }
 
-        public static DMReference CreateProc(string procName) {
-            return new DMReference() { RefType = Type.Proc, Name = procName };
-        }
-
         public static DMReference CreateGlobalProc(int procId) {
             return new DMReference() { RefType = Type.GlobalProc, Index = procId };
         }
@@ -334,7 +353,6 @@ namespace OpenDreamShared.Dream.Procs {
                 case Type.SrcField:
                 case Type.Field:
                 case Type.SrcProc:
-                case Type.Proc:
                     return $"{RefType} \"{Name}\"";
 
                 default: return RefType.ToString();

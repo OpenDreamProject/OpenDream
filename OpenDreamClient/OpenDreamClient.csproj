@@ -8,6 +8,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <OutputPath>..\bin\Content.Client\</OutputPath>
     <OutputType Condition="'$(FullRelease)' != 'True'">Exe</OutputType>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>

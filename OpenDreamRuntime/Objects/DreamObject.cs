@@ -54,6 +54,14 @@ namespace OpenDreamRuntime.Objects {
         public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
+        public virtual DreamValue Initial(string name) {
+            return ObjectDefinition.Variables[name];
+        }
+
+        public virtual bool IsSaved(string name) {
+            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
+            return ObjectDefinition.Variables.ContainsKey(name) && !ObjectDefinition.GlobalVariables.ContainsKey(name);
+        }
 
         public bool HasVariable(string name) {
             if(Deleted){
@@ -140,16 +148,13 @@ namespace OpenDreamRuntime.Objects {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
-        public DreamValue SpawnProc(string procName, DreamProcArguments arguments, DreamObject? usr = null) {
+        public DreamValue SpawnProc(string procName, DreamObject? usr = null, params DreamValue[] arguments) {
             if(Deleted){
                 throw new Exception("Cannot spawn proc on a deleted object");
             }
+
             var proc = GetProc(procName);
             return DreamThread.Run(proc, this, usr, arguments);
-        }
-
-        public DreamValue SpawnProc(string procName, DreamObject? usr = null) {
-            return SpawnProc(procName, new DreamProcArguments(null), usr);
         }
 
         /// <returns>true if \proper noun formatting should be used, false if \improper</returns>

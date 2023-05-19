@@ -14,7 +14,7 @@ namespace OpenDreamClient.Rendering {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;
-        [CanBeNull] private EntityLookupSystem _lookupSystem;
+        private EntityLookupSystem? _lookupSystem;
 
         public DMISpriteComponent() {
             Icon.SizeChanged += OnIconSizeChanged;
@@ -34,7 +34,7 @@ namespace OpenDreamClient.Rendering {
             return Icon.GetWorldAABB(transform.Position);
         }
 
-        public bool IsVisible(bool checkWorld = true, [CanBeNull] IMapManager mapManager = null, int seeInvis = 0) {
+        public bool IsVisible(bool checkWorld = true, IMapManager? mapManager = null, int seeInvis = 0) {
             if (Icon.Appearance?.Invisibility > seeInvis) return false;
 
             if (checkWorld) {

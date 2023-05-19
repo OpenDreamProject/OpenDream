@@ -3113,6 +3113,141 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
+
+        private static DreamValue CalculateGradient(List<DreamValue> gradientValues, DreamValue colorSpaceValue, DreamValue indexValue) {
+            if (gradientValues.Count == 1) {
+                if (!gradientValues[0].TryGetValueAsDreamList(out var gradientList))
+                    throw new Exception("Invalid gradient() values; expected either a list or at least 2 values");
+
+                gradientValues = gradientList.GetValues();
+            }
+
+            if (!indexValue.TryGetValueAsFloat(out float index))
+                throw new FormatException("Failed to parse index as float");
+
+            colorSpaceValue.TryGetValueAsInteger(out var colorSpace);
+
+            bool loop = gradientValues.Contains(new("loop"));
+
+            // true: look for int: false look for color
+            bool colorOrInt = true;
+
+            float workingFloat = 0;
+            float maxValue = 1;
+            float minValue = 0;
+            float leftBound = 0;
+            float rightBound = 1;
+
+            Color? left = null;
+            Color? right = null;
+
+            foreach (DreamValue value in gradientValues) {
+                if (colorOrInt && value.TryGetValueAsFloat(out float flt)) { // Int
+                    colorOrInt = false;
+                    workingFloat = flt;
+                    maxValue = Math.Max(maxValue, flt);
+                    minValue = Math.Min(minValue, flt);
+                    continue; // Successful parse
+                }
+
+                if (!value.TryGetValueAsString(out string? strValue)) {
+                    strValue = "#00000000";
+                }
+
+                if (strValue == "loop") continue;
+
+                if (!ColorHelpers.TryParseColor(strValue, out Color color))
+                    color = new(0, 0, 0, 0);
+
+                if (loop && index >= maxValue) {
+                    index %= maxValue;
+                }
+
+                if (workingFloat >= index) {
+                    right = color;
+                    rightBound = workingFloat;
+                    break;
+                } else {
+                    left = color;
+                    leftBound = workingFloat;
+                }
+
+                if (colorOrInt) {
+                    workingFloat = 1;
+                }
+
+                colorOrInt = true;
+            }
+
+            // Convert the index to a 0-1 range
+            float normalized = (index - leftBound) / (rightBound - leftBound);
+
+            // Cheap way to make sure the gradient works at the extremes (eg 1 and 0)
+            if (!left.HasValue || (right.HasValue && normalized == 1) || (right.HasValue && normalized == 0)) {
+                if (right?.AByte == 255) {
+                    return new DreamValue(right?.ToHexNoAlpha().ToLower() ?? "#00000000");
+                }
+                return new DreamValue(right?.ToHex().ToLower() ?? "#00000000");
+            } else if (!right.HasValue) {
+                if (left?.AByte == 255) {
+                    return new DreamValue(left?.ToHexNoAlpha().ToLower() ?? "#00000000");
+                }
+                return new DreamValue(left?.ToHex().ToLower() ?? "#00000000");
+            } else if (!left.HasValue && !right.HasValue) {
+                throw new InvalidOperationException("Failed to find any colors");
+            }
+
+            Color returnVal;
+            switch (colorSpace) {
+                case 0: // RGB
+                    returnVal = Color.InterpolateBetween(left.GetValueOrDefault(), right.GetValueOrDefault(), normalized);
+                    break;
+                case 1 or 2: // HSV/HSL
+                    Vector4 vec1 = new(Color.ToHsv(left.GetValueOrDefault()));
+                    Vector4 vec2 = new(Color.ToHsv(right.GetValueOrDefault()));
+
+                    // Some precision is lost when converting back to HSV at very small values this fixes that issue
+                    if (normalized < 0.05f) {
+                        normalized += 0.001f;
+                    }
+
+                    // This time it's overshooting
+                    // dw these numbers are insanely arbitrary
+                    if(normalized > 0.9f) {
+                        normalized -= 0.00445f;
+                    }
+
+                    float newHue;
+                    float delta = vec2.X - vec1.X;
+                    if (vec1.X > vec2.X) {
+                        (vec1.X, vec2.X) = (vec2.X, vec1.X);
+                        delta = -delta;
+                        normalized = 1 - normalized;
+                    }
+
+                    if (delta > 0.5f) { // 180deg
+                        vec1.X += 1f; // 360deg
+                        newHue = (vec1.X + normalized * (vec2.X - vec1.X)) % 1; // 360deg
+                    } else {
+                        newHue = vec1.X + normalized * delta;
+                    }
+
+                    Vector4 holder = new(
+                        newHue,
+                        vec1.Y + normalized * (vec2.Y - vec1.Y),
+                        vec1.Z + normalized * (vec2.Z - vec1.Z),
+                        vec1.W + normalized * (vec2.W - vec1.W));
+
+                    returnVal = Color.FromHsv(holder);
+                    break;
+                default:
+                    throw new NotSupportedException("Cannot interpolate colorspace");
+            }
+
+            if (returnVal.AByte == 255)
+                return new DreamValue(returnVal.ToHexNoAlpha().ToLower());
+            return new DreamValue(returnVal.ToHex().ToLower());
+        }
         #endregion Helpers
     }
 }

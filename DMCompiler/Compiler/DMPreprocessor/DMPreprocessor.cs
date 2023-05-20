@@ -104,6 +104,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
 
                     case TokenType.DM_Preproc_Include:
+                        if (!_currentLineContainsNonWhitespace) {
+                            _bufferedWhitespace.Clear();
+                        }
                         HandleIncludeDirective(token);
                         break;
                     case TokenType.DM_Preproc_Define:

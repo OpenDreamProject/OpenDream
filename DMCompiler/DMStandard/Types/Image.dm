@@ -26,7 +26,7 @@
 	var/mouse_opacity = 1
 	var/name = "image"
 	var/opacity as opendream_unimplemented
-	var/list/overlays = list()
+	var/list/overlays = null
 	var/override = 1 as opendream_unimplemented
 	var/pixel_x = 0
 	var/pixel_y = 0
@@ -38,7 +38,7 @@
 	var/suffix as opendream_unimplemented
 	var/text = "i" as opendream_unimplemented
 	var/matrix/transform
-	var/list/underlays = list()
+	var/list/underlays = null
 	var/vis_flags = 0 as opendream_unimplemented
 
 	var/bound_width as opendream_unimplemented

@@ -369,6 +369,7 @@
 
 
 /obj/complex_overlay_test
+	name = "complex overlay test"
 	icon = 'icons/hanoi.dmi'
 	icon_state = "5"
 
@@ -394,6 +395,7 @@
 		src.overlays += eight
 
 /obj/float_layer_test
+	name = "float layer test"
 	icon = 'icons/hanoi.dmi'
 	icon_state = "5"
 

@@ -113,7 +113,7 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "color", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "drop_shadow")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "color", "displace", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "drop_shadow")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"
@@ -140,6 +140,8 @@
 					src.filters = filter(type="color", color=list("#de0000","#000000","#00ad00"))
 				if("drop_shadow")
 					src.filters = filter(type="drop_shadow", size=2)
+				if("displace")
+					src.filters = filter(type="displace", size=50, icon=icon('icons/displace.dmi',"lense"))					
 			usr << "Applied [selected] filter"
 
 	verb/toggle_see_invisibility()

@@ -1,3 +1,15 @@
+#define TURF_PLANE -10
+
+/obj/plane_master
+	appearance_flags = PLANE_MASTER
+	
+/obj/plane_master/turf
+	screen_loc = "1,1"
+	plane = TURF_PLANE
+
+	New()
+		src.filters = filter(type="displace", size=100, icon=icon('icons/displace.dmi',"lense"))					
+
 /mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
@@ -6,7 +18,7 @@
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
 	layer = TURF_LAYER
-	plane = -1
+	plane = TURF_PLANE
 
 /turf/blue
 	icon_state = "turf_blue"
@@ -141,7 +153,7 @@
 				if("drop_shadow")
 					src.filters = filter(type="drop_shadow", size=2)
 				if("displace")
-					src.filters = filter(type="displace", size=50, icon=icon('icons/displace.dmi',"lense"))					
+					src.client.screen += new /obj/plane_master/turf 
 			usr << "Applied [selected] filter"
 
 	verb/toggle_see_invisibility()

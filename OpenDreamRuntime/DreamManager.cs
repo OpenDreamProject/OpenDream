@@ -107,7 +107,6 @@ namespace OpenDreamRuntime {
             _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
-            //TODO: Empty or invalid _compiledJson.Interface should return default interface - see issue #851
 
             _objectTree.LoadJson(json);
 

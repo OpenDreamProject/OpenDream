@@ -73,8 +73,16 @@ namespace OpenDreamClient.Interface {
                 }
             }
 
-            if(interfaceDescriptor == null || errorCount > 0)
-                throw new Exception($"{errorCount} Errors while parsing interface data");
+            if (interfaceDescriptor == null || errorCount > 0) {
+                // Open an error message that disconnects from the server once closed
+                OpenAlert(
+                    "Error",
+                    "Encountered error(s) while parsing interface source.\nCheck the console for details.",
+                    "Ok", null, null,
+                    (_, _) => _client.DisconnectFromServer("Errors while parsing interface"));
+
+                return;
+            }
 
             LoadInterface(interfaceDescriptor);
         }

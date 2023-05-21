@@ -87,6 +87,15 @@ namespace OpenDreamClient.Interface.Controls
                     string? element = queryParams.Get("element");
                     queryParams.Remove("element");
 
+                    // Wrap each parameter in quotes so the entire value is used
+                    foreach (var paramKey in queryParams.AllKeys) {
+                        var paramValue = queryParams[paramKey];
+                        if (paramValue == null)
+                            continue;
+
+                        queryParams.Set(paramKey, $"\"{paramValue}\"");
+                    }
+
                     // Reassemble the query params without element then convert to winset syntax
                     var query = queryParams.ToString();
                     query = HttpUtility.UrlDecode(query);

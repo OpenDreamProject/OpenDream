@@ -2470,30 +2470,54 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(state.ResourceManager.SaveTextToFile(file, text) ? 1 : 0);
         }
 
+        private static int? StringToInteger(string value, int radix) {
+            if (value == null || value.Length == 0)
+                return null;
+
+            if (radix < 2 || radix > 36)
+                throw new Exception($"Invalid radix: {radix}");
+
+            int? result = null;
+            foreach (char c in value) {
+                int digit = c;
+                if (c < '0' || c > '9') {
+                    if (c >= 'A' && c <= 'Z') {
+                        digit -= 'A' - 10;
+                    } else if (c >= 'a' && c <= 'z') {
+                        digit -= 'a' - 10;
+                    } else {
+                        return result;
+                    }
+                } else {
+                    digit -= '0';
+                }
+                if (!result.HasValue)
+                    result = 0;
+                result = result * radix + digit;
+            }
+
+            return result;
+        }
+
         [DreamProc("text2num")]
         [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.Float | DreamValueType.DreamObject)]
         [DreamProcParameter("radix", Type = DreamValueType.Float, DefaultValue = 10)]
         public static DreamValue NativeProc_text2num(NativeProc.State state) {
             DreamValue value = state.GetArgument(0, "T");
 
-            if (value.TryGetValueAsString(out string text)) {
+            if (value.TryGetValueAsString(out string valueAsString)) {
                 state.GetArgument(1, "radix").TryGetValueAsInteger(out var radix);
-                if (radix < 2)
-                    throw new Exception($"Invalid radix: {radix}");
+                valueAsString = valueAsString.Trim();
 
-                text = text.Trim();
-                if (text.Length == 0)
-                    return DreamValue.Null;
-
-                try {
-                    if (radix == 10) {
-                        return new DreamValue(Convert.ToSingle(text, CultureInfo.InvariantCulture));
-                    } else {
-                        return new DreamValue(Convert.ToInt32(text, radix));
-                    }
-                } catch (FormatException) {
-                    return DreamValue.Null; //No digits, return null
+                if (radix == 10) {
+                    if (float.TryParse(valueAsString, CultureInfo.InvariantCulture, out float valueAsFloat))
+                        return new DreamValue(valueAsFloat);
+                } else {
+                    int? valueAsInt = StringToInteger(valueAsString, radix);
+                    if (valueAsInt.HasValue)
+                        return new DreamValue(valueAsInt.Value);
                 }
+                return DreamValue.Null;
             } else if (value.Type == DreamValueType.Float) {
                 return value;
             } else if (value == DreamValue.Null) {

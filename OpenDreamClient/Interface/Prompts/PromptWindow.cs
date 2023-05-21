@@ -1,30 +1,23 @@
 ﻿using System.ComponentModel;
 using OpenDreamShared.Dream.Procs;
-using OpenDreamShared.Network.Messages;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-using Robust.Shared.Network;
 
 namespace OpenDreamClient.Interface.Prompts {
     public abstract class PromptWindow : OSWindow {
-        [Dependency] private readonly IClientNetManager _netManager = default!;
-
         protected readonly Control InputControl;
         protected string DefaultButton;
 
-        private BoxContainer _dockPanel;
+        private readonly BoxContainer _buttonPanel;
+        private bool _promptFinished;
 
-        private int _promptId;
-        private BoxContainer _buttonPanel;
-        private bool _responseSent = false;
+        private readonly Action<DMValueType, object?>? _closeAction;
 
-        public PromptWindow(int promptId, String title, String message) {
-            IoCManager.InjectDependencies(this);
+        protected PromptWindow(string? title, string? message, Action<DMValueType, object?>? onClose) {
+            _closeAction = onClose;
 
-            _promptId = promptId;
-
-            Title = !String.IsNullOrEmpty(title) ? title : "OpenDream";
+            Title = !string.IsNullOrEmpty(title) ? title : "OpenDream";
 
             Label messageLabel = new Label();
             messageLabel.Margin = new Thickness(5);
@@ -40,12 +33,12 @@ namespace OpenDreamClient.Interface.Prompts {
                 VerticalExpand = true
             };
 
-            _dockPanel = new BoxContainer();
-            _dockPanel.Orientation = BoxContainer.LayoutOrientation.Vertical;
-            _dockPanel.Margin = new Thickness(5);
-            _dockPanel.Children.Add(messageLabel);
-            _dockPanel.Children.Add(InputControl);
-            _dockPanel.Children.Add(_buttonPanel);
+            var dockPanel = new BoxContainer();
+            dockPanel.Orientation = BoxContainer.LayoutOrientation.Vertical;
+            dockPanel.Margin = new Thickness(5);
+            dockPanel.Children.Add(messageLabel);
+            dockPanel.Children.Add(InputControl);
+            dockPanel.Children.Add(_buttonPanel);
 
             SizeToContent = WindowSizeToContent.WidthAndHeight;
             MinWidth = 300;
@@ -54,7 +47,7 @@ namespace OpenDreamClient.Interface.Prompts {
             Closing += PromptWindow_Closing;
             WindowStyles = OSWindowStyles.NoTitleOptions;
 
-            AddChild(_dockPanel);
+            AddChild(dockPanel);
         }
 
         protected void CreateButton(string text, bool isDefault) {
@@ -75,21 +68,15 @@ namespace OpenDreamClient.Interface.Prompts {
         }
 
         protected void FinishPrompt(DMValueType responseType, object? value) {
-            if (_responseSent) return;
-            _responseSent = true;
+            if (_promptFinished) return;
+            _promptFinished = true;
 
-            var msg = new MsgPromptResponse() {
-                PromptId = _promptId,
-                Type = responseType,
-                Value = value
-            };
-
-            _netManager.ClientSendMessage(msg);
+            _closeAction?.Invoke(responseType, value);
         }
 
         private void PromptWindow_Closing(CancelEventArgs e) {
             //Don't allow closing if there hasn't been a response to the prompt
-            if (!_responseSent) {
+            if (!_promptFinished) {
                 e.Cancel = true;
             } else {
                 Owner = null;

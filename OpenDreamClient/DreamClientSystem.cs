@@ -12,7 +12,7 @@ namespace OpenDreamClient {
         private void OnPlayerAttached(PlayerAttachSysMessage e) {
             // The active input context gets reset to "common" when a new player is attached
             // So we have to set it again
-            _interfaceManager.DefaultWindow.Macro.SetActive();
+            _interfaceManager.DefaultWindow?.Macro.SetActive();
         }
     }
 }

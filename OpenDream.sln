@@ -7,7 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{72
 	ProjectSection(SolutionItems) = preProject
 		TestGame\code.dm = TestGame\code.dm
 		TestGame\environment.dme = TestGame\environment.dme
-		TestGame\interface.dmf = TestGame\interface.dmf
 		TestGame\map.dmm = TestGame\map.dmm
 		TestGame\renderer_tests.dm = TestGame\renderer_tests.dm
 	EndProjectSection

@@ -2470,35 +2470,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(state.ResourceManager.SaveTextToFile(file, text) ? 1 : 0);
         }
 
-        private static int? StringToInteger(string value, int radix) {
-            if (value == null || value.Length == 0)
-                return null;
-
-            if (radix < 2 || radix > 36)
-                throw new Exception($"Invalid radix: {radix}");
-
-            int? result = null;
-            foreach (char c in value) {
-                int digit = c;
-                if (c < '0' || c > '9') {
-                    if (c >= 'A' && c <= 'Z') {
-                        digit -= 'A' - 10;
-                    } else if (c >= 'a' && c <= 'z') {
-                        digit -= 'a' - 10;
-                    } else {
-                        return result;
-                    }
-                } else {
-                    digit -= '0';
-                }
-                if (!result.HasValue)
-                    result = 0;
-                result = result * radix + digit;
-            }
-
-            return result;
-        }
-
         [DreamProc("text2num")]
         [DreamProcParameter("T", Type = DreamValueType.String | DreamValueType.Float | DreamValueType.DreamObject)]
         [DreamProcParameter("radix", Type = DreamValueType.Float, DefaultValue = 10)]
@@ -2509,14 +2480,9 @@ namespace OpenDreamRuntime.Procs.Native {
                 state.GetArgument(1, "radix").TryGetValueAsInteger(out var radix);
                 valueAsString = valueAsString.Trim();
 
-                if (radix == 10) {
-                    if (float.TryParse(valueAsString, CultureInfo.InvariantCulture, out float valueAsFloat))
-                        return new DreamValue(valueAsFloat);
-                } else {
-                    int? valueAsInt = StringToInteger(valueAsString, radix);
-                    if (valueAsInt.HasValue)
-                        return new DreamValue(valueAsInt.Value);
-                }
+                double? valueAsDouble = DreamProcNativeHelpers.StringToDouble(valueAsString, radix);
+                if (valueAsDouble.HasValue)
+                    return new DreamValue(valueAsDouble.Value);
                 return DreamValue.Null;
             } else if (value.Type == DreamValueType.Float) {
                 return value;

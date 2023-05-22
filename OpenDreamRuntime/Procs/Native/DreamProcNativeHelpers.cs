@@ -228,4 +228,75 @@ internal static class DreamProcNativeHelpers {
             return false;
         }
     }
+
+    /// <remarks>
+    /// It's a very BYONDish converter. Probably, you don't want to reuse it somewhere aside from the text2num implementation
+    /// </remarks>
+    public static double? StringToDouble(ReadOnlySpan<char> value, int radix) {
+        if (value == null || value.IsEmpty)
+            return null;
+
+        if (radix < 2 || radix > 36)
+            throw new Exception($"Invalid radix: {radix}");
+
+        bool negative = false;
+        if (value[0] == '-' || value[0] == '+') {
+            if (value[0] == '-')
+                negative = true;
+            value = value.Slice(1);
+        }
+
+        if (value.StartsWith("0x")) {
+            if (radix == 10 || radix == 16) {
+                radix = 16;
+                value = value.Slice(2);
+            }
+        }
+
+        int letterDigitsVariaty = Math.Max(radix - 10, 0);
+
+        double result = 0;
+        int fractionalGrade = 0;
+        bool resultInited = false;
+
+        foreach (char c in value) {
+            if (c == '.') {
+                if (fractionalGrade != 0)
+                    break;
+                fractionalGrade = 1;
+                continue;
+            }
+
+            int digit = c;
+            if (c < '0' || c > '9') {
+                if (letterDigitsVariaty == 0)
+                    break;
+                if (c >= 'A' && c < 'A' + letterDigitsVariaty) {
+                    digit -= 'A' - 10;
+                } else if (c >= 'a' && c <= 'a' + letterDigitsVariaty) {
+                    digit -= 'a' - 10;
+                } else {
+                    break;
+                }
+            } else {
+                digit -= '0';
+            }
+            if (!resultInited) {
+                resultInited = true;
+            }
+            if (fractionalGrade == 0)
+                result = result * radix + digit;
+            else {
+                result += digit / Math.Pow(radix, fractionalGrade);
+                fractionalGrade++;
+            }
+        }
+
+        if (!resultInited)
+            return null;
+        if (negative)
+            result *= -1;
+
+        return result;
+    }
 }

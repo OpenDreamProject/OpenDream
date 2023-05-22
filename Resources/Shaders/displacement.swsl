@@ -7,18 +7,18 @@ uniform highp float y;
 uniform sampler2D displacement_map;
 
 void fragment() {
-    highp vec2 iResolution = vec2(textureSize(TEXTURE, 0));    
+    highp vec2 iResolution = vec2(textureSize(TEXTURE, 0))/2.0; //input texture is doubled in size, but we need the original size
     vec2 offset = vec2(x,y)/iResolution.xy;
     vec2 maxdistortion = size/iResolution.xy;
     
     //sample the displacement map
     vec4 dis = texture(displacement_map, UV+offset);
     dis.r = (clamp(dis.r, 0.5-maxdistortion.x, 0.5+maxdistortion.x) - 0.5) * dis.a;//center them and apply alpha
-    dis.g = (clamp(dis.g, 0.5-maxdistortion.x, 0.5+maxdistortion.x) - 0.5) * dis.a; 
+    dis.g = (clamp(dis.g, 0.5-maxdistortion.y, 0.5+maxdistortion.y) - 0.5) * dis.a; 
     
-    vec2 dis_coord = vec2(dis.r,dis.g);
+    vec2 dis_coord = vec2(dis.r, -dis.g);
     // Sample the texture
-    vec4 col = texture(TEXTURE, UV-dis_coord);
+    vec4 col = texture(TEXTURE, UV+dis_coord);
     
     // Output to screen
     COLOR = vec4(col);

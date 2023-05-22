@@ -5,6 +5,8 @@
 	ASSERT(num2text(999.23123, 4, 12) == "06b3")
 	ASSERT(num2text(999.23123, 4, 3) == "1101000")
 	ASSERT(num2text(999.23123, 20, 5) == "00000000000000012444")
+	ASSERT(num2text(20, 0, 16) == "14")
+	ASSERT(num2text(-20, 0, 16) == "-14")
 
 	// Sigfigs
 	ASSERT(num2text(999.23123, 2) == "1e+03")

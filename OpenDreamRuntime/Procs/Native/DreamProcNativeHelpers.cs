@@ -251,18 +251,24 @@ internal static class DreamProcNativeHelpers {
             throw new ArgumentOutOfRangeException(nameof(radix), "radix is above 36");
         }
 
-        var bufferIter = 32;
-        char[] buffer = new char[32];
+        StringBuilder resString = new();
+        bool wasNegative = false; // Theres likely a better way
 
-        do {
-            buffer[--bufferIter] = radixArray[value % radix];
+        if(value < 0) {
+            wasNegative = true;
+            value = Math.Abs(value);
+        }
+
+        while (value > 0)
+        {
+            resString.Insert(0, radixArray[value % radix]);
             value /= radix;
         }
-        while (value > 0);
 
-        char[] result = new char[32 - bufferIter];
-        Array.Copy(buffer, bufferIter, result, 0, 32 - bufferIter);
+        if(wasNegative) {
+            resString.Insert(0, '-');
+        }
 
-        return new string(result);
+        return new string(resString.ToString());
     }
 }

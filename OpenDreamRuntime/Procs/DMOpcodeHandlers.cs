@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -1054,13 +1054,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Modulus(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger()));
-            } else {
-                throw new Exception("Invalid modulus operation on " + first + " and " + second);
-            }
-
+            state.Push(ModulusValues(first, second));
             return null;
         }
 
@@ -2390,6 +2384,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
+            if (first == DreamValue.Null)
+                return new(0);
             if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 return new DreamValue(first.MustGetValueAsInteger() % second.MustGetValueAsInteger());
             } else {

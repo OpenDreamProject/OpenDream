@@ -1341,6 +1341,7 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 Newline();
+                Whitespace();
                 Consume(TokenType.DM_Catch, "Expected catch");
                 Whitespace();
 

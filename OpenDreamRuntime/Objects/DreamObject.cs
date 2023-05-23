@@ -43,7 +43,8 @@ namespace OpenDreamRuntime.Objects {
             _variables = null;
             ObjectDefinition = null!;
 
-            manager.ReferenceIDs.Remove(this);
+            if (manager.ReferenceIDs.Remove(this, out var refId))
+                manager.ReferenceIDsToDreamObject.Remove(refId);
         }
 
         public void SetObjectDefinition(DreamObjectDefinition objectDefinition) {

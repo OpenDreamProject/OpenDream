@@ -17,7 +17,7 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
-    partial class DreamManager : IDreamManager {
+    internal partial class DreamManager : IDreamManager {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -38,7 +38,8 @@ namespace OpenDreamRuntime {
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
         public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
-        public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
+        public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
+        public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
         public HashSet<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
@@ -202,6 +203,7 @@ namespace OpenDreamRuntime {
                     if (!ReferenceIDs.TryGetValue(refObject, out idx)) {
                         idx = _dreamObjectRefIdCounter++;
                         ReferenceIDs.Add(refObject, idx);
+                        ReferenceIDsToDreamObject.Add(idx, refObject);
                     }
                 }
             } else if (value.TryGetValueAsString(out var refStr)) {
@@ -250,9 +252,8 @@ namespace OpenDreamRuntime {
                 case RefType.Null:
                     return DreamValue.Null;
                 case RefType.DreamObject:
-                    foreach (KeyValuePair<DreamObject, int> referenceIdPair in ReferenceIDs) {
-                        if (referenceIdPair.Value == refId) return new DreamValue(referenceIdPair.Key);
-                    }
+                    if (ReferenceIDsToDreamObject.TryGetValue(refId, out var dreamObject))
+                        return new(dreamObject);
 
                     return DreamValue.Null;
                 case RefType.String:

@@ -40,7 +40,7 @@ namespace OpenDreamRuntime {
                             existingMobOwner.Mob = null;
 
                         _mob = value;
-                        _mob.SetVariableValue("ckey", new(Session!.Name));
+                        _mob.SetVariableValue("ckey", new(DreamProcNativeHelpers.Ckey(Session!.Name)));
                         _mob.SetVariableValue("key", new(Session!.Name));
                         _mob.SpawnProc("Login", usr: _mob);
                     } else {

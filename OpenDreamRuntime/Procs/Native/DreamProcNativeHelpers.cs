@@ -4,13 +4,14 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 namespace OpenDreamRuntime.Procs.Native;
 
 /// <summary>
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
-internal static class DreamProcNativeHelpers {
+internal static partial class DreamProcNativeHelpers {
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -228,4 +229,17 @@ internal static class DreamProcNativeHelpers {
             return false;
         }
     }
+
+    /// <summary>
+    /// Returns the string with all non-alphanumeric characters (except @) removed, and all letters converted to lowercase.
+    /// Mirrors the behaviour of BYOND's ckey() proc.
+    /// </summary>
+    /// <param name="input">The string to canonicalize</param>
+    /// <returns></returns>
+    public static string Ckey(string input) {
+        return CkeyRegex().Replace(input.ToLower(), "");
+    }
+
+    [GeneratedRegex("[\\^]|[^a-z0-9@]")]
+    private static partial Regex CkeyRegex();
 }

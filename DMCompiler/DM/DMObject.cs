@@ -4,6 +4,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
@@ -14,7 +15,7 @@ namespace DMCompiler.DM {
     /// but rather stores the compile-time information necessary to describe a certain object definition, <br/>
     /// including its procs, vars, path, parent, etc.
     /// </remarks>
-    class DMObject {
+    sealed class DMObject {
         public int Id;
         public DreamPath Path;
         public DMObject? Parent;
@@ -29,8 +30,8 @@ namespace DMCompiler.DM {
 
         public bool IsRoot => Path == DreamPath.Root;
 
-        public List<DMASTObjectVarOverride>? danglingOverrides = null; // Overrides waiting for the LateVarDef event to happen
-
+        // Statements waiting for LateVarDef event to happen
+        public Dictionary<string, List<DMASTStatement>> DanglingStatementsByUndefinedNames = new();
         private bool _isSubscribedToVarDef = false;
         private List<DMProc>? _verbs;
 
@@ -46,53 +47,37 @@ namespace DMCompiler.DM {
             Procs[name].Add(proc.Id);
         }
 
-        private void HandleLateVarDef(object? sender, DMVariable varDefined) {
+        private void HandleLateVarDef(object sender, DMVariable varDefined) {
             DMObject? maybeAncestor = sender as DMObject;
-            if (maybeAncestor == null || danglingOverrides == null)
+            if (maybeAncestor == null)
                 return;
 
-            for(int i = 0; i < danglingOverrides.Count; ++i) {
-                var varOverride = danglingOverrides[i];
-
-                // FINALLY we can do this
-                if (varOverride.VarName == varDefined.Name) {
-                    if (IsSubtypeOf(maybeAncestor.Path)) { // Resolves the ambiguous var override
-                        // Thank god DMObjectBuilder is static, amirite?
-                        DMObjectBuilder.OverrideVariableValue(this, ref varDefined, varOverride.Value); // I'd like to mark DMObjectBuilder as a friend class but that's not a thing in C# so
-                        VariableOverrides[varDefined.Name] = varDefined;
-                        danglingOverrides.RemoveAt(i);
-                        break;
-                    }
+            if (DanglingStatementsByUndefinedNames.ContainsKey(varDefined.Name)) {
+                foreach (DMASTStatement statement in DanglingStatementsByUndefinedNames[varDefined.Name].ToList()) {
+                    if (statement is DMASTObjectVarOverride && !IsSubtypeOf(maybeAncestor.Path)) // Resolves the ambiguous var override
+                        continue;
+                    DMObjectBuilder.ProcessStatement(statement);
+                    DanglingStatementsByUndefinedNames[varDefined.Name].Remove(statement);
                 }
+                if (DanglingStatementsByUndefinedNames[varDefined.Name].Count == 0)
+                    DanglingStatementsByUndefinedNames.Remove(varDefined.Name);
             }
 
-            // Unsubscribe if we're done doing this
-            if (danglingOverrides.Count == 0) {
-                DebugTools.Assert(danglingOverrides.Count == 0);
-                DMObjectBuilder.VarDefined -= HandleLateVarDef;
+            if (DanglingStatementsByUndefinedNames.Count == 0) {
+                DMObjectBuilder.VarDefined -= this.HandleLateVarDef;
                 _isSubscribedToVarDef = false;
             }
         }
 
-        public void WaitForLateVarDefinition(DMASTObjectVarOverride varOverride) {
-            danglingOverrides ??= new List<DMASTObjectVarOverride>();
-
-            for(int i = 0; i < danglingOverrides.Count; ++i) {
-                var otherOverride = danglingOverrides[i];
-
-                if(otherOverride.VarName == varOverride.VarName) {
-                    // This looks like an override for ANOTHER override.
-                    // Meaning we're probably already subscribed or... something?
-                    // Whatever. I guess we're the real override, now.
-                    danglingOverrides[i] = varOverride;
-                    // NOTE: This doesn't work quite right if DMObjectBuilder ever starts evaluating object definitions in a different order than how they appear in the source code.
-                    return;
-                }
+        public void WaitForLateVarDefinition(string waitForName, DMASTStatement statement) {
+            if (DanglingStatementsByUndefinedNames.ContainsKey(waitForName)) {
+                DanglingStatementsByUndefinedNames[waitForName].Add(statement);
+            } else {
+                DanglingStatementsByUndefinedNames[waitForName] = new List<DMASTStatement> { statement };
             }
 
-            danglingOverrides.Add(varOverride);
             if (_isSubscribedToVarDef == false) {
-                DMObjectBuilder.VarDefined += HandleLateVarDef; // GOD I hope this works
+                DMObjectBuilder.VarDefined += this.HandleLateVarDef;
                 _isSubscribedToVarDef = true;
             }
         }

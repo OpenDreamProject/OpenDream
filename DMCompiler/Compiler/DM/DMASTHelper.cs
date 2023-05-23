@@ -11,7 +11,7 @@ using OpenDreamShared.Compiler;
 namespace DMCompiler.Compiler.DM {
 
     public static partial class DMAST {
-        public class TopLevelTraveler {
+        public sealed class TopLevelTraveler {
             public Action<DMASTNode> VisitDefine;
 
             public void Travel(DMASTFile root) {
@@ -42,7 +42,7 @@ namespace DMCompiler.Compiler.DM {
                 VisitDefine(procdef);
             }
         }
-        public class ASTHasher {
+        public sealed class ASTHasher {
             public static string Hash(DMASTObjectDefinition objdef) {
                 return $"OD-{objdef.Path}";
             }
@@ -87,7 +87,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public class Labeler {
+        public sealed class Labeler {
             public Dictionary<object, int> labels = new();
             public int label_i = 0;
 
@@ -118,7 +118,7 @@ namespace DMCompiler.Compiler.DM {
             public List<Type> recurse_types = new() { };
             public List<Type> ignore_types = new() { };
 
-            public class ObjectTraveler { }
+            public sealed class ObjectTraveler { }
 
             public void Print(object node, System.IO.TextWriter print, int depth = 0, int max_depth = 9999, Labeler labeler = null) {
                 if (depth > max_depth) {
@@ -205,10 +205,10 @@ namespace DMCompiler.Compiler.DM {
         // hasher.HashFile(astFile);
         //    var proc = hasher.GetProcByPath("/datum/browser/proc/get_header");
         // new DMAST.DMASTNodePrinter().Print(proc, Console.Out);
-        public class DMASTNodePrinter : ObjectPrinter {
+        public sealed class DMASTNodePrinter : ObjectPrinter {
             public DMASTNodePrinter() {
                 tostring_types.AddRange( new Type[] { typeof(DMValueType), typeof(DreamPath), typeof(DreamPath.PathType) } );
-                recurse_types.AddRange( new Type[] { typeof(DMASTDereference.DereferenceType), typeof(DMASTNode), typeof(DMASTCallable), typeof(VarDeclInfo) } );
+                recurse_types.AddRange( new Type[] { typeof(DMASTNode), typeof(DMASTCallable), typeof(VarDeclInfo) } );
                 ignore_types.Add(typeof(Location));
             }
         }

@@ -61,9 +61,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     if (!_entityManager.TryGetComponent(entity, out TransformComponent? transform))
                         return;
 
-                    int x = (varName == "x") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.X;
-                    int y = (varName == "y") ? value.MustGetValueAsInteger() : (int)transform.WorldPosition.Y;
-                    int z = (varName == "z") ? value.MustGetValueAsInteger() : (int)transform.MapID;
+                    var position = _atomManager.GetAtomPosition(dreamObject);
+                    int x = (varName == "x") ? value.MustGetValueAsInteger() : position.X;
+                    int y = (varName == "y") ? value.MustGetValueAsInteger() : position.Y;
+                    int z = (varName == "z") ? value.MustGetValueAsInteger() : position.Z;
 
                     _dreamMapManager.TryGetTurfAt((x, y), z, out var newLoc);
                     dreamObject.SetVariable("loc", new DreamValue(newLoc));
@@ -124,20 +125,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
                 case "x":
+                    return new(_atomManager.GetAtomPosition(dreamObject).X);
                 case "y":
-                case "z": {
-                    EntityUid entity = _atomManager.GetMovableEntity(dreamObject);
-                    if (!_entityManager.TryGetComponent(entity, out TransformComponent? transform))
-                        return new(0);
-
-                    float coordinate = varName switch {
-                        "x" => transform.WorldPosition.X,
-                        "y" => transform.WorldPosition.Y,
-                        _ => (int)transform.MapID
-                    };
-
-                    return new(coordinate);
-                }
+                    return new(_atomManager.GetAtomPosition(dreamObject).Y);
+                case "z":
+                    return new(_atomManager.GetAtomPosition(dreamObject).Z);
                 case "contents": {
                     DreamList contents = _objectTree.CreateList();
                     EntityUid entity = _atomManager.GetMovableEntity(dreamObject);

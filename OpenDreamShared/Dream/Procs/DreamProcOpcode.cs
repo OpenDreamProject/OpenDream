@@ -104,12 +104,22 @@ namespace OpenDreamShared.Dream.Procs {
         ModulusModulusReference = 0x61,
         PushProcStub = 0x62,
         PushVerbStub = 0x63,
-        BitShiftLeftReference = 0x64,
-        BitShiftRightReference = 0x65,
-        Try = 0x66,
-        TryNoValue = 0x67,
-        EndTry = 0x68,
-        Gradient = 0x69
+        JumpIfNull = 0x64,
+        JumpIfNullNoPop = 0x65,
+        JumpIfTrueReference = 0x66,
+        JumpIfFalseReference = 0x67,
+        DereferenceField = 0x68,
+        DereferenceIndex = 0x69,
+        DereferenceCall = 0x6A,
+        PopReference = 0x6B,
+        //0x6C
+        BitShiftLeftReference = 0x6D,
+        BitShiftRightReference = 0x6E,
+        Try = 0x6F,
+        TryNoValue = 0x70,
+        EndTry = 0x71,
+        EnumerateNoAssign = 0x72,
+        Gradient = 0x73
     }
 
     /// <summary>
@@ -159,6 +169,9 @@ namespace OpenDreamShared.Dream.Procs {
 
             Proper,                   //String represents a proper noun
             Improper,                 //String represents an improper noun
+
+            LowerRoman,               //i, ii, iii, iv, v
+            UpperRoman,               //I, II, III, IV, V
 
             OrdinalIndicator,        //1st, 2nd, 3rd, 4th, ...
             PluralSuffix,            //-s suffix at the end of a plural noun
@@ -284,7 +297,6 @@ namespace OpenDreamShared.Dream.Procs {
             Global,
             Field,
             SrcField,
-            Proc,
             GlobalProc,
             SrcProc,
             SuperProc
@@ -322,10 +334,6 @@ namespace OpenDreamShared.Dream.Procs {
             return new DMReference() { RefType = Type.SrcField, Name = fieldName };
         }
 
-        public static DMReference CreateProc(string procName) {
-            return new DMReference() { RefType = Type.Proc, Name = procName };
-        }
-
         public static DMReference CreateGlobalProc(int procId) {
             return new DMReference() { RefType = Type.GlobalProc, Index = procId };
         }
@@ -345,7 +353,6 @@ namespace OpenDreamShared.Dream.Procs {
                 case Type.SrcField:
                 case Type.Field:
                 case Type.SrcProc:
-                case Type.Proc:
                     return $"{RefType} \"{Name}\"";
 
                 default: return RefType.ToString();

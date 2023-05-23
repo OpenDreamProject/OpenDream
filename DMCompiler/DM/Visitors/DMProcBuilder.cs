@@ -8,7 +8,7 @@ using OpenDreamShared.Dream.Procs;
 using System.Diagnostics;
 
 namespace DMCompiler.DM.Visitors {
-    class DMProcBuilder {
+    sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
@@ -264,12 +264,12 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 case "desc":
+                    // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
                     if (constant is not Expressions.String descStr) {
                         throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
                     }
 
                     _proc.VerbDesc = descStr.Value;
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set desc is not implemented");
                     break;
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs
@@ -438,7 +438,7 @@ namespace DMCompiler.DM.Visitors {
                                 ? DMExpression.Create(_dmObject, _proc, exprRange.Step)
                                 : new Number(exprRange.Location, 1);
 
-                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            ProcessStatementForRange(null, outputVar, start, end, step, statementFor.Body);
                             break;
                         }
                         case DMASTVarDeclExpression vd: {
@@ -513,6 +513,24 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
+        public void ProcessLoopAssignment(LValue lValue) {
+            if (lValue.CanReferenceShortCircuit()) {
+                string endLabel = _proc.NewLabelName();
+                string endLabel2 = _proc.NewLabelName();
+
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
+                _proc.Enumerate(outputRef);
+                _proc.Jump(endLabel2);
+
+                _proc.AddLabel(endLabel);
+                _proc.EnumerateNoAssign();
+                _proc.AddLabel(endLabel2);
+            } else {
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, null);
+                _proc.Enumerate(outputRef);
+            }
+        }
+
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
@@ -546,8 +564,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (lValue != null) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     }
 
                     ProcessBlockInner(body);
@@ -587,8 +604,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -625,8 +641,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -813,10 +828,11 @@ namespace DMCompiler.DM.Visitors {
                 // An LValue on the left needs a special opcode so that its reference can be used
                 // This allows for special operations like "savefile[...] << ..."
 
-                (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+                string endLabel = _proc.NewLabelName();
+                DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
                 right.EmitPushValue(_dmObject, _proc);
-
                 _proc.OutputReference(leftRef);
+                _proc.AddLabel(endLabel);
             } else {
                 left.EmitPushValue(_dmObject, _proc);
                 right.EmitPushValue(_dmObject, _proc);
@@ -841,10 +857,16 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
-            (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+            string rightEndLabel = _proc.NewLabelName();
+            string leftEndLabel = _proc.NewLabelName();
+            DMReference rightRef = right.EmitReference(_dmObject, _proc, rightEndLabel, DMExpression.ShortCircuitMode.PopNull);
+            DMReference leftRef = left.EmitReference(_dmObject, _proc, leftEndLabel, DMExpression.ShortCircuitMode.PopNull);
 
             _proc.Input(leftRef, rightRef);
+
+            _proc.AddLabel(leftEndLabel);
+            _proc.PopReference(rightRef);
+            _proc.AddLabel(rightEndLabel);
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

@@ -4,7 +4,9 @@ using OpenDreamShared.Rendering;
 namespace OpenDreamRuntime.Rendering {
     [RegisterComponent]
     public sealed class DMISpriteComponent : SharedDMISpriteComponent {
+        private IEntitySystemManager? _entitySystemManager;
         private ServerAppearanceSystem? _appearanceSystem;
+
         [ViewVariables]
         public ScreenLocation? ScreenLocation {
             get => _screenLocation;
@@ -15,25 +17,22 @@ namespace OpenDreamRuntime.Rendering {
         }
         private ScreenLocation? _screenLocation;
 
-        [ViewVariables]
-        public IconAppearance? Appearance => (_appearanceId != null) ? EntitySystem.Get<ServerAppearanceSystem>().MustGetAppearance(_appearanceId.Value) : null;
-
-        private uint? _appearanceId;
+        [ViewVariables] public IconAppearance? Appearance { get; private set; }
 
         public override ComponentState GetComponentState() {
-            return new DMISpriteComponentState(_appearanceId, ScreenLocation);
+            uint? appearanceId = null;
+            if (Appearance != null) {
+                IoCManager.Resolve(ref _entitySystemManager);
+                _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+
+                appearanceId = _appearanceSystem.AddAppearance(Appearance);
+            }
+
+            return new DMISpriteComponentState(appearanceId, ScreenLocation);
         }
 
         public void SetAppearance(IconAppearance? appearance, bool dirty = true) {
-            if (appearance == null) {
-                _appearanceId = null;
-            } else {
-                if (_appearanceSystem is null) {
-                    EntitySystem.TryGet<ServerAppearanceSystem>(out _appearanceSystem);
-                }
-
-                _appearanceId = _appearanceSystem?.AddAppearance(appearance);
-            }
+            Appearance = appearance;
 
             if (dirty) {
                 Dirty();

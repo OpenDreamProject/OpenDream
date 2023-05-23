@@ -10,25 +10,31 @@ namespace OpenDreamRuntime.Procs.Native {
     static class DreamProcNativeRegex {
         [DreamProc("Find")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("Start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)] // BYOND docs say these are uppercase, they're not
+        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Find(NativeProc.State state) {
             DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
             DreamValue haystack = state.GetArgument(0, "haystack");
-            int next = GetNext(state.Src, state.GetArgument(1, "Start"), dreamRegex.IsGlobal);
-            int end = state.GetArgument(2, "End").GetValueAsInteger();
-
-            state.Src.SetVariable("text", haystack);
 
             string haystackString;
             if (!haystack.TryGetValueAsString(out haystackString)) {
                 haystackString = String.Empty;
             }
+            
+            int next = GetNext(state.Src, state.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
+            int end = state.GetArgument(2, "end").GetValueAsInteger();
+
+            state.Src.SetVariable("text", haystack);
 
             if (end == 0) end = haystackString.Length;
-            if (haystackString.Length == next - 1) return new DreamValue(0);
+            if (haystackString.Length <= next - 1) {
+                if (dreamRegex.IsGlobal) {
+                    state.Src.SetVariable("next", DreamValue.Null);
+                }
+                return new DreamValue(0);
+            }
 
-            Match match = dreamRegex.Regex.Match(haystackString, next - 1, end - next);
+            Match match = dreamRegex.Regex.Match(haystackString, Math.Clamp(next - 1, 0, haystackString.Length), end - next + 1);
             if (match.Success) {
                 state.Src.SetVariable("index", new DreamValue(match.Index + 1));
                 state.Src.SetVariable("match", new DreamValue(match.Value));
@@ -48,6 +54,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 return new DreamValue(match.Index + 1);
             } else {
+                if (dreamRegex.IsGlobal) {
+                    state.Src.SetVariable("next", DreamValue.Null);
+                }
                 return new DreamValue(0);
             }
         }
@@ -57,12 +66,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamRegex regex = DreamMetaObjectRegex.ObjectToDreamRegex[regexInstance];
 
             if (!haystack.TryGetValueAsString(out var haystackString)) {
-                if (haystack == DreamValue.Null) {
-                    return DreamValue.Null;
-                }
-
-                //TODO Check what actually happens
-                throw new ArgumentException("Bad regex haystack");
+                return DreamValue.Null;
             }
 
             string haystackSubstring = haystackString;
@@ -79,34 +83,38 @@ namespace OpenDreamRuntime.Procs.Native {
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
             async Task<DreamValue> DoProcReplace(AsyncNativeProc.State state, DreamProc proc) {
-                if (regex.IsGlobal) {
-                    throw new NotImplementedException("Proc global regex replacements are not implemented");
-                }
+                Match match;
+                var currentStart = start;
+                var currentHaystack = haystackSubstring;
+                do {
+                    match = regex.Regex.Match(currentHaystack,
+                        Math.Clamp(currentStart - 1, 0, currentHaystack.Length));
+                    if (!match.Success) break;
+                    
+                    var groups = match.Groups;
+                    var args = new DreamValue[groups.Count];
+                    for (int i = 0; i < groups.Count; i++) {
+                        args[i] = new DreamValue(groups[i].Value);
+                    }
 
-                var match = regex.Regex.Match(haystackSubstring);
-                var groups = match.Groups;
-                var args = new DreamValue[groups.Count];
-                for (int i = 0; i < groups.Count; i++) {
-                    args[i] = new DreamValue(groups[i].Value);
-                }
+                    var result = await state.CallNoWait(proc, null, null, args);
 
-                var result = await state.CallNoWait(proc, regexInstance, null, args);
+                    var replacement = result.Stringify();
+                    currentHaystack = regex.Regex.Replace(currentHaystack, replacement, 1,
+                        Math.Clamp(currentStart - 1, 0, currentHaystack.Length));
+                    currentStart = match.Index + replacement.Length + 1;
+                } while (regex.IsGlobal && match.Success);
 
-                if (result.TryGetValueAsString(out var replacement)) {
-                    return DoTextReplace(replacement);
-                }
+                var replaced = currentHaystack;
+                if (end != 0) replaced += haystackString.Substring(end - start + 1);
 
-                //TODO Confirm this behavior
-                if (result == DreamValue.Null) {
-                    return new DreamValue(haystackSubstring);
-                }
-
-                throw new ArgumentException("Replacement is not a string");
+                regexInstance.SetVariable("text", new DreamValue(replaced));
+                return new DreamValue(replaced);
             }
 
             DreamValue DoTextReplace(string replacement) {
                 string replaced = regex.Regex.Replace(haystackSubstring, replacement, regex.IsGlobal ? -1 : 1,
-                    start - 1);
+                    Math.Clamp(start - 1, 0, haystackSubstring.Length));
 
                 if (end != 0) replaced += haystackString.Substring(end - start + 1);
 
@@ -118,20 +126,20 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Replace")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
-        [DreamProcParameter("Start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("End", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)] // BYOND docs say these are uppercase, they're not
+        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
             DreamValue haystack = state.GetArgument(0, "haystack");
             DreamValue replacement = state.GetArgument(1, "replacement");
-            int start = state.GetArgument(2, "Start").GetValueAsInteger();
-            int end = state.GetArgument(3, "End").GetValueAsInteger();
+            int start = state.GetArgument(2, "start").GetValueAsInteger();
+            int end = state.GetArgument(3, "end").GetValueAsInteger();
 
             return await RegexReplace(state, state.Src, haystack, replacement, start, end);
         }
 
-        private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal) {
+        private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal, string haystackString) {
             if (startParam == DreamValue.Null) {
-                if (isGlobal) {
+                if (isGlobal && regexInstance.GetVariable("text").TryGetValueAsString(out string? lastHaystack) && lastHaystack == haystackString) {
                     DreamValue nextVar = regexInstance.GetVariable("next");
 
                     return (nextVar != DreamValue.Null) ? nextVar.GetValueAsInteger() : 1;

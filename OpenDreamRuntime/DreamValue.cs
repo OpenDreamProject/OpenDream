@@ -1,4 +1,7 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
@@ -52,8 +55,6 @@ namespace OpenDreamRuntime {
 
         public DreamValue(int value) : this((float)value) { }
 
-        public DreamValue(UInt32 value) : this((float)value) { }
-
         public DreamValue(double value) : this((float)value) { }
 
         public DreamValue(DreamResource value) {
@@ -80,27 +81,6 @@ namespace OpenDreamRuntime {
         public DreamValue(IconAppearance appearance) {
             Type = DreamValueType.Appearance;
             _refValue = appearance;
-        }
-
-        public DreamValue(object value) {
-            if (value is int intValue) {
-                _floatValue = intValue;
-            } else if (value is float floatValue) {
-                _floatValue = floatValue;
-            } else {
-                _refValue = value;
-            }
-
-            Type = value switch {
-                string => DreamValueType.String,
-                int => DreamValueType.Float,
-                float => DreamValueType.Float,
-                DreamResource => DreamValueType.DreamResource,
-                DreamObject => DreamValueType.DreamObject,
-                IDreamObjectTree.TreeEntry => DreamValueType.DreamType,
-                DreamProc => DreamValueType.DreamProc,
-                _ => throw new ArgumentException($"Invalid DreamValue value ({value}, {value.GetType()})")
-            };
         }
 
         public static DreamValue CreateProcStub(IDreamObjectTree.TreeEntry type) {
@@ -369,8 +349,10 @@ namespace OpenDreamRuntime {
 
         public bool IsTruthy() {
             switch (Type) {
-                case DreamValueType.DreamObject:
-                    return _refValue != null && ((DreamObject) _refValue).Deleted == false;
+                case DreamValueType.DreamObject: {
+                    Debug.Assert(_refValue is DreamObject or null, "Failed to cast a DreamValue's DreamObject");
+                    return _refValue != null && Unsafe.As<DreamObject>(_refValue).Deleted == false;
+                }
                 case DreamValueType.DreamResource:
                 case DreamValueType.DreamType:
                 case DreamValueType.DreamProc:
@@ -381,7 +363,8 @@ namespace OpenDreamRuntime {
                 case DreamValueType.Float:
                     return _floatValue != 0;
                 case DreamValueType.String:
-                    return (string) _refValue != "";
+                    Debug.Assert(_refValue is string, "Failed to cast a DreamValueType.String as a string");
+                    return Unsafe.As<string>(_refValue) != "";
                 default:
                     throw new NotImplementedException($"Truthy evaluation for {this} is not implemented");
             }
@@ -422,8 +405,6 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public override bool Equals(object? obj) => obj is DreamValue other && Equals(other);
-
         public bool Equals(DreamValue other) {
             if (Type != other.Type) return false;
             switch (Type) {
@@ -431,9 +412,11 @@ namespace OpenDreamRuntime {
                     return _floatValue == other._floatValue;
                 // Ensure deleted DreamObjects are made null
                 case DreamValueType.DreamObject: {
-                    if ((_refValue as DreamObject)?.Deleted == true)
+                    Debug.Assert(_refValue is DreamObject or null, "Failed to cast _refValue to DreamObject");
+                    Debug.Assert(other._refValue is DreamObject or null, "Failed to cast other._refValue to DreamObject");
+                    if (_refValue != null && Unsafe.As<DreamObject>(_refValue).Deleted)
                         _refValue = null;
-                    if ((other._refValue as DreamObject)?.Deleted == true)
+                    if (other._refValue != null && Unsafe.As<DreamObject>(other._refValue).Deleted)
                         other._refValue = null;
                     break;
                 }

@@ -104,14 +104,15 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(state.Src); // Defaults to input on invalid angle
             }
 
-            return _NativeProc_TurnInternal(state.Src, state.Usr, angle);
+            _NativeProc_TurnInternal(state.Src, state.Usr, angle);
+            return DreamValue.Null;
         }
 
         /// <summary> Turns a given icon a given amount of degrees clockwise. </summary>
-        /// <returns> Returns a new icon which has been rotated </returns>
-        public static DreamValue _NativeProc_TurnInternal(DreamObject src, DreamObject usr, float angle) {
+        public static void _NativeProc_TurnInternal(DreamObject src, DreamObject usr, float angle) {
             DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[src];
-            return new DreamValue(DreamMetaObjectIcon.TurnIcon(dreamIconObject, angle));
+
+            DreamMetaObjectIcon.TurnIcon(dreamIconObject, angle);
         }
     }
 }

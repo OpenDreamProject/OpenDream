@@ -134,7 +134,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Datum)) {
-                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums));
+                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums, type));
                 return null;
             }
 
@@ -192,10 +192,20 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Enumerate(DMProcState state) {
             IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
-            DMReference reference = state.ReadReference();
+            DMReference outputRef = state.ReadReference();
             int jumpToIfFailure = state.ReadInt();
 
-            if (!enumerator.Enumerate(state, reference))
+            if (!enumerator.Enumerate(state, outputRef))
+                state.Jump(jumpToIfFailure);
+
+            return null;
+        }
+
+        public static ProcStatus? EnumerateNoAssign(DMProcState state) {
+            IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
+            int jumpToIfFailure = state.ReadInt();
+
+            if (!enumerator.Enumerate(state, null))
                 state.Jump(jumpToIfFailure);
 
             return null;
@@ -244,11 +254,55 @@ namespace OpenDreamRuntime.Procs {
             }
 
         }
+
+        private static void ToRoman(ref StringBuilder formattedString, ReadOnlySpan<DreamValue> interps, int nextInterpIndex, bool upperCase) {
+            char[] arr;
+            if(upperCase) {
+                arr = new char[] { 'M', 'D', 'C', 'L', 'X', 'V', 'I' };
+            } else {
+                arr = new char[] { 'm', 'd', 'c', 'l', 'x', 'v', 'i' };
+            }
+
+            int[] numArr = new int[] { 1000, 500, 100, 50, 10, 5, 1 };
+
+            if(!interps[nextInterpIndex].TryGetValueAsFloat(out float value)) {
+                return;
+            }
+
+            if(float.IsNaN(value)) {
+                formattedString.Append('�'); //fancy-ish way to represent
+                return;
+            }
+
+            if(value < 0) {
+                formattedString.Append('-');
+                value = MathF.Abs(value);
+            }
+
+            if (float.IsInfinity(value)) {
+                formattedString.Append('∞');
+                return;
+            }
+
+            var intValue = (int)value;
+            var i = 0;
+
+            while (intValue != 0) {
+                if(intValue >= numArr[i]) {
+                    intValue -= numArr[i];
+                    formattedString.Append(arr[i]);
+                } else {
+                    i++;
+                }
+            }
+        }
         public static ProcStatus? FormatString(DMProcState state) {
             string unformattedString = state.ReadString();
             StringBuilder formattedString = new StringBuilder();
 
             int interpCount = state.ReadInt();
+
+            StringFormatEncoder.FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
 
             ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
             int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
@@ -263,6 +317,7 @@ namespace OpenDreamRuntime.Procs {
                 switch (formatType) {
                     //Interp values
                     case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                        // TODO: use postPrefix for \th interpolation
                         formattedString.Append(interps[nextInterpIndex].Stringify());
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
@@ -278,6 +333,20 @@ namespace OpenDreamRuntime.Procs {
                     {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                             formattedString.Append(dreamObject.GetNameUnformatted());
+                        }
+
+                        // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
+                        if(postPrefix != null) { // Cursed Hack
+                            switch(postPrefix) {
+                                case StringFormatEncoder.FormatSuffix.LowerRoman:
+                                    ToRoman(ref formattedString, interps, nextInterpIndex, false);
+                                    break;
+                                case StringFormatEncoder.FormatSuffix.UpperRoman:
+                                    ToRoman(ref formattedString, interps, nextInterpIndex, true);
+                                    break;
+                                default: break;
+                            }
+                            postPrefix = null;
                         }
                         //Things that aren't objects just print nothing in this case
                         prevInterpIndex = nextInterpIndex;
@@ -389,6 +458,12 @@ namespace OpenDreamRuntime.Procs {
                             formattedString.Append("th");
                         }
                         continue;
+                    case StringFormatEncoder.FormatSuffix.LowerRoman:
+                        postPrefix = formatType;
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.UpperRoman:
+                        postPrefix = formatType;
+                        continue;
                     default:
                         if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
                             //Likely an unimplemented text macro, ignore it
@@ -406,19 +481,31 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Initial(DMProcState state) {
             DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
-            if (!key.TryGetValueAsString(out var property)) {
+
+            // number indices always perform a normal list access here
+            if (key.TryGetValueAsInteger(out _)) {
+                state.Push(state.GetIndex(owner, key));
+                return null;
+            }
+
+            if (!key.TryGetValueAsString(out string property)) {
                 throw new Exception("Invalid var for initial() call: " + key);
             }
 
-            DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
                 // Calling initial() on a null value just returns null
                 if (dreamObject == null) {
                     state.Push(DreamValue.Null);
                     return null;
                 }
 
-                objectDefinition = dreamObject.ObjectDefinition;
+                state.Push(dreamObject.Initial(property));
+                return null;
+            }
+
+            DreamObjectDefinition objectDefinition;
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject2)) {
+                objectDefinition = dreamObject2.ObjectDefinition;
             } else if (owner.TryGetValueAsType(out var ownerType)) {
                 objectDefinition = ownerType.ObjectDefinition;
             } else {
@@ -462,6 +549,12 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? Pop(DMProcState state) {
             state.Pop();
+            return null;
+        }
+
+        public static ProcStatus? PopReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            state.PopReference(reference);
             return null;
         }
 
@@ -961,13 +1054,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Modulus(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger()));
-            } else {
-                throw new Exception("Invalid modulus operation on " + first + " and " + second);
-            }
-
+            state.Push(ModulusValues(first, second));
             return null;
         }
 
@@ -1262,15 +1349,6 @@ namespace OpenDreamRuntime.Procs {
 
                     break;
                 }
-                case DMReference.Type.Proc: {
-                    DreamValue owner = state.Pop();
-                    if (!owner.TryGetValueAsDreamObject(out instance) || instance == null)
-                        throw new Exception($"Cannot dereference proc \"{procRef.Name}\" from {owner}");
-                    if (!instance.TryGetProc(procRef.Name, out proc))
-                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.Name}\"");
-
-                    break;
-                }
                 case DMReference.Type.GlobalProc: {
                     instance = null;
                     proc = state.Proc.ObjectTree.Procs[procRef.Index];
@@ -1411,6 +1489,26 @@ namespace OpenDreamRuntime.Procs {
 
             return null;
         }
+        public static ProcStatus? JumpIfNull(DMProcState state) {
+            int position = state.ReadInt();
+
+            if (state.Peek() == DreamValue.Null) {
+                state.Pop();
+                state.Jump(position);
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? JumpIfNullNoPop(DMProcState state) {
+            int position = state.ReadInt();
+
+            if (state.Peek() == DreamValue.Null) {
+                state.Jump(position);
+            }
+
+            return null;
+        }
 
         public static ProcStatus? JumpIfNullDereference(DMProcState state) {
             DMReference reference = state.ReadReference();
@@ -1421,6 +1519,44 @@ namespace OpenDreamRuntime.Procs {
                 state.Jump(position);
             }
 
+            return null;
+        }
+
+        public static ProcStatus? JumpIfTrueReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            int position = state.ReadInt();
+
+            var value = state.GetReferenceValue(reference, true);
+
+            if (value.IsTruthy()) {
+                state.PopReference(reference);
+                state.Push(value);
+                state.Jump(position);
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? JumpIfFalseReference(DMProcState state) {
+            DMReference reference = state.ReadReference();
+            int position = state.ReadInt();
+
+            var value = state.GetReferenceValue(reference, true);
+
+            if (!value.IsTruthy()) {
+                state.PopReference(reference);
+                state.Push(value);
+                state.Jump(position);
+            }
+
+            return null;
+        }
+
+        public static ProcStatus? DereferenceField(DMProcState state) {
+            string name = state.ReadString();
+            DreamValue owner = state.Pop();
+
+            state.Push(state.DereferenceField(owner, name));
             return null;
         }
 
@@ -1557,11 +1693,13 @@ namespace OpenDreamRuntime.Procs {
                     // "savefile[A] << B" is the same as "savefile[A] = B"
 
                     state.AssignReference(leftRef, right);
+                    state.Push(DreamValue.Null);
                     return null;
                 }
             }
 
             PerformOutput(state.GetReferenceValue(leftRef), right);
+            state.Push(DreamValue.Null);
             return null;
         }
 
@@ -2002,13 +2140,25 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? IsSaved(DMProcState state) {
             DreamValue key = state.Pop();
             DreamValue owner = state.Pop();
+
+            // number indices always evaluate to false here
+            if (key.TryGetValueAsFloat(out _)) {
+                state.Push(DreamValue.False);
+                return null;
+            }
+
             if (!key.TryGetValueAsString(out string property)) {
                 throw new Exception($"Invalid var for issaved() call: {key}");
             }
 
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                state.Push(dreamObject.IsSaved(property) ? DreamValue.True : DreamValue.False);
+                return null;
+            }
+
             DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out var dreamObject)) {
-                objectDefinition = dreamObject.ObjectDefinition;
+            if (owner.TryGetValueAsDreamObject(out var dreamObject2)) {
+                objectDefinition = dreamObject2.ObjectDefinition;
             } else if (owner.TryGetValueAsType(out var type)) {
                 objectDefinition = type.ObjectDefinition;
             } else {
@@ -2025,6 +2175,30 @@ namespace OpenDreamRuntime.Procs {
             return null;
         }
 
+        public static ProcStatus? DereferenceIndex(DMProcState state) {
+            DreamValue index = state.Pop();
+            DreamValue obj = state.Pop();
+
+            state.Push(state.GetIndex(obj, index));
+            return null;
+        }
+
+        public static ProcStatus? DereferenceCall(DMProcState state) {
+            string name = state.ReadString();
+            var argumentInfo = state.ReadProcArguments();
+            var argumentValues = state.PopCount(argumentInfo.StackSize);
+            DreamValue obj = state.Pop();
+
+            if (!obj.TryGetValueAsDreamObject(out var instance) || instance == null)
+                throw new Exception($"Cannot dereference proc \"{name}\" from {obj}");
+            if (!instance.TryGetProc(name, out var proc))
+                throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{name}\"");
+
+            var arguments = state.CreateProcArguments(argumentValues, proc, argumentInfo.Type, argumentInfo.StackSize);
+
+            state.Call(proc, instance, arguments);
+            return ProcStatus.Called;
+        }
         #endregion Others
 
         #region Helpers
@@ -2092,9 +2266,16 @@ namespace OpenDreamRuntime.Procs {
                         default: return false;
                     }
                 }
+                case DreamValue.DreamValueType.Appearance: {
+                    if (!second.TryGetValueAsAppearance(out var secondValue))
+                        return false;
+
+                    IconAppearance firstValue = first.MustGetValueAsAppearance();
+                    return firstValue.Equals(secondValue);
+                }
             }
 
-            throw new NotImplementedException("Equal comparison for " + first + " and " + second + " is not implemented");
+            throw new NotImplementedException($"Equal comparison for {first} and {second} is not implemented");
         }
 
         private static bool IsEquivalent(DreamValue first, DreamValue second) {
@@ -2203,6 +2384,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
+            if (first == DreamValue.Null)
+                return new(0);
             if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 return new DreamValue(first.MustGetValueAsInteger() % second.MustGetValueAsInteger());
             } else {

@@ -11,24 +11,27 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public static readonly Dictionary<DreamObject, VerbsList> VerbLists = new();
 
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        [Dependency] private readonly IDreamMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
-        private ServerAppearanceSystem? _appearanceSystem;
+        private readonly ServerAppearanceSystem? _appearanceSystem;
 
         private readonly Dictionary<DreamObject, DreamFilterList> _filterLists = new();
+        private readonly Dictionary<DreamObject, DreamOverlaysList> _overlayLists = new();
+        private readonly Dictionary<DreamObject, DreamOverlaysList> _underlayLists = new();
 
         public DreamMetaObjectAtom() {
             IoCManager.InjectDependencies(this);
+
+            _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
             VerbLists[dreamObject] = new VerbsList(_objectTree, dreamObject);
             _filterLists[dreamObject] = new DreamFilterList(_objectTree.List.ObjectDefinition, dreamObject);
+            _overlayLists[dreamObject] = new DreamOverlaysList(_objectTree.List.ObjectDefinition, dreamObject, _appearanceSystem, false);
+            _underlayLists[dreamObject] = new DreamOverlaysList(_objectTree.List.ObjectDefinition, dreamObject, _appearanceSystem, true);
 
             // TODO: These should use their own special list types
-            dreamObject.SetVariable("overlays", new(_objectTree.CreateList()));
-            dreamObject.SetVariable("underlays", new(_objectTree.CreateList()));
             dreamObject.SetVariableValue("vis_locs", new(_objectTree.CreateList()));
             dreamObject.SetVariableValue("vis_contents", new(_objectTree.CreateList()));
 
@@ -38,11 +41,11 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnObjectDeleted(DreamObject dreamObject) {
             VerbLists.Remove(dreamObject);
             _filterLists.Remove(dreamObject);
+            _overlayLists.Remove(dreamObject);
+            _underlayLists.Remove(dreamObject);
 
             _atomManager.DeleteMovableEntity(dreamObject);
 
-            _atomManager.OverlaysListToAtom.Remove(dreamObject.GetVariable("overlays").GetValueAsDreamList());
-            _atomManager.UnderlaysListToAtom.Remove(dreamObject.GetVariable("underlays").GetValueAsDreamList());
             ParentType?.OnObjectDeleted(dreamObject);
         }
 
@@ -61,39 +64,35 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     break;
                 }
                 case "overlays": {
-                    if (oldValue.TryGetValueAsDreamList(out var oldList)) {
-                        oldList.Cut();
-                        oldList.ValueAssigned -= OverlayValueAssigned;
-                        oldList.BeforeValueRemoved -= OverlayBeforeValueRemoved;
-                        _atomManager.OverlaysListToAtom.Remove(oldList);
+                    DreamOverlaysList overlaysList = _overlayLists[dreamObject];
+
+                    overlaysList.Cut();
+
+                    if (value.TryGetValueAsDreamList(out var valueList)) {
+                        // TODO: This should postpone UpdateAppearance until after everything is added
+                        foreach (DreamValue overlayValue in valueList.GetValues()) {
+                            overlaysList.AddValue(overlayValue);
+                        }
+                    } else if (value != DreamValue.Null) {
+                        overlaysList.AddValue(value);
                     }
 
-                    if (!value.TryGetValueAsDreamList(out var overlayList)) {
-                        overlayList = _objectTree.CreateList();
-                    }
-
-                    overlayList.ValueAssigned += OverlayValueAssigned;
-                    overlayList.BeforeValueRemoved += OverlayBeforeValueRemoved;
-                    _atomManager.OverlaysListToAtom[overlayList] = dreamObject;
-                    dreamObject.SetVariableValue(varName, new DreamValue(overlayList));
                     break;
                 }
                 case "underlays": {
-                    if (oldValue.TryGetValueAsDreamList(out var oldList)) {
-                        oldList.Cut();
-                        oldList.ValueAssigned -= UnderlayValueAssigned;
-                        oldList.BeforeValueRemoved -= UnderlayBeforeValueRemoved;
-                        _atomManager.UnderlaysListToAtom.Remove(oldList);
+                    DreamOverlaysList underlaysList = _underlayLists[dreamObject];
+
+                    underlaysList.Cut();
+
+                    if (value.TryGetValueAsDreamList(out var valueList)) {
+                        // TODO: This should postpone UpdateAppearance until after everything is added
+                        foreach (DreamValue underlayValue in valueList.GetValues()) {
+                            underlaysList.AddValue(underlayValue);
+                        }
+                    } else if (value != DreamValue.Null) {
+                        underlaysList.AddValue(value);
                     }
 
-                    if (!value.TryGetValueAsDreamList(out var underlayList)) {
-                        underlayList = _objectTree.CreateList();
-                    }
-
-                    underlayList.ValueAssigned += UnderlayValueAssigned;
-                    underlayList.BeforeValueRemoved += UnderlayBeforeValueRemoved;
-                    _atomManager.UnderlaysListToAtom[underlayList] = dreamObject;
-                    dreamObject.SetVariableValue(varName, new DreamValue(underlayList));
                     break;
                 }
                 case "verbs": {
@@ -117,7 +116,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     filterList.Cut();
 
                     if (value.TryGetValueAsDreamList(out var valueList)) {
-                        // TODO: This should maybe postpone UpdateAppearance until after everything is added
+                        // TODO: This should postpone UpdateAppearance until after everything is added
                         foreach (DreamValue filterValue in valueList.GetValues()) {
                             filterList.AddValue(filterValue);
                         }
@@ -156,6 +155,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     return new DreamValue(matrix);
                 case "verbs":
                     return new DreamValue(VerbLists[dreamObject]);
+                case "overlays":
+                    return new DreamValue(_overlayLists[dreamObject]);
+                case "underlays":
+                    return new DreamValue(_underlayLists[dreamObject]);
                 case "filters":
                     return new DreamValue(_filterLists[dreamObject]);
                 default:
@@ -167,82 +170,6 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
 
                     return ParentType?.OnVariableGet(dreamObject, varName, value) ?? value;
             }
-        }
-
-        private IconAppearance CreateOverlayAppearance(DreamObject atom, DreamValue value) {
-            IconAppearance overlay;
-
-            if (value.TryGetValueAsString(out var iconState)) {
-                overlay = new IconAppearance() {
-                    IconState = iconState
-                };
-            } else if (_atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
-                overlay = overlayAppearance;
-            } else {
-                return new IconAppearance(); // Not a valid overlay, use a default appearance
-            }
-
-            if (overlay.Icon == null) {
-                overlay.Icon = _atomManager.MustGetAppearance(atom)?.Icon;
-            }
-
-            return overlay;
-        }
-
-        private void OverlayValueAssigned(DreamList overlayList, DreamValue key, DreamValue value) {
-            if (value == DreamValue.Null) return;
-            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
-
-            DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
-
-            _atomManager.UpdateAppearance(atom, appearance => {
-                IconAppearance overlay = CreateOverlayAppearance(atom, value);
-                uint id = _appearanceSystem.AddAppearance(overlay);
-
-                appearance.Overlays.Add(id);
-            });
-        }
-
-        private void OverlayBeforeValueRemoved(DreamList overlayList, DreamValue key, DreamValue value) {
-            if (value == DreamValue.Null) return;
-            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
-
-            DreamObject atom = _atomManager.OverlaysListToAtom[overlayList];
-            IconAppearance overlayAppearance = CreateOverlayAppearance(atom, value);
-            uint? overlayAppearanceId = _appearanceSystem.GetAppearanceId(overlayAppearance);
-            if (overlayAppearanceId == null) return;
-
-            _atomManager.UpdateAppearance(atom, appearance => {
-                appearance.Overlays.Remove(overlayAppearanceId.Value);
-            });
-        }
-
-        private void UnderlayValueAssigned(DreamList underList, DreamValue key, DreamValue value) {
-            if (value == DreamValue.Null) return;
-            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
-
-            DreamObject atom = _atomManager.UnderlaysListToAtom[underList];
-
-            _atomManager.UpdateAppearance(atom, appearance => {
-                IconAppearance underlay = CreateOverlayAppearance(atom, value);
-                uint id = _appearanceSystem.AddAppearance(underlay);
-
-                appearance.Underlays.Add(id);
-            });
-        }
-
-        private void UnderlayBeforeValueRemoved(DreamList underlayList, DreamValue key, DreamValue value) {
-            if (value == DreamValue.Null) return;
-            if (_appearanceSystem == null && !_entitySystemManager.TryGetEntitySystem(out _appearanceSystem)) return;
-
-            DreamObject atom = _atomManager.UnderlaysListToAtom[underlayList];
-            IconAppearance underlayAppearance = CreateOverlayAppearance(atom, value);
-            uint? underlayAppearanceId = _appearanceSystem.GetAppearanceId(underlayAppearance);
-            if (underlayAppearanceId == null) return;
-
-            _atomManager.UpdateAppearance(atom, appearance => {
-                appearance.Underlays.Remove(underlayAppearanceId.Value);
-            });
         }
     }
 }

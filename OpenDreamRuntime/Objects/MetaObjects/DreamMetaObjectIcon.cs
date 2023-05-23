@@ -75,8 +75,7 @@ sealed class DreamMetaObjectIcon : IDreamMetaObject {
         return icon;
     }
 
-    public static DreamIcon TurnIcon(DreamIcon icon, float angle) {
+    public static void TurnIcon(DreamIcon icon, float angle) {
         //TODO: actually rotate the icon clockwise x degrees
-        return icon;
     }
 }

@@ -38,7 +38,6 @@ namespace OpenDreamRuntime {
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
         public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
-        public Dictionary<DreamObject, DreamList> AreaContents { get; set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; set; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
         public HashSet<DreamObject> Datums { get; set; } = new();
@@ -108,7 +107,6 @@ namespace OpenDreamRuntime {
             _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
-            //TODO: Empty or invalid _compiledJson.Interface should return default interface - see issue #851
 
             _objectTree.LoadJson(json);
 

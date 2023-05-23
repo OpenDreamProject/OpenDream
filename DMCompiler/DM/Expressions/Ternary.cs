@@ -3,7 +3,7 @@ using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x ? y : z
-    class Ternary : DMExpression {
+    sealed class Ternary : DMExpression {
         private readonly DMExpression _a, _b, _c;
 
         public Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : base(location) {
@@ -40,7 +40,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // var in x to y
-    class InRange : DMExpression {
+    sealed class InRange : DMExpression {
         private readonly DMExpression _var, _start, _end;
 
         public InRange(Location location, DMExpression var, DMExpression start, DMExpression end) : base(location) {

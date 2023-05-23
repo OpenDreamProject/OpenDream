@@ -5,12 +5,11 @@ using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface.Prompts;
 
-sealed class ListPrompt : InputWindow {
+internal sealed class ListPrompt : InputWindow {
     private readonly ItemList _itemList;
 
-    public ListPrompt(int promptId, String title, String message, String defaultValue, bool canCancel, string[] values) : base(
-        promptId, title, message, defaultValue, canCancel) {
-
+    public ListPrompt(string title, string message, string defaultValue, bool canCancel, string[] values,
+        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _itemList = new();
 
         bool foundDefault = false;

@@ -1,3 +1,15 @@
+#define TURF_PLANE -10
+
+/obj/plane_master
+	appearance_flags = PLANE_MASTER
+	
+/obj/plane_master/turf
+	screen_loc = "1,1"
+	plane = TURF_PLANE
+
+	New()
+		src.filters = filter(type="displace", size=100, icon=icon('icons/displace.dmi',"lense"))					
+
 /mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
@@ -6,7 +18,7 @@
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
 	layer = TURF_LAYER
-	plane = -1
+	plane = TURF_PLANE
 
 /turf/blue
 	icon_state = "turf_blue"
@@ -113,7 +125,7 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "color", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "all")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "color", "displace", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "drop_shadow")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"
@@ -121,11 +133,11 @@
 				if("alpha")
 					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"))
 				if("alpha-swap")
-					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_SWAP)					
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_SWAP)
 				if("alpha-inverse")
 					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_INVERSE)
 				if("alpha-both")
-					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_INVERSE|MASK_SWAP)					
+					src.filters = filter(type="alpha", icon=icon('icons/objects.dmi',"checker"), flags=MASK_INVERSE|MASK_SWAP)
 				if("outline")
 					src.filters = filter(type="outline", size=1, color=rgb(255,0,0))
 				if("greyscale")
@@ -138,12 +150,14 @@
 					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)))
 				if("color")
 					src.filters = filter(type="color", color=list("#de0000","#000000","#00ad00"))
-				if("all")
-					src.filters = list(filter(type="greyscale"), filter(type="outline", size=1, color=rgb(255,0,0)), filter(type="blur", size=2), filter(type="alpha", icon=icon('icons/objects.dmi',"checker")))
-			usr << "Applied [selected] filter"	
+				if("drop_shadow")
+					src.filters = filter(type="drop_shadow", size=2)
+				if("displace")
+					src.client.screen += new /obj/plane_master/turf 
+			usr << "Applied [selected] filter"
 
 	verb/toggle_see_invisibility()
-		if(src.see_invisible == 0)	
+		if(src.see_invisible == 0)
 			src.see_invisible = 101
 			usr << "now seeing invisible things"
 		else

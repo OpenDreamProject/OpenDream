@@ -6,11 +6,11 @@ using System.Collections.Generic;
 using DMCompiler.Compiler.DM;
 
 namespace DMCompiler.Compiler.DMM {
-    class DMMParser : DMParser {
+    sealed class DMMParser : DMParser {
         private int _cellNameLength = -1;
         private HashSet<DreamPath> _skippedTypes = new();
 
-        public DMMParser(DMLexer lexer) : base(lexer, true) { }
+        public DMMParser(DMLexer lexer) : base(lexer) { }
 
         public DreamMapJson ParseMap() {
             DreamMapJson map = new DreamMapJson();
@@ -19,7 +19,7 @@ namespace DMCompiler.Compiler.DMM {
 
             bool parsing = true;
             while (parsing) {
-                CellDefinitionJson cellDefinition = ParseCellDefinition();
+                CellDefinitionJson? cellDefinition = ParseCellDefinition();
                 if (cellDefinition != null) {
                     if (_cellNameLength == -1) _cellNameLength = cellDefinition.Name.Length;
                     else if (cellDefinition.Name.Length != _cellNameLength) Error("Invalid cell definition name");
@@ -27,7 +27,7 @@ namespace DMCompiler.Compiler.DMM {
                     map.CellDefinitions.Add(cellDefinition.Name, cellDefinition);
                 }
 
-                MapBlockJson mapBlock = ParseMapBlock();
+                MapBlockJson? mapBlock = ParseMapBlock();
                 if (mapBlock != null) {
                     int maxX = mapBlock.X + mapBlock.Width - 1;
                     int maxY = mapBlock.Y + mapBlock.Height - 1;
@@ -45,7 +45,7 @@ namespace DMCompiler.Compiler.DMM {
             return map;
         }
 
-        public CellDefinitionJson ParseCellDefinition() {
+        public CellDefinitionJson? ParseCellDefinition() {
             Token currentToken = Current();
 
             if (Check(TokenType.DM_String)) {
@@ -53,7 +53,7 @@ namespace DMCompiler.Compiler.DMM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
 
                 CellDefinitionJson cellDefinition = new CellDefinitionJson((string)currentToken.Value);
-                DMASTPath objectType = Path();
+                DMASTPath? objectType = Path();
                 while (objectType != null) {
                     bool skipType = !DMObjectTree.TryGetTypeId(objectType.Path, out int typeId);
                     if (skipType && _skippedTypes.Add(objectType.Path)) {
@@ -63,10 +63,10 @@ namespace DMCompiler.Compiler.DMM {
                     MapObjectJson mapObject = new MapObjectJson(typeId);
 
                     if (Check(TokenType.DM_LeftCurlyBracket)) {
-                        DMASTStatement statement = Statement(requireDelimiter: false);
+                        DMASTStatement? statement = Statement(requireDelimiter: false);
 
                         while (statement != null) {
-                            DMASTObjectVarOverride varOverride = statement as DMASTObjectVarOverride;
+                            DMASTObjectVarOverride? varOverride = statement as DMASTObjectVarOverride;
                             if (varOverride == null) Error("Expected a var override");
                             if (!varOverride.ObjectPath.Equals(DreamPath.Root)) DMCompiler.ForcedError(statement.Location, $"Invalid var name '{varOverride.VarName}' in DMM on type {objectType.Path}");
                             DMExpression value = DMExpression.Create(DMObjectTree.GetDMObject(objectType.Path, false), null, varOverride.Value);
@@ -110,7 +110,7 @@ namespace DMCompiler.Compiler.DMM {
             }
         }
 
-        public MapBlockJson ParseMapBlock() {
+        public MapBlockJson? ParseMapBlock() {
             (int X, int Y, int Z)? coordinates = Coordinates();
 
             if (coordinates.HasValue) {
@@ -147,13 +147,13 @@ namespace DMCompiler.Compiler.DMM {
 
         private (int X, int Y, int Z)? Coordinates() {
             if (Check(TokenType.DM_LeftParenthesis)) {
-                DMASTConstantInteger x = Constant() as DMASTConstantInteger;
+                DMASTConstantInteger? x = Constant() as DMASTConstantInteger;
                 if (x == null) Error("Expected an integer");
                 Consume(TokenType.DM_Comma, "Expected ','");
-                DMASTConstantInteger y = Constant() as DMASTConstantInteger;
+                DMASTConstantInteger? y = Constant() as DMASTConstantInteger;
                 if (y == null) Error("Expected an integer");
                 Consume(TokenType.DM_Comma, "Expected ','");
-                DMASTConstantInteger z = Constant() as DMASTConstantInteger;
+                DMASTConstantInteger? z = Constant() as DMASTConstantInteger;
                 if (z == null) Error("Expected an integer");
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
 

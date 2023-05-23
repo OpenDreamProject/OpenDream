@@ -71,14 +71,14 @@ namespace DMCompiler.Compiler.DM {
 
         /// <summary> Small helper function for <see cref="ExpressionFromString"/>, for macros that require a preceding expression in the string.</summary>
         /// <returns><see langword="true"/> if error occurs.</returns>
-        private bool CheckInterpolation(bool hasSeenNonRefInterpolation, List<DMASTExpression>? interpolationValues, string mack)
-        {
+        private bool CheckInterpolation(Location loc, bool hasSeenNonRefInterpolation, List<DMASTExpression?>? interpolationValues, string mack) {
             if (interpolationValues == null || interpolationValues.Count == 0) {
-                Error($"Macro \"\\{mack}\" requires preceding interpolated expression");
+                DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, loc, $"Macro \"\\{mack}\" requires preceding interpolated expression");
                 return true;
             }
+
             if(!hasSeenNonRefInterpolation) { // More elaborate error for a more elaborate situation
-                Error($"Macro \"\\{mack}\" requires preceding interpolated expression that is not a reference");
+                DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, loc, $"Macro \"\\{mack}\" requires preceding interpolated expression that is not a reference");
                 return true;
             }
 
@@ -90,11 +90,10 @@ namespace DMCompiler.Compiler.DM {
         /// (Shunted into a helper because this is a quite long and arduous block of code)
         /// </summary>
         /// <returns>Either a <see cref="DMASTConstantString"/> or a <see cref="DMASTStringFormat"/>.</returns>
-        private DMASTExpression ExpressionFromString(Token constantToken)
-        {
+        private DMASTExpression ExpressionFromString(Token constantToken) {
             string tokenValue = (string)constantToken.Value;
             StringBuilder stringBuilder = new StringBuilder(tokenValue.Length); // The actual text (but includes special codepoints for macros and markers for where interps go)
-            List<DMASTExpression>? interpolationValues = null;
+            List<DMASTExpression?>? interpolationValues = null;
             Advance();
 
             int bracketNesting = 0;
@@ -102,65 +101,52 @@ namespace DMCompiler.Compiler.DM {
             StringFormatEncoder.FormatSuffix currentInterpolationType = StringFormatEncoder.InterpolationDefault;
             string usedPrefixMacro = null; // A string holding the name of the last prefix macro (\the, \a etc.) used, for error presentation poipoises
             bool hasSeenNonRefInterpolation = false;
-            for (int i = 0; i < tokenValue.Length; i++)
-            {
+            for (int i = 0; i < tokenValue.Length; i++) {
                 char c = tokenValue[i];
 
-
-                if (bracketNesting > 0)
-                {
+                if (bracketNesting > 0) {
                     insideBrackets!.Append(c); // should never be null
                 }
 
-                switch (c)
-                {
+                switch (c) {
                     case '[':
                         bracketNesting++;
                         insideBrackets ??= new StringBuilder(tokenValue.Length - stringBuilder.Length);
-                        interpolationValues ??= new List<DMASTExpression>(1);
+                        interpolationValues ??= new List<DMASTExpression?>(1);
                         break;
-                    case ']' when bracketNesting > 0:
-                        {
+                    case ']' when bracketNesting > 0: {
                             bracketNesting--;
 
-                            if (bracketNesting == 0)
-                            { //End of expression
+                            if (bracketNesting == 0) { //End of expression
                                 insideBrackets.Remove(insideBrackets.Length - 1, 1); //Remove the ending bracket
 
                                 string insideBracketsText = insideBrackets?.ToString();
-                                if (!String.IsNullOrWhiteSpace(insideBracketsText))
-                                {
+                                if (!String.IsNullOrWhiteSpace(insideBracketsText)) {
                                     DMPreprocessorLexer preprocLexer = new DMPreprocessorLexer(null, constantToken.Location.SourceFile, insideBracketsText);
                                     List<Token> preprocTokens = new();
                                     Token preprocToken;
-                                    do
-                                    {
+                                    do {
                                         preprocToken = preprocLexer.GetNextToken();
                                         preprocToken.Location = constantToken.Location;
                                         preprocTokens.Add(preprocToken);
                                     } while (preprocToken.Type != TokenType.EndOfFile);
 
                                     DMLexer expressionLexer = new DMLexer(constantToken.Location.SourceFile, preprocTokens);
-                                    DMParser expressionParser = new DMParser(expressionLexer, _unimplementedWarnings);
+                                    DMParser expressionParser = new DMParser(expressionLexer);
 
-                                    DMASTExpression expression = null;
-                                    try
-                                    {
+                                    DMASTExpression? expression = null;
+                                    try {
                                         expressionParser.Whitespace(true);
                                         expression = expressionParser.Expression();
                                         if (expression == null) Error("Expected an expression");
                                         if (expressionParser.Current().Type != TokenType.EndOfFile) Error("Expected end of embedded statement");
-                                    }
-                                    catch (CompileErrorException e)
-                                    {
+                                    } catch (CompileErrorException e) {
                                         Emissions.Add(e.Error);
                                     }
 
                                     if (expressionParser.Emissions.Count > 0) Emissions.AddRange(expressionParser.Emissions);
                                     interpolationValues.Add(expression);
-                                }
-                                else
-                                {
+                                } else {
                                     interpolationValues.Add(null);
                                 }
                                 hasSeenNonRefInterpolation = hasSeenNonRefInterpolation || currentInterpolationType != StringFormatEncoder.FormatSuffix.ReferenceOfValue;
@@ -172,28 +158,23 @@ namespace DMCompiler.Compiler.DM {
 
                             break;
                         }
-                    case '\\' when bracketNesting == 0:
-                        {
+                    case '\\' when bracketNesting == 0: {
                             string escapeSequence = String.Empty;
 
-                            if (i == tokenValue.Length)
-                            {
+                            if (i == tokenValue.Length) {
                                 Error("Invalid escape sequence");
                             }
                             c = tokenValue[++i];
 
-                            if (char.IsLetter(c))
-                            {
-                                while (i < tokenValue.Length && char.IsLetter(tokenValue[i]))
-                                {
+                            if (char.IsLetter(c)) {
+                                while (i < tokenValue.Length && char.IsLetter(tokenValue[i])) {
                                     escapeSequence += tokenValue[i++];
                                 }
                                 i--;
 
                                 bool skipSpaces = false;
                                 bool consumeSpaceCharacter = false;
-                                switch (escapeSequence)
-                                {
+                                switch (escapeSequence) {
                                     case "Proper": // Users can have a little case-insensitivity, as a treat
                                     case "Improper":
                                         Warning($"Escape sequence \"\\{escapeSequence}\" should not be capitalized. Coercing macro to \"\\{escapeSequence.ToLower()}");
@@ -211,6 +192,14 @@ namespace DMCompiler.Compiler.DM {
                                             stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.Proper));
                                         else
                                             stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.Improper));
+                                        break;
+                                    case "roman":
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerRoman));
+                                        break;
+                                    case "Roman":
+                                        currentInterpolationType = StringFormatEncoder.FormatSuffix.StringifyNoArticle;
+                                        stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperRoman));
                                         break;
 
                                     case "ref":
@@ -248,21 +237,21 @@ namespace DMCompiler.Compiler.DM {
 
                                     case "He":
                                     case "She":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperSubjectPronoun));
                                         break;
                                     case "he":
                                     case "she":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerSubjectPronoun));
                                         break;
 
                                     case "His":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "His")) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, "His")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessiveAdjective));
                                         break;
                                     case "his":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "his")) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, "his")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessiveAdjective));
                                         break;
 
@@ -270,7 +259,7 @@ namespace DMCompiler.Compiler.DM {
                                         Warning("\"\\Him\" is not an available text macro. Coercing macro into \"\\him\"");
                                         goto case "him"; // Fallthrough!
                                     case "him":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "him")) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, "him")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ObjectPronoun));
                                         break;
 
@@ -281,64 +270,56 @@ namespace DMCompiler.Compiler.DM {
 
                                     case "himself":
                                     case "herself":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, escapeSequence)) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.ReflexivePronoun));
                                         break;
 
                                     case "Hers":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "Hers")) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, "Hers")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.UpperPossessivePronoun));
                                         break;
                                     case "hers":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "hers")) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, "hers")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.LowerPossessivePronoun));
                                         break;
                                     //Plurals, ordinals, etc
                                     //(things that hug, as a suffix, the [] that they reference)
                                     case "s":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "s")) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, "s")) break;
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.PluralSuffix));
                                         break;
                                     case "th":
-                                        if (CheckInterpolation(hasSeenNonRefInterpolation, interpolationValues, "th")) break;
+                                        if (CheckInterpolation(constantToken.Location, hasSeenNonRefInterpolation, interpolationValues, "th")) break;
                                         // TODO: this should error if not DIRECTLY after an expression ([]\s vs []AA\s)
                                         stringBuilder.Append(StringFormatEncoder.Encode(StringFormatEncoder.FormatSuffix.OrdinalIndicator));
                                         break;
                                     default:
-                                        if (escapeSequence.StartsWith("n"))
-                                        {
+                                        if (escapeSequence.StartsWith("n")) {
                                             stringBuilder.Append('\n');
                                             stringBuilder.Append(escapeSequence.Skip(1).ToArray());
-                                        }
-                                        else if (escapeSequence.StartsWith("t"))
-                                        {
+                                        } else if (escapeSequence.StartsWith("t")) {
                                             stringBuilder.Append('\t');
                                             stringBuilder.Append(escapeSequence.Skip(1).ToArray());
-                                        }
-                                        else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) // This only exists to allow unimplements to fallthrough w/o a direct error
-                                        {
+                                        } else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) { // This only exists to allow unimplements to fallthrough w/o a direct error
                                             Error($"Invalid escape sequence \"\\{escapeSequence}\"");
                                         }
 
                                         break;
                                 }
 
-                                if (skipSpaces)
-                                {
+                                if (skipSpaces) {
                                     // Note that some macros in BYOND require a single/zero space between them and the []
                                     // This doesn't replicate that
                                     while (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
                                 }
-                                if(consumeSpaceCharacter)
-                                {
+
+                                if(consumeSpaceCharacter) {
                                     if (i < tokenValue.Length - 1 && tokenValue[i + 1] == ' ') i++;
                                 }
                             }
-                            else
-                            {
+                            else {
                                 escapeSequence += c;
-                                switch (escapeSequence)
-                                {
+                                switch (escapeSequence) {
                                     case "[":
                                     case "]":
                                     case "<":
@@ -358,10 +339,8 @@ namespace DMCompiler.Compiler.DM {
 
                             break;
                         }
-                    default:
-                        {
-                            if (bracketNesting == 0)
-                            {
+                    default: {
+                            if (bracketNesting == 0) {
                                 stringBuilder.Append(c);
                             }
 
@@ -373,16 +352,18 @@ namespace DMCompiler.Compiler.DM {
             if (bracketNesting > 0) Error("Expected ']'");
 
             string stringValue = stringBuilder.ToString();
-            if (interpolationValues is null)
-            {
+            if (interpolationValues is null) {
                 if (usedPrefixMacro != null) // FIXME: \the should not compiletime here, instead becoming a tab character followed by "he", when in parity mode
-                    Error($"Macro \"\\{usedPrefixMacro}\" requires interpolated expression");
+                    DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, constantToken.Location,
+                        $"Macro \"\\{usedPrefixMacro}\" requires interpolated expression");
                 return new DMASTConstantString(constantToken.Location, stringValue);
             }
-            if(currentInterpolationType != StringFormatEncoder.InterpolationDefault) // this implies a prefix tried to modify a [] that never ended up existing after it
-            {
-                Error($"Macro \"\\{usedPrefixMacro}\" must precede an interpolated expression");
+
+            if(currentInterpolationType != StringFormatEncoder.InterpolationDefault) { // this implies a prefix tried to modify a [] that never ended up existing after it
+                DMCompiler.Emit(WarningCode.MissingInterpolatedExpression, constantToken.Location,
+                    $"Macro \"\\{usedPrefixMacro}\" must precede an interpolated expression");
             }
+
             return new DMASTStringFormat(constantToken.Location, stringValue, interpolationValues.ToArray());
         }
     }

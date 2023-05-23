@@ -85,7 +85,7 @@ namespace OpenDreamRuntime {
             Session = session;
 
             Client = client;
-            Client.InitSpawn(new DreamProcArguments(new() { DreamValue.Null }));
+            Client.InitSpawn(new());
         }
 
         public void HandleDisconnection() {
@@ -163,9 +163,9 @@ namespace OpenDreamRuntime {
                 try {
                     var statProc = Client.GetProc("Stat");
 
-                    await state.Call(statProc, Client, Mob, new DreamProcArguments(null));
+                    await state.Call(statProc, Client, Mob);
                     if (Session.Status == SessionStatus.InGame) {
-                        var msg = new MsgUpdateStatPanels() { StatPanels = _statPanels };
+                        var msg = new MsgUpdateStatPanels(_statPanels);
                         Session.ConnectedClient.SendMessage(msg);
                     }
 
@@ -219,13 +219,7 @@ namespace OpenDreamRuntime {
                 src = _dreamManager.LocateRef(srcRef);
             }
 
-            DreamProcArguments topicArguments = new DreamProcArguments(new() {
-                new DreamValue(pTopic.Query),
-                new DreamValue(hrefList),
-                src
-            });
-
-            Client?.SpawnProc("Topic", topicArguments, Mob);
+            Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);
         }
 
 
@@ -279,8 +273,8 @@ namespace OpenDreamRuntime {
         public void HandleCommand(string fullCommand) {
             // TODO: Arguments are a little more complicated than "split by spaces"
             // e.g. strings can be passed
-            string[] args = fullCommand.Split(' ');
-            string command = args[0].ToLowerInvariant().Replace(" ", "-"); // Case-insensitive, dashes instead of spaces
+            string[] args = fullCommand.Split(' ', StringSplitOptions.TrimEntries);
+            string command = args[0].ToLowerInvariant(); // Case-insensitive
 
             switch (command) {
                 //TODO: Maybe move these verbs to DM code?
@@ -299,33 +293,37 @@ namespace OpenDreamRuntime {
                         (DreamObject verbSrc, DreamProc verb) = value;
 
                         DreamThread.Run(fullCommand, async (state) => {
-                            Dictionary<String, DreamValue> arguments = new();
+                            DreamValue[] arguments;
+                            if (verb.ArgumentNames != null) {
+                                arguments = new DreamValue[verb.ArgumentNames.Count];
 
-                            // TODO: this should probably be done on the client, shouldn't it?
-                            if (args.Length == 1) { // No args given; prompt the client for them
-                                for (int i = 0; i < (verb.ArgumentNames?.Count ?? 0); i++) {
-                                    String argumentName = verb.ArgumentNames[i];
-                                    DMValueType argumentType = verb.ArgumentTypes[i];
-                                    DreamValue value = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
-                                        argumentName, defaultValue: String.Empty); // No default value for verbs
+                                // TODO: this should probably be done on the client, shouldn't it?
+                                if (args.Length == 1) { // No args given; prompt the client for them
+                                    for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                                        String argumentName = verb.ArgumentNames[i];
+                                        DMValueType argumentType = verb.ArgumentTypes[i];
+                                        DreamValue argumentValue = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
+                                            argumentName, defaultValue: String.Empty); // No default value for verbs
 
-                                    arguments.Add(argumentName, value);
-                                }
-                            } else { // Attempt to parse the given arguments
-                                for (int i = 0; i < (verb.ArgumentNames?.Count ?? 0); i++) {
-                                    String argumentName = verb.ArgumentNames[i];
-                                    DMValueType argumentType = verb.ArgumentTypes[i];
+                                        arguments[i] = argumentValue;
+                                    }
+                                } else { // Attempt to parse the given arguments
+                                    for (int i = 0; i < verb.ArgumentNames.Count; i++) {
+                                        DMValueType argumentType = verb.ArgumentTypes[i];
 
-                                    if (argumentType == DMValueType.Text) {
-                                        arguments.Add(argumentName, new(args[i+1]));
-                                    } else {
-                                        Logger.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
-                                        return DreamValue.Null;
+                                        if (argumentType == DMValueType.Text) {
+                                            arguments[i] = new(args[i+1]);
+                                        } else {
+                                            Logger.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
+                                            return DreamValue.Null;
+                                        }
                                     }
                                 }
+                            } else {
+                                arguments = Array.Empty<DreamValue>();
                             }
 
-                            await state.Call(verb, verbSrc, Mob, new DreamProcArguments(new(), arguments));
+                            await state.Call(verb, verbSrc, Mob, arguments);
                             return DreamValue.Null;
                         });
                     }

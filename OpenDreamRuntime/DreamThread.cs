@@ -18,6 +18,7 @@ namespace OpenDreamRuntime {
     public abstract class DreamProc {
         public DreamPath OwningType { get; }
         public string Name { get; }
+        public bool IsVerb { get; }
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
         public DreamProc? SuperProc { set; get; }
@@ -32,9 +33,10 @@ namespace OpenDreamRuntime {
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
 
-        protected DreamProc(DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility) {
+        protected DreamProc(DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, bool isVerb = false) {
             OwningType = owningType;
             Name = name;
+            IsVerb = isVerb;
             SuperProc = superProc;
             Attributes = attributes;
             ArgumentNames = argumentNames;
@@ -69,18 +71,17 @@ namespace OpenDreamRuntime {
                     return new DreamValue(VerbName);
                 case "category":
                     return new DreamValue(VerbCategory);
-                case "description":
+                case "desc":
                     return new DreamValue(VerbDesc);
                 case "invisibility":
-                    return new DreamValue(Invisibility);
+                    return new DreamValue((int)Invisibility);
                 default:
                     throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
             }
         }
 
         public override string ToString() {
-            var procElement = (SuperProc == null) ? "proc/" : String.Empty; // Has "proc/" only if it's not an override
-            // TODO: "verb/" proc element
+            var procElement = (SuperProc == null) ? (IsVerb ? "verb/" : "proc/") : String.Empty; // Has "proc/" only if it's not an override
 
             return OwningType == DreamPath.Root ? $"/{procElement}{Name}" : $"{OwningType}/{procElement}{Name}";
         }
@@ -159,7 +160,7 @@ namespace OpenDreamRuntime {
         public virtual void Cancel() {}
 
         public virtual void Dispose() {
-            Thread = null;
+            Thread = null!;
             Result = DreamValue.Null;
             WaitFor = true;
         }
@@ -196,9 +197,9 @@ namespace OpenDreamRuntime {
             Name = name;
         }
 
-        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, DreamProcArguments? arguments) {
+        public static DreamValue Run(DreamProc proc, DreamObject src, DreamObject? usr, params DreamValue[] arguments) {
             var context = new DreamThread(proc.ToString());
-            var state = proc.CreateState(context, src, usr, arguments ?? new DreamProcArguments(null));
+            var state = proc.CreateState(context, src, usr, new DreamProcArguments(arguments));
             context.PushProcState(state);
             return context.Resume();
         }

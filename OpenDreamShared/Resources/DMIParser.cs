@@ -34,8 +34,7 @@ namespace OpenDreamShared.Resources {
             /// <remarks>The default state could also not exist</remarks>
             /// <param name="stateName">The requested state's name</param>
             /// <returns>The requested state, default state, or null</returns>
-            [CanBeNull]
-            public ParsedDMIState GetStateOrDefault(string stateName) {
+            public ParsedDMIState? GetStateOrDefault(string stateName) {
                 if (String.IsNullOrEmpty(stateName) || !States.TryGetValue(stateName, out var state)) {
                     States.TryGetValue(String.Empty, out state);
                 }
@@ -92,7 +91,18 @@ namespace OpenDreamShared.Resources {
             }
 
             public ParsedDMIFrame[] GetFrames(AtomDirection direction = AtomDirection.South) {
-                if (!Directions.ContainsKey(direction)) direction = Directions.Keys.First();
+                // Find another direction to use if this one doesn't exist
+                if (!Directions.ContainsKey(direction)) {
+                    // The diagonal directions attempt to use east/west
+                    if (direction is AtomDirection.Northeast or AtomDirection.Southeast)
+                        direction = AtomDirection.East;
+                    else if (direction is AtomDirection.Northwest or AtomDirection.Southwest)
+                        direction = AtomDirection.West;
+
+                    // Use the south direction if the above still isn't valid
+                    if (!Directions.ContainsKey(direction))
+                        direction = AtomDirection.South;
+                }
 
                 return Directions[direction];
             }

@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Input;
+using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared;
 using Robust.Server.ServerStatus;
@@ -59,6 +60,11 @@ namespace OpenDreamRuntime {
         }
 
         protected override void Dispose(bool disposing) {
+            // Write every savefile to disk
+            foreach (var savefile in DreamMetaObjectSavefile.ObjectToSavefile.Values) {
+                savefile.Flush();
+            }
+
             _dreamManager.Shutdown();
             _debugManager.Shutdown();
         }

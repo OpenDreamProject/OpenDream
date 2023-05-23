@@ -63,9 +63,12 @@ namespace OpenDreamRuntime {
         private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
             switch (e.NewStatus) {
                 case SessionStatus.Connected:
-                    var interfaceResource = _dreamResourceManager.LoadResource(_compiledJson.Interface);
+                    string? interfaceText = null;
+                    if (_compiledJson.Interface != null)
+                        interfaceText = _dreamResourceManager.LoadResource(_compiledJson.Interface).ReadAsString();
+
                     var msgLoadInterface = new MsgLoadInterface() {
-                        InterfaceText = interfaceResource.ReadAsString()
+                        InterfaceText = interfaceText
                     };
 
                     e.Session.ConnectedClient.SendMessage(msgLoadInterface);
@@ -81,9 +84,9 @@ namespace OpenDreamRuntime {
                     break;
                 }
                 case SessionStatus.Disconnected: {
-                    DreamConnection connection = GetConnectionBySession(e.Session);
+                    if (_connections.TryGetValue(e.Session.UserId, out var connection))
+                        connection.HandleDisconnection();
 
-                    connection.HandleDisconnection();
                     break;
                 }
             }

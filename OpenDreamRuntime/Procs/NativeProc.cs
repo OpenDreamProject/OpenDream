@@ -23,9 +23,16 @@ namespace OpenDreamRuntime.Procs {
 
                 argumentNames.Add(parameterAttribute.Name);
                 if (parameterAttribute.DefaultValue != default) {
-                    if (defaultArgumentValues == null) defaultArgumentValues = new Dictionary<string, DreamValue>();
+                    defaultArgumentValues ??= new Dictionary<string, DreamValue>(1);
+                    DreamValue defaultValue = parameterAttribute.DefaultValue switch {
+                        // These are the only types you should be able to set in an attribute
+                        int intValue => new(intValue),
+                        float floatValue => new(floatValue),
+                        string stringValue => new(stringValue),
+                        _ => throw new Exception($"Invalid default value {parameterAttribute.DefaultValue}")
+                    };
 
-                    defaultArgumentValues.Add(parameterAttribute.Name, new DreamValue(parameterAttribute.DefaultValue));
+                    defaultArgumentValues.Add(parameterAttribute.Name, defaultValue);
                 }
             }
 
@@ -37,7 +44,10 @@ namespace OpenDreamRuntime.Procs {
 
             public DreamObject? Src;
             public DreamObject? Usr;
-            public DreamProcArguments Arguments;
+
+            public DreamProcArguments Arguments => new(_arguments.AsSpan(0, _argumentCount));
+            private readonly DreamValue[] _arguments = new DreamValue[128];
+            private int _argumentCount;
 
             private NativeProc _proc = default!;
             public override NativeProc Proc => _proc;
@@ -54,7 +64,8 @@ namespace OpenDreamRuntime.Procs {
                 _proc = proc;
                 Src = src;
                 Usr = usr;
-                Arguments = arguments;
+                arguments.Values.CopyTo(_arguments);
+                _argumentCount = arguments.Count;
             }
 
             public override ProcStatus Resume() {
@@ -70,16 +81,21 @@ namespace OpenDreamRuntime.Procs {
             public override void Dispose() {
                 base.Dispose();
 
+                _argumentCount = 0;
                 Src = null!;
                 Usr = null!;
-                Arguments = default;
                 _proc = null!;
 
                 Pool.Push(this);
             }
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            public DreamValue GetArgument(int argumentPosition, string argumentName) => Arguments.GetArgument(argumentPosition, argumentName);
+            public DreamValue GetArgument(int argumentPosition, string argumentName) {
+                if (argumentPosition < _argumentCount && _arguments[argumentPosition] != DreamValue.Null)
+                    return _arguments[argumentPosition];
+
+                return _proc._defaultArgumentValues?.TryGetValue(argumentName, out var argValue) == true ? argValue : DreamValue.Null;
+            }
         }
 
         private readonly IDreamManager _dreamManager;
@@ -88,7 +104,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly DreamResourceManager _resourceManager;
         private readonly IDreamObjectTree _objectTree;
 
-        private readonly Dictionary<string, DreamValue> _defaultArgumentValues;
+        private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly HandlerFn _handler;
 
         public NativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
@@ -104,19 +120,6 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public override State CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-            if (_defaultArgumentValues != null) {
-                var newNamedArguments = arguments.NamedArguments;
-                foreach (KeyValuePair<string, DreamValue> defaultArgumentValue in _defaultArgumentValues) {
-                    int argumentIndex = ArgumentNames.IndexOf(defaultArgumentValue.Key);
-
-                    if (arguments.GetArgument(argumentIndex, defaultArgumentValue.Key) == DreamValue.Null) {
-                        newNamedArguments ??= new();
-                        newNamedArguments.Add(defaultArgumentValue.Key, defaultArgumentValue.Value);
-                    }
-                }
-                arguments = new DreamProcArguments(arguments.OrderedArguments, newNamedArguments);
-            }
-
             if (!State.Pool.TryPop(out var state)) {
                 state = new State();
             }

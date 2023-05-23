@@ -54,6 +54,14 @@ namespace OpenDreamRuntime.Objects {
         public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
+        public virtual DreamValue Initial(string name) {
+            return ObjectDefinition.Variables[name];
+        }
+
+        public virtual bool IsSaved(string name) {
+            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
+            return ObjectDefinition.Variables.ContainsKey(name) && !ObjectDefinition.GlobalVariables.ContainsKey(name);
+        }
 
         public bool HasVariable(string name) {
             if(Deleted){
@@ -140,16 +148,13 @@ namespace OpenDreamRuntime.Objects {
             return ObjectDefinition.TryGetProc(procName, out proc);
         }
 
-        public DreamValue SpawnProc(string procName, DreamProcArguments arguments, DreamObject? usr = null) {
+        public DreamValue SpawnProc(string procName, DreamObject? usr = null, params DreamValue[] arguments) {
             if(Deleted){
                 throw new Exception("Cannot spawn proc on a deleted object");
             }
+
             var proc = GetProc(procName);
             return DreamThread.Run(proc, this, usr, arguments);
-        }
-
-        public DreamValue SpawnProc(string procName, DreamObject? usr = null) {
-            return SpawnProc(procName, new DreamProcArguments(null), usr);
         }
 
         /// <returns>true if \proper noun formatting should be used, false if \improper</returns>
@@ -196,16 +201,21 @@ namespace OpenDreamRuntime.Objects {
         /// Get the display name of this object, WITH ALL FORMATTING EVALUATED OR REMOVED!
         /// </summary>
         public string GetDisplayName(StringFormatEncoder.FormatSuffix? suffix = null) {
+            // /client is a little special and will return its key var
+            // TODO: Maybe MetaDreamObject should be handling GetDisplayName()?
+            if (IsSubtypeOf(ObjectDefinition.ObjectTree.Client) && TryGetVariable("key", out var keyVar) && keyVar.TryGetValueAsString(out var key))
+                return key;
+
             if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
+
             bool isProper = StringIsProper(name);
             name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
-            if(!isProper)
-            {
+            if(!isProper) {
                 return name;
             }
-            switch(suffix)
-            {
+
+            switch(suffix) {
                 case StringFormatEncoder.FormatSuffix.UpperDefiniteArticle:
                     return isProper ? name : $"The {name}";
                 case StringFormatEncoder.FormatSuffix.LowerDefiniteArticle:
@@ -218,8 +228,7 @@ namespace OpenDreamRuntime.Objects {
         /// <summary>
         /// Similar to <see cref="GetDisplayName"/> except it just returns the name as plaintext, with formatting removed. No article or anything.
         /// </summary>
-        public string GetNameUnformatted()
-        {
+        public string GetNameUnformatted() {
             if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
                 return ObjectDefinition?.Type.ToString() ?? String.Empty;
             return StringFormatEncoder.RemoveFormatting(name);

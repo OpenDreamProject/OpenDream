@@ -104,10 +104,10 @@ namespace OpenDreamClient.Rendering {
                 var protoManager = IoCManager.Resolve<IPrototypeManager>();
 
                 instance = protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
-
+                IRenderTexture renderSourceTexture;
                 switch (filter) {
                     case DreamFilterAlpha alpha:
-                        if(!String.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out var renderSourceTexture))
+                        if(!String.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out renderSourceTexture))
                             instance.SetParameter("mask_texture", renderSourceTexture.Texture);
                         else if(alpha.Icon != 0){
                             _dreamResourceManager.LoadResourceAsync<DMIResource>(alpha.Icon, (DMIResource rsc) => {
@@ -136,8 +136,26 @@ namespace OpenDreamClient.Rendering {
                         break;
                     }
                     case DreamFilterDisplace displace:
+                        if(!String.IsNullOrEmpty(displace.RenderSource) && renderSourceLookup.TryGetValue(displace.RenderSource, out renderSourceTexture))
+                            instance.SetParameter("displacement_map", renderSourceTexture.Texture);
+                        else if(displace.Icon != 0){
+                            _dreamResourceManager.LoadResourceAsync<DMIResource>(displace.Icon, (DMIResource rsc) => {
+                                    instance.SetParameter("displacement_map", rsc.Texture);
+                                });
+                        }
+                        else{
+                            instance.SetParameter("displacement_map", Texture.Transparent);
+                        }
+                        instance.SetParameter("size", displace.Size);
+                        instance.SetParameter("x", displace.X);
+                        instance.SetParameter("y", displace.Y);
                         break;
                     case DreamFilterDropShadow dropShadow:
+                        instance.SetParameter("size", dropShadow.Size);
+                        instance.SetParameter("x", dropShadow.X);
+                        instance.SetParameter("y", dropShadow.Y);
+                        instance.SetParameter("shadow_color", dropShadow.Color);
+                        // TODO: offset
                         break;
                     case DreamFilterLayer layer:
                         break;

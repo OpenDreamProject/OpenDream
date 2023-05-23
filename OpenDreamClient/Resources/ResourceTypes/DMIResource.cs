@@ -79,10 +79,20 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             }
 
             public AtlasTexture[] GetFrames(AtomDirection direction) {
-                if (!Frames.TryGetValue(direction, out AtlasTexture[] frames))
-                    frames = Frames[AtomDirection.South];
+                // Find another direction to use if this one doesn't exist
+                if (!Frames.ContainsKey(direction)) {
+                    // The diagonal directions attempt to use east/west
+                    if (direction is AtomDirection.Northeast or AtomDirection.Southeast)
+                        direction = AtomDirection.East;
+                    else if (direction is AtomDirection.Northwest or AtomDirection.Southwest)
+                        direction = AtomDirection.West;
 
-                return frames;
+                    // Use the south direction if the above still isn't valid
+                    if (!Frames.ContainsKey(direction))
+                        direction = AtomDirection.South;
+                }
+
+                return Frames[direction];
             }
         }
 

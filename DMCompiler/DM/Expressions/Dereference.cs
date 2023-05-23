@@ -1,183 +1,325 @@
+using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using System;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
+    // x[y][z]
+    // x.f().y.g()[2]
+    // etc.
     class Dereference : LValue {
-        // Kind of a lazy port
-        DMExpression _expr;
-        public readonly string PropertyName;
-        bool _conditional;
+        public struct Operation {
+            public DMASTDereference.OperationKind Kind;
 
-        public override DreamPath? Path => _path;
-        DreamPath? _path;
+            // Field*, Call*
+            public string Identifier;
 
-        internal DMExpression Expr => _expr;
+            // Field*
+            public int? GlobalId;
 
-        public static bool DirectConvertable(DMExpression expr, DMASTDereference astNode) {
-            switch (astNode.Expression) {
-                case DMASTDereference deref when deref.Type == DMASTDereference.DereferenceType.Search:
-                case DMASTProcCall when expr.Path == null:
-                case DMASTDereferenceProc:
-                case DMASTList:
-                case DMASTListIndex:
-                case DMASTTernary:
-                case DMASTBinaryAnd:
-                    return true;
-                case DMASTDereference deref when expr is Dereference _deref:
-                    return DirectConvertable(_deref._expr, deref);
-                default: return false;
+            // Index*
+            public DMExpression Index;
+
+            // Call*
+            public ArgumentList Parameters;
+
+            public DreamPath? Path;
+        }
+
+        private readonly DMExpression _expression;
+        private readonly Operation[] _operations;
+
+        public override DreamPath? Path { get; }
+        public override DreamPath? NestedPath { get; }
+
+        public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
+            : base(location, null) {
+            _expression = expression;
+            _operations = operations;
+            Path = path;
+
+            if (_operations.Length == 0) {
+                throw new InvalidOperationException("deref expression has no operations");
+            }
+
+            NestedPath = _operations[^1].Path;
+        }
+
+        private void ShortCircuitHandler(DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            switch (shortCircuitMode) {
+                case ShortCircuitMode.PopNull:
+                    proc.JumpIfNull(endLabel);
+                    break;
+                case ShortCircuitMode.KeepNull:
+                    proc.JumpIfNullNoPop(endLabel);
+                    break;
+                default:
+                    throw new InvalidOperationException();
             }
         }
 
-        public Dereference(Location location, DreamPath? path, DMExpression expr, bool conditional, string propertyName)
-            : base(location, null)
-        {
-            _expr = expr;
-            _conditional = conditional;
-            PropertyName = propertyName;
-            _path = path;
+        private void EmitOperation(DMObject dmObject, DMProc proc, ref Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
+            switch (operation.Kind) {
+                case DMASTDereference.OperationKind.Field:
+                case DMASTDereference.OperationKind.FieldSearch:
+                    proc.DereferenceField(operation.Identifier);
+                    break;
+
+                case DMASTDereference.OperationKind.FieldSafe:
+                case DMASTDereference.OperationKind.FieldSafeSearch:
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                    proc.DereferenceField(operation.Identifier);
+                    break;
+
+                case DMASTDereference.OperationKind.Index:
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.DereferenceIndex();
+                    break;
+
+                case DMASTDereference.OperationKind.IndexSafe:
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.DereferenceIndex();
+                    break;
+
+                case DMASTDereference.OperationKind.Call:
+                case DMASTDereference.OperationKind.CallSearch: {
+                    var (argumentsType, argumentStackSize) = operation.Parameters.EmitArguments(dmObject, proc);
+                    proc.DereferenceCall(operation.Identifier, argumentsType, argumentStackSize);
+                    break;
+                }
+
+                case DMASTDereference.OperationKind.CallSafe:
+                case DMASTDereference.OperationKind.CallSafeSearch: {
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                    var (argumentsType, argumentStackSize) = operation.Parameters.EmitArguments(dmObject, proc);
+                    proc.DereferenceCall(operation.Identifier, argumentsType, argumentStackSize);
+                    break;
+                }
+
+                case DMASTDereference.OperationKind.Invalid:
+                default:
+                    throw new NotImplementedException();
+            };
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            string endLabel = proc.NewLabelName();
+
+            _expression.EmitPushValue(dmObject, proc);
+
+            foreach (ref var operation in _operations.AsSpan()) {
+                EmitOperation(dmObject, proc, ref operation, endLabel, ShortCircuitMode.KeepNull);
+            }
+
+            proc.AddLabel(endLabel);
+        }
+
+        public override bool CanReferenceShortCircuit() {
+            foreach (var operation in _operations) {
+                switch (operation.Kind) {
+                    case DMASTDereference.OperationKind.FieldSafe:
+                    case DMASTDereference.OperationKind.FieldSafeSearch:
+                    case DMASTDereference.OperationKind.IndexSafe:
+                    case DMASTDereference.OperationKind.CallSafe:
+                    case DMASTDereference.OperationKind.CallSafeSearch:
+                        return true;
+
+                    case DMASTDereference.OperationKind.Field:
+                    case DMASTDereference.OperationKind.FieldSearch:
+                    case DMASTDereference.OperationKind.Index:
+                    case DMASTDereference.OperationKind.Call:
+                    case DMASTDereference.OperationKind.CallSearch:
+                        break;
+
+                    case DMASTDereference.OperationKind.Invalid:
+                    default:
+                        throw new NotImplementedException();
+                }
+            }
+
+            return base.CanReferenceShortCircuit();
+        }
+
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            _expression.EmitPushValue(dmObject, proc);
+
+            // Perform all except for our last operation
+            for (int i = 0; i < _operations.Length - 1; i++) {
+                EmitOperation(dmObject, proc, ref _operations[i], endLabel, shortCircuitMode);
+            }
+
+            ref var operation = ref _operations[^1];
+
+            switch (operation.Kind) {
+                case DMASTDereference.OperationKind.Field:
+                case DMASTDereference.OperationKind.FieldSearch:
+                    return DMReference.CreateField(operation.Identifier);
+
+                case DMASTDereference.OperationKind.FieldSafe:
+                case DMASTDereference.OperationKind.FieldSafeSearch:
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                    return DMReference.CreateField(operation.Identifier);
+
+                case DMASTDereference.OperationKind.Index:
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    return DMReference.ListIndex;
+
+                case DMASTDereference.OperationKind.IndexSafe:
+                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    return DMReference.ListIndex;
+
+                case DMASTDereference.OperationKind.Call:
+                case DMASTDereference.OperationKind.CallSearch:
+                case DMASTDereference.OperationKind.CallSafe:
+                case DMASTDereference.OperationKind.CallSafeSearch:
+                    throw new CompileErrorException(Location, $"attempt to reference proc call result");
+
+                case DMASTDereference.OperationKind.Invalid:
+                default:
+                    throw new NotImplementedException();
+            };
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-            proc.PushString(PropertyName);
-            proc.Initial();
+            string endLabel = proc.NewLabelName();
+
+            _expression.EmitPushValue(dmObject, proc);
+
+            // Perform all except for our last operation
+            for (int i = 0; i < _operations.Length - 1; i++) {
+                EmitOperation(dmObject, proc, ref _operations[i], endLabel, ShortCircuitMode.KeepNull);
+            }
+
+            ref var operation = ref _operations[^1];
+
+            switch (operation.Kind) {
+                case DMASTDereference.OperationKind.Field:
+                case DMASTDereference.OperationKind.FieldSearch:
+                    proc.PushString(operation.Identifier);
+                    proc.Initial();
+                    break;
+
+                case DMASTDereference.OperationKind.FieldSafe:
+                case DMASTDereference.OperationKind.FieldSafeSearch:
+                    proc.JumpIfNullNoPop(endLabel);
+                    proc.PushString(operation.Identifier);
+                    proc.Initial();
+                    break;
+
+                case DMASTDereference.OperationKind.Index:
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.Initial();
+                    break;
+
+                case DMASTDereference.OperationKind.IndexSafe:
+                    proc.JumpIfNullNoPop(endLabel);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.Initial();
+                    break;
+
+                case DMASTDereference.OperationKind.Call:
+                case DMASTDereference.OperationKind.CallSearch:
+                case DMASTDereference.OperationKind.CallSafe:
+                case DMASTDereference.OperationKind.CallSafeSearch:
+                    throw new CompileErrorException(Location, $"attempt to get `initial` of a proc call");
+
+                case DMASTDereference.OperationKind.Invalid:
+                default:
+                    throw new NotImplementedException();
+            };
+
+            proc.AddLabel(endLabel);
         }
 
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-            proc.PushString(PropertyName);
-            proc.IsSaved();
+            string endLabel = proc.NewLabelName();
+
+            _expression.EmitPushValue(dmObject, proc);
+
+            // Perform all except for our last operation
+            for (int i = 0; i < _operations.Length - 1; i++) {
+                EmitOperation(dmObject, proc, ref _operations[i], endLabel, ShortCircuitMode.KeepNull);
+            }
+
+            ref var operation = ref _operations[^1];
+
+            switch (operation.Kind) {
+                case DMASTDereference.OperationKind.Field:
+                case DMASTDereference.OperationKind.FieldSearch:
+                    proc.PushString(operation.Identifier);
+                    proc.IsSaved();
+                    break;
+
+                case DMASTDereference.OperationKind.FieldSafe:
+                case DMASTDereference.OperationKind.FieldSafeSearch:
+                    proc.JumpIfNullNoPop(endLabel);
+                    proc.PushString(operation.Identifier);
+                    proc.IsSaved();
+                    break;
+
+                case DMASTDereference.OperationKind.Index:
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.IsSaved();
+                    break;
+
+                case DMASTDereference.OperationKind.IndexSafe:
+                    proc.JumpIfNullNoPop(endLabel);
+                    operation.Index.EmitPushValue(dmObject, proc);
+                    proc.IsSaved();
+                    break;
+
+                case DMASTDereference.OperationKind.Call:
+                case DMASTDereference.OperationKind.CallSearch:
+                case DMASTDereference.OperationKind.CallSafe:
+                case DMASTDereference.OperationKind.CallSafeSearch:
+                    throw new CompileErrorException(Location, $"attempt to get `issaved` of a proc call");
+
+                case DMASTDereference.OperationKind.Invalid:
+                default:
+                    throw new NotImplementedException();
+            };
+
+            proc.AddLabel(endLabel);
         }
 
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-            return (DMReference.CreateField(PropertyName), _conditional);
-        }
+        public override bool TryAsConstant(out Constant constant) {
+            DreamPath? prevPath = null;
 
-        public override bool TryAsConstant(out Constant constant)
-        {
-            if(_expr.Path is not null)
-            {
-                var obj = DMObjectTree.GetDMObject(_expr.Path.GetValueOrDefault());
-                var variable = obj.GetVariable(PropertyName);
-                if (variable != null)
-                {
-                    if(variable.IsConst)
-                        return variable.Value.TryAsConstant(out constant);
-                    if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
-                    {
-                        variable.Value.TryAsConstant(out constant);
-                        return true; // MUST be true.
+            if (_operations.Length == 1) {
+                prevPath = _expression.Path;
+            } else {
+                prevPath = _operations[^2].Path;
+            }
+
+            ref var operation = ref _operations[^1];
+
+            switch (operation.Kind) {
+                case DMASTDereference.OperationKind.Field:
+                case DMASTDereference.OperationKind.FieldSearch:
+                case DMASTDereference.OperationKind.FieldSafe:
+                case DMASTDereference.OperationKind.FieldSafeSearch:
+                    if (prevPath is not null) {
+                        var obj = DMObjectTree.GetDMObject(prevPath.GetValueOrDefault());
+                        var variable = obj.GetVariable(operation.Identifier);
+                        if (variable != null) {
+                            if (variable.IsConst)
+                                return variable.Value.TryAsConstant(out constant);
+                            if ((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
+                                variable.Value.TryAsConstant(out constant);
+                                return true; // MUST be true.
+                            }
+                        }
                     }
-                }
+                    break;
             }
 
             constant = null;
             return false;
-        }
-    }
-
-    // x.y.z()
-    class DereferenceProc : DMExpression {
-        // Kind of a lazy port
-        DMExpression _expr;
-        bool _conditional;
-        string _field;
-
-        public DereferenceProc(Location location, DMExpression expr, DMASTDereferenceProc astNode) : base(location) {
-            _expr = expr;
-            _conditional = astNode.Conditional;
-            _field = astNode.Property;
-
-            if (astNode.Type == DMASTDereference.DereferenceType.Direct) {
-                if (Dereference.DirectConvertable(expr, astNode)) {
-                    astNode.Type = DMASTDereference.DereferenceType.Search;
-                    return;
-                }
-                else if (expr.Path == null) {
-                    throw new CompileErrorException(astNode.Location,$"Invalid property \"{_field}\"");
-                }
-
-                DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value, false);
-                if (dmObject == null) throw new CompileErrorException(Location, $"Type {expr.Path.Value} does not exist");
-                if (!dmObject.HasProc(_field)) throw new CompileErrorException(Location, $"Type {_expr.Path.Value} does not have a proc named \"{_field}\"");
-            }
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use proc as value");
-        }
-
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-            return (DMReference.CreateProc(_field), _conditional);
-        }
-
-        public (DMObject ProcOwner, DMProc Proc) GetProc() {
-            if (_expr.Path == null) return (null, null);
-
-            DMObject dmObject = DMObjectTree.GetDMObject(_expr.Path.Value);
-            var procId = dmObject.GetProcs(_field)?[^1];
-            return (dmObject, procId is null ? null : DMObjectTree.AllProcs[procId.Value]);
-        }
-    }
-
-    // x[y]
-    class ListIndex : LValue {
-        DMExpression _expr;
-        DMExpression _index;
-        bool _conditional;
-
-        public ListIndex(Location location, DMExpression expr, DMExpression index, DreamPath? path, bool conditional)
-            : base(location, path)
-        {
-            _expr = expr;
-            _index = index;
-            _conditional = conditional;
-        }
-
-        public override (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-            _index.EmitPushValue(dmObject, proc);
-
-            return (DMReference.ListIndex, _conditional);
-        }
-
-        public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            if (_expr is Dereference { Expr: var derefExpr, PropertyName: "vars" }) {
-                derefExpr.EmitPushValue(dmObject, proc);
-                _index.EmitPushValue(dmObject, proc);
-                proc.Initial();
-            } else if (_expr is Field { Variable: { Name: "vars" } }) {
-                proc.PushReferenceValue(DMReference.Src);
-                _index.EmitPushValue(dmObject, proc);
-                proc.Initial();
-            } else {
-                // This happens silently in BYOND
-                DMCompiler.Emit(WarningCode.PointlessBuiltinCall, Location, "calling initial() on a list index returns the current value");
-                EmitPushValue(dmObject, proc);
-            }
-        }
-
-        public void EmitPushIsSaved(DMObject dmObject, DMProc proc)
-        {
-            if (_expr is Dereference { Expr: var derefExpr, PropertyName: "vars" }) {
-                derefExpr.EmitPushValue(dmObject, proc);
-                _index.EmitPushValue(dmObject, proc);
-                proc.IsSaved();
-            } else if (_expr is Field { Variable: { Name: "vars" } }) {
-                proc.PushReferenceValue(DMReference.Src);
-                _index.EmitPushValue(dmObject, proc);
-                proc.IsSaved();
-            } else {
-                // Silent in BYOND
-                DMCompiler.Emit(WarningCode.PointlessBuiltinCall, _expr.Location, "calling issaved() on a list index is always false");
-                proc.PushFloat(0);
-            }
         }
     }
 }

@@ -43,6 +43,7 @@ namespace OpenDreamRuntime {
         public HashSet<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+        private int _dreamObjectRefIdCounter;
 
         private DreamCompiledJson _compiledJson;
         public bool Initialized { get; private set; }
@@ -199,7 +200,7 @@ namespace OpenDreamRuntime {
 
                     refType = RefType.DreamObject;
                     if (!ReferenceIDs.TryGetValue(refObject, out idx)) {
-                        idx = ReferenceIDs.Count;
+                        idx = _dreamObjectRefIdCounter++;
                         ReferenceIDs.Add(refObject, idx);
                     }
                 }

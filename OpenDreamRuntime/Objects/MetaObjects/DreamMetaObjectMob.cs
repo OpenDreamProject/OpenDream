@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.Native;
 using Robust.Server.Player;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Utility;
@@ -38,8 +39,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            if (varName == "key" || varName == "ckey") {
-                // TODO: make this work with ckeys too
+            if (varName == "ckey" && value.TryGetValueAsString(out var canonicalUsername)) {
+                foreach (var connection in _dreamManager.Connections) {
+                    if (DreamProcNativeHelpers.Ckey(connection.Session!.Name) == canonicalUsername) {
+                        connection.Mob = dreamObject;
+                    }
+                }
+            } else if (varName == "key") {
                 if (_playerManager.TryGetSessionByUsername(value.GetValueAsString(), out var session)) {
                     var connection = _dreamManager.GetConnectionBySession(session);
 

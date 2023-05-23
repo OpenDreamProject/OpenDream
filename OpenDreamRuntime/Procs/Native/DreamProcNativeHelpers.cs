@@ -234,7 +234,7 @@ internal static partial class DreamProcNativeHelpers {
     /// Returns the string with all non-alphanumeric characters (except @) removed, and all letters converted to lowercase.
     /// Mirrors the behaviour of BYOND's ckey() proc.
     /// </summary>
-    /// <param name="input"></param>
+    /// <param name="input">The string to canonicalize</param>
     /// <returns></returns>
     public static string Ckey(string input) {
         return CkeyRegex().Replace(input.ToLower(), "");

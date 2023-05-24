@@ -1543,31 +1543,22 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Haystack", Type = DreamValueType.String)]
         [DreamProcParameter("Needles", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
-        public static DreamValue NativeProc_nonspantext(NativeProc.State state)
-        {
+        public static DreamValue NativeProc_nonspantext(NativeProc.State state) {
             if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
                 return new DreamValue(0);
-            }
-
             if (!state.GetArgument(1, "Needles").TryGetValueAsString(out var needles))
-            {
                 return new DreamValue(1);
-            }
+            state.GetArgument(2, "Start").TryGetValueAsInteger(out var start);
 
-            int start = (int)state.GetArgument(2, "Start").GetValueAsFloat();
-
-            if (start == 0 || start > text.Length) return new DreamValue(0);
+            if (start == 0 || start > text.Length)
+                return new DreamValue(0);
 
             if (start < 0)
-            {
                 start += text.Length + 1;
-            }
+
             var index = text.AsSpan(start - 1).IndexOfAny(needles);
             if (index == -1)
-            {
                 index = text.Length - start + 1;
-            }
 
             return new DreamValue(index);
         }
@@ -1638,14 +1629,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_oviewers(NativeProc.State state) { //TODO: View obstruction (dense turfs)
             DreamValue depthValue = new DreamValue(5);
-            DreamObject center = state.Usr;
+            DreamObject? center = null;
 
             //Arguments are optional and can be passed in any order
             if (state.Arguments.Count > 0) {
                 DreamValue firstArgument = state.GetArgument(0, "Depth");
 
                 if (firstArgument.Type == DreamValueType.DreamObject) {
-                    center = firstArgument.GetValueAsDreamObject();
+                    center = firstArgument.MustGetValueAsDreamObject();
 
                     if (state.Arguments.Count > 1) {
                         depthValue = state.GetArgument(1, "Center");
@@ -1654,14 +1645,20 @@ namespace OpenDreamRuntime.Procs.Native {
                     depthValue = firstArgument;
 
                     if (state.Arguments.Count > 1) {
-                        center = state.GetArgument(1, "Center").GetValueAsDreamObject();
+                        state.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
                     }
                 }
             }
 
+            center ??= state.Usr;
+
             DreamList view = state.ObjectTree.CreateList();
-            int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
+            if (center == null)
+                return new(view);
+
             var centerPos = state.AtomManager.GetAtomPosition(center);
+            if (!depthValue.TryGetValueAsInteger(out var depth))
+                depth = 5; //TODO: Default to world.view
 
             foreach (DreamObject mob in state.AtomManager.Mobs) {
                 var mobPos = state.AtomManager.GetAtomPosition(mob);
@@ -2845,7 +2842,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_viewers(NativeProc.State state) { //TODO: View obstruction (dense turfs)
             DreamValue depthValue = new DreamValue(5);
-            DreamObject center = state.Usr;
+            DreamObject? center = null;
 
             //Arguments are optional and can be passed in any order
             if (state.Arguments.Count > 0) {
@@ -2861,15 +2858,21 @@ namespace OpenDreamRuntime.Procs.Native {
                     depthValue = firstArgument;
 
                     if (state.Arguments.Count > 1) {
-                        center = state.GetArgument(1, "Center").GetValueAsDreamObject();
+                        state.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
                     }
                 }
             }
 
+            center ??= state.Usr;
+
             DreamList view = state.ObjectTree.CreateList();
-            int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.MustGetValueAsInteger() : 5; //TODO: Default to world.view
+            if (center == null)
+                return new(view);
+
             int centerX = center.GetVariable("x").MustGetValueAsInteger();
             int centerY = center.GetVariable("y").MustGetValueAsInteger();
+            if (!depthValue.TryGetValueAsInteger(out var depth))
+                depth = 5; //TODO: Default to world.view
 
             foreach (DreamObject mob in state.AtomManager.Mobs) {
                 int mobX = mob.GetVariable("x").MustGetValueAsInteger();

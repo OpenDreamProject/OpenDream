@@ -157,11 +157,6 @@ namespace OpenDreamRuntime {
             }
         }
 
-        [Obsolete("Deprecated. Use TryGetValueAsFloat() or MustGetValueAsFloat() instead.")]
-        public float GetValueAsFloat() {
-            return MustGetValueAsFloat();
-        }
-
         public bool TryGetValueAsFloat(out float value) {
             if (Type == DreamValueType.Float) {
                 value = _floatValue;

@@ -432,8 +432,8 @@ namespace OpenDreamRuntime.Procs {
                         formattedString.Append("s");
                         continue;
                     case StringFormatEncoder.FormatSuffix.OrdinalIndicator:
-                        // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
-                        if (interps[prevInterpIndex].TryGetValueAsInteger(out var ordinalNumber)) {
+                        var interp = interps[prevInterpIndex];
+                        if (interp.TryGetValueAsInteger(out var ordinalNumber)) {
 
                             // For some mystical reason byond converts \th to integers
                             // This is slightly hacky but the only reliable way I know how to replace the number
@@ -454,8 +454,25 @@ namespace OpenDreamRuntime.Procs {
                                     formattedString.Append("th");
                                     break;
                             }
+                        } else if (interp == DreamValue.Null) {
+                            formattedString.Append("0th");
+                        } else if(interp.TryGetValueAsString(out var interpString)) {
+                            var lastIdx = formattedString.ToString().LastIndexOf(interpString);
+                            if (lastIdx != -1) { // Can this even fail?
+                                formattedString.Remove(lastIdx, interpString.Length);
+                                formattedString.Append("0th");
+                            }
+                        } else if (interp.TryGetValueAsDreamObject(out var interpObj)) {
+                            var typeStr = interpObj.ObjectDefinition.Type.ToString();
+                            var lastIdx = formattedString.ToString().LastIndexOf(typeStr);
+                            if (lastIdx != -1) { // Can this even fail?
+                                formattedString.Remove(lastIdx, typeStr.Length);
+                                formattedString.Append("0th");
+                            }
                         } else {
-                            formattedString.Append("th");
+                            // TODO: if the preceding expression value is not a float, it should be replaced with 0 (0th)
+                            // we support this behavior for some non-floats but not all, so just append 0th anyways for now
+                            formattedString.Append("0th");
                         }
                         continue;
                     case StringFormatEncoder.FormatSuffix.LowerRoman:

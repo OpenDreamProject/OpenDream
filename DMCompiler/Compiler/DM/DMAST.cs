@@ -260,7 +260,8 @@ namespace DMCompiler.Compiler.DM {
         public readonly DMASTProcBlockInner? Body;
         public DMValueType ReturnTypes;
 
-        public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters, DMASTProcBlockInner? body, DMValueType returnType) : base(location) {
+        public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters,
+            DMASTProcBlockInner? body, DMValueType returnType) : base(location) {
             int procElementIndex = path.FindElement("proc");
 
             if (procElementIndex == -1) {
@@ -378,7 +379,8 @@ namespace DMCompiler.Compiler.DM {
 
         private readonly ProcVarDeclInfo _varDecl;
 
-        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression? value, DMValueType valType) : base(location) {
+        public DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression? value, DMValueType valType) :
+            base(location) {
             _varDecl = new ProcVarDeclInfo(path.Path);
             Value = value;
             ValType = valType;

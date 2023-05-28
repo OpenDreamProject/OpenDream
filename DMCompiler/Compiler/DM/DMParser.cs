@@ -6,7 +6,6 @@ using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using String = System.String;
-using Robust.Shared.Utility;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
@@ -175,22 +174,22 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_LeftParenthesis)) {
                     DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
                     BracketWhitespace();
-                    var parameters = DefinitionParameters();
+                    var parameters = DefinitionParameters(out var wasIndeterminate);
 
                     if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
-                        !Check(TokenType.DM_IndeterminateArgs)) {
+                        !wasIndeterminate) {
                         if (parameters.Count > 0) // Separate error handling mentions the missing right-paren
                             Error($"error: {parameters.Last().Name}: missing comma ',' or right-paren ')'", false);
-                        parameters.AddRange(DefinitionParameters());
+                        parameters.AddRange(DefinitionParameters(out wasIndeterminate));
                     }
-                    if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
+                    if (!wasIndeterminate && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                         // BYOND doesn't specify the arg
                         Error($"error: bad argument definition '{Current().PrintableText}'", false);
                         Advance();
                         BracketWhitespace();
                         Check(TokenType.DM_Comma);
                         BracketWhitespace();
-                        parameters.AddRange(DefinitionParameters());
+                        parameters.AddRange(DefinitionParameters(out _));
                     }
 
                     BracketWhitespace();
@@ -1356,6 +1355,7 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 Newline();
+                Whitespace();
                 Consume(TokenType.DM_Catch, "Expected catch");
                 Whitespace();
 
@@ -1513,9 +1513,9 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public List<DMASTDefinitionParameter> DefinitionParameters() {
+        public List<DMASTDefinitionParameter> DefinitionParameters(out bool wasIndeterminate) {
             List<DMASTDefinitionParameter> parameters = new();
-            DMASTDefinitionParameter? parameter = DefinitionParameter();
+            DMASTDefinitionParameter? parameter = DefinitionParameter(out wasIndeterminate);
 
             if (parameter != null) parameters.Add(parameter);
 
@@ -1523,7 +1523,7 @@ namespace DMCompiler.Compiler.DM {
 
             while (Check(TokenType.DM_Comma)) {
                 BracketWhitespace();
-                parameter = DefinitionParameter();
+                parameter = DefinitionParameter(out wasIndeterminate);
 
                 if (parameter != null)
                 {
@@ -1538,7 +1538,7 @@ namespace DMCompiler.Compiler.DM {
                         BracketWhitespace();
                         Check(TokenType.DM_Comma);
                         BracketWhitespace();
-                        parameters.AddRange(DefinitionParameters());
+                        parameters.AddRange(DefinitionParameters(out wasIndeterminate));
                     }
                 }
             }
@@ -1546,7 +1546,7 @@ namespace DMCompiler.Compiler.DM {
             return parameters;
         }
 
-        public DMASTDefinitionParameter? DefinitionParameter() {
+        public DMASTDefinitionParameter? DefinitionParameter(out bool wasIndeterminate) {
             DMASTPath? path = Path();
 
             if (path != null) {
@@ -1569,10 +1569,12 @@ namespace DMCompiler.Compiler.DM {
                     possibleValues = Expression();
                 }
 
+                wasIndeterminate = false;
+
                 return new DMASTDefinitionParameter(loc, path, value, type, possibleValues);
             }
 
-            Check(TokenType.DM_IndeterminateArgs);
+            wasIndeterminate = Check(TokenType.DM_IndeterminateArgs);
 
             return null;
         }

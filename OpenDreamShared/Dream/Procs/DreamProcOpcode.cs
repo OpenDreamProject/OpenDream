@@ -170,6 +170,9 @@ namespace OpenDreamShared.Dream.Procs {
             Proper,                   //String represents a proper noun
             Improper,                 //String represents an improper noun
 
+            LowerRoman,               //i, ii, iii, iv, v
+            UpperRoman,               //I, II, III, IV, V
+
             OrdinalIndicator,        //1st, 2nd, 3rd, 4th, ...
             PluralSuffix,            //-s suffix at the end of a plural noun
 

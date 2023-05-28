@@ -1,4 +1,4 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -134,7 +134,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Datum)) {
-                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums));
+                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums, type));
                 return null;
             }
 
@@ -254,11 +254,55 @@ namespace OpenDreamRuntime.Procs {
             }
 
         }
+
+        private static void ToRoman(ref StringBuilder formattedString, ReadOnlySpan<DreamValue> interps, int nextInterpIndex, bool upperCase) {
+            char[] arr;
+            if(upperCase) {
+                arr = new char[] { 'M', 'D', 'C', 'L', 'X', 'V', 'I' };
+            } else {
+                arr = new char[] { 'm', 'd', 'c', 'l', 'x', 'v', 'i' };
+            }
+
+            int[] numArr = new int[] { 1000, 500, 100, 50, 10, 5, 1 };
+
+            if(!interps[nextInterpIndex].TryGetValueAsFloat(out float value)) {
+                return;
+            }
+
+            if(float.IsNaN(value)) {
+                formattedString.Append('�'); //fancy-ish way to represent
+                return;
+            }
+
+            if(value < 0) {
+                formattedString.Append('-');
+                value = MathF.Abs(value);
+            }
+
+            if (float.IsInfinity(value)) {
+                formattedString.Append('∞');
+                return;
+            }
+
+            var intValue = (int)value;
+            var i = 0;
+
+            while (intValue != 0) {
+                if(intValue >= numArr[i]) {
+                    intValue -= numArr[i];
+                    formattedString.Append(arr[i]);
+                } else {
+                    i++;
+                }
+            }
+        }
         public static ProcStatus? FormatString(DMProcState state) {
             string unformattedString = state.ReadString();
             StringBuilder formattedString = new StringBuilder();
 
             int interpCount = state.ReadInt();
+
+            StringFormatEncoder.FormatSuffix? postPrefix = null; // Prefix that needs the effects of a suffix
 
             ReadOnlySpan<DreamValue> interps = state.PopCount(interpCount);
             int nextInterpIndex = 0; // If we find a prefix macro, this is what it points to
@@ -273,6 +317,7 @@ namespace OpenDreamRuntime.Procs {
                 switch (formatType) {
                     //Interp values
                     case StringFormatEncoder.FormatSuffix.StringifyWithArticle:{
+                        // TODO: use postPrefix for \th interpolation
                         formattedString.Append(interps[nextInterpIndex].Stringify());
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
@@ -288,6 +333,20 @@ namespace OpenDreamRuntime.Procs {
                     {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                             formattedString.Append(dreamObject.GetNameUnformatted());
+                        }
+
+                        // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
+                        if(postPrefix != null) { // Cursed Hack
+                            switch(postPrefix) {
+                                case StringFormatEncoder.FormatSuffix.LowerRoman:
+                                    ToRoman(ref formattedString, interps, nextInterpIndex, false);
+                                    break;
+                                case StringFormatEncoder.FormatSuffix.UpperRoman:
+                                    ToRoman(ref formattedString, interps, nextInterpIndex, true);
+                                    break;
+                                default: break;
+                            }
+                            postPrefix = null;
                         }
                         //Things that aren't objects just print nothing in this case
                         prevInterpIndex = nextInterpIndex;
@@ -398,6 +457,12 @@ namespace OpenDreamRuntime.Procs {
                         } else {
                             formattedString.Append("th");
                         }
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.LowerRoman:
+                        postPrefix = formatType;
+                        continue;
+                    case StringFormatEncoder.FormatSuffix.UpperRoman:
+                        postPrefix = formatType;
                         continue;
                     default:
                         if (Enum.IsDefined(typeof(StringFormatEncoder.FormatSuffix), formatType)) {
@@ -989,13 +1054,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Modulus(DMProcState state) {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
-
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                state.Push(new DreamValue(first.GetValueAsInteger() % second.GetValueAsInteger()));
-            } else {
-                throw new Exception("Invalid modulus operation on " + first + " and " + second);
-            }
-
+            state.Push(ModulusValues(first, second));
             return null;
         }
 
@@ -2325,6 +2384,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
+            if (first == DreamValue.Null)
+                return new(0);
             if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
                 return new DreamValue(first.MustGetValueAsInteger() % second.MustGetValueAsInteger());
             } else {

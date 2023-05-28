@@ -95,7 +95,7 @@ namespace DMCompiler.DM {
 
     // (a, b, c, ...)
     // This isn't an expression, it's just a helper class for working with argument lists
-    class ArgumentList {
+    sealed class ArgumentList {
         public readonly (string? Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
         public Location Location;

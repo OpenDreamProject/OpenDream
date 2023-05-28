@@ -55,8 +55,6 @@ namespace OpenDreamRuntime {
 
         public DreamValue(int value) : this((float)value) { }
 
-        public DreamValue(UInt32 value) : this((float)value) { }
-
         public DreamValue(double value) : this((float)value) { }
 
         public DreamValue(DreamResource value) {
@@ -83,27 +81,6 @@ namespace OpenDreamRuntime {
         public DreamValue(IconAppearance appearance) {
             Type = DreamValueType.Appearance;
             _refValue = appearance;
-        }
-
-        public DreamValue(object value) {
-            if (value is int intValue) {
-                _floatValue = intValue;
-            } else if (value is float floatValue) {
-                _floatValue = floatValue;
-            } else {
-                _refValue = value;
-            }
-
-            Type = value switch {
-                string => DreamValueType.String,
-                int => DreamValueType.Float,
-                float => DreamValueType.Float,
-                DreamResource => DreamValueType.DreamResource,
-                DreamObject => DreamValueType.DreamObject,
-                IDreamObjectTree.TreeEntry => DreamValueType.DreamType,
-                DreamProc => DreamValueType.DreamProc,
-                _ => throw new ArgumentException($"Invalid DreamValue value ({value}, {value.GetType()})")
-            };
         }
 
         public static DreamValue CreateProcStub(IDreamObjectTree.TreeEntry type) {
@@ -427,8 +404,6 @@ namespace OpenDreamRuntime {
                     throw new NotImplementedException("Cannot stringify " + this);
             }
         }
-
-        public override bool Equals(object? obj) => obj is DreamValue other && Equals(other);
 
         public bool Equals(DreamValue other) {
             if (Type != other.Type) return false;

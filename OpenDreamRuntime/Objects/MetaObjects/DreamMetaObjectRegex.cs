@@ -15,8 +15,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         }
 
         public struct DreamRegex {
-            public Regex Regex;
-            public bool IsGlobal;
+            public readonly Regex Regex;
+            public readonly bool IsGlobal;
+            
+            public DreamRegex(Regex regex, bool isGlobal) {
+                Regex = regex;
+                IsGlobal = isGlobal;
+            }
         }
 
         public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
@@ -27,13 +32,12 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
             if (pattern.TryGetValueAsDreamObjectOfType(_objectTree.Regex, out var copyFrom)) {
                 regex = ObjectToDreamRegex[copyFrom];
             } else if (pattern.TryGetValueAsString(out var patternString)) {
-                regex = new DreamRegex();
-
+                bool isGlobal = false;
                 RegexOptions options = RegexOptions.None;
                 if (flags.TryGetValueAsString(out var flagsString)) {
                     if (flagsString.Contains("i")) options |= RegexOptions.IgnoreCase;
                     if (flagsString.Contains("m")) options |= RegexOptions.Multiline;
-                    if (flagsString.Contains("g")) regex.IsGlobal = true;
+                    if (flagsString.Contains("g")) isGlobal = true;
                 }
 
                 // TODO Make this more Robust(TM)
@@ -49,7 +53,7 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     anyLetterIdx = patternString.IndexOf("\\l", nextIdx, StringComparison.InvariantCulture);
                 }
 
-                regex.Regex = new Regex(patternString, options);
+                regex = new DreamRegex(new Regex(patternString, options), isGlobal);
             } else {
                 throw new Exception("Invalid regex pattern " + pattern);
             }

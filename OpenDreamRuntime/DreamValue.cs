@@ -118,7 +118,7 @@ namespace OpenDreamRuntime {
 
         public bool TryGetValueAsString([NotNullWhen(true)] out string? value) {
             if (Type == DreamValueType.String) {
-                value = (string) _refValue;
+                value = Unsafe.As<string>(_refValue)!;
                 return true;
             } else {
                 value = null;
@@ -127,11 +127,10 @@ namespace OpenDreamRuntime {
         }
 
         public string MustGetValueAsString() {
-            try {
-                return (string) _refValue;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException("Value " + this + " was not the expected type of string");
+            if (Type == DreamValueType.String) {
+                return Unsafe.As<string>(_refValue)!;
             }
+            throw new InvalidCastException("Value " + this + " was not the expected type of string");
         }
 
         //Casts a float value to an integer
@@ -182,7 +181,7 @@ namespace OpenDreamRuntime {
 
         public bool TryGetValueAsDreamResource([NotNullWhen(true)] out DreamResource? value) {
             if (Type == DreamValueType.DreamResource) {
-                value = (DreamResource) _refValue;
+                value = Unsafe.As<DreamResource>(_refValue)!;
                 return true;
             } else {
                 value = null;
@@ -191,11 +190,10 @@ namespace OpenDreamRuntime {
         }
 
         public DreamResource MustGetValueAsDreamResource() {
-            try {
-                return (DreamResource) _refValue;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException("Value " + this + " was not the expected type of DreamResource");
+            if (Type == DreamValueType.DreamResource) {
+                return Unsafe.As<DreamResource>(_refValue)!;
             }
+            throw new InvalidCastException("Value " + this + " was not the expected type of DreamResource");
         }
 
         [Obsolete("Deprecated. Use TryGetValueAsDreamObject() or MustGetValueAsDreamObject() instead.")]
@@ -259,15 +257,15 @@ namespace OpenDreamRuntime {
 
         public DreamList MustGetValueAsDreamList() {
             try {
-                return (DreamList) _refValue;
+                return (DreamList) _refValue!;
             } catch (InvalidCastException) {
                 throw new InvalidCastException("Value " + this + " was not the expected type of DreamList");
             }
         }
 
-        public bool TryGetValueAsType(out IDreamObjectTree.TreeEntry type) {
+        public bool TryGetValueAsType([NotNullWhen(true)] out IDreamObjectTree.TreeEntry? type) {
             if (Type == DreamValueType.DreamType) {
-                type = (IDreamObjectTree.TreeEntry) _refValue;
+                type = Unsafe.As<IDreamObjectTree.TreeEntry>(_refValue)!;
 
                 return true;
             } else {
@@ -281,12 +279,12 @@ namespace OpenDreamRuntime {
             if (Type != DreamValueType.DreamType) // Could be a proc or verb stub, they hold they same value
                 throw new InvalidCastException($"Value {this} was not the expected type of DreamPath");
 
-            return (IDreamObjectTree.TreeEntry) _refValue;
+            return Unsafe.As<IDreamObjectTree.TreeEntry>(_refValue)!;
         }
 
-        public bool TryGetValueAsProc(out DreamProc proc) {
+        public bool TryGetValueAsProc([NotNullWhen(true)] out DreamProc? proc) {
             if (Type == DreamValueType.DreamProc) {
-                proc = (DreamProc) _refValue;
+                proc = Unsafe.As<DreamProc>(_refValue)!;
 
                 return true;
             } else {
@@ -297,16 +295,15 @@ namespace OpenDreamRuntime {
         }
 
         public DreamProc MustGetValueAsProc() {
-            try {
-                return (DreamProc) _refValue;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException("Value " + this + " was not the expected type of DreamProc");
+            if (Type == DreamValueType.DreamProc) {
+                return Unsafe.As<DreamProc>(_refValue)!;
             }
+            throw new InvalidCastException("Value " + this + " was not the expected type of DreamProc");
         }
 
-        public bool TryGetValueAsProcStub(out IDreamObjectTree.TreeEntry type) {
+        public bool TryGetValueAsProcStub([NotNullWhen(true)] out IDreamObjectTree.TreeEntry? type) {
             if (Type == DreamValueType.ProcStub) {
-                type = (IDreamObjectTree.TreeEntry) _refValue;
+                type = Unsafe.As<IDreamObjectTree.TreeEntry>(_refValue)!;
 
                 return true;
             } else {
@@ -316,9 +313,9 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public bool TryGetValueAsVerbStub(out IDreamObjectTree.TreeEntry type) {
+        public bool TryGetValueAsVerbStub([NotNullWhen(true)] out IDreamObjectTree.TreeEntry? type) {
             if (Type == DreamValueType.VerbStub) {
-                type = (IDreamObjectTree.TreeEntry) _refValue;
+                type = Unsafe.As<IDreamObjectTree.TreeEntry>(_refValue)!;
 
                 return true;
             } else {
@@ -330,7 +327,7 @@ namespace OpenDreamRuntime {
 
         public bool TryGetValueAsAppearance([NotNullWhen(true)] out IconAppearance? args) {
             if (Type == DreamValueType.Appearance) {
-                args = (IconAppearance) _refValue!;
+                args = Unsafe.As<IconAppearance>(_refValue)!;
 
                 return true;
             }
@@ -340,11 +337,10 @@ namespace OpenDreamRuntime {
         }
 
         public IconAppearance MustGetValueAsAppearance() {
-            try {
-                return (IconAppearance) _refValue!;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException($"Value {this} was not the expected type of Appearance");
+            if (Type == DreamValueType.Appearance) {
+                return Unsafe.As<IconAppearance>(_refValue)!;
             }
+            throw new InvalidCastException("Value " + this + " was not the expected type of Appearance");
         }
 
         public bool IsTruthy() {
@@ -389,7 +385,7 @@ namespace OpenDreamRuntime {
                     return proc.ToString();
                 case DreamValueType.ProcStub:
                 case DreamValueType.VerbStub:
-                    var owner = (IDreamObjectTree.TreeEntry) _refValue;
+                    var owner = Unsafe.As<IDreamObjectTree.TreeEntry>(_refValue)!;
                     var lastElement = (Type == DreamValueType.ProcStub) ? "/proc" : "/verb";
 
                     return $"{owner.Path}{lastElement}";

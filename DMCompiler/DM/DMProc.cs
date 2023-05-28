@@ -223,7 +223,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
-                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type, DMValueType.Anything)); // TODO: Param static typing
+                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type, valueType));
             }
         }
 

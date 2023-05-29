@@ -13,7 +13,16 @@
 	ASSERT(b == 2)
 	ASSERT(args.len == 4)
 
+// For this one we just want to make sure the args can be parsed without erroring
+/proc/test(
+	datum/foo,
+	datum/bar,
+	...
+)
+	return
+
 /proc/RunTest()
 	A(b, 2, 3, 4)
 	fn1(1,2,3,4)
 	fn2(1,2,3,4)
+	test()

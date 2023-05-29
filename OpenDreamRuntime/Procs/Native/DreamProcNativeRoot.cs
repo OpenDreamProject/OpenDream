@@ -187,16 +187,17 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_block(NativeProc.State state) {
             (int X, int Y, int Z) startPos;
             (int X, int Y, int Z) endPos;
-            if (state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var start)) {
-                if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var end))
+            if (state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var startT)) {
+                if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var endT))
                     return new DreamValue(state.ObjectTree.CreateList());
-                startPos = state.AtomManager.GetAtomPosition(start);
-                endPos = state.AtomManager.GetAtomPosition(end);
-            } else { // likely coordinate-style
+                startPos = state.AtomManager.GetAtomPosition(startT);
+                endPos = state.AtomManager.GetAtomPosition(endT);
+            } else {
                 // Need to check that we weren't passed something like block("cat", turf) which should return an empty list
                 if (state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var wasEnd)) {
                     return new DreamValue(state.ObjectTree.CreateList());
                 }
+                // coordinate-style
                 if (!state.GetArgument(0, "Start").TryGetValueAsInteger(out startPos.X)) {
                     startPos.X = 1; // First three default to 1 when passed null or invalid
                 }
@@ -230,9 +231,9 @@ namespace OpenDreamRuntime.Procs.Native {
             for (int z = startZ; z <= endZ; z++) {
                 for (int y = startY; y <= endY; y++) {
                     for (int x = startX; x <= endX; x++) {
-                        state.MapManager.TryGetTurfAt((x, y), z, out var turf);
-
-                        turfs.AddValue(new DreamValue(turf));
+                        if (state.MapManager.TryGetTurfAt((x, y), z, out var turf)) {
+                            turfs.AddValue(new DreamValue(turf));
+                        }
                     }
                 }
             }

@@ -14,3 +14,7 @@
 	var/list/block_incomplete = block(1,1,1,1,2)
 	
 	ASSERT(block_diff_y ~= block_incomplete)
+	
+	var/list/block_invalid = block(7,7,7,8,8,8)
+	
+	ASSERT(block_invalid ~= list())

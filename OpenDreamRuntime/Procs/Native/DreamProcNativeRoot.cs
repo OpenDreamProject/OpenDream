@@ -194,7 +194,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 endPos = state.AtomManager.GetAtomPosition(endT);
             } else {
                 // Need to check that we weren't passed something like block("cat", turf) which should return an empty list
-                if (state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var wasEnd)) {
+                if (state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out _)) {
                     return new DreamValue(state.ObjectTree.CreateList());
                 }
                 // coordinate-style

@@ -47,7 +47,7 @@ public sealed record DreamFilterAlpha : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("icon")] public int Icon; // Icon resource ID
-    [ViewVariables, DataField("render_source")] public string RenderSource; // String that gets special processing in the render loop
+    [ViewVariables, DataField("render_source")] public string RenderSource = ""; // String that gets special processing in the render loop
     [ViewVariables, DataField("flags")] public short Flags;
 }
 
@@ -82,8 +82,8 @@ public sealed record DreamFilterDisplace : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("size")] public float Size = 1f;
-    [ViewVariables, DataField("icon")] public object Icon;
-    [ViewVariables, DataField("render_source")] public string RenderSource; // String that will require special processing
+    [ViewVariables, DataField("icon")] public int Icon; // Icon resource ID
+    [ViewVariables, DataField("render_source")] public string RenderSource = ""; // String that will require special processing
 }
 
 [Serializable, NetSerializable]
@@ -99,8 +99,8 @@ public sealed record DreamFilterDropShadow : DreamFilter {
 public sealed record DreamFilterLayer : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
-    [ViewVariables, DataField("icon")] public object Icon; // Icon type?
-    [ViewVariables, DataField("render_source")] public string RenderSource; // String that will require special processing
+    [ViewVariables, DataField("icon")] public int Icon; // Icon resource ID
+    [ViewVariables, DataField("render_source")] public string RenderSource = ""; // String that will require special processing
     [ViewVariables, DataField("flags")] public float Flags; // Default is FILTER_OVERLAY = 0
     [ViewVariables, DataField("color")] public Color Color = Color.Black.WithAlpha(128); // Shit needs to be string or color matrix, because of course one has to be special
     [ViewVariables, DataField("transform")] public Matrix3 Transform = Matrix3.Identity;

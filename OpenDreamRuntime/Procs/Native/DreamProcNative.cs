@@ -127,6 +127,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Cut);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Find);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Insert);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Join);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 

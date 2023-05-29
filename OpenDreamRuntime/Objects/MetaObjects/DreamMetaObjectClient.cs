@@ -1,4 +1,5 @@
 using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using System.Security.Cryptography;
 using System.Text;
@@ -89,8 +90,9 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public DreamValue OnVariableGet(DreamObject dreamObject, string varName, DreamValue value) {
             switch (varName) {
                 //TODO actually return the key
-                case "key":
                 case "ckey":
+                    return new(DreamProcNativeHelpers.Ckey(_dreamManager.GetConnectionFromClient(dreamObject).Session!.Name));
+                case "key":
                     return new(_dreamManager.GetConnectionFromClient(dreamObject).Session!.Name);
                 case "mob":
                     return new(_dreamManager.GetConnectionFromClient(dreamObject).Mob);

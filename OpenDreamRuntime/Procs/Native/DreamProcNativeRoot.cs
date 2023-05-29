@@ -258,7 +258,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
-            key = Regex.Replace(key.ToLower(), "[\\^]|[^a-z0-9@]", ""); //Remove all punctuation and make lowercase
+            key = DreamProcNativeHelpers.Ckey(key);
             return new DreamValue(key);
         }
 

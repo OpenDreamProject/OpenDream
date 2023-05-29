@@ -166,3 +166,15 @@
 /world/New()
 	..()
 	world.log << "World loaded!"
+	one()
+
+
+/proc/one()
+	world.maxx = world.maxy = world.maxz = 3
+	var/list/block_turfs = block(1,1,1,1,1,1)
+	var/list/block_coords = block(1,1,1,"cat",null,/turf)
+	
+	world.log << json_encode(block_turfs)
+	world.log << json_encode(block_coords)
+	world.log << json_encode(block_turfs[4].y)
+	world.log << json_encode(block_coords[4].y)

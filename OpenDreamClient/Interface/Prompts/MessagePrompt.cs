@@ -3,11 +3,11 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Prompts {
-    sealed class MessagePrompt : InputWindow {
+    internal sealed class MessagePrompt : InputWindow {
         private readonly TextEdit _textEdit;
 
-        public MessagePrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(
-            promptId, title, message, defaultValue, canCancel) {
+        public MessagePrompt(string title, string message, string defaultValue, bool canCancel,
+            Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
             _textEdit = new TextEdit {
                 TextRope = new Rope.Leaf(defaultValue),
 

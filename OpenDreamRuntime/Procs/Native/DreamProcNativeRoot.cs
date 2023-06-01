@@ -211,10 +211,10 @@ namespace OpenDreamRuntime.Procs.Native {
                     endPos.X = startPos.X; // Last three default to the start coords if null or invalid
                 }
                 if (!state.GetArgument(4, "EndY").TryGetValueAsInteger(out endPos.Y)) {
-                    endPos.X = startPos.Y;
+                    endPos.Y = startPos.Y;
                 }
                 if (!state.GetArgument(5, "EndZ").TryGetValueAsInteger(out endPos.Z)) {
-                    endPos.X = startPos.Z;
+                    endPos.Z = startPos.Z;
                 }
             }
 

@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
@@ -15,6 +14,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using Robust.Server;
 using Robust.Shared.Asynchronous;
@@ -26,7 +26,7 @@ namespace OpenDreamRuntime.Procs.Native {
     /// Note that this proc container also includes global procs which are used to create some DM objects,
     /// like filter(), matrix(), etc.
     /// </remarks>
-    static class DreamProcNativeRoot {
+    internal static class DreamProcNativeRoot {
         [DreamProc("abs")]
         [DreamProcParameter("A", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_abs(NativeProc.State state) {
@@ -46,8 +46,9 @@ namespace OpenDreamRuntime.Procs.Native {
             string message, title, button1, button2, button3;
 
             DreamValue usrArgument = state.GetArgument(0, "Usr");
-            if (usrArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Mob, out var usr) ||
-                usrArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Client, out usr)) {
+            usrArgument.TryGetValueAsDreamObject(out var usr);
+
+            if (usr is DreamObjectMob or DreamObjectClient) {
                 message = state.GetArgument(1, "Message").Stringify();
                 title = state.GetArgument(2, "Title").Stringify();
                 button1 = state.GetArgument(3, "Button1").Stringify();
@@ -63,10 +64,10 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             DreamConnection? connection = null;
-            if (usr?.IsSubtypeOf(state.ObjectTree.Mob) == true)
-                state.DreamManager.TryGetConnectionFromMob(usr, out connection);
-            else if (usr?.IsSubtypeOf(state.ObjectTree.Client) == true)
-                connection = state.DreamManager.GetConnectionFromClient(usr);
+            if (usr is DreamObjectMob usrMob)
+                connection = usrMob.Connection;
+            else if (usr is DreamObjectClient usrClient)
+                connection = usrClient.Connection;
 
             if (connection == null)
                 return new("OK"); // Returns "OK" if Usr is invalid
@@ -91,7 +92,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("color", Type = DreamValueType.String | DreamValueType.DreamObject)]
         public static DreamValue NativeProc_animate(NativeProc.State state) {
             // TODO: Leaving out the Object var adds a new step to the previous animation
-            if (!state.GetArgument(0, "Object").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var obj))
+            if (!state.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
                 return DreamValue.Null;
             // TODO: Is this the correct behavior for invalid time?
             if (!state.GetArgument(1, "time").TryGetValueAsFloat(out float time))
@@ -181,25 +182,17 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_block(NativeProc.State state) {
-            if (!state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var start))
+            if (!state.GetArgument(0, "Start").TryGetValueAsDreamObject<DreamObjectTurf>(out var start))
                 return new DreamValue(state.ObjectTree.CreateList());
-            if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var end))
+            if (!state.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out var end))
                 return new DreamValue(state.ObjectTree.CreateList());
 
-            start.GetVariable("x").TryGetValueAsInteger(out var x1);
-            start.GetVariable("y").TryGetValueAsInteger(out var y1);
-            start.GetVariable("z").TryGetValueAsInteger(out var z1);
-
-            end.GetVariable("x").TryGetValueAsInteger(out var x2);
-            end.GetVariable("y").TryGetValueAsInteger(out var y2);
-            end.GetVariable("z").TryGetValueAsInteger(out var z2);
-
-            int startX = Math.Min(x1, x2);
-            int startY = Math.Min(y1, y2);
-            int startZ = Math.Min(z1, z2);
-            int endX = Math.Max(x1, x2);
-            int endY = Math.Max(y1, y2);
-            int endZ = Math.Max(z1, z2);
+            int startX = Math.Min(start.X, end.X);
+            int startY = Math.Min(start.Y, end.Y);
+            int startZ = Math.Min(start.Z, end.Z);
+            int endX = Math.Max(start.X, end.X);
+            int endY = Math.Max(start.Y, end.Y);
+            int endZ = Math.Max(start.Z, end.Z);
 
             DreamList turfs = state.ObjectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
 
@@ -376,8 +369,8 @@ namespace OpenDreamRuntime.Procs.Native {
             string? src;
             if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
                 src = arg1Rsc.ResourcePath;
-            } else if (arg1.TryGetValueAsDreamObjectOfType(state.ObjectTree.Savefile, out var savefile)) {
-                src = DreamMetaObjectSavefile.ObjectToSavefile[savefile].Resource.ResourcePath;
+            } else if (arg1.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
+                src = savefile.Resource.ResourcePath;
             } else if (!arg1.TryGetValueAsString(out src)) {
                 throw new Exception($"Bad src file {arg1}");
             }
@@ -522,8 +515,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if (filter is null)
                 throw new Exception($"Failed to create filter of type {filterType}");
 
-            DreamObject filterObject = state.ObjectTree.CreateObject(state.ObjectTree.Filter);
-            DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
+            var filterObject = state.ObjectTree.CreateObject<DreamObjectFilter>(state.ObjectTree.Filter);
+            filterObject.Filter = filter;
             return new DreamValue(filterObject);
         }
 
@@ -733,9 +726,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Loc2", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_get_dir(NativeProc.State state) {
-            if (!state.GetArgument(0, "Loc1").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc1))
+            if (!state.GetArgument(0, "Loc1").TryGetValueAsDreamObject<DreamObjectAtom>(out var loc1))
                 return new DreamValue(0);
-            if (!state.GetArgument(1, "Loc2").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc2))
+            if (!state.GetArgument(1, "Loc2").TryGetValueAsDreamObject<DreamObjectAtom>(out var loc2))
                 return new DreamValue(0);
 
             var loc1Pos = state.AtomManager.GetAtomPosition(loc1);
@@ -765,7 +758,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Ref", Type = DreamValueType.DreamObject)]
         [DreamProcParameter("Dir", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_get_step(NativeProc.State state) {
-            if (!state.GetArgument(0, "Ref").TryGetValueAsDreamObjectOfType(state.ObjectTree.Atom, out var loc))
+            if (!state.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectAtom>(out var loc))
                 return DreamValue.Null;
 
             state.GetArgument(1, "Dir").TryGetValueAsInteger(out var dir);
@@ -846,9 +839,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
             var arg = state.GetArgument(0, "Icon");
 
-            if (arg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Icon, out var iconObj)) {
+            if (arg.TryGetValueAsDreamObject<DreamObjectIcon>(out var iconObj)) {
                 // Fast path for /icon, we don't need to generate the entire DMI
-                return new DreamValue(state.ObjectTree.CreateList(DreamMetaObjectIcon.ObjectToDreamIcon[iconObj].States.Keys.ToArray()));
+                return new DreamValue(state.ObjectTree.CreateList((iconObj).Icon.States.Keys.ToArray()));
             } else if (state.ResourceManager.TryLoadIcon(arg, out var iconRsc)) {
                 return new DreamValue(state.ObjectTree.CreateList(iconRsc.DMI.States.Keys.ToArray()));
             } else if (arg == DreamValue.Null) {
@@ -876,7 +869,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_isarea(NativeProc.State state) {
             foreach (var arg in state.Arguments.Values) {
-                if (!arg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Area, out _))
+                if (!arg.TryGetValueAsDreamObject<DreamObjectArea>(out _))
                     return DreamValue.False;
             }
 
@@ -895,9 +888,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Icon")]
         public static DreamValue NativeProc_isicon(NativeProc.State state) {
             DreamValue icon = state.GetArgument(0, "Icon");
-            if (icon.TryGetValueAsDreamObjectOfType(state.ObjectTree.Icon, out _))
+            if (icon.TryGetValueAsDreamObject<DreamObjectIcon>(out _))
                 return new DreamValue(1);
-            else if (icon.TryGetValueAsDreamResource(out DreamResource resource)) {
+            else if (icon.TryGetValueAsDreamResource(out var resource)) {
                 switch (Path.GetExtension(resource.ResourcePath)) {
                     case ".dmi":
                     case ".bmp":
@@ -938,8 +931,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (loc is null)
                     return DreamValue.False;
 
-                bool isLoc = loc.IsSubtypeOf(state.ObjectTree.Mob) || loc.IsSubtypeOf(state.ObjectTree.Obj) ||
-                             loc.IsSubtypeOf(state.ObjectTree.Turf) || loc.IsSubtypeOf(state.ObjectTree.Area);
+                bool isLoc = loc is DreamObjectMob or DreamObjectTurf or DreamObjectArea ||
+                             loc.IsSubtypeOf(state.ObjectTree.Obj);
 
                 if (!isLoc)
                     return DreamValue.False;
@@ -952,7 +945,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ismob(NativeProc.State state) {
             foreach (var arg in state.Arguments.Values) {
-                if (!arg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Mob, out _))
+                if (!arg.TryGetValueAsDreamObject<DreamObjectMob>(out _))
                     return DreamValue.False;
             }
 
@@ -963,7 +956,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_ismovable(NativeProc.State state) {
             foreach (var arg in state.Arguments.Values) {
-                if (!arg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Movable, out _))
+                if (!arg.TryGetValueAsDreamObject<DreamObjectMovable>(out _))
                     return DreamValue.False;
             }
 
@@ -1025,7 +1018,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_isturf(NativeProc.State state) {
             foreach (var arg in state.Arguments.Values) {
-                if (!arg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out _))
+                if (!arg.TryGetValueAsDreamObject<DreamObjectTurf>(out _))
                     return DreamValue.False;
             }
 
@@ -1123,10 +1116,10 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                 if (dreamObject == null)
                     writer.WriteNullValue();
-                else if (dreamObject.IsSubtypeOf(objectTree.Matrix)) { // Special behaviour for /matrix values
+                else if (dreamObject is DreamObjectMatrix matrix) { // Special behaviour for /matrix values
                     writer.WriteStartArray();
 
-                    foreach (var f in DreamMetaObjectMatrix.EnumerateMatrix(dreamObject)) {
+                    foreach (var f in DreamObjectMatrix.EnumerateMatrix(matrix)) {
                         writer.WriteNumberValue(f);
                     }
 
@@ -1256,19 +1249,19 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("e")]
         [DreamProcParameter("f")]
         public static DreamValue NativeProc_matrix(NativeProc.State state) {
-            DreamObject matrix;
+            DreamObjectMatrix matrix;
             // normal, documented uses of matrix().
             switch(state.Arguments.Count) {
                 case 6: // Take the arguments and construct a matrix.
                 case 0: // Since arguments are empty, this just creates an identity matrix.
-                    matrix = state.ObjectTree.CreateObject(state.ObjectTree.Matrix);
+                    matrix = state.ObjectTree.CreateObject<DreamObjectMatrix>(state.ObjectTree.Matrix);
                     matrix.InitSpawn(state.Arguments);
                     return new DreamValue(matrix);
                 case 1: // Clone the matrix.
                     var firstArg = state.GetArgument(0, "a");
-                    if (!firstArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
+                    if (!firstArg.TryGetValueAsDreamObject<DreamObjectMatrix>(out var argObject)) // Expecting a matrix here
                         throw new ArgumentException($"/matrix() called with invalid argument '{firstArg}'");
-                    matrix = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, argObject);
+                    matrix = DreamObjectMatrix.MatrixClone(state.ObjectTree, argObject);
                     return new DreamValue(matrix);
                 case 5:
                 case 4:
@@ -1306,22 +1299,22 @@ namespace OpenDreamRuntime.Procs.Native {
             var secondArgument = state.GetArgument(1, "b");
             switch (opcode) {
                 case MatrixOpcode.Copy: // Clone the matrix. Basically a redundant version of matrix(m).
-                    if (!firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var argObject)) // Expecting a matrix here
+                    if (!firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var argObject)) // Expecting a matrix here
                         throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}'");
-                    matrix = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, argObject);
+                    matrix = DreamObjectMatrix.MatrixClone(state.ObjectTree, argObject);
                     return new DreamValue(matrix);
                 case MatrixOpcode.Invert:
-                    if (!firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out DreamObject? matrixInput)) // Expecting a matrix here
+                    if (!firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixInput)) // Expecting a matrix here
                         throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}'");
                     //Choose whether we are inverting the original matrix or a clone of it
-                    var invertableMatrix = doModify ? matrixInput : DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, matrixInput);
-                    if (!DreamMetaObjectMatrix.TryInvert(invertableMatrix)) {
+                    var invertableMatrix = doModify ? matrixInput : DreamObjectMatrix.MatrixClone(state.ObjectTree, matrixInput);
+                    if (!DreamObjectMatrix.TryInvert(invertableMatrix)) {
                         throw new ArgumentException("/matrix provided for MATRIX_INVERT cannot be inverted");
                     }
                     return new DreamValue(invertableMatrix);
                 case MatrixOpcode.Rotate:
                     var angleArgument = firstArgument;
-                    if (firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out DreamObject? matrixToRotate)) {
+                    if (firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixToRotate)) {
                         //We have a matrix to rotate, and an angle to rotate it by.
                         angleArgument = secondArgument;
                     }
@@ -1332,11 +1325,11 @@ namespace OpenDreamRuntime.Procs.Native {
                         angleSin = 0;
                     if (float.IsSubnormal(angleCos))
                         angleCos = 0;
-                    var rotationMatrix = DreamMetaObjectMatrix.MakeMatrix(state.ObjectTree, angleCos, angleSin, 0, -angleSin, angleCos, 0);
+                    var rotationMatrix = DreamObjectMatrix.MakeMatrix(state.ObjectTree, angleCos, angleSin, 0, -angleSin, angleCos, 0);
                     if (matrixToRotate == null) return new DreamValue(rotationMatrix);
                     if (!doModify)
-                        matrixToRotate = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, matrixToRotate);
-                    DreamMetaObjectMatrix.MultiplyMatrix(matrixToRotate, rotationMatrix);
+                        matrixToRotate = DreamObjectMatrix.MatrixClone(state.ObjectTree, matrixToRotate);
+                    DreamObjectMatrix.MultiplyMatrix(matrixToRotate, rotationMatrix);
                     return new DreamValue(matrixToRotate);
                 case MatrixOpcode.Scale:
                     //Four possible signatures: two to create a scale-matrix, and one to scale an existing matrix
@@ -1347,8 +1340,9 @@ namespace OpenDreamRuntime.Procs.Native {
                     //matrix(m1,x,y,MATRIX_SCALE)
                     float horizontalScale;
                     float verticalScale;
-                    if (firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var matrixArgument)) { // scaling a matrix
-                        DreamObject scaledMatrix = doModify ? matrixArgument : DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, matrixArgument);
+                    if (firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArgument)) { // scaling a matrix
+                        var scaledMatrix = doModify ? matrixArgument : DreamObjectMatrix.MatrixClone(state.ObjectTree, matrixArgument);
+
                         if (!secondArgument.TryGetValueAsFloat(out horizontalScale))
                             throw new ArgumentException($"/matrix() called with invalid scaling factor '{secondArgument}'");
                         if (state.Arguments.Count == 4) {
@@ -1357,7 +1351,8 @@ namespace OpenDreamRuntime.Procs.Native {
                         } else {
                             verticalScale = horizontalScale;
                         }
-                        DreamMetaObjectMatrix.ScaleMatrix(scaledMatrix,horizontalScale, verticalScale);
+
+                        DreamObjectMatrix.ScaleMatrix(scaledMatrix, horizontalScale, verticalScale);
                         return new DreamValue(scaledMatrix);
                     } else { // making a scale-matrix
                         if (!firstArgument.TryGetValueAsFloat(out horizontalScale))
@@ -1369,7 +1364,7 @@ namespace OpenDreamRuntime.Procs.Native {
                             verticalScale = horizontalScale;
                         }
                         //A scaling matrix has the form {s,0,0, 0,s,0}, where s is the scaling factor.
-                        return new DreamValue(DreamMetaObjectMatrix.MakeMatrix(state.ObjectTree, horizontalScale, 0, 0, 0, verticalScale, 0));
+                        return new DreamValue(DreamObjectMatrix.MakeMatrix(state.ObjectTree, horizontalScale, 0, 0, 0, verticalScale, 0));
                     }
                 case MatrixOpcode.Translate:
                     //Possible signatures:
@@ -1377,13 +1372,13 @@ namespace OpenDreamRuntime.Procs.Native {
                     //matrix(x, y, MATRIX_TRANSLATE)
                     //matrix(m1, x, y, MATRIX_TRANSLATE)
                     if(state.Arguments.Count == 4) { // the 4-arg situation
-                        if (!firstArgument.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out DreamObject? targetMatrix)) // Expecting a matrix here
+                        if (!firstArgument.TryGetValueAsDreamObject<DreamObjectMatrix>(out var targetMatrix)) // Expecting a matrix here
                             throw new ArgumentException($"/matrix() called with invalid argument '{firstArgument}', expecting matrix");
-                        DreamObject translateMatrix;
+                        DreamObjectMatrix translateMatrix;
                         if (doModify)
                             translateMatrix = targetMatrix;
                         else
-                            translateMatrix = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, targetMatrix);
+                            translateMatrix = DreamObjectMatrix.MatrixClone(state.ObjectTree, targetMatrix);
                         state.GetArgument(1,"b").TryGetValueAsFloat(out float horizontalOffset);
                         translateMatrix.GetVariable("c").TryGetValueAsFloat(out float oldXOffset);
                         translateMatrix.SetVariableValue("c", new(horizontalOffset + oldXOffset));
@@ -1404,7 +1399,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     } else {
                         verticalShift = horizontalShift;
                     }
-                    var translationMatrix = DreamMetaObjectMatrix.MakeMatrix(state.ObjectTree, 1, 0, horizontalShift, 0, 1, verticalShift);
+                    var translationMatrix = DreamObjectMatrix.MakeMatrix(state.ObjectTree, 1, 0, horizontalShift, 0, 1, verticalShift);
                     return new DreamValue(translationMatrix);
                 default: // Being here means that the opcode is defined but not yet implemented within this switch.
                     throw new NotImplementedException($"/matrix() called with unimplemented opcode '{Enum.GetName(opcode)}'");
@@ -1590,16 +1585,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_orange(NativeProc.State state) {
-            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr, state.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = state.ObjectTree.CreateList(range.Height * range.Width);
-            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 rangeList.AddValue(new DreamValue(turf));
-                if (turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
-                    foreach (DreamValue content in contentsList.GetValues()) {
-                        rangeList.AddValue(content);
-                    }
+                foreach (DreamValue content in turf.Contents.GetValues()) {
+                    rangeList.AddValue(content);
                 }
             }
             return new DreamValue(rangeList);
@@ -1609,25 +1602,23 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_oview(NativeProc.State state) {
-            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr, state.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
 
             DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
-            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 if(!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
                     continue;
                 }
                 view.AddValue(new DreamValue(turf));
-                if(turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
-                    foreach (DreamValue content in contentsList.GetValues()) {
-                        if (content.TryGetValueAsDreamObject(out var contentObject)) {
-                            if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                                continue;
-                            }
+                foreach (DreamValue content in turf.Contents.GetValues()) {
+                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
+                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
+                            continue;
                         }
-                        view.AddValue(content);
                     }
+                    view.AddValue(content);
                 }
             }
             return new DreamValue(view);
@@ -1638,15 +1629,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_oviewers(NativeProc.State state) { //TODO: View obstruction (dense turfs)
             DreamValue depthValue = new DreamValue(5);
-            DreamObject center = state.Usr;
+            DreamObjectAtom? center = state.Usr as DreamObjectAtom;
 
             //Arguments are optional and can be passed in any order
             if (state.Arguments.Count > 0) {
                 DreamValue firstArgument = state.GetArgument(0, "Depth");
 
-                if (firstArgument.Type == DreamValueType.DreamObject) {
-                    center = firstArgument.GetValueAsDreamObject();
-
+                if (firstArgument.TryGetValueAsDreamObject(out center)) {
                     if (state.Arguments.Count > 1) {
                         depthValue = state.GetArgument(1, "Center");
                     }
@@ -1654,21 +1643,22 @@ namespace OpenDreamRuntime.Procs.Native {
                     depthValue = firstArgument;
 
                     if (state.Arguments.Count > 1) {
-                        center = state.GetArgument(1, "Center").GetValueAsDreamObject();
+                        state.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
                     }
                 }
             }
 
             DreamList view = state.ObjectTree.CreateList();
+            if (center == null)
+                return new(view);
+
             int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
             var centerPos = state.AtomManager.GetAtomPosition(center);
 
-            foreach (DreamObject mob in state.AtomManager.Mobs) {
-                var mobPos = state.AtomManager.GetAtomPosition(mob);
+            foreach (DreamObjectMob mob in state.AtomManager.Mobs) {
+                if (mob.X == centerPos.X && mob.Y == centerPos.Y) continue;
 
-                if (mobPos.X == centerPos.X && mobPos.Y == centerPos.Y) continue;
-
-                if (Math.Abs(centerPos.X - mobPos.X) <= depth && Math.Abs(centerPos.Y - mobPos.Y) <= depth) {
+                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
                     view.AddValue(new DreamValue(mob));
                 }
             }
@@ -1681,7 +1671,7 @@ namespace OpenDreamRuntime.Procs.Native {
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
             DreamList list = objectTree.CreateList();
 
-            foreach (string queryKey in query.AllKeys) {
+            foreach (string? queryKey in query.AllKeys) {
                 string[] queryValues = query.GetValues(queryKey);
                 string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
 
@@ -1741,7 +1731,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_range(NativeProc.State state) {
-            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr, state.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = state.ObjectTree.CreateList(range.Height * range.Width);
@@ -1752,8 +1742,8 @@ namespace OpenDreamRuntime.Procs.Native {
                     rangeList.AddValue(content);
                 }
             }
-            if(!center.IsSubtypeOf(state.ObjectTree.Turf)) { // If it's not a /turf, we have to include its loc and the loc's contents
-                if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out DreamObject centerLocObject)) {
+            if(center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
+                if(center.TryGetVariable("loc",out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out var centerLocObject)) {
                     rangeList.AddValue(centerLoc);
                     if(centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
                         foreach (DreamValue content in locContentsList.GetValues()) {
@@ -1763,12 +1753,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
             //And then everything else
-            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 rangeList.AddValue(new DreamValue(turf));
-                if (turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
-                    foreach (DreamValue content in contentsList.GetValues()) {
-                        rangeList.AddValue(content);
-                    }
+                foreach (DreamValue content in turf.Contents.GetValues()) {
+                    rangeList.AddValue(content);
                 }
             }
             return new DreamValue(rangeList);
@@ -1816,7 +1804,7 @@ namespace OpenDreamRuntime.Procs.Native {
             int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
             int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
-            if (needle.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out var regexObject)) {
+            if (needle.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
                 // According to the docs, this is the same as /regex.Replace()
                 return await DreamProcNativeRegex.RegexReplace(state, regexObject, haystack, replacementArg, start, end);
             }
@@ -2378,8 +2366,8 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue name = state.GetArgument(0, "Name");
             DreamValue value = state.GetArgument(1, "Value");
 
-            if (state.DreamManager.TryGetConnectionFromMob(state.Usr, out var connection))
-                OutputToStatPanel(connection, name, value);
+            if (state.Usr is DreamObjectMob { Connection: {} usrConnection })
+                OutputToStatPanel(usrConnection, name, value);
 
             return DreamValue.Null;
         }
@@ -2393,7 +2381,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue name = state.GetArgument(1, "Name");
             DreamValue value = state.GetArgument(2, "Value");
 
-            if (state.DreamManager.TryGetConnectionFromMob(state.Usr, out var connection)) {
+            if (state.Usr is DreamObjectMob { Connection: {} connection }) {
                 connection.SetOutputStatPanel(panel);
                 if (name != DreamValue.Null || value != DreamValue.Null) {
                     OutputToStatPanel(connection, name, value);
@@ -2631,18 +2619,19 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             // If Dir is actually an icon, call /icon.Turn
-            if (dirArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Icon, out var icon)) {
+            if (dirArg.TryGetValueAsDreamObject<DreamObjectIcon>(out var icon)) {
                 // Clone icon here since it's specified to return a new one
-                DreamObject clonedIcon = DreamMetaObjectIcon.CloneIcon(state.ObjectTree, icon);
+                DreamObjectIcon clonedIcon = icon.Clone();
 
-                DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, state.Usr, angle);
+                DreamProcNativeIcon._NativeProc_TurnInternal(clonedIcon, angle);
                 return new(clonedIcon);
             }
 
             // If Dir is actually a matrix, call /matrix.Turn
-            if (dirArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var matrix)) {
+            if (dirArg.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrix)) {
                 // Clone matrix here since it's specified to return a new one
-                DreamObject clonedMatrix = DreamMetaObjectMatrix.MatrixClone(state.ObjectTree, matrix);
+                var clonedMatrix = DreamObjectMatrix.MatrixClone(state.ObjectTree, matrix);
+
                 return DreamProcNativeMatrix._NativeProc_TurnInternal(state.ObjectTree, clonedMatrix, angle);
             }
 
@@ -2793,7 +2782,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_view(NativeProc.State state) { //TODO: View obstruction (dense turfs)
-            (DreamObject center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr, state.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
@@ -2802,7 +2791,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 view.AddValue(new DreamValue(center));
             if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
                 foreach (DreamValue content in centerContentsList.GetValues()) {
-                    if (content.TryGetValueAsDreamObject(out var contentObject)) {
+                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
                         if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
                             continue;
                         }
@@ -2810,8 +2799,8 @@ namespace OpenDreamRuntime.Procs.Native {
                     view.AddValue(content);
                 }
             }
-            if (!center.IsSubtypeOf(state.ObjectTree.Turf)) { // If it's not a /turf, we have to include its loc and the loc's contents
-                if (center.TryGetVariable("loc", out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out DreamObject centerLocObject)) {
+            if (center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
+                if (center.TryGetVariable("loc", out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out var centerLocObject)) {
                     view.AddValue(centerLoc);
                     if (centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
                         foreach (DreamValue content in locContentsList.GetValues()) {
@@ -2821,20 +2810,18 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
             //and then everything else
-            foreach (DreamObject turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
+            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
                     continue;
                 }
                 view.AddValue(new DreamValue(turf));
-                if (turf.GetVariable("contents").TryGetValueAsDreamList(out var contentsList)) {
-                    foreach (DreamValue content in contentsList.GetValues()) {
-                        if (content.TryGetValueAsDreamObject(out var contentObject)) {
-                            if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                                continue;
-                            }
+                foreach (DreamValue content in turf.Contents.GetValues()) {
+                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
+                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
+                            continue;
                         }
-                        view.AddValue(content);
                     }
+                    view.AddValue(content);
                 }
             }
             return new DreamValue(view);
@@ -2871,11 +2858,8 @@ namespace OpenDreamRuntime.Procs.Native {
             int centerX = center.GetVariable("x").MustGetValueAsInteger();
             int centerY = center.GetVariable("y").MustGetValueAsInteger();
 
-            foreach (DreamObject mob in state.AtomManager.Mobs) {
-                int mobX = mob.GetVariable("x").MustGetValueAsInteger();
-                int mobY = mob.GetVariable("y").MustGetValueAsInteger();
-
-                if (Math.Abs(centerX - mobX) <= depth && Math.Abs(centerY - mobY) <= depth) {
+            foreach (DreamObjectMob mob in state.AtomManager.Mobs) {
+                if (Math.Abs(centerX - mob.X) <= depth && Math.Abs(centerY - mob.Y) <= depth) {
                     view.AddValue(new DreamValue(mob));
                 }
             }
@@ -2920,10 +2904,10 @@ namespace OpenDreamRuntime.Procs.Native {
 
             DreamConnection? connection;
 
-            if (player.TryGetValueAsDreamObjectOfType(state.ObjectTree.Mob, out var mob)) {
-                state.DreamManager.TryGetConnectionFromMob(mob, out connection);
-            } else if (player.TryGetValueAsDreamObjectOfType(state.ObjectTree.Client, out var client)) {
-                connection = state.DreamManager.GetConnectionFromClient(client);
+            if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
+                connection = mob.Connection;
+            } else if (player.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                connection = client.Connection;
             } else {
                 throw new ArgumentException($"Invalid \"player\" argument {player}");
             }
@@ -2942,10 +2926,10 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             DreamConnection? connection = null;
-            if (player.TryGetValueAsDreamObjectOfType(state.ObjectTree.Mob, out var mob)) {
-                state.DreamManager.TryGetConnectionFromMob(mob, out connection);
-            } else if (player.TryGetValueAsDreamObjectOfType(state.ObjectTree.Client, out var client)) {
-                connection = state.DreamManager.GetConnectionFromClient(client);
+            if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
+                connection = mob.Connection;
+            } else if (player.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                connection = client.Connection;
             }
 
             if (connection == null) {
@@ -2966,10 +2950,10 @@ namespace OpenDreamRuntime.Procs.Native {
             string winsetParams = state.GetArgument(2, "params").GetValueAsString();
 
             DreamConnection? connection = null;
-            if (player.TryGetValueAsDreamObjectOfType(state.ObjectTree.Mob, out var mob)) {
-                state.DreamManager.TryGetConnectionFromMob(mob, out connection);
-            } else if (player.TryGetValueAsDreamObjectOfType(state.ObjectTree.Client, out var client)) {
-                connection = state.DreamManager.GetConnectionFromClient(client);
+            if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
+                connection = mob.Connection;
+            } else if (player.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                connection = client.Connection;
             }
 
             if (connection == null) {

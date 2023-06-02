@@ -1,12 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
-using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
@@ -14,28 +13,27 @@ using Level = OpenDreamRuntime.IDreamMapManager.Level;
 using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
 
 namespace OpenDreamRuntime {
-    public sealed class DreamMapManager : IDreamMapManager {
+    internal sealed class DreamMapManager : IDreamMapManager {
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
-        // Systems set in Initialize
+        // Set in Initialize
         private ServerAppearanceSystem _appearanceSystem = default!;
-        private TransformSystem _transformSystem = default!;
 
         public Vector2i Size { get; private set; }
         public int Levels => _levels.Count;
 
         private readonly List<Level> _levels = new();
-        private readonly Dictionary<DreamObject, (Vector2i Pos, Level Level)> _turfToTilePos = new();
-        private readonly Dictionary<MapObjectJson, DreamObject> _areas = new();
-        private MapObjectJson _defaultArea = default!;  // set in Initialize
-        private IDreamObjectTree.TreeEntry _defaultTurf;
+        private readonly Dictionary<MapObjectJson, DreamObjectArea> _areas = new();
+
+        // Set in Initialize
+        private MapObjectJson _defaultArea = default!;
+        private IDreamObjectTree.TreeEntry _defaultTurf = default!;
 
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-            _transformSystem = _entitySystemManager.GetEntitySystem<TransformSystem>();
 
             DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
 
@@ -127,19 +125,18 @@ namespace OpenDreamRuntime {
             }
         }
 
-        private DreamObject SetTurf(Vector2i pos, Level level, DreamObjectDefinition type, DreamProcArguments creationArguments) {
-            if (IsInvalidCoordinate(pos, level.Z)) throw new ArgumentException("Invalid coordinates");
+        private DreamObject SetTurf(Vector2i pos, int z, DreamObjectDefinition type, DreamProcArguments creationArguments) {
+            if (IsInvalidCoordinate(pos, z))
+                throw new ArgumentException("Invalid coordinates");
 
-            Cell cell = level.Cells[pos.X - 1, pos.Y - 1];
+            Cell cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
             if (cell.Turf != null) {
-                cell.Turf.SetObjectDefinition(type);
+                cell.Turf.SetTurfType(type);
             } else {
-                cell.Turf = new DreamObject(type);
-                _turfToTilePos.Add(cell.Turf, (pos, level));
+                cell.Turf = new DreamObjectTurf(type, pos.X, pos.Y, z, cell);
                 // Only add the /turf to .contents when it's created.
-                cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
+                cell.Area.Contents.AddValue(new(cell.Turf));
                 _atomManager.Turfs.Add(cell.Turf);
-                DreamMetaObjectTurf.TurfContentsLists.Add(cell.Turf, new TurfContentsList(_objectTree.List.ObjectDefinition, _objectTree, cell));
             }
 
             IconAppearance turfAppearance = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);
@@ -149,84 +146,50 @@ namespace OpenDreamRuntime {
             return cell.Turf;
         }
 
-        public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments) {
-            (Vector2i pos, Level level) = _turfToTilePos[turf];
-
-            SetTurf(pos, level, type, creationArguments);
+        public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments) {
+            SetTurf((turf.X, turf.Y), turf.Z, type, creationArguments);
         }
 
-        public void SetTurfAppearance(DreamObject turf, IconAppearance appearance) {
-            (Vector2i pos, Level level) = _turfToTilePos[turf];
-
+        public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
             uint appearanceId = _appearanceSystem.AddAppearance(appearance);
             if (appearanceId > ushort.MaxValue - 1) {
                 // TODO: Maybe separate appearance IDs and turf IDs to prevent this possibility
-                Logger.Error($"Failed to set turf's appearance at {pos} because its appearance ID was greater than {ushort.MaxValue - 1}");
+                Logger.Error($"Failed to set turf's appearance at ({turf.X}, {turf.Y}) because its appearance ID was greater than {ushort.MaxValue - 1}");
                 return;
             }
 
+            var level = _levels[turf.Z - 1];
             ushort turfId = (ushort) (appearanceId + 1); // +1 because 0 is used for empty turfs
-            level.QueuedTileUpdates[pos] = new Tile(turfId);
+            level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
+            turf.AppearanceId = appearanceId;
         }
 
-        private uint GetAppearanceIDForTurf(DreamObject turf) {
-            (Vector2i pos, Level level) = _turfToTilePos[turf];
-
-            if (!level.QueuedTileUpdates.TryGetValue(pos, out var tile)) {
-                tile = level.Grid.GetTileRef(pos).Tile;
-            }
-
-            uint appearanceId = (uint)tile.TypeId - 1;
-            return appearanceId;
-        }
-
-        public IconAppearance MustGetTurfAppearance(DreamObject turf) {
-            return _appearanceSystem.MustGetAppearance(GetAppearanceIDForTurf(turf));
-        }
-
-        public bool TryGetTurfAppearance(DreamObject turf, [NotNullWhen(true)] out IconAppearance? appearance) {
-            return _appearanceSystem.TryGetAppearance(GetAppearanceIDForTurf(turf), out appearance);
-        }
-
-        public Cell GetCellFromTurf(DreamObject turf) {
-            var (turfPos, level) = _turfToTilePos[turf];
-
-            return level.Cells[turfPos.X - 1, turfPos.Y - 1];
-        }
-
-        public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out Cell? cell) {
-            var pos = (Vector2i) _transformSystem.GetWorldPosition(transform);
-            var z = (int) transform.MapID;
-
-            if (IsInvalidCoordinate(pos, z)) {
+        public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell) {
+            if (IsInvalidCoordinate(pos, z) || !_levels.TryGetValue(z - 1, out var level)) {
                 cell = null;
                 return false;
             }
 
-            cell = _levels[z - 1].Cells[pos.X - 1, pos.Y - 1];
+            cell = level.Cells[pos.X - 1, pos.Y - 1];
             return true;
         }
 
-        public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObject? turf) {
-            if (IsInvalidCoordinate(pos, z) || !_levels.TryGetValue(z - 1, out var level)) {
-                turf = null;
-                return false;
+        public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf) {
+            if (TryGetCellAt(pos, z, out var cell)) {
+                turf = cell.Turf;
+                return (turf != null);
             }
 
-            turf = level.Cells[pos.X - 1, pos.Y - 1].Turf;
-            return (turf != null);
-        }
-
-        public (Vector2i Pos, Level Level) GetTurfPosition(DreamObject turf) {
-            return _turfToTilePos[turf];
+            turf = null;
+            return false;
         }
 
         //Returns an area loaded by a DMM
         //Does not include areas created by DM code
-        private DreamObject GetOrCreateArea(MapObjectJson prototype) {
-            if (!_areas.TryGetValue(prototype, out DreamObject? area)) {
+        private DreamObjectArea GetOrCreateArea(MapObjectJson prototype) {
+            if (!_areas.TryGetValue(prototype, out DreamObjectArea? area)) {
                 var definition = CreateMapObjectDefinition(prototype);
-                area = new DreamObject(definition);
+                area = new DreamObjectArea(definition);
                 area.InitSpawn(new());
                 _areas.Add(prototype, area);
             }
@@ -234,15 +197,9 @@ namespace OpenDreamRuntime {
             return area;
         }
 
-        public DreamObject GetAreaAt(DreamObject turf) {
-            (Vector2i pos, Level level) = GetTurfPosition(turf);
-
-            return level.Cells[pos.X - 1, pos.Y - 1].Area;
-        }
-
         public void SetZLevels(int levels) {
             if (levels > Levels) {
-                DreamObject defaultArea = GetOrCreateArea(_defaultArea);
+                DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
 
                 for (int z = Levels + 1; z <= levels; z++) {
                     MapId mapId = new(z);
@@ -256,7 +213,7 @@ namespace OpenDreamRuntime {
                         for (int y = 1; y <= Size.Y; y++) {
                             Vector2i pos = (x, y);
 
-                            SetTurf(pos, level, _defaultTurf.ObjectDefinition, new());
+                            SetTurf(pos, z, _defaultTurf.ObjectDefinition, new());
                         }
                     }
                 }
@@ -283,15 +240,15 @@ namespace OpenDreamRuntime {
             // Order here doesn't really matter because it's not observable.
             foreach (string cell in block.Cells) {
                 CellDefinitionJson cellDefinition = cellDefinitions[cell];
-                DreamObject area = GetOrCreateArea(cellDefinition.Area ?? _defaultArea);
+                DreamObjectArea area = GetOrCreateArea(cellDefinition.Area ?? _defaultArea);
 
                 Vector2i pos = (block.X + blockX - 1, block.Y + block.Height - blockY);
                 Level level = _levels[block.Z - 1];
 
-                var turf = SetTurf(pos, level, CreateMapObjectDefinition(cellDefinition.Turf), new());
+                var turf = SetTurf(pos, block.Z, CreateMapObjectDefinition(cellDefinition.Turf), new());
                 // The following calls level.SetArea via an event on the area's `contents` var.
                 if (level.Cells[pos.X - 1, pos.Y - 1].Area != area) {
-                    area.GetVariable("contents").MustGetValueAsDreamList().AddValue(new(turf));
+                    area.Contents.AddValue(new(turf));
                 }
 
                 blockX++;
@@ -313,7 +270,18 @@ namespace OpenDreamRuntime {
                     if (TryGetTurfAt((blockX, blockY), block.Z, out var turf)) {
                         foreach (MapObjectJson mapObject in cellDefinition.Objects) {
                             var objDef = CreateMapObjectDefinition(mapObject);
-                            var obj = new DreamObject(objDef);
+
+                            // TODO: Use modified types during compile so this hack isn't necessary
+                            DreamObject obj;
+                            if (objDef.IsSubtypeOf(_objectTree.Mob)) {
+                                obj = new DreamObjectMob(objDef);
+                            } else if (objDef.IsSubtypeOf(_objectTree.Movable)) {
+                                obj = new DreamObjectMovable(objDef);
+                            } else if (objDef.IsSubtypeOf(_objectTree.Atom)) {
+                                obj = new DreamObjectAtom(objDef);
+                            } else {
+                                obj = new DreamObject(objDef);
+                            }
 
                             obj.InitSpawn(new(new DreamValue(turf)));
                         }
@@ -339,6 +307,10 @@ namespace OpenDreamRuntime {
 
             return definition;
         }
+
+        public EntityUid GetZLevelEntity(int z) {
+            return _levels[z - 1].Grid.Owner;
+        }
     }
 
     public interface IDreamMapManager {
@@ -348,7 +320,7 @@ namespace OpenDreamRuntime {
             public readonly Cell[,] Cells;
             public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
 
-            public Level(int z, MapGridComponent grid, DreamObject area, Vector2i size) {
+            public Level(int z, MapGridComponent grid, DreamObjectArea area, Vector2i size) {
                 Z = z;
                 Grid = grid;
 
@@ -359,25 +331,14 @@ namespace OpenDreamRuntime {
                     }
                 }
             }
-
-            public void SetArea(Vector2i pos, DreamObject area) {
-                if (!area.GetVariable("x").TryGetValueAsInteger(out int x) || x == 0 || x > pos.X)
-                    area.SetVariable("x", new DreamValue(pos.X));
-                if (!area.GetVariable("y").TryGetValueAsInteger(out int y) || y == 0 || y > pos.Y)
-                    area.SetVariable("y", new DreamValue(pos.Y));
-                if (!area.GetVariable("z").TryGetValueAsInteger(out int z) || z == 0 || z > Z)
-                    area.SetVariable("z", new DreamValue(Z));
-
-                Cells[pos.X - 1, pos.Y - 1].Area = area;
-            }
         }
 
         public sealed class Cell {
-            public DreamObject? Turf;
-            public DreamObject Area;
+            public DreamObjectTurf? Turf;
+            public DreamObjectArea Area;
             public readonly List<DreamObject> Movables = new();
 
-            public Cell(DreamObject area) {
+            public Cell(DreamObjectArea area) {
                 Area = area;
             }
         }
@@ -390,15 +351,11 @@ namespace OpenDreamRuntime {
         public void InitializeAtoms(DreamMapJson map);
         public void UpdateTiles();
 
-        public void SetTurf(DreamObject turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
-        public void SetTurfAppearance(DreamObject turf, IconAppearance appearance);
-        public IconAppearance MustGetTurfAppearance(DreamObject turf);
-        public bool TryGetTurfAppearance(DreamObject turf, [NotNullWhen(true)] out IconAppearance? appearance);
-        public Cell GetCellFromTurf(DreamObject turf);
-        public bool TryGetCellFromTransform(TransformComponent transform, [NotNullWhen(true)] out Cell? cell);
-        public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObject? turf);
-        public (Vector2i Pos, Level Level) GetTurfPosition(DreamObject turf);
-        public DreamObject GetAreaAt(DreamObject turf);
+        public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);
+        public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance);
+        public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell);
+        public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf);
         public void SetZLevels(int levels);
+        public EntityUid GetZLevelEntity(int z);
     }
 }

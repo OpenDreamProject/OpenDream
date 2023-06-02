@@ -1,5 +1,5 @@
-using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 using Robust.Server.Player;
 using Robust.Shared.Timing;
 
@@ -7,7 +7,7 @@ namespace OpenDreamRuntime {
     public interface IDreamManager {
         public bool Initialized { get; }
         public GameTick InitializedTick { get; }
-        public DreamObject WorldInstance { get; }
+        public DreamObjectWorld WorldInstance { get; }
 
         /// <summary>
         /// A black box (as in, on an airplane) variable currently only used by the test suite to help harvest runtime error info.
@@ -37,8 +37,6 @@ namespace OpenDreamRuntime {
         public DreamValue LocateRef(string refString);
 
         public DreamConnection GetConnectionBySession(IPlayerSession session);
-        public DreamConnection GetConnectionFromClient(DreamObject client);
-        public bool TryGetConnectionFromMob(DreamObject mob, [NotNullWhen(true)] out DreamConnection? connection);
 
         public void HandleException(Exception e);
     }

@@ -42,7 +42,7 @@ namespace OpenDreamRuntime.Procs {
         public sealed class State : ProcState {
             public static readonly Stack<State> Pool = new();
 
-            public DreamObject? Src;
+            public DreamObject? Src; // TODO: Maybe make this a generic so Src doesn't have to be casted
             public DreamObject? Usr;
 
             public DreamProcArguments Arguments => new(_arguments.AsSpan(0, _argumentCount));

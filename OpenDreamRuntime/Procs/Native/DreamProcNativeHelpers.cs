@@ -1,11 +1,8 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
-using System.Threading.Tasks;
+using OpenDreamRuntime.Objects.Types;
+
 namespace OpenDreamRuntime.Procs.Native;
 
 /// <summary>
@@ -28,15 +25,15 @@ internal static partial class DreamProcNativeHelpers {
     /// <remarks>
     /// This proc tries to handle the rectangular case, but I am not totally confident that it's up to parity.
     /// </remarks>
-    /// <returns>Turfs, as <see cref="DreamObject"/>s, in the correct, parity order for the above procs.</returns>
-    static public IEnumerable<DreamObject> MakeViewSpiral(DreamObject center, ViewRange distance) {
+    /// <returns>Turfs, in the correct, parity order for the above procs.</returns>
+    public static IEnumerable<DreamObjectTurf> MakeViewSpiral(DreamObjectAtom center, ViewRange distance) {
         var mapMgr = IoCManager.Resolve<IDreamMapManager>();
         var atomMgr = IoCManager.Resolve<IAtomManager>();
         var centerPos = atomMgr.GetAtomPosition(center);
 
-        int WidthRange = (distance.Width - 1) >> 1; // TODO: Make rectangles work.
-        int HeightRange = (distance.Height - 1) >> 1;
-        int donutCount = Math.Max(WidthRange, HeightRange);
+        int widthRange = (distance.Width - 1) >> 1; // TODO: Make rectangles work.
+        int heightRange = (distance.Height - 1) >> 1;
+        int donutCount = Math.Max(widthRange, heightRange);
         for(int d = 1; d <= donutCount; d++) { // for each donut
             int sideLength = d + d + 1;
             //The left column
@@ -75,7 +72,6 @@ internal static partial class DreamProcNativeHelpers {
                 }
             }
         }
-        yield break;
     }
 
     /// <summary>
@@ -87,16 +83,16 @@ internal static partial class DreamProcNativeHelpers {
     /// If a range argument is passed, like "11x4", then THAT is what we have to deal with.
     /// </remarks>
     /// <returns>The center (which may not be the turf), the distance along the x-axis, and the distance along the y-axis to iterate.</returns>
-    public static (DreamObject, ViewRange) ResolveViewArguments(DreamObject usr, DreamProcArguments arguments) {
+    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamObjectAtom? usr, DreamProcArguments arguments) {
         if(arguments.Count == 0) {
             return (usr, new ViewRange(5,5));
         }
 
         ViewRange range = new ViewRange(5,5);
-        DreamObject center = usr;
+        DreamObjectAtom? center = usr;
 
         foreach (var arg in arguments.Values) {
-            if(arg.TryGetValueAsDreamObject(out var centerObject)) {
+            if(arg.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerObject)) {
                 center = centerObject;
             } else if(arg.TryGetValueAsInteger(out int distValue)) {
                 range = new ViewRange(distValue);
@@ -117,11 +113,9 @@ internal static partial class DreamProcNativeHelpers {
     /// <see langword="TODO:"/> This proc is DEFINITELY incomplete. <br/>
     /// </remarks>
     /// <returns>True if observer can see obj. False if not.</returns>
-    public static bool IsObjectVisible(IAtomManager atomManager, IDreamObjectTree objectTree, DreamObject obj, DreamObject observer) {
+    public static bool IsObjectVisible(IAtomManager atomManager, IDreamObjectTree objectTree, DreamObjectAtom obj, DreamObject observer) {
         if(obj == observer) // Not proven to be true, but makes intuitive sense.
             return true;
-        if(!obj.IsSubtypeOf(objectTree.Atom))
-            return false; // Can't see datums and nulls n stuff, I THINK???
         if (!atomManager.TryGetAppearance(obj, out var appearance))
             return false;
 
@@ -133,13 +127,9 @@ internal static partial class DreamProcNativeHelpers {
         // Ref:
         // "This determines the object's level of invisibility."
         // "The corresponding mob variable see_invisible controls the maximum level of invisibility that the mob may see."
-        if(observer.IsSubtypeOf(objectTree.Mob)) {
-            if(observer.TryGetVariable("see_invisible",out var maxInvisibility)) {
-                if(maxInvisibility.TryGetValueAsFloat(out float maxInvisibilityValue)) {
-                    if(maxInvisibilityValue < appearance.Invisibility) {
-                        return false;
-                    }
-                }
+        if(observer is DreamObjectMob observerMob) {
+            if(observerMob.SeeInvisible < appearance.Invisibility) {
+                return false;
             }
         }
         return true;

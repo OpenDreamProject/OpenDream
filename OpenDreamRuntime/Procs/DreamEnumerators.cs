@@ -105,7 +105,7 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 DreamValue value = _dreamValueArray[_current];
-                if (value.TryGetValueAsDreamObjectOfType(_filterType, out _)) {
+                if (value.TryGetValueAsDreamObject(out var dreamObject) && (dreamObject?.IsSubtypeOf(_filterType) ?? false)) {
                     if (reference != null)
                         state.AssignReference(reference.Value, value);
                     return true;

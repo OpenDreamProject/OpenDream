@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream.Procs;
@@ -8,7 +9,7 @@ using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;
 
-sealed class DreamDebugManager : IDreamDebugManager {
+internal sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IDreamManager _dreamManager = default!;
     [Dependency] private readonly IDreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;

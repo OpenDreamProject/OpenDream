@@ -1,4 +1,5 @@
 ﻿using System.Collections.Immutable;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -9,6 +10,45 @@ public sealed class DreamObjectMatrix : DreamObject {
 
     public DreamObjectMatrix(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
 
+    }
+
+    public override void Initialize(DreamProcArguments args) {
+        if (args.Count > 0) {
+            DreamValue copyMatrixOrA = args.GetArgument(0);
+            if (copyMatrixOrA.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixToCopy)) {
+                SetVariableValue("a", matrixToCopy.GetVariable("a"));
+                SetVariableValue("b", matrixToCopy.GetVariable("b"));
+                SetVariableValue("c", matrixToCopy.GetVariable("c"));
+                SetVariableValue("d", matrixToCopy.GetVariable("d"));
+                SetVariableValue("e", matrixToCopy.GetVariable("e"));
+                SetVariableValue("f", matrixToCopy.GetVariable("f"));
+            } else {
+                DreamValue b = args.GetArgument(1);
+                DreamValue c = args.GetArgument(2);
+                DreamValue d = args.GetArgument(3);
+                DreamValue e = args.GetArgument(4);
+                DreamValue f = args.GetArgument(5);
+                try { // BYOND runtimes if args are of the wrong type
+                    copyMatrixOrA.MustGetValueAsFloat();
+                    b.MustGetValueAsFloat();
+                    c.MustGetValueAsFloat();
+                    d.MustGetValueAsFloat();
+                    e.MustGetValueAsFloat();
+                    f.MustGetValueAsFloat();
+                } catch (InvalidCastException) {
+                    throw new ArgumentException($"Invalid arguments used to create matrix {copyMatrixOrA} {b} {c} {d} {e} {f}");
+                }
+
+                SetVariableValue("a", copyMatrixOrA);
+                SetVariableValue("b", b);
+                SetVariableValue("c", c);
+                SetVariableValue("d", d);
+                SetVariableValue("e", e);
+                SetVariableValue("f", f);
+            }
+        }
+
+        base.Initialize(args);
     }
 
     public override DreamValue OperatorMultiply(DreamValue b) {

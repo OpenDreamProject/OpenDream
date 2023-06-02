@@ -68,7 +68,7 @@ namespace OpenDreamRuntime.Procs {
                         return new DreamValueArrayEnumerator(Array.Empty<DreamValue>());
 
                     if (dreamObject is DreamObjectAtom) {
-                        list = dreamObject.GetVariable("contents").GetValueAsDreamList();
+                        list = dreamObject.GetVariable("contents").MustGetValueAsDreamList();
                     } else if (dreamObject is DreamObjectWorld) {
                         // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
                         if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
@@ -142,11 +142,18 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? CreateRangeEnumerator(DMProcState state) {
-            float step = state.Pop().GetValueAsFloat();
-            float rangeEnd = state.Pop().GetValueAsFloat();
-            float rangeStart = state.Pop().GetValueAsFloat();
+            DreamValue step = state.Pop();
+            DreamValue rangeEnd = state.Pop();
+            DreamValue rangeStart = state.Pop();
 
-            state.EnumeratorStack.Push(new DreamValueRangeEnumerator(rangeStart, rangeEnd, step));
+            if (!step.TryGetValueAsFloat(out var stepValue))
+                throw new Exception($"Invalid step {step}, must be a number");
+            if (!rangeEnd.TryGetValueAsFloat(out var rangeEndValue))
+                throw new Exception($"Invalid end {rangeEnd}, must be a number");
+            if (!rangeStart.TryGetValueAsFloat(out var rangeStartValue))
+                throw new Exception($"Invalid start {rangeStart}, must be a number");
+
+            state.EnumeratorStack.Push(new DreamValueRangeEnumerator(rangeStartValue, rangeEndValue, stepValue));
             return null;
         }
 
@@ -532,7 +539,7 @@ namespace OpenDreamRuntime.Procs {
 
                 if (list == null) {
                     if (listObject is DreamObjectAtom or DreamObjectWorld) {
-                        list = listObject.GetVariable("contents").GetValueAsDreamList();
+                        list = listObject.GetVariable("contents").MustGetValueAsDreamList();
                     } else {
                         // BYOND ignores all floats, strings, types, etc. here and just returns 0.
                         state.Push(new DreamValue(0));
@@ -631,16 +638,16 @@ namespace OpenDreamRuntime.Procs {
                 output = second;
             } else switch (first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    float firstFloat = first.GetValueAsFloat();
+                    float firstFloat = first.MustGetValueAsFloat();
 
                     output = second.Type switch {
-                        DreamValue.DreamValueType.Float => new DreamValue(firstFloat + second.GetValueAsFloat()),
+                        DreamValue.DreamValueType.Float => new DreamValue(firstFloat + second.MustGetValueAsFloat()),
                         _ => null
                     };
                     break;
                 }
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                    output = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
+                    output = new DreamValue(first.MustGetValueAsString() + second.MustGetValueAsString());
                     break;
                 case DreamValue.DreamValueType.DreamObject: {
                     output = first.MustGetValueAsDreamObject()!.OperatorAdd(second);
@@ -685,10 +692,10 @@ namespace OpenDreamRuntime.Procs {
             } else if (second != DreamValue.Null) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                        result = new DreamValue(first.GetValueAsFloat() + second.GetValueAsFloat());
+                        result = new DreamValue(first.MustGetValueAsFloat() + second.MustGetValueAsFloat());
                         break;
                     case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
-                        result = new DreamValue(first.GetValueAsString() + second.GetValueAsString());
+                        result = new DreamValue(first.MustGetValueAsString() + second.MustGetValueAsString());
                         break;
                     default:
                         throw new Exception("Invalid append operation on " + first + " and " + second);
@@ -1008,11 +1015,11 @@ namespace OpenDreamRuntime.Procs {
 
                     return null;
                 }
-                case DreamValue.DreamValueType.DreamObject:
+                case DreamValue.DreamValueType.DreamObject: // null
                     result = new DreamValue(0);
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger());
+                    result = new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger());
                     break;
                 default:
                     throw new Exception("Invalid mask operation on " + first + " and " + second);
@@ -1084,7 +1091,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.GetValueAsFloat())); break;
+                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.MustGetValueAsFloat())); break;
                 case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
                 default: throw new Exception("Invalid negate operation on " + value);
             }
@@ -1119,13 +1126,13 @@ namespace OpenDreamRuntime.Procs {
                     return null;
                 }
                 case DreamValue.DreamValueType.DreamObject when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(-second.GetValueAsFloat());
+                    result = new DreamValue(-second.MustGetValueAsFloat());
                     break;
                 case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.GetValueAsFloat() - second.GetValueAsFloat());
+                    result = new DreamValue(first.MustGetValueAsFloat() - second.MustGetValueAsFloat());
                     break;
                 default:
-                    throw new Exception("Invalid remove operation on " + first + " and " + second);
+                    throw new Exception($"Invalid remove operation on {first} and {second}");
             }
 
             state.AssignReference(reference, result);
@@ -1141,13 +1148,13 @@ namespace OpenDreamRuntime.Procs {
             if (second == DreamValue.Null) {
                 output = first;
             } else if (first == DreamValue.Null && second.Type == DreamValue.DreamValueType.Float) {
-                output = new DreamValue(-second.GetValueAsFloat());
+                output = new DreamValue(-second.MustGetValueAsFloat());
             } else switch (first.Type) {
                 case DreamValue.DreamValueType.Float: {
-                    float firstFloat = first.GetValueAsFloat();
+                    float firstFloat = first.MustGetValueAsFloat();
 
                     output = second.Type switch {
-                        DreamValue.DreamValueType.Float => new DreamValue(firstFloat - second.GetValueAsFloat()),
+                        DreamValue.DreamValueType.Float => new DreamValue(firstFloat - second.MustGetValueAsFloat()),
                         _ => null
                     };
                     break;
@@ -1165,7 +1172,7 @@ namespace OpenDreamRuntime.Procs {
             if (output != null) {
                 state.Push(output.Value);
             } else {
-                throw new Exception("Invalid subtract operation on " + first + " and " + second);
+                throw new Exception($"Invalid subtract operation on {first} and {second}");
             }
 
             return null;
@@ -1342,13 +1349,13 @@ namespace OpenDreamRuntime.Procs {
 
             switch (source.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject dreamObject = source.GetValueAsDreamObject();
+                    DreamObject? dreamObject = source.MustGetValueAsDreamObject();
                     DreamValue procId = state.Pop();
-                    DreamProc proc = null;
+                    DreamProc? proc = null;
 
                     switch (procId.Type) {
                         case DreamValue.DreamValueType.String:
-                            proc = dreamObject.GetProc(procId.GetValueAsString());
+                            proc = dreamObject?.GetProc(procId.MustGetValueAsString());
                             break;
                         case DreamValue.DreamValueType.DreamProc: {
                             proc = procId.MustGetValueAsProc();
@@ -1362,7 +1369,7 @@ namespace OpenDreamRuntime.Procs {
                         return ProcStatus.Called;
                     }
 
-                    throw new Exception($"Invalid proc ({procId})");
+                    throw new Exception($"Invalid proc ({procId} on {dreamObject})");
                 }
                 case DreamValue.DreamValueType.DreamProc: {
                     var proc = source.MustGetValueAsProc();
@@ -1587,7 +1594,7 @@ namespace OpenDreamRuntime.Procs {
         //Jump the current thread to after the spawn's code
         public static ProcStatus? Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
-            float delay = state.Pop().GetValueAsFloat();
+            state.Pop().TryGetValueAsFloat(out var delay);
             int delayMilliseconds = (int)(delay * 100);
 
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
@@ -1701,7 +1708,8 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Browse(DMProcState state) {
             state.Pop().TryGetValueAsString(out string? options);
             DreamValue body = state.Pop();
-            DreamObject receiver = state.Pop().GetValueAsDreamObject();
+            if (!state.Pop().TryGetValueAsDreamObject(out var receiver) ||  receiver == null)
+                return null;
 
             IEnumerable<DreamConnection> clients;
             if (receiver is DreamObjectMob { Connection: {} mobConnection }) {
@@ -1724,7 +1732,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             foreach (DreamConnection client in clients) {
-                client?.Browse(browseValue, options);
+                client.Browse(browseValue, options);
             }
 
             return null;
@@ -1742,7 +1750,8 @@ namespace OpenDreamRuntime.Procs {
                 }
             }
 
-            DreamObject receiver = state.Pop().GetValueAsDreamObject();
+            if (!state.Pop().TryGetValueAsDreamObject(out var receiver) || receiver == null)
+                return null;
 
             DreamConnection? connection;
             if (receiver is DreamObjectMob receiverMob) {
@@ -1758,19 +1767,23 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? DeleteObject(DMProcState state) {
-            DreamObject dreamObject = state.Pop().GetValueAsDreamObject();
+            state.Pop().TryGetValueAsDreamObject(out var dreamObject);
 
-            dreamObject?.Delete();
-            if (dreamObject is not null && dreamObject == state.Instance) {
-                return ProcStatus.Returned;
+            if (dreamObject is not null) {
+                dreamObject.Delete();
+
+                if (dreamObject == state.Instance) // We just deleted our src, end the proc TODO: Is the entire thread cancelled?
+                    return ProcStatus.Returned;
             }
+
             return null;
         }
 
         public static ProcStatus? OutputControl(DMProcState state) {
             string control = state.Pop().GetValueAsString();
             DreamValue message = state.Pop();
-            DreamObject receiver = state.Pop().GetValueAsDreamObject();
+            if (!state.Pop().TryGetValueAsDreamObject(out var receiver) || receiver == null)
+                return null;
 
             if (receiver == state.DreamManager.WorldInstance) {
                 //Same as "world << ..."
@@ -2286,7 +2299,7 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
                 return firstObject!.OperatorMultiply(second);
             } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new(first.GetValueAsFloat() * second.GetValueAsFloat());
+                return new(first.MustGetValueAsFloat() * second.MustGetValueAsFloat());
             } else {
                 throw new Exception($"Invalid multiply operation on {first} and {second}");
             }

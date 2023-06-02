@@ -224,7 +224,7 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
         }
 
-        public void VisitAssignInto(DMASTAssign assign) {
+        public void VisitAssignInto(DMASTAssignInto assign) {
             var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.NestedPath);
             if(lhs.TryAsConstant(out _)) {

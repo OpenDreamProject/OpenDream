@@ -1487,7 +1487,10 @@ namespace DMCompiler.Compiler.DM {
             Value = value;
         }
 
-        public override IEnumerable<DMASTExpression> Leaves() { yield return Expression; yield return Value; }
+        public override IEnumerable<DMASTExpression> Leaves() {
+            yield return Expression;
+            yield return Value;
+        }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitAssignInto(this);

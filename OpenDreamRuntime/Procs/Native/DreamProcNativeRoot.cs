@@ -179,20 +179,53 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("block")]
-        [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
-        [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Start", Type = DreamValueType.DreamObject | DreamValueType.Float)]
+        [DreamProcParameter("End", Type = DreamValueType.DreamObject | DreamValueType.Float)]
+        [DreamProcParameter("StartZ", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndX", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndY", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndZ", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_block(NativeProc.State state) {
-            if (!state.GetArgument(0, "Start").TryGetValueAsDreamObject<DreamObjectTurf>(out var start))
-                return new DreamValue(state.ObjectTree.CreateList());
-            if (!state.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out var end))
-                return new DreamValue(state.ObjectTree.CreateList());
+            (int X, int Y, int Z) startPos;
+            (int X, int Y, int Z) endPos;
+            if (state.GetArgument(0, "Start").TryGetValueAsDreamObject<DreamObjectTurf>(out var startT)) {
+                if (!state.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out var endT))
+                    return new DreamValue(state.ObjectTree.CreateList());
 
-            int startX = Math.Min(start.X, end.X);
-            int startY = Math.Min(start.Y, end.Y);
-            int startZ = Math.Min(start.Z, end.Z);
-            int endX = Math.Max(start.X, end.X);
-            int endY = Math.Max(start.Y, end.Y);
-            int endZ = Math.Max(start.Z, end.Z);
+                startPos = (startT.X, startT.Y, startT.Z);
+                endPos = (endT.X, endT.Y, endT.Z);
+            } else {
+                // Need to check that we weren't passed something like block("cat", turf) which should return an empty list
+                if (state.GetArgument(1, "End").TryGetValueAsDreamObject<DreamObjectTurf>(out _)) {
+                    return new DreamValue(state.ObjectTree.CreateList());
+                }
+                // coordinate-style
+                if (!state.GetArgument(0, "Start").TryGetValueAsInteger(out startPos.X)) {
+                    startPos.X = 1; // First three default to 1 when passed null or invalid
+                }
+                if (!state.GetArgument(1, "End").TryGetValueAsInteger(out startPos.Y)) {
+                    startPos.Y = 1;
+                }
+                if (!state.GetArgument(2, "StartZ").TryGetValueAsInteger(out startPos.Z)) {
+                    startPos.Z = 1;
+                }
+                if (!state.GetArgument(3, "EndX").TryGetValueAsInteger(out endPos.X)) {
+                    endPos.X = startPos.X; // Last three default to the start coords if null or invalid
+                }
+                if (!state.GetArgument(4, "EndY").TryGetValueAsInteger(out endPos.Y)) {
+                    endPos.Y = startPos.Y;
+                }
+                if (!state.GetArgument(5, "EndZ").TryGetValueAsInteger(out endPos.Z)) {
+                    endPos.Z = startPos.Z;
+                }
+            }
+
+            int startX = Math.Min(startPos.X, endPos.X);
+            int startY = Math.Min(startPos.Y, endPos.Y);
+            int startZ = Math.Min(startPos.Z, endPos.Z);
+            int endX = Math.Max(startPos.X, endPos.X);
+            int endY = Math.Max(startPos.Y, endPos.Y);
+            int endZ = Math.Max(startPos.Z, endPos.Z);
 
             DreamList turfs = state.ObjectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
 
@@ -200,9 +233,9 @@ namespace OpenDreamRuntime.Procs.Native {
             for (int z = startZ; z <= endZ; z++) {
                 for (int y = startY; y <= endY; y++) {
                     for (int x = startX; x <= endX; x++) {
-                        state.MapManager.TryGetTurfAt((x, y), z, out var turf);
-
-                        turfs.AddValue(new DreamValue(turf));
+                        if (state.MapManager.TryGetTurfAt((x, y), z, out var turf)) {
+                            turfs.AddValue(new DreamValue(turf));
+                        }
                     }
                 }
             }

@@ -19,6 +19,7 @@ public sealed class DMFLexer : TextLexer {
 
             switch (c) {
                 case ' ':
+                case '\r':
                 case '\t': {
                     Advance();
                     token = CreateToken(TokenType.Skip, c);

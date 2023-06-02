@@ -19,7 +19,7 @@
 			a += C
 
 	proc/operator-()
-		 return new /datum/complex(a*-1, b*-1)
+		return new /datum/complex(a*-1, b*-1)
 		 
 	proc/operator*(datum/complex/C) 
 		if(isnum(C))

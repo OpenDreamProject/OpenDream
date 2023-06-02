@@ -647,8 +647,7 @@ namespace DMCompiler.Compiler.DM {
         public DreamPath Path;
         public bool IsOperator = false;
 
-        public DMASTPath(Location location, DreamPath path, bool operatorFlag = false) : base(location)
-        {
+        public DMASTPath(Location location, DreamPath path, bool operatorFlag = false) : base(location) {
             Path = path;
             IsOperator = operatorFlag;
         }

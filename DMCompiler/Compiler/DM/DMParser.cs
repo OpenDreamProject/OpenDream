@@ -243,8 +243,7 @@ namespace DMCompiler.Compiler.DM {
                             procBlock = new DMASTProcBlockInner(loc, procStatement);
                         }
                     }
-                    if(path.IsOperator)
-                    {
+                    if(path.IsOperator) {
                         List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                         Location tokenLoc = procBlock.Location;
                         //add ". = src" as the first expression in the operator
@@ -365,8 +364,7 @@ namespace DMCompiler.Compiler.DM {
                     pathElement = PathElement();
 
                     if (pathElement != null) {
-                        if(pathElement == "operator")
-                        {
+                        if(pathElement == "operator") {
                             Token operatorToken = Current();
                             if(!Check(OperatorOverloadTypes))
                                 Error($"Invalid operator overload {operatorToken.PrintableText}");
@@ -415,16 +413,13 @@ namespace DMCompiler.Compiler.DM {
 
                 List<DMASTCallParameter> sizes = new(2); // Most common is 1D or 2D lists
 
-                while (true)
-                {
+                while (true) {
                     if(Check(TokenType.DM_DoubleSquareBracket))
                         Whitespace();
-                    else if(Check(TokenType.DM_LeftBracket))
-                    {
+                    else if(Check(TokenType.DM_LeftBracket)) {
                         Whitespace();
                         var size = Expression();
-                        if (size is not null)
-                        {
+                        if (size is not null) {
                             sizes.Add(new DMASTCallParameter(size.Location, size));
                         }
 

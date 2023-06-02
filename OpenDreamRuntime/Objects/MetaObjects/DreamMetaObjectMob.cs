@@ -59,14 +59,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 mobSightComponent.Dirty();
                 dreamObject.SetVariableValue("see_invisible", new DreamValue(seeVis));
             } else if (varName == "client" && value != oldValue) {
-                var newClient = value.GetValueAsDreamObject();
-                var oldClient = oldValue.GetValueAsDreamObject();
-
-                if (newClient != null) {
+                if (value.TryGetValueAsDreamObjectOfType(_objectTree.Client, out var newClient))
                     _dreamManager.GetConnectionFromClient(newClient).Mob = dreamObject;
-                } else if (oldClient != null) {
+                else if (oldValue.TryGetValueAsDreamObjectOfType(_objectTree.Client, out var oldClient))
                     _dreamManager.GetConnectionFromClient(oldClient).Mob = null;
-                }
             }
         }
 

@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Procs.Native;
 using Robust.Server.Player;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Utility;
@@ -38,7 +39,13 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
         public void OnVariableSet(DreamObject dreamObject, string varName, DreamValue value, DreamValue oldValue) {
             ParentType?.OnVariableSet(dreamObject, varName, value, oldValue);
 
-            if (varName == "key" || varName == "ckey") {
+            if (varName == "ckey" && value.TryGetValueAsString(out var canonicalUsername)) {
+                foreach (var connection in _dreamManager.Connections) {
+                    if (DreamProcNativeHelpers.Ckey(connection.Session!.Name) == canonicalUsername) {
+                        connection.Mob = dreamObject;
+                    }
+                }
+            } else if (varName == "key") {
                 if (_playerManager.TryGetSessionByUsername(value.GetValueAsString(), out var session)) {
                     var connection = _dreamManager.GetConnectionBySession(session);
 
@@ -52,14 +59,10 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                 mobSightComponent.Dirty();
                 dreamObject.SetVariableValue("see_invisible", new DreamValue(seeVis));
             } else if (varName == "client" && value != oldValue) {
-                var newClient = value.GetValueAsDreamObject();
-                var oldClient = oldValue.GetValueAsDreamObject();
-
-                if (newClient != null) {
+                if (value.TryGetValueAsDreamObjectOfType(_objectTree.Client, out var newClient))
                     _dreamManager.GetConnectionFromClient(newClient).Mob = dreamObject;
-                } else if (oldClient != null) {
+                else if (oldValue.TryGetValueAsDreamObjectOfType(_objectTree.Client, out var oldClient))
                     _dreamManager.GetConnectionFromClient(oldClient).Mob = null;
-                }
             }
         }
 

@@ -3,9 +3,9 @@ using Robust.Client.UserInterface;
 
 namespace OpenDreamClient.Interface.Prompts {
     [Virtual]
-    class InputWindow : PromptWindow {
-        protected InputWindow(int promptId, String title, String message, String defaultValue, bool canCancel) : base(
-            promptId, title, message) {
+    internal class InputWindow : PromptWindow {
+        protected InputWindow(string title, string message, bool canCancel,
+            Action<DMValueType, object?>? onClose) : base(title, message, onClose) {
             CreateButton("Ok", true);
             if (canCancel) CreateButton("Cancel", false);
         }

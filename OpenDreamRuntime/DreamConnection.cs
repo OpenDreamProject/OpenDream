@@ -40,7 +40,7 @@ namespace OpenDreamRuntime {
                             existingMobOwner.Mob = null;
 
                         _mob = value;
-                        _mob.SetVariableValue("ckey", new(Session!.Name));
+                        _mob.SetVariableValue("ckey", new(DreamProcNativeHelpers.Ckey(Session!.Name)));
                         _mob.SetVariableValue("key", new(Session!.Name));
                         _mob.SpawnProc("Login", usr: _mob);
                     } else {
@@ -273,8 +273,8 @@ namespace OpenDreamRuntime {
         public void HandleCommand(string fullCommand) {
             // TODO: Arguments are a little more complicated than "split by spaces"
             // e.g. strings can be passed
-            string[] args = fullCommand.Split(' ');
-            string command = args[0].ToLowerInvariant().Replace(" ", "-"); // Case-insensitive, dashes instead of spaces
+            string[] args = fullCommand.Split(' ', StringSplitOptions.TrimEntries);
+            string command = args[0].ToLowerInvariant(); // Case-insensitive
 
             switch (command) {
                 //TODO: Maybe move these verbs to DM code?
@@ -442,7 +442,7 @@ namespace OpenDreamRuntime {
             Session?.ConnectedClient.SendMessage(msg);
         }
 
-        public void Browse(string body, string? options) {
+        public void Browse(string? body, string? options) {
             string? window = null;
             Vector2i size = (480, 480);
 
@@ -450,7 +450,7 @@ namespace OpenDreamRuntime {
                 foreach (string option in options.Split(',', ';', '&')) {
                     string optionTrimmed = option.Trim();
 
-                    if (optionTrimmed != String.Empty) {
+                    if (optionTrimmed != string.Empty) {
                         string[] optionSeparated = optionTrimmed.Split("=", 2);
                         string key = optionSeparated[0];
                         string value = optionSeparated[1];

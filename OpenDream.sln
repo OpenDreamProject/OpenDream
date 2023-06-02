@@ -7,7 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{72
 	ProjectSection(SolutionItems) = preProject
 		TestGame\code.dm = TestGame\code.dm
 		TestGame\environment.dme = TestGame\environment.dme
-		TestGame\interface.dmf = TestGame\interface.dmf
 		TestGame\map.dmm = TestGame\map.dmm
 		TestGame\renderer_tests.dm = TestGame\renderer_tests.dm
 	EndProjectSection
@@ -16,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68
 	ProjectSection(SolutionItems) = preProject
 		TestGame\icons\mob.dmi = TestGame\icons\mob.dmi
 		TestGame\icons\turf.dmi = TestGame\icons\turf.dmi
+		TestGame\icons\displace.dmi = TestGame\icons\displace.dmi
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DMCompiler", "DMCompiler\DMCompiler.csproj", "{5CE157DB-7811-499B-97B7-11AC3C2C728F}"

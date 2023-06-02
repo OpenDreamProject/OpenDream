@@ -366,6 +366,7 @@ namespace DMCompiler.DM {
 
                 PushFloat(-1); // argument given to sleep()
                 Call(DMReference.CreateGlobalProc(sleepProc.Id), DMCallArgumentsType.FromStack, 1);
+                Pop(); // Pop the result of the sleep call
             }
         }
 

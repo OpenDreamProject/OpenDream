@@ -1,14 +1,13 @@
 ﻿using OpenDreamShared.Dream.Procs;
-using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Prompts;
 
-sealed class TextPrompt : InputWindow {
+internal sealed class TextPrompt : InputWindow {
     private readonly LineEdit _textEdit;
 
-    public TextPrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(promptId,
-        title, message, defaultValue, canCancel) {
+    public TextPrompt(string title, string message, string defaultValue, bool canCancel,
+        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _textEdit = new LineEdit {
             Text = defaultValue,
             VerticalAlignment = VAlignment.Top

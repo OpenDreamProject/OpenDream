@@ -149,7 +149,7 @@ namespace DMCompiler.DM.Expressions {
                 argumentsType = DMCallArgumentsType.FromProcArguments;
                 argumentStackSize = 0;
             } else {
-                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc);
+                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc, targetProc);
             }
 
             DMReference procRef = _target.EmitReference(dmObject, proc, endLabel);

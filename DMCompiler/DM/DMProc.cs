@@ -666,6 +666,10 @@ namespace DMCompiler.DM {
             WriteLabel(label);
         }
 
+        public DMASTDefinitionParameter[] GetDefParams() {
+            return _astDefinition.Parameters;
+        }
+
         public void JumpIfFalse(string label) {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.JumpIfFalse);

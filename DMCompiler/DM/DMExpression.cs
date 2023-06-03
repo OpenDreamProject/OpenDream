@@ -148,7 +148,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc) {
+        public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc, DMProc? targetProc = null) {
             if (Expressions.Length == 0) {
                 return (DMCallArgumentsType.None, 0);
             }
@@ -163,7 +163,15 @@ namespace DMCompiler.DM {
 
             // TODO: Named arguments must come after all ordered arguments
             int stackCount = 0;
-            foreach ((string name, DMExpression expr) in Expressions) {
+            var procParams = targetProc?.GetDefParams();
+            for (var index = 0; index < Expressions.Length; index++) {
+                (string name, DMExpression expr) = Expressions[index];
+                // TODO: See if the static typechecking can be improved
+                // Also right now we don't care if the arg is Anything
+                // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
+                if (targetProc is not null && index < procParams.Length && expr.ValType != DMValueType.Anything && procParams[index].Type != DMValueType.Anything && (expr.ValType & procParams[index].Type) == 0) {
+                    DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location, $"{dmObject.Path.ToString()}.{name}: Invalid var value type {expr.ValType}, expected {procParams[index].Type}");
+                }
                 if (_isKeyed) {
                     if (name != null) {
                         proc.PushString(name);

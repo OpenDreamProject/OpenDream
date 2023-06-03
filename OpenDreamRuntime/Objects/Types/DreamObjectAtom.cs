@@ -105,16 +105,6 @@ public class DreamObjectAtom : DreamObject {
             case "desc":
                 value.TryGetValueAsString(out Desc);
                 break;
-            case "transform":  {
-                AtomManager.UpdateAppearance(this, appearance => {
-                    float[] matrixArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrix)
-                        ? DreamObjectMatrix.MatrixToTransformFloatArray(matrix)
-                        : DreamObjectMatrix.IdentityMatrixArray;
-
-                    appearance.Transform = matrixArray;
-                });
-                break;
-            }
             case "overlays": {
                 Overlays.Cut();
 
@@ -171,7 +161,7 @@ public class DreamObjectAtom : DreamObject {
                 break;
             }
             default:
-                if (AtomManager.IsValidAppearanceVar(varName)) {
+                if (AtomManager.IsValidAppearanceVar(varName) || varName == "transform") {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
                     var appearance = AtomManager.MustGetAppearance(this);
 
@@ -179,7 +169,16 @@ public class DreamObjectAtom : DreamObject {
                     // TODO: We can probably avoid cloning while the DMISpriteComponent is dirty
                     appearance = (appearance != null) ? new(appearance) : new();
 
-                    AtomManager.SetAppearanceVar(appearance, varName, value);
+                    if (varName == "transform") {
+                        float[] matrixArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrix)
+                            ? DreamObjectMatrix.MatrixToTransformFloatArray(matrix)
+                            : DreamObjectMatrix.IdentityMatrixArray;
+
+                        appearance.Transform = matrixArray;
+                    } else {
+                        AtomManager.SetAppearanceVar(appearance, varName, value);
+                    }
+
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;
                 }

@@ -1,5 +1,6 @@
 ﻿using OpenDreamShared.Dream;
 using System.Collections.Immutable;
+using OpenDreamRuntime.Procs;
 
 namespace OpenDreamRuntime.Objects.MetaObjects;
 sealed class DreamMetaObjectMatrix : IDreamMetaObject {
@@ -42,6 +43,42 @@ sealed class DreamMetaObjectMatrix : IDreamMetaObject {
         int i = 0;
         foreach(float f in EnumerateMatrix(matrix)) {
             args[i++] = new DreamValue(f);
+        }
+        public void OnObjectCreated(DreamObject dreamObject, DreamProcArguments creationArguments) {
+            if (creationArguments.Count > 0) {
+                DreamValue copyMatrixOrA = creationArguments.GetArgument(0);
+                if (copyMatrixOrA.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var matrixToCopy)) {
+                    dreamObject.SetVariableValue("a", matrixToCopy.GetVariable("a"));
+                    dreamObject.SetVariableValue("b", matrixToCopy.GetVariable("b"));
+                    dreamObject.SetVariableValue("c", matrixToCopy.GetVariable("c"));
+                    dreamObject.SetVariableValue("d", matrixToCopy.GetVariable("d"));
+                    dreamObject.SetVariableValue("e", matrixToCopy.GetVariable("e"));
+                    dreamObject.SetVariableValue("f", matrixToCopy.GetVariable("f"));
+                } else {
+                    DreamValue b = creationArguments.GetArgument(1);
+                    DreamValue c = creationArguments.GetArgument(2);
+                    DreamValue d = creationArguments.GetArgument(3);
+                    DreamValue e = creationArguments.GetArgument(4);
+                    DreamValue f = creationArguments.GetArgument(5);
+                    try { // BYOND runtimes if args are of the wrong type
+                        copyMatrixOrA.MustGetValueAsFloat();
+                        b.MustGetValueAsFloat();
+                        c.MustGetValueAsFloat();
+                        d.MustGetValueAsFloat();
+                        e.MustGetValueAsFloat();
+                        f.MustGetValueAsFloat();
+                    } catch (InvalidCastException) {
+                        throw new ArgumentException($"Invalid arguments used to create matrix {dreamObject}");
+                    }
+                    dreamObject.SetVariableValue("a", copyMatrixOrA);
+                    dreamObject.SetVariableValue("b", b);
+                    dreamObject.SetVariableValue("c", c);
+                    dreamObject.SetVariableValue("d", d);
+                    dreamObject.SetVariableValue("e", e);
+                    dreamObject.SetVariableValue("f", f);
+                }
+            }
+            ParentType?.OnObjectCreated(dreamObject, creationArguments);
         }
 
         newMatrix.InitSpawn(new(args));

@@ -119,6 +119,7 @@ namespace DMCompiler.DM.Expressions {
         public Field(Location location, DMVariable variable)
             : base(location, variable.Type) {
             Variable = variable;
+            ValType = variable.ValType;
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {

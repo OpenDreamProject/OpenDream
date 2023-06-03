@@ -82,7 +82,7 @@ namespace DMCompiler.DM.Expressions {
     sealed class ProcSelf : LValue {
         public ProcSelf(Location location)
             : base(location, null) {
-            ValType = DMValueType.Null;
+            ValType = DMValueType.Anything; //TODO: figure out how to deal with procself static typing
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {

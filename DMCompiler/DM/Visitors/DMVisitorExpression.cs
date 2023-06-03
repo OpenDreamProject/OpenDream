@@ -126,7 +126,7 @@ namespace DMCompiler.DM.Visitors {
                     var field = _dmObject?.GetVariable(name);
                     if (field != null && _scopeMode == "normal") {
                         Result = new Expressions.Field(identifier.Location, field);
-                        Result.ValType = field.Value.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.Value.ValType;
+                        Result.ValType = field.Value.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.ValType;
                         return;
                     }
 

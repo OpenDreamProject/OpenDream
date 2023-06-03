@@ -178,28 +178,52 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("block")]
-        [DreamProcParameter("Start", Type = DreamValueType.DreamObject)]
-        [DreamProcParameter("End", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("Start", Type = DreamValueType.DreamObject | DreamValueType.Float)]
+        [DreamProcParameter("End", Type = DreamValueType.DreamObject | DreamValueType.Float)]
+        [DreamProcParameter("StartZ", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndX", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndY", Type = DreamValueType.Float)]
+        [DreamProcParameter("EndZ", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_block(NativeProc.State state) {
-            if (!state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var start))
-                return new DreamValue(state.ObjectTree.CreateList());
-            if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var end))
-                return new DreamValue(state.ObjectTree.CreateList());
+            (int X, int Y, int Z) startPos;
+            (int X, int Y, int Z) endPos;
+            if (state.GetArgument(0, "Start").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var startT)) {
+                if (!state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out var endT))
+                    return new DreamValue(state.ObjectTree.CreateList());
+                startPos = state.AtomManager.GetAtomPosition(startT);
+                endPos = state.AtomManager.GetAtomPosition(endT);
+            } else {
+                // Need to check that we weren't passed something like block("cat", turf) which should return an empty list
+                if (state.GetArgument(1, "End").TryGetValueAsDreamObjectOfType(state.ObjectTree.Turf, out _)) {
+                    return new DreamValue(state.ObjectTree.CreateList());
+                }
+                // coordinate-style
+                if (!state.GetArgument(0, "Start").TryGetValueAsInteger(out startPos.X)) {
+                    startPos.X = 1; // First three default to 1 when passed null or invalid
+                }
+                if (!state.GetArgument(1, "End").TryGetValueAsInteger(out startPos.Y)) {
+                    startPos.Y = 1;
+                }
+                if (!state.GetArgument(2, "StartZ").TryGetValueAsInteger(out startPos.Z)) {
+                    startPos.Z = 1;
+                }
+                if (!state.GetArgument(3, "EndX").TryGetValueAsInteger(out endPos.X)) {
+                    endPos.X = startPos.X; // Last three default to the start coords if null or invalid
+                }
+                if (!state.GetArgument(4, "EndY").TryGetValueAsInteger(out endPos.Y)) {
+                    endPos.Y = startPos.Y;
+                }
+                if (!state.GetArgument(5, "EndZ").TryGetValueAsInteger(out endPos.Z)) {
+                    endPos.Z = startPos.Z;
+                }
+            }
 
-            start.GetVariable("x").TryGetValueAsInteger(out var x1);
-            start.GetVariable("y").TryGetValueAsInteger(out var y1);
-            start.GetVariable("z").TryGetValueAsInteger(out var z1);
-
-            end.GetVariable("x").TryGetValueAsInteger(out var x2);
-            end.GetVariable("y").TryGetValueAsInteger(out var y2);
-            end.GetVariable("z").TryGetValueAsInteger(out var z2);
-
-            int startX = Math.Min(x1, x2);
-            int startY = Math.Min(y1, y2);
-            int startZ = Math.Min(z1, z2);
-            int endX = Math.Max(x1, x2);
-            int endY = Math.Max(y1, y2);
-            int endZ = Math.Max(z1, z2);
+            int startX = Math.Min(startPos.X, endPos.X);
+            int startY = Math.Min(startPos.Y, endPos.Y);
+            int startZ = Math.Min(startPos.Z, endPos.Z);
+            int endX = Math.Max(startPos.X, endPos.X);
+            int endY = Math.Max(startPos.Y, endPos.Y);
+            int endZ = Math.Max(startPos.Z, endPos.Z);
 
             DreamList turfs = state.ObjectTree.CreateList((endX - startX + 1) * (endY - startY + 1) * (endZ - startZ + 1));
 
@@ -207,9 +231,9 @@ namespace OpenDreamRuntime.Procs.Native {
             for (int z = startZ; z <= endZ; z++) {
                 for (int y = startY; y <= endY; y++) {
                     for (int x = startX; x <= endX; x++) {
-                        state.MapManager.TryGetTurfAt((x, y), z, out var turf);
-
-                        turfs.AddValue(new DreamValue(turf));
+                        if (state.MapManager.TryGetTurfAt((x, y), z, out var turf)) {
+                            turfs.AddValue(new DreamValue(turf));
+                        }
                     }
                 }
             }
@@ -1543,31 +1567,22 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Haystack", Type = DreamValueType.String)]
         [DreamProcParameter("Needles", Type = DreamValueType.String)]
         [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
-        public static DreamValue NativeProc_nonspantext(NativeProc.State state)
-        {
+        public static DreamValue NativeProc_nonspantext(NativeProc.State state) {
             if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
                 return new DreamValue(0);
-            }
-
             if (!state.GetArgument(1, "Needles").TryGetValueAsString(out var needles))
-            {
                 return new DreamValue(1);
-            }
+            state.GetArgument(2, "Start").TryGetValueAsInteger(out var start);
 
-            int start = (int)state.GetArgument(2, "Start").GetValueAsFloat();
-
-            if (start == 0 || start > text.Length) return new DreamValue(0);
+            if (start == 0 || start > text.Length)
+                return new DreamValue(0);
 
             if (start < 0)
-            {
                 start += text.Length + 1;
-            }
+
             var index = text.AsSpan(start - 1).IndexOfAny(needles);
             if (index == -1)
-            {
                 index = text.Length - start + 1;
-            }
 
             return new DreamValue(index);
         }
@@ -1638,14 +1653,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_oviewers(NativeProc.State state) { //TODO: View obstruction (dense turfs)
             DreamValue depthValue = new DreamValue(5);
-            DreamObject center = state.Usr;
+            DreamObject? center = null;
 
             //Arguments are optional and can be passed in any order
             if (state.Arguments.Count > 0) {
                 DreamValue firstArgument = state.GetArgument(0, "Depth");
 
                 if (firstArgument.Type == DreamValueType.DreamObject) {
-                    center = firstArgument.GetValueAsDreamObject();
+                    center = firstArgument.MustGetValueAsDreamObject();
 
                     if (state.Arguments.Count > 1) {
                         depthValue = state.GetArgument(1, "Center");
@@ -1654,14 +1669,20 @@ namespace OpenDreamRuntime.Procs.Native {
                     depthValue = firstArgument;
 
                     if (state.Arguments.Count > 1) {
-                        center = state.GetArgument(1, "Center").GetValueAsDreamObject();
+                        state.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
                     }
                 }
             }
 
+            center ??= state.Usr;
+
             DreamList view = state.ObjectTree.CreateList();
-            int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.GetValueAsInteger() : 5; //TODO: Default to world.view
+            if (center == null)
+                return new(view);
+
             var centerPos = state.AtomManager.GetAtomPosition(center);
+            if (!depthValue.TryGetValueAsInteger(out var depth))
+                depth = 5; //TODO: Default to world.view
 
             foreach (DreamObject mob in state.AtomManager.Mobs) {
                 var mobPos = state.AtomManager.GetAtomPosition(mob);
@@ -2845,7 +2866,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_viewers(NativeProc.State state) { //TODO: View obstruction (dense turfs)
             DreamValue depthValue = new DreamValue(5);
-            DreamObject center = state.Usr;
+            DreamObject? center = null;
 
             //Arguments are optional and can be passed in any order
             if (state.Arguments.Count > 0) {
@@ -2861,15 +2882,21 @@ namespace OpenDreamRuntime.Procs.Native {
                     depthValue = firstArgument;
 
                     if (state.Arguments.Count > 1) {
-                        center = state.GetArgument(1, "Center").GetValueAsDreamObject();
+                        state.GetArgument(1, "Center").TryGetValueAsDreamObject(out center);
                     }
                 }
             }
 
+            center ??= state.Usr;
+
             DreamList view = state.ObjectTree.CreateList();
-            int depth = (depthValue.Type == DreamValueType.Float) ? depthValue.MustGetValueAsInteger() : 5; //TODO: Default to world.view
+            if (center == null)
+                return new(view);
+
             int centerX = center.GetVariable("x").MustGetValueAsInteger();
             int centerY = center.GetVariable("y").MustGetValueAsInteger();
+            if (!depthValue.TryGetValueAsInteger(out var depth))
+                depth = 5; //TODO: Default to world.view
 
             foreach (DreamObject mob in state.AtomManager.Mobs) {
                 int mobX = mob.GetVariable("x").MustGetValueAsInteger();

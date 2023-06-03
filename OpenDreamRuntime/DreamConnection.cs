@@ -442,7 +442,7 @@ namespace OpenDreamRuntime {
             Session?.ConnectedClient.SendMessage(msg);
         }
 
-        public void Browse(string body, string? options) {
+        public void Browse(string? body, string? options) {
             string? window = null;
             Vector2i size = (480, 480);
 
@@ -450,7 +450,7 @@ namespace OpenDreamRuntime {
                 foreach (string option in options.Split(',', ';', '&')) {
                     string optionTrimmed = option.Trim();
 
-                    if (optionTrimmed != String.Empty) {
+                    if (optionTrimmed != string.Empty) {
                         string[] optionSeparated = optionTrimmed.Split("=", 2);
                         string key = optionSeparated[0];
                         string value = optionSeparated[1];

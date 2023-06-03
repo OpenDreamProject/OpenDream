@@ -158,11 +158,14 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
-            _proc.Goto(statementGoto.Label.Identifier);
+            _proc.Goto(statementGoto.Label);
         }
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
-            _proc.AddLabel(statementLabel.Name + "_codelabel");
+            var codeLabel = _proc.TryAddCodeLabel(statementLabel.Name);
+            var labelName = codeLabel?.LabelName ?? statementLabel.Name;
+
+            _proc.AddLabel(labelName);
 
             if (statementLabel.Body is not null) {
                 _proc.StartScope();
@@ -170,7 +173,7 @@ namespace DMCompiler.DM.Visitors {
                     ProcessBlockInner(statementLabel.Body);
                 }
                 _proc.EndScope();
-                _proc.AddLabel(statementLabel.Name + "_end");
+                _proc.AddLabel(labelName + "_end");
             }
         }
 

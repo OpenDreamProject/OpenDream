@@ -11,7 +11,7 @@ proc/arccos(X) as num
 proc/arcsin(X) as num
 proc/arctan(A) as num
 proc/ascii2text(N) as text
-proc/block(var/atom/Start, var/atom/End)
+proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ)
 proc/ceil(A) as num
 proc/ckey(Key) as text
 proc/ckeyEx(Text) as text

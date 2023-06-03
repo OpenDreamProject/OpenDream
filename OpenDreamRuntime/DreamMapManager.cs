@@ -137,7 +137,7 @@ namespace OpenDreamRuntime {
                 cell.Turf = new DreamObject(type);
                 _turfToTilePos.Add(cell.Turf, (pos, level));
                 // Only add the /turf to .contents when it's created.
-                cell.Area.GetVariable("contents").GetValueAsDreamList().AddValue(new(cell.Turf));
+                cell.Area.GetVariable("contents").MustGetValueAsDreamList().AddValue(new(cell.Turf));
                 _atomManager.Turfs.Add(cell.Turf);
                 DreamMetaObjectTurf.TurfContentsLists.Add(cell.Turf, new TurfContentsList(_objectTree.List.ObjectDefinition, _objectTree, cell));
             }

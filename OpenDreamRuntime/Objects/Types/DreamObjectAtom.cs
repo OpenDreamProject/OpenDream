@@ -46,13 +46,17 @@ public class DreamObjectAtom : DreamObject {
 
                 value = new(appearanceCopy);
                 return true;
-            case "transform":
-                // Accessing /atom.transform creates a copy
-                var transform = AtomManager.MustGetAppearance(this)!.Transform;
-                var transformCopy = DreamObjectMatrix.MakeMatrix(ObjectTree, transform[0], transform[2], transform[4], transform[1], transform[3], transform[5]);
+            case "transform":{
+                var appearance = AtomManager.MustGetAppearance(this)!;
 
-                value = new(transformCopy);
+                var transform = appearance.Transform;
+                var matrix = DreamObjectMatrix.MakeMatrix(ObjectTree,
+                    transform[0], transform[2], transform[4],
+                    transform[1], transform[3], transform[5]);
+
+                value = new(matrix);
                 return true;
+            }
             case "overlays":
                 value = new(Overlays);
                 return true;

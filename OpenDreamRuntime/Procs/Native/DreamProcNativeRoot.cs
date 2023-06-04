@@ -891,7 +891,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (arg.TryGetValueAsDreamObject<DreamObjectIcon>(out var iconObj)) {
                 // Fast path for /icon, we don't need to generate the entire DMI
-                return new DreamValue(state.ObjectTree.CreateList((iconObj).Icon.States.Keys.ToArray()));
+                return new DreamValue(state.ObjectTree.CreateList(iconObj.Icon.States.Keys.ToArray()));
             } else if (state.ResourceManager.TryLoadIcon(arg, out var iconRsc)) {
                 return new DreamValue(state.ObjectTree.CreateList(iconRsc.DMI.States.Keys.ToArray()));
             } else if (arg == DreamValue.Null) {

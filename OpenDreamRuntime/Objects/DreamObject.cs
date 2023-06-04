@@ -81,9 +81,6 @@ namespace OpenDreamRuntime.Objects {
         }
 
         protected virtual void HandleDeletion() {
-            if (TryGetProc("Del", out var delProc))
-                DreamThread.Run(delProc, this, null);
-
             // Atoms are in world.contents
             if (this is not DreamObjectAtom) {
                 ObjectDefinition.DreamManager.Datums.Remove(this);
@@ -103,6 +100,9 @@ namespace OpenDreamRuntime.Objects {
         public void Delete() {
             if (Deleted)
                 return;
+
+            if (TryGetProc("Del", out var delProc))
+                DreamThread.Run(delProc, this, null);
 
             HandleDeletion();
         }

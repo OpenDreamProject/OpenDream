@@ -5,6 +5,7 @@ namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectMob : DreamObjectMovable {
     public DreamConnection? Connection;
+    public string? Key;
 
     public int SeeInvisible {
         get => _sightComponent.SeeInvisibility;
@@ -29,10 +30,10 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                 value = new(Connection?.Client);
                 return true;
             case "key":
-                value = (Connection != null) ? new(Connection.Session!.Name) : DreamValue.Null;
+                value = (Key != null) ? new(Key) : DreamValue.Null;
                 return true;
             case "ckey":
-                value = (Connection != null) ? new(DreamProcNativeHelpers.Ckey(Connection.Session!.Name)) : DreamValue.Null;
+                value = (Key != null) ? new(DreamProcNativeHelpers.Ckey(Key)) : DreamValue.Null;
                 return true;
             case "see_invisible":
                 value = new(SeeInvisible);
@@ -55,11 +56,14 @@ public sealed class DreamObjectMob : DreamObjectMovable {
 
                 break;
             case "ckey":
-                if (!value.TryGetValueAsString(out var canonicalUsername))
+                if (!value.TryGetValueAsString(out Key)) { // TODO: Does the key get set to a player's un-canonized username?
+                    if (Connection != null)
+                        Connection.Mob = null;
                     break;
+                }
 
                 foreach (var connection in ObjectDefinition.DreamManager.Connections) {
-                    if (DreamProcNativeHelpers.Ckey(connection.Session!.Name) == canonicalUsername) {
+                    if (DreamProcNativeHelpers.Ckey(connection.Session!.Name) == Key) {
                         connection.Mob = this;
                         break;
                     }
@@ -67,10 +71,13 @@ public sealed class DreamObjectMob : DreamObjectMovable {
 
                 break;
             case "key":
-                if (!value.TryGetValueAsString(out var username))
+                if (!value.TryGetValueAsString(out Key)) {
+                    if (Connection != null)
+                        Connection.Mob = null;
                     break;
+                }
 
-                if (PlayerManager.TryGetSessionByUsername(username, out var session)) {
+                if (PlayerManager.TryGetSessionByUsername(Key, out var session)) {
                     var connection = ObjectDefinition.DreamManager.GetConnectionBySession(session);
 
                     connection.Mob = this;

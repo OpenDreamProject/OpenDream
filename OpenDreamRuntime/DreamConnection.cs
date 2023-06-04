@@ -30,8 +30,7 @@ namespace OpenDreamRuntime {
             set {
                 if (_mob != value) {
                     if (_mob != null) {
-                        _mob.SetVariableValue("ckey", DreamValue.Null);
-                        _mob.SetVariableValue("key", DreamValue.Null);
+                        _mob.Key = null;
                         _mob.SpawnProc("Logout");
                         _mob.Connection = null;
                     }
@@ -43,8 +42,7 @@ namespace OpenDreamRuntime {
 
                         _mob = value;
                         _mob.Connection = this;
-                        _mob.SetVariableValue("ckey", new(DreamProcNativeHelpers.Ckey(Session!.Name)));
-                        _mob.SetVariableValue("key", new(Session!.Name));
+                        _mob.Key = Session!.Name;
                         _mob.SpawnProc("Login", usr: _mob);
                     } else {
                         _mob = null;
@@ -97,8 +95,12 @@ namespace OpenDreamRuntime {
             if (Session == null || Client == null) // Already disconnected?
                 return;
 
-            _mob?.SpawnProc("Logout"); // Don't null out the ckey here
-            _mob = null;
+            if (_mob != null) {
+                // Don't null out the ckey here
+                _mob.SpawnProc("Logout");
+                _mob.Connection = null;
+                _mob = null;
+            }
 
             Client.Delete();
             Client = null;

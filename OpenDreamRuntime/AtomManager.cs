@@ -252,7 +252,7 @@ namespace OpenDreamRuntime {
         }
 
         /// <summary>
-        /// Gets an atom's appearance. <br/>
+        /// Gets an atom's appearance.
         /// </summary>
         /// <param name="atom">The atom to find the appearance of.</param>
         public IconAppearance? MustGetAppearance(DreamObjectAtom atom) {

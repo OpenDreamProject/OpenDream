@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Objects {
             ObjectDefinition = objectDefinition;
 
             // Atoms are in world.contents
-            if (this is not DreamObjectAtom) {
+            if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
                 ObjectDefinition.DreamManager.Datums.Add(this);
             }
         }
@@ -82,7 +82,7 @@ namespace OpenDreamRuntime.Objects {
 
         protected virtual void HandleDeletion() {
             // Atoms are in world.contents
-            if (this is not DreamObjectAtom) {
+            if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
                 ObjectDefinition.DreamManager.Datums.Remove(this);
             }
 

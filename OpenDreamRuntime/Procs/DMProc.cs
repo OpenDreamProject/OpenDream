@@ -174,6 +174,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
             {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
+            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
             {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},
             {DreamProcOpcode.JumpIfTrueReference, DMOpcodeHandlers.JumpIfTrueReference},

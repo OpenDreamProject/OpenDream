@@ -83,11 +83,11 @@ namespace OpenDreamRuntime.Objects {
         protected virtual void HandleDeletion() {
             // Atoms are in world.contents
             if (this is not DreamObjectAtom && IsSubtypeOf(ObjectTree.Datum)) {
-                ObjectDefinition.DreamManager.Datums.Remove(this);
+                DreamManager.Datums.Remove(this);
             }
 
-            if (ObjectDefinition.DreamManager.ReferenceIDs.Remove(this, out var refId))
-                ObjectDefinition.DreamManager.ReferenceIDsToDreamObject.Remove(refId);
+            if (DreamManager.ReferenceIDs.Remove(this, out var refId))
+                DreamManager.ReferenceIDsToDreamObject.Remove(refId);
 
             Tag = null;
             Deleted = true;
@@ -156,7 +156,7 @@ namespace OpenDreamRuntime.Objects {
 
                     return true;
                 case "vars":
-                    value = new(new DreamListVars(ObjectDefinition.ObjectTree.List.ObjectDefinition, this));
+                    value = new(new DreamListVars(ObjectTree.List.ObjectDefinition, this));
                     return true;
                 case "tag":
                     value = (Tag != null) ? new(Tag) : DreamValue.Null;

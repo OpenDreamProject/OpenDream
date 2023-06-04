@@ -62,7 +62,7 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                     break;
                 }
 
-                foreach (var connection in ObjectDefinition.DreamManager.Connections) {
+                foreach (var connection in DreamManager.Connections) {
                     if (DreamProcNativeHelpers.Ckey(connection.Session!.Name) == Key) {
                         connection.Mob = this;
                         break;
@@ -78,7 +78,7 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                 }
 
                 if (PlayerManager.TryGetSessionByUsername(Key, out var session)) {
-                    var connection = ObjectDefinition.DreamManager.GetConnectionBySession(session);
+                    var connection = DreamManager.GetConnectionBySession(session);
 
                     connection.Mob = this;
                 }

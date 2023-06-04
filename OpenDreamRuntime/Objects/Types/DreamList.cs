@@ -52,7 +52,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
                         for (int j = 0; j < size; j++) {
                             if (argIndex < dimensions - 1) {
-                                DreamList newList = ObjectDefinition.ObjectTree.CreateList();
+                                DreamList newList = ObjectTree.CreateList();
 
                                 list.AddValue(new DreamValue(newList));
                                 newLists[i * size + j] = newList;

@@ -13,15 +13,15 @@ public sealed class DreamObjectClient : DreamObject {
 
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem) : base(objectDefinition) {
         Connection = connection;
-        Screen = new(objectDefinition.ObjectTree, screenOverlaySystem, Connection);
-        Verbs = new(ObjectDefinition.ObjectTree, this);
-        Images = ObjectDefinition.ObjectTree.CreateList();
+        Screen = new(ObjectTree, screenOverlaySystem, Connection);
+        Verbs = new(ObjectTree, this);
+        Images = ObjectTree.CreateList();
 
-        ObjectDefinition.DreamManager.Clients.Add(this);
+        DreamManager.Clients.Add(this);
     }
 
     protected override void HandleDeletion() {
-        ObjectDefinition.DreamManager.Clients.Remove(this);
+        DreamManager.Clients.Remove(this);
 
         base.HandleDeletion();
     }

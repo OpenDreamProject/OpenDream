@@ -65,7 +65,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 value = new DreamValue(Resource.ResourcePath);
                 return true;
             case "dir":
-                DreamList dirList = ObjectDefinition.ObjectTree.CreateList();
+                DreamList dirList = ObjectTree.CreateList();
 
                 foreach (string dirPath in Directories.Keys) {
                     if (dirPath.StartsWith(_currentDirPath)) {

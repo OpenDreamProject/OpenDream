@@ -41,6 +41,7 @@ namespace OpenDreamRuntime.Objects {
             AtomManager = copyFrom.AtomManager;
             DreamMapManager = copyFrom.DreamMapManager;
             MapManager = copyFrom.MapManager;
+            DreamResourceManager = copyFrom.DreamResourceManager;
             EntityManager = copyFrom.EntityManager;
             PlayerManager = copyFrom.PlayerManager;
             SerializationManager = copyFrom.SerializationManager;
@@ -48,7 +49,6 @@ namespace OpenDreamRuntime.Objects {
             TransformSystem = copyFrom.TransformSystem;
 
             TreeEntry = copyFrom.TreeEntry;
-            DreamResourceManager = copyFrom.DreamResourceManager;
             InitializationProc = copyFrom.InitializationProc;
 
             Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);

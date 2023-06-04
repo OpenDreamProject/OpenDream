@@ -544,8 +544,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamObject? regex = null;
             if (!needleArg.TryGetValueAsString(out var needle))
             {
-                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex))
-                {
+                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex)) {
                     failCount++;
                 }
             }
@@ -600,8 +599,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamObject? regex = null;
             if (!needleArg.TryGetValueAsString(out var needle))
             {
-                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex))
-                {
+                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex)) {
                     failCount++;
                 }
             }

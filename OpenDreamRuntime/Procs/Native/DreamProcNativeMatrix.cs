@@ -9,8 +9,8 @@ internal static class DreamProcNativeMatrix {
     [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject)]
     public static DreamValue NativeProc_Add(NativeProc.State state) {
         DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
-        if (possibleMatrix.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var matrixArg)) {
-            DreamMetaObjectMatrix.AddMatrix(state.Src, matrixArg);
+        if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
+            DreamObjectMatrix.AddMatrix((DreamObjectMatrix)state.Src!, matrixArg);
             return new DreamValue(state.Src);
         }
         // On invalid input, throw runtime
@@ -65,8 +65,8 @@ internal static class DreamProcNativeMatrix {
     [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject)]
     public static DreamValue NativeProc_Subtract(NativeProc.State state) {
         DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
-        if (possibleMatrix.TryGetValueAsDreamObjectOfType(state.ObjectTree.Matrix, out var matrixArg)) {
-            DreamMetaObjectMatrix.SubtractMatrix(state.Src, matrixArg);
+        if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
+            DreamObjectMatrix.SubtractMatrix((DreamObjectMatrix)state.Src!, matrixArg);
             return new DreamValue(state.Src);
         }
         // On invalid input, throw runtime
@@ -97,7 +97,7 @@ internal static class DreamProcNativeMatrix {
             return new DreamValue(state.Src);
         }
 
-        DreamMetaObjectMatrix.TranslateMatrix(state.Src, xTranslation, yTranslation);
+        DreamObjectMatrix.TranslateMatrix((DreamObjectMatrix)state.Src!, xTranslation, yTranslation);
 
         return new DreamValue(state.Src);
     }

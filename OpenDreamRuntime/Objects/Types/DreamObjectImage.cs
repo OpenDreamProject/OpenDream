@@ -36,7 +36,7 @@ public sealed class DreamObjectImage : DreamObject {
 
         int argIndex = 1;
         DreamValue loc = args.GetArgument(1);
-        if (!loc.TryGetValueAsDreamObject(out _loc)) { // If it's not a DreamObject, it's actually icon_state and not loc
+        if (loc.TryGetValueAsDreamObject(out _loc)) { // If it's not a DreamObject, it's actually icon_state and not loc
             argIndex = 2;
         }
 

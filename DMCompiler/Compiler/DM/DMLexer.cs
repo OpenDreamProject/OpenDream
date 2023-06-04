@@ -7,7 +7,7 @@ using OpenDreamShared.Compiler;
 namespace DMCompiler.Compiler.DM {
     public sealed class DMLexer : TokenLexer {
         // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
-        public static readonly List<string> ValidEscapeSequences = new(41) {
+        public static readonly List<string> ValidEscapeSequences = new(38) {
             "icon",
             "Roman", "roman",
             "The", "the",
@@ -26,7 +26,6 @@ namespace DMCompiler.Compiler.DM {
             "red", "blue", "green", "black", "yellow", "navy", "teal", "cyan",
             "bold", "b",
             "italic",
-            "u", "U", "x",  //TODO: ASCII/Unicode values *properly*
             "..."
         };
 

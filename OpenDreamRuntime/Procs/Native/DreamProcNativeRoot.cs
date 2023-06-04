@@ -565,9 +565,14 @@ namespace OpenDreamRuntime.Procs.Native {
             {
                 failCount++;
             }
-            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+
+            DreamValue needleArg = state.GetArgument(1, "Needle");
+            DreamObject? regex = null;
+            if (!needleArg.TryGetValueAsString(out var needle))
             {
-                failCount++;
+                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex)) {
+                    failCount++;
+                }
             }
             if (failCount > 0)
             {
@@ -593,6 +598,13 @@ namespace OpenDreamRuntime.Procs.Native {
                 end = text.Length + 1;
             }
 
+            if (regex is not null) {
+                DreamMetaObjectRegex.DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[regex];
+                Match match = dreamRegex.Regex.Match(text, start - 1, end - start);
+
+                return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
+            }
+
             int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);
             return new DreamValue(needleIndex + 1); //1-indexed
         }
@@ -609,9 +621,13 @@ namespace OpenDreamRuntime.Procs.Native {
             {
                 failCount++;
             }
-            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
+            DreamValue needleArg = state.GetArgument(1, "Needle");
+            DreamObject? regex = null;
+            if (!needleArg.TryGetValueAsString(out var needle))
             {
-                failCount++;
+                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex)) {
+                    failCount++;
+                }
             }
             if (failCount > 0)
             {
@@ -625,6 +641,13 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (end == 0 || end > text.Length + 1) {
                 end = text.Length + 1;
+            }
+
+            if (regex is not null) {
+                DreamMetaObjectRegex.DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[regex];
+                Match match = dreamRegex.Regex.Match(text, start - 1, end - start);
+
+                return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }
 
             int needleIndex = text.IndexOf(needle, start - 1, end - start);

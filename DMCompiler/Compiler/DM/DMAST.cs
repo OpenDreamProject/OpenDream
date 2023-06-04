@@ -250,6 +250,10 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitAssignInto(DMASTAssignInto assign) {
+            throw new NotImplementedException();
+        }
+
         public void VisitVarDeclExpression(DMASTVarDeclExpression vardecl) {
             throw new NotImplementedException();
         }
@@ -641,9 +645,11 @@ namespace DMCompiler.Compiler.DM {
     //TODO: This can probably be replaced with a DreamPath nullable
     public sealed class DMASTPath : DMASTNode {
         public DreamPath Path;
+        public bool IsOperator = false;
 
-        public DMASTPath(Location location, DreamPath path) : base(location) {
+        public DMASTPath(Location location, DreamPath path, bool operatorFlag = false) : base(location) {
             Path = path;
+            IsOperator = operatorFlag;
         }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -1473,9 +1479,26 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public sealed class DMASTVarDeclExpression : DMASTExpression {
-        public readonly DMASTPath DeclPath;
+    public class DMASTAssignInto : DMASTExpression {
+        public DMASTExpression Expression, Value;
 
+        public DMASTAssignInto(Location location, DMASTExpression expression, DMASTExpression value) : base(location) {
+            Expression = expression;
+            Value = value;
+        }
+
+        public override IEnumerable<DMASTExpression> Leaves() {
+            yield return Expression;
+            yield return Value;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitAssignInto(this);
+        }
+    }
+
+    public class DMASTVarDeclExpression : DMASTExpression {
+        public DMASTPath DeclPath;
         public DMASTVarDeclExpression(Location location, DMASTPath path) : base(location) {
             DeclPath = path;
         }

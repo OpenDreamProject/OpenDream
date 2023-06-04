@@ -1,5 +1,5 @@
-﻿using System.IO;
-using OpenDreamRuntime.Objects.MetaObjects;
+﻿using System.Buffers;
+using System.IO;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
@@ -15,6 +15,8 @@ using ParsedDMIFrame = OpenDreamShared.Resources.DMIParser.ParsedDMIFrame;
 namespace OpenDreamRuntime.Objects;
 
 public sealed class DreamIcon {
+    private static readonly ArrayPool<Rgba32> PixelArrayPool = ArrayPool<Rgba32>.Shared;
+
     public int Width, Height;
     public readonly Dictionary<string, IconState> States = new();
 
@@ -118,7 +120,7 @@ public sealed class DreamIcon {
 
         Dictionary<string, ParsedDMIState> dmiStates = new(States.Count);
         int span = frameWidth * Math.Max(_frameCount, 1);
-        Rgba32[] pixels = new Rgba32[span * frameHeight];
+        Rgba32[] pixels = PixelArrayPool.Rent(span * frameHeight);
 
         int currentFrame = 0;
         foreach (var iconStatePair in States) {
@@ -143,6 +145,8 @@ public sealed class DreamIcon {
 
         Image<Rgba32> dmiImage = Image.LoadPixelData(pixels, span, frameHeight);
         ParsedDMIDescription newDescription = new() {Width = frameWidth, Height = frameHeight, States = dmiStates};
+
+        PixelArrayPool.Return(pixels);
 
         using (MemoryStream dmiImageStream = new MemoryStream()) {
             var pngTextData = new PngTextData("Description", newDescription.ExportAsText(), null, null);

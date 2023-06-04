@@ -24,6 +24,7 @@
 #pragma InvalidSetStatement error
 #pragma InvalidOverride warning
 #pragma DanglingVarType warning
+#pragma MissingInterpolatedExpression warning
 
 //3000-3999
 #pragma EmptyBlock notice

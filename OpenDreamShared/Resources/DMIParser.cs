@@ -91,7 +91,18 @@ namespace OpenDreamShared.Resources {
             }
 
             public ParsedDMIFrame[] GetFrames(AtomDirection direction = AtomDirection.South) {
-                if (!Directions.ContainsKey(direction)) direction = Directions.Keys.First();
+                // Find another direction to use if this one doesn't exist
+                if (!Directions.ContainsKey(direction)) {
+                    // The diagonal directions attempt to use east/west
+                    if (direction is AtomDirection.Northeast or AtomDirection.Southeast)
+                        direction = AtomDirection.East;
+                    else if (direction is AtomDirection.Northwest or AtomDirection.Southwest)
+                        direction = AtomDirection.West;
+
+                    // Use the south direction if the above still isn't valid
+                    if (!Directions.ContainsKey(direction))
+                        direction = AtomDirection.South;
+                }
 
                 return Directions[direction];
             }

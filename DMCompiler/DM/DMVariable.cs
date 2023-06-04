@@ -3,7 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
-    class DMVariable {
+    sealed class DMVariable {
         public DreamPath? Type;
         public string Name;
         public bool IsGlobal;

@@ -4,6 +4,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -99,7 +100,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // null
-    class Null : Constant {
+    sealed class Null : Constant {
         public Null(Location location) : base(location) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -143,7 +144,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // 4.0, -4.0
-    class Number : Constant {
+    sealed class Number : Constant {
         public float Value { get; }
 
         public Number(Location location, int value) : base(location) {
@@ -317,7 +318,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // "abc"
-    class String : Constant {
+    sealed class String : Constant {
         public string Value { get; }
 
         public String(Location location, string value) : base(location) {
@@ -344,16 +345,36 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // 'abc'
-    class Resource : Constant {
-        string Value { get; }
+    // '[resource_path]'
+    // Where resource_path is one of:
+    //   - path relative to project root (.dme file location)
+    //   - path relative to current .dm source file location
+    //
+    // Note: built .json file depends on resource files, so they should be moving with it
+    // TODO: cache resources to a single .rsc file, as BYOND does
+    sealed class Resource : Constant {
+        string Path { get; }
 
-        public Resource(Location location, string value) : base(location) {
-            Value = value;
+        public Resource(Location location, string path) : base(location) {
+            string outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]);
+            string pathBasedOnOutputDir = System.IO.Path.Combine(outputDir, path);
+
+            if (File.Exists(pathBasedOnOutputDir)) {
+                Path = path;
+            } else {
+                var locationDir = System.IO.Path.GetDirectoryName(location.SourceFile);
+                var pathBasedOnLocation = System.IO.Path.Combine(outputDir, locationDir, path);
+                if (File.Exists(pathBasedOnLocation)) {
+                    Path = System.IO.Path.Combine(locationDir, path);
+                } else {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{path}'");
+                    Path = path;
+                }
+            }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushResource(Value);
+            proc.PushResource(Path);
         }
 
         public override bool IsTruthy() => true;
@@ -361,7 +382,7 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object? json) {
             json = new Dictionary<string, object>() {
                 { "type", JsonVariableType.Resource },
-                { "resourcePath", Value }
+                { "resourcePath", Path }
             };
 
             return true;
@@ -369,7 +390,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // /a/b/c
-    class Path : Constant {
+    sealed class Path : Constant {
         public DreamPath Value { get; }
 
         /// <summary>

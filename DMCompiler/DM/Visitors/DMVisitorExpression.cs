@@ -131,7 +131,7 @@ namespace DMCompiler.DM.Visitors {
                         return;
                     }
 
-                    throw new CompileErrorException(identifier.Location, $"Unknown identifier \"{name}\"");
+                    throw new UnknownIdentifierException(identifier.Location, name);
                 }
             }
         }
@@ -222,6 +222,15 @@ namespace DMCompiler.DM.Visitors {
                 DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
             }
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
+        }
+
+        public void VisitAssignInto(DMASTAssignInto assign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.NestedPath);
+            if(lhs.TryAsConstant(out _)) {
+                DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
+            }
+            Result = new Expressions.AssignmentInto(assign.Location, lhs, rhs);
         }
 
         public void VisitNegate(DMASTNegate negate) {

@@ -8,7 +8,7 @@ using OpenDreamShared.Dream.Procs;
 using System.Diagnostics;
 
 namespace DMCompiler.DM.Visitors {
-    class DMProcBuilder {
+    sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
@@ -158,11 +158,14 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
-            _proc.Goto(statementGoto.Label.Identifier);
+            _proc.Goto(statementGoto.Label);
         }
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
-            _proc.AddLabel(statementLabel.Name + "_codelabel");
+            var codeLabel = _proc.TryAddCodeLabel(statementLabel.Name);
+            var labelName = codeLabel?.LabelName ?? statementLabel.Name;
+
+            _proc.AddLabel(labelName);
 
             if (statementLabel.Body is not null) {
                 _proc.StartScope();
@@ -170,7 +173,7 @@ namespace DMCompiler.DM.Visitors {
                     ProcessBlockInner(statementLabel.Body);
                 }
                 _proc.EndScope();
-                _proc.AddLabel(statementLabel.Name + "_end");
+                _proc.AddLabel(labelName + "_end");
             }
         }
 
@@ -264,12 +267,12 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 case "desc":
+                    // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
                     if (constant is not Expressions.String descStr) {
                         throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
                     }
 
                     _proc.VerbDesc = descStr.Value;
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set desc is not implemented");
                     break;
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs

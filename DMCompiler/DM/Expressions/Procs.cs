@@ -6,7 +6,7 @@ using System.Linq;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
-    class Proc : DMExpression {
+    sealed class Proc : DMExpression {
         private readonly string _identifier;
 
         public Proc(Location location, string identifier) : base(location) {
@@ -39,7 +39,7 @@ namespace DMCompiler.DM.Expressions {
     /// This doesn't actually contain the GlobalProc itself;
     /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
     /// </remarks>
-    class GlobalProc : DMExpression {
+    sealed class GlobalProc : DMExpression {
         private readonly string _name;
 
         public GlobalProc(Location location, string name) : base(location) {
@@ -69,7 +69,7 @@ namespace DMCompiler.DM.Expressions {
     /// . <br/>
     /// This is an LValue _and_ a proc!
     /// </summary>
-    class ProcSelf : LValue {
+    sealed class ProcSelf : LValue {
         public ProcSelf(Location location)
             : base(location, null)
         {}
@@ -80,7 +80,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // ..
-    class ProcSuper : DMExpression {
+    sealed class ProcSuper : DMExpression {
         public ProcSuper(Location location) : base(location) { }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

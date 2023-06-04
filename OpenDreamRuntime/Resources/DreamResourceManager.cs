@@ -176,7 +176,9 @@ namespace OpenDreamRuntime.Resources {
 
         public bool SaveTextToFile(string filePath, string text) {
             try {
-                File.WriteAllText(Path.Combine(RootPath, filePath), text);
+                string absoluteFilePath = Path.Combine(RootPath, filePath);
+                Directory.GetParent(absoluteFilePath)?.Create();
+                File.WriteAllText(absoluteFilePath, text);
             } catch (Exception) {
                 return false;
             }

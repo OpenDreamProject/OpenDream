@@ -36,7 +36,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // src
-    class Src : LValue {
+    sealed class Src : LValue {
         public Src(Location location, DreamPath? path)
             : base(location, path)
         {}
@@ -51,7 +51,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // usr
-    class Usr : LValue {
+    sealed class Usr : LValue {
         public Usr(Location location)
             : base(location, DreamPath.Mob)
         {}
@@ -62,7 +62,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // args
-    class Args : LValue {
+    sealed class Args : LValue {
         public Args(Location location)
             : base(location, DreamPath.List)
         {}
@@ -73,7 +73,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Identifier of local variable
-    class Local : LValue {
+    sealed class Local : LValue {
         DMProc.LocalVariable LocalVar { get; }
 
         public Local(Location location, DMProc.LocalVariable localVar)
@@ -111,7 +111,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Identifier of field
-    class Field : LValue {
+    sealed class Field : LValue {
         public readonly DMVariable Variable;
 
         public Field(Location location, DMVariable variable)
@@ -146,7 +146,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Id of global field
-    class GlobalField : LValue {
+    sealed class GlobalField : LValue {
         int Id { get; }
 
         public GlobalField(Location location, DreamPath? path, int id)
@@ -184,7 +184,7 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class GlobalVars : LValue {
+    sealed class GlobalVars : LValue {
         public GlobalVars(Location location)
             : base(location, null) {
         }

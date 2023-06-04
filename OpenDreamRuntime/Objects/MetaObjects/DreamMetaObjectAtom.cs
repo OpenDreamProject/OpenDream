@@ -147,12 +147,18 @@ namespace OpenDreamRuntime.Objects.MetaObjects {
                     var copy = new IconAppearance(appearance); // Return a copy of our appearance
                     return new(copy);
                 }
-                case "transform":
-                    // Clone the matrix
-                    DreamObject matrix = _objectTree.CreateObject(_objectTree.Matrix);
-                    matrix.InitSpawn(new(value));
+                case "transform": {
+                    var appearance = _atomManager.MustGetAppearance(dreamObject);
+                    if (appearance == null)
+                        return DreamValue.Null;
+
+                    var transform = appearance.Transform;
+                    var matrix = DreamMetaObjectMatrix.MakeMatrix(_objectTree,
+                        transform[0], transform[2], transform[4],
+                        transform[1], transform[3], transform[5]);
 
                     return new DreamValue(matrix);
+                }
                 case "verbs":
                     return new DreamValue(VerbLists[dreamObject]);
                 case "overlays":

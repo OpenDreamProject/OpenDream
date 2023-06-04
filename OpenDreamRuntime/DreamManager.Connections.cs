@@ -84,9 +84,9 @@ namespace OpenDreamRuntime {
                     break;
                 }
                 case SessionStatus.Disconnected: {
-                    DreamConnection connection = GetConnectionBySession(e.Session);
+                    if (_connections.TryGetValue(e.Session.UserId, out var connection))
+                        connection.HandleDisconnection();
 
-                    connection.HandleDisconnection();
                     break;
                 }
             }

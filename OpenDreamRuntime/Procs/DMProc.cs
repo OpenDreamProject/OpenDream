@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -453,10 +454,12 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         #region Operands
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadByte() {
             return _proc.Bytecode[_pc++];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadInt() {
             int value = BitConverter.ToInt32(_proc.Bytecode, _pc);
             _pc += 4;
@@ -464,6 +467,7 @@ namespace OpenDreamRuntime.Procs {
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float ReadFloat() {
             float value = BitConverter.ToSingle(_proc.Bytecode, _pc);
             _pc += 4;
@@ -471,12 +475,14 @@ namespace OpenDreamRuntime.Procs {
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadString() {
-            int stringID = ReadInt();
+            int stringId = ReadInt();
 
-            return Proc.ObjectTree.Strings[stringID];
+            return Proc.ObjectTree.Strings[stringId];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DMReference ReadReference() {
             DMReference.Type refType = (DMReference.Type)ReadByte();
 

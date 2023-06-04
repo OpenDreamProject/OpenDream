@@ -567,15 +567,14 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             DreamValue needleArg = state.GetArgument(1, "Needle");
-            DreamObject? regex = null;
-            if (!needleArg.TryGetValueAsString(out var needle))
-            {
-                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex)) {
+            DreamObjectRegex? regex = null;
+            if (!needleArg.TryGetValueAsString(out var needle)) {
+                if(!needleArg.TryGetValueAsDreamObject(out regex)) {
                     failCount++;
                 }
             }
-            if (failCount > 0)
-            {
+
+            if (failCount > 0) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -584,13 +583,11 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (start > text.Length || start == 0) return new DreamValue(0);
 
-            if (start < 0)
-            {
+            if (start < 0) {
                 start = text.Length + start + 1; //1-indexed
             }
 
-            if (end < 0)
-            {
+            if (end < 0) {
                 end = text.Length + end + 1; //1-indexed
             }
 
@@ -599,8 +596,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (regex is not null) {
-                DreamMetaObjectRegex.DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[regex];
-                Match match = dreamRegex.Regex.Match(text, start - 1, end - start);
+                Match match = regex.Regex.Match(text, start - 1, end - start);
 
                 return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }
@@ -622,15 +618,14 @@ namespace OpenDreamRuntime.Procs.Native {
                 failCount++;
             }
             DreamValue needleArg = state.GetArgument(1, "Needle");
-            DreamObject? regex = null;
-            if (!needleArg.TryGetValueAsString(out var needle))
-            {
-                if(!needleArg.TryGetValueAsDreamObjectOfType(state.ObjectTree.Regex, out regex)) {
+            DreamObjectRegex? regex = null;
+            if (!needleArg.TryGetValueAsString(out var needle)) {
+                if (!needleArg.TryGetValueAsDreamObject(out regex)) {
                     failCount++;
                 }
             }
-            if (failCount > 0)
-            {
+
+            if (failCount > 0) {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
@@ -644,8 +639,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if (regex is not null) {
-                DreamMetaObjectRegex.DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[regex];
-                Match match = dreamRegex.Regex.Match(text, start - 1, end - start);
+                Match match = regex.Regex.Match(text, start - 1, end - start);
 
                 return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }

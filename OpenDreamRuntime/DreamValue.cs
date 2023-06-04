@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Serialization;
@@ -214,21 +214,18 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public bool TryGetValueAsDreamObjectOfType(IDreamObjectTree.TreeEntry type,
-            [NotNullWhen(true)] out DreamObject? dreamObject) {
-            return TryGetValueAsDreamObject(out dreamObject) && dreamObject != null && dreamObject.IsSubtypeOf(type);
+        public bool TryGetValueAsDreamObject<T>([NotNullWhen(true)] out T? dreamObject) where T : DreamObject {
+            if (_refValue is T dreamObjectValue) {
+                dreamObject = dreamObjectValue;
+                return true;
+            }
+
+            dreamObject = null;
+            return false;
         }
 
         public bool TryGetValueAsDreamList([NotNullWhen(true)] out DreamList? list) {
-            if (TryGetValueAsDreamObject(out var obj) && obj is DreamList listObject) {
-                list = listObject;
-
-                return true;
-            } else {
-                list = null;
-
-                return false;
-            }
+            return TryGetValueAsDreamObject(out list);
         }
 
         public DreamList MustGetValueAsDreamList() {
@@ -347,7 +344,18 @@ namespace OpenDreamRuntime {
                 case DreamValueType.String:
                     return MustGetValueAsString();
                 case DreamValueType.Float:
-                    return _floatValue.ToString();
+                    var floatValue = MustGetValueAsFloat();
+
+                    if (floatValue > 16777216f) {
+                        return floatValue.ToString("g6");
+                    }
+
+                    if (floatValue >= 1000000 && ((int)floatValue == floatValue)) {
+                        return floatValue.ToString("g8");
+                    }
+
+                    return floatValue.ToString("g6");
+
                 case DreamValueType.DreamResource:
                     TryGetValueAsDreamResource(out var rscPath);
                     return rscPath.ResourcePath;
@@ -441,13 +449,12 @@ namespace OpenDreamRuntime {
                     } else {
                         writer.WriteString("Value", dreamObject.ObjectDefinition.Type.PathString);
 
-                        if (!dreamObject.IsSubtypeOf(_objectTree.Icon)) {
+                        if (dreamObject is not DreamObjectIcon icon) {
                             throw new NotImplementedException($"Json serialization for {value} is not implemented");
                         }
 
                         // TODO Check what happens with multiple states
-                        var icon = DreamMetaObjectIcon.ObjectToDreamIcon[dreamObject];
-                        var resource = icon.GenerateDMI();
+                        var resource = icon.Icon.GenerateDMI();
                         var base64 = Convert.ToBase64String(resource.ResourceData);
                         writer.WriteString("icon-data", base64);
                     }
@@ -496,10 +503,9 @@ namespace OpenDreamRuntime {
 
                         byte[] iconData = Convert.FromBase64String(iconDataBase64);
                         IconResource resource = _resourceManager.CreateIconResource(iconData);
-                        DreamObject iconObj = _objectTree.CreateObject(_objectTree.Icon);
-                        DreamIcon icon = DreamMetaObjectIcon.InitializeIcon(_resourceManager, iconObj);
+                        var iconObj = _objectTree.CreateObject<DreamObjectIcon>(_objectTree.Icon);
 
-                        icon.InsertStates(resource, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+                        iconObj.Icon.InsertStates(resource, DreamValue.Null, DreamValue.Null, DreamValue.Null);
                         value = new DreamValue(iconObj);
                     }
 
@@ -628,7 +634,7 @@ namespace OpenDreamRuntime {
             SerializationHookContext hookCtx,
             ISerializationContext? context = null,
             ISerializationManager.InstantiationDelegate<Matrix3>? instanceProvider = null) {
-            if (!node.Value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var matrixObject))
+            if (!node.Value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixObject))
                 throw new Exception($"Value {node.Value} was not a matrix");
 
             // Matrix3 except not really because DM matrix is actually 3x2
@@ -645,7 +651,7 @@ namespace OpenDreamRuntime {
             DreamValueDataNode node,
             IDependencyCollection dependencies,
             ISerializationContext? context = null) {
-            if (node.Value.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out _))
+            if (node.Value.TryGetValueAsDreamObject<DreamObjectMatrix>(out _))
                 return new ValidatedValueNode(node);
 
             return new ErrorNode(node, $"Value {node.Value} is not a matrix");

@@ -1,17 +1,18 @@
 using System.Linq;
 using System.Runtime.CompilerServices;
-using OpenDreamRuntime.Objects.MetaObjects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Serialization.Manager;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
-namespace OpenDreamRuntime.Objects {
+namespace OpenDreamRuntime.Objects.Types {
     [Virtual]
     public class DreamList : DreamObject {
         private readonly List<DreamValue> _values;
         private Dictionary<DreamValue, DreamValue>? _associativeValues;
+
+        public override bool ShouldCallNew => false;
 
         public virtual bool IsAssociative => (_associativeValues != null && _associativeValues.Count > 0);
 
@@ -25,6 +26,45 @@ namespace OpenDreamRuntime.Objects {
         private DreamList(DreamObjectDefinition listDef, List<DreamValue> values, Dictionary<DreamValue, DreamValue>? associativeValues) : base(listDef) {
             _values = values;
             _associativeValues = associativeValues;
+        }
+
+        public override void Initialize(DreamProcArguments args) {
+            base.Initialize(args);
+
+            // Named arguments are ignored
+            if (args.Count == 1 && args.GetArgument(0).TryGetValueAsInteger(out int size)) {
+                Resize(size);
+            } else if (args.Count > 1) {
+                DreamList[] lists = { this };
+
+                int dimensions = args.Count;
+                for (int argIndex = 0; argIndex < dimensions; argIndex++) {
+                    DreamValue arg = args.GetArgument(argIndex);
+                    arg.TryGetValueAsInteger(out size);
+
+                    DreamList[] newLists = null;
+                    if (argIndex < dimensions) {
+                        newLists = new DreamList[size * lists.Length];
+                    }
+
+                    for (int i = 0; i < lists.Length; i++) {
+                        DreamList list = lists[i];
+
+                        for (int j = 0; j < size; j++) {
+                            if (argIndex < dimensions - 1) {
+                                DreamList newList = ObjectTree.CreateList();
+
+                                list.AddValue(new DreamValue(newList));
+                                newLists[i * size + j] = newList;
+                            } else {
+                                list.AddValue(DreamValue.Null);
+                            }
+                        }
+                    }
+
+                    lists = newLists;
+                }
+            }
         }
 
         public DreamList CreateCopy(int start = 1, int end = 0) {
@@ -164,6 +204,154 @@ namespace OpenDreamRuntime.Objects {
             string assoc = IsAssociative ? ", assoc" : "";
             return $"/list{{len={GetLength()}{assoc}}}";
         }
+
+        protected override bool TryGetVar(string varName, out DreamValue value) {
+            if (varName == "len") {
+                value = new(GetLength());
+                return true;
+            }
+
+            // Note that invalid vars on /list will give null and not error in BYOND
+            // We don't replicate that
+            return base.TryGetVar(varName, out value);
+        }
+
+        protected override void SetVar(string varName, DreamValue value) {
+            if (varName == "len") {
+                value.TryGetValueAsInteger(out var newLen);
+
+                Resize(newLen);
+            } else {
+                base.SetVar(varName, value);
+            }
+        }
+
+        #region Operators
+        public override DreamValue OperatorIndex(DreamValue index) {
+            return GetValue(index);
+        }
+
+        public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
+            SetValue(index, value);
+        }
+
+        public override DreamValue OperatorAdd(DreamValue b) {
+            DreamList listCopy = CreateCopy();
+
+            if (b.TryGetValueAsDreamList(out var bList)) {
+                foreach (DreamValue value in bList.GetValues()) {
+                    listCopy.AddValue(value);
+                }
+            } else {
+                listCopy.AddValue(b);
+            }
+
+            return new(listCopy);
+        }
+
+        public override DreamValue OperatorSubtract(DreamValue b) {
+            DreamList listCopy = CreateCopy();
+
+            if (b.TryGetValueAsDreamList(out var bList)) {
+                foreach (DreamValue value in bList.GetValues()) {
+                    listCopy.RemoveValue(value);
+                }
+            } else {
+                listCopy.RemoveValue(b);
+            }
+
+            return new(listCopy);
+        }
+
+        public override DreamValue OperatorOr(DreamValue b) {
+            DreamList list;
+
+            if (b.TryGetValueAsDreamList(out var bList)) {  // List | List
+                list = Union(bList);
+            } else {                                        // List | x
+                list = CreateCopy();
+                list.AddValue(b);
+            }
+
+            return new(list);
+        }
+
+        public override DreamValue OperatorAppend(DreamValue b) {
+            if (b.TryGetValueAsDreamList(out var bList)) {
+                foreach (DreamValue value in bList.GetValues()) {
+                    AddValue(value);
+                }
+            } else {
+                AddValue(b);
+            }
+
+            return new(this);
+        }
+
+        public override DreamValue OperatorRemove(DreamValue b) {
+            if (b.TryGetValueAsDreamList(out var bList)) {
+                DreamValue[] values = bList.GetValues().ToArray();
+
+                foreach (DreamValue value in values) {
+                    RemoveValue(value);
+                }
+            } else {
+                RemoveValue(b);
+            }
+
+            return new(this);
+        }
+
+        public override DreamValue OperatorCombine(DreamValue b) {
+            if (b.TryGetValueAsDreamList(out var bList)) {
+                foreach (DreamValue value in bList.GetValues()) {
+                    if (!ContainsValue(value)) {
+                        AddValue(value);
+                    }
+                }
+            } else if (!ContainsValue(b)) {
+                AddValue(b);
+            }
+
+            return new(this);
+        }
+
+        public override DreamValue OperatorMask(DreamValue b) {
+            if (b.TryGetValueAsDreamList(out var bList)) {
+                for (int i = 1; i <= GetLength(); i++) {
+                    if (!bList.ContainsValue(GetValue(new DreamValue(i)))) {
+                        Cut(i, i + 1);
+                        i--;
+                    }
+                }
+            } else {
+                for (int i = 1; i <= GetLength(); i++) {
+                    if (GetValue(new DreamValue(i)) != b) {
+                        Cut(i, i + 1);
+                        i--;
+                    }
+                }
+            }
+
+            return new(this);
+        }
+
+        public override DreamValue OperatorEquivalent(DreamValue b) {
+            if (!b.TryGetValueAsDreamList(out var secondList))
+                return DreamValue.False;
+            if (GetLength() != secondList.GetLength())
+                return DreamValue.False;
+
+            var firstValues = GetValues();
+            var secondValues = secondList.GetValues();
+            for (var i = 0; i < firstValues.Count; i++) {
+                if (!firstValues[i].Equals(secondValues[i]))
+                    return DreamValue.False;
+            }
+
+            return DreamValue.True;
+        }
+        #endregion Operators
     }
 
     // /datum.vars list
@@ -353,14 +541,14 @@ namespace OpenDreamRuntime.Objects {
 
     // atom.overlays or atom.underlays list
     // Operates on an atom's appearance
-    sealed class DreamOverlaysList : DreamList {
+    public sealed class DreamOverlaysList : DreamList {
         [Dependency] private readonly IAtomManager _atomManager = default!;
         private readonly ServerAppearanceSystem? _appearanceSystem;
 
-        private readonly DreamObject _atom;
+        private readonly DreamObjectAtom _atom;
         private readonly bool _isUnderlays;
 
-        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
+        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObjectAtom atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
             IoCManager.InjectDependencies(this);
 
             _atom = atom;
@@ -458,13 +646,12 @@ namespace OpenDreamRuntime.Objects {
     // atom.filters list
     // Operates on an atom's appearance
     public sealed class DreamFilterList : DreamList {
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IAtomManager _atomManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
-        private readonly DreamObject _atom;
+        private readonly DreamObjectAtom _atom;
 
-        public DreamFilterList(DreamObjectDefinition listDef, DreamObject atom) : base(listDef, 0) {
+        public DreamFilterList(DreamObjectDefinition listDef, DreamObjectAtom atom) : base(listDef, 0) {
             IoCManager.InjectDependencies(this);
             _atom = atom;
         }
@@ -491,9 +678,9 @@ namespace OpenDreamRuntime.Objects {
 
                 DreamFilter oldFilter = appearance.Filters[index - 1];
 
-                DreamMetaObjectFilter.FilterAttachedTo.Remove(oldFilter);
+                DreamObjectFilter.FilterAttachedTo.Remove(oldFilter);
                 appearance.Filters[index - 1] = filter;
-                DreamMetaObjectFilter.FilterAttachedTo[filter] = this;
+                DreamObjectFilter.FilterAttachedTo[filter] = this;
             });
         }
 
@@ -506,31 +693,30 @@ namespace OpenDreamRuntime.Objects {
                 throw new Exception($"Atom only has {appearance.Filters.Count} filter(s), cannot index {filterIndex}");
 
             DreamFilter filter = appearance.Filters[filterIndex - 1];
-            DreamObject filterObject = _objectTree.CreateObject(_objectTree.Filter);
-            DreamMetaObjectFilter.DreamObjectToFilter[filterObject] = filter;
+            DreamObjectFilter filterObject = ObjectTree.CreateObject<DreamObjectFilter>(ObjectTree.Filter);
+            filterObject.Filter = filter;
             return new DreamValue(filterObject);
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
-            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Filter, out var filterObject))
+            if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
                 throw new Exception($"Cannot set value of filter list to {value}");
             if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
                 throw new Exception($"Invalid index into filter list: {key}");
 
-            DreamFilter filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];
-            SetFilter(filterIndex, filter);
+            SetFilter(filterIndex, filterObject.Filter);
         }
 
         public override void AddValue(DreamValue value) {
-            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Filter, out var filterObject))
+            if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
                 throw new Exception($"Cannot add {value} to filter list");
 
             //This is dynamic to prevent the compiler from optimising the SerializationManager.CreateCopy() call to the DreamFilter type
             //so we can preserve the subclass information. Setting it to DreamFilter instead will cause filter parameters to stop working.
-            dynamic filter = DreamMetaObjectFilter.DreamObjectToFilter[filterObject];
+            dynamic filter = filterObject.Filter;
             DreamFilter copy = _serializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
 
-            DreamMetaObjectFilter.FilterAttachedTo[copy] = this;
+            DreamObjectFilter.FilterAttachedTo[copy] = this;
             _atomManager.UpdateAppearance(_atom, appearance => {
                 appearance.Filters.Add(copy);
             });
@@ -576,7 +762,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override void AddValue(DreamValue value) {
-            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+            if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
                 return;
 
             _screenOverlaySystem?.AddScreenObject(_connection, movable);
@@ -584,7 +770,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override void RemoveValue(DreamValue value) {
-            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+            if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
                 return;
 
             _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
@@ -595,7 +781,7 @@ namespace OpenDreamRuntime.Objects {
             if (end == 0 || end > _screenObjects.Count + 1) end = _screenObjects.Count + 1;
 
             for (int i = start - 1; i < end - 1; i++) {
-                if (!_screenObjects[i].TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+                if (!_screenObjects[i].TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
                     continue;
 
                 _screenOverlaySystem?.RemoveScreenObject(_connection, movable);
@@ -650,11 +836,9 @@ namespace OpenDreamRuntime.Objects {
 
     // turf.contents list
     public sealed class TurfContentsList : DreamList {
-        private readonly IDreamObjectTree _objectTree;
         private readonly IDreamMapManager.Cell _cell;
 
-        public TurfContentsList(DreamObjectDefinition listDef, IDreamObjectTree objectTree, IDreamMapManager.Cell cell) : base(listDef, 0) {
-            _objectTree = objectTree;
+        public TurfContentsList(DreamObjectDefinition listDef, IDreamMapManager.Cell cell) : base(listDef, 0) {
             _cell = cell;
         }
 
@@ -683,7 +867,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override void AddValue(DreamValue value) {
-            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Movable, out var movable))
+            if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
                 throw new Exception($"Cannot add {value} to turf contents");
 
             movable.SetVariable("loc", new(_cell.Turf));
@@ -705,17 +889,10 @@ namespace OpenDreamRuntime.Objects {
 
     // area.contents list
     public sealed class AreaContentsList : DreamList {
-        private readonly IDreamObjectTree _objectTree;
-        private readonly IDreamMapManager _dreamMapManager;
-
-        private readonly DreamObject _area;
+        private readonly DreamObjectArea _area;
         private readonly List<DreamValue> _turfs = new();
 
-        public AreaContentsList(IDreamObjectTree objectTree, IDreamMapManager dreamMapManager, DreamObject area) : base(
-            objectTree.List.ObjectDefinition, 0) {
-            _objectTree = objectTree;
-            _dreamMapManager = dreamMapManager;
-
+        public AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : base(listDef, 0) {
             _area = area;
         }
 
@@ -737,11 +914,10 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public override void AddValue(DreamValue value) {
-            if (!value.TryGetValueAsDreamObjectOfType(_objectTree.Turf, out var turf))
+            if (!value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
                 throw new Exception($"Cannot add {value} to area contents");
 
-            (Vector2i pos, IDreamMapManager.Level level) = _dreamMapManager.GetTurfPosition(turf);
-            level.SetArea(pos, _area);
+            turf.Cell.Area = _area;
 
             // TODO: Actually keep track of every turf in an area, not just which ones have been added by DM through .contents
             _turfs.Add(value);

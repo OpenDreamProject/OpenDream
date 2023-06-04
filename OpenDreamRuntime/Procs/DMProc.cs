@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Linq;
 using System.Text;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -73,7 +73,7 @@ namespace OpenDreamRuntime.Procs {
     }
 
     public sealed class DMProcState : ProcState {
-        delegate ProcStatus? OpcodeHandler(DMProcState state);
+        private delegate ProcStatus? OpcodeHandler(DMProcState state);
 
         public static readonly Stack<DMProcState> Pool = new();
 
@@ -174,6 +174,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
             {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
+            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
             {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},
             {DreamProcOpcode.JumpIfTrueReference, DMOpcodeHandlers.JumpIfTrueReference},
@@ -572,12 +573,8 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
 
-                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                        listObj.SetValue(index, value);
-                    } else if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                        IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                            metaObject.OperatorIndexAssign(dreamObject!, index, value);
+                    if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                        dreamObject.OperatorIndexAssign(index, value);
                     } else {
                         throw new Exception($"Cannot assign to index {index} of {indexing}");
                     }
@@ -674,9 +671,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                if (metaObject != null)
-                    return metaObject.OperatorIndex(dreamObject, index);
+                if (dreamObject != null)
+                    return dreamObject.OperatorIndex(index);
             }
 
             throw new Exception($"Cannot get index {index} of {indexing}");

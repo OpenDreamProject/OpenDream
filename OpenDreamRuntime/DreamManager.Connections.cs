@@ -1,12 +1,10 @@
-using System.Diagnostics.CodeAnalysis;
-using OpenDreamRuntime.Objects;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime {
-    sealed partial class DreamManager {
+    internal sealed partial class DreamManager {
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         private readonly Dictionary<NetUserId, DreamConnection> _connections = new();
@@ -100,27 +98,6 @@ namespace OpenDreamRuntime {
 
         public DreamConnection GetConnectionBySession(IPlayerSession session) {
             return _connections[session.UserId];
-        }
-
-        public DreamConnection GetConnectionFromClient(DreamObject client) {
-            foreach (DreamConnection potentialConnection in Connections) {
-                if (potentialConnection.Client == client)
-                    return potentialConnection;
-            }
-
-            throw new Exception($"Client {client} does not belong to a connection");
-        }
-
-        public bool TryGetConnectionFromMob(DreamObject mob, [NotNullWhen(true)] out DreamConnection? connection) {
-            foreach (DreamConnection potentialConnection in Connections) {
-                if (potentialConnection.Mob == mob) {
-                    connection = potentialConnection;
-                    return true;
-                }
-            }
-
-            connection = null;
-            return false;
         }
     }
 }

@@ -1,26 +1,22 @@
-﻿using System.Text;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
-using OpenDreamShared.Dream;
-using DreamRegex = OpenDreamRuntime.Objects.MetaObjects.DreamMetaObjectRegex.DreamRegex;
+using OpenDreamRuntime.Objects.Types;
 
 namespace OpenDreamRuntime.Procs.Native {
-    static class DreamProcNativeRegex {
+    internal static class DreamProcNativeRegex {
         [DreamProc("Find")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
         [DreamProcParameter("start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)] // BYOND docs say these are uppercase, they're not
         [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
         public static DreamValue NativeProc_Find(NativeProc.State state) {
-            DreamRegex dreamRegex = DreamMetaObjectRegex.ObjectToDreamRegex[state.Src];
+            DreamObjectRegex dreamRegex = (DreamObjectRegex)state.Src!;
             DreamValue haystack = state.GetArgument(0, "haystack");
 
-            string haystackString;
-            if (!haystack.TryGetValueAsString(out haystackString)) {
-                haystackString = String.Empty;
+            if (!haystack.TryGetValueAsString(out var haystackString)) {
+                haystackString = string.Empty;
             }
-            
+
             int next = GetNext(state.Src, state.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
             int end = state.GetArgument(2, "end").GetValueAsInteger();
 
@@ -61,9 +57,8 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
-        public static async Task<DreamValue> RegexReplace(AsyncNativeProc.State state, DreamObject regexInstance, DreamValue haystack, DreamValue replace,
-            int start, int end) {
-            DreamRegex regex = DreamMetaObjectRegex.ObjectToDreamRegex[regexInstance];
+        public static async Task<DreamValue> RegexReplace(AsyncNativeProc.State state, DreamObject regexInstance, DreamValue haystack, DreamValue replace, int start, int end) {
+            DreamObjectRegex regex = (DreamObjectRegex)regexInstance;
 
             if (!haystack.TryGetValueAsString(out var haystackString)) {
                 return DreamValue.Null;
@@ -90,7 +85,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     match = regex.Regex.Match(currentHaystack,
                         Math.Clamp(currentStart - 1, 0, currentHaystack.Length));
                     if (!match.Success) break;
-                    
+
                     var groups = match.Groups;
                     var args = new DreamValue[groups.Count];
                     for (int i = 0; i < groups.Count; i++) {

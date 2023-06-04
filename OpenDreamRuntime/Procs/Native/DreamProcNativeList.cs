@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {

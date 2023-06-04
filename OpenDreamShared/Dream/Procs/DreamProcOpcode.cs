@@ -119,7 +119,8 @@ namespace OpenDreamShared.Dream.Procs {
         TryNoValue = 0x70,
         EndTry = 0x71,
         EnumerateNoAssign = 0x72,
-        Gradient = 0x73
+        Gradient = 0x73,
+        AssignInto = 0x74,
     }
 
     /// <summary>

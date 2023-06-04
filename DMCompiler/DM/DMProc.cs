@@ -739,6 +739,10 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Assign);
             WriteReference(reference);
         }
+        public void AssignInto(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.AssignInto);
+            WriteReference(reference);
+        }
 
         public void CreateObject(DMCallArgumentsType argumentsType, int argumentStackSize) {
             ShrinkStack(argumentStackSize); // Pops type and arguments, pushes new object

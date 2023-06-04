@@ -2,7 +2,7 @@
 using System.Linq;
 using System.Text.Json;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
@@ -30,7 +30,7 @@ namespace OpenDreamRuntime {
 
         private ServerAppearanceSystem? _appearanceSystem;
 
-        public DreamObject WorldInstance { get; private set; }
+        public DreamObjectWorld WorldInstance { get; private set; }
         public Exception? LastDMException { get; set; }
 
         public event EventHandler<Exception>? OnException;
@@ -112,12 +112,10 @@ namespace OpenDreamRuntime {
 
             _objectTree.LoadJson(json);
 
-            SetMetaObjects();
-
             DreamProcNative.SetupNativeProcs(_objectTree);
 
             _dreamMapManager.Initialize();
-            WorldInstance = _objectTree.CreateObject(_objectTree.World);
+            WorldInstance = new DreamObjectWorld(_objectTree.World.ObjectDefinition);
 
             // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.
             WorldInstance.InitSpawn(new());
@@ -142,28 +140,6 @@ namespace OpenDreamRuntime {
             return true;
         }
 
-        private void SetMetaObjects() {
-            // Datum needs to be set first
-            _objectTree.SetMetaObject(_objectTree.Datum, new DreamMetaObjectDatum());
-
-            //TODO Investigate what types BYOND can reparent without exploding and only allow reparenting those
-            _objectTree.SetMetaObject(_objectTree.List, new DreamMetaObjectList());
-            _objectTree.SetMetaObject(_objectTree.Client, new DreamMetaObjectClient());
-            _objectTree.SetMetaObject(_objectTree.World, new DreamMetaObjectWorld());
-            _objectTree.SetMetaObject(_objectTree.Matrix, new DreamMetaObjectMatrix());
-            _objectTree.SetMetaObject(_objectTree.Regex, new DreamMetaObjectRegex());
-            _objectTree.SetMetaObject(_objectTree.Atom, new DreamMetaObjectAtom());
-            _objectTree.SetMetaObject(_objectTree.Area, new DreamMetaObjectArea());
-            _objectTree.SetMetaObject(_objectTree.Turf, new DreamMetaObjectTurf());
-            _objectTree.SetMetaObject(_objectTree.Movable, new DreamMetaObjectMovable());
-            _objectTree.SetMetaObject(_objectTree.Obj, new DreamMetaObjectObj());
-            _objectTree.SetMetaObject(_objectTree.Mob, new DreamMetaObjectMob());
-            _objectTree.SetMetaObject(_objectTree.Image, new DreamMetaObjectImage());
-            _objectTree.SetMetaObject(_objectTree.Icon, new DreamMetaObjectIcon());
-            _objectTree.SetMetaObject(_objectTree.Filter, new DreamMetaObjectFilter());
-            _objectTree.SetMetaObject(_objectTree.Savefile, new DreamMetaObjectSavefile());
-        }
-
         public void WriteWorldLog(string message, LogLevel level = LogLevel.Info, string sawmill = "world.log") {
             if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc)) {
                 logRsc = new ConsoleOutputResource();
@@ -171,15 +147,12 @@ namespace OpenDreamRuntime {
                 Logger.Log(LogLevel.Error, $"Failed to write to the world log, falling back to console output. Original log message follows: [{LogMessage.LogLevelToName(level)}] world.log: {message}");
             }
 
-            if (logRsc is ConsoleOutputResource consoleOut) // Output() on ConsoleOutputResource uses LogLevel.Info
-            {
+            if (logRsc is ConsoleOutputResource consoleOut) { // Output() on ConsoleOutputResource uses LogLevel.Info
                 consoleOut.WriteConsole(level, sawmill, message);
-            }
-            else
-            {
+            } else {
                 logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] {sawmill}: {message}"));
-                if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions))
-                {
+
+                if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions)) {
                     Logger.LogS(level, sawmill, message);
                 }
             }

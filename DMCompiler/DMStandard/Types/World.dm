@@ -1,5 +1,5 @@
 ﻿/world
-	var/list/contents = list()
+	var/list/contents = null
 	var/list/vars
 
 	var/log = null
@@ -37,7 +37,7 @@
 	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
 	var/process
-	var/list/params = list() as opendream_unimplemented
+	var/list/params = null as opendream_unimplemented
 
 	var/sleep_offline = 0 as opendream_unimplemented
 

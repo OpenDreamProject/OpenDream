@@ -1,24 +1,20 @@
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
-    static class DreamProcNativeIcon {
+    internal static class DreamProcNativeIcon {
         [DreamProc("Width")]
         public static DreamValue NativeProc_Width(NativeProc.State state) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
-
-            return new DreamValue(dreamIconObject.Width);
+            return new DreamValue(((DreamObjectIcon)state.Src!).Icon.Width);
         }
 
         [DreamProc("Height")]
         public static DreamValue NativeProc_Height(NativeProc.State state) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
-
-            return new DreamValue(dreamIconObject.Height);
+            return new DreamValue(((DreamObjectIcon)state.Src!).Icon.Height);
         }
 
         [DreamProc("Insert")]
@@ -44,8 +40,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!resourceManager.TryLoadIcon(newIcon, out var iconRsc))
                 throw new Exception($"Cannot insert {newIcon}");
 
-            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
-            iconObj.InsertStates(iconRsc, iconState, dir, frame); // TODO: moving & delay
+            ((DreamObjectIcon)state.Src!).Icon.InsertStates(iconRsc, iconState, dir, frame); // TODO: moving & delay
             return DreamValue.Null;
         }
 
@@ -77,7 +72,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!function.TryGetValueAsInteger(out var functionValue))
                 throw new Exception($"Invalid 'function' argument {function}");
 
-            Blend(DreamMetaObjectIcon.ObjectToDreamIcon[state.Src], icon, (BlendType)functionValue, x, y);
+            Blend(((DreamObjectIcon)state.Src!).Icon, icon, (BlendType)functionValue, x, y);
             return DreamValue.Null;
         }
 
@@ -90,7 +85,7 @@ namespace OpenDreamRuntime.Procs.Native {
             state.GetArgument(0, "width").TryGetValueAsInteger(out var width);
             state.GetArgument(1, "height").TryGetValueAsInteger(out var height);
 
-            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
+            DreamIcon iconObj = ((DreamObjectIcon)state.Src!).Icon;
             iconObj.Width = width;
             iconObj.Height = height;
             return DreamValue.Null;
@@ -104,15 +99,13 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(state.Src); // Defaults to input on invalid angle
             }
 
-            _NativeProc_TurnInternal(state.Src, state.Usr, angle);
+            _NativeProc_TurnInternal((DreamObjectIcon)state.Src!, angle);
             return DreamValue.Null;
         }
 
         /// <summary> Turns a given icon a given amount of degrees clockwise. </summary>
-        public static void _NativeProc_TurnInternal(DreamObject src, DreamObject usr, float angle) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[src];
-
-            DreamMetaObjectIcon.TurnIcon(dreamIconObject, angle);
+        public static void _NativeProc_TurnInternal(DreamObjectIcon src, float angle) {
+            src.Turn(angle);
         }
     }
 }

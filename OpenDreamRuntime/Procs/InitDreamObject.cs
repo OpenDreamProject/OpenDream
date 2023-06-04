@@ -77,18 +77,14 @@ namespace OpenDreamRuntime.Procs {
                 case Stage.OnObjectCreated: {
                     _stage = Stage.Return;
 
-                    if (src.ObjectDefinition.MetaObject == null) {
-                        goto switch_start;
-                    }
-
-                    _dreamObject.ObjectDefinition.MetaObject.OnObjectCreated(_dreamObject, new DreamProcArguments(_arguments.AsSpan(0, _argumentCount)));
+                    _dreamObject.Initialize(new DreamProcArguments(_arguments.AsSpan(0, _argumentCount)));
 
                     if (!_dreamMan.Initialized) {
                         // Suppress all New() calls during /world/<init>() and map loading.
                         goto switch_start;
                     }
 
-                    if (src.ObjectDefinition.MetaObject.ShouldCallNew) {
+                    if (src.ShouldCallNew) {
                         var newProc = src.GetProc("New");
                         var newProcState = newProc.CreateState(Thread, src, _usr, new DreamProcArguments(_arguments.AsSpan(0, _argumentCount)));
                         Thread.PushProcState(newProcState);

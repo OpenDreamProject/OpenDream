@@ -1,17 +1,14 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Shared.Network;
-using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
 namespace OpenDreamRuntime.Resources {
     public sealed class DreamResourceManager {
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         public string RootPath { get; private set; }
@@ -31,7 +28,7 @@ namespace OpenDreamRuntime.Resources {
 
             // An empty resource path is the console
             _resourceCache.Add(new ConsoleOutputResource());
-            _resourcePathToId.Add(String.Empty, 0);
+            _resourcePathToId.Add(string.Empty, 0);
         }
 
         public void SetDirectory(string directory) {
@@ -91,10 +88,8 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public bool TryLoadIcon(DreamValue value, [NotNullWhen(true)] out IconResource? icon) {
-            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var iconObj)) {
-                DreamIcon dreamIcon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
-
-                icon = dreamIcon.GenerateDMI();
+            if (value.TryGetValueAsDreamObject<DreamObjectIcon>(out var iconObj)) {
+                icon = iconObj.Icon.GenerateDMI();
                 return true;
             }
 

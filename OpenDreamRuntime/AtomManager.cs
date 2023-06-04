@@ -1,20 +1,21 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using Robust.Server.GameObjects;
 using Robust.Shared.Map;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime {
     internal sealed class AtomManager : IAtomManager {
-        public List<DreamObject> Areas { get; } = new();
-        public List<DreamObject> Turfs { get; } = new();
-        public List<DreamObject> Movables { get; } = new();
-        public List<DreamObject> Objects { get; } = new();
-        public List<DreamObject> Mobs { get; } = new();
+        public List<DreamObjectArea> Areas { get; } = new();
+        public List<DreamObjectTurf> Turfs { get; } = new();
+        public List<DreamObjectMovable> Movables { get; } = new();
+        public List<DreamObjectMovable> Objects { get; } = new();
+        public List<DreamObjectMob> Mobs { get; } = new();
         public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -23,12 +24,11 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
-        private readonly Dictionary<DreamObject, EntityUid> _atomToEntity = new();
         private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
         private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
+        private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
         private ServerAppearanceSystem? _appearanceSystem;
-        private TransformSystem? _transformSystem;
 
         public DreamObject GetAtom(int index) {
             if (index < Areas.Count)
@@ -53,44 +53,28 @@ namespace OpenDreamRuntime {
             throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
         }
 
-        public EntityUid CreateMovableEntity(DreamObject atom) {
-            if (_atomToEntity.TryGetValue(atom, out var entity))
-                return entity;
-
-            entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
+        public EntityUid CreateMovableEntity(DreamObjectMovable movable) {
+            var entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
             DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
-            sprite.SetAppearance(GetAppearanceFromDefinition(atom.ObjectDefinition));
+            sprite.SetAppearance(GetAppearanceFromDefinition(movable.ObjectDefinition));
 
             if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
-                atom.GetVariable("desc").TryGetValueAsString(out var desc);
-                metaData.EntityName = atom.GetDisplayName();
-                metaData.EntityDescription = desc;
+                metaData.EntityName = movable.GetDisplayName();
+                metaData.EntityDescription = movable.Desc ?? string.Empty;
             }
 
-            _atomToEntity.Add(atom, entity);
-            _entityToAtom.Add(entity, atom);
+            _entityToAtom.Add(entity, movable);
             return entity;
-        }
-
-        public EntityUid GetMovableEntity(DreamObject movable) {
-            return _atomToEntity.ContainsKey(movable) ? _atomToEntity[movable] : CreateMovableEntity(movable);
-        }
-
-        public bool TryGetMovableEntity(DreamObject movable, out EntityUid entity) {
-            return _atomToEntity.TryGetValue(movable, out entity);
         }
 
         public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable) {
             return _entityToAtom.TryGetValue(entity, out movable);
         }
 
-        public void DeleteMovableEntity(DreamObject movable) {
-            EntityUid entity = GetMovableEntity(movable);
-
-            _entityToAtom.Remove(entity);
-            _atomToEntity.Remove(movable);
-            _entityManager.DeleteEntity(entity);
+        public void DeleteMovableEntity(DreamObjectMovable movable) {
+            _entityToAtom.Remove(movable.Entity);
+            _entityManager.DeleteEntity(movable.Entity);
         }
 
         public bool IsValidAppearanceVar(string name) {
@@ -268,59 +252,60 @@ namespace OpenDreamRuntime {
         }
 
         /// <summary>
-        /// Looks for an appearance and, if one does not exist, usually creates a new one. <br/>
-        /// If used with a turf, this will fail and throw some kinda KeyNotFoundException down the line.
+        /// Gets an atom's appearance.
         /// </summary>
         /// <param name="atom">The atom to find the appearance of.</param>
-        public IconAppearance? MustGetAppearance(DreamObject atom) {
-            return atom.IsSubtypeOf(_objectTree.Turf)
-                ? _dreamMapManager.MustGetTurfAppearance(atom)
-                : _entityManager.GetComponent<DMISpriteComponent>(GetMovableEntity(atom)).Appearance;
+        public IconAppearance? MustGetAppearance(DreamObjectAtom atom) {
+            return atom switch {
+                DreamObjectTurf turf => AppearanceSystem.MustGetAppearance(turf.AppearanceId),
+                DreamObjectMovable movable => movable.SpriteComponent.Appearance,
+                DreamObjectArea => new IconAppearance(),
+                _ => throw new Exception($"Cannot get appearance of {atom}")
+            };
         }
 
         /// <summary>
         /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
         /// </summary>
-        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance) {
-            if (atom.IsSubtypeOf(_objectTree.Turf))
-                _dreamMapManager.TryGetTurfAppearance(atom, out appearance);
-            else if (TryGetMovableEntity(atom, out var entity)) // If a movable is already on the map
-                appearance = _entityManager.GetComponent<DMISpriteComponent>(entity).Appearance;
+        public bool TryGetAppearance(DreamObjectAtom atom, [NotNullWhen(true)] out IconAppearance? appearance) {
+            if (atom is DreamObjectTurf turf)
+                appearance = AppearanceSystem.MustGetAppearance(turf.AppearanceId);
+            else if (atom is DreamObjectMovable movable)
+                appearance = movable.SpriteComponent.Appearance;
             else
                 appearance = null;
+
             return appearance is not null;
         }
 
-        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
-            if (atom.IsSubtypeOf(_objectTree.Turf)) {
-                IconAppearance appearance = new IconAppearance(_dreamMapManager.MustGetTurfAppearance(atom));
-                update(appearance);
-                _dreamMapManager.SetTurfAppearance(atom, appearance);
-            } else if (atom.IsSubtypeOf(_objectTree.Movable)) {
-                if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
-                    return;
+        public void UpdateAppearance(DreamObjectAtom atom, Action<IconAppearance> update) {
+            var appearance = MustGetAppearance(atom);
+            appearance = (appearance != null) ? new(appearance) : new(); // Clone the appearance
 
-                IconAppearance appearance = new IconAppearance(sprite.Appearance);
-                update(appearance);
-                sprite.SetAppearance(appearance);
+            update(appearance);
+            SetAtomAppearance(atom, appearance);
+        }
+
+        public void SetAtomAppearance(DreamObjectAtom atom, IconAppearance appearance) {
+            if (atom is DreamObjectTurf turf) {
+                _dreamMapManager.SetTurfAppearance(turf, appearance);
+            } else if (atom is DreamObjectMovable movable) {
+                movable.SpriteComponent.SetAppearance(appearance);
             }
         }
 
-        public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate) {
-            if (!atom.IsSubtypeOf(_objectTree.Movable))
+        public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate) {
+            if (atom is not DreamObjectMovable movable)
                 return; //Animating non-movables is unimplemented
-            if (!_entityManager.TryGetComponent<DMISpriteComponent>(GetMovableEntity(atom), out var sprite))
-                return;
 
-            IconAppearance appearance = new IconAppearance(sprite.Appearance);
+            IconAppearance appearance = new IconAppearance(movable.SpriteComponent.Appearance);
 
             animate(appearance);
 
             // Don't send the updated appearance to clients, they will animate it
-            sprite.SetAppearance(appearance, dirty: false);
+            movable.SpriteComponent.SetAppearance(appearance, dirty: false);
 
-            _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-            _appearanceSystem.Animate(GetMovableEntity(atom), appearance, duration);
+            AppearanceSystem.Animate(movable.Entity, appearance, duration);
         }
 
         public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {
@@ -329,8 +314,8 @@ namespace OpenDreamRuntime {
                 return true;
             }
 
-            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Image, out var copyFromImage)) {
-                appearance = new(DreamMetaObjectImage.ObjectToAppearance[copyFromImage]);
+            if (value.TryGetValueAsDreamObject<DreamObjectImage>(out var copyFromImage)) {
+                appearance = new(copyFromImage.Appearance!);
                 return true;
             }
 
@@ -339,8 +324,8 @@ namespace OpenDreamRuntime {
                 return true;
             }
 
-            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Atom, out var copyFromAtom)) {
-                appearance = CreateAppearanceFromAtom(copyFromAtom);
+            if (value.TryGetValueAsDreamObject<DreamObjectAtom>(out var copyFromAtom)) {
+                appearance = new(MustGetAppearance(copyFromAtom));
                 return true;
             }
 
@@ -354,35 +339,6 @@ namespace OpenDreamRuntime {
 
             appearance = null;
             return false;
-        }
-
-        public IconAppearance CreateAppearanceFromAtom(DreamObject atom) {
-            if (TryGetAppearance(atom, out var appearance))
-                return new(appearance); // Just return a copy
-
-            appearance = new IconAppearance();
-            SetAppearanceVar(appearance, "icon", atom.GetVariable("icon"));
-            SetAppearanceVar(appearance, "icon_state", atom.GetVariable("icon_state"));
-            SetAppearanceVar(appearance, "color", atom.GetVariable("color"));
-            SetAppearanceVar(appearance, "alpha", atom.GetVariable("alpha"));
-            SetAppearanceVar(appearance, "dir", atom.GetVariable("dir"));
-            SetAppearanceVar(appearance, "invisibility", atom.GetVariable("invisibility"));
-            SetAppearanceVar(appearance, "opacity", atom.GetVariable("opacity"));
-            SetAppearanceVar(appearance, "mouse_opacity", atom.GetVariable("mouse_opacity"));
-            SetAppearanceVar(appearance, "pixel_x", atom.GetVariable("pixel_x"));
-            SetAppearanceVar(appearance, "pixel_y", atom.GetVariable("pixel_y"));
-            SetAppearanceVar(appearance, "layer", atom.GetVariable("layer"));
-            SetAppearanceVar(appearance, "plane", atom.GetVariable("plane"));
-            SetAppearanceVar(appearance, "blend_mode", atom.GetVariable("blend_mode"));
-            SetAppearanceVar(appearance, "render_source", atom.GetVariable("render_source"));
-            SetAppearanceVar(appearance, "render_target", atom.GetVariable("render_target"));
-            SetAppearanceVar(appearance, "appearance_flags", atom.GetVariable("appearance_flags"));
-
-            if (atom.GetVariable("transform").TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
-                appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
-            }
-
-            return appearance;
         }
 
         public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def) {
@@ -422,70 +378,53 @@ namespace OpenDreamRuntime {
             SetAppearanceVar(appearance, "blend_mode", blendModeVar);
             SetAppearanceVar(appearance, "appearance_flags", appearanceFlagsVar);
 
-            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObjectOfType(_objectTree.Matrix, out var transformMatrix)) {
-                appearance.Transform = DreamMetaObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
+            if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformMatrix)) {
+                appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
             }
 
             _definitionAppearanceCache.Add(def, appearance);
             return appearance;
         }
 
-        public (int X, int Y, int Z) GetAtomPosition(DreamObject atom) {
-            if (atom.IsSubtypeOf(_objectTree.Movable)) {
-                if (_transformSystem == null && !_entitySystemManager.TryGetEntitySystem(out _transformSystem))
-                    return (0, 0, 0);
-
-                var entity = GetMovableEntity(atom);
-                var transform = _entityManager.GetComponent<TransformComponent>(entity);
-                var worldPosition = _transformSystem.GetWorldPosition(transform);
-
-                return ((int)worldPosition.X, (int)worldPosition.Y, (int)transform.MapID);
-            } else if (atom.IsSubtypeOf(_objectTree.Turf)) {
-                var position = _dreamMapManager.GetTurfPosition(atom);
-
-                return (position.Pos.X, position.Pos.Y, position.Level.Z);
-            } else if (atom.IsSubtypeOf(_objectTree.Area)) {
-                atom.GetVariable("x").TryGetValueAsInteger(out var x);
-                atom.GetVariable("y").TryGetValueAsInteger(out var y);
-                atom.GetVariable("z").TryGetValueAsInteger(out var z);
-
-                return (x, y, z);
-            }
-
-            throw new Exception($"Cannot get the position of {atom}");
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public (int X, int Y, int Z) GetAtomPosition(DreamObjectAtom atom) {
+            return atom switch {
+                DreamObjectMovable movable => (movable.X, movable.Y, movable.Z),
+                DreamObjectTurf turf => (turf.X, turf.Y, turf.Z),
+                DreamObjectArea area => (area.X, area.Y, area.Z),
+                _ => throw new Exception($"Cannot get the position of {atom}")
+            };
         }
     }
 
     public interface IAtomManager {
-        public List<DreamObject> Areas { get; }
-        public List<DreamObject> Turfs { get; }
-        public List<DreamObject> Movables { get; }
-        public List<DreamObject> Objects { get; }
-        public List<DreamObject> Mobs { get; }
+        public List<DreamObjectArea> Areas { get; }
+        public List<DreamObjectTurf> Turfs { get; }
+        public List<DreamObjectMovable> Movables { get; }
+        public List<DreamObjectMovable> Objects { get; }
+        public List<DreamObjectMob> Mobs { get; }
         public int AtomCount { get; }
 
         public DreamObject GetAtom(int index);
 
-        public EntityUid CreateMovableEntity(DreamObject movable);
-        public EntityUid GetMovableEntity(DreamObject movable);
+        public EntityUid CreateMovableEntity(DreamObjectMovable movable);
 
-        public bool TryGetMovableEntity(DreamObject movable, out EntityUid entity);
         public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);
-        public void DeleteMovableEntity(DreamObject movable);
+        public void DeleteMovableEntity(DreamObjectMovable movable);
 
         public bool IsValidAppearanceVar(string varName);
         public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value);
         public DreamValue GetAppearanceVar(IconAppearance appearance, string varName);
 
-        public IconAppearance? MustGetAppearance(DreamObject atom);
+        public IconAppearance? MustGetAppearance(DreamObjectAtom atom);
 
-        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
-        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
-        public void AnimateAppearance(DreamObject atom, TimeSpan duration, Action<IconAppearance> animate);
+        public bool TryGetAppearance(DreamObjectAtom atom, [NotNullWhen(true)] out IconAppearance? appearance);
+        public void UpdateAppearance(DreamObjectAtom atom, Action<IconAppearance> update);
+        public void SetAtomAppearance(DreamObjectAtom atom, IconAppearance appearance);
+        public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate);
         public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
-        public IconAppearance CreateAppearanceFromAtom(DreamObject atom);
         public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def);
 
-        public (int X, int Y, int Z) GetAtomPosition(DreamObject atom);
+        public (int X, int Y, int Z) GetAtomPosition(DreamObjectAtom atom);
     }
 }

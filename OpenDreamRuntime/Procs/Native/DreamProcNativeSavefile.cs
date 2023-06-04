@@ -1,9 +1,9 @@
-﻿using OpenDreamRuntime.Objects.MetaObjects;
+﻿using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native;
 
-public static class DreamProcNativeSavefile {
+internal static class DreamProcNativeSavefile {
     [DreamProc("ExportText")]
     [DreamProcParameter("path", Type = DreamValueType.String)]
     [DreamProcParameter("file", Type = DreamValueType.String | DreamValueType.DreamResource)]
@@ -11,7 +11,7 @@ public static class DreamProcNativeSavefile {
         // Implementing this correctly is a fair amount of effort, and the only use of it I'm aware of is icon2base64()
         // So this implements it just enough to get that working
 
-        var savefile = DreamMetaObjectSavefile.ObjectToSavefile[state.Src];
+        var savefile = (DreamObjectSavefile)state.Src!;
         DreamValue path = state.GetArgument(0, "path");
         DreamValue file = state.GetArgument(1, "file");
 
@@ -35,7 +35,7 @@ public static class DreamProcNativeSavefile {
 
     [DreamProc("Flush")]
     public static DreamValue NativeProc_Flush(NativeProc.State state) {
-        var savefile = DreamMetaObjectSavefile.ObjectToSavefile[state.Src];
+        var savefile = (DreamObjectSavefile)state.Src!;
 
         savefile.Flush();
         return DreamValue.Null;

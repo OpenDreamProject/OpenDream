@@ -1,5 +1,5 @@
 ﻿using System.Buffers;
-using System.IO
+using System.IO;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;

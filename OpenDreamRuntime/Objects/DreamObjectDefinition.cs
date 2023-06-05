@@ -77,9 +77,10 @@ namespace OpenDreamRuntime.Objects {
             if (Parent != null) {
                 InitializationProc = Parent.InitializationProc;
                 Variables = new Dictionary<string, DreamValue>(Parent.Variables);
-                GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
                 if (Parent.Verbs != null)
                     Verbs = new List<int>(Parent.Verbs);
+                if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
+                    GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
             }
         }
 

@@ -545,10 +545,10 @@ namespace OpenDreamRuntime.Objects.Types {
         [Dependency] private readonly IAtomManager _atomManager = default!;
         private readonly ServerAppearanceSystem? _appearanceSystem;
 
-        private readonly DreamObjectAtom _atom;
+        private readonly DreamObject _atom;
         private readonly bool _isUnderlays;
 
-        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObjectAtom atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
+        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
             IoCManager.InjectDependencies(this);
 
             _atom = atom;

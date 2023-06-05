@@ -114,6 +114,10 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitProcStatementFtp(DMASTProcStatementFtp statementFtp) {
+            throw new NotImplementedException();
+        }
+
         public void VisitProcStatementOutput(DMASTProcStatementOutput statementOutput) {
             throw new NotImplementedException();
         }
@@ -1039,6 +1043,22 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementOutputControl(this);
+        }
+    }
+
+    public sealed class DMASTProcStatementFtp : DMASTProcStatement {
+        public DMASTExpression Receiver;
+        public DMASTExpression File;
+        public DMASTExpression Name;
+
+        public DMASTProcStatementFtp(Location location, DMASTExpression receiver, DMASTExpression file, DMASTExpression name) : base(location) {
+            Receiver = receiver;
+            File = file;
+            Name = name;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementFtp(this);
         }
     }
 

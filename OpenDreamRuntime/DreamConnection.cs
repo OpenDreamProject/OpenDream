@@ -231,7 +231,6 @@ namespace OpenDreamRuntime {
             Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);
         }
 
-
         public void OutputDreamValue(DreamValue value) {
             if (value.TryGetValueAsDreamObject(out var outputObject)) {
                 if (outputObject is DreamObjectSound) {
@@ -494,7 +493,21 @@ namespace OpenDreamRuntime {
         }
 
         public void WinClone(string controlId, string cloneId) {
-            var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId, };
+            var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId };
+
+            Session?.ConnectedClient.SendMessage(msg);
+        }
+
+        /// <summary>
+        /// Prompts the user to save a file to disk
+        /// </summary>
+        /// <param name="file">File to save</param>
+        /// <param name="suggestedName">Suggested name to save the file as</param>
+        public void SendFile(DreamResource file, string suggestedName) {
+            var msg = new MsgFtp {
+                ResourceId = file.Id,
+                SuggestedName = suggestedName
+            };
 
             Session?.ConnectedClient.SendMessage(msg);
         }

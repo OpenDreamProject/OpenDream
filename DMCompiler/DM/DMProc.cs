@@ -509,6 +509,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
+        public void Ftp() {
+            ShrinkStack(3);
+            WriteOpcode(DreamProcOpcode.Ftp);
+        }
+
         public void OutputReference(DMReference leftRef) {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.OutputReference);

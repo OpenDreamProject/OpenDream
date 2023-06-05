@@ -523,6 +523,8 @@ namespace OpenDreamRuntime.Objects.Types {
         public override void AddValue(DreamValue value) {
             if (!value.TryGetValueAsProc(out var verb))
                 throw new Exception($"Cannot add {value} to verbs list");
+            if (_verbs.Contains(verb))
+                return; // Even += won't add the verb if it's already in this list
 
             _verbs.Add(verb);
         }

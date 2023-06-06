@@ -1561,6 +1561,22 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
+        public DMASTExpression? ExpressionParameter() {
+            if(Current().Type == TokenType.DM_LeftParenthesis)
+            {
+                DMASTExpression? wrapped = Expression();
+
+                if (wrapped is DMASTAssign assignment)
+                    return new DMASTAssign(
+                        assignment.Location,
+                        new DMASTConstantNull(assignment.Location),
+                        assignment
+                    );
+                return wrapped;
+            }
+            return Expression();
+        }
+
         public List<DMASTDefinitionParameter> DefinitionParameters(out bool wasIndeterminate) {
             List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter? parameter = DefinitionParameter(out wasIndeterminate);
@@ -2049,10 +2065,8 @@ namespace DMCompiler.Compiler.DM {
 
                 if (inner is null) {
                     inner = new DMASTVoid(token.Location);
-                }
-
-                if (inner is DMASTIdentifier identifier) {
-                    inner = new DMASTIdentifierWrapped(identifier.Location, identifier);
+                } else {
+                    inner = new DMASTExpressionWrapped(inner.Location, inner);
                 }
 
                 return inner;

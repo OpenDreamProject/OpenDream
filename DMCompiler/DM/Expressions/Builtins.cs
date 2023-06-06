@@ -68,6 +68,7 @@ namespace DMCompiler.DM.Expressions {
         public NewPath(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
             _targetPath = targetPath;
             _arguments = arguments;
+
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -82,6 +83,8 @@ namespace DMCompiler.DM.Expressions {
             proc.PushType(typeId);
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
+
+        public override DreamPath? Path => _targetPath;
     }
 
     // locate()

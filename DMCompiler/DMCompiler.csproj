@@ -6,7 +6,6 @@
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
-    <NoWarn>8604;8602;0618;8618;8601;8618;8605;8600;8629;8625</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>

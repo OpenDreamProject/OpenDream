@@ -366,9 +366,7 @@ namespace DMCompiler.Compiler.DM {
                     if (pathElement != null) {
                         if(pathElement == "operator") {
                             Token operatorToken = Current();
-                            if(!Check(OperatorOverloadTypes))
-                                Error($"Invalid operator overload {operatorToken.PrintableText}");
-                            else {
+                            if(Check(OperatorOverloadTypes)) {
                                 operatorFlag = true;
                                 pathElement+=operatorToken.PrintableText;
                             }

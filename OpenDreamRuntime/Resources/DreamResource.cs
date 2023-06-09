@@ -41,19 +41,22 @@ namespace OpenDreamRuntime.Resources {
 
         public void Clear() {
             CreateDirectory();
-            File.WriteAllText(_filePath, String.Empty);
+            File.WriteAllText(_filePath, string.Empty);
         }
 
         public virtual void Output(DreamValue value) {
-            if (value.TryGetValueAsString(out string? text)) {
-                string filePath = Path.Combine(IoCManager.Resolve<DreamResourceManager>().RootPath, ResourcePath);
-
-                CreateDirectory();
-                File.AppendAllText(filePath, text + "\r\n");
-                _resourceData = null;
-            } else {
-                throw new Exception("Invalid output operation on '" + ResourcePath + "'");
+            string? text;
+            if (value == DreamValue.Null) {
+                text = string.Empty;
+            } else if (!value.TryGetValueAsString(out text)) {
+                throw new Exception($"Invalid output operation '{ResourcePath}' << {value}");
             }
+
+            string filePath = Path.Combine(IoCManager.Resolve<DreamResourceManager>().RootPath, ResourcePath);
+
+            CreateDirectory();
+            File.AppendAllText(filePath, text + "\r\n");
+            _resourceData = null;
         }
 
         private void CreateDirectory() {

@@ -1864,19 +1864,48 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Called;
         }
 
-        public static ProcStatus? LocateCoord(DMProcState state)
-        {
+        public static ProcStatus? Ftp(DMProcState state) {
+            DreamValue name = state.Pop();
+            DreamValue file = state.Pop();
+            if (!state.Pop().TryGetValueAsDreamObject(out var receiver) || receiver == null)
+                return null;
+
+            DreamConnection? connection;
+            if (receiver is DreamObjectMob receiverMob) {
+                connection = receiverMob.Connection;
+            } else if (receiver is DreamObjectClient receiverClient) {
+                connection = receiverClient.Connection;
+            } else {
+                throw new Exception("Invalid ftp() recipient");
+            }
+
+            if (!file.TryGetValueAsDreamResource(out var resource)) {
+                if (file.TryGetValueAsString(out var resourcePath)) {
+                    if (!state.Proc.DreamResourceManager.DoesFileExist(resourcePath))
+                        return null; // Do nothing
+
+                    resource = state.Proc.DreamResourceManager.LoadResource(resourcePath);
+                } else {
+                    throw new Exception($"{file} is not a valid file");
+                }
+            }
+
+            if (!name.TryGetValueAsString(out var suggestedName))
+                suggestedName = Path.GetFileName(resource.ResourcePath) ?? string.Empty;
+
+            connection.SendFile(resource, suggestedName);
+            return null;
+        }
+
+        public static ProcStatus? LocateCoord(DMProcState state) {
             var z = state.Pop();
             var y = state.Pop();
             var x = state.Pop();
             if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
-                z.TryGetValueAsInteger(out var zInt))
-            {
+                z.TryGetValueAsInteger(out var zInt)) {
                 state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
                 state.Push(new DreamValue(turf));
-            }
-            else
-            {
+            } else {
                 state.Push(DreamValue.Null);
             }
 

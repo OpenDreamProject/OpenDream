@@ -1,4 +1,6 @@
-﻿namespace OpenDreamClient.Resources.ResourceTypes;
+﻿using System.IO;
+
+namespace OpenDreamClient.Resources.ResourceTypes;
 
 public abstract class DreamResource {
     public readonly int Id;
@@ -8,5 +10,9 @@ public abstract class DreamResource {
     protected DreamResource(int id, byte[] data) {
         Id = id;
         Data = data;
+    }
+
+    public void WriteTo(Stream stream) {
+        stream.Write(Data);
     }
 }

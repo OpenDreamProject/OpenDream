@@ -1,8 +1,6 @@
 
 //# issue 1276
 
-#define ASSERT(x) x
-
 /datum/foo
 	var/bar = 5
 

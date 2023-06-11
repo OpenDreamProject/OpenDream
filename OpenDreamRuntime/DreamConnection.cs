@@ -17,7 +17,6 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
 

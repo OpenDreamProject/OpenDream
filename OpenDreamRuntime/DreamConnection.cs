@@ -29,11 +29,9 @@ namespace OpenDreamRuntime {
         [ViewVariables] public DreamObject? Mob {
             get => _mob;
             set {
-                DebugTools.Assert(value == null || value.IsSubtypeOf(_objectTree.Mob));
-
                 // The session's attached entity needs to be updated before verbs are updated
-                if (value != null) {
-                    Session!.AttachToEntity(_atomManager.GetMovableEntity(value));
+                if (_mob != null) {
+                    Session!.AttachToEntity(_mob.Entity);
                 } else {
                     Session!.DetachFromEntity();
                 }

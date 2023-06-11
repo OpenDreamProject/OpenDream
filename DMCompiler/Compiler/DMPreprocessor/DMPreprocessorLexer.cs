@@ -10,7 +10,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
     /// This class acts as the first layer of digestion for the compiler, <br/>
     /// taking in raw text and outputting vague tokens descriptive enough for the preprocessor to run on them.
     /// </summary>
-    class DMPreprocessorLexer : TextLexer {
+    sealed class DMPreprocessorLexer : TextLexer {
         public string IncludeDirectory;
 
         public DMPreprocessorLexer(string includeDirectory, string sourceName, string source) : base(sourceName, source) {
@@ -27,7 +27,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         protected override Token ParseNextToken() {
             Token token = base.ParseNextToken();
 
-            if (token == null) {
+            if (token.Type == TokenType.Unknown) {
                 char c = GetCurrent();
 
                 switch (c) {
@@ -42,11 +42,28 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case '}': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator, c); break;
                     case ';': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c); break;
                     case '.': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Period, c); break;
-                    case ':': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c); break;
+                    case ':':
+                        if(Advance() == '=') {
+                            Advance();
+                            token = CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                        } else
+                            token = CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
+                        break;
                     case ',': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c); break;
                     case '(': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c); break;
                     case ')': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c); break;
-                    case '[': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c); break;
+                    case '[': {
+                        if(Advance() == ']'){
+                            if(Advance() == '=') {
+                                Advance();
+                                token = CreateToken(TokenType.DM_Preproc_Punctuator, "[]=");
+                            } else
+                                token = CreateToken(TokenType.DM_Preproc_Punctuator, "[]");
+                        } else {
+                            token = CreateToken(TokenType.DM_Preproc_Punctuator_LeftBracket, c);
+                        }
+                        break;
+                    }
                     case ']': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_RightBracket, c); break;
                     case '?': Advance(); token = CreateToken(TokenType.DM_Preproc_Punctuator_Question, c); break;
                     case '\\': {
@@ -410,7 +427,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         /// <returns>True if token was successfully set to a macro keyword token, false if not.</returns>
-        protected bool TryMacroKeyword(string text, out Token token) {
+        private bool TryMacroKeyword(string text, out Token token) {
             switch (text) {
                 case "warn":
                 case "warning": token = CreateToken(TokenType.DM_Preproc_Warning, "#warn"); break;

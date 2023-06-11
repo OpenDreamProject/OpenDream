@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Input;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared;
 using Robust.Server.ServerStatus;
@@ -8,6 +9,7 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Timing;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
+
 namespace OpenDreamRuntime {
     public sealed class EntryPoint : GameServer {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
@@ -59,6 +61,11 @@ namespace OpenDreamRuntime {
         }
 
         protected override void Dispose(bool disposing) {
+            // Write every savefile to disk
+            foreach (var savefile in DreamObjectSavefile.Savefiles) {
+                savefile.Flush();
+            }
+
             _dreamManager.Shutdown();
             _debugManager.Shutdown();
         }

@@ -1,5 +1,6 @@
 using Robust.Shared.Analyzers;
 using System.Collections.Generic;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Compiler {
     [Virtual]
@@ -34,16 +35,12 @@ namespace OpenDreamShared.Compiler {
                 _currentToken = _lexer.GetNextToken();
 
                 if (_currentToken.Type == TokenType.Error) {
-                    Error((string)_currentToken.Value, throwException: false);
+                    Error((string)_currentToken.Value!, throwException: false);
                     Advance();
                 } else if (_currentToken.Type == TokenType.Warning) {
-                    Warning((string)_currentToken.Value);
+                    Warning((string)_currentToken.Value!);
                     Advance();
                 }
-            }
-
-            if (_lookahead.Count > 0) {
-                _lookahead.Peek().Push(_currentToken);
             }
 
             return Current();
@@ -99,7 +96,8 @@ namespace OpenDreamShared.Compiler {
         /// <remarks> This implementation on <see cref="Parser{SourceType}"/> does not make use of <see cref="WarningCode"/> <br/>
         /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
         /// </remarks>
-        protected void Error(string message, bool throwException = true) {
+        [AssertionMethod]
+        protected void Error(string message, [AssertionCondition(AssertionConditionType.IS_TRUE)] bool throwException = true) {
             CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken?.Location, message);
 
             if(Emissions.Count < MAX_EMISSIONS_RECORDED)

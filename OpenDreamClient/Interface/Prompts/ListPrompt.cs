@@ -1,14 +1,15 @@
 ﻿using OpenDreamShared.Dream.Procs;
+using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface.Prompts;
 
-sealed class ListPrompt : InputWindow {
+internal sealed class ListPrompt : InputWindow {
     private readonly ItemList _itemList;
 
-    public ListPrompt(int promptId, String title, String message, String defaultValue, bool canCancel, string[] values) : base(
-        promptId, title, message, defaultValue, canCancel) {
-
+    public ListPrompt(string title, string message, string defaultValue, bool canCancel, string[] values,
+        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _itemList = new();
 
         bool foundDefault = false;
@@ -25,6 +26,7 @@ sealed class ListPrompt : InputWindow {
         }
 
         if (!foundDefault) _itemList[0].Selected = true;
+        _itemList.OnKeyBindDown += ItemList_KeyBindDown;
         SetPromptControl(_itemList, grabKeyboard: false);
     }
 
@@ -38,5 +40,12 @@ sealed class ListPrompt : InputWindow {
         }
 
         // Prompt is not finished if nothing was selected
+    }
+
+    private void ItemList_KeyBindDown(GUIBoundKeyEventArgs e) {
+        if (e.Function == EngineKeyFunctions.TextSubmit) {
+            e.Handle();
+            ButtonClicked(DefaultButton);
+        }
     }
 }

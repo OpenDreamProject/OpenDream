@@ -1,33 +1,29 @@
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
-    static class DreamProcNativeIcon {
+    internal static class DreamProcNativeIcon {
         [DreamProc("Width")]
         public static DreamValue NativeProc_Width(NativeProc.State state) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
-
-            return new DreamValue(dreamIconObject.Width);
+            return new DreamValue(((DreamObjectIcon)state.Src!).Icon.Width);
         }
 
         [DreamProc("Height")]
         public static DreamValue NativeProc_Height(NativeProc.State state) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
-
-            return new DreamValue(dreamIconObject.Height);
+            return new DreamValue(((DreamObjectIcon)state.Src!).Icon.Height);
         }
 
         [DreamProc("Insert")]
-        [DreamProcParameter("new_icon", Type = DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("icon_state", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("dir", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("frame", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("moving", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("delay", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("new_icon", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("icon_state", Type = DreamValueType.String)]
+        [DreamProcParameter("dir", Type = DreamValueType.Float)]
+        [DreamProcParameter("frame", Type = DreamValueType.Float)]
+        [DreamProcParameter("moving", Type = DreamValueType.Float)]
+        [DreamProcParameter("delay", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_Insert(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
@@ -44,8 +40,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!resourceManager.TryLoadIcon(newIcon, out var iconRsc))
                 throw new Exception($"Cannot insert {newIcon}");
 
-            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
-            iconObj.InsertStates(iconRsc, iconState, dir, frame); // TODO: moving & delay
+            ((DreamObjectIcon)state.Src!).Icon.InsertStates(iconRsc, iconState, dir, frame); // TODO: moving & delay
             return DreamValue.Null;
         }
 
@@ -61,10 +56,10 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Blend")]
-        [DreamProcParameter("icon", Type = DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("function", Type = DreamValue.DreamValueType.Float, DefaultValue = (int)BlendType.Add)] // ICON_ADD
-        [DreamProcParameter("x", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
-        [DreamProcParameter("y", Type = DreamValue.DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("icon", Type = DreamValueType.DreamObject)]
+        [DreamProcParameter("function", Type = DreamValueType.Float, DefaultValue = (int)BlendType.Add)] // ICON_ADD
+        [DreamProcParameter("x", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("y", Type = DreamValueType.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_Blend(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
@@ -77,20 +72,20 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!function.TryGetValueAsInteger(out var functionValue))
                 throw new Exception($"Invalid 'function' argument {function}");
 
-            Blend(DreamMetaObjectIcon.ObjectToDreamIcon[state.Src], icon, (BlendType)functionValue, x, y);
+            Blend(((DreamObjectIcon)state.Src!).Icon, icon, (BlendType)functionValue, x, y);
             return DreamValue.Null;
         }
 
         [DreamProc("Scale")]
-        [DreamProcParameter("width", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("height", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("width", Type = DreamValueType.Float)]
+        [DreamProcParameter("height", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_Scale(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
             state.GetArgument(0, "width").TryGetValueAsInteger(out var width);
             state.GetArgument(1, "height").TryGetValueAsInteger(out var height);
 
-            DreamIcon iconObj = DreamMetaObjectIcon.ObjectToDreamIcon[state.Src];
+            DreamIcon iconObj = ((DreamObjectIcon)state.Src!).Icon;
             iconObj.Width = width;
             iconObj.Height = height;
             return DreamValue.Null;
@@ -98,19 +93,19 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("Turn")]
         [DreamProcParameter("angle", Type = DreamValueType.Float)]
-        public static DreamValue NativeProc_Turn(DreamObject src, DreamObject usr, DreamProcArguments arguments) {
-            DreamValue angleArg = arguments.GetArgument(0, "angle");
+        public static DreamValue NativeProc_Turn(NativeProc.State state) {
+            DreamValue angleArg = state.GetArgument(0, "angle");
             if (!angleArg.TryGetValueAsFloat(out float angle)) {
-                return new DreamValue(src); // Defaults to input on invalid angle
+                return new DreamValue(state.Src); // Defaults to input on invalid angle
             }
-            return _NativeProc_TurnInternal(src, usr, angle);
+
+            _NativeProc_TurnInternal((DreamObjectIcon)state.Src!, angle);
+            return DreamValue.Null;
         }
 
         /// <summary> Turns a given icon a given amount of degrees clockwise. </summary>
-        /// <returns> Returns a new icon which has been rotated </returns>
-        public static DreamValue _NativeProc_TurnInternal(DreamObject src, DreamObject usr, float angle) {
-            DreamIcon dreamIconObject = DreamMetaObjectIcon.ObjectToDreamIcon[src];
-            return new DreamValue(DreamMetaObjectIcon.TurnIcon(dreamIconObject, angle));
+        public static void _NativeProc_TurnInternal(DreamObjectIcon src, float angle) {
+            src.Turn(angle);
         }
     }
 }

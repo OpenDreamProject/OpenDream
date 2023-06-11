@@ -23,7 +23,7 @@ namespace OpenDreamShared.Json {
 
     public sealed class MapObjectJson {
         public int Type { get; set; }
-        public Dictionary<string, object> VarOverrides { get; set; }
+        public Dictionary<string, object>? VarOverrides { get; set; }
 
         public MapObjectJson(int type) {
             Type = type;
@@ -36,7 +36,7 @@ namespace OpenDreamShared.Json {
             return !contained;
         }
 
-        public override bool Equals(object obj) {
+        public override bool Equals(object? obj) {
             return obj is MapObjectJson json &&
                 Type == json.Type &&
                 EqualityComparer<Dictionary<string, object>>.Default.Equals(VarOverrides, json.VarOverrides);

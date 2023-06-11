@@ -51,6 +51,7 @@ namespace OpenDreamShared.Compiler {
         DM_AndEquals,
         DM_AndAndEquals,
         DM_As,
+        DM_AssignInto,
         DM_Bar,
         DM_BarBar,
         DM_BarEquals,
@@ -64,6 +65,8 @@ namespace OpenDreamShared.Compiler {
         DM_Dedent,
         DM_Del,
         DM_Do,
+        DM_DoubleSquareBracket,
+        DM_DoubleSquareBracketEquals,
         DM_Else,
         DM_Equals,
         DM_EqualsEquals,
@@ -154,11 +157,11 @@ namespace OpenDreamShared.Compiler {
         public Location Location;
         /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>
         public readonly string Text;
-        public readonly object Value;
+        public readonly object? Value;
 
-        public string PrintableText => Text?.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
+        public string PrintableText => Text.Replace("\n", "\\n").Replace("\r", "\\r").Replace("\t", "\\t");
 
-        public Token(TokenType type, string text, Location location, object value) {
+        public Token(TokenType type, string text, Location location, object? value) {
             Type = type;
             Text = text;
             Location = location;

@@ -4,6 +4,8 @@
 # i.e. filter(type="color"...) must correlate to a shader with id: color
 # This may later change (comment written Feb 13 '23) but, uh, watch out for that.
 
+#unimplemented shaders point to empty.swsl and do nothing
+
 - type: shader
   id: outline
   kind: source
@@ -73,11 +75,6 @@
     y: 0
     flags: 0  
 
-#unimplemented shaders point to empty.swsl and do nothing
-
-
-
-
 - type: shader
   id: angular_blur
   kind: source
@@ -100,24 +97,22 @@
 - type: shader
   id: displace
   kind: source
-  path: "/Shaders/empty.swsl"
+  path: "/Shaders/displacement.swsl"
   params:
     x: 0
     y: 0
     size: 0    
-    icon: 0
-    render_source: 0
 
 - type: shader
   id: drop_shadow
   kind: source
-  path: "/Shaders/empty.swsl"
+  path: "/Shaders/drop_shadow.swsl"
   params:
-    x: 0
-    y: 0
-    size: 0 
+    x: 1
+    y: -1
+    size: 1
     offset: 0
-    color: 0
+    shadow_color: "#00000080"
 
 - type: shader
   id: layer

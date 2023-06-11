@@ -27,33 +27,21 @@
     <ProjectReference Include="..\RobustToolbox\Robust.UnitTesting\Robust.UnitTesting.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <DMProject Include="$(ProjectDir)\DMProject\**"/>
-    <DMStandard Include="..\DMCompiler\DMStandard\**"/>
+    <DMProject Include="$(ProjectDir)\DMProject\**" />
+    <DMStandard Include="..\DMCompiler\DMStandard\**" />
   </ItemGroup>
   <!-- Need to copy DMStandard and DMProject to output directory during AfterBuild and Publish. -->
   <Target Name="CopyDMProject" AfterTargets="AfterBuild">
-    <Copy
-      SourceFiles="@(DMProject)"
-      DestinationFiles="@(DMProject->'$(OutDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMProject)" DestinationFiles="@(DMProject->'$(OutDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
   <Target Name="CopyDMProjectOnPublish" AfterTargets="Publish">
-    <Copy
-      SourceFiles="@(DMProject)"
-      DestinationFiles="@(DMProject->'$(PublishDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMProject)" DestinationFiles="@(DMProject->'$(PublishDir)\DMProject\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
   <Target Name="CopyDMStandard" AfterTargets="AfterBuild">
-    <Copy
-      SourceFiles="@(DMStandard)"
-      DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(OutDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
   <Target Name="CopyDMStandardOnPublish" AfterTargets="Publish">
-    <Copy
-      SourceFiles="@(DMStandard)"
-      DestinationFiles="@(DMStandard->'$(PublishDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')"
-    />
+    <Copy SourceFiles="@(DMStandard)" DestinationFiles="@(DMStandard->'$(PublishDir)\DMStandard\%(RecursiveDir)%(Filename)%(Extension)')" />
   </Target>
   <Import Project="..\RobustToolbox\MSBuild\Robust.Analyzers.targets" />
 </Project>

@@ -22,7 +22,7 @@ public sealed class ControlMap : InterfaceControl {
     }
 
     private void OnViewportKeyBindDown(GUIBoundKeyEventArgs e) {
-        if (e.Function == EngineKeyFunctions.Use || e.Function ==  EngineKeyFunctions.UIRightClick) {
+        if (e.Function == EngineKeyFunctions.Use || e.Function == EngineKeyFunctions.TextCursorSelect || e.Function ==  EngineKeyFunctions.UIRightClick) {
             IoCManager.Resolve<IEntitySystemManager>().Resolve(ref _mouseInput);
 
             if (_mouseInput.HandleViewportClick(Viewport, e)) {

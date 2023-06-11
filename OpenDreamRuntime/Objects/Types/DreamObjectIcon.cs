@@ -24,7 +24,7 @@ public sealed class DreamObjectIcon : DreamObject {
             if (!DreamResourceManager.TryLoadIcon(icon, out var iconRsc))
                 throw new Exception($"Cannot create an icon from {icon}");
 
-            Icon.InsertStates(iconRsc, state, dir, frame, useStateName: false);
+            Icon.InsertStates(iconRsc, state, dir, frame, isConstructor: true);
         }
     }
 

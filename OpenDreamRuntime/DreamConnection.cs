@@ -17,6 +17,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
@@ -28,6 +29,13 @@ namespace OpenDreamRuntime {
         [ViewVariables] public DreamObjectMob? Mob {
             get => _mob;
             set {
+                // The session's attached entity needs to be updated before verbs are updated
+                if (_mob != null) {
+                    Session!.AttachToEntity(_mob.Entity);
+                } else {
+                    Session!.DetachFromEntity();
+                }
+
                 if (_mob != value) {
                     if (_mob != null) {
                         _mob.Key = null;
@@ -49,12 +57,6 @@ namespace OpenDreamRuntime {
                     }
 
                     UpdateAvailableVerbs();
-                }
-
-                if (_mob != null) {
-                    Session!.AttachToEntity(_mob.Entity);
-                } else {
-                    Session!.DetachFromEntity();
                 }
             }
         }
@@ -127,6 +129,11 @@ namespace OpenDreamRuntime {
                     }
 
                     _availableVerbs.Add(verbId, (src, proc));
+
+                    // Don't send invisible verbs.
+                    if (proc.Invisibility > _mob.SeeInvisible) {
+                        continue;
+                    }
 
                     // Don't send hidden verbs. Names starting with "." count as hidden.
                     if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||

@@ -283,7 +283,6 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");

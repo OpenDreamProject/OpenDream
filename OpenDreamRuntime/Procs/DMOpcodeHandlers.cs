@@ -1677,13 +1677,11 @@ namespace OpenDreamRuntime.Procs {
                     // "savefile[A] << B" is the same as "savefile[A] = B"
 
                     state.AssignReference(leftRef, right);
-                    state.Push(DreamValue.Null);
                     return null;
                 }
             }
 
             PerformOutput(state.GetReferenceValue(leftRef), right);
-            state.Push(DreamValue.Null);
             return null;
         }
 

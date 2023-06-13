@@ -17,6 +17,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
@@ -28,6 +29,13 @@ namespace OpenDreamRuntime {
         [ViewVariables] public DreamObjectMob? Mob {
             get => _mob;
             set {
+                // The session's attached entity needs to be updated before verbs are updated
+                if (_mob != null) {
+                    Session!.AttachToEntity(_mob.Entity);
+                } else {
+                    Session!.DetachFromEntity();
+                }
+
                 if (_mob != value) {
                     if (_mob != null) {
                         _mob.Key = null;
@@ -49,12 +57,6 @@ namespace OpenDreamRuntime {
                     }
 
                     UpdateAvailableVerbs();
-                }
-
-                if (_mob != null) {
-                    Session!.AttachToEntity(_mob.Entity);
-                } else {
-                    Session!.DetachFromEntity();
                 }
             }
         }
@@ -127,6 +129,11 @@ namespace OpenDreamRuntime {
                     }
 
                     _availableVerbs.Add(verbId, (src, proc));
+
+                    // Don't send invisible verbs.
+                    if (proc.Invisibility > _mob.SeeInvisible) {
+                        continue;
+                    }
 
                     // Don't send hidden verbs. Names starting with "." count as hidden.
                     if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||
@@ -232,38 +239,36 @@ namespace OpenDreamRuntime {
         }
 
         public void OutputDreamValue(DreamValue value) {
-            if (value.TryGetValueAsDreamObject(out var outputObject)) {
-                if (outputObject is DreamObjectSound) {
-                    ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
-                    ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
-                    DreamValue file = outputObject.GetVariable("file");
+            if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
+                ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
+                ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+                DreamValue file = outputObject.GetVariable("file");
 
-                    var msg = new MsgSound() {
-                        Channel = channel,
-                        Volume = volume
-                    };
+                var msg = new MsgSound() {
+                    Channel = channel,
+                    Volume = volume
+                };
 
-                    if (!file.TryGetValueAsDreamResource(out var soundResource)) {
-                        if (file.TryGetValueAsString(out var soundPath)) {
-                            soundResource = _resourceManager.LoadResource(soundPath);
-                        } else if (file != DreamValue.Null) {
-                            throw new ArgumentException($"Cannot output {value}", nameof(value));
-                        }
+                if (!file.TryGetValueAsDreamResource(out var soundResource)) {
+                    if (file.TryGetValueAsString(out var soundPath)) {
+                        soundResource = _resourceManager.LoadResource(soundPath);
+                    } else if (file != DreamValue.Null) {
+                        throw new ArgumentException($"Cannot output {value}", nameof(value));
                     }
-
-                    msg.ResourceId = soundResource?.Id;
-                    if (soundResource?.ResourcePath is { } resourcePath) {
-                        if (resourcePath.EndsWith(".ogg"))
-                            msg.Format = MsgSound.FormatType.Ogg;
-                        else if (resourcePath.EndsWith(".wav"))
-                            msg.Format = MsgSound.FormatType.Wav;
-                        else
-                            throw new Exception($"Sound {value} is not a supported file type");
-                    }
-
-                    Session?.ConnectedClient.SendMessage(msg);
-                    return;
                 }
+
+                msg.ResourceId = soundResource?.Id;
+                if (soundResource?.ResourcePath is { } resourcePath) {
+                    if (resourcePath.EndsWith(".ogg"))
+                        msg.Format = MsgSound.FormatType.Ogg;
+                    else if (resourcePath.EndsWith(".wav"))
+                        msg.Format = MsgSound.FormatType.Wav;
+                    else
+                        throw new Exception($"Sound {value} is not a supported file type");
+                }
+
+                Session?.ConnectedClient.SendMessage(msg);
+                return;
             }
 
             OutputControl(value.Stringify(), null);

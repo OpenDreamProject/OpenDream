@@ -1885,6 +1885,8 @@ namespace OpenDreamRuntime.Procs {
                         return null; // Do nothing
 
                     resource = state.Proc.DreamResourceManager.LoadResource(resourcePath);
+                } else if (file.TryGetValueAsDreamObject<DreamObjectIcon>(out var icon)) {
+                    resource = icon.Icon.GenerateDMI();
                 } else {
                     throw new Exception($"{file} is not a valid file");
                 }

@@ -1,13 +1,16 @@
 ﻿using System.IO;
+using JetBrains.Annotations;
 
 namespace OpenDreamClient.Resources.ResourceTypes;
 
-public abstract class DreamResource {
+[Virtual]
+public class DreamResource {
     public readonly int Id;
 
     protected readonly byte[] Data;
 
-    protected DreamResource(int id, byte[] data) {
+    [UsedImplicitly]
+    public DreamResource(int id, byte[] data) {
         Id = id;
         Data = data;
     }

@@ -5,7 +5,7 @@ using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 
 namespace OpenDreamClient.Rendering {
-    sealed class DreamIcon {
+    internal sealed class DreamIcon {
         public delegate void SizeChangedEventHandler();
 
         public List<DreamIcon> Overlays { get; } = new();

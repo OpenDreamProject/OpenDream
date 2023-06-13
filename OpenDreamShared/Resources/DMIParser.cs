@@ -77,7 +77,7 @@ namespace OpenDreamShared.Resources {
             public bool Loop = true;
             public bool Rewind = false;
 
-            // TODO: This can only contain either 1, 2, 4, or 8 directions. Enforcing this could simplify some things.
+            // TODO: This can only contain either 1, 4, or 8 directions. Enforcing this could simplify some things.
             public readonly Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
 
             /// <summary>
@@ -171,7 +171,7 @@ namespace OpenDreamShared.Resources {
 
         /// <summary>
         /// The total directions present in an exported DMI.<br/>
-        /// An icon state in a DMI must contain either 1, 2, 4, or 8 directions.
+        /// An icon state in a DMI must contain either 1, 4, or 8 directions.
         /// </summary>
         public static int GetExportedDirectionCount(IEnumerable<AtomDirection> directions) {
             // If we have any of these directions then we export 8 directions
@@ -185,18 +185,15 @@ namespace OpenDreamShared.Resources {
                 }
             }
 
-            // East or west means 4 directions
+            // Any of these means 4 directions
             foreach (var direction in directions) {
                 switch (direction) {
+                    case AtomDirection.North:
                     case AtomDirection.East:
                     case AtomDirection.West:
                         return 4;
                 }
             }
-
-            // Only contains a north and a south
-            if (directions.Contains(AtomDirection.North))
-                return 2;
 
             // Otherwise, 1 direction (just south)
             return 1;

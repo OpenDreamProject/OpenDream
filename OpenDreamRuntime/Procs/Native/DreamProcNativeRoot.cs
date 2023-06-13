@@ -1862,7 +1862,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue haystack = state.GetArgument(0, "Haystack");
             DreamValue needle = state.GetArgument(1, "Needle");
             DreamValue replacementArg = state.GetArgument(2, "Replacement");
-            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            state.GetArgument(3, "Start").TryGetValueAsInteger(out var start); //1-indexed
             int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
             if (needle.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
@@ -1874,10 +1874,16 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
+            if (start == 0) { // Return unmodified if Start is 0
+                return new(text);
+            } else if (start < 0) { // Negative wrap-around
+                start = Math.Max(start + text.Length + 1, 1);
+            }
+
             var arg3 = replacementArg.TryGetValueAsString(out var replacement);
 
-            if (end == 0) {
-                end = text.Length + 1;
+            if (end <= 0) { // Zero or negative wrap-around
+                end = Math.Max(end + text.Length + 1, start);
             }
 
             if (needle == DreamValue.Null) { // Insert the replacement after each char except the last
@@ -1917,6 +1923,53 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             throw new Exception($"Invalid needle {needle}");
+        }
+
+        [DreamProc("replacetextEx")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Replacement", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_replacetextEx(NativeProc.State state) {
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text)) {
+                return DreamValue.Null;
+            }
+
+            var arg3 = state.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
+
+            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle)) {
+                if (!arg3) {
+                    return new DreamValue(text);
+                }
+
+                //Insert the replacement after each char except the last char
+                //TODO: Properly support non-default start/end values
+                StringBuilder result = new StringBuilder();
+                var pos = 0;
+                while (pos + 1 <= text.Length) {
+                    result.Append(text[pos]).Append(arg3);
+                    pos += 1;
+                }
+
+                result.Append(text[pos]);
+                return new DreamValue(result.ToString());
+            }
+
+            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+
+            if (start == 0) { // Return unmodified
+                return new(text);
+            } else if (start < 0) { // Negative wrap-around
+                start = Math.Max(start + text.Length + 1, 1);
+            }
+
+            if (end <= 0) { // Zero and negative wrap-around
+                end = Math.Max(end + text.Length + 1, start);
+            }
+
+            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
         }
 
         [DreamProc("rgb")]
@@ -2002,50 +2055,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(list);
-        }
-
-        [DreamProc("replacetextEx")]
-        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
-        [DreamProcParameter("Needle", Type = DreamValueType.String)]
-        [DreamProcParameter("Replacement", Type = DreamValueType.String)]
-        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetextEx(NativeProc.State state) {
-            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
-                return DreamValue.Null;
-            }
-
-            var arg3 = state.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
-
-            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
-            {
-                if (!arg3)
-                {
-                    return new DreamValue(text);
-                }
-
-                //Insert the replacement after each char except the last char
-                //TODO: Properly support non-default start/end values
-                StringBuilder result = new StringBuilder();
-                var pos = 0;
-                while (pos + 1 <= text.Length)
-                {
-                    result.Append(text[pos]).Append(arg3);
-                    pos += 1;
-                }
-                result.Append(text[pos]);
-                return new DreamValue(result.ToString());
-            }
-
-            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
-
-            if (end == 0) {
-                end = text.Length + 1;
-            }
-
-            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
         }
 
         [DreamProc("round")]

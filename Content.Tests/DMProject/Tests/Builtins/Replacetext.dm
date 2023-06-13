@@ -6,6 +6,7 @@
 	ASSERT(replacetext(str, "A", "G") == "GBCDEF")
 	ASSERT(replacetext(str, "A", "G", 1) == "GBCDEF")
 	ASSERT(replacetext(str, "A", "G", 2) == "ABCDEF")
+	ASSERT(replacetext(str, "A", "G", -5) == "ABCDEF")
 	ASSERT(replacetext(str, "A", "G", -6) == "GBCDEF")
 	ASSERT(replacetext(str, "A", "G", -100) == "GBCDEF")
 

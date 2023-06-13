@@ -29,13 +29,6 @@ namespace OpenDreamRuntime {
         [ViewVariables] public DreamObjectMob? Mob {
             get => _mob;
             set {
-                // The session's attached entity needs to be updated before verbs are updated
-                if (_mob != null) {
-                    Session!.AttachToEntity(_mob.Entity);
-                } else {
-                    Session!.DetachFromEntity();
-                }
-
                 if (_mob != value) {
                     if (_mob != null) {
                         _mob.Key = null;
@@ -57,6 +50,12 @@ namespace OpenDreamRuntime {
                     }
 
                     UpdateAvailableVerbs();
+                }
+
+                if (_mob != null) {
+                    Session!.AttachToEntity(_mob.Entity);
+                } else {
+                    Session!.DetachFromEntity();
                 }
             }
         }
@@ -131,7 +130,7 @@ namespace OpenDreamRuntime {
                     _availableVerbs.Add(verbId, (src, proc));
 
                     // Don't send invisible verbs.
-                    if (proc.Invisibility > _mob.SeeInvisible) {
+                    if (_mob != null && proc.Invisibility > _mob.SeeInvisible) {
                         continue;
                     }
 

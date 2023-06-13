@@ -74,9 +74,11 @@ namespace OpenDreamShared.Resources {
 
         public sealed class ParsedDMIState {
             public string Name;
-            public Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
             public bool Loop = true;
             public bool Rewind = false;
+
+            // TODO: This can only contain either 1, 4, or 8 directions. Enforcing this could simplify some things.
+            public readonly Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
 
             /// <summary>
             /// The amount of animation frames this state has
@@ -113,7 +115,7 @@ namespace OpenDreamShared.Resources {
                 text.AppendLine("\"");
 
                 text.Append("\tdirs = ");
-                text.Append(Directions.Count);
+                text.Append(GetExportedDirectionCount(Directions.Keys));
                 text.AppendLine();
 
                 text.Append("\tframes = ");
@@ -134,8 +136,9 @@ namespace OpenDreamShared.Resources {
             /// </summary>
             /// <param name="dir">Which direction to get. Every direction if null.</param>
             /// <param name="frame">Which frame to get. Every frame if null.</param>
+            /// <param name="asSouth">If dir isn't null, return the frames as facing south</param>
             /// <returns>A dictionary containing the specified frames for each specified direction</returns>
-            public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null) {
+            public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null, bool asSouth = false) {
                 Dictionary<AtomDirection, ParsedDMIFrame[]> directions;
                 if (dir == null) { // Get every direction
                     directions = new(Directions);
@@ -145,8 +148,7 @@ namespace OpenDreamShared.Resources {
                     if (!Directions.TryGetValue(dir.Value, out var frames))
                         frames = Array.Empty<ParsedDMIFrame>();
 
-                    // Getting only one direction will give it to you with AtomDirection.South
-                    directions.Add(AtomDirection.South, frames);
+                    directions.Add(asSouth ? AtomDirection.South : dir.Value, frames);
                 }
 
                 if (frame != null) { // Only get a specified frame
@@ -165,6 +167,36 @@ namespace OpenDreamShared.Resources {
         public sealed class ParsedDMIFrame {
             public int X, Y;
             public float Delay;
+        }
+
+        /// <summary>
+        /// The total directions present in an exported DMI.<br/>
+        /// An icon state in a DMI must contain either 1, 4, or 8 directions.
+        /// </summary>
+        public static int GetExportedDirectionCount(IEnumerable<AtomDirection> directions) {
+            // If we have any of these directions then we export 8 directions
+            foreach (var direction in directions) {
+                switch (direction) {
+                    case AtomDirection.Northeast:
+                    case AtomDirection.Southeast:
+                    case AtomDirection.Southwest:
+                    case AtomDirection.Northwest:
+                        return 8;
+                }
+            }
+
+            // Any of these means 4 directions
+            foreach (var direction in directions) {
+                switch (direction) {
+                    case AtomDirection.North:
+                    case AtomDirection.East:
+                    case AtomDirection.West:
+                        return 4;
+                }
+            }
+
+            // Otherwise, 1 direction (just south)
+            return 1;
         }
 
         public static ParsedDMIDescription ParseDMI(Stream stream) {

@@ -366,9 +366,7 @@ namespace DMCompiler.Compiler.DM {
                     if (pathElement != null) {
                         if(pathElement == "operator") {
                             Token operatorToken = Current();
-                            if(!Check(OperatorOverloadTypes))
-                                Error($"Invalid operator overload {operatorToken.PrintableText}");
-                            else {
+                            if(Check(OperatorOverloadTypes)) {
                                 operatorFlag = true;
                                 pathElement+=operatorToken.PrintableText;
                             }
@@ -634,10 +632,10 @@ namespace DMCompiler.Compiler.DM {
                         return new DMASTProcStatementInput(loc, rightShift.A, rightShift.B);
                     case DMASTLeftShift leftShift: {
                         // A left shift on its own becomes a special "output" statement
-                        // Or something else depending on what's on the right ( browse(), browse_rsc(), or output() )
+                        // Or something else depending on what's on the right ( browse(), browse_rsc(), output(), etc )
                         if (leftShift.B is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
                             switch (identifier.Identifier) {
-                                case "browse":
+                                case "browse": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
                                         Error("browse() requires 1 or 2 parameters");
 
@@ -646,7 +644,8 @@ namespace DMCompiler.Compiler.DM {
                                         ? procCall.Parameters[1].Value
                                         : new DMASTConstantNull(loc);
                                     return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
-                                case "browse_rsc":
+                                }
+                                case "browse_rsc": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
                                         Error("browse_rsc() requires 1 or 2 parameters");
 
@@ -655,12 +654,25 @@ namespace DMCompiler.Compiler.DM {
                                         ? procCall.Parameters[1].Value
                                         : new DMASTConstantNull(loc);
                                     return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
-                                case "output":
-                                    if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
+                                }
+                                case "output": {
+                                    if (procCall.Parameters.Length != 2)
+                                        Error("output() requires 2 parameters");
 
                                     DMASTExpression msg = procCall.Parameters[0].Value;
                                     DMASTExpression control = procCall.Parameters[1].Value;
                                     return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
+                                }
+                                case "ftp": {
+                                    if (procCall.Parameters.Length is not 1 and not 2)
+                                        Error("ftp() requires 1 or 2 parameters");
+
+                                    DMASTExpression file = procCall.Parameters[0].Value;
+                                    DMASTExpression name = (procCall.Parameters.Length == 2)
+                                        ? procCall.Parameters[1].Value
+                                        : new DMASTConstantNull(loc);
+                                    return new DMASTProcStatementFtp(loc, leftShift.A, file, name);
+                                }
                             }
                         }
 

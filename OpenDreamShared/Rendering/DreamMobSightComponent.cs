@@ -8,7 +8,7 @@ using System.Collections.Generic;
 namespace OpenDreamShared.Rendering {
     [RegisterComponent]
     [NetworkedComponent]
-    public class DreamMobSightComponent : Component {
+    public sealed class DreamMobSightComponent : Component {
         //this would be a good place for:
         //see_in_dark
         //see_infrared

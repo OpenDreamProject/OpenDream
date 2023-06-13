@@ -240,7 +240,11 @@ namespace OpenDreamRuntime.Objects.Types {
 
             if (b.TryGetValueAsDreamList(out var bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
-                    listCopy.AddValue(value);
+                    if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
+                        listCopy.SetValue(value, assocValue);
+                    } else {
+                        listCopy.AddValue(value);
+                    }
                 }
             } else {
                 listCopy.AddValue(b);
@@ -279,7 +283,11 @@ namespace OpenDreamRuntime.Objects.Types {
         public override DreamValue OperatorAppend(DreamValue b) {
             if (b.TryGetValueAsDreamList(out var bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
-                    AddValue(value);
+                    if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
+                        SetValue(value, assocValue);
+                    } else {
+                        AddValue(value);
+                    }
                 }
             } else {
                 AddValue(b);
@@ -523,6 +531,8 @@ namespace OpenDreamRuntime.Objects.Types {
         public override void AddValue(DreamValue value) {
             if (!value.TryGetValueAsProc(out var verb))
                 throw new Exception($"Cannot add {value} to verbs list");
+            if (_verbs.Contains(verb))
+                return; // Even += won't add the verb if it's already in this list
 
             _verbs.Add(verb);
         }

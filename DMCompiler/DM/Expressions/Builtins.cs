@@ -82,6 +82,8 @@ namespace DMCompiler.DM.Expressions {
             proc.PushType(typeId);
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
+
+        public override DreamPath? Path => _targetPath;
     }
 
     // locate()

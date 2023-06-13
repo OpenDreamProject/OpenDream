@@ -8,6 +8,7 @@ using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
+using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
@@ -109,6 +110,7 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
             _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
             _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
+            _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
             _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
             _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         }
@@ -265,6 +267,19 @@ namespace OpenDreamClient.Interface {
             };
 
             _netManager.ClientSendMessage(response);
+        }
+
+        private void RxFtp(MsgFtp message) {
+            _dreamResource.LoadResourceAsync<DreamResource>(message.ResourceId, async resource => {
+                // TODO: Default the filename to message.SuggestedName
+                // RT doesn't seem to support this currently
+                var tuple = await _fileDialogManager.SaveFile();
+                if (tuple == null) // User cancelled
+                    return;
+
+                await using var file = tuple.Value.fileStream;
+                resource.WriteTo(file);
+            });
         }
 
         private void RxLoadInterface(MsgLoadInterface message) {

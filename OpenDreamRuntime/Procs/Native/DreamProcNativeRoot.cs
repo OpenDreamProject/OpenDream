@@ -1716,13 +1716,30 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = objectTree.CreateList();
 
             foreach (string? queryKey in query.AllKeys) {
-                string[] queryValues = query.GetValues(queryKey);
-                string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
+                string[]? queryValues = query.GetValues(queryKey);
 
-                if (queryKey != null) {
-                    list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
+                if (queryValues == null)
+                    continue;
+
+                if (queryKey == null) { // queryValues contains every value without a key
+                    foreach (string value in queryValues.Distinct()) {
+                        int count = queryValues.Count(item => item == value);
+
+                        if (count > 1) { // "a;a;a" creates list(a=list("","",""))
+                            var valueList = objectTree.CreateList(count);
+
+                            for (int i = 0; i < count; i++)
+                                valueList.AddValue(new(string.Empty));
+
+                            list.SetValue(new(value), new(valueList));
+                        } else {
+                            list.SetValue(new(value), new(string.Empty));
+                        }
+                    }
                 } else {
-                    list.AddValue(new DreamValue(queryValue));
+                    string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
+
+                    list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
                 }
             }
 
@@ -1735,7 +1752,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue paramsValue = state.GetArgument(0, "Params");
             DreamList result;
 
-            if (paramsValue.TryGetValueAsString(out string paramsString)) {
+            if (paramsValue.TryGetValueAsString(out var paramsString)) {
                 result = params2list(state.ObjectTree, paramsString);
             } else {
                 result = state.ObjectTree.CreateList();

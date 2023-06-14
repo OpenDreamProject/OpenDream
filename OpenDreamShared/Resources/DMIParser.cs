@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
 using System.Globalization;
-using JetBrains.Annotations;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -121,6 +120,19 @@ namespace OpenDreamShared.Resources {
                 text.Append("\tframes = ");
                 text.Append(FrameCount);
                 text.AppendLine();
+
+                if (Directions.Count > 0) {
+                    text.Append("\tdelay = ");
+                    var frames = Directions.Values.First(); // Delays should be the same in each direction
+                    for (int i = 0; i < frames.Length; i++) {
+                        var delay = frames[i].Delay / 100; // Convert back to deciseconds
+
+                        text.Append(delay.ToString(CultureInfo.InvariantCulture));
+                        if (i != frames.Length - 1)
+                            text.Append(',');
+                    }
+                    text.AppendLine();
+                }
 
                 if (!Loop) {
                     text.AppendLine("\tloop = 0");

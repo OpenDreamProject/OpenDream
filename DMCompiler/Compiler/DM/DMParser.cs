@@ -366,7 +366,18 @@ namespace DMCompiler.Compiler.DM {
                     if (pathElement != null) {
                         if(pathElement == "operator") {
                             Token operatorToken = Current();
-                            if(Check(OperatorOverloadTypes)) {
+                            if(Current().Type == TokenType.DM_Slash) {
+                                //Up to this point, it's ambiguous whether it's a slash to mean operator/(), like the division operator overload
+                                //or "operator" just being used as a normal type name, as in a/operator/b/c/d
+                                Token peekToken = Advance();
+                                if (peekToken.Type == TokenType.DM_LeftParenthesis) { // Disambiguated as an overload
+                                    operatorFlag = true;
+                                    pathElement += operatorToken.PrintableText;
+                                } else { //Otherwise it's just a normal path, resume
+                                    ReuseToken(operatorToken);
+                                    Warning("Using \"operator\" as a path element is ambiguous", Current()); // NOTE: Maybe should be SoftReservedKeyword? Unsure!
+                                }
+                            } else if(Check(OperatorOverloadTypes)) {
                                 operatorFlag = true;
                                 pathElement+=operatorToken.PrintableText;
                             }

@@ -57,7 +57,7 @@ public static class HtmlParser {
 
                     string insideTag = currentText.ToString();
                     string[] attributes = insideTag.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-                    string tagType = attributes[0];
+                    string tagType = attributes[0].ToLowerInvariant();
 
                     currentText.Clear();
                     if (closingTag) {

@@ -370,25 +370,27 @@ namespace DMCompiler.DM.Expressions {
             if (directory != null) {
                 // Perform a case-insensitive search for the file
                 finalFilePath = FindFile(directory, fileName);
-                if (finalFilePath == null) { // Search relative to the source file if it wasn't in the project's directory
-                    var sourceDir = System.IO.Path.Combine(outputDir, System.IO.Path.GetDirectoryName(Location.SourceFile) ?? string.Empty);
-                    directory = FindDirectory(sourceDir, fileDir);
+            }
 
-                    if (directory != null)
-                        finalFilePath = FindFile(directory, fileName);
-                }
+            // Search relative to the source file if it wasn't in the project's directory
+            if (finalFilePath == null) {
+                var sourceDir = System.IO.Path.Combine(outputDir, System.IO.Path.GetDirectoryName(Location.SourceFile) ?? string.Empty);
+                directory = FindDirectory(sourceDir, fileDir);
+
+                if (directory != null)
+                    finalFilePath = FindFile(directory, fileName);
             }
 
             if (finalFilePath != null) {
-                _filePath = finalFilePath;
+                _filePath = System.IO.Path.GetRelativePath(outputDir, finalFilePath);
+
+                if (_isAmbiguous) {
+                    DMCompiler.Emit(WarningCode.AmbiguousResourcePath, Location,
+                        $"Resource {filePath} has multiple case-insensitive matches, using {_filePath}");
+                }
             } else {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
                 _filePath = filePath;
-            }
-
-            if (_isAmbiguous) {
-                DMCompiler.Emit(WarningCode.AmbiguousResourcePath, Location,
-                    $"Resource {filePath} has multiple case-insensitive matches, using {System.IO.Path.GetRelativePath(outputDir, _filePath)}");
             }
         }
 

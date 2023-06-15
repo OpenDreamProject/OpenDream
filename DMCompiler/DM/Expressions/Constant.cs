@@ -407,6 +407,13 @@ namespace DMCompiler.DM.Expressions {
             return true;
         }
 
+        /// <summary>
+        /// Performs a recursive case-insensitive for a directory.<br/>
+        /// Marks the resource as ambiguous if multiple are found.
+        /// </summary>
+        /// <param name="directory">Directory to search in (case-sensitive)</param>
+        /// <param name="searching">Directory to search for (case-insensitive)</param>
+        /// <returns>The found directory, null if none</returns>
         private string? FindDirectory(string directory, string searching) {
             var searchingDirectories = searching.Split('/', StringSplitOptions.RemoveEmptyEntries);
 
@@ -424,6 +431,13 @@ namespace DMCompiler.DM.Expressions {
             return directory;
         }
 
+        /// <summary>
+        /// Performs a case-insensitive search for a file inside a directory.<br/>
+        /// Marks the resource as ambiguous if multiple are found.
+        /// </summary>
+        /// <param name="directory">Directory to search in (case-sensitive)</param>
+        /// <param name="searching">File to search for (case-insensitive)</param>
+        /// <returns>The found file, null if none</returns>
         private string? FindFile(string directory, string searching) {
             var files = Directory.GetFiles(directory, searching, SearchOptions);
 

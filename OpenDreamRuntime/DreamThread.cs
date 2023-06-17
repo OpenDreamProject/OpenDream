@@ -16,9 +16,10 @@ namespace OpenDreamRuntime {
     }
 
     public abstract class DreamProc {
-        public DreamPath OwningType { get; }
-        public string Name { get; }
-        public bool IsVerb { get; }
+        public readonly int Id;
+        public readonly DreamPath OwningType;
+        public readonly string Name;
+        public readonly bool IsVerb;
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
         public DreamProc? SuperProc { set; get; }
@@ -33,7 +34,8 @@ namespace OpenDreamRuntime {
         public string? VerbDesc { get; }
         public sbyte? Invisibility { get; }
 
-        protected DreamProc(DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<String>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, bool isVerb = false) {
+        protected DreamProc(int id, DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, bool isVerb = false) {
+            Id = id;
             OwningType = owningType;
             Name = name;
             IsVerb = isVerb;

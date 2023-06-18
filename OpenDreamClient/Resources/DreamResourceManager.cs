@@ -11,10 +11,10 @@ namespace OpenDreamClient.Resources {
     public interface IDreamResourceManager {
         void Initialize();
         void Shutdown();
-        ResourcePath CreateCacheFile(string filename, string data);
-        ResourcePath CreateCacheFile(string filename, byte[] data);
+        ResPath CreateCacheFile(string filename, string data);
+        ResPath CreateCacheFile(string filename, byte[] data);
         void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T : DreamResource;
-        ResourcePath GetCacheFilePath(string filename);
+        ResPath GetCacheFilePath(string filename);
     }
 
     internal sealed class DreamResourceManager : IDreamResourceManager {
@@ -26,7 +26,7 @@ namespace OpenDreamClient.Resources {
         [Dependency] private readonly IDynamicTypeFactory _typeFactory = default!;
         [Dependency] private readonly IConfigurationManager _cfg = default!;
 
-        private ResourcePath _cacheDirectory = default!;
+        private ResPath _cacheDirectory = default!;
 
         private ISawmill _sawmill = default!;
 
@@ -46,7 +46,7 @@ namespace OpenDreamClient.Resources {
         private void InitCacheDirectory() {
             var random = new Random();
             while (true) {
-                _cacheDirectory = new ResourcePath($"/OpenDream/Cache/{random.Next()}");
+                _cacheDirectory = new ResPath($"/OpenDream/Cache/{random.Next()}");
                 if (!_resourceManager.UserData.Exists(_cacheDirectory))
                     break;
             }
@@ -107,25 +107,25 @@ namespace OpenDreamClient.Resources {
             }
         }
 
-        public ResourcePath GetCacheFilePath(string filename)
+        public ResPath GetCacheFilePath(string filename)
         {
-            return _cacheDirectory / new ResourcePath(filename).ToRelativePath();
+            return _cacheDirectory / new ResPath(filename).ToRelativePath();
         }
 
-        public ResourcePath CreateCacheFile(string filename, string data)
+        public ResPath CreateCacheFile(string filename, string data)
         {
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
-            var path = _cacheDirectory / new ResourcePath(filename).Filename;
+            var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllText(path, data);
-            return new ResourcePath(filename);
+            return new ResPath(filename);
         }
 
-        public ResourcePath CreateCacheFile(string filename, byte[] data)
+        public ResPath CreateCacheFile(string filename, byte[] data)
         {
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
-            var path = _cacheDirectory / new ResourcePath(filename).Filename;
+            var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllBytes(path, data);
-            return new ResourcePath(filename);
+            return new ResPath(filename);
         }
 
         private DreamResource? GetCachedResource(int resourceId) {

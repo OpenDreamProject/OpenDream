@@ -65,7 +65,7 @@ namespace OpenDreamClient.Interface.Controls
             _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
         }
 
-        public void SetFileSource(ResourcePath filepath, bool userData) {
+        public void SetFileSource(ResPath filepath, bool userData) {
             _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
         }
 
@@ -117,7 +117,7 @@ namespace OpenDreamClient.Interface.Controls
             if (newUri.Scheme == "usr") {
                 Stream stream;
                 HttpStatusCode status;
-                var path = new ResourcePath(newUri.AbsolutePath);
+                var path = new ResPath(newUri.AbsolutePath);
                 try {
                     stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
                     status = HttpStatusCode.OK;

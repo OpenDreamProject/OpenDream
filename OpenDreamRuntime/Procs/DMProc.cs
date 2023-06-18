@@ -148,6 +148,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DebugSource, DMOpcodeHandlers.DebugSource},
             {DreamProcOpcode.DebugLine, DMOpcodeHandlers.DebugLine},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
+            {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
             {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},

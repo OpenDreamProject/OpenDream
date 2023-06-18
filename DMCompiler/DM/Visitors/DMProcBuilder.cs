@@ -128,6 +128,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementFtp statementFtp: ProcessStatementFtp(statementFtp); break;
                 case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
                 case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
@@ -282,7 +283,6 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
@@ -821,6 +821,13 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
+        }
+
+        public void ProcessStatementFtp(DMASTProcStatementFtp statementFtp) {
+            DMExpression.Emit(_dmObject, _proc, statementFtp.Receiver);
+            DMExpression.Emit(_dmObject, _proc, statementFtp.File);
+            DMExpression.Emit(_dmObject, _proc, statementFtp.Name);
+            _proc.Ftp();
         }
 
         public void ProcessStatementOutput(DMASTProcStatementOutput statementOutput) {

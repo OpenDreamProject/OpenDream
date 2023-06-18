@@ -155,6 +155,12 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementOutput.B);
         }
 
+        public void VisitProcStatementFtp(DMASTProcStatementFtp statementFtp) {
+            SimplifyExpression(ref statementFtp.Receiver);
+            SimplifyExpression(ref statementFtp.File);
+            SimplifyExpression(ref statementFtp.Name);
+        }
+
         public void VisitProcStatementInput(DMASTProcStatementInput statementInput) {
             SimplifyExpression(ref statementInput.A);
             SimplifyExpression(ref statementInput.B);

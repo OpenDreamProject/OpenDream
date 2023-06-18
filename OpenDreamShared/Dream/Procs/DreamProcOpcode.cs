@@ -75,7 +75,7 @@ namespace OpenDreamShared.Dream.Procs {
         DebugSource = 0x43,
         DebugLine = 0x44,
         Prompt = 0x45,
-        //0x46
+        Ftp = 0x46,
         Initial = 0x47,
         //0x48
         IsType = 0x49,

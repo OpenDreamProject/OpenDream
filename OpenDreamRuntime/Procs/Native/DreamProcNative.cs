@@ -154,6 +154,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_Export);
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_GetConfig);
+            objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_Profile);
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_SetConfig);
         }
     }

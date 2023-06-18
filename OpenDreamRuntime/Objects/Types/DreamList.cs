@@ -240,7 +240,11 @@ namespace OpenDreamRuntime.Objects.Types {
 
             if (b.TryGetValueAsDreamList(out var bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
-                    listCopy.AddValue(value);
+                    if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
+                        listCopy.SetValue(value, assocValue);
+                    } else {
+                        listCopy.AddValue(value);
+                    }
                 }
             } else {
                 listCopy.AddValue(b);
@@ -279,7 +283,11 @@ namespace OpenDreamRuntime.Objects.Types {
         public override DreamValue OperatorAppend(DreamValue b) {
             if (b.TryGetValueAsDreamList(out var bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
-                    AddValue(value);
+                    if (bList._associativeValues?.TryGetValue(value, out var assocValue) is true) {
+                        SetValue(value, assocValue);
+                    } else {
+                        AddValue(value);
+                    }
                 }
             } else {
                 AddValue(b);

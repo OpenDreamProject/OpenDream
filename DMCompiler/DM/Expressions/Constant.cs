@@ -352,29 +352,50 @@ namespace DMCompiler.DM.Expressions {
     //
     // Note: built .json file depends on resource files, so they should be moving with it
     // TODO: cache resources to a single .rsc file, as BYOND does
-    sealed class Resource : Constant {
-        string Path { get; }
+    internal sealed class Resource : Constant {
+        private static readonly EnumerationOptions SearchOptions = new() {
+            MatchCasing = MatchCasing.CaseInsensitive
+        };
 
-        public Resource(Location location, string path) : base(location) {
-            string outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]);
-            string pathBasedOnOutputDir = System.IO.Path.Combine(outputDir, path);
+        private readonly string _filePath;
+        private bool _isAmbiguous;
 
-            if (File.Exists(pathBasedOnOutputDir)) {
-                Path = path;
-            } else {
-                var locationDir = System.IO.Path.GetDirectoryName(location.SourceFile);
-                var pathBasedOnLocation = System.IO.Path.Combine(outputDir, locationDir, path);
-                if (File.Exists(pathBasedOnLocation)) {
-                    Path = System.IO.Path.Combine(locationDir, path);
-                } else {
-                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{path}'");
-                    Path = path;
+        public Resource(Location location, string filePath) : base(location) {
+            string? finalFilePath = null;
+
+            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? string.Empty;
+            var fileName = System.IO.Path.GetFileName(filePath);
+            var fileDir = System.IO.Path.GetDirectoryName(filePath) ?? string.Empty;
+            var directory = FindDirectory(outputDir, fileDir);
+            if (directory != null) {
+                // Perform a case-insensitive search for the file
+                finalFilePath = FindFile(directory, fileName);
+            }
+
+            // Search relative to the source file if it wasn't in the project's directory
+            if (finalFilePath == null) {
+                var sourceDir = System.IO.Path.Combine(outputDir, System.IO.Path.GetDirectoryName(Location.SourceFile) ?? string.Empty);
+                directory = FindDirectory(sourceDir, fileDir);
+
+                if (directory != null)
+                    finalFilePath = FindFile(directory, fileName);
+            }
+
+            if (finalFilePath != null) {
+                _filePath = System.IO.Path.GetRelativePath(outputDir, finalFilePath);
+
+                if (_isAmbiguous) {
+                    DMCompiler.Emit(WarningCode.AmbiguousResourcePath, Location,
+                        $"Resource {filePath} has multiple case-insensitive matches, using {_filePath}");
                 }
+            } else {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
+                _filePath = filePath;
             }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushResource(Path);
+            proc.PushResource(_filePath);
         }
 
         public override bool IsTruthy() => true;
@@ -382,10 +403,56 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object? json) {
             json = new Dictionary<string, object>() {
                 { "type", JsonVariableType.Resource },
-                { "resourcePath", Path }
+                { "resourcePath", _filePath }
             };
 
             return true;
+        }
+
+        /// <summary>
+        /// Performs a recursive case-insensitive for a directory.<br/>
+        /// Marks the resource as ambiguous if multiple are found.
+        /// </summary>
+        /// <param name="directory">Directory to search in (case-sensitive)</param>
+        /// <param name="searching">Directory to search for (case-insensitive)</param>
+        /// <returns>The found directory, null if none</returns>
+        private string? FindDirectory(string directory, string searching) {
+            var searchingDirectories = searching.Split('/', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (var searchingDirectory in searchingDirectories) {
+                string[] directories = Directory.GetDirectories(directory, searchingDirectory, SearchOptions);
+
+                if (directories.Length == 0)
+                    return null;
+                else if (directories.Length > 1)
+                    _isAmbiguous = true;
+
+                directory = directories[0];
+            }
+
+            return directory;
+        }
+
+        /// <summary>
+        /// Performs a case-insensitive search for a file inside a directory.<br/>
+        /// Marks the resource as ambiguous if multiple are found.
+        /// </summary>
+        /// <param name="directory">Directory to search in (case-sensitive)</param>
+        /// <param name="searching">File to search for (case-insensitive)</param>
+        /// <returns>The found file, null if none</returns>
+        private string? FindFile(string directory, string searching) {
+            var files = Directory.GetFiles(directory, searching, SearchOptions);
+
+            // GetFiles() can't find "..ogg" on Linux for some reason, so try a direct check for the file
+            if (files.Length == 0) {
+                string combined = System.IO.Path.Combine(directory, searching);
+
+                return File.Exists(combined) ? combined : null;
+            } else if (files.Length > 1) {
+                _isAmbiguous = true;
+            }
+
+            return System.IO.Path.Combine(directory, files[0]);
         }
     }
 

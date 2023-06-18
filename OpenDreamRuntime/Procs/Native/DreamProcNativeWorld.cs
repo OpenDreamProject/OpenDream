@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeWorld {
@@ -61,6 +61,53 @@ namespace OpenDreamRuntime.Procs.Native {
                     throw new NotSupportedException("Unsupported GetConfig config_set: " + config_set);
                 default:
                     throw new ArgumentException("Incorrect GetConfig config_set: " + config_set);
+            }
+        }
+
+        [DreamProc("Profile")]
+        [DreamProcParameter("command", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("type", Type = DreamValue.DreamValueType.String)]
+        [DreamProcParameter("format", Type = DreamValue.DreamValueType.String)]
+        public static DreamValue NativeProc_Profile(NativeProc.State state) {
+            state.GetArgument(0, "command").TryGetValueAsInteger(out var command);
+
+            string? type, format;
+            switch (state.Arguments.Count) {
+                case 3:
+                    state.GetArgument(1, "type").TryGetValueAsString(out type);
+                    state.GetArgument(2, "format").TryGetValueAsString(out format);
+                    break;
+                case 2:
+                    type = null;
+                    state.GetArgument(1, "type").TryGetValueAsString(out format);
+                    break;
+                default:
+                    type = null;
+                    format = null;
+                    break;
+            }
+
+            // TODO: Actually return profiling data
+
+            if (format == "json") {
+                return new("[]");
+            } else { // Anything else gives a /list
+                DreamList dataList = state.ObjectTree.CreateList();
+
+                if (type == "sendmaps") {
+                    dataList.AddValue(new("name"));
+                    dataList.AddValue(new("value"));
+                    dataList.AddValue(new("calls"));
+                } else { // Anything else is a proc profile
+                    dataList.AddValue(new("name"));
+                    dataList.AddValue(new("self"));
+                    dataList.AddValue(new("total"));
+                    dataList.AddValue(new("real"));
+                    dataList.AddValue(new("over"));
+                    dataList.AddValue(new("calls"));
+                }
+
+                return new(dataList);
             }
         }
 

@@ -363,7 +363,10 @@ namespace DMCompiler.DM.Expressions {
         public Resource(Location location, string filePath) : base(location) {
             string? finalFilePath = null;
 
-            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? string.Empty;
+            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? "/";
+            if (string.IsNullOrEmpty(outputDir))
+                outputDir = "./";
+
             var fileName = System.IO.Path.GetFileName(filePath);
             var fileDir = System.IO.Path.GetDirectoryName(filePath) ?? string.Empty;
             var directory = FindDirectory(outputDir, fileDir);

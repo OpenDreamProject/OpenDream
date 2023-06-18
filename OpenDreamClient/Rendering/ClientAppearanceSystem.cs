@@ -28,6 +28,7 @@ namespace OpenDreamClient.Rendering {
             SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
             SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
             SubscribeLocalEvent<GridModifiedEvent>(OnGridModified);
+            SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
         }
 
         public override void Shutdown() {
@@ -84,6 +85,10 @@ namespace OpenDreamClient.Rendering {
             LoadAppearance(e.TargetAppearanceId, targetAppearance => {
                 sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration);
             });
+        }
+
+        private static void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
+            comp.GetAABB(ref e);
         }
 
         public void ResetFilterUsageFlags() {

@@ -14,3 +14,6 @@
 
 	proc/Read(savefile/F)
 		set opendream_unimplemented = TRUE
+
+	proc/Write(savefile/F)
+		set opendream_unimplemented = TRUE

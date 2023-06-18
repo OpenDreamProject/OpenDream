@@ -90,7 +90,6 @@ sealed class DreamViewOverlay : Overlay {
             Logger.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
 
-
         //store our mouse map's image and return the render target
         MouseMap = _mouseMapRenderTarget.Texture;
         ReturnRenderTarget(_mouseMapRenderTarget);
@@ -107,7 +106,6 @@ sealed class DreamViewOverlay : Overlay {
         //RendererMetaData objects get reused instead of GC'd
         while( _rendererMetaDataToReturn.Count > 0)
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
-
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
@@ -116,10 +114,12 @@ sealed class DreamViewOverlay : Overlay {
         _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
         _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
 
-
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
+
         Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
+
+        _mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid);
 
         HashSet<EntityUid> entities;
         using (_prof.Group("lookup")) {
@@ -141,31 +141,75 @@ sealed class DreamViewOverlay : Overlay {
                 sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
         }
 
-        //visible entities
-        if(RenderEntityEnabled) {
-            using var _ = _prof.Group("process entities");
-            foreach (EntityUid entity in entities) {
-                if(entity == eye)
-                    continue; //don't render the player twice
-                // TODO use a sprite tree.
-                if (!spriteQuery.TryGetComponent(entity, out var sprite))
-                    continue;
-                if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
-                    continue;
-                if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
-                    continue;
-                sprites.AddRange(ProcessIconComponents(sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
-            }
-        }
+        // Hardcoded for a 15x15 view (with 1 tile buffer on each side)
+        var tiles = new ViewAlgorithm.Tile?[17, 17];
 
-        //visible turfs
-        if(RenderTurfEnabled){
-            using var _ = _prof.Group("visible turfs");
-            if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
-                foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
-                    MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
+        if (grid != null) {
+            var eyeTile = grid.GetTileRef(eyeTransform.MapPosition);
+
+            //visible turfs
+            if(RenderTurfEnabled) {
+                using var _ = _prof.Group("visible turfs");
+
+                var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
+                var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, (17, 17)));
+
+                // Gather up all the data the view algorithm needs
+                foreach (TileRef tileRef in tileRefs) {
+                    var delta = tileRef.GridIndices - eyeTile.GridIndices;
+                    var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
+
+                    // TODO: A turf's contents should also be considered when determining a tile's opacity
+                    var tile = new ViewAlgorithm.Tile {
+                        Opaque = appearance.Opacity,
+                        DeltaX = delta.X,
+                        DeltaY = delta.Y
+                    };
+
+                    tiles[delta.X + 8, delta.Y + 8] = tile;
                 }
+
+                ViewAlgorithm.CalculateVisibility(tiles);
+
+                // Collect visible turf sprites
+                foreach (var tile in tiles) {
+                    if (tile?.IsVisible is not true)
+                        continue;
+
+                    Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
+                    TileRef tileRef = grid.GetTileRef(tilePos);
+                    MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
+
+                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - 1, EntityUid.Invalid, false));
+                }
+            }
+
+            //visible entities
+            if (RenderEntityEnabled) {
+                using var _ = _prof.Group("process entities");
+
+                foreach (EntityUid entity in entities) {
+                    if(entity == eye)
+                        continue; //don't render the player twice
+
+                    // TODO use a sprite tree.
+                    if (!spriteQuery.TryGetComponent(entity, out var sprite))
+                        continue;
+                    if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
+                        continue;
+
+                    var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
+                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
+                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                        continue;
+
+                    var tile = tiles[tilePos.X, tilePos.Y];
+                    if (tile?.IsVisible is not true)
+                        continue;
+
+                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, sprite.Owner, false));
+                }
+            }
         }
 
         //screen objects

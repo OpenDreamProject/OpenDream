@@ -421,8 +421,6 @@ namespace DMCompiler.DM.Expressions {
         /// <returns>The found directory, null if none</returns>
         private string? FindDirectory(string directory, string searching) {
             var searchingDirectories = searching.Split('/', StringSplitOptions.RemoveEmptyEntries);
-            if (string.IsNullOrEmpty(directory))
-                directory = "./";
 
             foreach (var searchingDirectory in searchingDirectories) {
                 string[] directories = Directory.GetDirectories(directory, searchingDirectory, SearchOptions);

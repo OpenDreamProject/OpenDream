@@ -2,6 +2,7 @@
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
@@ -22,6 +23,7 @@ namespace OpenDreamClient.Rendering {
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly OccluderSystem _occluderSystem = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
+        [Dependency] private readonly TransformSystem _transformSystem = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -87,8 +89,8 @@ namespace OpenDreamClient.Rendering {
             });
         }
 
-        private static void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
-            comp.GetAABB(ref e);
+        private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
+            comp.GetAABB(_transformSystem, ref e);
         }
 
         public void ResetFilterUsageFlags() {

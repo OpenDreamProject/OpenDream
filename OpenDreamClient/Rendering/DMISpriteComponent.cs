@@ -14,7 +14,6 @@ namespace OpenDreamClient.Rendering {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;
-        [Dependency] private readonly TransformSystem _transformSystem = default!;
         private EntityLookupSystem? _lookupSystem;
 
         public DMISpriteComponent() {
@@ -31,11 +30,11 @@ namespace OpenDreamClient.Rendering {
             Icon.SetAppearance(state.AppearanceId);
         }
 
-        public void GetAABB(ref WorldAABBEvent e) {
+        public void GetAABB(TransformSystem sys, ref WorldAABBEvent e) {
             if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform)) {
                 return;
             }
-            e.AABB = Icon.GetWorldAABB(_transformSystem.GetWorldPosition(transform));
+            e.AABB = Icon.GetWorldAABB(sys.GetWorldPosition(transform));
         }
 
         public bool IsVisible(bool checkWorld = true, IMapManager? mapManager = null, int seeInvis = 0) {

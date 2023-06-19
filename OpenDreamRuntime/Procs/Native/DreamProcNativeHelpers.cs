@@ -75,6 +75,51 @@ internal static partial class DreamProcNativeHelpers {
     }
 
     /// <summary>
+    /// A variation of <see cref="MakeViewSpiral(OpenDreamRuntime.Objects.Types.DreamObjectAtom,OpenDreamShared.Dream.ViewRange)"/>
+    /// that works on the view algorithm's collection of tiles
+    /// </summary>
+    public static IEnumerable<ViewAlgorithm.Tile?> MakeViewSpiral(ViewAlgorithm.Tile?[,] tiles, bool includeCenter) {
+        var width = tiles.GetLength(0);
+        var height = tiles.GetLength(1);
+        var centerPos = (X: width / 2, Y: height / 2);
+
+        if (includeCenter)
+            yield return tiles[centerPos.X, centerPos.Y];
+
+        int widthRange = (width - 1) >> 1; // TODO: Make rectangles work.
+        int heightRange = (height - 1) >> 1;
+        int donutCount = Math.Max(widthRange, heightRange);
+        for(int d = 1; d <= donutCount; d++) { // for each donut
+            int sideLength = d + d + 1;
+
+            //The left column
+            int leftColumnX = centerPos.X - d;
+            int startingLeftColumnY = centerPos.Y - d;
+            for (int i = 0; i < sideLength; ++i) {
+                yield return tiles[leftColumnX, startingLeftColumnY + i];
+            }
+
+            //The criss-cross-apple-sauce
+            int crissCrossLength = sideLength - 2;
+            int startingCrossX = centerPos.X - d + 1;
+            for(int i = 0; i < crissCrossLength; ++i) {
+                //the criss
+                yield return tiles[startingCrossX + i, centerPos.Y - d];
+
+                //the cross
+                yield return tiles[startingCrossX + i, centerPos.Y + d];
+            }
+
+            //The right column
+            int rightColumnX = centerPos.X + d;
+            int startingRightColumnY = centerPos.Y - d;
+            for (int i = 0; i < sideLength; ++i) {
+                yield return tiles[rightColumnX, startingRightColumnY + i];
+            }
+        }
+    }
+
+    /// <summary>
     /// Resolves the arguments of view, oview, orange, and range procs, <br/>
     /// Since it's rather convoluted for a few reasons.
     /// </summary>
@@ -104,6 +149,38 @@ internal static partial class DreamProcNativeHelpers {
         }
 
         return (center, range);
+    }
+
+    public static ViewAlgorithm.Tile?[,] CollectViewData(IAtomManager atomManager, IDreamMapManager mapManager, (int X, int Y, int Z) eyePos, ViewRange range) {
+        var tiles = new ViewAlgorithm.Tile?[range.Width, range.Height];
+
+        for (int viewX = 0; viewX < range.Width; viewX++) {
+            for (int viewY = 0; viewY < range.Height; viewY++) {
+                int deltaX = -(range.Width / 2) + viewX;
+                int deltaY = -(range.Height / 2) + viewY;
+
+                if (!mapManager.TryGetCellAt((eyePos.X + deltaX, eyePos.Y + deltaY), eyePos.Z, out var cell))
+                    continue;
+
+                var appearance = atomManager.MustGetAppearance(cell.Turf!)!;
+                var tile = new ViewAlgorithm.Tile() {
+                    Opaque = appearance.Opacity,
+                    Luminosity = 0,
+                    DeltaX = deltaX,
+                    DeltaY = deltaY
+                };
+
+                foreach (var movable in cell.Movables) {
+                    appearance = atomManager.MustGetAppearance(movable)!;
+
+                    tile.Opaque |= appearance.Opacity;
+                }
+
+                tiles[viewX, viewY] = tile;
+            }
+        }
+
+        return tiles;
     }
 
     /// <summary>

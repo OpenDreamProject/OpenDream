@@ -122,7 +122,7 @@
 	a >>= C(null)
 	ASSERT(a == C(1))
 
-	//a := C(5)
-	//ASSERT(a == C(5))
-	//a := C(null)
-	//ASSERT(a == null)
+	a := C(5)
+	ASSERT(a == C(5))
+	a := C(null)
+	ASSERT(a == null)

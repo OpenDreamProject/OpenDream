@@ -5,7 +5,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.Compiler.DMPreprocessor {

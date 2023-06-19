@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace OpenDreamShared.Json {
+namespace DMShared.Json {
     public sealed class DreamCompiledJson {
         public List<string>? Strings { get; set; }
         public int[]? GlobalProcs { get; set; }

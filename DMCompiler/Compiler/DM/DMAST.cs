@@ -1,8 +1,8 @@
 using System;
 using System.Collections.Generic;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Compiler;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
 
 namespace DMCompiler.Compiler.DM {
     public interface DMASTVisitor : ASTVisitor {

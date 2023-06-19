@@ -1,9 +1,9 @@
 using System;
 using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM {

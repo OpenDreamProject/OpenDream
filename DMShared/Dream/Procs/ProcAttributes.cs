@@ -1,7 +1,6 @@
 using System;
-using System.ComponentModel;
 
-namespace OpenDreamShared.Dream.Procs;
+namespace DMShared.Dream.Procs;
 
 [Flags]
 public enum ProcAttributes

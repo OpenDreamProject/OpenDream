@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     sealed class DMVariable {

@@ -1,13 +1,13 @@
 using DMCompiler.DM.Visitors;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using OpenDreamShared.Json;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
+using DMShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 
 namespace DMCompiler.DM {
     sealed class DMProc {

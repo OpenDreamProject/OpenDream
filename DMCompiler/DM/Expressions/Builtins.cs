@@ -1,9 +1,9 @@
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+using DMShared.Dream;
+using DMShared.Json;
 using System.Collections.Generic;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"

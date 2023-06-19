@@ -1,6 +1,6 @@
-﻿using OpenDreamShared.Compiler;
+﻿using DMShared.Compiler;
 using DMCompiler.Compiler.DMPreprocessor;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.Linq;

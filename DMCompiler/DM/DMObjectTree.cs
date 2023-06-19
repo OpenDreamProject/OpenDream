@@ -1,11 +1,11 @@
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+using DMShared.Dream;
+using DMShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler.DM;
 using JetBrains.Annotations;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Compiler;
+using DMShared.Dream.Procs;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {

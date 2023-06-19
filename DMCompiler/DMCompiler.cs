@@ -3,8 +3,8 @@ using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Json;
+using DMShared.Compiler;
+using DMShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -43,7 +43,7 @@ namespace DMCompiler {
             if (settings.SuppressUnimplementedWarnings) {
                 ForcedWarning("Unimplemented proc & var warnings are currently suppressed");
             }
-            if(OpenDreamShared.Dream.Procs.OpcodeVerifier.AreOpcodesInvalid())
+            if(DMShared.Dream.Procs.OpcodeVerifier.AreOpcodesInvalid())
             {
                 ForcedError("Some opcodes have the same byte value! Output assembly may be corrupted.");
             }

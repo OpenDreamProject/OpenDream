@@ -1,8 +1,7 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using DMShared.Dream.Procs;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
-namespace OpenDreamShared.Json {
+namespace DMShared.Json {
     public sealed class ProcDefinitionJson {
         public int OwningTypeId { get; set; }
         public string Name { get; set; }

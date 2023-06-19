@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 using Robust.Shared.Utility;
 
 namespace DMCompiler {

@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 
-namespace OpenDreamShared.Json {
+namespace DMShared.Json {
     public sealed class DreamMapJson {
         public int MaxX { get; set; }
         public int MaxY { get; set; }

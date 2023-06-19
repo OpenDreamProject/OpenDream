@@ -1,10 +1,10 @@
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
-using OpenDreamShared.Dream;
+using DMShared.Dream;
 using System;
 using DMCompiler.DM.Expressions;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream.Procs;
 using System.Diagnostics;
 
 namespace DMCompiler.DM.Visitors {

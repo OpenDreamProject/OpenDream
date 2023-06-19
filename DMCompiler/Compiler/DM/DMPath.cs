@@ -1,6 +1,6 @@
 ﻿
 using System.Collections.Generic;
-using OpenDreamShared.Dream;
+using DMShared.Dream;
 
 namespace DMCompiler.Compiler.DM
 {

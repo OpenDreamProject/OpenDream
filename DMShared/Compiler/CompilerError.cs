@@ -1,7 +1,6 @@
 ﻿using System;
-using Robust.Shared.Analyzers;
 
-namespace OpenDreamShared.Compiler {
+namespace DMShared.Compiler {
 
     /// <remarks>
     /// All values should be unique.
@@ -99,7 +98,6 @@ namespace OpenDreamShared.Compiler {
         };
     }
 
-    [Virtual]
     [Obsolete("This is not a desirable way for the compiler to emit an error. Use CompileAbortException or ForceError() if it needs to be fatal, or an DMCompiler.Emit() otherwise.")]
     public class CompileErrorException : Exception {
         public CompilerEmission Error;

@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Text;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor {
     class DMMacro {

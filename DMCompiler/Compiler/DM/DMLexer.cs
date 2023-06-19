@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 
 namespace DMCompiler.Compiler.DM {
     public sealed class DMLexer : TokenLexer {

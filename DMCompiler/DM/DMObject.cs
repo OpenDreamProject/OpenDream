@@ -1,12 +1,12 @@
 ﻿using DMCompiler.DM.Visitors;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+using DMShared.Dream;
+using DMShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Compiler;
+using DMShared.Dream.Procs;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {

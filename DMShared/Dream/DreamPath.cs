@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
 
-namespace OpenDreamShared.Dream {
+namespace DMShared.Dream {
     public struct DreamPath {
         public static readonly DreamPath Root = new DreamPath("/");
         public static readonly DreamPath Exception = new DreamPath("/exception");

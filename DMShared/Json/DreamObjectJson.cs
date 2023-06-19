@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace OpenDreamShared.Json {
+namespace DMShared.Json {
     public enum JsonVariableType {
         Resource = 0,
         Type = 1,

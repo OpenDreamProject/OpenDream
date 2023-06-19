@@ -1,6 +1,6 @@
 ﻿using System;
 using Lidgren.Network;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream.Procs;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 

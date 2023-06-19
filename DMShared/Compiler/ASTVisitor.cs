@@ -1,4 +1,4 @@
-﻿namespace OpenDreamShared.Compiler {
+﻿namespace DMShared.Compiler {
     public interface ASTVisitor {
 
     }

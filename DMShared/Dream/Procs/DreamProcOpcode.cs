@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace OpenDreamShared.Dream.Procs {
+namespace DMShared.Dream.Procs {
     public enum DreamProcOpcode {
         BitShiftLeft = 0x1,
         PushType = 0x2,
@@ -379,7 +379,7 @@ namespace OpenDreamShared.Dream.Procs {
         public static bool AreOpcodesInvalid() // FIXME: Can this be made into something done during compiletime? Like, *this code's* compiletime? >:/
         {
             // I'm not *too* satisfied with this boolean schtick, as opposed to throwing,
-            // but since we're in OpenDreamShared I want each executable to be able to do what they want with this information.
+            // but since we're in DMShared I want each executable to be able to do what they want with this information.
 
             // Key is an int (or whatever the underlying type is) we're already using for an opcode
             HashSet<DreamProcOpcode> bytePool = new();

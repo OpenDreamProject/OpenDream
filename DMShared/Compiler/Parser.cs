@@ -1,9 +1,6 @@
-using Robust.Shared.Analyzers;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 
-namespace OpenDreamShared.Compiler {
-    [Virtual]
+namespace DMShared.Compiler {
     public partial class Parser<SourceType> {
         /// <summary> Includes errors and warnings acccumulated by this parser. </summary>
         /// <remarks> These initial capacities are arbitrary. We just assume there's a decent chance you'll get a handful of errors/warnings. </remarks>
@@ -96,8 +93,7 @@ namespace OpenDreamShared.Compiler {
         /// <remarks> This implementation on <see cref="Parser{SourceType}"/> does not make use of <see cref="WarningCode"/> <br/>
         /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
         /// </remarks>
-        [AssertionMethod]
-        protected void Error(string message, [AssertionCondition(AssertionConditionType.IS_TRUE)] bool throwException = true) {
+        protected void Error(string message, bool throwException = true) {
             CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken?.Location, message);
 
             if(Emissions.Count < MAX_EMISSIONS_RECORDED)

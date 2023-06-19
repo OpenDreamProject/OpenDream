@@ -1,6 +1,6 @@
 ﻿// ReSharper disable InconsistentNaming
 
-namespace OpenDreamShared.Compiler {
+namespace DMShared.Compiler {
     // Must be : byte for ReadOnlySpan<TokenType> x = new TokenType[] { } to be intrinsic'd by the compiler.
     public enum TokenType : byte {
         //Base lexer

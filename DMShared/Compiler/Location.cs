@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace OpenDreamShared.Compiler
+namespace DMShared.Compiler
 {
     public readonly struct Location
     {

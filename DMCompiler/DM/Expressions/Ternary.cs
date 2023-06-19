@@ -1,5 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x ? y : z

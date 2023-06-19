@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Dream;
+﻿using DMShared.Dream;
 using DMShared.Json;
 using System.Collections.Generic;
 

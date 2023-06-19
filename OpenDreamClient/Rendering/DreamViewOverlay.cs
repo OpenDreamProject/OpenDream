@@ -159,14 +159,32 @@ sealed class DreamViewOverlay : Overlay {
                     var delta = tileRef.GridIndices - eyeTile.GridIndices;
                     var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
 
-                    // TODO: A turf's contents should also be considered when determining a tile's opacity
                     var tile = new ViewAlgorithm.Tile {
                         Opaque = appearance.Opacity,
+                        Luminosity = 0,
                         DeltaX = delta.X,
                         DeltaY = delta.Y
                     };
 
                     tiles[delta.X + 8, delta.Y + 8] = tile;
+                }
+
+                // Apply entities' opacity
+                foreach (EntityUid entity in entities) {
+                    // TODO use a sprite tree.
+                    if (!spriteQuery.TryGetComponent(entity, out var sprite))
+                        continue;
+                    if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
+                        continue;
+
+                    var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
+                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
+                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                        continue;
+
+                    var tile = tiles[tilePos.X, tilePos.Y];
+                    if (tile != null)
+                        tile.Opaque |= sprite.Icon.Appearance.Opacity;
                 }
 
                 ViewAlgorithm.CalculateVisibility(tiles);

@@ -356,6 +356,7 @@ namespace OpenDreamRuntime {
             def.TryGetVariable("alpha", out var alphaVar);
             def.TryGetVariable("dir", out var dirVar);
             def.TryGetVariable("invisibility", out var invisibilityVar);
+            def.TryGetVariable("opacity", out var opacityVar);
             def.TryGetVariable("mouse_opacity", out var mouseVar);
             def.TryGetVariable("pixel_x", out var xVar);
             def.TryGetVariable("pixel_y", out var yVar);
@@ -373,6 +374,7 @@ namespace OpenDreamRuntime {
             SetAppearanceVar(appearance, "alpha", alphaVar);
             SetAppearanceVar(appearance, "dir", dirVar);
             SetAppearanceVar(appearance, "invisibility", invisibilityVar);
+            SetAppearanceVar(appearance, "opacity", opacityVar);
             SetAppearanceVar(appearance, "mouse_opacity", mouseVar);
             SetAppearanceVar(appearance, "pixel_x", xVar);
             SetAppearanceVar(appearance, "pixel_y", yVar);

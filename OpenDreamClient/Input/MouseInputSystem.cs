@@ -67,14 +67,17 @@ namespace OpenDreamClient.Input {
 
             if (args.Function == EngineKeyFunctions.UIRightClick) { //either turf or atom was clicked, and it was a right-click
                 var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f);
+
                 //TODO filter entities by the valid verbs that exist on them
                 //they should only show up if there is a verb attached to usr which matches the filter in world syntax
                 //ie, obj|turf in world
                 //note that popup_menu = 0 overrides this behaviour, as does verb invisibility (urgh), and also hidden
                 //because BYOND sure loves redundancy
-                if(entities.Count == 0)
-                    return true; //don't open a 1x1 empty context menu
+
                 _contextMenu.RepopulateEntities(entities);
+                if(_contextMenu.EntityCount == 0)
+                    return true; //don't open a 1x1 empty context menu
+
                 _contextMenu.Measure(_userInterfaceManager.ModalRoot.Size);
                 Vector2 contextMenuLocation = args.PointerLocation.Position / _userInterfaceManager.ModalRoot.UIScale; // Take scaling into account
                 _contextMenu.Open(UIBox2.FromDimensions(contextMenuLocation, _contextMenu.DesiredSize));
@@ -88,8 +91,7 @@ namespace OpenDreamClient.Input {
             return true;
         }
 
-        [CanBeNull]
-        private RendererMetaData GetEntityUnderMouse(Vector2 mousePos) {
+        private RendererMetaData? GetEntityUnderMouse(Vector2 mousePos) {
             _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
             if(_dreamViewOverlay.MouseMap == null)
                 return null;

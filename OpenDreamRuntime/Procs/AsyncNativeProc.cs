@@ -4,8 +4,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class AsyncNativeProc : DreamProc {

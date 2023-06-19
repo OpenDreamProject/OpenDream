@@ -8,8 +8,9 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream.Procs;
 using Robust.Shared.Random;
+using DMShared.Dream;
 
 namespace OpenDreamRuntime.Procs {
     internal static class DMOpcodeHandlers {

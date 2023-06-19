@@ -6,9 +6,9 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using OpenDreamShared.Json;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
+using DMShared.Json;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class DMProc : DreamProc {

@@ -4,8 +4,8 @@ using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+using DMShared.Json;
 
 namespace DMDisassembler {
     class Program {

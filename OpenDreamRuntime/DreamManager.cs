@@ -9,7 +9,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+using DMShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
 using Robust.Shared.Asynchronous;

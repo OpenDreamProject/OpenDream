@@ -1,6 +1,6 @@
 ﻿using System.IO;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Compiler;
+using DMShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls;

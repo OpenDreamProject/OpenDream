@@ -1,7 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
+using DMShared.Dream;
 using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.Map;

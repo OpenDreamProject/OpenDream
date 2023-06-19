@@ -4,7 +4,7 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream.Procs;
 using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;
@@ -650,7 +650,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandArguments(RequestVariables req, DMProcState dmFrame) {
-        if (dmFrame.Proc.OwningType != OpenDreamShared.Dream.DreamPath.Root) {
+        if (dmFrame.Proc.OwningType != DMShared.Dream.DreamPath.Root) {
             yield return DescribeValue("src", new(dmFrame.Instance));
         }
         yield return DescribeValue("usr", new(dmFrame.Usr));

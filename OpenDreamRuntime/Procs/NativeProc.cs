@@ -3,8 +3,8 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMShared.Dream;
+using DMShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class NativeProc : DreamProc {

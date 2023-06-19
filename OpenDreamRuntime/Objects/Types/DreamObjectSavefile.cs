@@ -1,7 +1,7 @@
 ﻿using System.Text.Json;
+using DMShared.Dream;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 

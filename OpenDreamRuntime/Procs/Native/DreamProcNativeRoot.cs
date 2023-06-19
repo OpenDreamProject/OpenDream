@@ -20,6 +20,7 @@ using Robust.Server;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
+using DMShared.Dream;
 
 namespace OpenDreamRuntime.Procs.Native {
     /// <remarks>

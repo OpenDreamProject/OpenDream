@@ -1,5 +1,5 @@
 ﻿using System.Text;
-using OpenDreamShared.Compiler;
+using DMShared.Compiler;
 
 namespace OpenDreamClient.Interface.DMF;
 

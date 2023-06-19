@@ -1,4 +1,4 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using DMShared.Dream.Procs;
 using JetBrains.Annotations;
 using Robust.Shared.Console;
 

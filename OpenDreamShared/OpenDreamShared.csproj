@@ -15,6 +15,7 @@
     <PackageReference Include="JetBrains.Annotations" Version="2020.3.0" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\DMShared\DMShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Shared\Robust.Shared.csproj" />
   </ItemGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.Analyzers.targets" />

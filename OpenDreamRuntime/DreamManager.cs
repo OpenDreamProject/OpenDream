@@ -197,6 +197,9 @@ namespace OpenDreamRuntime {
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 refType = RefType.DreamResource;
                 idx = refRsc.Id;
+            }  else if (value.TryGetValueAsProc(out var proc)) {
+                refType = RefType.Proc;
+                idx = proc.Id;
             } else {
                 throw new NotImplementedException($"Ref for {value} is unimplemented");
             }
@@ -247,6 +250,8 @@ namespace OpenDreamRuntime {
                     return _appearanceSystem.TryGetAppearance((uint)refId, out IconAppearance? appearance)
                         ? new DreamValue(appearance)
                         : DreamValue.Null;
+                case RefType.Proc:
+                    return new(_objectTree.Procs[refId]);
                 default:
                     throw new Exception($"Invalid reference type for ref {refString}");
             }

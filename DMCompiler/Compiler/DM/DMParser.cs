@@ -1459,12 +1459,6 @@ namespace DMCompiler.Compiler.DM {
             Newline();
 
             DMASTProcBlockInner? body = ProcBlock();
-            if (body == null) {
-                var loc = Current().Location;
-                DMASTProcStatement? statement = ProcStatement();
-
-                if (statement != null) body = new DMASTProcBlockInner(loc, statement);
-            }
 
             return new DMASTProcStatementLabel(expression.Location, expression.Identifier, body);
         }

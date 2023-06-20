@@ -130,10 +130,9 @@ sealed class DreamViewOverlay : Overlay {
 
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
-        int seeVis = 127;
-        if(mobSightQuery.TryGetComponent(eye, out var mobSight)){
-            seeVis = mobSight.SeeInvisibility;
-        }
+        mobSightQuery.TryGetComponent(eye, out var mobSight);
+        int seeVis = mobSight?.SeeInvisibility ?? 127;
+        SightFlags sight = mobSight?.Sight ?? 0;
 
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
@@ -191,7 +190,9 @@ sealed class DreamViewOverlay : Overlay {
 
                 // Collect visible turf sprites
                 foreach (var tile in tiles) {
-                    if (tile?.IsVisible is not true)
+                    if (tile == null)
+                        continue;
+                    if (tile.IsVisible == false && (sight & SightFlags.SeeTurfs) == 0)
                         continue;
 
                     Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
@@ -217,13 +218,18 @@ sealed class DreamViewOverlay : Overlay {
                         continue;
 
                     var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
-                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
-                        continue;
 
-                    var tile = tiles[tilePos.X, tilePos.Y];
-                    if (tile?.IsVisible is not true)
-                        continue;
+                    // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
+                    // TODO: Differentiate between objs and mobs
+                    if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0) {
+                        var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
+                        if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                            continue;
+
+                        var tile = tiles[tilePos.X, tilePos.Y];
+                        if (tile?.IsVisible is not true)
+                            continue;
+                    }
 
                     sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, sprite.Owner, false));
                 }

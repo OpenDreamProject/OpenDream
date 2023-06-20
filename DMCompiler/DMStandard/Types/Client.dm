@@ -59,6 +59,7 @@
 		if (mob == null) // No existing mob, create a default one
 			mob = new world.mob(locate(1,1,1)) // TODO: Find nearest non-dense turf
 
+		eye = mob
 		return mob
 
 	proc/Del()

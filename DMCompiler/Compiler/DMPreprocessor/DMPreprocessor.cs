@@ -146,7 +146,21 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             DMCompiler.Emit(WarningCode.BadDirective, token.Location, "Unexpected #endif");
                         break;
                     case TokenType.DM_Preproc_Identifier: {
-                        if (TryMacro(token)) {
+                        //because expanding the macro breaks up identifiers with numbers in them, we put them back together here
+                        String actualText = token.Text;
+                        if(_unprocessedTokens.Count > 0) {
+                            Token next = _unprocessedTokens.Peek();
+                            bool isNumberValid = true; //multiple identifiers in a row shouldn't be concatenated unless they have a number between them
+                            while((isNumberValid && next.Type == TokenType.DM_Preproc_Number) || (!isNumberValid && next.Type == TokenType.DM_Preproc_Identifier)) {
+                                actualText += next.Text;
+                                _unprocessedTokens.Pop();
+                                next = _unprocessedTokens.Peek();
+                                isNumberValid = !isNumberValid;
+                            }
+                        }
+                        Token actualToken = new(TokenType.DM_Preproc_Identifier, actualText, token.Location, token.Value);
+
+                        if (TryMacro(actualToken)) {
                             break;
                         }
 

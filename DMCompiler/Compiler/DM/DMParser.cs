@@ -535,6 +535,8 @@ namespace DMCompiler.Compiler.DM {
                             Check(TokenType.DM_Dedent); // Have to do this ensure that the current token will ALWAYS move forward,
                                                         // and not get stuck once we reach this branch!
                             LocateNextStatement();
+                            if(Check(TokenType.EndOfFile)) //prevent infinite loop if we hit EOF while looking for the end
+                                break;
                             Delimiter();
                         } else {
                             break;

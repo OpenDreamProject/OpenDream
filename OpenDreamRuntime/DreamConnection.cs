@@ -36,6 +36,10 @@ namespace OpenDreamRuntime {
                         _mob.Connection = null;
                     }
 
+                    if (Eye != null && Eye == Mob) {
+                        Eye = value;
+                    }
+
                     if (value != null) {
                         // If the mob is already owned by another player, kick them out
                         if (value.Connection != null)
@@ -51,9 +55,17 @@ namespace OpenDreamRuntime {
 
                     UpdateAvailableVerbs();
                 }
+            }
+        }
 
-                if (_mob != null) {
-                    Session!.AttachToEntity(_mob.Entity);
+        [ViewVariables]
+        public DreamObjectMovable? Eye {
+            get => _eye;
+            set {
+                _eye = value;
+
+                if (_eye != null) {
+                    Session!.AttachToEntity(_eye.Entity);
                 } else {
                     Session!.DetachFromEntity();
                 }
@@ -66,6 +78,7 @@ namespace OpenDreamRuntime {
         [ViewVariables] private int _nextPromptEvent = 1;
 
         private DreamObjectMob? _mob;
+        private DreamObjectMovable? _eye;
 
         public string SelectedStatPanel {
             get => _selectedStatPanel;

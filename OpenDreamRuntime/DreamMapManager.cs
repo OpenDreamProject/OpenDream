@@ -336,7 +336,7 @@ namespace OpenDreamRuntime {
         public sealed class Cell {
             public DreamObjectTurf? Turf;
             public DreamObjectArea Area;
-            public readonly List<DreamObject> Movables = new();
+            public readonly List<DreamObjectMovable> Movables = new();
 
             public Cell(DreamObjectArea area) {
                 Area = area;

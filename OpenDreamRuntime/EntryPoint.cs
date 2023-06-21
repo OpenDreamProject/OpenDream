@@ -44,7 +44,7 @@ namespace OpenDreamRuntime {
             _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // TODO: world.sleep_offline can control this
             _configManager.SetCVar(CVars.GridSplitting, false); // Grid splitting should never be used
 
-            _prototypeManager.LoadDirectory(new ResourcePath("/Resources/Prototypes"));
+            _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
         }
 
         public override void PostInit() {

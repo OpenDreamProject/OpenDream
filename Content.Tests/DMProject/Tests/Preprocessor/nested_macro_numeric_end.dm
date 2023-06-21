@@ -14,4 +14,5 @@ TEST_CASE(/obj/critter/domestic_bee, proc/dance, proc/puke_honey)
 	proc/puke_honey()
 		return "HONEY"
 
-		
+proc/RunTest()
+	return 0

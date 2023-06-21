@@ -148,12 +148,13 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     case TokenType.DM_Preproc_Identifier: {
                         //because expanding the macro breaks up identifiers with numbers in them, we put them back together here
                         String actualText = token.Text;
+                        List<Token> testedTokens = new List<Token>();
                         if(_unprocessedTokens.Count > 0) {
                             Token next = _unprocessedTokens.Peek();
                             bool isNumberValid = true; //multiple identifiers in a row shouldn't be concatenated unless they have a number between them
                             while((isNumberValid && next.Type == TokenType.DM_Preproc_Number) || (!isNumberValid && next.Type == TokenType.DM_Preproc_Identifier)) {
                                 actualText += next.Text;
-                                _unprocessedTokens.Pop();
+                                testedTokens.Add(_unprocessedTokens.Pop());
                                 next = _unprocessedTokens.Peek();
                                 isNumberValid = !isNumberValid;
                             }
@@ -162,6 +163,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
                         if (TryMacro(actualToken)) {
                             break;
+                        }
+                        else { //put them back!
+                            while(testedTokens.Count > 0)
+                                _unprocessedTokens.Push(testedTokens.Pop());
                         }
 
                         // Otherwise treat it like any other normal token

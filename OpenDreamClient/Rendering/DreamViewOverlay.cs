@@ -175,6 +175,8 @@ sealed class DreamViewOverlay : Overlay {
                         continue;
                     if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
                         continue;
+                    if(sprite.Icon.Appearance == null) //apearance hasn't loaded yet
+                        continue;
 
                     var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
                     var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;

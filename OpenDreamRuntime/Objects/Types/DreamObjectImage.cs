@@ -31,7 +31,8 @@ public sealed class DreamObjectImage : DreamObject {
             // Use a default appearance, but log a warning about it if icon wasn't null
             Appearance = new IconAppearance();
             if (icon != DreamValue.Null)
-                Logger.Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
+                Logger.GetSawmill("opendream.image")
+                    .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
 
         int argIndex = 1;

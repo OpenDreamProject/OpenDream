@@ -2124,21 +2124,23 @@ namespace OpenDreamRuntime.Procs {
         ///but later it might make sense to have this be a simplification path for detected repetitive additions of strings,
         ///so as to slightly reduce the amount of re-allocation taking place.
         ///</summary>.
-        public static ProcStatus? MassConcatenation(DMProcState state)
-        {
+        public static ProcStatus? MassConcatenation(DMProcState state) {
             int count = state.ReadInt();
-            if (count < 2) // One or zero arguments -- shouldn't really ever happen. addtext() compiletimes with <2 args and stringification should probably be a different opcode
-            {
-                Logger.Warning("addtext() called with " + count.ToString() + " arguments at runtime."); // TODO: tweak this warning if this ever gets used for other sorts of string concat
+
+            // One or zero arguments -- shouldn't really ever happen. addtext() compiletimes with <2 args and stringification should probably be a different opcode
+            if (count < 2) {
+                // TODO: tweak this warning if this ever gets used for other sorts of string concat
+                Logger.GetSawmill("opendream.opcodes").Warning($"addtext() called with {count} arguments at runtime.");
                 state.Push(DreamValue.Null);
                 return null;
             }
-            int estimated_string_size = count * 10; // FIXME: We can do better with string size prediction here.
-            StringBuilder builder = new StringBuilder(estimated_string_size); // An approximate guess at how big this string is going to be.
-            foreach (DreamValue add in state.PopCount(count))
-            {
-                if (add.TryGetValueAsString(out var addStr))
-                {
+
+            // An approximate guess at how big this string is going to be.
+            int estimatedStringSize = count * 10; // FIXME: We can do better with string size prediction here.
+            var builder = new StringBuilder(estimatedStringSize);
+
+            foreach (DreamValue add in state.PopCount(count)) {
+                if (add.TryGetValueAsString(out var addStr)) {
                     builder.Append(addStr);
                 }
             }

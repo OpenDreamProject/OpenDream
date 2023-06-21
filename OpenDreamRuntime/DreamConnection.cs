@@ -81,6 +81,8 @@ namespace OpenDreamRuntime {
         private DreamObjectMob? _mob;
         private DreamObjectMovable? _eye;
 
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
+
         public string SelectedStatPanel {
             get => _selectedStatPanel;
             set {
@@ -138,7 +140,7 @@ namespace OpenDreamRuntime {
                     if (_availableVerbs.ContainsKey(verbId)) {
                         // BYOND will actually show the user two verbs with different capitalization/dashes, but they will both execute the same verb.
                         // We make a warning and ignore the latter ones instead.
-                        Logger.Warning($"User \"{Session.Name}\" has multiple verb commands named \"{verbId}\", ignoring all but the first");
+                        _sawmill.Warning($"User \"{Session.Name}\" has multiple verb commands named \"{verbId}\", ignoring all but the first");
                         continue;
                     }
 
@@ -225,7 +227,7 @@ namespace OpenDreamRuntime {
 
         public void HandleMsgPromptResponse(MsgPromptResponse message) {
             if (!_promptEvents.TryGetValue(message.PromptId, out var promptEvent)) {
-                Logger.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
+                _sawmill.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
                 return;
             }
 
@@ -341,7 +343,7 @@ namespace OpenDreamRuntime {
                                         if (argumentType == DMValueType.Text) {
                                             arguments[i] = new(args[i+1]);
                                         } else {
-                                            Logger.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
+                                            _sawmill.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
                                             return DreamValue.Null;
                                         }
                                     }

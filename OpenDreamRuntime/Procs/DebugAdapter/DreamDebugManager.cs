@@ -16,6 +16,8 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
 
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.debugger");
+
     // Setup
     private DebugAdapter? _adapter;
     private string RootPath => _resourceManager.RootPath ?? throw new Exception("No RootPath yet!");
@@ -32,6 +34,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         StepIn,
         StepOut,
     }
+
     public struct ThreadStepMode {
         public StepMode Mode;
         public int FrameId;
@@ -714,7 +717,8 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             try {
                 described = DescribeValue(name, obj.GetVariable(name));
             } catch (Exception ex) {
-                Logger.ErrorS("debug", ex, $"Error in GetVariable({name})");
+                _sawmill.Log(LogLevel.Error, ex, $"Error in GetVariable({name})");
+
                 described = new Variable {
                     Name = name,
                     Value = $"<error: {ex.Message}>",

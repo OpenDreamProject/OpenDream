@@ -15,7 +15,7 @@ sealed class ConsoleOutputResource : DreamResource {
 
     public void WriteConsole(LogLevel logLevel, string sawmill, string message) {
         IoCManager.Resolve<IDreamDebugManager>().HandleOutput(logLevel, message);
-        Logger.LogS(logLevel, sawmill, message);
+        Logger.GetSawmill(sawmill).Log(logLevel, message);
     }
 
     public override void Output(DreamValue value) {

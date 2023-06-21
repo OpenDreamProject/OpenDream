@@ -55,7 +55,7 @@ namespace OpenDreamClient.Input {
                 // Grid coordinates are half a meter off from entity coordinates
                 mapCoords = new MapCoordinates(mapCoords.Position + 0.5f, mapCoords.MapId);
 
-                if (_mapManager.TryFindGridAt(mapCoords, out var grid)){
+                if (_mapManager.TryFindGridAt(mapCoords, out _, out var grid)){
                     Vector2i position = grid.CoordinatesToTile(mapCoords);
                     MapCoordinates worldPosition = grid.GridTileToWorld(position);
                     Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);

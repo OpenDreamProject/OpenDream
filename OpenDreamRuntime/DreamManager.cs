@@ -50,8 +50,12 @@ namespace OpenDreamRuntime {
         public bool Initialized { get; private set; }
         public GameTick InitializedTick { get; private set; }
 
+        private ISawmill _sawmill = default!;
+
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
+            _sawmill = Logger.GetSawmill("opendream");
+
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 
@@ -102,7 +106,7 @@ namespace OpenDreamRuntime {
 
             if (json.Maps == null || json.Maps.Count == 0) throw new ArgumentException("No maps were given");
             if (json.Maps.Count > 1) {
-                Logger.Warning("Loading more than one map is not implemented, skipping additional maps");
+                _sawmill.Warning("Loading more than one map is not implemented, skipping additional maps");
             }
 
             _compiledJson = json;
@@ -144,7 +148,7 @@ namespace OpenDreamRuntime {
             if (!WorldInstance.GetVariable("log").TryGetValueAsDreamResource(out var logRsc)) {
                 logRsc = new ConsoleOutputResource();
                 WorldInstance.SetVariableValue("log", new DreamValue(logRsc));
-                Logger.Log(LogLevel.Error, $"Failed to write to the world log, falling back to console output. Original log message follows: [{LogMessage.LogLevelToName(level)}] world.log: {message}");
+                _sawmill.Log(LogLevel.Error, $"Failed to write to the world log, falling back to console output. Original log message follows: [{LogMessage.LogLevelToName(level)}] world.log: {message}");
             }
 
             if (logRsc is ConsoleOutputResource consoleOut) { // Output() on ConsoleOutputResource uses LogLevel.Info
@@ -153,7 +157,7 @@ namespace OpenDreamRuntime {
                 logRsc.Output(new DreamValue($"[{LogMessage.LogLevelToName(level)}] {sawmill}: {message}"));
 
                 if (_configManager.GetCVar(OpenDreamCVars.AlwaysShowExceptions)) {
-                    Logger.LogS(level, sawmill, message);
+                    Logger.GetSawmill(sawmill).Log(level, message);
                 }
             }
         }

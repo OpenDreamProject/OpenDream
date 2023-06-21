@@ -51,7 +51,7 @@ namespace OpenDreamClient.Resources {
                     break;
             }
 
-            Logger.DebugS("opendream.res", $"Cache directory is {_cacheDirectory}");
+            _sawmill.Debug($"Cache directory is {_cacheDirectory}");
             _resourceManager.UserData.CreateDir(_cacheDirectory);
         }
 
@@ -70,7 +70,7 @@ namespace OpenDreamClient.Resources {
                     try {
                         callback.Invoke(resource);
                     } catch (Exception e) {
-                        Logger.Fatal($"Exception while calling resource load callback: {e.Message}");
+                        _sawmill.Fatal($"Exception while calling resource load callback: {e.Message}");
                     }
                 }
 

@@ -1,33 +1,27 @@
 ﻿using OpenDreamShared.Dream;
-using Robust.Shared.Map;
-using Robust.Shared.Map.Components;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 
 namespace OpenDreamClient.Rendering {
-    sealed class ClientAppearanceSystem : SharedAppearanceSystem {
+    internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         private Dictionary<uint, IconAppearance> _appearances = new();
         private readonly Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
         private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
         private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
-        /// <summary>
-        /// Holds the entities used by opaque turfs to block vision
-        /// </summary>
-        private readonly Dictionary<(MapGridComponent, Vector2i), EntityUid> _opaqueTurfEntities = new();
-
         [Dependency] private readonly IEntityManager _entityManager = default!;
-        [Dependency] private readonly OccluderSystem _occluderSystem = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
+        [Dependency] private readonly TransformSystem _transformSystem = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
             SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
             SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
-            SubscribeLocalEvent<GridModifiedEvent>(OnGridModified);
+            SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
         }
 
         public override void Shutdown() {
@@ -37,7 +31,7 @@ namespace OpenDreamClient.Rendering {
         }
 
         public void LoadAppearance(uint appearanceId, Action<IconAppearance> loadCallback) {
-            if (_appearances.TryGetValue(appearanceId, out IconAppearance appearance)) {
+            if (_appearances.TryGetValue(appearanceId, out var appearance)) {
                 loadCallback(appearance);
             }
 
@@ -84,6 +78,10 @@ namespace OpenDreamClient.Rendering {
             LoadAppearance(e.TargetAppearanceId, targetAppearance => {
                 sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration);
             });
+        }
+
+        private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
+            comp.GetAABB(_transformSystem, ref e);
         }
 
         public void ResetFilterUsageFlags() {
@@ -182,34 +180,6 @@ namespace OpenDreamClient.Rendering {
             filter.Used = true;
             _filterShaders[filter] = instance;
             return instance;
-        }
-
-        private void OnGridModified(GridModifiedEvent e) {
-            foreach (var modified in e.Modified) {
-                UpdateTurfOpacity(e.Grid, modified.position, modified.tile);
-            }
-        }
-
-        private void UpdateTurfOpacity(MapGridComponent grid, Vector2i position, Tile newTile) {
-            LoadAppearance((uint)newTile.TypeId - 1, appearance => {
-                bool hasOpaqueEntity = _opaqueTurfEntities.TryGetValue((grid, position), out var opaqueEntity);
-
-                if (appearance.Opacity && !hasOpaqueEntity) {
-                    var entityPosition = grid.GridTileToWorld(position);
-
-                    // TODO: Maybe use a prototype?
-                    opaqueEntity = _entityManager.SpawnEntity(null, entityPosition);
-                    _entityManager.GetComponent<TransformComponent>(opaqueEntity).Anchored = true;
-                    var occluder = _entityManager.AddComponent<OccluderComponent>(opaqueEntity);
-                    _occluderSystem.SetBoundingBox(opaqueEntity, Box2.FromDimensions(-1.0f, -1.0f, 1.0f, 1.0f), occluder);
-                    _occluderSystem.SetEnabled(opaqueEntity, true, occluder);
-
-                    _opaqueTurfEntities.Add((grid, position), opaqueEntity);
-                } else if (hasOpaqueEntity) {
-                    _entityManager.DeleteEntity(opaqueEntity);
-                    _opaqueTurfEntities.Remove((grid, position));
-                }
-            });
         }
     }
 }

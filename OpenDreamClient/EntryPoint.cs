@@ -20,6 +20,7 @@ namespace OpenDreamClient {
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
+        [Dependency] private readonly ILightManager _lightManager = default!;
 
         private const string UserAgent =
             "Mozilla/4.0 (compatible; MSIE 7.0; Windows NT 6.2; WOW64; Trident/7.0; .NET4.0C; .NET4.0E; .NET CLR 2.0.50727; .NET CLR 3.0.30729; .NET CLR 3.5.30729)";
@@ -60,16 +61,15 @@ namespace OpenDreamClient {
             IoCManager.Resolve<ILocalizationManager>().LoadCulture(new CultureInfo("en-US"));
 
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
-            IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
         }
 
         public override void PostInit() {
-            ILightManager lightManager = IoCManager.Resolve<ILightManager>();
-            lightManager.Enabled = true;
-            lightManager.DrawLighting = false;
-            lightManager.DrawShadows = true;
+            _lightManager.Enabled = false;
 
             _overlayManager.AddOverlay(new DreamViewOverlay());
+
+            // In PostInit() since the engine stylesheet gets set in Init()
+            IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
 
             _dreamInterface.Initialize();
             IoCManager.Resolve<IDreamSoundEngine>().Initialize();

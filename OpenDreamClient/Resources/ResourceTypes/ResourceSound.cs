@@ -38,7 +38,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
                     _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioWav(new MemoryStream(Data));
                     break;
                 default:
-                    Logger.Fatal("Only *.ogg and *.wav audio files are supported.");
+                    Logger.GetSawmill("opendream.audio").Fatal("Only *.ogg and *.wav audio files are supported.");
                     break;
             }
         }

@@ -106,15 +106,12 @@ namespace OpenDreamClient.States.MainMenu
 
             _setConnectingState(true);
             _netManager.ConnectFailed += _onConnectFailed;
-            try
-            {
+            try {
                 ParseAddress(address, out var ip, out var port);
                 _client.ConnectToServer(ip, port);
-            }
-            catch (ArgumentException e)
-            {
+            } catch (ArgumentException e) {
                 _userInterfaceManager.Popup($"Unable to connect: {e.Message}", "Connection error.");
-                Logger.Warning(e.ToString());
+                Logger.GetSawmill("opendream").Warning(e.ToString());
                 _netManager.ConnectFailed -= _onConnectFailed;
                 _setConnectingState(false);
             }

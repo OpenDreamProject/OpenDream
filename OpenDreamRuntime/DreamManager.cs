@@ -205,11 +205,11 @@ namespace OpenDreamRuntime {
             }
 
             // The first digit is the type, i.e. 1 for objects and 2 for strings
-            return $"{(int) refType}{idx}";
+            return $"0x{(int) refType}{idx.ToString().PadLeft(6,'0')}";
         }
 
         public DreamValue LocateRef(string refString) {
-            if (!int.TryParse(refString, out var refId)) {
+            if (!int.TryParse(refString.Substring(2), out var refId)) { //strip "0x"
                 // If the ref is not an integer, it may be a tag
                 if (Tags.TryGetValue(refString, out var tagList)) {
                     return new DreamValue(tagList.First());
@@ -219,8 +219,8 @@ namespace OpenDreamRuntime {
             }
 
             // The first digit is the type
-            var typeId = (RefType) int.Parse(refString.Substring(0, 1));
-            var untypedRefString = refString.Substring(1); // The ref minus its ref type prefix
+            var typeId = (RefType) int.Parse(refString.Substring(2, 1));
+            var untypedRefString = refString.Substring(3); // The ref minus its ref type prefix
 
             refId = int.Parse(untypedRefString);
 

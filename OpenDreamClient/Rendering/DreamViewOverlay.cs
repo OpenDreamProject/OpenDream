@@ -119,7 +119,7 @@ sealed class DreamViewOverlay : Overlay {
 
         Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
 
-        _mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid);
+        _mapManager.TryFindGridAt(eyeTransform.MapPosition, out _, out var grid);
 
         HashSet<EntityUid> entities;
         using (_prof.Group("lookup")) {

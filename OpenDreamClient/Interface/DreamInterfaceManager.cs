@@ -40,6 +40,8 @@ namespace OpenDreamClient.Interface {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
 
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
+
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
         public ControlWindow? DefaultWindow { get; private set; }
@@ -67,10 +69,10 @@ namespace OpenDreamClient.Interface {
             int errorCount = 0;
             foreach (CompilerEmission warning in dmfParser.Emissions) {
                 if (warning.Level == ErrorLevel.Error) {
-                    Logger.Error(warning.ToString());
+                    _sawmill.Error(warning.ToString());
                     errorCount++;
                 } else {
-                    Logger.Warning(warning.ToString());
+                    _sawmill.Warning(warning.ToString());
                 }
             }
 
@@ -386,10 +388,10 @@ namespace OpenDreamClient.Interface {
                     bool hadError = false;
                     foreach (CompilerEmission emission in parser.Emissions) {
                         if (emission.Level == ErrorLevel.Error) {
-                            Logger.ErrorS("opendream.interface.winset", emission.ToString());
+                            _sawmill.Error(emission.ToString());
                             hadError = true;
                         } else {
-                            Logger.WarningS("opendream.interface.winset", emission.ToString());
+                            _sawmill.Warning(emission.ToString());
                         }
                     }
 
@@ -412,7 +414,7 @@ namespace OpenDreamClient.Interface {
 
                             commandSystem.RunCommand(winSet.Value);
                         } else {
-                            Logger.ErrorS("opendream.interface.winset", $"Invalid global winset \"{winsetParams}\"");
+                            _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                         }
                     } else {
                         InterfaceElement? element = FindElementWithName(winSet.Element);
@@ -423,7 +425,7 @@ namespace OpenDreamClient.Interface {
                         if (element != null) {
                             element.PopulateElementDescriptor(node, _serializationManager);
                         } else {
-                            Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                            _sawmill.Error($"Invalid element \"{controlId}\"");
                         }
                     }
                 }
@@ -437,7 +439,7 @@ namespace OpenDreamClient.Interface {
                 if (element == null && node.TryGet("parent", out ValueDataNode? parentNode)) {
                     var parent = FindElementWithName(parentNode.Value);
                     if (parent == null) {
-                        Logger.ErrorS("opendream.interface.winset", $"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
+                        _sawmill.Error($"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
                         return;
                     }
 
@@ -449,7 +451,7 @@ namespace OpenDreamClient.Interface {
                 } else if (element != null) {
                     element.PopulateElementDescriptor(node, _serializationManager);
                 } else {
-                    Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                    _sawmill.Error($"Invalid element \"{controlId}\"");
                 }
             }
         }
@@ -473,7 +475,7 @@ namespace OpenDreamClient.Interface {
                         elementDescriptor = new MacroSetDescriptor(cloneId);
                         break;
                     default:
-                        Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
+                        _sawmill.Error($"Invalid element to winclone \"{controlId}\"");
                         return;
                 }
             }

@@ -13,16 +13,20 @@ namespace OpenDreamClient.Rendering;
 /// <summary>
 /// Overlay for rendering world atoms
 /// </summary>
-sealed class DreamViewOverlay : Overlay {
+internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly ProfManager _prof = default!;
+
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
+
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
     private EntityQuery<DreamMobSightComponent> mobSightQuery;
+
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
@@ -50,7 +54,7 @@ sealed class DreamViewOverlay : Overlay {
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
-        Logger.Debug("Loading shaders...");
+        _sawmill.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
@@ -87,7 +91,7 @@ sealed class DreamViewOverlay : Overlay {
         try {
             DrawAll(args, eye.Value);
         } catch (Exception e) {
-            Logger.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
+            _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
 
         //store our mouse map's image and return the render target

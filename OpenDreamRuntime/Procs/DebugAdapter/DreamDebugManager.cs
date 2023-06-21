@@ -16,7 +16,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
 
-    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.debugger");
+    private ISawmill _sawmill = default!;
 
     // Setup
     private DebugAdapter? _adapter;
@@ -86,6 +86,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     // Lifecycle
     public void Initialize(int port) {
+        _sawmill = Logger.GetSawmill("opendream.debugger");
         _adapter = new DebugAdapter();
 
         _adapter.OnClientConnected += OnClientConnected;

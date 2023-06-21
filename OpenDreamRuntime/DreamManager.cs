@@ -50,10 +50,12 @@ namespace OpenDreamRuntime {
         public bool Initialized { get; private set; }
         public GameTick InitializedTick { get; private set; }
 
-        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream");
+        private ISawmill _sawmill = default!;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
+            _sawmill = Logger.GetSawmill("opendream");
+
             InitializeConnectionManager();
             _dreamResourceManager.Initialize();
 

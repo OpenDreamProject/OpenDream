@@ -79,9 +79,13 @@ namespace OpenDreamClient {
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
-            if (level == ModUpdateLevel.FramePostEngine) {
-                _soundEngine.StopFinishedChannels();
-                _dreamInterface.FrameUpdate(frameEventArgs);
+            switch (level) {
+                case ModUpdateLevel.FramePostEngine:
+                    _dreamInterface.FrameUpdate(frameEventArgs);
+                    break;
+                case ModUpdateLevel.PostEngine:
+                    _soundEngine.StopFinishedChannels();
+                    break;
             }
         }
 

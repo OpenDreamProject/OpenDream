@@ -7,9 +7,9 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
+using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime {
     public sealed class DreamConnection {
@@ -19,6 +19,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
+        private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
         [ViewVariables] private readonly Dictionary<string, List<string>> _statPanels = new();
@@ -65,9 +66,9 @@ namespace OpenDreamRuntime {
                 _eye = value;
 
                 if (_eye != null) {
-                    Session!.AttachToEntity(_eye.Entity);
+                    _actorSystem?.Attach(_eye.Entity, Session!);
                 } else {
-                    Session!.DetachFromEntity();
+                    _actorSystem?.Detach(Session!);
                 }
             }
         }
@@ -94,6 +95,7 @@ namespace OpenDreamRuntime {
             IoCManager.InjectDependencies(this);
 
             _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
+            _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
         public void HandleConnection(IPlayerSession session) {

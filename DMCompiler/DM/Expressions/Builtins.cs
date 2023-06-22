@@ -82,6 +82,7 @@ namespace DMCompiler.DM.Expressions {
                 json = null;
                 return false;
             }
+
             if(!_arguments.TryAsJsonRepresentation(out object? argsJson)){
                 json = null;
                 return false;

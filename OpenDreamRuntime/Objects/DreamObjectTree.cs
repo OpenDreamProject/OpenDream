@@ -226,8 +226,8 @@ namespace OpenDreamRuntime.Objects {
                             }
 
                             if (jsonElement.TryGetProperty("associatedValuesKeys", out JsonElement associatedValuesKeys) && jsonElement.TryGetProperty("associatedValuesValues", out JsonElement associatedValues)) {
-                                var valueEnumerator = associatedValues.EnumerateObject();
-                                var keyEnumerator = associatedValuesKeys.EnumerateObject();
+                                var valueEnumerator = associatedValues.EnumerateArray();
+                                var keyEnumerator = associatedValuesKeys.EnumerateArray();
                                 while(valueEnumerator.MoveNext() && keyEnumerator.MoveNext())
                                     list.SetValue(GetDreamValueFromJsonElement(keyEnumerator.Current), GetDreamValueFromJsonElement(valueEnumerator.Current));
                             }
@@ -238,6 +238,17 @@ namespace OpenDreamRuntime.Objects {
                         case JsonVariableType.NegativeInfinity:
                             return new DreamValue(float.NegativeInfinity);
                         case JsonVariableType.NewPath:
+                            DreamObject returnObject;
+                            DreamValue typePath = GetDreamValueFromJsonElement(jsonElement.GetProperty("path"));
+                            if(typePath.TryGetValueAsType(out TreeEntry? instanceType)) {
+                                returnObject = new(instanceType.ObjectDefinition);
+                                //DreamValue constructorArgs = GetDreamValueFromJsonElement(jsonElement.GetProperty("args"));
+                                //Help how do I do this part
+                                returnObject.Initialize(new DreamProcArguments());
+                                return new DreamValue(returnObject);
+                            } else {
+                                throw new Exception($"Invalid path type ({typePath})");
+                            }
                         default:
                             throw new Exception($"Invalid variable type ({variableType})");
                     }

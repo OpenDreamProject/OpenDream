@@ -242,9 +242,9 @@ namespace OpenDreamRuntime.Objects {
                             DreamValue typePath = GetDreamValueFromJsonElement(jsonElement.GetProperty("path"));
                             if(typePath.TryGetValueAsType(out TreeEntry? instanceType)) {
                                 returnObject = new(instanceType.ObjectDefinition);
+                                //TODO parse arguments and pass them to the constructor
                                 //DreamValue constructorArgs = GetDreamValueFromJsonElement(jsonElement.GetProperty("args"));
-                                //Help how do I do this part
-                                returnObject.Initialize(new DreamProcArguments());
+                                returnObject.InitSpawn(new DreamProcArguments());
                                 return new DreamValue(returnObject);
                             } else {
                                 throw new Exception($"Invalid path type ({typePath})");

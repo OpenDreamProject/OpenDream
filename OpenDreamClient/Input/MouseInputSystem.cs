@@ -1,10 +1,9 @@
-﻿using JetBrains.Annotations;
-using OpenDreamClient.Input.ContextMenu;
+﻿using OpenDreamClient.Input.ContextMenu;
+using OpenDreamClient.Interface;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Input;
-using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
@@ -13,7 +12,7 @@ using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
 
 namespace OpenDreamClient.Input {
-    sealed class MouseInputSystem : SharedMouseInputSystem {
+    internal sealed class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
@@ -37,6 +36,7 @@ namespace OpenDreamClient.Input {
             if (!viewportBox.Contains((int)args.RelativePixelPosition.X, (int)args.RelativePixelPosition.Y))
                 return false; // Click was outside of the viewport
 
+            bool middle = args.Function == OpenDreamKeyFunctions.MouseMiddle;
             bool shift = _inputManager.IsKeyDown(Keyboard.Key.Shift);
             bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
             bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
@@ -59,7 +59,7 @@ namespace OpenDreamClient.Input {
                     Vector2i position = grid.CoordinatesToTile(mapCoords);
                     MapCoordinates worldPosition = grid.GridTileToWorld(position);
                     Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
-                    RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc,  shift, ctrl, alt, turfIconPosition));
+                    RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc, middle, shift, ctrl, alt, turfIconPosition));
                 }
 
                 return true;
@@ -87,7 +87,7 @@ namespace OpenDreamClient.Input {
 
             // TODO: Take icon transformations into account
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
-            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, shift, ctrl, alt, iconPosition));
+            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, middle, shift, ctrl, alt, iconPosition));
             return true;
         }
 

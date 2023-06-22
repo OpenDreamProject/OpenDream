@@ -225,12 +225,11 @@ namespace OpenDreamRuntime.Objects {
                                 }
                             }
 
-                            if (jsonElement.TryGetProperty("associatedValues", out JsonElement associatedValues)) {
-                                foreach (JsonProperty associatedValue in associatedValues.EnumerateObject()) {
-                                    DreamValue key = new DreamValue(associatedValue.Name);
-
-                                    list.SetValue(key, GetDreamValueFromJsonElement(associatedValue.Value));
-                                }
+                            if (jsonElement.TryGetProperty("associatedValuesKeys", out JsonElement associatedValuesKeys) && jsonElement.TryGetProperty("associatedValuesValues", out JsonElement associatedValues)) {
+                                var valueEnumerator = associatedValues.EnumerateObject();
+                                var keyEnumerator = associatedValuesKeys.EnumerateObject();
+                                while(valueEnumerator.MoveNext() && keyEnumerator.MoveNext())
+                                    list.SetValue(GetDreamValueFromJsonElement(keyEnumerator.Current), GetDreamValueFromJsonElement(valueEnumerator.Current));
                             }
 
                             return new DreamValue(list);
@@ -238,6 +237,7 @@ namespace OpenDreamRuntime.Objects {
                             return new DreamValue(float.PositiveInfinity);
                         case JsonVariableType.NegativeInfinity:
                             return new DreamValue(float.NegativeInfinity);
+                        case JsonVariableType.NewPath:
                         default:
                             throw new Exception($"Invalid variable type ({variableType})");
                     }

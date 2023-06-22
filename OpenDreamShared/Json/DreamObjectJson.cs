@@ -9,7 +9,9 @@ namespace OpenDreamShared.Json {
         ProcStub = 4,
         VerbStub = 5,
         PositiveInfinity = 6,
-        NegativeInfinity = 7
+        NegativeInfinity = 7,
+        NewPath = 8,
+        ArgList = 9,
     }
 
     public sealed class DreamTypeJson {

@@ -70,6 +70,31 @@ namespace DMCompiler.DM.Expressions {
             _arguments = arguments;
         }
 
+        public override bool TryAsJsonRepresentation(out object? json) {
+            Dictionary<string, object> jsonRepresentation = new();
+            DMObject? validObject = DMObjectTree.GetDMObject(_targetPath);
+            if(validObject == null){
+                json = null;
+                return false;
+            }
+            Path pathExpression = new Path(this.Location, validObject,_targetPath);
+            if(!pathExpression.TryAsJsonRepresentation(out object? pathJson)){
+                json = null;
+                return false;
+            }
+            if(!_arguments.TryAsJsonRepresentation(out object? argsJson)){
+                json = null;
+                return false;
+            }
+
+            jsonRepresentation.Add("type", JsonVariableType.NewPath);
+            jsonRepresentation.Add("path", pathJson!);
+            jsonRepresentation.Add("args", argsJson!);
+
+            json = jsonRepresentation;
+            return true;
+        }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             if (!DMObjectTree.TryGetTypeId(_targetPath, out var typeId)) {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_targetPath} does not exist");
@@ -379,8 +404,8 @@ namespace DMCompiler.DM.Expressions {
 
         public override bool TryAsJsonRepresentation(out object? json) {
             List<object?> list = new();
-            Dictionary<string, object?> associatedValues = new();
-
+            List<object?> assocKeys = new();
+            List<object?> assocValues = new();
             foreach (var value in _values) {
                 if (!value.Value.TryAsJsonRepresentation(out var jsonValue)) {
                     json = null;
@@ -388,12 +413,12 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 if (value.Key != null) {
-                    if (value.Key is not Expressions.String keyString) { //Only string keys are supported
+                    if (!value.Key.TryAsJsonRepresentation(out var keyValue)) {
                         json = null;
                         return false;
                     }
-
-                    associatedValues.Add(keyString.Value, jsonValue);
+                    assocKeys.Add(keyValue);
+                    assocValues.Add(jsonValue);
                 } else {
                     list.Add(jsonValue);
                 }
@@ -402,7 +427,10 @@ namespace DMCompiler.DM.Expressions {
             Dictionary<string, object> jsonRepresentation = new();
             jsonRepresentation.Add("type", JsonVariableType.List);
             if (list.Count > 0) jsonRepresentation.Add("values", list);
-            if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
+            if (assocKeys.Count > 0)
+                jsonRepresentation.Add("associatedValuesKeys", assocKeys);
+            if (assocValues.Count > 0)
+                jsonRepresentation.Add("associatedValuesValues", assocValues);
             json = jsonRepresentation;
             return true;
         }

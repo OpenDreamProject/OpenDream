@@ -5,6 +5,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System.Diagnostics.CodeAnalysis;
+using System.Collections.Generic;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {
@@ -174,6 +175,31 @@ namespace DMCompiler.DM {
             }
 
             return (_isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
+        }
+
+        public bool TryAsJsonRepresentation(out object? json) {
+            List<object?> list = new();
+            Dictionary<string, object?> associatedValues = new();
+
+            foreach (var value in Expressions) {
+                if (!value.Expr.TryAsJsonRepresentation(out var jsonValue)) {
+                    json = null;
+                    return false;
+                }
+
+                if (value.Name != null) {
+                    associatedValues.Add(value.Name, jsonValue);
+                } else {
+                    list.Add(jsonValue);
+                }
+            }
+
+            Dictionary<string, object> jsonRepresentation = new();
+            jsonRepresentation.Add("type", OpenDreamShared.Json.JsonVariableType.ArgList);
+            if (list.Count > 0) jsonRepresentation.Add("values", list);
+            if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
+            json = jsonRepresentation;
+            return true;
         }
     }
 }

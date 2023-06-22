@@ -1,28 +1,35 @@
 using System.IO;
+using JetBrains.Annotations;
 using OpenDreamShared.Network.Messages;
 using Robust.Client.Audio;
 using Robust.Client.Graphics;
 using Robust.Shared.Audio;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
-    // ReSharper disable once ClassNeverInstantiated.Global
+    [UsedImplicitly]
     public sealed class ResourceSound : DreamResource {
-        private AudioStream _stream;
+        private AudioStream? _stream;
 
         public ResourceSound(int id, byte[] data) : base(id, data) { }
 
-        public IClydeAudioSource Play(MsgSound.FormatType format, AudioParams audioParams) {
+        public IClydeAudioSource? Play(MsgSound.FormatType format, AudioParams audioParams) {
             LoadStream(format);
+            if (_stream == null)
+                return null;
 
             // TODO: Positional audio.
             var source = IoCManager.Resolve<IClydeAudio>().CreateAudioSource(_stream);
-            source.SetGlobal();
-            source.SetPitch(audioParams.PitchScale);
-            source.SetVolume(audioParams.Volume);
-            source.SetPlaybackPosition(audioParams.PlayOffsetSeconds);
-            source.IsLooping = audioParams.Loop;
 
-            source.StartPlaying();
+            if (source != null) {
+                source.SetGlobal();
+                source.SetPitch(audioParams.PitchScale);
+                source.SetVolume(audioParams.Volume);
+                source.SetPlaybackPosition(audioParams.PlayOffsetSeconds);
+                source.IsLooping = audioParams.Loop;
+
+                source.StartPlaying();
+            }
+
             return source;
         }
 

@@ -2297,7 +2297,7 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public sealed class DMASTExpressionWrapped : DMASTExpression {
-        public readonly DMASTExpression Expression;
+        public DMASTExpression Expression;
 
         public DMASTExpressionWrapped(Location location, DMASTExpression expression) : base(location) {
             Expression = expression;

@@ -99,6 +99,13 @@ namespace OpenDreamClient.Interface {
             MacroSets.Clear();
             _popupWindows.Clear();
 
+            // Set up the middle-mouse button keybind
+            _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
+            _inputManager.RegisterBinding(new KeyBindingRegistration() {
+                Function = OpenDreamKeyFunctions.MouseMiddle,
+                BaseKey = Keyboard.Key.MouseMiddle
+            });
+
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
             _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>(RxUpdateAvailableVerbs);

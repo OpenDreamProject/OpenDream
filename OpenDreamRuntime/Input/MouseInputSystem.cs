@@ -41,6 +41,7 @@ namespace OpenDreamRuntime.Input {
 
         private DreamValue[] ConstructClickArguments(DreamObject atom, IAtomClickedEvent e) {
             NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
+            if (e.Middle) paramsBuilder.Add("middle", "1");
             if (e.Shift) paramsBuilder.Add("shift", "1");
             if (e.Ctrl) paramsBuilder.Add("ctrl", "1");
             if (e.Alt) paramsBuilder.Add("alt", "1");

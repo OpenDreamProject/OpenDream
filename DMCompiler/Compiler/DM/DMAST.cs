@@ -146,10 +146,6 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
-        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
-            throw new NotImplementedException();
-        }
-
         public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) {
             throw new NotImplementedException();
         }
@@ -1135,18 +1131,6 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIdentifier(this);
-        }
-    }
-
-    public sealed class DMASTIdentifierWrapped : DMASTExpression {
-        public readonly DMASTIdentifier Identifier;
-
-        public DMASTIdentifierWrapped(Location location, DMASTIdentifier identifier) : base(location) {
-            Identifier = identifier;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitIdentifierWrapped(this);
         }
     }
 
@@ -2329,6 +2313,18 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRightShift(this);
+        }
+    }
+
+    public sealed class DMASTExpressionWrapped : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTExpressionWrapped(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            Expression.Visit(visitor);
         }
     }
 

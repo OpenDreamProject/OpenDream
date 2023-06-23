@@ -177,6 +177,7 @@ namespace OpenDreamRuntime {
                         case DreamObjectArea: refType = RefType.DreamObjectArea; break;
                         case DreamObjectClient: refType = RefType.DreamObjectArea; break;
                         case DreamObjectImage: refType = RefType.DreamObjectImage; break;
+                        case DreamList: refType = RefType.DreamObjectList; break;
                         default: {
                             refType = RefType.DreamObjectDatum;
                             if(refObject.IsSubtypeOf(_objectTree.Obj))
@@ -216,11 +217,11 @@ namespace OpenDreamRuntime {
             }
 
             // The first digit is the type
-            return $"0x{((int) refType+idx):X}";
+            return $"[0x{((int) refType+idx):X}]";
         }
 
         public DreamValue LocateRef(string refString) {
-            if (!int.TryParse(refString.Substring(2), System.Globalization.NumberStyles.HexNumber, null, out var refId)) { //strip "0x"
+            if (!int.TryParse(refString.Substring(3).TrimEnd(']'), System.Globalization.NumberStyles.HexNumber, null, out var refId)) { //strip "[0x" and "]"
                 // If the ref is not an integer, it may be a tag
                 if (Tags.TryGetValue(refString, out var tagList)) {
                     return new DreamValue(tagList.First());
@@ -236,6 +237,13 @@ namespace OpenDreamRuntime {
             switch (typeId) {
                 case RefType.Null:
                     return DreamValue.Null;
+                case RefType.DreamObjectArea:
+                case RefType.DreamObjectClient:
+                case RefType.DreamObjectDatum:
+                case RefType.DreamObjectImage:
+                case RefType.DreamObjectList:
+                case RefType.DreamObjectMob:
+                case RefType.DreamObjectTurf:
                 case RefType.DreamObject:
                     if (ReferenceIDsToDreamObject.TryGetValue(refId, out var dreamObject))
                         return new(dreamObject);

@@ -1,3 +1,4 @@
+#define ASSERT(expr) ((expr) ? null : CRASH("Assertion Failed: " + #expr))
 /proc/RunTest()
 	var/obj/thing = new()
 	var/obj/thing2 = new()
@@ -13,5 +14,8 @@
 	ASSERT(locate(string_ref) == string)
 
 	var/proc_ref = "\ref[/proc/RunTest]"
-	ASSERT(length(proc_ref)==10)
+	ASSERT(length(proc_ref)==12)
 
+	var/list/test = list(1,2,3)
+	ASSERT(lowertext(copytext("\ref[test]",4,5)) == "f")
+	ASSERT(locate("\ref[test]") == test)

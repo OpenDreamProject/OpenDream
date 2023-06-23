@@ -50,6 +50,7 @@ namespace OpenDreamRuntime {
         DreamObjectArea = 0x4000000,
         DreamObjectClient = 0x5000000,
         DreamObjectImage = 0xD000000,
+        DreamObjectList = 0xF000000,
         DreamObjectDatum = 0x21000000,
         String = 0x6000000,
         DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that

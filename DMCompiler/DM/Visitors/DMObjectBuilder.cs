@@ -54,7 +54,7 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            // Step 4: Define vars. Collect static vars for later
+            // Step 4: Define vars
             List<(DMObject, DMASTObjectVarDefinition, UnknownIdentifierException e)> lateVarDefs = new();
             foreach (var varDef in VarDefinitions) {
                 try {

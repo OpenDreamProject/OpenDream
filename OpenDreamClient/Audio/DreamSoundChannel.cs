@@ -1,21 +1,20 @@
 using Robust.Client.Graphics;
 
-namespace OpenDreamClient.Audio
-{
-    public sealed class DreamSoundChannel : IDisposable {
-        public IClydeAudioSource Source { get; }
+namespace OpenDreamClient.Audio;
 
-        public DreamSoundChannel(IClydeAudioSource source) {
-            Source = source;
-        }
+public sealed class DreamSoundChannel : IDisposable {
+    public IClydeAudioSource Source { get; }
 
-        public void Stop() {
-            Source?.StopPlaying();
-        }
+    public DreamSoundChannel(IClydeAudioSource source) {
+        Source = source;
+    }
 
-        public void Dispose() {
-            Stop();
-            Source?.Dispose();
-        }
+    public void Stop() {
+        Source.StopPlaying();
+    }
+
+    public void Dispose() {
+        Stop();
+        Source.Dispose();
     }
 }

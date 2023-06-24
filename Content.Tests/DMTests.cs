@@ -27,6 +27,8 @@ namespace Content.Tests
         public const string MapFile = "map.dmm";
         public const string InitializeEnvironment = "./environment.dme";
 
+        private const string TESTS_DIRECTORY = "Tests";
+
         [Dependency] private readonly IDreamManager _dreamMan = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
@@ -74,11 +76,13 @@ namespace Content.Tests
         [Test, TestCaseSource(nameof(GetTests))]
         public void TestFiles(string sourceFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
+            TestContext.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
             try {
-                string? compiledFile = Compile(Path.Join(initialDirectory, "Tests", sourceFile));
+                string? compiledFile = Compile(Path.Join(initialDirectory, TESTS_DIRECTORY, sourceFile));
                 if (testFlags.HasFlag(DMTestFlags.CompileError)) {
                     Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
                     Cleanup(compiledFile);
+                    TestContext.WriteLine($"--- PASS {sourceFile}");
                     return;
                 }
 
@@ -110,6 +114,7 @@ namespace Content.Tests
                 }
 
                 Cleanup(compiledFile);
+                TestContext.WriteLine($"--- PASS {sourceFile}");
             } finally {
                 // Restore the original CurrentDirectory, since loading a compiled JSON changes it.
                 Directory.SetCurrentDirectory(initialDirectory);
@@ -154,8 +159,8 @@ namespace Content.Tests
         {
             Directory.SetCurrentDirectory(TestProject);
 
-            foreach (string sourceFile in Directory.GetFiles("Tests", "*.dm", SearchOption.AllDirectories)) {
-                string sourceFile2 = sourceFile["Tests/".Length..];
+            foreach (string sourceFile in Directory.GetFiles(TESTS_DIRECTORY, "*.dm", SearchOption.AllDirectories)) {
+                string sourceFile2 = sourceFile[$"{TESTS_DIRECTORY}/".Length..];
                 DMTestFlags testFlags = GetDMTestFlags(sourceFile);
                 if (testFlags.HasFlag(DMTestFlags.Ignore))
                     continue;

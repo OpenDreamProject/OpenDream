@@ -11,12 +11,9 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
 
-namespace OpenDreamClient.Interface.Controls
-{
-    sealed class ControlBrowser : InterfaceControl
-    {
-        private static readonly Dictionary<string, string> FileExtensionMimeTypes = new Dictionary<string, string>
-        {
+namespace OpenDreamClient.Interface.Controls {
+    internal sealed class ControlBrowser : InterfaceControl {
+        private static readonly Dictionary<string, string> FileExtensionMimeTypes = new() {
             { "css", "text/css" },
             { "html", "text/html" },
             { "htm", "text/html" },
@@ -35,13 +32,12 @@ namespace OpenDreamClient.Interface.Controls
         [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
-        private ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
         private WebViewControl _webView;
 
         public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
-            : base(controlDescriptor, window)
-        {
+            : base(controlDescriptor, window) {
             IoCManager.InjectDependencies(this);
         }
 
@@ -65,7 +61,7 @@ namespace OpenDreamClient.Interface.Controls
             _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
         }
 
-        public void SetFileSource(ResourcePath filepath, bool userData) {
+        public void SetFileSource(ResPath filepath, bool userData) {
             _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
         }
 
@@ -117,7 +113,7 @@ namespace OpenDreamClient.Interface.Controls
             if (newUri.Scheme == "usr") {
                 Stream stream;
                 HttpStatusCode status;
-                var path = new ResourcePath(newUri.AbsolutePath);
+                var path = new ResPath(newUri.AbsolutePath);
                 try {
                     stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
                     status = HttpStatusCode.OK;

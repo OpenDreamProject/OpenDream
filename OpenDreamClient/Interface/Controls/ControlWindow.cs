@@ -10,6 +10,8 @@ namespace OpenDreamClient.Interface.Controls {
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
+
         // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
         // Just like in win32 (which is definitely what this is inspired by let's be real),
         // windows can be embedded into other windows as a way to do nesting.
@@ -128,7 +130,7 @@ namespace OpenDreamClient.Interface.Controls {
                     if (control.Anchor2.HasValue) {
                         if (control.Anchor2.Value.X < control.Anchor1.Value.X ||
                             control.Anchor2.Value.Y < control.Anchor1.Value.Y)
-                            Logger.Warning($"Invalid anchor2 value in DMF for element {control.Name}. Ignoring.");
+                            _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Name}. Ignoring.");
                         else {
                             var offset2X = (elementPos.X + elementSize.X) -
                                            (windowSize.X * control.Anchor2.Value.X / 100);
@@ -197,8 +199,9 @@ namespace OpenDreamClient.Interface.Controls {
                 if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                     ChildControls.Add(control);
                 else {
-                    Logger.Warning(
+                    _sawmill.Warning(
                         $"Out of order component {control.Name}. Elements should be defined in order of position. Attempting to fix automatically.");
+
                     int i = 0;
                     while (i < ChildControls.Count) {
                         prevPos = ChildControls[i].Pos.GetValueOrDefault();

@@ -375,7 +375,7 @@ namespace DMCompiler.Compiler.DM {
                                     pathElement += operatorToken.PrintableText;
                                 } else { //Otherwise it's just a normal path, resume
                                     ReuseToken(operatorToken);
-                                    Warning("Using \"operator\" as a path element is ambiguous", Current()); // NOTE: Maybe should be SoftReservedKeyword? Unsure!
+                                    Error(WarningCode.SoftReservedKeyword, "Using \"operator\" as a path element is ambiguous");
                                 }
                             } else if(Check(OperatorOverloadTypes)) {
                                 operatorFlag = true;

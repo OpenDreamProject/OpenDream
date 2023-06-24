@@ -155,6 +155,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             while((isNumberValid && next.Type == TokenType.DM_Preproc_Number) || (!isNumberValid && next.Type == TokenType.DM_Preproc_Identifier)) {
                                 actualText += next.Text;
                                 testedTokens.Add(_unprocessedTokens.Pop());
+                                if(_unprocessedTokens.Count == 0)
+                                    break;
                                 next = _unprocessedTokens.Peek();
                                 isNumberValid = !isNumberValid;
                             }

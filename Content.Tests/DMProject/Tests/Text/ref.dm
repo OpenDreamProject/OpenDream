@@ -1,4 +1,3 @@
-#define ASSERT(expr) ((expr) ? null : CRASH("Assertion Failed: " + #expr))
 /proc/RunTest()
 	var/obj/thing = new()
 	var/obj/thing2 = new()

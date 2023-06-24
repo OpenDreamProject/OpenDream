@@ -900,7 +900,7 @@ namespace OpenDreamRuntime.Objects.Types {
     // area.contents list
     public sealed class AreaContentsList : DreamList {
         private readonly DreamObjectArea _area;
-        private readonly List<DreamValue> _turfs = new();
+        private readonly List<DreamObjectTurf> _turfs = new();
 
         public AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : base(listDef, 0) {
             _area = area;
@@ -909,14 +909,36 @@ namespace OpenDreamRuntime.Objects.Types {
         public override DreamValue GetValue(DreamValue key) {
             if (!key.TryGetValueAsInteger(out var index))
                 throw new Exception($"Invalid index into area contents list: {key}");
-            if (index < 1 || index > _turfs.Count)
-                throw new Exception($"Out of bounds index on turf contents list: {index}");
 
-            return _turfs[index - 1];
+            foreach (var turf in _turfs) {
+                if (index < 1)
+                    break;
+
+                if (index == 1) // The index references this turf
+                    return new(turf);
+
+                index -= 1;
+
+                int contentsLength = turf.Contents.GetLength();
+
+                if (index <= contentsLength) // The index references one of the turf's contents
+                    return turf.Contents.GetValue(new(index));
+
+                index -= contentsLength;
+            }
+
+            throw new Exception($"Out of bounds index on turf contents list: {key}");
         }
 
         public override List<DreamValue> GetValues() {
-            return _turfs;
+            List<DreamValue> values = new(_turfs.Count);
+
+            foreach (var turf in _turfs) {
+                values.Add(new(turf));
+                values.AddRange(turf.Contents.GetValues());
+            }
+
+            return values;
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -930,7 +952,7 @@ namespace OpenDreamRuntime.Objects.Types {
             turf.Cell.Area = _area;
 
             // TODO: Actually keep track of every turf in an area, not just which ones have been added by DM through .contents
-            _turfs.Add(value);
+            _turfs.Add(turf);
         }
 
         public override void RemoveValue(DreamValue value) {
@@ -942,7 +964,12 @@ namespace OpenDreamRuntime.Objects.Types {
         }
 
         public override int GetLength() {
-            return _turfs.Count;
+            int length = _turfs.Count;
+
+            foreach (var turf in _turfs)
+                length += turf.Contents.GetLength();
+
+            return length;
         }
     }
 

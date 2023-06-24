@@ -54,7 +54,7 @@ namespace OpenDreamRuntime {
         DreamObjectDatum = 0x21000000,
         String = 0x6000000,
         DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that
-        DreamResource = 0xFF000000, //doesn't exist in byond
+        DreamResource = 0x27000000, //Equivalent to file
         DreamAppearance = 0x3A000000,
         Proc = 0x26000000
     }

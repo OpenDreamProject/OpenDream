@@ -177,11 +177,12 @@ namespace OpenDreamRuntime {
                         case DreamObjectArea: refType = RefType.DreamObjectArea; break;
                         case DreamObjectClient: refType = RefType.DreamObjectArea; break;
                         case DreamObjectImage: refType = RefType.DreamObjectImage; break;
-                        case DreamList: refType = RefType.DreamObjectList; break;
                         default: {
                             refType = RefType.DreamObjectDatum;
                             if(refObject.IsSubtypeOf(_objectTree.Obj))
                                 refType = RefType.DreamObject;
+                            else if (refObject.GetType() == typeof(DreamList))
+                                refType = RefType.DreamObjectList;
                             break;
                         }
                     }
@@ -217,7 +218,7 @@ namespace OpenDreamRuntime {
             }
 
             // The first digit is the type
-            return $"[0x{((int) refType+idx):X}]";
+            return $"[0x{((int) refType+idx):x}]";
         }
 
         public DreamValue LocateRef(string refString) {

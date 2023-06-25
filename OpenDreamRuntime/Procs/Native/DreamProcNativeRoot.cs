@@ -2429,7 +2429,12 @@ namespace OpenDreamRuntime.Procs.Native {
             if (name != DreamValue.Null) {
                 connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
             } else {
-                connection.AddStatPanelLine(value.Stringify());
+                if (value.TryGetValueAsDreamList(out var list)) {
+                    foreach (var item in list.GetValues())
+                        connection.AddStatPanelLine(item.Stringify());
+                } else {
+                    connection.AddStatPanelLine(value.Stringify());
+                }
             }
         }
 

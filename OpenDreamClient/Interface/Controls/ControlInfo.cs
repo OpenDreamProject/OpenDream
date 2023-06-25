@@ -42,10 +42,15 @@ namespace OpenDreamClient.Interface.Controls {
             text.PushColor(Color.Black);
             text.PushTag(new MarkupNode("font_od", null, null)); // Use the default font and font size
             foreach (string line in lines) {
+                // TODO: Tabs should align with each other.
+                //       Probably should be done by RT, but it just ignores them currently.
+                var lineText = line.Replace("\t", "    ");
+
                 if (_owner.InfoDescriptor.AllowHtml) {
-                    HtmlParser.Parse(line, text);
+                    // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
+                    HtmlParser.Parse(lineText, text);
                 } else {
-                    text.AddText(line);
+                    text.AddText(lineText);
                 }
 
                 text.PushNewline();

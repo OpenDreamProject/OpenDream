@@ -136,10 +136,6 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
-            VisitIdentifier(identifier.Identifier);
-        }
-
         public void VisitVarDeclExpression(DMASTVarDeclExpression declExpr) {
             VisitIdentifier( new DMASTIdentifier(declExpr.Location, declExpr.DeclPath.Path.LastElement) );
         }
@@ -476,6 +472,7 @@ namespace DMCompiler.DM.Visitors {
             static bool IsFuzzy(DMExpression expr) {
                 switch (expr) {
                     case ProcCall when expr.Path == null:
+                    case New when expr.Path == null:
                     case List:
                     case Ternary:
                     case BinaryAnd:

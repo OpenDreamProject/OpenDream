@@ -37,6 +37,9 @@ public sealed class DreamObjectClient : DreamObject {
             case "mob":
                 value = new(Connection.Mob);
                 return true;
+            case "eye":
+                value = new(Connection.Eye);
+                return true;
             case "computer_id": // FIXME: This is not secure! Whenever RT implements a more robust (heh) method of uniquely identifying computers, replace this impl with that.
                 MD5 md5 = MD5.Create();
                 // Check on Robust.Shared.Network.NetUserData.HWId" if you want to seed from how RT does user identification.
@@ -82,6 +85,15 @@ public sealed class DreamObjectClient : DreamObject {
                 value.TryGetValueAsDreamObject<DreamObjectMob>(out var newMob);
 
                 Connection.Mob = newMob;
+                break;
+            }
+            case "eye": {
+                value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
+                if (newEye is not (DreamObjectMovable or null)) {
+                    throw new Exception($"Cannot set eye to non-movable {value}"); // TODO: You can set it to a turf
+                }
+
+                Connection.Eye = newEye as DreamObjectMovable;
                 break;
             }
             case "screen": {

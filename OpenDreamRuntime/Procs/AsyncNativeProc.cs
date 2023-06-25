@@ -191,8 +191,8 @@ namespace OpenDreamRuntime.Procs {
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
-        public AsyncNativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, IDreamManager dreamManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
-            : base(owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
+        public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, IDreamManager dreamManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
+            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
 

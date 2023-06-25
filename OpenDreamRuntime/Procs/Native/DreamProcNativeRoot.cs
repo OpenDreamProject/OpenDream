@@ -1643,25 +1643,29 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_oview(NativeProc.State state) {
+            DreamList view = state.ObjectTree.CreateList();
+
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new(view);
 
-            DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
-            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-                if(!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+            var eyePos = state.AtomManager.GetAtomPosition(center);
+            var viewData = DreamProcNativeHelpers.CollectViewData(state.AtomManager, state.MapManager, eyePos, range);
+
+            ViewAlgorithm.CalculateVisibility(viewData);
+
+            foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, false)) {
+                if (tile == null || tile.IsVisible == false)
                     continue;
-                }
-                view.AddValue(new DreamValue(turf));
-                foreach (DreamValue content in turf.Contents.GetValues()) {
-                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
-                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                            continue;
-                        }
-                    }
-                    view.AddValue(content);
+                if (!state.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
+                    continue;
+
+                view.AddValue(new(cell.Turf!));
+                foreach (var movable in cell.Movables) {
+                    view.AddValue(new(movable));
                 }
             }
+
             return new DreamValue(view);
         }
 
@@ -2851,49 +2855,30 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("view")]
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_view(NativeProc.State state) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_view(NativeProc.State state) {
+            DreamList view = state.ObjectTree.CreateList();
+
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
-            DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
-            //Have to include centre
-            if(DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, center, center)) // NOTE: I think this is always true, but I'm not 100% sure.
-                view.AddValue(new DreamValue(center));
-            if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-                foreach (DreamValue content in centerContentsList.GetValues()) {
-                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
-                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                            continue;
-                        }
-                    }
-                    view.AddValue(content);
-                }
-            }
-            if (center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
-                if (center.TryGetVariable("loc", out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out var centerLocObject)) {
-                    view.AddValue(centerLoc);
-                    if (centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
-                        foreach (DreamValue content in locContentsList.GetValues()) {
-                            view.AddValue(content);
-                        }
-                    }
-                }
-            }
-            //and then everything else
-            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-                if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+                return new(view);
+
+            var eyePos = state.AtomManager.GetAtomPosition(center);
+            var viewData = DreamProcNativeHelpers.CollectViewData(state.AtomManager, state.MapManager, eyePos, range);
+
+            ViewAlgorithm.CalculateVisibility(viewData);
+
+            foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, true)) {
+                if (tile == null || tile.IsVisible == false)
                     continue;
-                }
-                view.AddValue(new DreamValue(turf));
-                foreach (DreamValue content in turf.Contents.GetValues()) {
-                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
-                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                            continue;
-                        }
-                    }
-                    view.AddValue(content);
+                if (!state.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
+                    continue;
+
+                view.AddValue(new(cell.Turf!));
+                foreach (var movable in cell.Movables) {
+                    view.AddValue(new(movable));
                 }
             }
+
             return new DreamValue(view);
         }
 

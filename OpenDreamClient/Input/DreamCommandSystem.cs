@@ -20,7 +20,7 @@ namespace OpenDreamClient.Input {
                     break;
 
                 case ".configure":
-                    Logger.WarningS("opendream.commands", ".configure command is not implemented");
+                    Log.Warning(".configure command is not implemented");
                     break;
 
                 case ".winset":

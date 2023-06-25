@@ -19,7 +19,7 @@ namespace OpenDreamClient.Interface.Prompts {
 
         protected override void OkButtonClicked() {
             if (!float.TryParse(_numberInput.Text, out float num)) {
-                Logger.Error($"Error while trying to convert {_numberInput.Text} to a number.");
+                Logger.GetSawmill("opendream.prompt").Error($"Error while trying to convert {_numberInput.Text} to a number.");
             }
 
             FinishPrompt(DMValueType.Num, num);

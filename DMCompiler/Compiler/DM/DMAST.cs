@@ -518,6 +518,14 @@ namespace DMCompiler.Compiler.DM {
         public virtual IEnumerable<DMASTExpression> Leaves() {
             yield break;
         }
+
+        /// <summary>
+        /// If this is a <see cref="DMASTExpressionWrapped"/>, returns the expression inside.
+        /// Returns this expression if not.
+        /// </summary>
+        public virtual DMASTExpression GetUnwrapped() {
+            return this;
+        }
     }
 
     public abstract class DMASTExpressionConstant : DMASTExpression {
@@ -2316,6 +2324,10 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    /// <summary>
+    /// An expression wrapped around parentheses
+    /// <code>(1 + 1)</code>
+    /// </summary>
     public sealed class DMASTExpressionWrapped : DMASTExpression {
         public DMASTExpression Expression;
 
@@ -2325,6 +2337,14 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             Expression.Visit(visitor);
+        }
+
+        public override DMASTExpression GetUnwrapped() {
+            DMASTExpression expr = Expression;
+            while (expr is DMASTExpressionWrapped wrapped)
+                expr = wrapped.Expression;
+
+            return expr;
         }
     }
 

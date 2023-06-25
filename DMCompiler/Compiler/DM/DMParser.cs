@@ -635,7 +635,7 @@ namespace DMCompiler.Compiler.DM {
                     case DMASTLeftShift leftShift: {
                         // A left shift on its own becomes a special "output" statement
                         // Or something else depending on what's on the right ( browse(), browse_rsc(), output(), etc )
-                        if (leftShift.B is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
+                        if (leftShift.B.GetUnwrapped() is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
                             switch (identifier.Identifier) {
                                 case "browse": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)

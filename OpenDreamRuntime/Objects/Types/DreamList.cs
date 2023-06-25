@@ -313,9 +313,13 @@ namespace OpenDreamRuntime.Objects.Types {
         public override DreamValue OperatorCombine(DreamValue b) {
             if (b.TryGetValueAsDreamList(out var bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
-                    if (!ContainsValue(value)) {
+                    if (ContainsValue(value))
+                        continue;
+
+                    if (bList._associativeValues?.TryGetValue(value, out var associatedValue) is true)
+                        SetValue(value, associatedValue);
+                    else
                         AddValue(value);
-                    }
                 }
             } else if (!ContainsValue(b)) {
                 AddValue(b);

@@ -123,7 +123,10 @@ public sealed class DreamObjectClient : DreamObject {
                 break;
             }
             case "statpanel":
-                //connection.SelectedStatPanel = variableValue.GetValueAsString();
+                if (!value.TryGetValueAsString(out var statPanel))
+                    return;
+
+                Connection.SelectedStatPanel = statPanel;
                 break;
             default:
                 base.SetVar(varName, value);

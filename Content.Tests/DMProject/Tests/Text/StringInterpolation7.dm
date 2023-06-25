@@ -19,7 +19,12 @@
 	ASSERT(text == "the fitness 1st is a")
 	text = "the fitness [99999999]\th is a"
 	ASSERT(text == "the fitness 100000000th is a")
-	// TODO: this should assert/eval to 0th
 	text = "[null]\th"
-	ASSERT(findtextEx(text,"th") != 0)
+	ASSERT(text == "0th")
+	var/datum/D = new
+	text = "[D]\th"
+	ASSERT(text == "0th")
+	var/foo = "bar"
+	text = "[foo]\th"
+	ASSERT(text == "0th")
 

@@ -1,5 +1,6 @@
 ﻿using OpenDreamShared.Dream;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
@@ -14,11 +15,13 @@ namespace OpenDreamClient.Rendering {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
+        [Dependency] private readonly TransformSystem _transformSystem = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
             SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
             SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
+            SubscribeLocalEvent<DMISpriteComponent, WorldAABBEvent>(OnWorldAABB);
         }
 
         public override void Shutdown() {
@@ -75,6 +78,10 @@ namespace OpenDreamClient.Rendering {
             LoadAppearance(e.TargetAppearanceId, targetAppearance => {
                 sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration);
             });
+        }
+
+        private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
+            comp.GetAABB(_transformSystem, ref e);
         }
 
         public void ResetFilterUsageFlags() {

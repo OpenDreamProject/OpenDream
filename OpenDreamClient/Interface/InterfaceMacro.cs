@@ -154,7 +154,7 @@ struct ParsedKeybind {
         {"ALT", Keyboard.Key.Alt},
     };
 
-    private static Dictionary<Key, String> keyToKeyName;
+    private static Dictionary<Key, string>? keyToKeyName;
 
     public static Key KeyNameToKey(string key) {
         if (keyNameToKey.TryGetValue(key, out Key result)) {
@@ -164,8 +164,7 @@ struct ParsedKeybind {
         }
     }
 
-    [CanBeNull]
-    public static string KeyToKeyName(Key key) {
+    public static string? KeyToKeyName(Key key) {
         if (keyToKeyName == null) {
             keyToKeyName = new Dictionary<Key, string>();
             foreach (KeyValuePair<string, Key> entry in keyNameToKey) {
@@ -173,7 +172,7 @@ struct ParsedKeybind {
             }
         }
 
-        if (keyToKeyName.TryGetValue(key, out string result)) {
+        if (keyToKeyName.TryGetValue(key, out var result)) {
             return result;
         } else {
             return null;
@@ -247,11 +246,11 @@ public sealed class InterfaceMacro : InterfaceElement {
 
         BoundKeyFunction function = new BoundKeyFunction($"{contextName}_{Id}");
         ParsedKeybind parsedKeybind;
-        
+
         try {
             parsedKeybind = ParsedKeybind.Parse(Name);
         } catch (Exception e) {
-            Logger.Warning($"Invalid keybind for macro {Id}: {e.Message}");
+            Logger.GetSawmill("opendream.macro").Warning($"Invalid keybind for macro {Id}: {e.Message}");
             return;
         }
 
@@ -274,12 +273,12 @@ public sealed class InterfaceMacro : InterfaceElement {
 
         if (binding == null)
             return;
-        
+
         inputContext.AddFunction(function);
         inputManager.RegisterBinding(in binding);
         inputManager.SetInputCommand(function, InputCmdHandler.FromDelegate(OnMacroPress, OnMacroRelease, outsidePrediction: false));
     }
-    
+
     private void FirstChanceKeyHandler(KeyEventArgs args, KeyEventType type) {
         if (_inputManager.Contexts.ActiveContext != _inputContext) // don't trigger macro if we're not in the right context / macro set
             return;
@@ -292,11 +291,11 @@ public sealed class InterfaceMacro : InterfaceElement {
         if (_uiManager.KeyboardFocused != null) {
             // don't trigger  macros if we're typing somewhere
             // Ideally this would be way more robust and would instead go through the RT keybind pipeline, most importantly passing through control.KeyBindDown.
-            // However, currently it all seems to be internal, protected or protected internal so no luck. 
+            // However, currently it all seems to be internal, protected or protected internal so no luck.
             return;
         }
-        
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
             string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
             if (keyName == null)
                 return;
@@ -312,7 +311,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         if (_isRelease)
             return;
 
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
             if (_isRepeating) {
                 commandSystem.StartRepeatingCommand(Command);
             } else {
@@ -334,9 +333,9 @@ public sealed class InterfaceMacro : InterfaceElement {
         }
     }
 
-    private static KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {
+    private static KeyBindingRegistration? CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {
         if (keybind.Key == null) {
-            Logger.Warning($"Invalid keybind: {keybind}");
+            Logger.GetSawmill("opendream.macro").Warning($"Invalid keybind: {keybind}");
             return null;
         }
 

@@ -19,6 +19,7 @@ namespace OpenDreamClient {
     public sealed class EntryPoint : GameClient {
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
+        [Dependency] private readonly IDreamSoundEngine _soundEngine = default!;
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly ILightManager _lightManager = default!;
 
@@ -61,13 +62,15 @@ namespace OpenDreamClient {
             IoCManager.Resolve<ILocalizationManager>().LoadCulture(new CultureInfo("en-US"));
 
             IoCManager.Resolve<IClyde>().SetWindowTitle("OpenDream");
-            IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
         }
 
         public override void PostInit() {
             _lightManager.Enabled = false;
 
             _overlayManager.AddOverlay(new DreamViewOverlay());
+
+            // In PostInit() since the engine stylesheet gets set in Init()
+            IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
 
             _dreamInterface.Initialize();
             IoCManager.Resolve<IDreamSoundEngine>().Initialize();
@@ -78,8 +81,13 @@ namespace OpenDreamClient {
         }
 
         public override void Update(ModUpdateLevel level, FrameEventArgs frameEventArgs) {
-            if (level == ModUpdateLevel.FramePostEngine) {
-                _dreamInterface.FrameUpdate(frameEventArgs);
+            switch (level) {
+                case ModUpdateLevel.FramePostEngine:
+                    _dreamInterface.FrameUpdate(frameEventArgs);
+                    break;
+                case ModUpdateLevel.PostEngine:
+                    _soundEngine.StopFinishedChannels();
+                    break;
             }
         }
 

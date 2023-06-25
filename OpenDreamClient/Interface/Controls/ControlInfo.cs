@@ -1,10 +1,11 @@
-using System.Text;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.Html;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Network;
+using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls {
     [Virtual]
@@ -18,28 +19,46 @@ namespace OpenDreamClient.Interface.Controls {
     }
 
     public sealed class StatPanel : InfoPanel {
-        private readonly Label _textBlock;
+        private readonly ControlInfo _owner;
+        private readonly RichTextLabel _textBlock;
 
-        public StatPanel(string name) : base(name) {
-            _textBlock = new Label() {
-                HorizontalAlignment = HAlignment.Stretch, VerticalAlignment = VAlignment.Stretch,
-                // FontFamily = new FontFamily("Courier New")
+        public StatPanel(ControlInfo owner, string name) : base(name) {
+            _owner = owner;
+            _textBlock = new RichTextLabel() {
+                HorizontalAlignment = HAlignment.Stretch,
+                VerticalAlignment = VAlignment.Stretch
             };
 
             var scrollViewer = new ScrollContainer() {
+                HScrollEnabled = false,
                 Children = { _textBlock }
             };
             AddChild(scrollViewer);
         }
 
         public void UpdateLines(List<string> lines) {
-            StringBuilder text = new StringBuilder();
+            FormattedMessage text = new();
 
+            text.PushColor(Color.Black);
+            text.PushTag(new MarkupNode("font", null, null)); // Use the default font and font size
             foreach (string line in lines) {
-                text.Append(line + Environment.NewLine);
-            }
+                // TODO: Tabs should align with each other.
+                //       Probably should be done by RT, but it just ignores them currently.
+                var lineText = line.Replace("\t", "    ");
 
-            _textBlock.Text = text.ToString();
+                if (_owner.InfoDescriptor.AllowHtml) {
+                    // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
+                    HtmlParser.Parse(lineText, text);
+                } else {
+                    text.AddText(lineText);
+                }
+
+                text.PushNewline();
+            }
+            text.Pop();
+            text.Pop();
+
+            _textBlock.SetMessage(text);
         }
     }
 
@@ -77,6 +96,8 @@ namespace OpenDreamClient.Interface.Controls {
     }
 
     public sealed class ControlInfo : InterfaceControl {
+        public ControlDescriptorInfo InfoDescriptor => (ControlDescriptorInfo)ControlDescriptor;
+
         [Dependency] private readonly IClientNetManager _netManager = default!;
 
         private TabContainer _tabControl;
@@ -90,10 +111,7 @@ namespace OpenDreamClient.Interface.Controls {
         }
 
         protected override Control CreateUIElement() {
-            _tabControl = new TabContainer() {
-                /*BorderBrush = Brushes.Black,
-                BorderThickness = new Thickness(1)*/
-            };
+            _tabControl = new TabContainer();
             _tabControl.OnTabChanged += OnSelectionChanged;
 
             RefreshVerbs();
@@ -153,7 +171,7 @@ namespace OpenDreamClient.Interface.Controls {
         }
 
         public StatPanel CreateStatPanel(string name) {
-            var panel = new StatPanel(name);
+            var panel = new StatPanel(this, name);
             panel.Margin = new Thickness(20, 2);
             _statPanels.Add(name, panel);
             SortPanels();

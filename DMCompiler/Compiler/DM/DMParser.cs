@@ -244,6 +244,8 @@ namespace DMCompiler.Compiler.DM {
                         }
                     }
                     if(path.IsOperator) {
+                        DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
+
                         List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                         Location tokenLoc = procBlock.Location;
                         //add ". = src" as the first expression in the operator
@@ -2055,10 +2057,8 @@ namespace DMCompiler.Compiler.DM {
 
                 if (inner is null) {
                     inner = new DMASTVoid(token.Location);
-                }
-
-                if (inner is DMASTIdentifier identifier) {
-                    inner = new DMASTIdentifierWrapped(identifier.Location, identifier);
+                } else {
+                    inner = new DMASTExpressionWrapped(inner.Location, inner);
                 }
 
                 return inner;

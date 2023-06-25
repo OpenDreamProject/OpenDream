@@ -40,7 +40,7 @@ namespace OpenDreamClient.Interface.Controls {
             FormattedMessage text = new();
 
             text.PushColor(Color.Black);
-            text.PushTag(new MarkupNode("font_od", null, null)); // Use the default font and font size
+            text.PushTag(new MarkupNode("font", null, null)); // Use the default font and font size
             foreach (string line in lines) {
                 // TODO: Tabs should align with each other.
                 //       Probably should be done by RT, but it just ignores them currently.

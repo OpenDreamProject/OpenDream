@@ -16,7 +16,7 @@ public sealed class TagFont : IMarkupTag {
     [Dependency] private readonly IResourceCache _resourceCache = default!;
     [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
 
-    public string Name => "font_od";
+    public string Name => "font"; // Overrides RobustToolbox's font tag
 
     public void PushDrawContext(MarkupNode node, MarkupDrawingContext context) {
         var font = CreateFont(context.Font, node, _resourceCache, _prototypeManager);

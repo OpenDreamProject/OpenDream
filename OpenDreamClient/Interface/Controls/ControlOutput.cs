@@ -29,7 +29,7 @@ namespace OpenDreamClient.Interface.Controls {
             var msg = new FormattedMessage(2);
 
             msg.PushColor(Color.Black);
-            msg.PushTag(new MarkupNode("font_od", null, null)); // Use the default font and font size
+            msg.PushTag(new MarkupNode("font", null, null)); // Use the default font and font size
             // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
             HtmlParser.Parse(value.Replace("\t", "    "), msg);
             msg.Pop();

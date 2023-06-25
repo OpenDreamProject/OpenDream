@@ -74,9 +74,6 @@ public static class HtmlParser {
                     } else {
                         tags.Push(tagType);
 
-                        if (tagType == "font") // RT has its own "font" tag so we instead use "font_od"
-                            tagType = "font_od";
-
                         appendTo.PushTag(new MarkupNode(tagType, null, ParseAttributes(attributes)), selfClosing: attributes[^1] == "/");
                     }
 

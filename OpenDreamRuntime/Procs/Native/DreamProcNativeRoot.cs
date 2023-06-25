@@ -2430,7 +2430,12 @@ namespace OpenDreamRuntime.Procs.Native {
                 // TODO: The value should be displayed in its own grid column rather than after a tab
                 connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
             } else {
-                connection.AddStatPanelLine(value.Stringify());
+                if (value.TryGetValueAsDreamList(out var list)) {
+                    foreach (var item in list.GetValues())
+                        connection.AddStatPanelLine(item.Stringify());
+                } else {
+                    connection.AddStatPanelLine(value.Stringify());
+                }
             }
         }
 

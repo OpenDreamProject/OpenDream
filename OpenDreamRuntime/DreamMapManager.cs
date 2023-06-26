@@ -28,6 +28,8 @@ namespace OpenDreamRuntime {
         private readonly List<Level> _levels = new();
         private readonly Dictionary<MapObjectJson, DreamObjectArea> _areas = new();
 
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.map");
+
         // Set in Initialize
         private MapObjectJson _defaultArea = default!;
         private IDreamObjectTree.TreeEntry _defaultTurf = default!;
@@ -154,7 +156,7 @@ namespace OpenDreamRuntime {
             uint appearanceId = _appearanceSystem.AddAppearance(appearance);
             if (appearanceId > ushort.MaxValue - 1) {
                 // TODO: Maybe separate appearance IDs and turf IDs to prevent this possibility
-                Logger.Error($"Failed to set turf's appearance at ({turf.X}, {turf.Y}) because its appearance ID was greater than {ushort.MaxValue - 1}");
+                _sawmill.Error($"Failed to set turf's appearance at ({turf.X}, {turf.Y}) because its appearance ID was greater than {ushort.MaxValue - 1}");
                 return;
             }
 
@@ -336,7 +338,7 @@ namespace OpenDreamRuntime {
         public sealed class Cell {
             public DreamObjectTurf? Turf;
             public DreamObjectArea Area;
-            public readonly List<DreamObject> Movables = new();
+            public readonly List<DreamObjectMovable> Movables = new();
 
             public Cell(DreamObjectArea area) {
                 Area = area;

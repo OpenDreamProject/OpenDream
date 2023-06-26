@@ -11,6 +11,7 @@ namespace OpenDreamShared.Input;
 public class SharedMouseInputSystem : EntitySystem {
     protected interface IAtomClickedEvent {
         public ScreenLocation ScreenLoc { get; }
+        public bool Middle { get; }
         public bool Shift { get; }
         public bool Ctrl { get; }
         public bool Alt { get; }
@@ -22,15 +23,17 @@ public class SharedMouseInputSystem : EntitySystem {
     public sealed class EntityClickedEvent : EntityEventArgs, IAtomClickedEvent {
         public EntityUid EntityUid { get; }
         public ScreenLocation ScreenLoc { get; }
+        public bool Middle { get; }
         public bool Shift { get; }
         public bool Ctrl { get; }
         public bool Alt { get; }
         public int IconX { get; }
         public int IconY { get; }
 
-        public EntityClickedEvent(EntityUid entityUid, ScreenLocation screenLoc, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
+        public EntityClickedEvent(EntityUid entityUid, ScreenLocation screenLoc, bool middle, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
             EntityUid = entityUid;
             ScreenLoc = screenLoc;
+            Middle = middle;
             Shift = shift;
             Ctrl = ctrl;
             Alt = alt;
@@ -44,16 +47,18 @@ public class SharedMouseInputSystem : EntitySystem {
         public Vector2i Position;
         public ScreenLocation ScreenLoc { get; }
         public int Z;
+        public bool Middle { get; }
         public bool Shift { get; }
         public bool Ctrl { get; }
         public bool Alt { get; }
         public int IconX { get; }
         public int IconY { get; }
 
-        public TurfClickedEvent(Vector2i position, int z, ScreenLocation screenLoc, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
+        public TurfClickedEvent(Vector2i position, int z, ScreenLocation screenLoc, bool middle, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
             Position = position;
             Z = z;
             ScreenLoc = screenLoc;
+            Middle = middle;
             Shift = shift;
             Ctrl = ctrl;
             Alt = alt;

@@ -128,6 +128,8 @@ public sealed class ControlDescriptorOutput : ControlDescriptor {
 }
 
 public sealed class ControlDescriptorInfo : ControlDescriptor {
+    [DataField("allow-html")]
+    public bool AllowHtml = true; // Supposedly false by default, but it isn't if you're not using BYOND's default skin
 }
 
 public sealed class ControlDescriptorMap : ControlDescriptor {

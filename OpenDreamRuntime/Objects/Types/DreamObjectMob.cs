@@ -9,9 +9,17 @@ public sealed class DreamObjectMob : DreamObjectMovable {
 
     public int SeeInvisible {
         get => _sightComponent.SeeInvisibility;
-        set {
+        private set {
             _sightComponent.SeeInvisibility = (sbyte)value;
-            _sightComponent.Dirty();
+            EntityManager.Dirty(_sightComponent);
+        }
+    }
+
+    public SightFlags Sight {
+        get => _sightComponent.Sight;
+        private set {
+            _sightComponent.Sight = value;
+            EntityManager.Dirty(_sightComponent);
         }
     }
 
@@ -21,7 +29,10 @@ public sealed class DreamObjectMob : DreamObjectMovable {
         _sightComponent = EntityManager.AddComponent<DreamMobSightComponent>(Entity);
 
         objectDefinition.Variables["see_invisible"].TryGetValueAsInteger(out var seeVis);
+        objectDefinition.Variables["sight"].TryGetValueAsInteger(out var sight);
+
         SeeInvisible = seeVis;
+        Sight = (SightFlags)sight;
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -37,6 +48,9 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                 return true;
             case "see_invisible":
                 value = new(SeeInvisible);
+                return true;
+            case "sight":
+                value = new((int)Sight);
                 return true;
             default:
                 return base.TryGetVar(varName, out value);
@@ -88,6 +102,11 @@ public sealed class DreamObjectMob : DreamObjectMovable {
                 value.TryGetValueAsInteger(out int seeVis);
 
                 SeeInvisible = seeVis;
+                break;
+            case "sight":
+                value.TryGetValueAsInteger(out int sight);
+
+                Sight = (SightFlags)sight;
                 break;
             default:
                 base.SetVar(varName, value);

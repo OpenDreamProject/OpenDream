@@ -13,16 +13,20 @@ namespace OpenDreamClient.Rendering;
 /// <summary>
 /// Overlay for rendering world atoms
 /// </summary>
-sealed class DreamViewOverlay : Overlay {
+internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly ProfManager _prof = default!;
+
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
+
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
     private EntityQuery<DreamMobSightComponent> mobSightQuery;
+
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
@@ -50,7 +54,7 @@ sealed class DreamViewOverlay : Overlay {
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
-        Logger.Debug("Loading shaders...");
+        _sawmill.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
@@ -87,7 +91,7 @@ sealed class DreamViewOverlay : Overlay {
         try {
             DrawAll(args, eye.Value);
         } catch (Exception e) {
-            Logger.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
+            _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
 
         //store our mouse map's image and return the render target
@@ -119,7 +123,7 @@ sealed class DreamViewOverlay : Overlay {
 
         Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
 
-        _mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid);
+        _mapManager.TryFindGridAt(eyeTransform.MapPosition, out _, out var grid);
 
         HashSet<EntityUid> entities;
         using (_prof.Group("lookup")) {
@@ -130,10 +134,9 @@ sealed class DreamViewOverlay : Overlay {
 
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
-        int seeVis = 127;
-        if(mobSightQuery.TryGetComponent(eye, out var mobSight)){
-            seeVis = mobSight.SeeInvisibility;
-        }
+        mobSightQuery.TryGetComponent(eye, out var mobSight);
+        int seeVis = mobSight?.SeeInvisibility ?? 127;
+        SightFlags sight = mobSight?.Sight ?? 0;
 
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
@@ -176,6 +179,8 @@ sealed class DreamViewOverlay : Overlay {
                         continue;
                     if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
                         continue;
+                    if(sprite.Icon.Appearance == null) //apearance hasn't loaded yet
+                        continue;
 
                     var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
                     var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
@@ -191,7 +196,9 @@ sealed class DreamViewOverlay : Overlay {
 
                 // Collect visible turf sprites
                 foreach (var tile in tiles) {
-                    if (tile?.IsVisible is not true)
+                    if (tile == null)
+                        continue;
+                    if (tile.IsVisible == false && (sight & SightFlags.SeeTurfs) == 0)
                         continue;
 
                     Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
@@ -217,13 +224,18 @@ sealed class DreamViewOverlay : Overlay {
                         continue;
 
                     var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
-                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
-                        continue;
 
-                    var tile = tiles[tilePos.X, tilePos.Y];
-                    if (tile?.IsVisible is not true)
-                        continue;
+                    // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
+                    // TODO: Differentiate between objs and mobs
+                    if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0) {
+                        var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
+                        if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                            continue;
+
+                        var tile = tiles[tilePos.X, tilePos.Y];
+                        if (tile?.IsVisible is not true)
+                            continue;
+                    }
 
                     sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, sprite.Owner, false));
                 }

@@ -107,8 +107,8 @@ namespace OpenDreamRuntime.Procs {
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly HandlerFn _handler;
 
-        public NativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
-            : base(owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
+        public NativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
+            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _handler = handler;
 

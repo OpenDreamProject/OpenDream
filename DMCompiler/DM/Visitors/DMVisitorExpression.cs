@@ -136,10 +136,6 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
-            VisitIdentifier(identifier.Identifier);
-        }
-
         public void VisitVarDeclExpression(DMASTVarDeclExpression declExpr) {
             VisitIdentifier( new DMASTIdentifier(declExpr.Location, declExpr.DeclPath.Path.LastElement) );
         }
@@ -513,7 +509,7 @@ namespace DMCompiler.DM.Visitors {
 
                     var globalId = _dmObject.GetGlobalVariableId(firstOperation.Identifier.Identifier);
                     if (globalId == null) {
-                        throw new CompileErrorException(deref.Location, $"Invalid property global.{firstOperation.Identifier.Identifier}");
+                        throw new UnknownIdentifierException(deref.Location, $"global.{firstOperation.Identifier.Identifier}");
                     }
 
                     var property = DMObjectTree.Globals[globalId.Value];
@@ -587,7 +583,7 @@ namespace DMCompiler.DM.Visitors {
                             string field = astOperation.Identifier.Identifier;
 
                             if (prevPath == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\"");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             DMObject dmObject = DMObjectTree.GetDMObject(prevPath.Value, false);
@@ -620,7 +616,7 @@ namespace DMCompiler.DM.Visitors {
                             }
 
                             if (property == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\" on type {prevPath}");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
@@ -657,7 +653,7 @@ namespace DMCompiler.DM.Visitors {
                             ArgumentList argumentList = new(deref.Expression.Location, _dmObject, _proc, astOperation.Parameters, null);
 
                             if (prevPath == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\"");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             DMObject dmObject = DMObjectTree.GetDMObject(prevPath.Value, false);

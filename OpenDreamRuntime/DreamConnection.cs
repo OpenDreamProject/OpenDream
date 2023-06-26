@@ -7,9 +7,9 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using DMShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
+using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime {
     public sealed class DreamConnection {
@@ -19,6 +19,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
+        private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
         [ViewVariables] private readonly Dictionary<string, List<string>> _statPanels = new();
@@ -36,6 +37,10 @@ namespace OpenDreamRuntime {
                         _mob.Connection = null;
                     }
 
+                    if (Eye != null && Eye == Mob) {
+                        Eye = value;
+                    }
+
                     if (value != null) {
                         // If the mob is already owned by another player, kick them out
                         if (value.Connection != null)
@@ -51,11 +56,19 @@ namespace OpenDreamRuntime {
 
                     UpdateAvailableVerbs();
                 }
+            }
+        }
 
-                if (_mob != null) {
-                    Session!.AttachToEntity(_mob.Entity);
+        [ViewVariables]
+        public DreamObjectMovable? Eye {
+            get => _eye;
+            set {
+                _eye = value;
+
+                if (_eye != null) {
+                    _actorSystem?.Attach(_eye.Entity, Session!);
                 } else {
-                    Session!.DetachFromEntity();
+                    _actorSystem?.Detach(Session!);
                 }
             }
         }
@@ -66,6 +79,9 @@ namespace OpenDreamRuntime {
         [ViewVariables] private int _nextPromptEvent = 1;
 
         private DreamObjectMob? _mob;
+        private DreamObjectMovable? _eye;
+
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 
         public string SelectedStatPanel {
             get => _selectedStatPanel;
@@ -81,6 +97,7 @@ namespace OpenDreamRuntime {
             IoCManager.InjectDependencies(this);
 
             _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
+            _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
         public void HandleConnection(IPlayerSession session) {
@@ -123,7 +140,7 @@ namespace OpenDreamRuntime {
                     if (_availableVerbs.ContainsKey(verbId)) {
                         // BYOND will actually show the user two verbs with different capitalization/dashes, but they will both execute the same verb.
                         // We make a warning and ignore the latter ones instead.
-                        Logger.Warning($"User \"{Session.Name}\" has multiple verb commands named \"{verbId}\", ignoring all but the first");
+                        _sawmill.Warning($"User \"{Session.Name}\" has multiple verb commands named \"{verbId}\", ignoring all but the first");
                         continue;
                     }
 
@@ -210,7 +227,7 @@ namespace OpenDreamRuntime {
 
         public void HandleMsgPromptResponse(MsgPromptResponse message) {
             if (!_promptEvents.TryGetValue(message.PromptId, out var promptEvent)) {
-                Logger.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
+                _sawmill.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
                 return;
             }
 
@@ -326,7 +343,7 @@ namespace OpenDreamRuntime {
                                         if (argumentType == DMValueType.Text) {
                                             arguments[i] = new(args[i+1]);
                                         } else {
-                                            Logger.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
+                                            _sawmill.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
                                             return DreamValue.Null;
                                         }
                                     }

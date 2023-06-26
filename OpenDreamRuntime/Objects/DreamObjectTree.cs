@@ -66,7 +66,7 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings ?? new();
 
             if (json.GlobalInitProc is { } initProcDef) {
-                GlobalInitProc = new DMProc(DreamPath.Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
+                GlobalInitProc = new DMProc(0, DreamPath.Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
             } else {
                 GlobalInitProc = null;
             }
@@ -362,9 +362,9 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public DreamProc LoadProcJson(DreamTypeJson[] types, ProcDefinitionJson procDefinition) {
+        public DreamProc LoadProcJson(int id, DreamTypeJson[] types, ProcDefinitionJson procDefinition) {
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
-            return new DMProc(owningType, procDefinition, null, _dreamManager,
+            return new DMProc(id, owningType, procDefinition, null, _dreamManager,
                 _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
         }
 
@@ -374,7 +374,7 @@ namespace OpenDreamRuntime.Objects {
                 Procs.EnsureCapacity(jsonProcs.Length);
 
                 foreach (var proc in jsonProcs) {
-                    Procs.Add(LoadProcJson(types, proc));
+                    Procs.Add(LoadProcJson(Procs.Count, types, proc));
                 }
             }
 
@@ -389,46 +389,46 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func, out int procId) {
+        public NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
-            procId = Procs.Count;
+            var proc = new NativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
+
             Procs.Add(proc);
             return proc;
         }
 
-        public AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func, out int procId) {
+        public AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
-            procId = Procs.Count;
+            var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
+
             Procs.Add(proc);
             return proc;
         }
 
         public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
+            var proc = new NativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
 
-            Procs[_globalProcIds[name]] = proc;
+            Procs[proc.Id] = proc;
         }
 
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
+            var proc = new AsyncNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
 
-            Procs[_globalProcIds[name]] = proc;
+            Procs[proc.Id] = proc;
         }
 
         public void SetNativeProc(TreeEntry type, NativeProc.HandlerFn func) {
-            var proc = CreateNativeProc(type.Path, func, out var procId);
+            var proc = CreateNativeProc(type.Path, func);
 
-            type.ObjectDefinition.SetProcDefinition(proc.Name, procId);
+            type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
         }
 
         public void SetNativeProc(TreeEntry type, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
-            var proc = CreateAsyncNativeProc(type.Path, func, out var procId);
+            var proc = CreateAsyncNativeProc(type.Path, func);
 
-            type.ObjectDefinition.SetProcDefinition(proc.Name, procId);
+            type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
         }
 
         /// <summary>

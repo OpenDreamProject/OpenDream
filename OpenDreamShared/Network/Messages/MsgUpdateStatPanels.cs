@@ -8,9 +8,9 @@ namespace OpenDreamShared.Network.Messages {
     public sealed class MsgUpdateStatPanels : NetMessage {
         public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
-        public readonly Dictionary<string, List<string>> StatPanels;
+        public readonly Dictionary<string, List<(string Name, string Value)>> StatPanels;
 
-        public MsgUpdateStatPanels(Dictionary<string, List<string>> statPanels) {
+        public MsgUpdateStatPanels(Dictionary<string, List<(string, string)>> statPanels) {
             StatPanels = statPanels;
         }
 
@@ -26,10 +26,12 @@ namespace OpenDreamShared.Network.Messages {
             for (var i = 0; i < countTabs; i++) {
                 var title = buffer.ReadString();
                 var countLines = buffer.ReadVariableInt32();
-                var lines = new List<string>(countLines);
+                var lines = new List<(string, string)>(countLines);
 
                 for (var l = 0; l < countLines; l++) {
-                    lines.Add(buffer.ReadString());
+                    var value = (buffer.ReadString(), buffer.ReadString());
+
+                    lines.Add(value);
                 }
 
                 StatPanels.Add(title, lines);
@@ -43,7 +45,8 @@ namespace OpenDreamShared.Network.Messages {
                 buffer.WriteVariableInt32(lines.Count);
 
                 foreach (var line in lines) {
-                    buffer.Write(line);
+                    buffer.Write(line.Name);
+                    buffer.Write(line.Value);
                 }
             }
         }

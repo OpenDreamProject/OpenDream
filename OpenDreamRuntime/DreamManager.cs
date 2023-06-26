@@ -37,7 +37,7 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
-        public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
+        public List<string> GlobalNames { get; private set; } = new List<string>();
         public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
         public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
@@ -135,8 +135,7 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            // The first global is always `world`.
-            Globals[0] = new DreamValue(WorldInstance);
+            Globals[GlobalNames.IndexOf("world")] = new DreamValue(WorldInstance);
 
             // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
             _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps[0]);

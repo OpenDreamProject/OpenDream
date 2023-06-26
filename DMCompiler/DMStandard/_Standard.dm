@@ -1,5 +1,3 @@
-//The first global in the runtime is always `world`
-//So keep this at the top
 /var/world/world = null
 
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs

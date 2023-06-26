@@ -196,31 +196,26 @@ namespace DMCompiler.DM {
         }
 
         public void WaitFor(bool waitFor) {
-            if (waitFor)
-            {
+            if (waitFor) {
                 // "waitfor" is true by default
                 Attributes &= ~ProcAttributes.DisableWaitfor;
-            }
-            else
-            {
+            } else {
                 Attributes |= ProcAttributes.DisableWaitfor;
             }
         }
 
-        public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst)
-        {
-            int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst);
+        public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, out int id) {
+            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst);
 
             GlobalVariables[name] = id;
             return global;
         }
 
-        public int? GetGlobalVariableId(string name)
-        {
-            if (GlobalVariables.TryGetValue(name, out int id))
-            {
+        public int? GetGlobalVariableId(string name) {
+            if (GlobalVariables.TryGetValue(name, out int id)) {
                 return id;
             }
+
             return null;
         }
 

@@ -19,46 +19,99 @@ namespace OpenDreamClient.Interface.Controls {
     }
 
     public sealed class StatPanel : InfoPanel {
+        private sealed class StatEntry {
+            public readonly RichTextLabel NameLabel = new();
+            public readonly RichTextLabel ValueLabel = new();
+
+            private readonly ControlInfo _owner;
+            private readonly FormattedMessage _nameText = new();
+            private readonly FormattedMessage _valueText = new();
+
+            public StatEntry(ControlInfo owner) {
+                _owner = owner;
+            }
+
+            public void Clear() {
+                _nameText.Clear();
+                _valueText.Clear();
+
+                NameLabel.SetMessage(_nameText);
+                ValueLabel.SetMessage(_valueText);
+            }
+
+            public void UpdateLabels(string name, string value) {
+                // TODO: Tabs should align with each other.
+                //       Probably should be done by RT, but it just ignores them currently.
+                name = name.Replace("\t", "    ");
+                value = value.Replace("\t", "    ");
+
+                _nameText.Clear();
+                _valueText.Clear();
+
+                // Use the default color and font
+                _nameText.PushColor(Color.Black);
+                _valueText.PushColor(Color.Black);
+                _nameText.PushTag(new MarkupNode("font", null, null));
+                _valueText.PushTag(new MarkupNode("font", null, null));
+
+                if (_owner.InfoDescriptor.AllowHtml) {
+                    // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
+                    HtmlParser.Parse(name, _nameText);
+                    HtmlParser.Parse(value, _valueText);
+                } else {
+                    _nameText.AddText(name);
+                    _valueText.AddText(value);
+                }
+
+                NameLabel.SetMessage(_nameText);
+                ValueLabel.SetMessage(_valueText);
+            }
+        }
+
         private readonly ControlInfo _owner;
-        private readonly RichTextLabel _textBlock;
+        private readonly GridContainer _grid;
+        private readonly List<StatEntry> _entries = new();
 
         public StatPanel(ControlInfo owner, string name) : base(name) {
             _owner = owner;
-            _textBlock = new RichTextLabel() {
-                HorizontalAlignment = HAlignment.Stretch,
-                VerticalAlignment = VAlignment.Stretch
+            _grid = new() {
+                Columns = 2
             };
 
             var scrollViewer = new ScrollContainer() {
                 HScrollEnabled = false,
-                Children = { _textBlock }
+                Children = { _grid }
             };
             AddChild(scrollViewer);
         }
 
-        public void UpdateLines(List<string> lines) {
-            FormattedMessage text = new();
+        public void UpdateLines(List<(string Name, string Value)> lines) {
+            for (int i = 0; i < Math.Max(_entries.Count, lines.Count); i++) {
+                var entry = GetEntry(i);
 
-            text.PushColor(Color.Black);
-            text.PushTag(new MarkupNode("font", null, null)); // Use the default font and font size
-            foreach (string line in lines) {
-                // TODO: Tabs should align with each other.
-                //       Probably should be done by RT, but it just ignores them currently.
-                var lineText = line.Replace("\t", "    ");
+                if (i < lines.Count) {
+                    var line = lines[i];
 
-                if (_owner.InfoDescriptor.AllowHtml) {
-                    // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
-                    HtmlParser.Parse(lineText, text);
+                    entry.UpdateLabels(line.Name, line.Value);
                 } else {
-                    text.AddText(lineText);
+                    entry.Clear();
                 }
-
-                text.PushNewline();
             }
-            text.Pop();
-            text.Pop();
+        }
 
-            _textBlock.SetMessage(text);
+        private StatEntry GetEntry(int index) {
+            // Expand the entries if there aren't enough
+            if (_entries.Count <= index) {
+                for (int i = _entries.Count; i <= index; i++) {
+                    var entry = new StatEntry(_owner);
+
+                    _grid.AddChild(entry.NameLabel);
+                    _grid.AddChild(entry.ValueLabel);
+                    _entries.Add(entry);
+                }
+            }
+
+            return _entries[index];
         }
     }
 
@@ -139,7 +192,7 @@ namespace OpenDreamClient.Interface.Controls {
                 }
             }
 
-            foreach (KeyValuePair<string, List<string>> updatingPanel in pUpdateStatPanels.StatPanels) {
+            foreach (var updatingPanel in pUpdateStatPanels.StatPanels) {
                 if (!_statPanels.TryGetValue(updatingPanel.Key, out var panel)) {
                     panel = CreateStatPanel(updatingPanel.Key);
                 }

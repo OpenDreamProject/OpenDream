@@ -1130,9 +1130,17 @@ namespace OpenDreamRuntime.Procs.Native {
                 return;
             }
 
-            if (value.TryGetValueAsFloat(out float floatValue))
-                writer.WriteNumberValue(floatValue);
-            else if (value.TryGetValueAsString(out var text))
+            if (value.TryGetValueAsFloat(out float floatValue)) {
+                // For parity with Byond where it gets around the JSON standard not supporting
+                // the floating point specials INFINITY and NAN by writing it as an object
+                if (float.IsFinite(floatValue))
+                    writer.WriteNumberValue(floatValue);
+                else {
+                    writer.WriteStartObject();
+                    writer.WriteString("__number__", floatValue.ToString());
+                    writer.WriteEndObject();
+                }
+            } else if (value.TryGetValueAsString(out var text))
                 writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
                 writer.WriteStringValue(type.Path.PathString);

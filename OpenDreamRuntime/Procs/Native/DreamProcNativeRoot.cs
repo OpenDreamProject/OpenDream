@@ -1089,9 +1089,25 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(list);
                 }
                 case JsonValueKind.Object: {
+                    var enumerated = jsonElement.EnumerateObject().ToArray();
+
+                    // For handling special values expressed as single-property objects
+                    // Such as float-point values Infinity and NaN
+                    if (enumerated.Length == 1) {
+                        JsonProperty property = enumerated[0];
+                        switch(property.Name) {
+                            case "__number__": {
+                                var raw = property.Value.GetString();
+                                var val = raw != null ? float.Parse(raw) : float.NaN;
+                                return new DreamValue(val);
+                            }
+                            default: break;
+                        }
+                    }
+
                     DreamList list = objectTree.CreateList();
 
-                    foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
+                    foreach (JsonProperty childProperty in enumerated) {
                         DreamValue value = CreateValueFromJsonElement(objectTree, childProperty.Value);
 
                         list.SetValue(new DreamValue(childProperty.Name), value);

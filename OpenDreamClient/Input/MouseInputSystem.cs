@@ -19,8 +19,8 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
 
-        private DreamViewOverlay _dreamViewOverlay;
-        private ContextMenuPopup _contextMenu;
+        private DreamViewOverlay? _dreamViewOverlay;
+        private ContextMenuPopup _contextMenu = default!;
 
         public override void Initialize() {
             _contextMenu = new ContextMenuPopup();
@@ -89,6 +89,10 @@ namespace OpenDreamClient.Input {
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
             RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, middle, shift, ctrl, alt, iconPosition));
             return true;
+        }
+
+        public void HandleStatClick(string atomRef) {
+            RaiseNetworkEvent(new StatClickedEvent(atomRef));
         }
 
         private RendererMetaData? GetEntityUnderMouse(Vector2 mousePos) {

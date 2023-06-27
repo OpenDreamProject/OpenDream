@@ -66,4 +66,22 @@ public class SharedMouseInputSystem : EntitySystem {
             IconY = iconPos.Y;
         }
     }
+
+    [Serializable, NetSerializable]
+    public sealed class StatClickedEvent : EntityEventArgs, IAtomClickedEvent {
+        public string AtomRef;
+
+        // TODO: These all actually work
+        public ScreenLocation ScreenLoc => new(0, 0, 32);
+        public bool Middle => false;
+        public bool Shift => false;
+        public bool Ctrl => false;
+        public bool Alt => false;
+        public int IconX => 0;
+        public int IconY => 0;
+
+        public StatClickedEvent(string atomRef) {
+            AtomRef = atomRef;
+        }
+    }
 }

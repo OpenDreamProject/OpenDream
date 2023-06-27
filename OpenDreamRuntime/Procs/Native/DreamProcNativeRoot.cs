@@ -2433,16 +2433,17 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue((float)Math.Sqrt(a));
         }
 
-        private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
-            if (name != DreamValue.Null) {
-                connection.AddStatPanelLine(name.Stringify(), value.Stringify());
+        private static void OutputToStatPanel(IDreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
+            if (name == DreamValue.Null && value.TryGetValueAsDreamList(out var list)) {
+                foreach (var item in list.GetValues())
+                    OutputToStatPanel(dreamManager, connection, name, item);
             } else {
-                if (value.TryGetValueAsDreamList(out var list)) {
-                    foreach (var item in list.GetValues())
-                        connection.AddStatPanelLine(string.Empty, item.Stringify());
-                } else {
-                    connection.AddStatPanelLine(string.Empty, value.Stringify());
-                }
+                string nameStr = name.Stringify();
+                string? atomRef = null;
+                if (value.TryGetValueAsDreamObject<DreamObjectAtom>(out _)) // Atoms are clickable
+                    atomRef = dreamManager.CreateRef(value);
+
+                connection.AddStatPanelLine(nameStr, value.Stringify(), atomRef);
             }
         }
 
@@ -2454,7 +2455,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue value = state.GetArgument(1, "Value");
 
             if (state.Usr is DreamObjectMob { Connection: {} usrConnection })
-                OutputToStatPanel(usrConnection, name, value);
+                OutputToStatPanel(state.DreamManager, usrConnection, name, value);
 
             return DreamValue.Null;
         }
@@ -2471,7 +2472,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (state.Usr is DreamObjectMob { Connection: {} connection }) {
                 connection.SetOutputStatPanel(panel);
                 if (name != DreamValue.Null || value != DreamValue.Null) {
-                    OutputToStatPanel(connection, name, value);
+                    OutputToStatPanel(state.DreamManager, connection, name, value);
                 }
 
                 return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);

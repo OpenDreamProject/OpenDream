@@ -79,13 +79,16 @@ namespace OpenDreamClient.Interface.Controls {
             }
 
             private void OnKeyBindDown(GUIBoundKeyEventArgs e) {
-                if (e.Function != EngineKeyFunctions.Use || _atomRef == null)
+                if (e.Function != EngineKeyFunctions.Use && e.Function != OpenDreamKeyFunctions.MouseMiddle &&
+                    e.Function != EngineKeyFunctions.TextCursorSelect)
+                    return;
+                if (_atomRef == null)
                     return;
                 if (!_entitySystemManager.TryGetEntitySystem(out MouseInputSystem? mouseInputSystem))
                     return;
 
                 e.Handle();
-                mouseInputSystem.HandleStatClick(_atomRef);
+                mouseInputSystem.HandleStatClick(_atomRef, e.Function == OpenDreamKeyFunctions.MouseMiddle);
             }
         }
 

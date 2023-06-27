@@ -70,18 +70,24 @@ public class SharedMouseInputSystem : EntitySystem {
     [Serializable, NetSerializable]
     public sealed class StatClickedEvent : EntityEventArgs, IAtomClickedEvent {
         public string AtomRef;
+        public bool Middle { get; }
+        public bool Shift { get; }
+        public bool Ctrl { get; }
+        public bool Alt { get; }
 
-        // TODO: These all actually work
-        public ScreenLocation ScreenLoc => new(0, 0, 32);
-        public bool Middle => false;
-        public bool Shift => false;
-        public bool Ctrl => false;
-        public bool Alt => false;
+        // TODO: icon-x and icon-y
         public int IconX => 0;
         public int IconY => 0;
 
-        public StatClickedEvent(string atomRef) {
+        // This doesn't seem to appear at all in the click params
+        public ScreenLocation ScreenLoc => new(0, 0, 32);
+
+        public StatClickedEvent(string atomRef, bool middle, bool shift, bool ctrl, bool alt) {
             AtomRef = atomRef;
+            Middle = middle;
+            Shift = shift;
+            Ctrl = ctrl;
+            Alt = alt;
         }
     }
 }

@@ -91,8 +91,12 @@ namespace OpenDreamClient.Input {
             return true;
         }
 
-        public void HandleStatClick(string atomRef) {
-            RaiseNetworkEvent(new StatClickedEvent(atomRef));
+        public void HandleStatClick(string atomRef, bool isMiddle) {
+            bool shift = _inputManager.IsKeyDown(Keyboard.Key.Shift);
+            bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
+            bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
+
+            RaiseNetworkEvent(new StatClickedEvent(atomRef, isMiddle, shift, ctrl, alt));
         }
 
         private RendererMetaData? GetEntityUnderMouse(Vector2 mousePos) {

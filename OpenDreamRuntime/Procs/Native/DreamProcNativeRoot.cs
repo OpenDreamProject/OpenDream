@@ -2431,9 +2431,9 @@ namespace OpenDreamRuntime.Procs.Native {
             } else {
                 if (value.TryGetValueAsDreamList(out var list)) {
                     foreach (var item in list.GetValues())
-                        connection.AddStatPanelLine(item.Stringify(), string.Empty);
+                        connection.AddStatPanelLine(string.Empty, item.Stringify());
                 } else {
-                    connection.AddStatPanelLine(value.Stringify(), string.Empty);
+                    connection.AddStatPanelLine(string.Empty, value.Stringify());
                 }
             }
         }

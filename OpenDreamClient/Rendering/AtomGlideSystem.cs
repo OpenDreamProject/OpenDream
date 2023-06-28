@@ -41,6 +41,8 @@ public sealed class AtomGlideSystem : EntitySystem {
     }
 
     public override void FrameUpdate(float frameTime) {
+        _ignoreMoveEvent = false;
+
         for (int i = 0; i < _currentGlides.Count; i++) {
             var glide = _currentGlides[i];
             var currentPos = glide.Transform.LocalPosition;

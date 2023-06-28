@@ -2,7 +2,7 @@
 using Robust.Client.GameObjects;
 
 namespace OpenDreamClient {
-    sealed class DreamClientSystem : EntitySystem {
+    internal sealed class DreamClientSystem : EntitySystem {
         [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
 
         public override void Initialize() {

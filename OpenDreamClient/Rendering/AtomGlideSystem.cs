@@ -83,7 +83,6 @@ public sealed class AtomGlideSystem : EntitySystem {
     private void OnTransformMove(EntityUid entity, TransformComponent transform, ref MoveEvent e) {
         if (_ignoreMoveEvent || e.ParentChanged)
             return;
-
         if (!_spriteQuery.TryGetComponent(entity, out var sprite))
             return;
 
@@ -109,6 +108,7 @@ public sealed class AtomGlideSystem : EntitySystem {
             if (glide != null)
                 _currentGlides.Remove(glide);
 
+            _ignoreMoveEvent = false;
             return;
         }
 

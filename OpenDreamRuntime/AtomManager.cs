@@ -93,6 +93,7 @@ namespace OpenDreamRuntime {
                 case "blend_mode":
                 case "appearance_flags":
                 case "alpha":
+                case "glide_size":
                 case "render_source":
                 case "render_target":
                     return true;
@@ -178,6 +179,10 @@ namespace OpenDreamRuntime {
                     value.TryGetValueAsFloat(out float floatAlpha);
                     appearance.Alpha = (byte) floatAlpha;
                     break;
+                case "glide_size":
+                    value.TryGetValueAsFloat(out float glideSize);
+                    appearance.GlideSize = (byte) glideSize;
+                    break;
                 case "render_source":
                     value.TryGetValueAsString(out appearance.RenderSource);
                     break;
@@ -240,6 +245,8 @@ namespace OpenDreamRuntime {
                     return new((int) appearance.AppearanceFlags);
                 case "alpha":
                     return new(appearance.Alpha);
+                case "glide_size":
+                    return new(appearance.GlideSize);
                 case "render_source":
                     return new(appearance.RenderSource);
                 case "render_target":
@@ -349,6 +356,7 @@ namespace OpenDreamRuntime {
             def.TryGetVariable("icon_state", out var stateVar);
             def.TryGetVariable("color", out var colorVar);
             def.TryGetVariable("alpha", out var alphaVar);
+            def.TryGetVariable("glide_size", out var glideSizeVar);
             def.TryGetVariable("dir", out var dirVar);
             def.TryGetVariable("invisibility", out var invisibilityVar);
             def.TryGetVariable("opacity", out var opacityVar);
@@ -367,6 +375,7 @@ namespace OpenDreamRuntime {
             SetAppearanceVar(appearance, "icon_state", stateVar);
             SetAppearanceVar(appearance, "color", colorVar);
             SetAppearanceVar(appearance, "alpha", alphaVar);
+            SetAppearanceVar(appearance, "glide_size", glideSizeVar);
             SetAppearanceVar(appearance, "dir", dirVar);
             SetAppearanceVar(appearance, "invisibility", invisibilityVar);
             SetAppearanceVar(appearance, "opacity", opacityVar);

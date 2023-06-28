@@ -79,11 +79,7 @@ public sealed class AtomGlideSystem : EntitySystem {
     /// Disables RT lerping and sets up the entity's glide
     /// </summary>
     private void OnTransformMove(EntityUid entity, TransformComponent transform, ref MoveEvent e) {
-        if (_ignoreMoveEvent)
-            return;
-
-        // Moving between z-levels. Ignore it.
-        if (e.OldPosition.GetMapId(_entityManager) != e.NewPosition.GetMapId(_entityManager))
+        if (_ignoreMoveEvent || e.ParentChanged)
             return;
 
         // Moving a greater distance than 2 tiles. Don't glide.

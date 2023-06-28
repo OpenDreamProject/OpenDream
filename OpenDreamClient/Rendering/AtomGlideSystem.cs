@@ -102,8 +102,13 @@ public sealed class AtomGlideSystem : EntitySystem {
 
         // Moving a greater distance than 2 tiles. Don't glide.
         // TODO: Support step_size values (I think that's what decides whether or not to glide?)
-        if ((glidingTo - startingFrom).Length > 2f)
+        if ((glidingTo - startingFrom).Length > 2f) {
+            // Stop the current glide if there is one
+            if (glide != null)
+                _currentGlides.Remove(glide);
+
             return;
+        }
 
         if (glide == null) {
             glide = new(transform);

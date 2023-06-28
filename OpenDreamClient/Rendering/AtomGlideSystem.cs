@@ -82,11 +82,6 @@ public sealed class AtomGlideSystem : EntitySystem {
         if (_ignoreMoveEvent || e.ParentChanged)
             return;
 
-        // Moving a greater distance than 2 tiles. Don't glide.
-        // TODO: Support step_size values (I think that's what decides whether or not to glide?)
-        if (e.OldPosition.TryDistance(_entityManager, _transformSystem, e.NewPosition, out var dist) && dist > 2)
-            return;
-
         if (!_spriteQuery.TryGetComponent(entity, out var sprite))
             return;
 
@@ -102,20 +97,24 @@ public sealed class AtomGlideSystem : EntitySystem {
             break;
         }
 
-        if (glide != null) {
-            // Move the transform to the current glide's end so we start from there
-            // Also serves the function of disabling RT's lerp
-            _transformSystem.SetLocalPositionNoLerp(transform, glide.EndPos);
-        } else {
+        var startingFrom = glide?.EndPos ?? e.OldPosition.Position;
+        var glidingTo = e.NewPosition.Position;
+
+        // Moving a greater distance than 2 tiles. Don't glide.
+        // TODO: Support step_size values (I think that's what decides whether or not to glide?)
+        if ((glidingTo - startingFrom).Length > 2f)
+            return;
+
+        if (glide == null) {
             glide = new(transform);
             _currentGlides.Add(glide);
-
-            // Move the transform back to the old position
-            // Also serves the function of disabling RT's lerp
-            _transformSystem.SetLocalPositionNoLerp(transform, e.OldPosition.Position);
         }
 
-        glide.EndPos = e.NewPosition.Position;
+        // Move the transform to our starting point
+        // Also serves the function of disabling RT's lerp
+        _transformSystem.SetLocalPositionNoLerp(transform, startingFrom);
+
+        glide.EndPos = glidingTo;
         glide.MovementPerFrame = CalculateMovementPerFrame(sprite.Icon.Appearance.GlideSize);
         _ignoreMoveEvent = false;
     }

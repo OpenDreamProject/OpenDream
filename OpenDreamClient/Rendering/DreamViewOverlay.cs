@@ -492,8 +492,7 @@ internal sealed class DreamViewOverlay : Overlay {
             tieBreaker++;
             if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) {//KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, false));
-            }
-            else {
+            } else {
                 current.KeepTogetherGroup ??= new();
                 current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, keepTogether));
             }

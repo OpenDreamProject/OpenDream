@@ -501,7 +501,6 @@ internal sealed class DreamViewOverlay : Overlay {
         tieBreaker++;
         current.TieBreaker = tieBreaker;
 
-
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
             tieBreaker++;

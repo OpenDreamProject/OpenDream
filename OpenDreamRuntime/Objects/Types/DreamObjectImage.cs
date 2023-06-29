@@ -5,10 +5,10 @@ namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectImage : DreamObject {
     public IconAppearance? Appearance;
-    private readonly DreamOverlaysList Overlays;
-    private readonly DreamOverlaysList Underlays;
 
     private DreamObject? _loc;
+    private DreamList _overlays;
+    private DreamList _underlays;
 
     /// <summary>
     /// All the args in /image/New() after "icon" and "loc", in their correct order
@@ -22,8 +22,16 @@ public sealed class DreamObjectImage : DreamObject {
     };
 
     public DreamObjectImage(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-        Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+        if (objectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
+            // /mutable_appearance.overlays and /mutable_appearance.underlays have an initial value of a normal list
+            // Assigning to these vars later will replace them with the expected special overlay list type
+            // This is likely unintentional behavior from BYOND, but we have to replicate it
+            _overlays = ObjectTree.CreateList();
+            _underlays = ObjectTree.CreateList();
+        } else {
+            _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+            _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+        }
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -72,10 +80,10 @@ public sealed class DreamObjectImage : DreamObject {
                 return true;
             }
             case "overlays":
-                value = new(Overlays);
+                value = new(_overlays);
                 return true;
             case "underlays":
-                value = new(Underlays);
+                value = new(_underlays);
                 return true;
             default: {
                 if (AtomManager.IsValidAppearanceVar(varName)) {
@@ -105,29 +113,35 @@ public sealed class DreamObjectImage : DreamObject {
                 value.TryGetValueAsDreamObject(out _loc);
                 break;
             case "overlays": {
-                Overlays.Cut();
+                if (_overlays is not DreamOverlaysList) // Assigning to this will ensure it's a DreamOverlaysList
+                    _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+
+                _overlays.Cut();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue overlayValue in valueList.GetValues()) {
-                        Overlays.AddValue(overlayValue);
+                        _overlays.AddValue(overlayValue);
                     }
                 } else if (value != DreamValue.Null) {
-                    Overlays.AddValue(value);
+                    _overlays.AddValue(value);
                 }
 
                 break;
             }
             case "underlays": {
-                Underlays.Cut();
+                if (_underlays is not DreamOverlaysList) // Assigning to this will ensure it's a DreamOverlaysList
+                    _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+
+                _underlays.Cut();
 
                 if (value.TryGetValueAsDreamList(out var valueList)) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue underlayValue in valueList.GetValues()) {
-                        Underlays.AddValue(underlayValue);
+                        _underlays.AddValue(underlayValue);
                     }
                 } else if (value != DreamValue.Null) {
-                    Underlays.AddValue(value);
+                    _underlays.AddValue(value);
                 }
 
                 break;

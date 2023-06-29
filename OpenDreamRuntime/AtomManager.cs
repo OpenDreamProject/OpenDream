@@ -262,11 +262,12 @@ namespace OpenDreamRuntime {
         /// Gets an atom's appearance.
         /// </summary>
         /// <param name="atom">The atom to find the appearance of.</param>
-        public IconAppearance? MustGetAppearance(DreamObjectAtom atom) {
+        public IconAppearance? MustGetAppearance(DreamObject atom) {
             return atom switch {
                 DreamObjectTurf turf => AppearanceSystem.MustGetAppearance(turf.AppearanceId),
                 DreamObjectMovable movable => movable.SpriteComponent.Appearance,
                 DreamObjectArea => new IconAppearance(),
+                DreamObjectImage image => image.Appearance,
                 _ => throw new Exception($"Cannot get appearance of {atom}")
             };
         }
@@ -274,18 +275,20 @@ namespace OpenDreamRuntime {
         /// <summary>
         /// Optionally looks up for an appearance. Does not try to create a new one when one is not found for this atom.
         /// </summary>
-        public bool TryGetAppearance(DreamObjectAtom atom, [NotNullWhen(true)] out IconAppearance? appearance) {
+        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance) {
             if (atom is DreamObjectTurf turf)
                 appearance = AppearanceSystem.MustGetAppearance(turf.AppearanceId);
             else if (atom is DreamObjectMovable movable)
                 appearance = movable.SpriteComponent.Appearance;
+            else if (atom is DreamObjectImage image)
+                appearance = image.Appearance;
             else
                 appearance = null;
 
             return appearance is not null;
         }
 
-        public void UpdateAppearance(DreamObjectAtom atom, Action<IconAppearance> update) {
+        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
             var appearance = MustGetAppearance(atom);
             appearance = (appearance != null) ? new(appearance) : new(); // Clone the appearance
 
@@ -293,11 +296,13 @@ namespace OpenDreamRuntime {
             SetAtomAppearance(atom, appearance);
         }
 
-        public void SetAtomAppearance(DreamObjectAtom atom, IconAppearance appearance) {
+        public void SetAtomAppearance(DreamObject atom, IconAppearance appearance) {
             if (atom is DreamObjectTurf turf) {
                 _dreamMapManager.SetTurfAppearance(turf, appearance);
             } else if (atom is DreamObjectMovable movable) {
                 movable.SpriteComponent.SetAppearance(appearance);
+            } else if (atom is DreamObjectImage image) {
+                image.Appearance = appearance;
             }
         }
 
@@ -427,11 +432,11 @@ namespace OpenDreamRuntime {
         public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value);
         public DreamValue GetAppearanceVar(IconAppearance appearance, string varName);
 
-        public IconAppearance? MustGetAppearance(DreamObjectAtom atom);
+        public IconAppearance? MustGetAppearance(DreamObject atom);
 
-        public bool TryGetAppearance(DreamObjectAtom atom, [NotNullWhen(true)] out IconAppearance? appearance);
-        public void UpdateAppearance(DreamObjectAtom atom, Action<IconAppearance> update);
-        public void SetAtomAppearance(DreamObjectAtom atom, IconAppearance appearance);
+        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
+        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
+        public void SetAtomAppearance(DreamObject atom, IconAppearance appearance);
         public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate);
         public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
         public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def);

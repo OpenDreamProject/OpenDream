@@ -4,12 +4,13 @@ using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Input;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface.Controls {
     [Virtual]
-    public class InfoPanel : Control {
+    internal class InfoPanel : Control {
         public string PanelName { get; }
 
         protected InfoPanel(string name) {
@@ -18,51 +19,129 @@ namespace OpenDreamClient.Interface.Controls {
         }
     }
 
-    public sealed class StatPanel : InfoPanel {
-        private readonly ControlInfo _owner;
-        private readonly RichTextLabel _textBlock;
+    internal sealed class StatPanel : InfoPanel {
+        private sealed class StatEntry {
+            public readonly RichTextLabel NameLabel = new();
+            public readonly RichTextLabel ValueLabel = new();
 
-        public StatPanel(ControlInfo owner, string name) : base(name) {
+            private readonly ControlInfo _owner;
+            private readonly IEntitySystemManager _entitySystemManager;
+            private readonly FormattedMessage _nameText = new();
+            private readonly FormattedMessage _valueText = new();
+            private string? _atomRef;
+
+            public StatEntry(ControlInfo owner, IEntitySystemManager entitySystemManager) {
+                _owner = owner;
+                _entitySystemManager = entitySystemManager;
+
+                // TODO: Change color when the mouse is hovering
+                //       I couldn't find a way to do this without recreating the FormattedMessage
+                ValueLabel.MouseFilter = MouseFilterMode.Stop;
+                ValueLabel.OnKeyBindDown += OnKeyBindDown;
+            }
+
+            public void Clear() {
+                _atomRef = null;
+                _nameText.Clear();
+                _valueText.Clear();
+
+                NameLabel.SetMessage(_nameText);
+                ValueLabel.SetMessage(_valueText);
+            }
+
+            public void UpdateLabels(string name, string value, string? atomRef) {
+                // TODO: Tabs should align with each other.
+                //       Probably should be done by RT, but it just ignores them currently.
+                name = name.Replace("\t", "    ");
+                value = value.Replace("\t", "    ");
+                _atomRef = atomRef;
+
+                _nameText.Clear();
+                _valueText.Clear();
+
+                // Use the default color and font
+                _nameText.PushColor(Color.Black);
+                _valueText.PushColor(Color.Black);
+                _nameText.PushTag(new MarkupNode("font", null, null));
+                _valueText.PushTag(new MarkupNode("font", null, null));
+
+                if (_owner.InfoDescriptor.AllowHtml) {
+                    // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
+                    HtmlParser.Parse(name, _nameText);
+                    HtmlParser.Parse(value, _valueText);
+                } else {
+                    _nameText.AddText(name);
+                    _valueText.AddText(value);
+                }
+
+                NameLabel.SetMessage(_nameText);
+                ValueLabel.SetMessage(_valueText);
+            }
+
+            private void OnKeyBindDown(GUIBoundKeyEventArgs e) {
+                if (e.Function != EngineKeyFunctions.Use && e.Function != OpenDreamKeyFunctions.MouseMiddle &&
+                    e.Function != EngineKeyFunctions.TextCursorSelect)
+                    return;
+                if (_atomRef == null)
+                    return;
+                if (!_entitySystemManager.TryGetEntitySystem(out MouseInputSystem? mouseInputSystem))
+                    return;
+
+                e.Handle();
+                mouseInputSystem.HandleStatClick(_atomRef, e.Function == OpenDreamKeyFunctions.MouseMiddle);
+            }
+        }
+
+        private readonly ControlInfo _owner;
+        private readonly IEntitySystemManager _entitySystemManager;
+        private readonly GridContainer _grid;
+        private readonly List<StatEntry> _entries = new();
+
+        public StatPanel(ControlInfo owner, IEntitySystemManager entitySystemManager, string name) : base(name) {
             _owner = owner;
-            _textBlock = new RichTextLabel() {
-                HorizontalAlignment = HAlignment.Stretch,
-                VerticalAlignment = VAlignment.Stretch
+            _entitySystemManager = entitySystemManager;
+            _grid = new() {
+                Columns = 2
             };
 
             var scrollViewer = new ScrollContainer() {
                 HScrollEnabled = false,
-                Children = { _textBlock }
+                Children = { _grid }
             };
             AddChild(scrollViewer);
         }
 
-        public void UpdateLines(List<string> lines) {
-            FormattedMessage text = new();
+        public void UpdateLines(List<(string Name, string Value, string? AtomRef)> lines) {
+            for (int i = 0; i < Math.Max(_entries.Count, lines.Count); i++) {
+                var entry = GetEntry(i);
 
-            text.PushColor(Color.Black);
-            text.PushTag(new MarkupNode("font", null, null)); // Use the default font and font size
-            foreach (string line in lines) {
-                // TODO: Tabs should align with each other.
-                //       Probably should be done by RT, but it just ignores them currently.
-                var lineText = line.Replace("\t", "    ");
+                if (i < lines.Count) {
+                    var line = lines[i];
 
-                if (_owner.InfoDescriptor.AllowHtml) {
-                    // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
-                    HtmlParser.Parse(lineText, text);
+                    entry.UpdateLabels(line.Name, line.Value, line.AtomRef);
                 } else {
-                    text.AddText(lineText);
+                    entry.Clear();
                 }
-
-                text.PushNewline();
             }
-            text.Pop();
-            text.Pop();
+        }
 
-            _textBlock.SetMessage(text);
+        private StatEntry GetEntry(int index) {
+            // Expand the entries if there aren't enough
+            if (_entries.Count <= index) {
+                for (int i = _entries.Count; i <= index; i++) {
+                    var entry = new StatEntry(_owner, _entitySystemManager);
+
+                    _grid.AddChild(entry.NameLabel);
+                    _grid.AddChild(entry.ValueLabel);
+                    _entries.Add(entry);
+                }
+            }
+
+            return _entries[index];
         }
     }
 
-    public sealed class VerbPanel : InfoPanel {
+    internal sealed class VerbPanel : InfoPanel {
         [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
         private readonly GridContainer _grid;
 
@@ -99,6 +178,7 @@ namespace OpenDreamClient.Interface.Controls {
         public ControlDescriptorInfo InfoDescriptor => (ControlDescriptorInfo)ControlDescriptor;
 
         [Dependency] private readonly IClientNetManager _netManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         private TabContainer _tabControl;
         private readonly Dictionary<string, StatPanel> _statPanels = new();
@@ -139,7 +219,7 @@ namespace OpenDreamClient.Interface.Controls {
                 }
             }
 
-            foreach (KeyValuePair<string, List<string>> updatingPanel in pUpdateStatPanels.StatPanels) {
+            foreach (var updatingPanel in pUpdateStatPanels.StatPanels) {
                 if (!_statPanels.TryGetValue(updatingPanel.Key, out var panel)) {
                     panel = CreateStatPanel(updatingPanel.Key);
                 }
@@ -162,16 +242,14 @@ namespace OpenDreamClient.Interface.Controls {
             return _verbPanels.ContainsKey(name);
         }
 
-        public VerbPanel CreateVerbPanel(string name) {
+        public void CreateVerbPanel(string name) {
             var panel = new VerbPanel(name);
             _verbPanels.Add(name, panel);
             SortPanels();
-
-            return panel;
         }
 
-        public StatPanel CreateStatPanel(string name) {
-            var panel = new StatPanel(this, name);
+        private StatPanel CreateStatPanel(string name) {
+            var panel = new StatPanel(this, _entitySystemManager, name);
             panel.Margin = new Thickness(20, 2);
             _statPanels.Add(name, panel);
             SortPanels();

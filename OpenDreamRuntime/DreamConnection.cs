@@ -22,7 +22,7 @@ namespace OpenDreamRuntime {
         private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
-        [ViewVariables] private readonly Dictionary<string, List<string>> _statPanels = new();
+        [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
         [ViewVariables] private bool _currentlyUpdatingStat;
 
         [ViewVariables] public IPlayerSession? Session { get; private set; }
@@ -209,16 +209,17 @@ namespace OpenDreamRuntime {
         }
 
         public void SetOutputStatPanel(string name) {
-            if (!_statPanels.ContainsKey(name)) _statPanels.Add(name, new List<string>());
+            if (!_statPanels.ContainsKey(name))
+                _statPanels.Add(name, new());
 
             _outputStatPanel = name;
         }
 
-        public void AddStatPanelLine(string text) {
+        public void AddStatPanelLine(string name, string value, string? atomRef) {
             if (_outputStatPanel == null || !_statPanels.ContainsKey(_outputStatPanel))
                 SetOutputStatPanel("Stats");
 
-            _statPanels[_outputStatPanel].Add(text);
+            _statPanels[_outputStatPanel].Add( (name, value, atomRef) );
         }
 
         public void HandleMsgSelectStatPanel(MsgSelectStatPanel message) {

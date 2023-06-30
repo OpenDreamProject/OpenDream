@@ -1089,30 +1089,28 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(list);
                 }
                 case JsonValueKind.Object: {
-                    var enumerated = jsonElement.EnumerateObject().ToArray();
+                    DreamList list = objectTree.CreateList();
+
+                    foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
+                        DreamValue value = CreateValueFromJsonElement(objectTree, childProperty.Value);
+
+                        list.SetValue(new DreamValue(childProperty.Name), value);
+                    }
 
                     // For handling special values expressed as single-property objects
                     // Such as float-point values Infinity and NaN
-                    if (enumerated.Length == 1) {
-                        JsonProperty property = enumerated[0];
-                        switch(property.Name) {
+                    if (list.GetLength() == 1) {
+                        var pair = list.GetAssociativeValues().First();
+                        pair.Key.TryGetValueAsString(out string? propertyName);
+                        switch(propertyName) {
                             case "__number__": {
-                                var raw = property.Value.GetString();
+                                pair.Value.TryGetValueAsString(out string? raw);
                                 var val = raw != null ? float.Parse(raw) : float.NaN;
                                 return new DreamValue(val);
                             }
                             default: break;
                         }
                     }
-
-                    DreamList list = objectTree.CreateList();
-
-                    foreach (JsonProperty childProperty in enumerated) {
-                        DreamValue value = CreateValueFromJsonElement(objectTree, childProperty.Value);
-
-                        list.SetValue(new DreamValue(childProperty.Name), value);
-                    }
-
                     return new DreamValue(list);
                 }
                 case JsonValueKind.String:

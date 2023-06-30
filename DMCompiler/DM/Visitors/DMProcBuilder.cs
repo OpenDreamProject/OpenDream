@@ -57,6 +57,10 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            if (procDefinition.Body.Statements.Length == 0) {
+                DMCompiler.Emit(WarningCode.EmptyProc, _proc.Location,"Empty proc detected - add an explicit \"return\" statement");
+            }
+            
             ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             _proc.ResolveLabels();
         }
@@ -66,7 +70,7 @@ namespace DMCompiler.DM.Visitors {
         /// A.) are not marked opendream_unimplemented and <br/>
         /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
         /// </param>
-        public void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
+        private void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
             foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
                 Location loc = stmt.Location;
                 try {

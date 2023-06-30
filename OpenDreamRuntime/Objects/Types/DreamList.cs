@@ -623,7 +623,8 @@ namespace OpenDreamRuntime.Objects.Types {
                 return;
 
             _atomManager.UpdateAppearance(_atom, appearance => {
-                IconAppearance overlayAppearance = CreateOverlayAppearance(value);
+                IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
+                overlayAppearance ??= new IconAppearance();
 
                 GetOverlaysList(appearance).Add(_appearanceSystem.AddAppearance(overlayAppearance));
             });
@@ -634,7 +635,8 @@ namespace OpenDreamRuntime.Objects.Types {
                 return;
 
             _atomManager.UpdateAppearance(_atom, appearance => {
-                IconAppearance overlayAppearance = CreateOverlayAppearance(value);
+                IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
+                overlayAppearance ??= new IconAppearance();
 
                 GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance));
             });
@@ -656,20 +658,20 @@ namespace OpenDreamRuntime.Objects.Types {
             return appearance;
         }
 
-        private IconAppearance CreateOverlayAppearance(DreamValue value) {
+        public static IconAppearance? CreateOverlayAppearance(IAtomManager atomManager, DreamValue value, int? defaultIcon) {
             IconAppearance overlay;
 
             if (value.TryGetValueAsString(out var iconState)) {
                 overlay = new IconAppearance() {
                     IconState = iconState
                 };
-            } else if (_atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
+            } else if (atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
                 overlay = overlayAppearance;
             } else {
-                return new IconAppearance(); // Not a valid overlay, use a default appearance
+                return null; // Not a valid overlay
             }
 
-            overlay.Icon ??= GetAppearance().Icon;
+            overlay.Icon ??= defaultIcon;
             return overlay;
         }
     }

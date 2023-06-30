@@ -1,5 +1,3 @@
-//The first global in the runtime is always `world`
-//So keep this at the top
 /var/world/world = null
 
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
@@ -11,7 +9,7 @@ proc/arccos(X)
 proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
-proc/block(var/atom/Start, var/atom/End)
+proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ)
 proc/ceil(A)
 proc/ckey(Key)
 proc/ckeyEx(Text)

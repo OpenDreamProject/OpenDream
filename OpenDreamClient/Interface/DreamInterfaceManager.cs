@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Compiler;
+﻿using System.IO;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
@@ -7,29 +8,39 @@ using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
+using OpenDreamClient.Resources.ResourceTypes;
+using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Timing;
+using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 
 namespace OpenDreamClient.Interface {
-    sealed class DreamInterfaceManager : IDreamInterfaceManager {
+    internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
+        private static readonly ResPath DefaultInterfaceFile = new("/OpenDream/DefaultInterface.dmf");
+
         [Dependency] private readonly IClyde _clyde = default!;
+        [Dependency] private readonly IBaseClient _client = default!;
         [Dependency] private readonly IUserInterfaceManager _userInterfaceManager = default!;
         [Dependency] private readonly IEyeManager _eyeManager = default!;
         [Dependency] private readonly IClientNetManager _netManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
+        [Dependency] private readonly IResourceManager _resourceManager = default!;
         [Dependency] private readonly IFileDialogManager _fileDialogManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
+
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -58,15 +69,23 @@ namespace OpenDreamClient.Interface {
             int errorCount = 0;
             foreach (CompilerEmission warning in dmfParser.Emissions) {
                 if (warning.Level == ErrorLevel.Error) {
-                    Logger.Error(warning.ToString());
+                    _sawmill.Error(warning.ToString());
                     errorCount++;
                 } else {
-                    Logger.Warning(warning.ToString());
+                    _sawmill.Warning(warning.ToString());
                 }
             }
 
-            if(interfaceDescriptor == null || errorCount > 0)
-                throw new Exception($"{errorCount} Errors while parsing interface data");
+            if (interfaceDescriptor == null || errorCount > 0) {
+                // Open an error message that disconnects from the server once closed
+                OpenAlert(
+                    "Error",
+                    "Encountered error(s) while parsing interface source.\nCheck the console for details.",
+                    "Ok", null, null,
+                    (_, _) => _client.DisconnectFromServer("Errors while parsing interface"));
+
+                return;
+            }
 
             LoadInterface(interfaceDescriptor);
         }
@@ -79,6 +98,13 @@ namespace OpenDreamClient.Interface {
             Menus.Clear();
             MacroSets.Clear();
             _popupWindows.Clear();
+
+            // Set up the middle-mouse button keybind
+            _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
+            _inputManager.RegisterBinding(new KeyBindingRegistration() {
+                Function = OpenDreamKeyFunctions.MouseMiddle,
+                BaseKey = Keyboard.Key.MouseMiddle
+            });
 
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
@@ -93,6 +119,7 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
             _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
             _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
+            _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
             _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
             _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         }
@@ -109,7 +136,7 @@ namespace OpenDreamClient.Interface {
             AvailableVerbs = message.AvailableVerbs;
 
             // Verbs are displayed alphabetically with uppercase coming first
-            Array.Sort(AvailableVerbs, (a, b) => String.CompareOrdinal(a.Item1, b.Item1));
+            Array.Sort(AvailableVerbs, (a, b) => string.CompareOrdinal(a.Item1, b.Item1));
 
             if (DefaultInfo == null)
                 return; // No verb panel to show these on
@@ -142,19 +169,18 @@ namespace OpenDreamClient.Interface {
 
         private void RxAlert(MsgAlert message) {
             OpenAlert(
-                message.PromptId,
                 message.Title,
                 message.Message,
-                message.Button1, message.Button2, message.Button3);
+                message.Button1, message.Button2, message.Button3,
+                (responseType, response) => OnPromptFinished(message.PromptId, responseType, response));
         }
 
-        public void OpenAlert(int promptId, string title, string message, string button1, string button2 = "",
-            string button3 = "") {
+        public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DMValueType, object?>? onClose) {
             var alert = new AlertWindow(
-                promptId,
                 title,
                 message,
-                button1, button2, button3);
+                button1, button2, button3,
+                onClose);
 
             alert.Owner = _clyde.MainWindow;
             alert.Show();
@@ -164,12 +190,16 @@ namespace OpenDreamClient.Interface {
             PromptWindow? prompt = null;
             bool canCancel = (pPrompt.Types & DMValueType.Null) == DMValueType.Null;
 
+            void OnPromptClose(DMValueType responseType, object? response) {
+                OnPromptFinished(pPrompt.PromptId, responseType, response);
+            }
+
             if ((pPrompt.Types & DMValueType.Text) == DMValueType.Text) {
-                prompt = new TextPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+                prompt = new TextPrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
             } else if ((pPrompt.Types & DMValueType.Num) == DMValueType.Num) {
-                prompt = new NumberPrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+                prompt = new NumberPrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
             } else if ((pPrompt.Types & DMValueType.Message) == DMValueType.Message) {
-                prompt = new MessagePrompt(pPrompt.PromptId, pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel);
+                prompt = new MessagePrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
             }
 
             if (prompt != null) {
@@ -179,12 +209,12 @@ namespace OpenDreamClient.Interface {
 
         private void RxPromptList(MsgPromptList pPromptList) {
             var prompt = new ListPrompt(
-                pPromptList.PromptId,
                 pPromptList.Title,
                 pPromptList.Message,
                 pPromptList.DefaultValue,
                 pPromptList.CanCancel,
-                pPromptList.Values
+                pPromptList.Values,
+                (responseType, response) => OnPromptFinished(pPromptList.PromptId, responseType, response)
             );
 
             ShowPrompt(prompt);
@@ -242,16 +272,44 @@ namespace OpenDreamClient.Interface {
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
                 Type = DMValueType.Text,
-                Value = element?.Type ?? String.Empty
+                Value = element?.Type ?? string.Empty
             };
 
             _netManager.ClientSendMessage(response);
         }
 
-        private void RxLoadInterface(MsgLoadInterface message) {
-            if (message.InterfaceText != null) // TODO: Default interface if none exists
-                LoadInterfaceFromSource(message.InterfaceText);
+        private void RxFtp(MsgFtp message) {
+            _dreamResource.LoadResourceAsync<DreamResource>(message.ResourceId, async resource => {
+                // TODO: Default the filename to message.SuggestedName
+                // RT doesn't seem to support this currently
+                var tuple = await _fileDialogManager.SaveFile();
+                if (tuple == null) // User cancelled
+                    return;
 
+                await using var file = tuple.Value.fileStream;
+                resource.WriteTo(file);
+            });
+        }
+
+        private void RxLoadInterface(MsgLoadInterface message) {
+            string? interfaceText = message.InterfaceText;
+            if (interfaceText == null) {
+                if (!_resourceManager.TryContentFileRead(DefaultInterfaceFile.CanonPath, out var defaultInterface)) {
+                    // Open an error message that disconnects from the server once closed
+                    OpenAlert(
+                        "Error",
+                        "The server did not provide an interface and there is no default interface in the resources folder.",
+                        "Ok", null, null,
+                        (_, _) => _client.DisconnectFromServer("No interface to use"));
+
+                    return;
+                }
+
+                using var defaultInterfaceReader = new StreamReader(defaultInterface);
+                interfaceText = defaultInterfaceReader.ReadToEnd();
+            }
+
+            LoadInterfaceFromSource(interfaceText);
             _netManager.ClientSendMessage(new MsgAckLoadInterface());
         }
 
@@ -337,10 +395,10 @@ namespace OpenDreamClient.Interface {
                     bool hadError = false;
                     foreach (CompilerEmission emission in parser.Emissions) {
                         if (emission.Level == ErrorLevel.Error) {
-                            Logger.ErrorS("opendream.interface.winset", emission.ToString());
+                            _sawmill.Error(emission.ToString());
                             hadError = true;
                         } else {
-                            Logger.WarningS("opendream.interface.winset", emission.ToString());
+                            _sawmill.Warning(emission.ToString());
                         }
                     }
 
@@ -350,7 +408,7 @@ namespace OpenDreamClient.Interface {
                 return false;
             }
 
-            if (String.IsNullOrEmpty(controlId)) {
+            if (string.IsNullOrEmpty(controlId)) {
                 List<DMFWinSet> winSets = parser.GlobalWinSet();
 
                 if (CheckParserErrors())
@@ -363,7 +421,7 @@ namespace OpenDreamClient.Interface {
 
                             commandSystem.RunCommand(winSet.Value);
                         } else {
-                            Logger.ErrorS("opendream.interface.winset", $"Invalid global winset \"{winsetParams}\"");
+                            _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                         }
                     } else {
                         InterfaceElement? element = FindElementWithName(winSet.Element);
@@ -374,7 +432,7 @@ namespace OpenDreamClient.Interface {
                         if (element != null) {
                             element.PopulateElementDescriptor(node, _serializationManager);
                         } else {
-                            Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                            _sawmill.Error($"Invalid element \"{controlId}\"");
                         }
                     }
                 }
@@ -388,7 +446,7 @@ namespace OpenDreamClient.Interface {
                 if (element == null && node.TryGet("parent", out ValueDataNode? parentNode)) {
                     var parent = FindElementWithName(parentNode.Value);
                     if (parent == null) {
-                        Logger.ErrorS("opendream.interface.winset", $"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
+                        _sawmill.Error($"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
                         return;
                     }
 
@@ -400,7 +458,7 @@ namespace OpenDreamClient.Interface {
                 } else if (element != null) {
                     element.PopulateElementDescriptor(node, _serializationManager);
                 } else {
-                    Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                    _sawmill.Error($"Invalid element \"{controlId}\"");
                 }
             }
         }
@@ -424,7 +482,7 @@ namespace OpenDreamClient.Interface {
                         elementDescriptor = new MacroSetDescriptor(cloneId);
                         break;
                     default:
-                        Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
+                        _sawmill.Error($"Invalid element to winclone \"{controlId}\"");
                         return;
                 }
             }
@@ -499,6 +557,16 @@ namespace OpenDreamClient.Interface {
                     }
                     break;
             }
+        }
+
+        private void OnPromptFinished(int promptId, DMValueType responseType, object? response) {
+            var msg = new MsgPromptResponse() {
+                PromptId = promptId,
+                Type = responseType,
+                Value = response
+            };
+
+            _netManager.ClientSendMessage(msg);
         }
     }
 

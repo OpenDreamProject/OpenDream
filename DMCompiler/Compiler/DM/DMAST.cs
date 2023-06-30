@@ -114,6 +114,10 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitProcStatementFtp(DMASTProcStatementFtp statementFtp) {
+            throw new NotImplementedException();
+        }
+
         public void VisitProcStatementOutput(DMASTProcStatementOutput statementOutput) {
             throw new NotImplementedException();
         }
@@ -139,10 +143,6 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public void VisitIdentifier(DMASTIdentifier identifier) {
-            throw new NotImplementedException();
-        }
-
-        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
             throw new NotImplementedException();
         }
 
@@ -247,6 +247,10 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public void VisitAssign(DMASTAssign assign) {
+            throw new NotImplementedException();
+        }
+
+        public void VisitAssignInto(DMASTAssignInto assign) {
             throw new NotImplementedException();
         }
 
@@ -514,6 +518,14 @@ namespace DMCompiler.Compiler.DM {
         public virtual IEnumerable<DMASTExpression> Leaves() {
             yield break;
         }
+
+        /// <summary>
+        /// If this is a <see cref="DMASTExpressionWrapped"/>, returns the expression inside.
+        /// Returns this expression if not.
+        /// </summary>
+        public virtual DMASTExpression GetUnwrapped() {
+            return this;
+        }
     }
 
     public abstract class DMASTExpressionConstant : DMASTExpression {
@@ -641,9 +653,11 @@ namespace DMCompiler.Compiler.DM {
     //TODO: This can probably be replaced with a DreamPath nullable
     public sealed class DMASTPath : DMASTNode {
         public DreamPath Path;
+        public bool IsOperator = false;
 
-        public DMASTPath(Location location, DreamPath path) : base(location) {
+        public DMASTPath(Location location, DreamPath path, bool operatorFlag = false) : base(location) {
             Path = path;
+            IsOperator = operatorFlag;
         }
 
         public override void Visit(DMASTVisitor visitor) {
@@ -1036,6 +1050,22 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public sealed class DMASTProcStatementFtp : DMASTProcStatement {
+        public DMASTExpression Receiver;
+        public DMASTExpression File;
+        public DMASTExpression Name;
+
+        public DMASTProcStatementFtp(Location location, DMASTExpression receiver, DMASTExpression file, DMASTExpression name) : base(location) {
+            Receiver = receiver;
+            File = file;
+            Name = name;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementFtp(this);
+        }
+    }
+
     public sealed class DMASTProcStatementOutput : DMASTProcStatement {
         public DMASTExpression A, B;
 
@@ -1109,18 +1139,6 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIdentifier(this);
-        }
-    }
-
-    public sealed class DMASTIdentifierWrapped : DMASTExpression {
-        public readonly DMASTIdentifier Identifier;
-
-        public DMASTIdentifierWrapped(Location location, DMASTIdentifier identifier) : base(location) {
-            Identifier = identifier;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitIdentifierWrapped(this);
         }
     }
 
@@ -1473,9 +1491,26 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public sealed class DMASTVarDeclExpression : DMASTExpression {
-        public readonly DMASTPath DeclPath;
+    public class DMASTAssignInto : DMASTExpression {
+        public DMASTExpression Expression, Value;
 
+        public DMASTAssignInto(Location location, DMASTExpression expression, DMASTExpression value) : base(location) {
+            Expression = expression;
+            Value = value;
+        }
+
+        public override IEnumerable<DMASTExpression> Leaves() {
+            yield return Expression;
+            yield return Value;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitAssignInto(this);
+        }
+    }
+
+    public class DMASTVarDeclExpression : DMASTExpression {
+        public DMASTPath DeclPath;
         public DMASTVarDeclExpression(Location location, DMASTPath path) : base(location) {
             DeclPath = path;
         }
@@ -2286,6 +2321,30 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRightShift(this);
+        }
+    }
+
+    /// <summary>
+    /// An expression wrapped around parentheses
+    /// <code>(1 + 1)</code>
+    /// </summary>
+    public sealed class DMASTExpressionWrapped : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTExpressionWrapped(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            Expression.Visit(visitor);
+        }
+
+        public override DMASTExpression GetUnwrapped() {
+            DMASTExpression expr = Expression;
+            while (expr is DMASTExpressionWrapped wrapped)
+                expr = wrapped.Expression;
+
+            return expr;
         }
     }
 

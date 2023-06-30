@@ -5,10 +5,10 @@ using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
 
 namespace OpenDreamRuntime.Rendering {
-    sealed class ServerAppearanceSystem : SharedAppearanceSystem {
+    public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         private readonly Dictionary<IconAppearance, uint> _appearanceToId = new();
         private readonly Dictionary<uint, IconAppearance> _idToAppearance = new();
-        private uint _appearanceIdCounter = 0;
+        private uint _appearanceIdCounter;
 
         [Dependency] private readonly IPlayerManager _playerManager = default!;
 
@@ -37,12 +37,6 @@ namespace OpenDreamRuntime.Rendering {
             }
 
             return appearanceId;
-        }
-
-        public uint? GetAppearanceId(IconAppearance appearance) {
-            if (_appearanceToId.TryGetValue(appearance, out uint id)) return id;
-
-            return null;
         }
 
         public IconAppearance MustGetAppearance(uint appearanceId) {

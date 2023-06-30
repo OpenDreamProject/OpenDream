@@ -1,13 +1,13 @@
-﻿using System.Linq;
-using OpenDreamRuntime.Objects;
+﻿using System.Text;
+using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 
 namespace OpenDreamRuntime.Procs.Native {
-    static class DreamProcNativeList {
+    internal static class DreamProcNativeList {
         [DreamProc("Add")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Add(NativeProc.State state) {
-            DreamList list = (DreamList)state.Src;
+            DreamList list = (DreamList)state.Src!;
 
             foreach (var argument in state.Arguments.Values) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Copy(NativeProc.State state) {
             int start = state.GetArgument(0, "Start").GetValueAsInteger(); //1-indexed
             int end = state.GetArgument(1, "End").GetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)state.Src;
+            DreamList list = (DreamList)state.Src!;
             DreamList listCopy = list.CreateCopy(start, end);
 
             return new DreamValue(listCopy);
@@ -40,7 +40,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Cut(NativeProc.State state) {
             int start = state.GetArgument(0, "Start").GetValueAsInteger(); //1-indexed
             int end = state.GetArgument(1, "End").GetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)state.Src;
+            DreamList list = (DreamList)state.Src!;
 
             list.Cut(start, end);
             return DreamValue.Null;
@@ -54,7 +54,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue element = state.GetArgument(0, "Elem");
             int start = state.GetArgument(1, "Start").GetValueAsInteger(); //1-indexed
             int end = state.GetArgument(2, "End").GetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)state.Src;
+            DreamList list = (DreamList)state.Src!;
 
             return new(list.FindValue(element, start, end));
         }
@@ -64,7 +64,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Insert(NativeProc.State state) {
             int index = state.GetArgument(0, "Index").GetValueAsInteger(); //1-indexed
-            DreamList list = (DreamList)state.Src;
+            DreamList list = (DreamList)state.Src!;
 
             if (index <= 0) index = list.GetLength() + 1;
             if (state.Arguments.Count < 2) throw new Exception("No value given to insert");
@@ -84,10 +84,43 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(index);
         }
 
+        [DreamProc("Join")]
+        [DreamProcParameter("Glue", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_Join(NativeProc.State state) {
+            DreamList list = (DreamList)state.Src!;
+            List<DreamValue> values = list.GetValues();
+
+            state.GetArgument(0, "Glue").TryGetValueAsString(out var glue);
+            if (!state.GetArgument(1, "Start").TryGetValueAsInteger(out var start))
+                start = 1;
+            state.GetArgument(2, "End").TryGetValueAsInteger(out var end);
+
+            // Negative wrap-around
+            if (end <= 0)
+                end += values.Count + 1;
+            if (start < 0)
+                start += values.Count + 1;
+
+            if (start == 0 || start >= end)
+                return new(string.Empty);
+
+            StringBuilder result = new(end - start);
+            for (int i = start; i < end; i++) {
+                result.Append(values[i - 1].Stringify());
+
+                if (i != end - 1)
+                    result.Append(glue);
+            }
+
+            return new DreamValue(result.ToString());
+        }
+
         [DreamProc("Remove")]
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Remove(NativeProc.State state) {
-            DreamList list = (DreamList)state.Src;
+            DreamList list = (DreamList)state.Src!;
             bool itemRemoved = false;
 
             foreach (var argument in state.Arguments.Values) {
@@ -115,7 +148,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Index1", Type = DreamValueType.Float)]
         [DreamProcParameter("Index2", Type = DreamValueType.Float)]
         public static DreamValue NativeProc_Swap(NativeProc.State state) {
-            DreamList list = (DreamList)state.Src;
+            DreamList list = (DreamList)state.Src!;
             int index1 = state.GetArgument(0, "Index1").GetValueAsInteger();
             int index2 = state.GetArgument(1, "Index2").GetValueAsInteger();
 

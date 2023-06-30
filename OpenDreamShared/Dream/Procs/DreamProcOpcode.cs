@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace OpenDreamShared.Dream.Procs {
@@ -74,7 +75,7 @@ namespace OpenDreamShared.Dream.Procs {
         DebugSource = 0x43,
         DebugLine = 0x44,
         Prompt = 0x45,
-        //0x46
+        Ftp = 0x46,
         Initial = 0x47,
         //0x48
         IsType = 0x49,
@@ -119,7 +120,8 @@ namespace OpenDreamShared.Dream.Procs {
         TryNoValue = 0x70,
         EndTry = 0x71,
         EnumerateNoAssign = 0x72,
-        Gradient = 0x73
+        Gradient = 0x73,
+        AssignInto = 0x74,
     }
 
     /// <summary>
@@ -310,34 +312,41 @@ namespace OpenDreamShared.Dream.Procs {
         //Field, SrcField, Proc, SrcProc
         public string Name;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DMReference CreateArgument(int argId) {
             if (argId > 255) throw new Exception("Argument id is greater than the maximum of 255");
 
             return new DMReference() { RefType = Type.Argument, Index = (byte)argId };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DMReference CreateLocal(int local) {
             if (local > 255) throw new Exception("Local variable id is greater than the maximum of 255");
 
             return new DMReference() { RefType = Type.Local, Index = (byte)local };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DMReference CreateGlobal(int global) {
             return new DMReference() { RefType = Type.Global, Index = global };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DMReference CreateField(string fieldName) {
             return new DMReference() { RefType = Type.Field, Name = fieldName };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DMReference CreateSrcField(string fieldName) {
             return new DMReference() { RefType = Type.SrcField, Name = fieldName };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DMReference CreateGlobalProc(int procId) {
             return new DMReference() { RefType = Type.GlobalProc, Index = procId };
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static DMReference CreateSrcProc(string procName) {
             return new DMReference() { RefType = Type.SrcProc, Name = procName };
         }

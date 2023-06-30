@@ -13,16 +13,20 @@ namespace OpenDreamClient.Rendering;
 /// <summary>
 /// Overlay for rendering world atoms
 /// </summary>
-sealed class DreamViewOverlay : Overlay {
+internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly ProfManager _prof = default!;
+
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
+
     private EntityQuery<DMISpriteComponent> spriteQuery;
     private EntityQuery<TransformComponent> xformQuery;
     private EntityQuery<DreamMobSightComponent> mobSightQuery;
+
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
@@ -50,7 +54,7 @@ sealed class DreamViewOverlay : Overlay {
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
-        Logger.Debug("Loading shaders...");
+        _sawmill.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
@@ -87,9 +91,8 @@ sealed class DreamViewOverlay : Overlay {
         try {
             DrawAll(args, eye.Value);
         } catch (Exception e) {
-            Logger.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
+            _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
-
 
         //store our mouse map's image and return the render target
         MouseMap = _mouseMapRenderTarget.Texture;
@@ -107,7 +110,6 @@ sealed class DreamViewOverlay : Overlay {
         //RendererMetaData objects get reused instead of GC'd
         while( _rendererMetaDataToReturn.Count > 0)
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
-
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
@@ -116,10 +118,12 @@ sealed class DreamViewOverlay : Overlay {
         _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
         _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
 
-
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
+
         Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
+
+        _mapManager.TryFindGridAt(eyeTransform.MapPosition, out _, out var grid);
 
         HashSet<EntityUid> entities;
         using (_prof.Group("lookup")) {
@@ -130,42 +134,118 @@ sealed class DreamViewOverlay : Overlay {
 
         List<RendererMetaData> sprites = new(entities.Count + 1);
 
-        int seeVis = 127;
-        if(mobSightQuery.TryGetComponent(eye, out var mobSight)){
-            seeVis = mobSight.SeeInvisibility;
-        }
+        mobSightQuery.TryGetComponent(eye, out var mobSight);
+        int seeVis = mobSight?.SeeInvisibility ?? 127;
+        SightFlags sight = mobSight?.Sight ?? 0;
+
+        int tValue = 0; //this exists purely because the tiebreaker var needs to exist somewhere, but it's set to 0 again before every unique call to ProcessIconComponents
 
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
-            if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
-                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false));
-        }
-
-        //visible entities
-        if(RenderEntityEnabled) {
-            using var _ = _prof.Group("process entities");
-            foreach (EntityUid entity in entities) {
-                if(entity == eye)
-                    continue; //don't render the player twice
-                // TODO use a sprite tree.
-                if (!spriteQuery.TryGetComponent(entity, out var sprite))
-                    continue;
-                if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
-                    continue;
-                if(!xformQuery.TryGetComponent(sprite.Owner, out var spriteTransform))
-                    continue;
-                sprites.AddRange(ProcessIconComponents(sprite.Icon, _transformSystem.GetWorldPosition(spriteTransform.Owner, xformQuery) - 0.5f, sprite.Owner, false));
+            if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis)){
+                tValue = 0;
+                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false, ref tValue));
             }
         }
 
-        //visible turfs
-        if(RenderTurfEnabled){
-            using var _ = _prof.Group("visible turfs");
-            if (_mapManager.TryFindGridAt(eyeTransform.MapPosition, out var grid))
-                foreach (TileRef tileRef in grid.GetTilesIntersecting(screenArea.Scale(1.2f))) {
-                    MapCoordinates pos = grid.GridTileToWorld(tileRef.GridIndices);
-                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), pos.Position - 1, EntityUid.Invalid, false));
+        // Hardcoded for a 15x15 view (with 1 tile buffer on each side)
+        var tiles = new ViewAlgorithm.Tile?[17, 17];
+
+        if (grid != null) {
+            var eyeTile = grid.GetTileRef(eyeTransform.MapPosition);
+
+            //visible turfs
+            if(RenderTurfEnabled) {
+                using var _ = _prof.Group("visible turfs");
+
+                var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
+                var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, (17, 17)));
+
+                // Gather up all the data the view algorithm needs
+                foreach (TileRef tileRef in tileRefs) {
+                    var delta = tileRef.GridIndices - eyeTile.GridIndices;
+                    var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
+
+                    var tile = new ViewAlgorithm.Tile {
+                        Opaque = appearance.Opacity,
+                        Luminosity = 0,
+                        DeltaX = delta.X,
+                        DeltaY = delta.Y
+                    };
+
+                    tiles[delta.X + 8, delta.Y + 8] = tile;
                 }
+
+                // Apply entities' opacity
+                foreach (EntityUid entity in entities) {
+                    // TODO use a sprite tree.
+                    if (!spriteQuery.TryGetComponent(entity, out var sprite))
+                        continue;
+                    if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
+                        continue;
+                    if(sprite.Icon.Appearance == null) //apearance hasn't loaded yet
+                        continue;
+
+                    var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
+                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
+                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                        continue;
+
+                    var tile = tiles[tilePos.X, tilePos.Y];
+                    if (tile != null)
+                        tile.Opaque |= sprite.Icon.Appearance.Opacity;
+                }
+
+                ViewAlgorithm.CalculateVisibility(tiles);
+
+                // Collect visible turf sprites
+                foreach (var tile in tiles) {
+                    if (tile == null)
+                        continue;
+                    if (tile.IsVisible == false && (sight & SightFlags.SeeTurfs) == 0)
+                        continue;
+
+                    Vector2i tilePos = eyeTile.GridIndices + (tile.DeltaX, tile.DeltaY);
+                    TileRef tileRef = grid.GetTileRef(tilePos);
+                    MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
+
+                    tValue = 0;
+                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - 1, EntityUid.Invalid, false, ref tValue));
+                }
+            }
+
+            //visible entities
+            if (RenderEntityEnabled) {
+                using var _ = _prof.Group("process entities");
+
+                foreach (EntityUid entity in entities) {
+                    if(entity == eye)
+                        continue; //don't render the player twice
+
+                    // TODO use a sprite tree.
+                    if (!spriteQuery.TryGetComponent(entity, out var sprite))
+                        continue;
+                    if (!sprite.IsVisible(mapManager: _mapManager, seeInvis: seeVis))
+                        continue;
+
+                    var worldPos = _transformSystem.GetWorldPosition(entity, xformQuery);
+
+                    // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
+                    // TODO: Differentiate between objs and mobs
+                    if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0) {
+                        var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
+                        if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                            continue;
+
+                        var tile = tiles[tilePos.X, tilePos.Y];
+                        if (tile?.IsVisible is not true)
+                            continue;
+                    }
+
+                    tValue = 0;
+                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, sprite.Owner, false, ref tValue));
+                }
+            }
         }
 
         //screen objects
@@ -180,7 +260,8 @@ sealed class DreamViewOverlay : Overlay {
                 Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
-                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true));
+                        tValue = 0;
+                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true, ref tValue));
                     }
                 }
             }
@@ -306,7 +387,7 @@ sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
-    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, RendererMetaData? parentIcon = null, bool keepTogether = false, int tieBreaker = 0) {
+    private List<RendererMetaData> ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, Boolean isScreen, ref int tieBreaker, RendererMetaData? parentIcon = null, bool keepTogether = false ) {
         if(icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return new List<RendererMetaData>(0);
         List<RendererMetaData> result = new(icon.Underlays.Count + icon.Overlays.Count + 1);
@@ -407,28 +488,28 @@ sealed class DreamViewOverlay : Overlay {
         //dont forget the vis_flags
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
-        int underlayTiebreaker = -icon.Underlays.Count+tieBreaker;
         foreach (DreamIcon underlay in icon.Underlays) {
-            underlayTiebreaker--;
-
-            if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, false, underlayTiebreaker));
-            else {
+            tieBreaker++;
+            if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) {//KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
+                result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, false));
+            } else {
                 current.KeepTogetherGroup ??= new();
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, current, keepTogether, underlayTiebreaker));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, keepTogether));
             }
         }
 
+        tieBreaker++;
+        current.TieBreaker = tieBreaker;
+
         //overlays - colour, alpha, and transform are inherited, but filters aren't
-        int overlayTiebreaker = icon.Overlays.Count+tieBreaker;
         foreach (DreamIcon overlay in icon.Overlays) {
-            overlayTiebreaker++;
+            tieBreaker++;
 
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
-                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, false, overlayTiebreaker));
+                result.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current, false));
             else {
                 current.KeepTogetherGroup ??= new();
-                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, current, keepTogether, overlayTiebreaker));
+                current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current, keepTogether));
             }
         }
 
@@ -809,7 +890,14 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         if (val != 0) {
             return val;
         }
-
+        //FLOAT_LAYER must be sorted local to the thing they're floating on, and since all overlays/underlays share their parent's UID, we
+        //can do that here.
+        if(this.MainIcon.Appearance?.Layer < 0 && other.MainIcon.Appearance?.Layer < 0){ //if these are FLOAT_LAYER, sort amongst them
+            val = this.MainIcon.Appearance.Layer.CompareTo(other.MainIcon.Appearance.Layer);
+            if (val != 0) {
+                return val;
+            }
+        }
         val = this.TieBreaker.CompareTo(other.TieBreaker);
         if (val != 0) {
             return val;

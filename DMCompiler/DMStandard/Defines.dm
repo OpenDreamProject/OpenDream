@@ -149,10 +149,10 @@
 //world/Profile() arg
 #define PROFILE_STOP	1
 #define PROFILE_CLEAR	2
-#define PROFILE_AVERAGE 3
-#define PROFILE_START	4
-#define PROFILE_REFRESH	5
-#define PROFILE_RESTART	6
+#define PROFILE_AVERAGE 4
+#define PROFILE_START	0
+#define PROFILE_REFRESH	0
+#define PROFILE_RESTART	PROFILE_CLEAR
 
 //filter(type="alpha", ...) flags arg
 #define MASK_INVERSE	(1<<0)

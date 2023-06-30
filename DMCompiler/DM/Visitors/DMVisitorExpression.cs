@@ -136,10 +136,6 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
-            VisitIdentifier(identifier.Identifier);
-        }
-
         public void VisitVarDeclExpression(DMASTVarDeclExpression declExpr) {
             VisitIdentifier( new DMASTIdentifier(declExpr.Location, declExpr.DeclPath.Path.LastElement) );
         }
@@ -222,6 +218,15 @@ namespace DMCompiler.DM.Visitors {
                 DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
             }
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
+        }
+
+        public void VisitAssignInto(DMASTAssignInto assign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.NestedPath);
+            if(lhs.TryAsConstant(out _)) {
+                DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
+            }
+            Result = new Expressions.AssignmentInto(assign.Location, lhs, rhs);
         }
 
         public void VisitNegate(DMASTNegate negate) {
@@ -467,6 +472,7 @@ namespace DMCompiler.DM.Visitors {
             static bool IsFuzzy(DMExpression expr) {
                 switch (expr) {
                     case ProcCall when expr.Path == null:
+                    case New when expr.Path == null:
                     case List:
                     case Ternary:
                     case BinaryAnd:
@@ -503,7 +509,7 @@ namespace DMCompiler.DM.Visitors {
 
                     var globalId = _dmObject.GetGlobalVariableId(firstOperation.Identifier.Identifier);
                     if (globalId == null) {
-                        throw new CompileErrorException(deref.Location, $"Invalid property global.{firstOperation.Identifier.Identifier}");
+                        throw new UnknownIdentifierException(deref.Location, $"global.{firstOperation.Identifier.Identifier}");
                     }
 
                     var property = DMObjectTree.Globals[globalId.Value];
@@ -577,7 +583,7 @@ namespace DMCompiler.DM.Visitors {
                             string field = astOperation.Identifier.Identifier;
 
                             if (prevPath == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\"");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             DMObject dmObject = DMObjectTree.GetDMObject(prevPath.Value, false);
@@ -610,7 +616,7 @@ namespace DMCompiler.DM.Visitors {
                             }
 
                             if (property == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\" on type {prevPath}");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
@@ -647,7 +653,7 @@ namespace DMCompiler.DM.Visitors {
                             ArgumentList argumentList = new(deref.Expression.Location, _dmObject, _proc, astOperation.Parameters, null);
 
                             if (prevPath == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\"");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             DMObject dmObject = DMObjectTree.GetDMObject(prevPath.Value, false);

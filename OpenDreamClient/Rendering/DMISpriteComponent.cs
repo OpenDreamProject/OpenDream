@@ -1,14 +1,14 @@
 ﻿using JetBrains.Annotations;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
+using Robust.Client.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Physics;
 
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    [ComponentReference(typeof(ILookupWorldBox2Component))]
-    sealed class DMISpriteComponent : SharedDMISpriteComponent, ILookupWorldBox2Component {
+    sealed class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
 
@@ -30,8 +30,11 @@ namespace OpenDreamClient.Rendering {
             Icon.SetAppearance(state.AppearanceId);
         }
 
-        public Box2 GetAABB(Transform transform) {
-            return Icon.GetWorldAABB(transform.Position);
+        public void GetAABB(TransformSystem sys, ref WorldAABBEvent e) {
+            if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform)) {
+                return;
+            }
+            e.AABB = Icon.GetWorldAABB(sys.GetWorldPosition(transform));
         }
 
         public bool IsVisible(bool checkWorld = true, IMapManager? mapManager = null, int seeInvis = 0) {

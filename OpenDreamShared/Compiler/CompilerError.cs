@@ -50,6 +50,7 @@ namespace OpenDreamShared.Compiler {
         InvalidOverride = 2303,
         DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
         MissingInterpolatedExpression = 2500, // A text macro is missing a required interpolated expression
+        AmbiguousResourcePath = 2600,
 
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,

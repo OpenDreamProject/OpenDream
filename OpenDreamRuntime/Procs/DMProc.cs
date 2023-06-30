@@ -1,8 +1,9 @@
 using System.Buffers;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -26,8 +27,8 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
-            : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
+        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
+            : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
             Source = json.Source;
@@ -73,7 +74,7 @@ namespace OpenDreamRuntime.Procs {
     }
 
     public sealed class DMProcState : ProcState {
-        delegate ProcStatus? OpcodeHandler(DMProcState state);
+        private delegate ProcStatus? OpcodeHandler(DMProcState state);
 
         public static readonly Stack<DMProcState> Pool = new();
 
@@ -147,6 +148,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.DebugSource, DMOpcodeHandlers.DebugSource},
             {DreamProcOpcode.DebugLine, DMOpcodeHandlers.DebugLine},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
+            {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
             {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},
@@ -174,6 +176,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
             {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
+            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
             {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},
             {DreamProcOpcode.JumpIfTrueReference, DMOpcodeHandlers.JumpIfTrueReference},
@@ -452,10 +455,12 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         #region Operands
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadByte() {
             return _proc.Bytecode[_pc++];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadInt() {
             int value = BitConverter.ToInt32(_proc.Bytecode, _pc);
             _pc += 4;
@@ -463,6 +468,7 @@ namespace OpenDreamRuntime.Procs {
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float ReadFloat() {
             float value = BitConverter.ToSingle(_proc.Bytecode, _pc);
             _pc += 4;
@@ -470,12 +476,14 @@ namespace OpenDreamRuntime.Procs {
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadString() {
-            int stringID = ReadInt();
+            int stringId = ReadInt();
 
-            return Proc.ObjectTree.Strings[stringID];
+            return Proc.ObjectTree.Strings[stringId];
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public DMReference ReadReference() {
             DMReference.Type refType = (DMReference.Type)ReadByte();
 
@@ -572,12 +580,8 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
 
-                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                        listObj.SetValue(index, value);
-                    } else if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                        IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                            metaObject.OperatorIndexAssign(dreamObject!, index, value);
+                    if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                        dreamObject.OperatorIndexAssign(index, value);
                     } else {
                         throw new Exception($"Cannot assign to index {index} of {indexing}");
                     }
@@ -674,9 +678,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                if (metaObject != null)
-                    return metaObject.OperatorIndex(dreamObject, index);
+                if (dreamObject != null)
+                    return dreamObject.OperatorIndex(index);
             }
 
             throw new Exception($"Cannot get index {index} of {indexing}");

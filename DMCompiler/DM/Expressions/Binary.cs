@@ -524,6 +524,18 @@ namespace DMCompiler.DM.Expressions {
             proc.Assign(reference);
         }
     }
+    // x := y
+    class AssignmentInto : AssignmentBinaryOp {
+        public override DreamPath? Path => LHS.Path;
+
+        public AssignmentInto(Location location, DMExpression lhs, DMExpression rhs)
+            : base(location, lhs, rhs) { }
+
+        public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
+            RHS.EmitPushValue(dmObject, proc);
+            proc.AssignInto(reference);
+        }
+    }
 
     // x += y
     sealed class Append : AssignmentBinaryOp {

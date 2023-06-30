@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream.Procs;
@@ -8,12 +9,14 @@ using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;
 
-sealed class DreamDebugManager : IDreamDebugManager {
+internal sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly IDreamManager _dreamManager = default!;
     [Dependency] private readonly IDreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
+
+    private ISawmill _sawmill = default!;
 
     // Setup
     private DebugAdapter? _adapter;
@@ -31,6 +34,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
         StepIn,
         StepOut,
     }
+
     public struct ThreadStepMode {
         public StepMode Mode;
         public int FrameId;
@@ -82,6 +86,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
 
     // Lifecycle
     public void Initialize(int port) {
+        _sawmill = Logger.GetSawmill("opendream.debugger");
         _adapter = new DebugAdapter();
 
         _adapter.OnClientConnected += OnClientConnected;
@@ -665,7 +670,7 @@ sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandGlobals(RequestVariables req) {
-        foreach (var (name, value) in _dreamManager.GlobalNames.Zip(_dreamManager.Globals)) {
+        foreach (var (name, value) in _dreamManager.GlobalNames.Order().Zip(_dreamManager.Globals)) {
             yield return DescribeValue(name, value);
         }
     }
@@ -713,7 +718,8 @@ sealed class DreamDebugManager : IDreamDebugManager {
             try {
                 described = DescribeValue(name, obj.GetVariable(name));
             } catch (Exception ex) {
-                Logger.ErrorS("debug", ex, $"Error in GetVariable({name})");
+                _sawmill.Log(LogLevel.Error, ex, $"Error in GetVariable({name})");
+
                 described = new Variable {
                     Name = name,
                     Value = $"<error: {ex.Message}>",

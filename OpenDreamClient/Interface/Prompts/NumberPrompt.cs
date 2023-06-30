@@ -1,15 +1,12 @@
 ﻿using OpenDreamShared.Dream.Procs;
-using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Prompts
-{
-    [Virtual]
-    class NumberPrompt : InputWindow {
+namespace OpenDreamClient.Interface.Prompts {
+    internal sealed class NumberPrompt : InputWindow {
         private readonly LineEdit _numberInput;
 
-        public NumberPrompt(int promptId, String title, String message, String defaultValue, bool canCancel) : base(
-            promptId, title, message, defaultValue, canCancel) {
+        public NumberPrompt(string title, string message, string defaultValue, bool canCancel,
+            Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
             _numberInput = new() {
                 Text = defaultValue,
                 VerticalAlignment = VAlignment.Top,
@@ -22,7 +19,7 @@ namespace OpenDreamClient.Interface.Prompts
 
         protected override void OkButtonClicked() {
             if (!float.TryParse(_numberInput.Text, out float num)) {
-                Logger.Error($"Error while trying to convert {_numberInput.Text} to a number.");
+                Logger.GetSawmill("opendream.prompt").Error($"Error while trying to convert {_numberInput.Text} to a number.");
             }
 
             FinishPrompt(DMValueType.Num, num);

@@ -23,9 +23,7 @@ public sealed class DreamObjectImage : DreamObject {
 
     public DreamObjectImage(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         if (objectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
-            // /mutable_appearance.overlays and /mutable_appearance.underlays have an initial value of a normal list
-            // Assigning to these vars later will replace them with the expected special overlay list type
-            // This is likely unintentional behavior from BYOND, but we have to replicate it
+            // /mutable_appearance.overlays and /mutable_appearance.underlays are normal lists
             _overlays = ObjectTree.CreateList();
             _underlays = ObjectTree.CreateList();
         } else {
@@ -113,12 +111,30 @@ public sealed class DreamObjectImage : DreamObject {
                 value.TryGetValueAsDreamObject(out _loc);
                 break;
             case "overlays": {
-                if (_overlays is not DreamOverlaysList) // Assigning to this will ensure it's a DreamOverlaysList
-                    _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+                value.TryGetValueAsDreamList(out var valueList);
+
+                // /mutable_appearance has some special behavior for its overlays and underlays vars
+                // They're normal lists, not the special DreamOverlaysList.
+                // Setting them to a list will create a copy of that list.
+                // Otherwise it attempts to create an appearance and creates a new (normal) list with that appearance
+                if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
+                    if (valueList != null) {
+                        _overlays = valueList.CreateCopy();
+                    } else {
+                        var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, Appearance?.Icon);
+                        if (overlay == null)
+                            return;
+
+                        _overlays.Cut();
+                        _overlays.AddValue(new(overlay));
+                    }
+
+                    return;
+                }
 
                 _overlays.Cut();
 
-                if (value.TryGetValueAsDreamList(out var valueList)) {
+                if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue overlayValue in valueList.GetValues()) {
                         _overlays.AddValue(overlayValue);
@@ -130,12 +146,27 @@ public sealed class DreamObjectImage : DreamObject {
                 break;
             }
             case "underlays": {
-                if (_underlays is not DreamOverlaysList) // Assigning to this will ensure it's a DreamOverlaysList
-                    _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+                value.TryGetValueAsDreamList(out var valueList);
+
+                // See the comment in the overlays setter for info on this
+                if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
+                    if (valueList != null) {
+                        _underlays = valueList.CreateCopy();
+                    } else {
+                        var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, Appearance?.Icon);
+                        if (underlay == null)
+                            return;
+
+                        _underlays.Cut();
+                        _underlays.AddValue(new(underlay));
+                    }
+
+                    return;
+                }
 
                 _underlays.Cut();
 
-                if (value.TryGetValueAsDreamList(out var valueList)) {
+                if (valueList != null) {
                     // TODO: This should postpone UpdateAppearance until after everything is added
                     foreach (DreamValue underlayValue in valueList.GetValues()) {
                         _underlays.AddValue(underlayValue);

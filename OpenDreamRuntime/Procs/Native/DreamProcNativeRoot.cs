@@ -1089,28 +1089,49 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(list);
                 }
                 case JsonValueKind.Object: {
+                    // Stick to using an enumerator because getting an array, specially of an
+                    // object in a plaintext notation of unconstrained size, causes lot of
+                    // heap allocation, so avoid that.
+                    var enumerator = jsonElement.EnumerateObject();
                     DreamList list = objectTree.CreateList();
 
-                    foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
-                        DreamValue value = CreateValueFromJsonElement(objectTree, childProperty.Value);
-
-                        list.SetValue(new DreamValue(childProperty.Name), value);
-                    }
+                    // The object contained nothing.
+                    if(!enumerator.MoveNext())
+                        return new DreamValue(list);
 
                     // For handling special values expressed as single-property objects
                     // Such as float-point values Infinity and NaN
-                    if (list.GetLength() == 1) {
-                        var pair = list.GetAssociativeValues().First();
-                        pair.Key.TryGetValueAsString(out string? propertyName);
-                        switch(propertyName) {
+                    var first = enumerator.Current;
+                    var has_second = enumerator.MoveNext();
+                    if (!has_second) {
+                        switch(first.Name) {
                             case "__number__": {
-                                pair.Value.TryGetValueAsString(out string? raw);
+                                var raw = first.Value.GetString();
                                 var val = raw != null ? float.Parse(raw) : float.NaN;
                                 return new DreamValue(val);
                             }
                             default: break;
                         }
                     }
+                    // It was not a single-property? Or the property was not special?
+                    // FANTASTIC. STOP PRETENDING BEING A PARSER AND INSERT THEM IN A LIST
+                    DreamValue v1 = CreateValueFromJsonElement(objectTree, first.Value);
+                    list.SetValue(new DreamValue(first.Name), v1);
+
+                    if(!has_second)
+                        return new DreamValue(list);
+
+                    var second = enumerator.Current;
+                    DreamValue v2 = CreateValueFromJsonElement(objectTree, second.Value);
+                    list.SetValue(new DreamValue(second.Name), v2);
+
+                    // Enumerate the damn rest of the godawful fucking shitty JSON
+                    foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
+                        DreamValue value = CreateValueFromJsonElement(objectTree, childProperty.Value);
+
+                        list.SetValue(new DreamValue(childProperty.Name), value);
+                    }
+
                     return new DreamValue(list);
                 }
                 case JsonValueKind.String:

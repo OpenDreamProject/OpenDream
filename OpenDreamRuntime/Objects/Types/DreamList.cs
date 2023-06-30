@@ -570,6 +570,23 @@ namespace OpenDreamRuntime.Objects.Types {
             _isUnderlays = isUnderlays;
         }
 
+        public override List<DreamValue> GetValues() {
+            var appearance = _atomManager.MustGetAppearance(_atom);
+            if (appearance == null || _appearanceSystem == null)
+                return new List<DreamValue>();
+
+            var overlays = GetOverlaysList(appearance);
+            var values = new List<DreamValue>(overlays.Count);
+
+            foreach (var overlay in overlays) {
+                var overlayAppearance = _appearanceSystem.MustGetAppearance(overlay);
+
+                values.Add(new(overlayAppearance));
+            }
+
+            return values;
+        }
+
         public override void Cut(int start = 1, int end = 0) {
             _atomManager.UpdateAppearance(_atom, appearance => {
                 List<uint> overlaysList = GetOverlaysList(appearance);

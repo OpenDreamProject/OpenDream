@@ -61,8 +61,6 @@ namespace DMCompiler.DM.Visitors {
                 DMCompiler.Emit(WarningCode.EmptyProc, _proc.Location,"Empty proc detected - add an explicit \"return\" statement");
                 if (procDefinition.Body.SetStatements.Length > 0) { // We check this after because a proc with just set statements is still an empty proc
                     ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
-                } else {
-                    DMCompiler.Emit(WarningCode.EmptyBlock,_proc.Location,"Empty block detected");
                 }
             } else {
                 ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);

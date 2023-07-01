@@ -60,6 +60,7 @@
 			mob = new world.mob(locate(1,1,1)) // TODO: Find nearest non-dense turf
 
 		eye = mob
+		statobj = mob
 		return mob
 
 	proc/Del()

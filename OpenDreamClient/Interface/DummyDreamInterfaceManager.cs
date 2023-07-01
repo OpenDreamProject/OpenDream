@@ -25,7 +25,7 @@ namespace OpenDreamClient.Interface {
 
         }
 
-        public InterfaceElement? FindElementWithName(string name) {
+        public InterfaceElement? FindElementWithId(string id) {
             return null;
         }
 

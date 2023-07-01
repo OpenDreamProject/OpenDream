@@ -158,7 +158,7 @@ namespace OpenDreamClient.Interface {
             if (pOutput.Control != null) {
                 string[] split = pOutput.Control.Split(":");
 
-                interfaceElement = (InterfaceControl?)FindElementWithName(split[0]);
+                interfaceElement = (InterfaceControl?)FindElementWithId(split[0]);
                 if (split.Length > 1) data = split[1];
             } else {
                 interfaceElement = DefaultOutput;
@@ -234,7 +234,7 @@ namespace OpenDreamClient.Interface {
 
                 if (pBrowse.Window != null) {
                     htmlFileName = pBrowse.Window;
-                    outputBrowser = FindElementWithName(pBrowse.Window) as ControlBrowser;
+                    outputBrowser = FindElementWithId(pBrowse.Window) as ControlBrowser;
 
                     if (outputBrowser == null) {
                         if (!_popupWindows.TryGetValue(pBrowse.Window, out popup)) {
@@ -268,7 +268,7 @@ namespace OpenDreamClient.Interface {
         }
 
         private void RxWinExists(MsgWinExists message) {
-            InterfaceElement? element = FindElementWithName(message.ControlId);
+            InterfaceElement? element = FindElementWithId(message.ControlId);
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
                 Type = DMValueType.Text,
@@ -323,49 +323,54 @@ namespace OpenDreamClient.Interface {
                 DefaultMap.Viewport.Eye = _eyeManager.CurrentEye;
         }
 
-        public InterfaceElement? FindElementWithName(string name) {
-            string[] split = name.Split(".");
+        public InterfaceElement? FindElementWithId(string id) {
+            string[] split = id.Split(".");
 
             if (split.Length == 2) {
-                string windowName = split[0];
-                string elementName = split[1];
+                string windowId = split[0];
+                string elementId = split[1];
                 ControlWindow? window = null;
 
-                if (Windows.ContainsKey(windowName)) {
-                    window = Windows[windowName];
-                } else if (_popupWindows.TryGetValue(windowName, out var popup)) {
+                if (Windows.ContainsKey(windowId)) {
+                    window = Windows[windowId];
+                } else if (_popupWindows.TryGetValue(windowId, out var popup)) {
                     window = popup.WindowElement;
                 }
 
                 if (window != null) {
                     foreach (InterfaceControl element in window.ChildControls) {
-                        if (element.Name == elementName) return element;
+                        if (element.Id == elementId) return element;
                     }
                 }
             } else {
-                string elementName = split[0];
+                string elementId = split[0];
 
                 foreach (ControlWindow window in Windows.Values) {
-                    if (window.Name == elementName)
+                    if (window.Id == elementId)
                         return window;
 
                     foreach (InterfaceControl element in window.ChildControls) {
-                        if (element.Name == elementName) return element;
+                        if (element.Id == elementId) return element;
                     }
                 }
 
                 foreach (InterfaceMenu menu in Menus.Values) {
-                    if (menu.Name == elementName)
+                    if (menu.Id == elementId)
                         return menu;
 
-                    if (menu.MenuElements.TryGetValue(elementName, out var menuElement))
+                    if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
                         return menuElement;
                 }
 
-                if (MacroSets.TryGetValue(elementName, out var macroSet))
-                    return macroSet;
+                foreach (var macroSet in MacroSets.Values) {
+                    if (macroSet.Id == elementId)
+                        return macroSet;
 
-                if (_popupWindows.TryGetValue(elementName, out var popup))
+                    if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
+                        return macroElement;
+                }
+
+                if (_popupWindows.TryGetValue(elementId, out var popup))
                     return popup.WindowElement;
             }
 
@@ -424,7 +429,7 @@ namespace OpenDreamClient.Interface {
                             _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                         }
                     } else {
-                        InterfaceElement? element = FindElementWithName(winSet.Element);
+                        InterfaceElement? element = FindElementWithId(winSet.Element);
                         MappingDataNode node = new() {
                             {winSet.Attribute, winSet.Value}
                         };
@@ -437,19 +442,20 @@ namespace OpenDreamClient.Interface {
                     }
                 }
             } else {
-                InterfaceElement? element = FindElementWithName(controlId);
+                InterfaceElement? element = FindElementWithId(controlId);
                 MappingDataNode node = parser.Attributes();
 
                 if (CheckParserErrors())
                     return;
 
                 if (element == null && node.TryGet("parent", out ValueDataNode? parentNode)) {
-                    var parent = FindElementWithName(parentNode.Value);
+                    var parent = FindElementWithId(parentNode.Value);
                     if (parent == null) {
                         _sawmill.Error($"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
                         return;
                     }
 
+                    node.Add("id", controlId);
                     var childDescriptor = parent.ElementDescriptor.CreateChildDescriptor(_serializationManager, node);
                     if (childDescriptor == null)
                         return;
@@ -541,12 +547,12 @@ namespace OpenDreamClient.Interface {
                 case MacroSetDescriptor macroSetDescriptor:
                     InterfaceMacroSet macroSet = new(macroSetDescriptor, _entitySystemManager, _inputManager, _uiManager);
 
-                    MacroSets.Add(macroSet.Name, macroSet);
+                    MacroSets[macroSet.Id] = macroSet;
                     break;
                 case MenuDescriptor menuDescriptor:
                     InterfaceMenu menu = new(menuDescriptor);
 
-                    Menus.Add(menu.Name, menu);
+                    Menus.Add(menu.Id, menu);
                     break;
                 case WindowDescriptor windowDescriptor:
                     ControlWindow window = new ControlWindow(windowDescriptor);
@@ -582,7 +588,7 @@ namespace OpenDreamClient.Interface {
 
         void Initialize();
         void FrameUpdate(FrameEventArgs frameEventArgs);
-        InterfaceElement? FindElementWithName(string name);
+        InterfaceElement? FindElementWithId(string id);
         void SaveScreenshot(bool openDialog);
         void LoadInterfaceFromSource(string source);
         void WinSet(string? controlId, string winsetParams);

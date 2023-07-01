@@ -20,7 +20,7 @@ namespace OpenDreamClient.Interface
             WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name,
                 new() {
                     new ControlDescriptorBrowser {
-                        Name = "browser",
+                        Id = "browser",
                         Size = size,
                         Anchor1 = new Vector2i(0, 0),
                         Anchor2 = new Vector2i(100, 100)

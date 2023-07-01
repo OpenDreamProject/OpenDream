@@ -130,7 +130,7 @@ namespace OpenDreamClient.Interface.Controls {
                     if (control.Anchor2.HasValue) {
                         if (control.Anchor2.Value.X < control.Anchor1.Value.X ||
                             control.Anchor2.Value.Y < control.Anchor1.Value.Y)
-                            _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Name}. Ignoring.");
+                            _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Id}. Ignoring.");
                         else {
                             var offset2X = (elementPos.X + elementSize.X) -
                                            (windowSize.X * control.Anchor2.Value.X / 100);
@@ -200,7 +200,7 @@ namespace OpenDreamClient.Interface.Controls {
                     ChildControls.Add(control);
                 else {
                     _sawmill.Warning(
-                        $"Out of order component {control.Name}. Elements should be defined in order of position. Attempting to fix automatically.");
+                        $"Out of order component {control.Id}. Elements should be defined in order of position. Attempting to fix automatically.");
 
                     int i = 0;
                     while (i < ChildControls.Count) {

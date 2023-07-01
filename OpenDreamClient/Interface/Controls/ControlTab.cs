@@ -2,20 +2,20 @@ using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls {
-    sealed class ControlTab : InterfaceControl {
-        private TabContainer _tab;
+namespace OpenDreamClient.Interface.Controls;
 
-        public ControlTab(ControlDescriptor controlDescriptor, ControlWindow window) :
-            base(controlDescriptor, window) {
-        }
+internal sealed class ControlTab : InterfaceControl {
+    private TabContainer _tab;
 
-        protected override Control CreateUIElement() {
-            _tab = new TabContainer() {
+    public ControlTab(ControlDescriptor controlDescriptor, ControlWindow window) :
+        base(controlDescriptor, window) {
+    }
 
-            };
+    protected override Control CreateUIElement() {
+        _tab = new TabContainer() {
 
-            return _tab;
-        }
+        };
+
+        return _tab;
     }
 }

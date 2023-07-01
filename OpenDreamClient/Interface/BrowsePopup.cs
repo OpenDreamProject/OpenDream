@@ -3,54 +3,53 @@ using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface
-{
-    sealed class BrowsePopup {
-        public event Action Closed;
+namespace OpenDreamClient.Interface;
 
-        public ControlBrowser Browser;
-        public ControlWindow WindowElement;
+internal sealed class BrowsePopup {
+    public event Action Closed;
 
-        private OSWindow _window;
+    public ControlBrowser Browser;
+    public ControlWindow WindowElement;
 
-        public BrowsePopup(
-            string name,
-            Vector2i size,
-            IClydeWindow ownerWindow) {
-            WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name,
-                new() {
-                    new ControlDescriptorBrowser {
-                        Id = "browser",
-                        Size = size,
-                        Anchor1 = new Vector2i(0, 0),
-                        Anchor2 = new Vector2i(100, 100)
-                    }
-                }) {
-                    Size = size
-                };
+    private OSWindow _window;
 
-            WindowElement = new ControlWindow(popupWindowDescriptor);
-            WindowElement.CreateChildControls();
+    public BrowsePopup(
+        string name,
+        Vector2i size,
+        IClydeWindow ownerWindow) {
+        WindowDescriptor popupWindowDescriptor = new WindowDescriptor(name,
+            new() {
+                new ControlDescriptorBrowser {
+                    Id = "browser",
+                    Size = size,
+                    Anchor1 = new Vector2i(0, 0),
+                    Anchor2 = new Vector2i(100, 100)
+                }
+            }) {
+                Size = size
+            };
 
-            _window = WindowElement.CreateWindow();
-            _window.StartupLocation = WindowStartupLocation.CenterOwner;
-            _window.Owner = ownerWindow;
-            _window.Closed += OnWindowClosed;
+        WindowElement = new ControlWindow(popupWindowDescriptor);
+        WindowElement.CreateChildControls();
 
-            Browser = (ControlBrowser)WindowElement.ChildControls[0];
-        }
+        _window = WindowElement.CreateWindow();
+        _window.StartupLocation = WindowStartupLocation.CenterOwner;
+        _window.Owner = ownerWindow;
+        _window.Closed += OnWindowClosed;
 
-        public void Open() {
-            _window.Show();
-            // _window.Focus();
-        }
+        Browser = (ControlBrowser)WindowElement.ChildControls[0];
+    }
 
-        public void Close() {
-            _window.Close();
-        }
+    public void Open() {
+        _window.Show();
+        // _window.Focus();
+    }
 
-        private void OnWindowClosed() {
-            Closed?.Invoke();
-        }
+    public void Close() {
+        _window.Close();
+    }
+
+    private void OnWindowClosed() {
+        Closed?.Invoke();
     }
 }

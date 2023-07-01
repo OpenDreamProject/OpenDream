@@ -71,7 +71,8 @@
 			hsrc.Topic(href, href_list)
 
 	proc/Stat()
-		if (statobj != null) statobj.Stat()
+		if (istype(statobj, /atom))
+			statobj.Stat()
 
 	proc/Command(command as command_text)
 		set opendream_unimplemented = TRUE

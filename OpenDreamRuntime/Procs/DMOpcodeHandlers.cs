@@ -1825,7 +1825,7 @@ namespace OpenDreamRuntime.Procs {
                     connection.OutputControl(message, control);
                 }
             } else {
-                throw new Exception("Invalid output() recipient");
+                throw new Exception($"Invalid output() recipient: {receiver}");
             }
 
             return null;

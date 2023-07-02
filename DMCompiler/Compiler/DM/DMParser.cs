@@ -244,6 +244,8 @@ namespace DMCompiler.Compiler.DM {
                         }
                     }
                     if(path.IsOperator) {
+                        DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
+
                         List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                         Location tokenLoc = procBlock.Location;
                         //add ". = src" as the first expression in the operator
@@ -366,9 +368,18 @@ namespace DMCompiler.Compiler.DM {
                     if (pathElement != null) {
                         if(pathElement == "operator") {
                             Token operatorToken = Current();
-                            if(!Check(OperatorOverloadTypes))
-                                Error($"Invalid operator overload {operatorToken.PrintableText}");
-                            else {
+                            if(Current().Type == TokenType.DM_Slash) {
+                                //Up to this point, it's ambiguous whether it's a slash to mean operator/(), like the division operator overload
+                                //or "operator" just being used as a normal type name, as in a/operator/b/c/d
+                                Token peekToken = Advance();
+                                if (peekToken.Type == TokenType.DM_LeftParenthesis) { // Disambiguated as an overload
+                                    operatorFlag = true;
+                                    pathElement += operatorToken.PrintableText;
+                                } else { //Otherwise it's just a normal path, resume
+                                    ReuseToken(operatorToken);
+                                    Error(WarningCode.SoftReservedKeyword, "Using \"operator\" as a path element is ambiguous");
+                                }
+                            } else if(Check(OperatorOverloadTypes)) {
                                 operatorFlag = true;
                                 pathElement+=operatorToken.PrintableText;
                             }
@@ -634,10 +645,10 @@ namespace DMCompiler.Compiler.DM {
                         return new DMASTProcStatementInput(loc, rightShift.A, rightShift.B);
                     case DMASTLeftShift leftShift: {
                         // A left shift on its own becomes a special "output" statement
-                        // Or something else depending on what's on the right ( browse(), browse_rsc(), or output() )
-                        if (leftShift.B is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
+                        // Or something else depending on what's on the right ( browse(), browse_rsc(), output(), etc )
+                        if (leftShift.B.GetUnwrapped() is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
                             switch (identifier.Identifier) {
-                                case "browse":
+                                case "browse": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
                                         Error("browse() requires 1 or 2 parameters");
 
@@ -646,7 +657,8 @@ namespace DMCompiler.Compiler.DM {
                                         ? procCall.Parameters[1].Value
                                         : new DMASTConstantNull(loc);
                                     return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
-                                case "browse_rsc":
+                                }
+                                case "browse_rsc": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
                                         Error("browse_rsc() requires 1 or 2 parameters");
 
@@ -655,12 +667,25 @@ namespace DMCompiler.Compiler.DM {
                                         ? procCall.Parameters[1].Value
                                         : new DMASTConstantNull(loc);
                                     return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
-                                case "output":
-                                    if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
+                                }
+                                case "output": {
+                                    if (procCall.Parameters.Length != 2)
+                                        Error("output() requires 2 parameters");
 
                                     DMASTExpression msg = procCall.Parameters[0].Value;
                                     DMASTExpression control = procCall.Parameters[1].Value;
                                     return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
+                                }
+                                case "ftp": {
+                                    if (procCall.Parameters.Length is not 1 and not 2)
+                                        Error("ftp() requires 1 or 2 parameters");
+
+                                    DMASTExpression file = procCall.Parameters[0].Value;
+                                    DMASTExpression name = (procCall.Parameters.Length == 2)
+                                        ? procCall.Parameters[1].Value
+                                        : new DMASTConstantNull(loc);
+                                    return new DMASTProcStatementFtp(loc, leftShift.A, file, name);
+                                }
                             }
                         }
 
@@ -1447,12 +1472,6 @@ namespace DMCompiler.Compiler.DM {
             Newline();
 
             DMASTProcBlockInner? body = ProcBlock();
-            if (body == null) {
-                var loc = Current().Location;
-                DMASTProcStatement? statement = ProcStatement();
-
-                if (statement != null) body = new DMASTProcBlockInner(loc, statement);
-            }
 
             return new DMASTProcStatementLabel(expression.Location, expression.Identifier, body);
         }
@@ -2049,10 +2068,8 @@ namespace DMCompiler.Compiler.DM {
 
                 if (inner is null) {
                     inner = new DMASTVoid(token.Location);
-                }
-
-                if (inner is DMASTIdentifier identifier) {
-                    inner = new DMASTIdentifierWrapped(identifier.Location, identifier);
+                } else {
+                    inner = new DMASTExpressionWrapped(inner.Location, inner);
                 }
 
                 return inner;

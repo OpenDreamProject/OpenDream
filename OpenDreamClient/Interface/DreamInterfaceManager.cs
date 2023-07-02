@@ -8,6 +8,7 @@ using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
+using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
@@ -15,6 +16,7 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
+using Robust.Shared.Random;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
@@ -38,6 +40,9 @@ namespace OpenDreamClient.Interface {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IInputManager _inputManager = default!;
         [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
+        [Dependency] private readonly IRobustRandom _random = default!;
+
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
         public InterfaceDescriptor InterfaceDescriptor { get; private set; }
 
@@ -66,10 +71,10 @@ namespace OpenDreamClient.Interface {
             int errorCount = 0;
             foreach (CompilerEmission warning in dmfParser.Emissions) {
                 if (warning.Level == ErrorLevel.Error) {
-                    Logger.Error(warning.ToString());
+                    _sawmill.Error(warning.ToString());
                     errorCount++;
                 } else {
-                    Logger.Warning(warning.ToString());
+                    _sawmill.Warning(warning.ToString());
                 }
             }
 
@@ -96,6 +101,13 @@ namespace OpenDreamClient.Interface {
             MacroSets.Clear();
             _popupWindows.Clear();
 
+            // Set up the middle-mouse button keybind
+            _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
+            _inputManager.RegisterBinding(new KeyBindingRegistration() {
+                Function = OpenDreamKeyFunctions.MouseMiddle,
+                BaseKey = Keyboard.Key.MouseMiddle
+            });
+
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>(RxUpdateStatPanels);
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
             _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>(RxUpdateAvailableVerbs);
@@ -109,6 +121,7 @@ namespace OpenDreamClient.Interface {
             _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
             _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
             _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
+            _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
             _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
             _netManager.RegisterNetMessage<MsgAckLoadInterface>();
         }
@@ -222,7 +235,7 @@ namespace OpenDreamClient.Interface {
                 BrowsePopup? popup = null;
 
                 if (pBrowse.Window != null) {
-                    htmlFileName = pBrowse.Window;
+                    htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
                     outputBrowser = FindElementWithName(pBrowse.Window) as ControlBrowser;
 
                     if (outputBrowser == null) {
@@ -265,6 +278,19 @@ namespace OpenDreamClient.Interface {
             };
 
             _netManager.ClientSendMessage(response);
+        }
+
+        private void RxFtp(MsgFtp message) {
+            _dreamResource.LoadResourceAsync<DreamResource>(message.ResourceId, async resource => {
+                // TODO: Default the filename to message.SuggestedName
+                // RT doesn't seem to support this currently
+                var tuple = await _fileDialogManager.SaveFile();
+                if (tuple == null) // User cancelled
+                    return;
+
+                await using var file = tuple.Value.fileStream;
+                resource.WriteTo(file);
+            });
         }
 
         private void RxLoadInterface(MsgLoadInterface message) {
@@ -371,10 +397,10 @@ namespace OpenDreamClient.Interface {
                     bool hadError = false;
                     foreach (CompilerEmission emission in parser.Emissions) {
                         if (emission.Level == ErrorLevel.Error) {
-                            Logger.ErrorS("opendream.interface.winset", emission.ToString());
+                            _sawmill.Error(emission.ToString());
                             hadError = true;
                         } else {
-                            Logger.WarningS("opendream.interface.winset", emission.ToString());
+                            _sawmill.Warning(emission.ToString());
                         }
                     }
 
@@ -397,7 +423,7 @@ namespace OpenDreamClient.Interface {
 
                             commandSystem.RunCommand(winSet.Value);
                         } else {
-                            Logger.ErrorS("opendream.interface.winset", $"Invalid global winset \"{winsetParams}\"");
+                            _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                         }
                     } else {
                         InterfaceElement? element = FindElementWithName(winSet.Element);
@@ -408,7 +434,7 @@ namespace OpenDreamClient.Interface {
                         if (element != null) {
                             element.PopulateElementDescriptor(node, _serializationManager);
                         } else {
-                            Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                            _sawmill.Error($"Invalid element \"{controlId}\"");
                         }
                     }
                 }
@@ -422,7 +448,7 @@ namespace OpenDreamClient.Interface {
                 if (element == null && node.TryGet("parent", out ValueDataNode? parentNode)) {
                     var parent = FindElementWithName(parentNode.Value);
                     if (parent == null) {
-                        Logger.ErrorS("opendream.interface.winset", $"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
+                        _sawmill.Error($"Attempted to create an element with nonexistent parent \"{parentNode.Value}\" ({winsetParams})");
                         return;
                     }
 
@@ -434,7 +460,7 @@ namespace OpenDreamClient.Interface {
                 } else if (element != null) {
                     element.PopulateElementDescriptor(node, _serializationManager);
                 } else {
-                    Logger.ErrorS("opendream.interface.winset", $"Invalid element \"{controlId}\"");
+                    _sawmill.Error($"Invalid element \"{controlId}\"");
                 }
             }
         }
@@ -458,7 +484,7 @@ namespace OpenDreamClient.Interface {
                         elementDescriptor = new MacroSetDescriptor(cloneId);
                         break;
                     default:
-                        Logger.ErrorS("opendream.interface.winclone", $"Invalid element \"{controlId}\"");
+                        _sawmill.Error($"Invalid element to winclone \"{controlId}\"");
                         return;
                 }
             }

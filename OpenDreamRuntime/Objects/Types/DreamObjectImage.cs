@@ -7,6 +7,8 @@ public sealed class DreamObjectImage : DreamObject {
     public IconAppearance? Appearance;
 
     private DreamObject? _loc;
+    private DreamList _overlays;
+    private DreamList _underlays;
 
     /// <summary>
     /// All the args in /image/New() after "icon" and "loc", in their correct order
@@ -20,7 +22,14 @@ public sealed class DreamObjectImage : DreamObject {
     };
 
     public DreamObjectImage(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-
+        if (objectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
+            // /mutable_appearance.overlays and /mutable_appearance.underlays are normal lists
+            _overlays = ObjectTree.CreateList();
+            _underlays = ObjectTree.CreateList();
+        } else {
+            _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+            _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+        }
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -31,7 +40,8 @@ public sealed class DreamObjectImage : DreamObject {
             // Use a default appearance, but log a warning about it if icon wasn't null
             Appearance = new IconAppearance();
             if (icon != DreamValue.Null)
-                Logger.Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
+                Logger.GetSawmill("opendream.image")
+                    .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
 
         int argIndex = 1;
@@ -56,23 +66,34 @@ public sealed class DreamObjectImage : DreamObject {
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
-        if (AtomManager.IsValidAppearanceVar(varName)) {
-            value = AtomManager.GetAppearanceVar(Appearance!, varName);
-            return true;
-        } else if (varName == "appearance") {
-            IconAppearance appearanceCopy = new IconAppearance(Appearance!); // Return a copy
-
-            value = new(appearanceCopy);
-            return true;
-        } else if (varName == "loc") {
-            value = new(_loc);
-            return true;
+        // TODO: filters, transform
+        switch(varName) {
+            case "appearance": {
+                IconAppearance appearanceCopy = new IconAppearance(Appearance!); // Return a copy
+                value = new(appearanceCopy);
+                return true;
+            }
+            case "loc": {
+                value = new(_loc);
+                return true;
+            }
+            case "overlays":
+                value = new(_overlays);
+                return true;
+            case "underlays":
+                value = new(_underlays);
+                return true;
+            default: {
+                if (AtomManager.IsValidAppearanceVar(varName)) {
+                    value = AtomManager.GetAppearanceVar(Appearance!, varName);
+                    return true;
+                } else {
+                    return base.TryGetVar(varName, out value);
+                }
+            }
         }
-
-        // TODO: overlays, underlays, filters, transform
-
-        return base.TryGetVar(varName, out value);
     }
+
 
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
@@ -89,6 +110,73 @@ public sealed class DreamObjectImage : DreamObject {
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
                 break;
+            case "overlays": {
+                value.TryGetValueAsDreamList(out var valueList);
+
+                // /mutable_appearance has some special behavior for its overlays and underlays vars
+                // They're normal lists, not the special DreamOverlaysList.
+                // Setting them to a list will create a copy of that list.
+                // Otherwise it attempts to create an appearance and creates a new (normal) list with that appearance
+                if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
+                    if (valueList != null) {
+                        _overlays = valueList.CreateCopy();
+                    } else {
+                        var overlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, Appearance?.Icon);
+                        if (overlay == null)
+                            return;
+
+                        _overlays.Cut();
+                        _overlays.AddValue(new(overlay));
+                    }
+
+                    return;
+                }
+
+                _overlays.Cut();
+
+                if (valueList != null) {
+                    // TODO: This should postpone UpdateAppearance until after everything is added
+                    foreach (DreamValue overlayValue in valueList.GetValues()) {
+                        _overlays.AddValue(overlayValue);
+                    }
+                } else if (value != DreamValue.Null) {
+                    _overlays.AddValue(value);
+                }
+
+                break;
+            }
+            case "underlays": {
+                value.TryGetValueAsDreamList(out var valueList);
+
+                // See the comment in the overlays setter for info on this
+                if (ObjectDefinition.IsSubtypeOf(ObjectTree.MutableAppearance)) {
+                    if (valueList != null) {
+                        _underlays = valueList.CreateCopy();
+                    } else {
+                        var underlay = DreamOverlaysList.CreateOverlayAppearance(AtomManager, value, Appearance?.Icon);
+                        if (underlay == null)
+                            return;
+
+                        _underlays.Cut();
+                        _underlays.AddValue(new(underlay));
+                    }
+
+                    return;
+                }
+
+                _underlays.Cut();
+
+                if (valueList != null) {
+                    // TODO: This should postpone UpdateAppearance until after everything is added
+                    foreach (DreamValue underlayValue in valueList.GetValues()) {
+                        _underlays.AddValue(underlayValue);
+                    }
+                } else if (value != DreamValue.Null) {
+                    _underlays.AddValue(value);
+                }
+
+                break;
+            }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     AtomManager.SetAppearanceVar(Appearance!, varName, value);

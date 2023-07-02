@@ -1,13 +1,9 @@
-﻿using DMCompiler.DM.Visitors;
-using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
-using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
     /// <remarks>
@@ -15,7 +11,7 @@ namespace DMCompiler.DM {
     /// but rather stores the compile-time information necessary to describe a certain object definition, <br/>
     /// including its procs, vars, path, parent, etc.
     /// </remarks>
-    sealed class DMObject {
+    internal sealed class DMObject {
         public int Id;
         public DreamPath Path;
         public DMObject? Parent;
@@ -30,9 +26,6 @@ namespace DMCompiler.DM {
 
         public bool IsRoot => Path == DreamPath.Root;
 
-        // Statements waiting for LateVarDef event to happen
-        public Dictionary<string, List<DMASTStatement>> DanglingStatementsByUndefinedNames = new();
-        private bool _isSubscribedToVarDef = false;
         private List<DMProc>? _verbs;
 
         public DMObject(int id, DreamPath path, DMObject? parent) {
@@ -45,41 +38,6 @@ namespace DMCompiler.DM {
             if (!Procs.ContainsKey(name)) Procs.Add(name, new List<int>(1));
 
             Procs[name].Add(proc.Id);
-        }
-
-        private void HandleLateVarDef(object sender, DMVariable varDefined) {
-            DMObject? maybeAncestor = sender as DMObject;
-            if (maybeAncestor == null)
-                return;
-
-            if (DanglingStatementsByUndefinedNames.ContainsKey(varDefined.Name)) {
-                foreach (DMASTStatement statement in DanglingStatementsByUndefinedNames[varDefined.Name].ToList()) {
-                    if (statement is DMASTObjectVarOverride && !IsSubtypeOf(maybeAncestor.Path)) // Resolves the ambiguous var override
-                        continue;
-                    DMObjectBuilder.ProcessStatement(statement);
-                    DanglingStatementsByUndefinedNames[varDefined.Name].Remove(statement);
-                }
-                if (DanglingStatementsByUndefinedNames[varDefined.Name].Count == 0)
-                    DanglingStatementsByUndefinedNames.Remove(varDefined.Name);
-            }
-
-            if (DanglingStatementsByUndefinedNames.Count == 0) {
-                DMObjectBuilder.VarDefined -= this.HandleLateVarDef;
-                _isSubscribedToVarDef = false;
-            }
-        }
-
-        public void WaitForLateVarDefinition(string waitForName, DMASTStatement statement) {
-            if (DanglingStatementsByUndefinedNames.ContainsKey(waitForName)) {
-                DanglingStatementsByUndefinedNames[waitForName].Add(statement);
-            } else {
-                DanglingStatementsByUndefinedNames[waitForName] = new List<DMASTStatement> { statement };
-            }
-
-            if (_isSubscribedToVarDef == false) {
-                DMObjectBuilder.VarDefined += this.HandleLateVarDef;
-                _isSubscribedToVarDef = true;
-            }
         }
 
         ///<remarks>

@@ -22,6 +22,8 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         Variables?.Clear();
 
         Verbs.Cut();
+
+        Initialize(new());
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

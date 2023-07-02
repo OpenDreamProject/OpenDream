@@ -29,7 +29,7 @@ namespace OpenDreamClient.Input.ContextMenu {
             }
 
             Icon.Margin = new Thickness(2);
-            if (entityManager.TryGetComponent(entity, out DMISpriteComponent sprite)) {
+            if (entityManager.TryGetComponent(entity, out DMISpriteComponent? sprite)) {
                 Icon.Texture = sprite.Icon.CurrentFrame;
             }
 

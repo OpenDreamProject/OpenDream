@@ -7,9 +7,9 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
+using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime {
     public sealed class DreamConnection {
@@ -17,10 +17,12 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
+        private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
-        [ViewVariables] private readonly Dictionary<string, List<string>> _statPanels = new();
+        [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
         [ViewVariables] private bool _currentlyUpdatingStat;
 
         [ViewVariables] public IPlayerSession? Session { get; private set; }
@@ -33,6 +35,11 @@ namespace OpenDreamRuntime {
                         _mob.Key = null;
                         _mob.SpawnProc("Logout");
                         _mob.Connection = null;
+                    }
+
+                    StatObj = new(value);
+                    if (Eye != null && Eye == Mob) {
+                        Eye = value;
                     }
 
                     if (value != null) {
@@ -50,14 +57,25 @@ namespace OpenDreamRuntime {
 
                     UpdateAvailableVerbs();
                 }
+            }
+        }
 
-                if (_mob != null) {
-                    Session!.AttachToEntity(_mob.Entity);
+        [ViewVariables]
+        public DreamObjectMovable? Eye {
+            get => _eye;
+            set {
+                _eye = value;
+
+                if (_eye != null) {
+                    _actorSystem?.Attach(_eye.Entity, Session!);
                 } else {
-                    Session!.DetachFromEntity();
+                    _actorSystem?.Detach(Session!);
                 }
             }
         }
+
+        [ViewVariables]
+        public DreamValue StatObj { get; set; } // This can be just any DreamValue. Only atoms will function though.
 
         [ViewVariables] private string? _outputStatPanel;
         [ViewVariables] private string _selectedStatPanel;
@@ -65,6 +83,9 @@ namespace OpenDreamRuntime {
         [ViewVariables] private int _nextPromptEvent = 1;
 
         private DreamObjectMob? _mob;
+        private DreamObjectMovable? _eye;
+
+        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.connection");
 
         public string SelectedStatPanel {
             get => _selectedStatPanel;
@@ -80,6 +101,7 @@ namespace OpenDreamRuntime {
             IoCManager.InjectDependencies(this);
 
             _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
+            _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
         public void HandleConnection(IPlayerSession session) {
@@ -122,11 +144,16 @@ namespace OpenDreamRuntime {
                     if (_availableVerbs.ContainsKey(verbId)) {
                         // BYOND will actually show the user two verbs with different capitalization/dashes, but they will both execute the same verb.
                         // We make a warning and ignore the latter ones instead.
-                        Logger.Warning($"User \"{Session.Name}\" has multiple verb commands named \"{verbId}\", ignoring all but the first");
+                        _sawmill.Warning($"User \"{Session.Name}\" has multiple verb commands named \"{verbId}\", ignoring all but the first");
                         continue;
                     }
 
                     _availableVerbs.Add(verbId, (src, proc));
+
+                    // Don't send invisible verbs.
+                    if (_mob != null && proc.Invisibility > _mob.SeeInvisible) {
+                        continue;
+                    }
 
                     // Don't send hidden verbs. Names starting with "." count as hidden.
                     if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||
@@ -186,16 +213,17 @@ namespace OpenDreamRuntime {
         }
 
         public void SetOutputStatPanel(string name) {
-            if (!_statPanels.ContainsKey(name)) _statPanels.Add(name, new List<string>());
+            if (!_statPanels.ContainsKey(name))
+                _statPanels.Add(name, new());
 
             _outputStatPanel = name;
         }
 
-        public void AddStatPanelLine(string text) {
+        public void AddStatPanelLine(string name, string value, string? atomRef) {
             if (_outputStatPanel == null || !_statPanels.ContainsKey(_outputStatPanel))
                 SetOutputStatPanel("Stats");
 
-            _statPanels[_outputStatPanel].Add(text);
+            _statPanels[_outputStatPanel].Add( (name, value, atomRef) );
         }
 
         public void HandleMsgSelectStatPanel(MsgSelectStatPanel message) {
@@ -204,7 +232,7 @@ namespace OpenDreamRuntime {
 
         public void HandleMsgPromptResponse(MsgPromptResponse message) {
             if (!_promptEvents.TryGetValue(message.PromptId, out var promptEvent)) {
-                Logger.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
+                _sawmill.Warning($"{message.MsgChannel}: Received MsgPromptResponse for prompt {message.PromptId} which does not exist.");
                 return;
             }
 
@@ -231,40 +259,37 @@ namespace OpenDreamRuntime {
             Client?.SpawnProc("Topic", usr: Mob, new(pTopic.Query), new(hrefList), src);
         }
 
-
         public void OutputDreamValue(DreamValue value) {
-            if (value.TryGetValueAsDreamObject(out var outputObject)) {
-                if (outputObject is DreamObjectSound) {
-                    ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
-                    ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
-                    DreamValue file = outputObject.GetVariable("file");
+            if (value.TryGetValueAsDreamObject<DreamObjectSound>(out var outputObject)) {
+                ushort channel = (ushort)outputObject.GetVariable("channel").GetValueAsInteger();
+                ushort volume = (ushort)outputObject.GetVariable("volume").GetValueAsInteger();
+                DreamValue file = outputObject.GetVariable("file");
 
-                    var msg = new MsgSound() {
-                        Channel = channel,
-                        Volume = volume
-                    };
+                var msg = new MsgSound() {
+                    Channel = channel,
+                    Volume = volume
+                };
 
-                    if (!file.TryGetValueAsDreamResource(out var soundResource)) {
-                        if (file.TryGetValueAsString(out var soundPath)) {
-                            soundResource = _resourceManager.LoadResource(soundPath);
-                        } else if (file != DreamValue.Null) {
-                            throw new ArgumentException($"Cannot output {value}", nameof(value));
-                        }
+                if (!file.TryGetValueAsDreamResource(out var soundResource)) {
+                    if (file.TryGetValueAsString(out var soundPath)) {
+                        soundResource = _resourceManager.LoadResource(soundPath);
+                    } else if (file != DreamValue.Null) {
+                        throw new ArgumentException($"Cannot output {value}", nameof(value));
                     }
-
-                    msg.ResourceId = soundResource?.Id;
-                    if (soundResource?.ResourcePath is { } resourcePath) {
-                        if (resourcePath.EndsWith(".ogg"))
-                            msg.Format = MsgSound.FormatType.Ogg;
-                        else if (resourcePath.EndsWith(".wav"))
-                            msg.Format = MsgSound.FormatType.Wav;
-                        else
-                            throw new Exception($"Sound {value} is not a supported file type");
-                    }
-
-                    Session?.ConnectedClient.SendMessage(msg);
-                    return;
                 }
+
+                msg.ResourceId = soundResource?.Id;
+                if (soundResource?.ResourcePath is { } resourcePath) {
+                    if (resourcePath.EndsWith(".ogg"))
+                        msg.Format = MsgSound.FormatType.Ogg;
+                    else if (resourcePath.EndsWith(".wav"))
+                        msg.Format = MsgSound.FormatType.Wav;
+                    else
+                        throw new Exception($"Sound {value} is not a supported file type");
+                }
+
+                Session?.ConnectedClient.SendMessage(msg);
+                return;
             }
 
             OutputControl(value.Stringify(), null);
@@ -323,7 +348,7 @@ namespace OpenDreamRuntime {
                                         if (argumentType == DMValueType.Text) {
                                             arguments[i] = new(args[i+1]);
                                         } else {
-                                            Logger.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
+                                            _sawmill.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
                                             return DreamValue.Null;
                                         }
                                     }
@@ -494,7 +519,21 @@ namespace OpenDreamRuntime {
         }
 
         public void WinClone(string controlId, string cloneId) {
-            var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId, };
+            var msg = new MsgWinClone() { ControlId = controlId, CloneId = cloneId };
+
+            Session?.ConnectedClient.SendMessage(msg);
+        }
+
+        /// <summary>
+        /// Prompts the user to save a file to disk
+        /// </summary>
+        /// <param name="file">File to save</param>
+        /// <param name="suggestedName">Suggested name to save the file as</param>
+        public void SendFile(DreamResource file, string suggestedName) {
+            var msg = new MsgFtp {
+                ResourceId = file.Id,
+                SuggestedName = suggestedName
+            };
 
             Session?.ConnectedClient.SendMessage(msg);
         }

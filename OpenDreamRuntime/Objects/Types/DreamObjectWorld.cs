@@ -16,6 +16,8 @@ public sealed class DreamObjectWorld : DreamObject {
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.world");
+
     public DreamResource? Log;
 
     private double TickLag {
@@ -64,7 +66,7 @@ public sealed class DreamObjectWorld : DreamObject {
             _viewRange = new ViewRange(viewString);
         } else {
             if (!view.TryGetValueAsInteger(out var viewInt)) {
-                Logger.Warning("world.view did not contain a valid value. A default of 7 is being used.");
+                _sawmill.Warning("world.view did not contain a valid value. A default of 7 is being used.");
                 viewInt = 7;
             }
 

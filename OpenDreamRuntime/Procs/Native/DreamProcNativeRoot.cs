@@ -1130,9 +1130,17 @@ namespace OpenDreamRuntime.Procs.Native {
                 return;
             }
 
-            if (value.TryGetValueAsFloat(out float floatValue))
-                writer.WriteNumberValue(floatValue);
-            else if (value.TryGetValueAsString(out var text))
+            if (value.TryGetValueAsFloat(out float floatValue)) {
+                // For parity with Byond where it gets around the JSON standard not supporting
+                // the floating point specials INFINITY and NAN by writing it as an object
+                if (float.IsFinite(floatValue))
+                    writer.WriteNumberValue(floatValue);
+                else {
+                    writer.WriteStartObject();
+                    writer.WriteString("__number__", floatValue.ToString());
+                    writer.WriteEndObject();
+                }
+            } else if (value.TryGetValueAsString(out var text))
                 writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
                 writer.WriteStringValue(type.Path.PathString);
@@ -1643,25 +1651,29 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
         public static DreamValue NativeProc_oview(NativeProc.State state) {
+            DreamList view = state.ObjectTree.CreateList();
+
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new(view);
 
-            DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
-            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-                if(!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+            var eyePos = state.AtomManager.GetAtomPosition(center);
+            var viewData = DreamProcNativeHelpers.CollectViewData(state.AtomManager, state.MapManager, eyePos, range);
+
+            ViewAlgorithm.CalculateVisibility(viewData);
+
+            foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, false)) {
+                if (tile == null || tile.IsVisible == false)
                     continue;
-                }
-                view.AddValue(new DreamValue(turf));
-                foreach (DreamValue content in turf.Contents.GetValues()) {
-                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
-                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                            continue;
-                        }
-                    }
-                    view.AddValue(content);
+                if (!state.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
+                    continue;
+
+                view.AddValue(new(cell.Turf!));
+                foreach (var movable in cell.Movables) {
+                    view.AddValue(new(movable));
                 }
             }
+
             return new DreamValue(view);
         }
 
@@ -1716,13 +1728,30 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = objectTree.CreateList();
 
             foreach (string? queryKey in query.AllKeys) {
-                string[] queryValues = query.GetValues(queryKey);
-                string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
+                string[]? queryValues = query.GetValues(queryKey);
 
-                if (queryKey != null) {
-                    list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
+                if (queryValues == null)
+                    continue;
+
+                if (queryKey == null) { // queryValues contains every value without a key
+                    foreach (string value in queryValues.Distinct()) {
+                        int count = queryValues.Count(item => item == value);
+
+                        if (count > 1) { // "a;a;a" creates list(a=list("","",""))
+                            var valueList = objectTree.CreateList(count);
+
+                            for (int i = 0; i < count; i++)
+                                valueList.AddValue(new(string.Empty));
+
+                            list.SetValue(new(value), new(valueList));
+                        } else {
+                            list.SetValue(new(value), new(string.Empty));
+                        }
+                    }
                 } else {
-                    list.AddValue(new DreamValue(queryValue));
+                    string queryValue = queryValues[^1]; //Use the last appearance of the key in the query
+
+                    list.SetValue(new DreamValue(queryKey), new DreamValue(queryValue));
                 }
             }
 
@@ -1735,7 +1764,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue paramsValue = state.GetArgument(0, "Params");
             DreamList result;
 
-            if (paramsValue.TryGetValueAsString(out string paramsString)) {
+            if (paramsValue.TryGetValueAsString(out var paramsString)) {
                 result = params2list(state.ObjectTree, paramsString);
             } else {
                 result = state.ObjectTree.CreateList();
@@ -1845,7 +1874,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue haystack = state.GetArgument(0, "Haystack");
             DreamValue needle = state.GetArgument(1, "Needle");
             DreamValue replacementArg = state.GetArgument(2, "Replacement");
-            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            state.GetArgument(3, "Start").TryGetValueAsInteger(out var start); //1-indexed
             int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
 
             if (needle.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
@@ -1857,10 +1886,16 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null;
             }
 
+            if (start == 0) { // Return unmodified if Start is 0
+                return new(text);
+            } else if (start < 0) { // Negative wrap-around
+                start = Math.Max(start + text.Length + 1, 1);
+            }
+
             var arg3 = replacementArg.TryGetValueAsString(out var replacement);
 
-            if (end == 0) {
-                end = text.Length + 1;
+            if (end <= 0) { // Zero or negative wrap-around
+                end = Math.Max(end + text.Length + 1, start);
             }
 
             if (needle == DreamValue.Null) { // Insert the replacement after each char except the last
@@ -1900,6 +1935,53 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             throw new Exception($"Invalid needle {needle}");
+        }
+
+        [DreamProc("replacetextEx")]
+        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
+        [DreamProcParameter("Needle", Type = DreamValueType.String)]
+        [DreamProcParameter("Replacement", Type = DreamValueType.String)]
+        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_replacetextEx(NativeProc.State state) {
+            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text)) {
+                return DreamValue.Null;
+            }
+
+            var arg3 = state.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
+
+            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle)) {
+                if (!arg3) {
+                    return new DreamValue(text);
+                }
+
+                //Insert the replacement after each char except the last char
+                //TODO: Properly support non-default start/end values
+                StringBuilder result = new StringBuilder();
+                var pos = 0;
+                while (pos + 1 <= text.Length) {
+                    result.Append(text[pos]).Append(arg3);
+                    pos += 1;
+                }
+
+                result.Append(text[pos]);
+                return new DreamValue(result.ToString());
+            }
+
+            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
+
+            if (start == 0) { // Return unmodified
+                return new(text);
+            } else if (start < 0) { // Negative wrap-around
+                start = Math.Max(start + text.Length + 1, 1);
+            }
+
+            if (end <= 0) { // Zero and negative wrap-around
+                end = Math.Max(end + text.Length + 1, start);
+            }
+
+            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
         }
 
         [DreamProc("rgb")]
@@ -1985,50 +2067,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(list);
-        }
-
-        [DreamProc("replacetextEx")]
-        [DreamProcParameter("Haystack", Type = DreamValueType.String)]
-        [DreamProcParameter("Needle", Type = DreamValueType.String)]
-        [DreamProcParameter("Replacement", Type = DreamValueType.String)]
-        [DreamProcParameter("Start", Type = DreamValueType.Float, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueType.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_replacetextEx(NativeProc.State state) {
-            if (!state.GetArgument(0, "Haystack").TryGetValueAsString(out var text))
-            {
-                return DreamValue.Null;
-            }
-
-            var arg3 = state.GetArgument(2, "Replacement").TryGetValueAsString(out var replacement);
-
-            if (!state.GetArgument(1, "Needle").TryGetValueAsString(out var needle))
-            {
-                if (!arg3)
-                {
-                    return new DreamValue(text);
-                }
-
-                //Insert the replacement after each char except the last char
-                //TODO: Properly support non-default start/end values
-                StringBuilder result = new StringBuilder();
-                var pos = 0;
-                while (pos + 1 <= text.Length)
-                {
-                    result.Append(text[pos]).Append(arg3);
-                    pos += 1;
-                }
-                result.Append(text[pos]);
-                return new DreamValue(result.ToString());
-            }
-
-            int start = state.GetArgument(3, "Start").GetValueAsInteger(); //1-indexed
-            int end = state.GetArgument(4, "End").GetValueAsInteger(); //1-indexed
-
-            if (end == 0) {
-                end = text.Length + 1;
-            }
-
-            return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
         }
 
         [DreamProc("round")]
@@ -2395,11 +2433,17 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue((float)Math.Sqrt(a));
         }
 
-        private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
-            if (name != DreamValue.Null) {
-                connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
+        private static void OutputToStatPanel(IDreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
+            if (name == DreamValue.Null && value.TryGetValueAsDreamList(out var list)) {
+                foreach (var item in list.GetValues())
+                    OutputToStatPanel(dreamManager, connection, name, item);
             } else {
-                connection.AddStatPanelLine(value.Stringify());
+                string nameStr = name.Stringify();
+                string? atomRef = null;
+                if (value.TryGetValueAsDreamObject<DreamObjectAtom>(out _)) // Atoms are clickable
+                    atomRef = dreamManager.CreateRef(value);
+
+                connection.AddStatPanelLine(nameStr, value.Stringify(), atomRef);
             }
         }
 
@@ -2411,7 +2455,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue value = state.GetArgument(1, "Value");
 
             if (state.Usr is DreamObjectMob { Connection: {} usrConnection })
-                OutputToStatPanel(usrConnection, name, value);
+                OutputToStatPanel(state.DreamManager, usrConnection, name, value);
 
             return DreamValue.Null;
         }
@@ -2428,7 +2472,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (state.Usr is DreamObjectMob { Connection: {} connection }) {
                 connection.SetOutputStatPanel(panel);
                 if (name != DreamValue.Null || value != DreamValue.Null) {
-                    OutputToStatPanel(connection, name, value);
+                    OutputToStatPanel(state.DreamManager, connection, name, value);
                 }
 
                 return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);
@@ -2825,49 +2869,30 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("view")]
         [DreamProcParameter("Dist", Type = DreamValueType.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueType.DreamObject)]
-        public static DreamValue NativeProc_view(NativeProc.State state) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_view(NativeProc.State state) {
+            DreamList view = state.ObjectTree.CreateList();
+
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(state.Usr as DreamObjectAtom, state.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
-            DreamList view = state.ObjectTree.CreateList(range.Height * range.Width); // Should be a reasonable approximation for the list size.
-            //Have to include centre
-            if(DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, center, center)) // NOTE: I think this is always true, but I'm not 100% sure.
-                view.AddValue(new DreamValue(center));
-            if (center.TryGetVariable("contents", out var centerContents) && centerContents.TryGetValueAsDreamList(out var centerContentsList)) {
-                foreach (DreamValue content in centerContentsList.GetValues()) {
-                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
-                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                            continue;
-                        }
-                    }
-                    view.AddValue(content);
-                }
-            }
-            if (center is not DreamObjectTurf) { // If it's not a /turf, we have to include its loc and the loc's contents
-                if (center.TryGetVariable("loc", out DreamValue centerLoc) && centerLoc.TryGetValueAsDreamObject(out var centerLocObject)) {
-                    view.AddValue(centerLoc);
-                    if (centerLocObject.GetVariable("contents").TryGetValueAsDreamList(out var locContentsList)) {
-                        foreach (DreamValue content in locContentsList.GetValues()) {
-                            view.AddValue(content);
-                        }
-                    }
-                }
-            }
-            //and then everything else
-            foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
-                if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, turf, center)) { //NOTE: I'm assuming here that a turf being invisible means its contents are, too
+                return new(view);
+
+            var eyePos = state.AtomManager.GetAtomPosition(center);
+            var viewData = DreamProcNativeHelpers.CollectViewData(state.AtomManager, state.MapManager, eyePos, range);
+
+            ViewAlgorithm.CalculateVisibility(viewData);
+
+            foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, true)) {
+                if (tile == null || tile.IsVisible == false)
                     continue;
-                }
-                view.AddValue(new DreamValue(turf));
-                foreach (DreamValue content in turf.Contents.GetValues()) {
-                    if (content.TryGetValueAsDreamObject<DreamObjectAtom>(out var contentObject)) {
-                        if (!DreamProcNativeHelpers.IsObjectVisible(state.AtomManager, state.ObjectTree, contentObject, center)) {
-                            continue;
-                        }
-                    }
-                    view.AddValue(content);
+                if (!state.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
+                    continue;
+
+                view.AddValue(new(cell.Turf!));
+                foreach (var movable in cell.Movables) {
+                    view.AddValue(new(movable));
                 }
             }
+
             return new DreamValue(view);
         }
 

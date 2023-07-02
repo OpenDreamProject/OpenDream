@@ -41,14 +41,15 @@ namespace OpenDreamClient.Interface.Controls {
 
             _window?.UpdateAnchors();
 
-            if (ControlDescriptor.BackgroundColor is { } bgColor)
-            {
-                var styleBox = new StyleBoxFlat { BackgroundColor = bgColor };
+            if (ControlDescriptor.BackgroundColor is { } bgColor) {
+                var styleBox = new StyleBoxFlat {BackgroundColor = bgColor};
 
-                switch (UIElement)
-                {
+                switch (UIElement) {
                     case PanelContainer panel:
                         panel.PanelOverride = styleBox;
+                        break;
+                    case LineEdit lineEdit:
+                        lineEdit.StyleBoxOverride = styleBox;
                         break;
                 }
             }

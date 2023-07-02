@@ -742,6 +742,7 @@ namespace OpenDreamRuntime {
         }
 
         public ColorMatrix CreateCopy(ISerializationManager serializationManager, ColorMatrix source,
+            IDependencyCollection dependencies,
             SerializationHookContext hookCtx,
             ISerializationContext? context = null) {
             return new(source);

@@ -1809,28 +1809,25 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus? OutputControl(DMProcState state) {
             string control = state.Pop().GetValueAsString();
-            DreamValue message = state.Pop();
+            string message = state.Pop().Stringify();
             if (!state.Pop().TryGetValueAsDreamObject(out var receiver) || receiver == null)
                 return null;
 
-            if (receiver == state.DreamManager.WorldInstance) {
-                //Same as "world << ..."
-                receiver.OperatorOutput(message);
-                return null;
-            }
+            // TODO: When errors are more strict (or a setting for it added), a null receiver should error
 
-            DreamConnection? connection;
             if (receiver is DreamObjectMob receiverMob) {
-                connection = receiverMob.Connection;
+                receiverMob.Connection?.OutputControl(message, control);
             } else if (receiver is DreamObjectClient receiverClient) {
-                connection = receiverClient.Connection;
+                receiverClient.Connection.OutputControl(message, control);
+            } else if (receiver is DreamObjectWorld) {
+                // Output to every player
+                foreach (var connection in state.DreamManager.Connections) {
+                    connection.OutputControl(message, control);
+                }
             } else {
                 throw new Exception("Invalid output() recipient");
             }
 
-            connection?.OutputControl(message.Stringify(), control);
-
-            // TODO: When errors are more strict (or a setting for it added), a null client should error
 
             return null;
         }

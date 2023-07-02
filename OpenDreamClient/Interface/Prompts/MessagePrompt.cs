@@ -2,25 +2,25 @@
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Utility;
 
-namespace OpenDreamClient.Interface.Prompts {
-    internal sealed class MessagePrompt : InputWindow {
-        private readonly TextEdit _textEdit;
+namespace OpenDreamClient.Interface.Prompts;
 
-        public MessagePrompt(string title, string message, string defaultValue, bool canCancel,
-            Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
-            _textEdit = new TextEdit {
-                TextRope = new Rope.Leaf(defaultValue),
+internal sealed class MessagePrompt : InputWindow {
+    private readonly TextEdit _textEdit;
 
-                // Select all the text by default
-                CursorPosition = new TextEdit.CursorPos(defaultValue.Length, TextEdit.LineBreakBias.Bottom),
-                SelectionStart = new TextEdit.CursorPos(0, TextEdit.LineBreakBias.Bottom)
-            };
+    public MessagePrompt(string title, string message, string defaultValue, bool canCancel,
+        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        _textEdit = new TextEdit {
+            TextRope = new Rope.Leaf(defaultValue),
 
-            SetPromptControl(_textEdit);
-        }
+            // Select all the text by default
+            CursorPosition = new TextEdit.CursorPos(defaultValue.Length, TextEdit.LineBreakBias.Bottom),
+            SelectionStart = new TextEdit.CursorPos(0, TextEdit.LineBreakBias.Bottom)
+        };
 
-        protected override void OkButtonClicked() {
-            FinishPrompt(DMValueType.Message, Rope.Collapse(_textEdit.TextRope));
-        }
+        SetPromptControl(_textEdit);
+    }
+
+    protected override void OkButtonClicked() {
+        FinishPrompt(DMValueType.Message, Rope.Collapse(_textEdit.TextRope));
     }
 }

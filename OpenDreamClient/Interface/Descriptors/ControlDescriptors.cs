@@ -41,9 +41,9 @@ public sealed class WindowDescriptor : ControlDescriptor {
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 
-    public WindowDescriptor(string name, List<ControlDescriptor>? controlDescriptors = null) {
+    public WindowDescriptor(string id, List<ControlDescriptor>? controlDescriptors = null) {
         ControlDescriptors = controlDescriptors ?? new();
-        Name = name;
+        Id = id;
     }
 
     [UsedImplicitly]
@@ -90,10 +90,10 @@ public sealed class WindowDescriptor : ControlDescriptor {
         return child;
     }
 
-    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._name = name;
+        copy._id = id;
         return copy;
     }
 

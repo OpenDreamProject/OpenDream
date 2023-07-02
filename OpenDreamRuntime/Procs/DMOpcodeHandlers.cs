@@ -1828,7 +1828,6 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid output() recipient");
             }
 
-
             return null;
         }
 

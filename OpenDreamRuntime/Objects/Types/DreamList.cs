@@ -161,6 +161,11 @@ namespace OpenDreamRuntime.Objects.Types {
         public virtual void Cut(int start = 1, int end = 0) {
             if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
+            if (_associativeValues != null) {
+                for (int i = start; i < end; i++)
+                    _associativeValues.Remove(_values[i - 1]);
+            }
+
             _values.RemoveRange(start - 1, end - start);
         }
 

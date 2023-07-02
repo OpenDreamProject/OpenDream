@@ -1131,9 +1131,17 @@ namespace OpenDreamRuntime.Procs.Native {
                 return;
             }
 
-            if (value.TryGetValueAsFloat(out float floatValue))
-                writer.WriteNumberValue(floatValue);
-            else if (value.TryGetValueAsString(out var text))
+            if (value.TryGetValueAsFloat(out float floatValue)) {
+                // For parity with Byond where it gets around the JSON standard not supporting
+                // the floating point specials INFINITY and NAN by writing it as an object
+                if (float.IsFinite(floatValue))
+                    writer.WriteNumberValue(floatValue);
+                else {
+                    writer.WriteStartObject();
+                    writer.WriteString("__number__", floatValue.ToString());
+                    writer.WriteEndObject();
+                }
+            } else if (value.TryGetValueAsString(out var text))
                 writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
                 writer.WriteStringValue(type.Path.PathString);
@@ -2426,17 +2434,17 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue((float)Math.Sqrt(a));
         }
 
-        private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
-            if (name != DreamValue.Null) {
-                // TODO: The value should be displayed in its own grid column rather than after a tab
-                connection.AddStatPanelLine(name.Stringify() + "\t" + value.Stringify());
+        private static void OutputToStatPanel(IDreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
+            if (name == DreamValue.Null && value.TryGetValueAsDreamList(out var list)) {
+                foreach (var item in list.GetValues())
+                    OutputToStatPanel(dreamManager, connection, name, item);
             } else {
-                if (value.TryGetValueAsDreamList(out var list)) {
-                    foreach (var item in list.GetValues())
-                        connection.AddStatPanelLine(item.Stringify());
-                } else {
-                    connection.AddStatPanelLine(value.Stringify());
-                }
+                string nameStr = name.Stringify();
+                string? atomRef = null;
+                if (value.TryGetValueAsDreamObject<DreamObjectAtom>(out _)) // Atoms are clickable
+                    atomRef = dreamManager.CreateRef(value);
+
+                connection.AddStatPanelLine(nameStr, value.Stringify(), atomRef);
             }
         }
 
@@ -2448,7 +2456,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamValue value = state.GetArgument(1, "Value");
 
             if (state.Usr is DreamObjectMob { Connection: {} usrConnection })
-                OutputToStatPanel(usrConnection, name, value);
+                OutputToStatPanel(state.DreamManager, usrConnection, name, value);
 
             return DreamValue.Null;
         }
@@ -2465,7 +2473,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (state.Usr is DreamObjectMob { Connection: {} connection }) {
                 connection.SetOutputStatPanel(panel);
                 if (name != DreamValue.Null || value != DreamValue.Null) {
-                    OutputToStatPanel(connection, name, value);
+                    OutputToStatPanel(state.DreamManager, connection, name, value);
                 }
 
                 return new DreamValue(connection.SelectedStatPanel == panel ? 1 : 0);

@@ -53,6 +53,7 @@ namespace DMShared.Compiler {
 
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,
+        EmptyProc = 3101
 
         // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     }

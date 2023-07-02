@@ -9,7 +9,7 @@ using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
-    static class DMObjectTree {
+    internal static class DMObjectTree {
         public static List<DMObject> AllObjects = new();
         public static List<DMProc> AllProcs = new();
 
@@ -145,7 +145,7 @@ namespace DMCompiler.DM {
                         return new DreamPath("/proc/" + searchingProcName);
                     }
                 } else if (foundType) { // We're searching for a type
-                    break;
+                    return currentPath.Combine(search);
                 }
 
                 if (currentPath == DreamPath.Root) {

@@ -378,8 +378,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool TryAsJsonRepresentation(out object? json) {
-            List<object?> list = new();
-            Dictionary<string, object?> associatedValues = new();
+            List<object?> values = new();
 
             foreach (var value in _values) {
                 if (!value.Value.TryAsJsonRepresentation(out var jsonValue)) {
@@ -388,22 +387,26 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 if (value.Key != null) {
-                    if (value.Key is not Expressions.String keyString) { //Only string keys are supported
+                    // Null key is not supported here
+                    if (!value.Key.TryAsJsonRepresentation(out var jsonKey) || jsonKey == null) {
                         json = null;
                         return false;
                     }
 
-                    associatedValues.Add(keyString.Value, jsonValue);
+                    values.Add(new Dictionary<object, object?> {
+                        { "key", jsonKey },
+                        { "value", jsonValue }
+                    });
                 } else {
-                    list.Add(jsonValue);
+                    values.Add(jsonValue);
                 }
             }
 
-            Dictionary<string, object> jsonRepresentation = new();
-            jsonRepresentation.Add("type", JsonVariableType.List);
-            if (list.Count > 0) jsonRepresentation.Add("values", list);
-            if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
-            json = jsonRepresentation;
+            json = new Dictionary<string, object> {
+                { "type", JsonVariableType.List },
+                { "values", values }
+            };
+
             return true;
         }
     }

@@ -3,3 +3,9 @@
 	ASSERT(A.len == 3)
 	A.Cut()
 	ASSERT(A.len == 0)
+
+	A = list(a = 10, b = 20)
+	A.Cut(1, 2)
+	ASSERT(A ~= list("b"))
+	ASSERT(A["a"] == null)
+	ASSERT(A["b"] == 20)

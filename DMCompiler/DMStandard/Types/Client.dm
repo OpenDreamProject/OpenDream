@@ -60,6 +60,7 @@
 			mob = new world.mob(locate(1,1,1)) // TODO: Find nearest non-dense turf
 
 		eye = mob
+		statobj = mob
 		return mob
 
 	proc/Del()
@@ -70,7 +71,8 @@
 			hsrc.Topic(href, href_list)
 
 	proc/Stat()
-		if (statobj != null) statobj.Stat()
+		if (istype(statobj, /atom))
+			statobj.Stat()
 
 	proc/Command(command as command_text)
 		set opendream_unimplemented = TRUE

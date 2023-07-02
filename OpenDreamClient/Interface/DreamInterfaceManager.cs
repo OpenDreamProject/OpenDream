@@ -16,6 +16,7 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
+using Robust.Shared.Random;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
@@ -40,6 +41,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
     [Dependency] private readonly IInputManager _inputManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
+    [Dependency] private readonly IRobustRandom _random = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -220,7 +222,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         ShowPrompt(prompt);
     }
-
+  
     private void RxBrowse(MsgBrowse pBrowse) {
         if (pBrowse.HtmlSource == null && pBrowse.Window != null) {
             //Closing a popup
@@ -234,7 +236,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             BrowsePopup? popup = null;
 
             if (pBrowse.Window != null) {
-                htmlFileName = pBrowse.Window;
+                htmlFileName = $"browse{_random.Next()}"; // TODO: Possible collisions and explicit file names
                 outputBrowser = FindElementWithId(pBrowse.Window) as ControlBrowser;
 
                 if (outputBrowser == null) {

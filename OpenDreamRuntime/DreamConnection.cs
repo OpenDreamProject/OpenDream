@@ -37,6 +37,7 @@ namespace OpenDreamRuntime {
                         _mob.Connection = null;
                     }
 
+                    StatObj = new(value);
                     if (Eye != null && Eye == Mob) {
                         Eye = value;
                     }
@@ -72,6 +73,9 @@ namespace OpenDreamRuntime {
                 }
             }
         }
+
+        [ViewVariables]
+        public DreamValue StatObj { get; set; } // This can be just any DreamValue. Only atoms will function though.
 
         [ViewVariables] private string? _outputStatPanel;
         [ViewVariables] private string _selectedStatPanel;

@@ -57,7 +57,7 @@ namespace OpenDreamClient.Rendering {
         private void OnIconSizeChanged() {
             _entityManager.TryGetComponent<TransformComponent>(Owner, out var transform);
             _lookupSystem ??= _entitySystemMan.GetEntitySystem<EntityLookupSystem>();
-            _lookupSystem?.FindAndAddToEntityTree(Owner, transform);
+            _lookupSystem?.FindAndAddToEntityTree(Owner, xform: transform);
         }
     }
 }

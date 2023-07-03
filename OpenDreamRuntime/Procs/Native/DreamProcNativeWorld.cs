@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects.Types;
+using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeWorld {
@@ -109,6 +110,15 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 return new(dataList);
             }
+        }
+
+        [DreamProc("Reboot")]
+        [DreamProcParameter("reason", Type = DreamValue.DreamValueType.Float)]
+        public static DreamValue NativeProc_Reboot(NativeProc.State state) {
+            var server = IoCManager.Resolve<IBaseServer>();
+
+            server.Shutdown("/world.Reboot() was called but restarting is very broken");
+            return DreamValue.Null;
         }
 
         [DreamProc("SetConfig")]

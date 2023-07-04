@@ -455,7 +455,7 @@ namespace DMCompiler.DM.Expressions {
                 _isAmbiguous = true;
             }
 
-            return System.IO.Path.Combine(directory, files[0]);
+            return files[0];
         }
     }
 

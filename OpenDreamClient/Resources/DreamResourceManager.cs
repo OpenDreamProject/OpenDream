@@ -109,10 +109,7 @@ namespace OpenDreamClient.Resources {
 
                 resource = LoadResourceFromData(typeof(T), resourceId, data);
 
-                Timer.Spawn(1, () => {
-                    onLoadCallback((T)resource);
-
-                });
+                onLoadCallback((T)resource);
                 return;
             }
 

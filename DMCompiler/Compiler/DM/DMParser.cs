@@ -368,7 +368,18 @@ namespace DMCompiler.Compiler.DM {
                     if (pathElement != null) {
                         if(pathElement == "operator") {
                             Token operatorToken = Current();
-                            if(Check(OperatorOverloadTypes)) {
+                            if(Current().Type == TokenType.DM_Slash) {
+                                //Up to this point, it's ambiguous whether it's a slash to mean operator/(), like the division operator overload
+                                //or "operator" just being used as a normal type name, as in a/operator/b/c/d
+                                Token peekToken = Advance();
+                                if (peekToken.Type == TokenType.DM_LeftParenthesis) { // Disambiguated as an overload
+                                    operatorFlag = true;
+                                    pathElement += operatorToken.PrintableText;
+                                } else { //Otherwise it's just a normal path, resume
+                                    ReuseToken(operatorToken);
+                                    Error(WarningCode.SoftReservedKeyword, "Using \"operator\" as a path element is ambiguous");
+                                }
+                            } else if(Check(OperatorOverloadTypes)) {
                                 operatorFlag = true;
                                 pathElement+=operatorToken.PrintableText;
                             }
@@ -637,7 +648,7 @@ namespace DMCompiler.Compiler.DM {
                     case DMASTLeftShift leftShift: {
                         // A left shift on its own becomes a special "output" statement
                         // Or something else depending on what's on the right ( browse(), browse_rsc(), output(), etc )
-                        if (leftShift.B is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
+                        if (leftShift.B.GetUnwrapped() is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
                             switch (identifier.Identifier) {
                                 case "browse": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
@@ -2059,10 +2070,8 @@ namespace DMCompiler.Compiler.DM {
 
                 if (inner is null) {
                     inner = new DMASTVoid(token.Location);
-                }
-
-                if (inner is DMASTIdentifier identifier) {
-                    inner = new DMASTIdentifierWrapped(identifier.Location, identifier);
+                } else {
+                    inner = new DMASTExpressionWrapped(inner.Location, inner);
                 }
 
                 return inner;

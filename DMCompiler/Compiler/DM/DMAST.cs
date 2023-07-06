@@ -146,10 +146,6 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
-        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
-            throw new NotImplementedException();
-        }
-
         public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) {
             throw new NotImplementedException();
         }
@@ -521,6 +517,14 @@ namespace DMCompiler.Compiler.DM {
 
         public virtual IEnumerable<DMASTExpression> Leaves() {
             yield break;
+        }
+
+        /// <summary>
+        /// If this is a <see cref="DMASTExpressionWrapped"/>, returns the expression inside.
+        /// Returns this expression if not.
+        /// </summary>
+        public virtual DMASTExpression GetUnwrapped() {
+            return this;
         }
     }
 
@@ -1135,18 +1139,6 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIdentifier(this);
-        }
-    }
-
-    public sealed class DMASTIdentifierWrapped : DMASTExpression {
-        public readonly DMASTIdentifier Identifier;
-
-        public DMASTIdentifierWrapped(Location location, DMASTIdentifier identifier) : base(location) {
-            Identifier = identifier;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitIdentifierWrapped(this);
         }
     }
 
@@ -2329,6 +2321,30 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitRightShift(this);
+        }
+    }
+
+    /// <summary>
+    /// An expression wrapped around parentheses
+    /// <code>(1 + 1)</code>
+    /// </summary>
+    public sealed class DMASTExpressionWrapped : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTExpressionWrapped(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            Expression.Visit(visitor);
+        }
+
+        public override DMASTExpression GetUnwrapped() {
+            DMASTExpression expr = Expression;
+            while (expr is DMASTExpressionWrapped wrapped)
+                expr = wrapped.Expression;
+
+            return expr;
         }
     }
 

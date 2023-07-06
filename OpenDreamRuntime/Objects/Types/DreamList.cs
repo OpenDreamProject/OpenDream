@@ -161,6 +161,11 @@ namespace OpenDreamRuntime.Objects.Types {
         public virtual void Cut(int start = 1, int end = 0) {
             if (end == 0 || end > (_values.Count + 1)) end = _values.Count + 1;
 
+            if (_associativeValues != null) {
+                for (int i = start; i < end; i++)
+                    _associativeValues.Remove(_values[i - 1]);
+            }
+
             _values.RemoveRange(start - 1, end - start);
         }
 
@@ -313,9 +318,13 @@ namespace OpenDreamRuntime.Objects.Types {
         public override DreamValue OperatorCombine(DreamValue b) {
             if (b.TryGetValueAsDreamList(out var bList)) {
                 foreach (DreamValue value in bList.GetValues()) {
-                    if (!ContainsValue(value)) {
+                    if (ContainsValue(value))
+                        continue;
+
+                    if (bList._associativeValues?.TryGetValue(value, out var associatedValue) is true)
+                        SetValue(value, associatedValue);
+                    else
                         AddValue(value);
-                    }
                 }
             } else if (!ContainsValue(b)) {
                 AddValue(b);
@@ -555,15 +564,32 @@ namespace OpenDreamRuntime.Objects.Types {
         [Dependency] private readonly IAtomManager _atomManager = default!;
         private readonly ServerAppearanceSystem? _appearanceSystem;
 
-        private readonly DreamObjectAtom _atom;
+        private readonly DreamObject _atom;
         private readonly bool _isUnderlays;
 
-        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObjectAtom atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
+        public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
             IoCManager.InjectDependencies(this);
 
             _atom = atom;
             _appearanceSystem = appearanceSystem;
             _isUnderlays = isUnderlays;
+        }
+
+        public override List<DreamValue> GetValues() {
+            var appearance = _atomManager.MustGetAppearance(_atom);
+            if (appearance == null || _appearanceSystem == null)
+                return new List<DreamValue>();
+
+            var overlays = GetOverlaysList(appearance);
+            var values = new List<DreamValue>(overlays.Count);
+
+            foreach (var overlay in overlays) {
+                var overlayAppearance = _appearanceSystem.MustGetAppearance(overlay);
+
+                values.Add(new(overlayAppearance));
+            }
+
+            return values;
         }
 
         public override void Cut(int start = 1, int end = 0) {
@@ -602,7 +628,8 @@ namespace OpenDreamRuntime.Objects.Types {
                 return;
 
             _atomManager.UpdateAppearance(_atom, appearance => {
-                IconAppearance overlayAppearance = CreateOverlayAppearance(value);
+                IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
+                overlayAppearance ??= new IconAppearance();
 
                 GetOverlaysList(appearance).Add(_appearanceSystem.AddAppearance(overlayAppearance));
             });
@@ -613,7 +640,8 @@ namespace OpenDreamRuntime.Objects.Types {
                 return;
 
             _atomManager.UpdateAppearance(_atom, appearance => {
-                IconAppearance overlayAppearance = CreateOverlayAppearance(value);
+                IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
+                overlayAppearance ??= new IconAppearance();
 
                 GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance));
             });
@@ -635,20 +663,20 @@ namespace OpenDreamRuntime.Objects.Types {
             return appearance;
         }
 
-        private IconAppearance CreateOverlayAppearance(DreamValue value) {
+        public static IconAppearance? CreateOverlayAppearance(IAtomManager atomManager, DreamValue value, int? defaultIcon) {
             IconAppearance overlay;
 
             if (value.TryGetValueAsString(out var iconState)) {
                 overlay = new IconAppearance() {
                     IconState = iconState
                 };
-            } else if (_atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
+            } else if (atomManager.TryCreateAppearanceFrom(value, out var overlayAppearance)) {
                 overlay = overlayAppearance;
             } else {
-                return new IconAppearance(); // Not a valid overlay, use a default appearance
+                return null; // Not a valid overlay
             }
 
-            overlay.Icon ??= GetAppearance().Icon;
+            overlay.Icon ??= defaultIcon;
             return overlay;
         }
     }
@@ -900,7 +928,7 @@ namespace OpenDreamRuntime.Objects.Types {
     // area.contents list
     public sealed class AreaContentsList : DreamList {
         private readonly DreamObjectArea _area;
-        private readonly List<DreamValue> _turfs = new();
+        private readonly List<DreamObjectTurf> _turfs = new();
 
         public AreaContentsList(DreamObjectDefinition listDef, DreamObjectArea area) : base(listDef, 0) {
             _area = area;
@@ -909,14 +937,36 @@ namespace OpenDreamRuntime.Objects.Types {
         public override DreamValue GetValue(DreamValue key) {
             if (!key.TryGetValueAsInteger(out var index))
                 throw new Exception($"Invalid index into area contents list: {key}");
-            if (index < 1 || index > _turfs.Count)
-                throw new Exception($"Out of bounds index on turf contents list: {index}");
 
-            return _turfs[index - 1];
+            foreach (var turf in _turfs) {
+                if (index < 1)
+                    break;
+
+                if (index == 1) // The index references this turf
+                    return new(turf);
+
+                index -= 1;
+
+                int contentsLength = turf.Contents.GetLength();
+
+                if (index <= contentsLength) // The index references one of the turf's contents
+                    return turf.Contents.GetValue(new(index));
+
+                index -= contentsLength;
+            }
+
+            throw new Exception($"Out of bounds index on turf contents list: {key}");
         }
 
         public override List<DreamValue> GetValues() {
-            return _turfs;
+            List<DreamValue> values = new(_turfs.Count);
+
+            foreach (var turf in _turfs) {
+                values.Add(new(turf));
+                values.AddRange(turf.Contents.GetValues());
+            }
+
+            return values;
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
@@ -930,7 +980,7 @@ namespace OpenDreamRuntime.Objects.Types {
             turf.Cell.Area = _area;
 
             // TODO: Actually keep track of every turf in an area, not just which ones have been added by DM through .contents
-            _turfs.Add(value);
+            _turfs.Add(turf);
         }
 
         public override void RemoveValue(DreamValue value) {
@@ -942,7 +992,12 @@ namespace OpenDreamRuntime.Objects.Types {
         }
 
         public override int GetLength() {
-            return _turfs.Count;
+            int length = _turfs.Count;
+
+            foreach (var turf in _turfs)
+                length += turf.Contents.GetLength();
+
+            return length;
         }
     }
 

@@ -395,6 +395,8 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
                 _filePath = filePath;
             }
+
+            DMObjectTree.Resources.Add(_filePath);
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -455,7 +457,7 @@ namespace DMCompiler.DM.Expressions {
                 _isAmbiguous = true;
             }
 
-            return System.IO.Path.Combine(directory, files[0]);
+            return files[0];
         }
     }
 

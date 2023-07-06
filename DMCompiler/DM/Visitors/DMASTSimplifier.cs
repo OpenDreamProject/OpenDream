@@ -183,6 +183,11 @@ namespace DMCompiler.DM.Visitors {
         private void SimplifyExpression(ref DMASTExpression expression) {
             if (expression == null || expression is DMASTExpressionConstant || expression is DMASTCallable) return;
 
+            if (expression is DMASTExpressionWrapped wrapped) {
+                SimplifyExpression(ref wrapped.Expression);
+                return;
+            }
+
             #region Comparators
             DMASTEqual equal = expression as DMASTEqual;
             if (equal != null) {

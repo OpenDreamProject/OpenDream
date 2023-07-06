@@ -1,183 +1,279 @@
-using System.Text;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.Html;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
+using Robust.Shared.Input;
 using Robust.Shared.Network;
+using Robust.Shared.Utility;
 
-namespace OpenDreamClient.Interface.Controls {
-    [Virtual]
-    public class InfoPanel : Control {
-        public string PanelName { get; }
+namespace OpenDreamClient.Interface.Controls;
 
-        protected InfoPanel(string name) {
-            PanelName = name;
-            TabContainer.SetTabTitle(this, name);
+[Virtual]
+internal class InfoPanel : Control {
+    public string PanelName { get; }
+
+    protected InfoPanel(string name) {
+        PanelName = name;
+        TabContainer.SetTabTitle(this, name);
+    }
+}
+
+internal sealed class StatPanel : InfoPanel {
+    private sealed class StatEntry {
+        public readonly RichTextLabel NameLabel = new();
+        public readonly RichTextLabel ValueLabel = new();
+
+        private readonly ControlInfo _owner;
+        private readonly IEntitySystemManager _entitySystemManager;
+        private readonly FormattedMessage _nameText = new();
+        private readonly FormattedMessage _valueText = new();
+        private string? _atomRef;
+
+        public StatEntry(ControlInfo owner, IEntitySystemManager entitySystemManager) {
+            _owner = owner;
+            _entitySystemManager = entitySystemManager;
+
+            // TODO: Change color when the mouse is hovering
+            //       I couldn't find a way to do this without recreating the FormattedMessage
+            ValueLabel.MouseFilter = MouseFilterMode.Stop;
+            ValueLabel.OnKeyBindDown += OnKeyBindDown;
+        }
+
+        public void Clear() {
+            _atomRef = null;
+            _nameText.Clear();
+            _valueText.Clear();
+
+            NameLabel.SetMessage(_nameText);
+            ValueLabel.SetMessage(_valueText);
+        }
+
+        public void UpdateLabels(string name, string value, string? atomRef) {
+            // TODO: Tabs should align with each other.
+            //       Probably should be done by RT, but it just ignores them currently.
+            name = name.Replace("\t", "    ");
+            value = value.Replace("\t", "    ");
+            _atomRef = atomRef;
+
+            _nameText.Clear();
+            _valueText.Clear();
+
+            // Use the default color and font
+            _nameText.PushColor(Color.Black);
+            _valueText.PushColor(Color.Black);
+            _nameText.PushTag(new MarkupNode("font", null, null));
+            _valueText.PushTag(new MarkupNode("font", null, null));
+
+            if (_owner.InfoDescriptor.AllowHtml) {
+                // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
+                HtmlParser.Parse(name, _nameText);
+                HtmlParser.Parse(value, _valueText);
+            } else {
+                _nameText.AddText(name);
+                _valueText.AddText(value);
+            }
+
+            NameLabel.SetMessage(_nameText);
+            ValueLabel.SetMessage(_valueText);
+        }
+
+        private void OnKeyBindDown(GUIBoundKeyEventArgs e) {
+            if (e.Function != EngineKeyFunctions.Use && e.Function != OpenDreamKeyFunctions.MouseMiddle &&
+                e.Function != EngineKeyFunctions.TextCursorSelect)
+                return;
+            if (_atomRef == null)
+                return;
+            if (!_entitySystemManager.TryGetEntitySystem(out MouseInputSystem? mouseInputSystem))
+                return;
+
+            e.Handle();
+            mouseInputSystem.HandleStatClick(_atomRef, e.Function == OpenDreamKeyFunctions.MouseMiddle);
         }
     }
 
-    public sealed class StatPanel : InfoPanel {
-        private readonly Label _textBlock;
+    private readonly ControlInfo _owner;
+    private readonly IEntitySystemManager _entitySystemManager;
+    private readonly GridContainer _grid;
+    private readonly List<StatEntry> _entries = new();
 
-        public StatPanel(string name) : base(name) {
-            _textBlock = new Label() {
-                HorizontalAlignment = HAlignment.Stretch, VerticalAlignment = VAlignment.Stretch,
-                // FontFamily = new FontFamily("Courier New")
-            };
+    public StatPanel(ControlInfo owner, IEntitySystemManager entitySystemManager, string name) : base(name) {
+        _owner = owner;
+        _entitySystemManager = entitySystemManager;
+        _grid = new() {
+            Columns = 2
+        };
 
-            var scrollViewer = new ScrollContainer() {
-                Children = { _textBlock }
-            };
-            AddChild(scrollViewer);
-        }
-
-        public void UpdateLines(List<string> lines) {
-            StringBuilder text = new StringBuilder();
-
-            foreach (string line in lines) {
-                text.Append(line + Environment.NewLine);
-            }
-
-            _textBlock.Text = text.ToString();
-        }
+        var scrollViewer = new ScrollContainer() {
+            HScrollEnabled = false,
+            Children = { _grid }
+        };
+        AddChild(scrollViewer);
     }
 
-    public sealed class VerbPanel : InfoPanel {
-        [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
-        private readonly GridContainer _grid;
+    public void UpdateLines(List<(string Name, string Value, string? AtomRef)> lines) {
+        for (int i = 0; i < Math.Max(_entries.Count, lines.Count); i++) {
+            var entry = GetEntry(i);
 
-        public VerbPanel(string name) : base(name) {
-            _grid = new GridContainer { Columns = 4 };
-            IoCManager.InjectDependencies(this);
-            AddChild(_grid);
-        }
+            if (i < lines.Count) {
+                var line = lines[i];
 
-        public void RefreshVerbs() {
-            _grid.Children.Clear();
-
-            foreach ((string verbName, string verbId, string verbCategory) in _dreamInterface.AvailableVerbs) {
-                if (verbCategory != PanelName)
-                    continue;
-
-                Button verbButton = new Button() {
-                    Margin = new Thickness(2),
-                    MinWidth = 100,
-                    Text = verbName
-                };
-
-                verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
-                verbButton.OnPressed += _ => {
-                    EntitySystem.Get<DreamCommandSystem>().RunCommand(verbId);
-                };
-
-                _grid.Children.Add(verbButton);
+                entry.UpdateLabels(line.Name, line.Value, line.AtomRef);
+            } else {
+                entry.Clear();
             }
         }
     }
 
-    public sealed class ControlInfo : InterfaceControl {
-        [Dependency] private readonly IClientNetManager _netManager = default!;
+    private StatEntry GetEntry(int index) {
+        // Expand the entries if there aren't enough
+        if (_entries.Count <= index) {
+            for (int i = _entries.Count; i <= index; i++) {
+                var entry = new StatEntry(_owner, _entitySystemManager);
 
-        private TabContainer _tabControl;
-        private readonly Dictionary<string, StatPanel> _statPanels = new();
-        private readonly SortedDictionary<string, VerbPanel> _verbPanels = new();
-
-        private bool _defaultPanelSent = false;
-
-        public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) {
-            IoCManager.InjectDependencies(this);
+                _grid.AddChild(entry.NameLabel);
+                _grid.AddChild(entry.ValueLabel);
+                _entries.Add(entry);
+            }
         }
 
-        protected override Control CreateUIElement() {
-            _tabControl = new TabContainer() {
-                /*BorderBrush = Brushes.Black,
-                BorderThickness = new Thickness(1)*/
+        return _entries[index];
+    }
+}
+
+internal sealed class VerbPanel : InfoPanel {
+    [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+    private readonly GridContainer _grid;
+
+    public VerbPanel(string name) : base(name) {
+        _grid = new GridContainer { Columns = 4 };
+        IoCManager.InjectDependencies(this);
+        AddChild(_grid);
+    }
+
+    public void RefreshVerbs() {
+        _grid.Children.Clear();
+
+        foreach ((string verbName, string verbId, string verbCategory) in _dreamInterface.AvailableVerbs) {
+            if (verbCategory != PanelName)
+                continue;
+
+            Button verbButton = new Button() {
+                Margin = new Thickness(2),
+                MinWidth = 100,
+                Text = verbName
             };
-            _tabControl.OnTabChanged += OnSelectionChanged;
 
-            RefreshVerbs();
+            verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
+            verbButton.OnPressed += _ => {
+                EntitySystem.Get<DreamCommandSystem>().RunCommand(verbId);
+            };
 
-            return _tabControl;
+            _grid.Children.Add(verbButton);
         }
+    }
+}
 
-        public void RefreshVerbs() {
-            foreach (var panel in _verbPanels) {
-                _verbPanels[panel.Key].RefreshVerbs();
+public sealed class ControlInfo : InterfaceControl {
+    public ControlDescriptorInfo InfoDescriptor => (ControlDescriptorInfo)ControlDescriptor;
+
+    [Dependency] private readonly IClientNetManager _netManager = default!;
+    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+
+    private TabContainer _tabControl;
+    private readonly Dictionary<string, StatPanel> _statPanels = new();
+    private readonly SortedDictionary<string, VerbPanel> _verbPanels = new();
+
+    private bool _defaultPanelSent = false;
+
+    public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) {
+        IoCManager.InjectDependencies(this);
+    }
+
+    protected override Control CreateUIElement() {
+        _tabControl = new TabContainer();
+        _tabControl.OnTabChanged += OnSelectionChanged;
+
+        RefreshVerbs();
+
+        return _tabControl;
+    }
+
+    public void RefreshVerbs() {
+        foreach (var panel in _verbPanels) {
+            _verbPanels[panel.Key].RefreshVerbs();
+        }
+    }
+
+    public void SelectStatPanel(string statPanelName) {
+        if (_statPanels.TryGetValue(statPanelName, out var panel))
+            _tabControl.CurrentTab = panel.GetPositionInParent();
+    }
+
+    public void UpdateStatPanels(MsgUpdateStatPanels pUpdateStatPanels) {
+        //Remove any panels the packet doesn't contain
+        foreach (KeyValuePair<string, StatPanel> existingPanel in _statPanels) {
+            if (!pUpdateStatPanels.StatPanels.ContainsKey(existingPanel.Key)) {
+                _tabControl.RemoveChild(existingPanel.Value);
+                _statPanels.Remove(existingPanel.Key);
             }
         }
 
-        public void SelectStatPanel(string statPanelName) {
-            if (_statPanels.TryGetValue(statPanelName, out var panel))
-                _tabControl.CurrentTab = panel.GetPositionInParent();
-        }
-
-        public void UpdateStatPanels(MsgUpdateStatPanels pUpdateStatPanels) {
-            //Remove any panels the packet doesn't contain
-            foreach (KeyValuePair<string, StatPanel> existingPanel in _statPanels) {
-                if (!pUpdateStatPanels.StatPanels.ContainsKey(existingPanel.Key)) {
-                    _tabControl.RemoveChild(existingPanel.Value);
-                    _statPanels.Remove(existingPanel.Key);
-                }
+        foreach (var updatingPanel in pUpdateStatPanels.StatPanels) {
+            if (!_statPanels.TryGetValue(updatingPanel.Key, out var panel)) {
+                panel = CreateStatPanel(updatingPanel.Key);
             }
 
-            foreach (KeyValuePair<string, List<string>> updatingPanel in pUpdateStatPanels.StatPanels) {
-                if (!_statPanels.TryGetValue(updatingPanel.Key, out var panel)) {
-                    panel = CreateStatPanel(updatingPanel.Key);
-                }
-
-                panel.UpdateLines(updatingPanel.Value);
-            }
-
-            // Tell the server we're ready to receive data
-            if (!_defaultPanelSent && _tabControl.ChildCount > 0) {
-                var msg = new MsgSelectStatPanel() {
-                    StatPanel = _tabControl.GetActualTabTitle(0)
-                };
-
-                _netManager.ClientSendMessage(msg);
-                _defaultPanelSent = true;
-            }
+            panel.UpdateLines(updatingPanel.Value);
         }
 
-        public bool HasVerbPanel(string name) {
-            return _verbPanels.ContainsKey(name);
-        }
-
-        public VerbPanel CreateVerbPanel(string name) {
-            var panel = new VerbPanel(name);
-            _verbPanels.Add(name, panel);
-            SortPanels();
-
-            return panel;
-        }
-
-        public StatPanel CreateStatPanel(string name) {
-            var panel = new StatPanel(name);
-            panel.Margin = new Thickness(20, 2);
-            _statPanels.Add(name, panel);
-            SortPanels();
-            return panel;
-        }
-
-        private void SortPanels() {
-            _tabControl.Children.Clear();
-            foreach(var (_, statPanel) in _statPanels) {
-                _tabControl.AddChild(statPanel);
-            }
-
-            foreach(var (_, verbPanel) in _verbPanels) {
-                _tabControl.AddChild(verbPanel);
-            }
-        }
-
-        private void OnSelectionChanged(int tabIndex) {
-            InfoPanel panel = (InfoPanel)_tabControl.GetChild(tabIndex);
+        // Tell the server we're ready to receive data
+        if (!_defaultPanelSent && _tabControl.ChildCount > 0) {
             var msg = new MsgSelectStatPanel() {
-                StatPanel = panel.PanelName
+                StatPanel = _tabControl.GetActualTabTitle(0)
             };
 
             _netManager.ClientSendMessage(msg);
+            _defaultPanelSent = true;
         }
+    }
+
+    public bool HasVerbPanel(string name) {
+        return _verbPanels.ContainsKey(name);
+    }
+
+    public void CreateVerbPanel(string name) {
+        var panel = new VerbPanel(name);
+        _verbPanels.Add(name, panel);
+        SortPanels();
+    }
+
+    private StatPanel CreateStatPanel(string name) {
+        var panel = new StatPanel(this, _entitySystemManager, name);
+        panel.Margin = new Thickness(20, 2);
+        _statPanels.Add(name, panel);
+        SortPanels();
+        return panel;
+    }
+
+    private void SortPanels() {
+        _tabControl.Children.Clear();
+        foreach(var (_, statPanel) in _statPanels) {
+            _tabControl.AddChild(statPanel);
+        }
+
+        foreach(var (_, verbPanel) in _verbPanels) {
+            _tabControl.AddChild(verbPanel);
+        }
+    }
+
+    private void OnSelectionChanged(int tabIndex) {
+        InfoPanel panel = (InfoPanel)_tabControl.GetChild(tabIndex);
+        var msg = new MsgSelectStatPanel() {
+            StatPanel = panel.PanelName
+        };
+
+        _netManager.ClientSendMessage(msg);
     }
 }

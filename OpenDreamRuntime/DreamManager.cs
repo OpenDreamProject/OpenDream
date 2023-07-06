@@ -12,6 +12,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
+using Robust.Server.ServerStatus;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
@@ -27,6 +28,8 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private readonly IStatusHost _statusHost = default!;
+        [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
 
         private ServerAppearanceSystem? _appearanceSystem;
 
@@ -37,7 +40,7 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public List<DreamValue> Globals { get; set; } = new();
-        public IReadOnlyList<string> GlobalNames { get; private set; } = new List<string>();
+        public List<string> GlobalNames { get; private set; } = new List<string>();
         public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
         public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
@@ -57,7 +60,7 @@ namespace OpenDreamRuntime {
             _sawmill = Logger.GetSawmill("opendream");
 
             InitializeConnectionManager();
-            _dreamResourceManager.Initialize();
+            _dreamResourceManager.PreInitialize();
 
             if (!LoadJson(jsonPath)) {
                 _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
@@ -110,9 +113,11 @@ namespace OpenDreamRuntime {
             }
 
             _compiledJson = json;
-            _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
+            var rootPath = Path.GetDirectoryName(jsonPath)!;
+            var resources = _compiledJson.Resources ?? Array.Empty<string>();
+            _dreamResourceManager.Initialize(rootPath, resources);
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
-                throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
+                throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
 
             _objectTree.LoadJson(json);
 
@@ -135,11 +140,14 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            // The first global is always `world`.
-            Globals[0] = new DreamValue(WorldInstance);
+            Globals[GlobalNames.IndexOf("world")] = new DreamValue(WorldInstance);
 
             // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
             _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps[0]);
+
+            _statusHost.SetMagicAczProvider(new DreamMagicAczProvider(
+                _dependencyCollection, rootPath, resources
+            ));
 
             return true;
         }
@@ -175,8 +183,21 @@ namespace OpenDreamRuntime {
                         // i dont believe this will **ever** be called, but just to be sure, funky errors /might/ appear in the future if someone does a fucky wucky and calls this on a deleted object.
                         throw new Exception("Cannot create reference ID for an object that is deleted");
                     }
-
-                    refType = RefType.DreamObject;
+                    switch(refObject){
+                        case DreamObjectTurf: refType = RefType.DreamObjectTurf; break;
+                        case DreamObjectMob: refType = RefType.DreamObjectMob; break;
+                        case DreamObjectArea: refType = RefType.DreamObjectArea; break;
+                        case DreamObjectClient: refType = RefType.DreamObjectArea; break;
+                        case DreamObjectImage: refType = RefType.DreamObjectImage; break;
+                        default: {
+                            refType = RefType.DreamObjectDatum;
+                            if(refObject.IsSubtypeOf(_objectTree.Obj))
+                                refType = RefType.DreamObject;
+                            else if (refObject.GetType() == typeof(DreamList))
+                                refType = RefType.DreamObjectList;
+                            break;
+                        }
+                    }
                     if (!ReferenceIDs.TryGetValue(refObject, out idx)) {
                         idx = _dreamObjectRefIdCounter++;
                         ReferenceIDs.Add(refObject, idx);
@@ -208,12 +229,12 @@ namespace OpenDreamRuntime {
                 throw new NotImplementedException($"Ref for {value} is unimplemented");
             }
 
-            // The first digit is the type, i.e. 1 for objects and 2 for strings
-            return $"{(int) refType}{idx}";
+            // The first digit is the type
+            return $"[0x{((int) refType+idx):x}]";
         }
 
         public DreamValue LocateRef(string refString) {
-            if (!int.TryParse(refString, out var refId)) {
+            if (!int.TryParse(refString.Substring(3).TrimEnd(']'), System.Globalization.NumberStyles.HexNumber, null, out var refId)) { //strip "[0x" and "]"
                 // If the ref is not an integer, it may be a tag
                 if (Tags.TryGetValue(refString, out var tagList)) {
                     return new DreamValue(tagList.First());
@@ -222,15 +243,20 @@ namespace OpenDreamRuntime {
                 return DreamValue.Null;
             }
 
-            // The first digit is the type
-            var typeId = (RefType) int.Parse(refString.Substring(0, 1));
-            var untypedRefString = refString.Substring(1); // The ref minus its ref type prefix
-
-            refId = int.Parse(untypedRefString);
+            // The first one/two digits give the type, the last 6 give the index
+            var typeId = (RefType) (refId & 0xFF000000);
+            refId = (refId & 0x00FFFFFF); // The ref minus its ref type prefix
 
             switch (typeId) {
                 case RefType.Null:
                     return DreamValue.Null;
+                case RefType.DreamObjectArea:
+                case RefType.DreamObjectClient:
+                case RefType.DreamObjectDatum:
+                case RefType.DreamObjectImage:
+                case RefType.DreamObjectList:
+                case RefType.DreamObjectMob:
+                case RefType.DreamObjectTurf:
                 case RefType.DreamObject:
                     if (ReferenceIDsToDreamObject.TryGetValue(refId, out var dreamObject))
                         return new(dreamObject);

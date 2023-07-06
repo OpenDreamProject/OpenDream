@@ -37,6 +37,9 @@ public sealed class DreamObjectClient : DreamObject {
             case "mob":
                 value = new(Connection.Mob);
                 return true;
+            case "statobj":
+                value = Connection.StatObj;
+                return true;
             case "eye":
                 value = new(Connection.Eye);
                 return true;
@@ -87,6 +90,9 @@ public sealed class DreamObjectClient : DreamObject {
                 Connection.Mob = newMob;
                 break;
             }
+            case "statobj":
+                Connection.StatObj = value;
+                break;
             case "eye": {
                 value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newEye);
                 if (newEye is not (DreamObjectMovable or null)) {
@@ -123,7 +129,10 @@ public sealed class DreamObjectClient : DreamObject {
                 break;
             }
             case "statpanel":
-                //connection.SelectedStatPanel = variableValue.GetValueAsString();
+                if (!value.TryGetValueAsString(out var statPanel))
+                    return;
+
+                Connection.SelectedStatPanel = statPanel;
                 break;
             default:
                 base.SetVar(varName, value);

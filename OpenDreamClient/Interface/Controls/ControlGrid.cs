@@ -2,20 +2,20 @@ using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls {
-    sealed class ControlGrid : InterfaceControl {
-        private GridContainer _grid;
+namespace OpenDreamClient.Interface.Controls;
 
-        public ControlGrid(ControlDescriptor controlDescriptor, ControlWindow window) :
-            base(controlDescriptor, window) {
-        }
+internal sealed class ControlGrid : InterfaceControl {
+    private GridContainer _grid;
 
-        protected override Control CreateUIElement() {
-            _grid = new GridContainer() {
+    public ControlGrid(ControlDescriptor controlDescriptor, ControlWindow window) :
+        base(controlDescriptor, window) {
+    }
 
-            };
+    protected override Control CreateUIElement() {
+        _grid = new GridContainer() {
 
-            return _grid;
-        }
+        };
+
+        return _grid;
     }
 }

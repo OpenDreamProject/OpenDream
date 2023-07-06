@@ -1,12 +1,10 @@
-﻿using JetBrains.Annotations;
-using OpenDreamClient.Input;
+﻿using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Players;
-using Robust.Shared.Utility;
 using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace OpenDreamClient.Interface;
@@ -28,12 +26,13 @@ public sealed class InterfaceMacroSet : InterfaceElement {
         _entitySystemManager = entitySystemManager;
         _uiManager = uiManager;
 
-        _inputContextName = $"{InputContextPrefix}{Name}";
-        if (inputManager.Contexts.Exists(_inputContextName)) {
-            inputManager.Contexts.Remove(_inputContextName);
+        _inputContextName = $"{InputContextPrefix}{ElementDescriptor.Name}";
+        if (inputManager.Contexts.TryGetContext(_inputContextName, out var existingContext)) {
+            _inputContext = existingContext;
+        } else {
+            _inputContext = inputManager.Contexts.New(_inputContextName, "common");
         }
 
-        _inputContext = inputManager.Contexts.New(_inputContextName, "common");
         foreach (MacroDescriptor macro in descriptor.Macros) {
             AddChild(macro);
         }
@@ -43,15 +42,15 @@ public sealed class InterfaceMacroSet : InterfaceElement {
         if (descriptor is not MacroDescriptor macroDescriptor)
             throw new ArgumentException($"Attempted to add a {descriptor} to a macro set", nameof(descriptor));
 
-        Macros.Add(macroDescriptor.Name, new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext, _uiManager));
+        Macros.Add(macroDescriptor.Id, new InterfaceMacro(_inputContextName, macroDescriptor, _entitySystemManager, _inputManager, _inputContext, _uiManager));
     }
 
     public void SetActive() {
-        _inputManager.Contexts.SetActiveContext($"{InputContextPrefix}{Name}");
+        _inputManager.Contexts.SetActiveContext($"{InputContextPrefix}{ElementDescriptor.Name}");
     }
 }
 
-struct ParsedKeybind {
+internal struct ParsedKeybind {
     public bool Up;
     public bool Rep;
     public bool Shift;
@@ -154,7 +153,7 @@ struct ParsedKeybind {
         {"ALT", Keyboard.Key.Alt},
     };
 
-    private static Dictionary<Key, String> keyToKeyName;
+    private static Dictionary<Key, string>? keyToKeyName;
 
     public static Key KeyNameToKey(string key) {
         if (keyNameToKey.TryGetValue(key, out Key result)) {
@@ -164,8 +163,7 @@ struct ParsedKeybind {
         }
     }
 
-    [CanBeNull]
-    public static string KeyToKeyName(Key key) {
+    public static string? KeyToKeyName(Key key) {
         if (keyToKeyName == null) {
             keyToKeyName = new Dictionary<Key, string>();
             foreach (KeyValuePair<string, Key> entry in keyNameToKey) {
@@ -173,7 +171,7 @@ struct ParsedKeybind {
             }
         }
 
-        if (keyToKeyName.TryGetValue(key, out string result)) {
+        if (keyToKeyName.TryGetValue(key, out var result)) {
             return result;
         } else {
             return null;
@@ -225,10 +223,8 @@ struct ParsedKeybind {
 }
 
 public sealed class InterfaceMacro : InterfaceElement {
-    public string Id => MacroDescriptor.Id;
-    public string Command => MacroDescriptor.Id;
-
-    private MacroDescriptor MacroDescriptor => (ElementDescriptor as MacroDescriptor);
+    private MacroDescriptor MacroDescriptor => (MacroDescriptor)ElementDescriptor;
+    private string Command => MacroDescriptor.Command;
 
     private readonly IEntitySystemManager _entitySystemManager;
     private readonly IUserInterfaceManager _uiManager;
@@ -249,7 +245,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         ParsedKeybind parsedKeybind;
 
         try {
-            parsedKeybind = ParsedKeybind.Parse(Name);
+            parsedKeybind = ParsedKeybind.Parse(ElementDescriptor.Name);
         } catch (Exception e) {
             Logger.GetSawmill("opendream.macro").Warning($"Invalid keybind for macro {Id}: {e.Message}");
             return;
@@ -270,7 +266,7 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
         }
 
-        KeyBindingRegistration binding = CreateMacroBinding(function, parsedKeybind);
+        KeyBindingRegistration? binding = CreateMacroBinding(function, parsedKeybind);
 
         if (binding == null)
             return;
@@ -296,7 +292,7 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
         }
 
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
             string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
             if (keyName == null)
                 return;
@@ -307,12 +303,12 @@ public sealed class InterfaceMacro : InterfaceElement {
     }
 
     private void OnMacroPress(ICommonSession? session) {
-        if (String.IsNullOrEmpty(Command))
+        if (string.IsNullOrEmpty(Command))
             return;
         if (_isRelease)
             return;
 
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
             if (_isRepeating) {
                 commandSystem.StartRepeatingCommand(Command);
             } else {
@@ -322,10 +318,10 @@ public sealed class InterfaceMacro : InterfaceElement {
     }
 
     private void OnMacroRelease(ICommonSession? session) {
-        if (String.IsNullOrEmpty(Command))
+        if (string.IsNullOrEmpty(Command))
             return;
 
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem commandSystem)) {
+        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
             if (_isRepeating) {
                 commandSystem.StopRepeatingCommand(Command);
             } else if (_isRelease) {
@@ -334,7 +330,7 @@ public sealed class InterfaceMacro : InterfaceElement {
         }
     }
 
-    private static KeyBindingRegistration CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {
+    private static KeyBindingRegistration? CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {
         if (keybind.Key == null) {
             Logger.GetSawmill("opendream.macro").Warning($"Invalid keybind: {keybind}");
             return null;
@@ -348,5 +344,4 @@ public sealed class InterfaceMacro : InterfaceElement {
             Mod3 = keybind.Alt ? Key.Alt : Key.Unknown,
         };
     }
-
 }

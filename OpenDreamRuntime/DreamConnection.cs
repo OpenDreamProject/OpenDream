@@ -22,7 +22,7 @@ namespace OpenDreamRuntime {
         private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
-        [ViewVariables] private readonly Dictionary<string, List<string>> _statPanels = new();
+        [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
         [ViewVariables] private bool _currentlyUpdatingStat;
 
         [ViewVariables] public IPlayerSession? Session { get; private set; }
@@ -31,27 +31,28 @@ namespace OpenDreamRuntime {
             get => _mob;
             set {
                 if (_mob != value) {
-                    if (_mob != null) {
-                        _mob.Key = null;
-                        _mob.SpawnProc("Logout");
-                        _mob.Connection = null;
+                    var oldMob = _mob;
+                    _mob = value;
+
+                    if (oldMob != null) {
+                        oldMob.Key = null;
+                        oldMob.SpawnProc("Logout");
+                        oldMob.Connection = null;
                     }
 
-                    if (Eye != null && Eye == Mob) {
+                    StatObj = new(value);
+                    if (Eye != null && Eye == oldMob) {
                         Eye = value;
                     }
 
-                    if (value != null) {
+                    if (_mob != null) {
                         // If the mob is already owned by another player, kick them out
-                        if (value.Connection != null)
-                            value.Connection.Mob = null;
+                        if (_mob.Connection != null)
+                            _mob.Connection.Mob = null;
 
-                        _mob = value;
                         _mob.Connection = this;
                         _mob.Key = Session!.Name;
                         _mob.SpawnProc("Login", usr: _mob);
-                    } else {
-                        _mob = null;
                     }
 
                     UpdateAvailableVerbs();
@@ -72,6 +73,9 @@ namespace OpenDreamRuntime {
                 }
             }
         }
+
+        [ViewVariables]
+        public DreamValue StatObj { get; set; } // This can be just any DreamValue. Only atoms will function though.
 
         [ViewVariables] private string? _outputStatPanel;
         [ViewVariables] private string _selectedStatPanel;
@@ -116,8 +120,11 @@ namespace OpenDreamRuntime {
             if (_mob != null) {
                 // Don't null out the ckey here
                 _mob.SpawnProc("Logout");
-                _mob.Connection = null;
-                _mob = null;
+
+                if (_mob != null) { // Logout() may have removed our mob
+                    _mob.Connection = null;
+                    _mob = null;
+                }
             }
 
             Client.Delete();
@@ -209,16 +216,17 @@ namespace OpenDreamRuntime {
         }
 
         public void SetOutputStatPanel(string name) {
-            if (!_statPanels.ContainsKey(name)) _statPanels.Add(name, new List<string>());
+            if (!_statPanels.ContainsKey(name))
+                _statPanels.Add(name, new());
 
             _outputStatPanel = name;
         }
 
-        public void AddStatPanelLine(string text) {
+        public void AddStatPanelLine(string name, string value, string? atomRef) {
             if (_outputStatPanel == null || !_statPanels.ContainsKey(_outputStatPanel))
                 SetOutputStatPanel("Stats");
 
-            _statPanels[_outputStatPanel].Add(text);
+            _statPanels[_outputStatPanel].Add( (name, value, atomRef) );
         }
 
         public void HandleMsgSelectStatPanel(MsgSelectStatPanel message) {

@@ -4,6 +4,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Shared.Network;
+using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 
@@ -18,7 +19,7 @@ namespace OpenDreamRuntime.Resources {
 
         private ISawmill _sawmill;
 
-        public void Initialize() {
+        public void PreInitialize() {
             _sawmill = Logger.GetSawmill("opendream.res");
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
@@ -31,12 +32,20 @@ namespace OpenDreamRuntime.Resources {
             _resourcePathToId.Add(string.Empty, 0);
         }
 
-        public void SetDirectory(string directory) {
-            RootPath = directory;
+        public void Initialize(string rootPath, string[] resources) {
+            RootPath = rootPath;
             // Used to ensure external DLL calls see a consistent current directory.
             Directory.SetCurrentDirectory(RootPath);
 
             _sawmill.Debug($"Resource root path set to {RootPath}");
+
+            // Immediately build list of resources from rsc.
+            for (var i = 0; i < resources.Length; i++) {
+                var resource = resources[i];
+                var loaded = LoadResource(resource);
+                // Resource IDs must be consistent with the ordering, or else packaged resources will mismatch.
+                DebugTools.Assert(loaded.Id == i + 1, "Resource IDs not consistent!");
+            }
         }
 
         public bool DoesFileExist(string resourcePath) {

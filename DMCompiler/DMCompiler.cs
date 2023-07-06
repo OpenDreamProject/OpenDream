@@ -273,6 +273,7 @@ namespace DMCompiler {
             var jsonRep = DMObjectTree.CreateJsonRepresentation();
             DreamCompiledJson compiledDream = new DreamCompiledJson {
                 Strings = DMObjectTree.StringTable,
+                Resources = DMObjectTree.Resources.ToArray(),
                 Maps = maps,
                 Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
                 Types = jsonRep.Item1,

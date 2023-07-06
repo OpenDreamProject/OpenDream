@@ -506,6 +506,7 @@ namespace OpenDreamRuntime.Objects {
         public void LoadJson(DreamCompiledJson json);
         public void SetGlobalNativeProc(NativeProc.HandlerFn func);
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func);
+        public NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func);
         public void SetNativeProc(TreeEntry type, NativeProc.HandlerFn func);
         public void SetNativeProc(TreeEntry type, Func<AsyncNativeProc.State, Task<DreamValue>> func);
 

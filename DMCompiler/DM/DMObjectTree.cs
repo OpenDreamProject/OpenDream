@@ -9,7 +9,7 @@ using DMShared.Dream.Procs;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
-    static class DMObjectTree {
+    internal static class DMObjectTree {
         public static List<DMObject> AllObjects = new();
         public static List<DMProc> AllProcs = new();
 
@@ -24,6 +24,7 @@ namespace DMCompiler.DM {
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
+        public static HashSet<string> Resources = new();
         public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
@@ -145,7 +146,7 @@ namespace DMCompiler.DM {
                         return new DreamPath("/proc/" + searchingProcName);
                     }
                 } else if (foundType) { // We're searching for a type
-                    break;
+                    return currentPath.Combine(search);
                 }
 
                 if (currentPath == DreamPath.Root) {

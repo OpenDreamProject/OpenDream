@@ -4,243 +4,243 @@ using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls {
-    public sealed class ControlWindow : InterfaceControl {
-        [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
-        [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
-        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+namespace OpenDreamClient.Interface.Controls;
 
-        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
+public sealed class ControlWindow : InterfaceControl {
+    [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
+    [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
-        // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
-        // Just like in win32 (which is definitely what this is inspired by let's be real),
-        // windows can be embedded into other windows as a way to do nesting.
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
 
-        public readonly List<InterfaceControl> ChildControls = new();
+    // NOTE: a "window" in BYOND does not necessarily map 1:1 to OS windows.
+    // Just like in win32 (which is definitely what this is inspired by let's be real),
+    // windows can be embedded into other windows as a way to do nesting.
 
-        public InterfaceMacroSet Macro => _dreamInterface.MacroSets[WindowDescriptor.Macro];
+    public readonly List<InterfaceControl> ChildControls = new();
 
-        private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
+    public InterfaceMacroSet Macro => _dreamInterface.MacroSets[WindowDescriptor.Macro];
 
-        private Control _menuContainer = default!;
-        private LayoutContainer _canvas = default!;
-        private readonly List<(OSWindow? osWindow, IClydeWindow? clydeWindow)> _openWindows = new();
+    private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
-        public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
-            IoCManager.InjectDependencies(this);
+    private Control _menuContainer = default!;
+    private LayoutContainer _canvas = default!;
+    private readonly List<(OSWindow? osWindow, IClydeWindow? clydeWindow)> _openWindows = new();
+
+    public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
+        IoCManager.InjectDependencies(this);
+    }
+
+    protected override void UpdateElementDescriptor() {
+        // Don't call base.UpdateElementDescriptor();
+
+        _menuContainer.RemoveAllChildren();
+        if (WindowDescriptor.Menu != null && _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
+            _menuContainer.AddChild(menu.MenuBar);
+            _menuContainer.Visible = true;
+        } else {
+            _menuContainer.Visible = false;
         }
 
-        protected override void UpdateElementDescriptor() {
-            // Don't call base.UpdateElementDescriptor();
+        foreach (var window in _openWindows) {
+            UpdateWindowAttributes(window);
+        }
 
-            _menuContainer.RemoveAllChildren();
-            if (WindowDescriptor.Menu != null && _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
-                _menuContainer.AddChild(menu.MenuBar);
-                _menuContainer.Visible = true;
-            } else {
-                _menuContainer.Visible = false;
+        if (WindowDescriptor.IsDefault) {
+            Macro.SetActive();
+        }
+    }
+
+    public OSWindow CreateWindow() {
+        OSWindow window = new();
+
+        window.Children.Add(UIElement);
+        window.SetWidth = ControlDescriptor.Size?.X ?? 640;
+        window.SetHeight = ControlDescriptor.Size?.Y ?? 440;
+        if (ControlDescriptor.Size?.X == 0)
+            window.SetWidth = window.MaxWidth;
+        if (ControlDescriptor.Size?.Y == 0)
+            window.SetHeight = window.MaxHeight;
+        window.Closing += _ => {
+            // A window can have a command set to be run when it's closed
+            if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
+                commandSystem.RunCommand(WindowDescriptor.OnClose);
             }
 
-            foreach (var window in _openWindows) {
-                UpdateWindowAttributes(window);
-            }
+            _openWindows.Remove((window, null));
+        };
 
-            if (WindowDescriptor.IsDefault) {
-                Macro.SetActive();
-            }
-        }
+        _openWindows.Add((window, null));
+        UpdateWindowAttributes((window, null));
+        return window;
+    }
 
-        public OSWindow CreateWindow() {
-            OSWindow window = new();
+    public void RegisterOnClydeWindow(IClydeWindow window) {
+        // todo: listen for closed.
+        _openWindows.Add((null, window));
+        UpdateWindowAttributes((null, window));
+    }
 
-            window.Children.Add(UIElement);
-            window.SetWidth = ControlDescriptor.Size?.X ?? 640;
-            window.SetHeight = ControlDescriptor.Size?.Y ?? 440;
-            if (ControlDescriptor.Size?.X == 0)
-                window.SetWidth = window.MaxWidth;
-            if (ControlDescriptor.Size?.Y == 0)
-                window.SetHeight = window.MaxHeight;
-            window.Closing += _ => {
-                // A window can have a command set to be run when it's closed
-                if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
-                    commandSystem.RunCommand(WindowDescriptor.OnClose);
-                }
+    public void UpdateAnchors() {
+        var windowSize = Size.GetValueOrDefault();
+        if (windowSize.X == 0)
+            windowSize.X = 640;
+        if (windowSize.Y == 0)
+            windowSize.Y = 440;
 
-                _openWindows.Remove((window, null));
-            };
+        for (int i = 0; i < ChildControls.Count; i++) {
+            InterfaceControl control = ChildControls[i];
+            var element = control.UIElement;
+            var elementPos = control.Pos.GetValueOrDefault();
+            var elementSize = control.Size.GetValueOrDefault();
 
-            _openWindows.Add((window, null));
-            UpdateWindowAttributes((window, null));
-            return window;
-        }
-
-        public void RegisterOnClydeWindow(IClydeWindow window) {
-            // todo: listen for closed.
-            _openWindows.Add((null, window));
-            UpdateWindowAttributes((null, window));
-        }
-
-        public void UpdateAnchors() {
-            var windowSize = Size.GetValueOrDefault();
-            if (windowSize.X == 0)
-                windowSize.X = 640;
-            if (windowSize.Y == 0)
-                windowSize.Y = 440;
-
-            for (int i = 0; i < ChildControls.Count; i++) {
-                InterfaceControl control = ChildControls[i];
-                var element = control.UIElement;
-                var elementPos = control.Pos.GetValueOrDefault();
-                var elementSize = control.Size.GetValueOrDefault();
-
-                if (control.Size?.Y == 0) {
-                    elementSize.Y = (windowSize.Y - elementPos.Y);
-                    if (ChildControls.Count - 1 > i) {
-                        if (ChildControls[i + 1].Pos != null) {
-                            var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
-                            elementSize.Y = nextElementPos.Y - elementPos.Y;
-                        }
-                    }
-
-                    element.SetHeight = (elementSize.Y / windowSize.Y) * _canvas.Height;
-                }
-
-                if (control.Size?.X == 0) {
-                    elementSize.X = (windowSize.X - elementPos.X);
-                    if (ChildControls.Count - 1 > i) {
-                        if (ChildControls[i + 1].Pos != null) {
-                            var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
-                            if (nextElementPos.X < (elementSize.X + elementPos.X) &&
-                                nextElementPos.Y < (elementSize.Y + elementPos.Y))
-                                elementSize.X = nextElementPos.X - elementPos.X;
-                        }
-                    }
-
-                    element.SetWidth = (elementSize.X / windowSize.X) * _canvas.Width;
-                }
-
-                if (control.Anchor1.HasValue) {
-                    var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
-                    var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
-                    var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
-                    var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
-                    LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
-                    LayoutContainer.SetMarginTop(element, Math.Max(top, 0));
-
-                    if (control.Anchor2.HasValue) {
-                        if (control.Anchor2.Value.X < control.Anchor1.Value.X ||
-                            control.Anchor2.Value.Y < control.Anchor1.Value.Y)
-                            _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Name}. Ignoring.");
-                        else {
-                            var offset2X = (elementPos.X + elementSize.X) -
-                                           (windowSize.X * control.Anchor2.Value.X / 100);
-                            var offset2Y = (elementPos.Y + elementSize.Y) -
-                                           (windowSize.Y * control.Anchor2.Value.Y / 100);
-                            var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
-                            var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
-                            element.SetWidth = Math.Max(width, 0);
-                            element.SetHeight = Math.Max(height, 0);
-                        }
-
+            if (control.Size?.Y == 0) {
+                elementSize.Y = (windowSize.Y - elementPos.Y);
+                if (ChildControls.Count - 1 > i) {
+                    if (ChildControls[i + 1].Pos != null) {
+                        var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
+                        elementSize.Y = nextElementPos.Y - elementPos.Y;
                     }
                 }
+
+                element.SetHeight = (elementSize.Y / windowSize.Y) * _canvas.Height;
             }
-        }
 
-        private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
-            // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
-            var (osWindow, clydeWindow) = windowRoot;
+            if (control.Size?.X == 0) {
+                elementSize.X = (windowSize.X - elementPos.X);
+                if (ChildControls.Count - 1 > i) {
+                    if (ChildControls[i + 1].Pos != null) {
+                        var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
+                        if (nextElementPos.X < (elementSize.X + elementPos.X) &&
+                            nextElementPos.Y < (elementSize.Y + elementPos.Y))
+                            elementSize.X = nextElementPos.X - elementPos.X;
+                    }
+                }
 
-            var title = WindowDescriptor.Title ?? "OpenDream World";
-            if (osWindow != null) osWindow.Title = title;
-            else if (clydeWindow != null) clydeWindow.Title = title;
-
-            WindowRoot? root = null;
-            if (osWindow?.Window != null)
-                root = _uiMgr.GetWindowRoot(osWindow.Window);
-            else if (clydeWindow != null)
-                root = _uiMgr.GetWindowRoot(clydeWindow);
-
-            if (root != null) {
-                root.BackgroundColor = WindowDescriptor.BackgroundColor;
+                element.SetWidth = (elementSize.X / windowSize.X) * _canvas.Width;
             }
-        }
 
-        public void CreateChildControls() {
-            foreach (ControlDescriptor controlDescriptor in WindowDescriptor.ControlDescriptors) {
-                AddChild(controlDescriptor);
-            }
-        }
+            if (control.Anchor1.HasValue) {
+                var offset1X = elementPos.X - (windowSize.X * control.Anchor1.Value.X / 100f);
+                var offset1Y = elementPos.Y - (windowSize.Y * control.Anchor1.Value.Y / 100f);
+                var left = (_canvas.Width * control.Anchor1.Value.X / 100) + offset1X;
+                var top = (_canvas.Height * control.Anchor1.Value.Y / 100) + offset1Y;
+                LayoutContainer.SetMarginLeft(element, Math.Max(left, 0));
+                LayoutContainer.SetMarginTop(element, Math.Max(top, 0));
 
-        public override void AddChild(ElementDescriptor descriptor) {
-            if (descriptor is not ControlDescriptor controlDescriptor)
-                throw new Exception($"Attempted to add {descriptor} to a window, but it was not a control");
-            if (controlDescriptor is WindowDescriptor)
-                throw new Exception("Cannot add a window to a window");
-
-            InterfaceControl control = controlDescriptor switch {
-                ControlDescriptorChild => new ControlChild(controlDescriptor, this),
-                ControlDescriptorInput => new ControlInput(controlDescriptor, this),
-                ControlDescriptorButton => new ControlButton(controlDescriptor, this),
-                ControlDescriptorOutput => new ControlOutput(controlDescriptor, this),
-                ControlDescriptorInfo => new ControlInfo(controlDescriptor, this),
-                ControlDescriptorMap => new ControlMap(controlDescriptor, this),
-                ControlDescriptorBrowser => new ControlBrowser(controlDescriptor, this),
-                ControlDescriptorLabel => new ControlLabel(controlDescriptor, this),
-                ControlDescriptorGrid => new ControlGrid(controlDescriptor, this),
-                ControlDescriptorTab => new ControlTab(controlDescriptor, this),
-                _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
-            };
-
-            // Can't have out-of-order components, so make sure they're ordered properly
-            if (ChildControls.Count > 0) {
-                var prevPos = ChildControls[^1].Pos.GetValueOrDefault();
-                var curPos = control.Pos.GetValueOrDefault();
-                if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
-                    ChildControls.Add(control);
-                else {
-                    _sawmill.Warning(
-                        $"Out of order component {control.Name}. Elements should be defined in order of position. Attempting to fix automatically.");
-
-                    int i = 0;
-                    while (i < ChildControls.Count) {
-                        prevPos = ChildControls[i].Pos.GetValueOrDefault();
-                        if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
-                            i++;
-                        else
-                            break;
+                if (control.Anchor2.HasValue) {
+                    if (control.Anchor2.Value.X < control.Anchor1.Value.X ||
+                        control.Anchor2.Value.Y < control.Anchor1.Value.Y)
+                        _sawmill.Warning($"Invalid anchor2 value in DMF for element {control.Id}. Ignoring.");
+                    else {
+                        var offset2X = (elementPos.X + elementSize.X) -
+                                       (windowSize.X * control.Anchor2.Value.X / 100);
+                        var offset2Y = (elementPos.Y + elementSize.Y) -
+                                       (windowSize.Y * control.Anchor2.Value.Y / 100);
+                        var width = (_canvas.Width * control.Anchor2.Value.X / 100) + offset2X - left;
+                        var height = (_canvas.Height * control.Anchor2.Value.Y / 100) + offset2Y - top;
+                        element.SetWidth = Math.Max(width, 0);
+                        element.SetHeight = Math.Max(height, 0);
                     }
 
-                    ChildControls.Insert(i, control);
                 }
-            } else
+            }
+        }
+    }
+
+    private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
+        // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
+        var (osWindow, clydeWindow) = windowRoot;
+
+        var title = WindowDescriptor.Title ?? "OpenDream World";
+        if (osWindow != null) osWindow.Title = title;
+        else if (clydeWindow != null) clydeWindow.Title = title;
+
+        WindowRoot? root = null;
+        if (osWindow?.Window != null)
+            root = _uiMgr.GetWindowRoot(osWindow.Window);
+        else if (clydeWindow != null)
+            root = _uiMgr.GetWindowRoot(clydeWindow);
+
+        if (root != null) {
+            root.BackgroundColor = WindowDescriptor.BackgroundColor;
+        }
+    }
+
+    public void CreateChildControls() {
+        foreach (ControlDescriptor controlDescriptor in WindowDescriptor.ControlDescriptors) {
+            AddChild(controlDescriptor);
+        }
+    }
+
+    public override void AddChild(ElementDescriptor descriptor) {
+        if (descriptor is not ControlDescriptor controlDescriptor)
+            throw new Exception($"Attempted to add {descriptor} to a window, but it was not a control");
+        if (controlDescriptor is WindowDescriptor)
+            throw new Exception("Cannot add a window to a window");
+
+        InterfaceControl control = controlDescriptor switch {
+            ControlDescriptorChild => new ControlChild(controlDescriptor, this),
+            ControlDescriptorInput => new ControlInput(controlDescriptor, this),
+            ControlDescriptorButton => new ControlButton(controlDescriptor, this),
+            ControlDescriptorOutput => new ControlOutput(controlDescriptor, this),
+            ControlDescriptorInfo => new ControlInfo(controlDescriptor, this),
+            ControlDescriptorMap => new ControlMap(controlDescriptor, this),
+            ControlDescriptorBrowser => new ControlBrowser(controlDescriptor, this),
+            ControlDescriptorLabel => new ControlLabel(controlDescriptor, this),
+            ControlDescriptorGrid => new ControlGrid(controlDescriptor, this),
+            ControlDescriptorTab => new ControlTab(controlDescriptor, this),
+            _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
+        };
+
+        // Can't have out-of-order components, so make sure they're ordered properly
+        if (ChildControls.Count > 0) {
+            var prevPos = ChildControls[^1].Pos.GetValueOrDefault();
+            var curPos = control.Pos.GetValueOrDefault();
+            if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                 ChildControls.Add(control);
+            else {
+                _sawmill.Warning(
+                    $"Out of order component {control.Id}. Elements should be defined in order of position. Attempting to fix automatically.");
 
-            _canvas.Children.Add(control.UIElement);
-        }
-
-        // Because of how windows are not always real windows,
-        // UIControl contains the *contents* of the window, not the actual OS window itself.
-        protected override Control CreateUIElement() {
-            var container = new BoxContainer {
-                RectClipContent = true,
-                Orientation = BoxContainer.LayoutOrientation.Vertical,
-                Children = {
-                    (_menuContainer = new Control { Margin = new Thickness(4, 0)}),
-                    (_canvas = new LayoutContainer {
-                        InheritChildMeasure = false,
-                        VerticalExpand = true
-                    })
+                int i = 0;
+                while (i < ChildControls.Count) {
+                    prevPos = ChildControls[i].Pos.GetValueOrDefault();
+                    if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
+                        i++;
+                    else
+                        break;
                 }
-            };
 
-            _canvas.OnResized += CanvasOnResized;
+                ChildControls.Insert(i, control);
+            }
+        } else
+            ChildControls.Add(control);
 
-            return container;
-        }
+        _canvas.Children.Add(control.UIElement);
+    }
 
-        private void CanvasOnResized() {
-            UpdateAnchors();
-        }
+    // Because of how windows are not always real windows,
+    // UIControl contains the *contents* of the window, not the actual OS window itself.
+    protected override Control CreateUIElement() {
+        var container = new BoxContainer {
+            RectClipContent = true,
+            Orientation = BoxContainer.LayoutOrientation.Vertical,
+            Children = {
+                (_menuContainer = new Control { Margin = new Thickness(4, 0)}),
+                (_canvas = new LayoutContainer {
+                    InheritChildMeasure = false,
+                    VerticalExpand = true
+                })
+            }
+        };
+
+        _canvas.OnResized += CanvasOnResized;
+
+        return container;
+    }
+
+    private void CanvasOnResized() {
+        UpdateAnchors();
     }
 }

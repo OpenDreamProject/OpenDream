@@ -471,6 +471,7 @@ namespace DMCompiler.DM.Visitors {
 
             static bool IsFuzzy(DMExpression expr) {
                 switch (expr) {
+                    case Dereference when expr.Path == null:
                     case ProcCall when expr.Path == null:
                     case New when expr.Path == null:
                     case List:

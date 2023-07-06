@@ -3,40 +3,40 @@ using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls {
-    sealed class ControlButton : InterfaceControl {
-        public const string StyleClassDMFButton = "DMFbutton";
+namespace OpenDreamClient.Interface.Controls;
 
-        private Button _button;
+internal sealed class ControlButton : InterfaceControl {
+    public const string StyleClassDMFButton = "DMFbutton";
 
-        public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+    private Button _button;
 
-        protected override Control CreateUIElement() {
-            _button = new Button() {
-                ClipText = true
-            };
+    public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
-            _button.OnPressed += OnButtonClick;
-            _button.Label.Margin = new Thickness(0, -3, 0, 0);
-            _button.Label.AddStyleClass(StyleClassDMFButton);
+    protected override Control CreateUIElement() {
+        _button = new Button() {
+            ClipText = true
+        };
 
-            return _button;
-        }
+        _button.OnPressed += OnButtonClick;
+        _button.Label.Margin = new Thickness(0, -3, 0, 0);
+        _button.Label.AddStyleClass(StyleClassDMFButton);
 
-        protected override void UpdateElementDescriptor() {
-            base.UpdateElementDescriptor();
+        return _button;
+    }
 
-            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
 
-            _button.Text = controlDescriptor.Text;
-        }
+        ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
-        private void OnButtonClick(BaseButton.ButtonEventArgs args) {
-            ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
+        _button.Text = controlDescriptor.Text;
+    }
 
-            if (controlDescriptor.Command != null) {
-                EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.Command);
-            }
+    private void OnButtonClick(BaseButton.ButtonEventArgs args) {
+        ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
+
+        if (controlDescriptor.Command != null) {
+            EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.Command);
         }
     }
 }

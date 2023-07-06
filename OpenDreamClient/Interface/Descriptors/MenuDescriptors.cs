@@ -8,9 +8,9 @@ public sealed class MenuDescriptor : ElementDescriptor {
     private readonly List<MenuElementDescriptor> _elements = new();
     public IReadOnlyList<MenuElementDescriptor> Elements => _elements;
 
-    public MenuDescriptor(string name) {
+    public MenuDescriptor(string id) {
         Type = "MENU";
-        Name = name;
+        Id = id;
     }
 
     [UsedImplicitly]
@@ -25,22 +25,22 @@ public sealed class MenuDescriptor : ElementDescriptor {
         return menuElement;
     }
 
-    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._name = name;
+        copy._id = id;
         return copy;
     }
 }
 
 public sealed class MenuElementDescriptor : ElementDescriptor {
-    private string _category;
+    private string? _category;
 
     [DataField("command")]
     public string Command { get; init; }
 
     [DataField("category")]
-    public string Category {
+    public string? Category {
         get => _category;
         init => _category = value;
     }

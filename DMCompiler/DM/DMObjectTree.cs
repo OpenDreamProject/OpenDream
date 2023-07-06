@@ -24,6 +24,7 @@ namespace DMCompiler.DM {
         public static List<string> StringTable = new();
         public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
+        public static HashSet<string> Resources = new();
         public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();

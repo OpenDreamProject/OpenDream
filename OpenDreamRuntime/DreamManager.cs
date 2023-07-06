@@ -12,6 +12,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
+using Robust.Server.ServerStatus;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
@@ -27,6 +28,8 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private readonly IStatusHost _statusHost = default!;
+        [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
 
         private ServerAppearanceSystem? _appearanceSystem;
 
@@ -57,7 +60,7 @@ namespace OpenDreamRuntime {
             _sawmill = Logger.GetSawmill("opendream");
 
             InitializeConnectionManager();
-            _dreamResourceManager.Initialize();
+            _dreamResourceManager.PreInitialize();
 
             if (!LoadJson(jsonPath)) {
                 _taskManager.RunOnMainThread(() => { IoCManager.Resolve<IBaseServer>().Shutdown("Error while loading the compiled json. The opendream.json_path CVar may be empty, or points to a file that doesn't exist"); });
@@ -110,9 +113,11 @@ namespace OpenDreamRuntime {
             }
 
             _compiledJson = json;
-            _dreamResourceManager.SetDirectory(Path.GetDirectoryName(jsonPath));
+            var rootPath = Path.GetDirectoryName(jsonPath)!;
+            var resources = _compiledJson.Resources ?? Array.Empty<string>();
+            _dreamResourceManager.Initialize(rootPath, resources);
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))
-                throw new FileNotFoundException("Interface DMF not found at "+Path.Join(Path.GetDirectoryName(jsonPath),_compiledJson.Interface));
+                throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
 
             _objectTree.LoadJson(json);
 
@@ -139,6 +144,10 @@ namespace OpenDreamRuntime {
 
             // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
             _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps[0]);
+
+            _statusHost.SetMagicAczProvider(new DreamMagicAczProvider(
+                _dependencyCollection, rootPath, resources
+            ));
 
             return true;
         }

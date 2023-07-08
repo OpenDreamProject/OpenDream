@@ -35,6 +35,7 @@ internal sealed class DreamViewOverlay : Overlay {
     private EntityLookupSystem _lookupSystem;
     private ClientAppearanceSystem _appearanceSystem;
     private ClientScreenOverlaySystem _screenOverlaySystem;
+    private ClientImagesSystem _clientImagesSystem;
     private SharedTransformSystem _transformSystem;
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
     public bool ScreenOverlayEnabled = true;
@@ -51,6 +52,7 @@ internal sealed class DreamViewOverlay : Overlay {
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private Matrix3 _flipMatrix;
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
+    private Dictionary<EntityUid, List<DreamIcon>> _clientImages;
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
@@ -117,6 +119,7 @@ internal sealed class DreamViewOverlay : Overlay {
         _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
         _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
         _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
+        _clientImagesSystem ??= _entitySystem.GetEntitySystem<ClientImagesSystem>();
 
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
@@ -139,6 +142,10 @@ internal sealed class DreamViewOverlay : Overlay {
         SightFlags sight = mobSight?.Sight ?? 0;
 
         int tValue = 0; //this exists purely because the tiebreaker var needs to exist somewhere, but it's set to 0 again before every unique call to ProcessIconComponents
+
+        //client.images
+        //because they can override the sprite of any of the following, get them first and check for overrides & overlays in ProcessIconComponents
+        _clientImages = _clientImagesSystem.GetClientImages();
 
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
@@ -475,13 +482,7 @@ internal sealed class DreamViewOverlay : Overlay {
             result.Add(renderTargetPlaceholder);
         }
 
-        //TODO check for images with override here
-        /*foreach(image in client.images){
-            if(image.override && image.location == icon.owner)
-                current.MainIcon = image
-            else
-                add like overlays?
-        }*/
+
 
         //TODO vis_contents
         //click uid should be set to current.uid again
@@ -510,6 +511,18 @@ internal sealed class DreamViewOverlay : Overlay {
             else {
                 current.KeepTogetherGroup ??= new();
                 current.KeepTogetherGroup.AddRange(ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current, keepTogether));
+            }
+        }
+
+        //client images act as either an overlay or replace the main icon
+        if(_clientImages.TryGetValue(current.UID, out List<DreamIcon> attachedClientImages)){
+            foreach(DreamIcon CI in attachedClientImages){
+                if(CI.Appearance == null)
+                    continue;
+                if(CI.Appearance.Override)
+                    current.MainIcon = CI;
+                else
+                    result.AddRange(ProcessIconComponents(CI, current.Position, uid, isScreen, ref tieBreaker, current, false));
             }
         }
 

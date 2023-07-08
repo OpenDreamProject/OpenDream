@@ -34,6 +34,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
+        [ViewVariables] public bool Override;
         [ViewVariables] public string? RenderSource;
         [ViewVariables] public string? RenderTarget;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
@@ -69,6 +70,7 @@ namespace OpenDreamShared.Dream {
             Overlays = new List<uint>(appearance.Overlays);
             Underlays = new List<uint>(appearance.Underlays);
             Filters = new List<DreamFilter>(appearance.Filters);
+            Override = appearance.Override;
 
             for (int i = 0; i < 6; i++) {
                 Transform[i] = appearance.Transform[i];
@@ -101,6 +103,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Overlays.Count != Overlays.Count) return false;
             if (appearance.Underlays.Count != Underlays.Count) return false;
             if (appearance.Filters.Count != Filters.Count) return false;
+            if (appearance.Override != Override) return false;
 
             for (int i = 0; i < Filters.Count; i++) {
                 if (appearance.Filters[i] != Filters[i]) return false;

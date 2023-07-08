@@ -42,6 +42,7 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+		src.add_client_image()
 
 	verb/rotate()
 		for(var/i in 1 to 8)
@@ -167,6 +168,7 @@
 	verb/add_client_image()
 		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
 		i.loc = src
+		
 		src.client.images += i
 		spawn(20)
 			src.client.images.Remove(i)

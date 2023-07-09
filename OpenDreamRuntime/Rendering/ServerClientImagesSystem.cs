@@ -7,7 +7,6 @@ using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Rendering {
     public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
-        private readonly Dictionary<IPlayerSession, Dictionary<DreamObject, List<DreamObjectImage>>> _sessionToObjectImageDict = new();
         [Dependency] private readonly ServerAppearanceSystem serverAppearanceSystem = default!;
         [Dependency] private readonly IAtomManager atomManager = default!;
 
@@ -16,19 +15,10 @@ namespace OpenDreamRuntime.Rendering {
         }
 
         public void AddImageObject(DreamConnection connection, DreamObjectImage imageObject) {
-            if (!_sessionToObjectImageDict.TryGetValue(connection.Session, out var objectImageDict)) {
-                objectImageDict = new Dictionary<DreamObject, List<DreamObjectImage>>();
-                _sessionToObjectImageDict.Add(connection.Session, objectImageDict);
-            }
 
             DreamObject? loc = imageObject.GetAttachedLoc();
             if(loc == null)
                 return;
-
-            if(!objectImageDict.TryGetValue(loc, out var imageList))
-                imageList = new List<DreamObjectImage>();
-            imageList.Add(imageObject);
-            objectImageDict[loc] = imageList;
 
             EntityUid locEntity = EntityUid.Invalid;
             uint locAppearanceID = 0;
@@ -54,8 +44,6 @@ namespace OpenDreamRuntime.Rendering {
             DreamObject? loc = imageObject.GetAttachedLoc();
             if(loc == null)
                 return;
-            var objectImageDict = _sessionToObjectImageDict[connection.Session];
-            objectImageDict[loc].Remove(imageObject);
 
             EntityUid locEntity = EntityUid.Invalid;
             uint locAppearanceID = 0;

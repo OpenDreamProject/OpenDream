@@ -171,9 +171,12 @@
 		i.override = 1
 		
 		src.client.images += i
-		spawn(20)
-			src.client.images -= i
-			del(i)
+		world.log << "override added"
+		for(var/turf/T in range(src, 2))
+			var/image/turf_image = image(icon = 'icons/hanoi.dmi', loc=T, icon_state="1")
+			src.client.images += turf_image
+		spawn(50)
+			src.client.images.Cut()
 
 /mob/Stat()
 	if (statpanel("Status"))

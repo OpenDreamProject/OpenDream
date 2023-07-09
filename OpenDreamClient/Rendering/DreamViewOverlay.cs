@@ -52,7 +52,6 @@ internal sealed class DreamViewOverlay : Overlay {
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private Matrix3 _flipMatrix;
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
-    private Dictionary<EntityUid, List<DreamIcon>> _clientImages;
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
@@ -142,10 +141,6 @@ internal sealed class DreamViewOverlay : Overlay {
         SightFlags sight = mobSight?.Sight ?? 0;
 
         int tValue = 0; //this exists purely because the tiebreaker var needs to exist somewhere, but it's set to 0 again before every unique call to ProcessIconComponents
-
-        //client.images
-        //because they can override the sprite of any of the following, get them first and check for overrides & overlays in ProcessIconComponents
-        _clientImages = _clientImagesSystem.GetClientImages();
 
         //self icon
         if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
@@ -516,7 +511,8 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //client images act as either an overlay or replace the main icon
         //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
-        if(parentIcon == null && _clientImages.TryGetValue(current.UID, out List<DreamIcon> attachedClientImages)){
+
+        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.UID, current.MainIcon.Appearance, out List<DreamIcon>? attachedClientImages)){
             foreach(DreamIcon CI in attachedClientImages){
                 if(CI.Appearance == null)
                     continue;

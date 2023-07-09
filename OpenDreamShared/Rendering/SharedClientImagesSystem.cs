@@ -9,23 +9,27 @@ namespace OpenDreamShared.Rendering {
     public class SharedClientImagesSystem : EntitySystem {
         [Serializable, NetSerializable]
         public sealed class AddClientImageEvent : EntityEventArgs {
-            public EntityUid AttachedObject;
+            public uint AttachedAppearance;
+            public EntityUid AttachedEntity; //if this is EntityUid.Invalid (ie, a turf) use the AttachedAppearance instead
             public uint ImageAppearance;
 
-            public AddClientImageEvent(EntityUid attachedObject, uint imageAppearance) {
-                AttachedObject = attachedObject;
+            public AddClientImageEvent(EntityUid attachedEntity, uint attachedAppearance, uint imageAppearance) {
+                AttachedAppearance = attachedAppearance;
                 ImageAppearance = imageAppearance;
+                AttachedEntity = attachedEntity;
             }
         }
 
         [Serializable, NetSerializable]
         public sealed class RemoveClientImageEvent : EntityEventArgs {
-            public EntityUid AttachedObject;
+            public uint AttachedAppearance;
+            public EntityUid AttachedEntity; //if this is EntityUid.Invalid (ie, a turf) use the AttachedAppearance instead
             public uint ImageAppearance;
 
-            public RemoveClientImageEvent(EntityUid attachedObject, uint imageAppearance) {
-                AttachedObject = attachedObject;
+            public RemoveClientImageEvent(EntityUid attachedEntity, uint attachedAppearance, uint imageAppearance) {
+                AttachedAppearance = attachedAppearance;
                 ImageAppearance = imageAppearance;
+                AttachedEntity = attachedEntity;
             }
         }
     }

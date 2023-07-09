@@ -192,20 +192,7 @@ public sealed class DreamObjectImage : DreamObject {
         }
     }
 
-    public EntityUid? GetAttachedEntity(){
-        if(this._loc == null)
-            return null;
-
-        if(this._loc.ObjectDefinition.IsSubtypeOf(ObjectTree.Movable)){
-            DreamObjectMovable movableLoc = (DreamObjectMovable) this._loc;
-            return movableLoc.Entity;
-        }
-
-        if(this._loc.ObjectDefinition.IsSubtypeOf(ObjectTree.Turf)){
-            DreamObjectTurf turfLoc = (DreamObjectTurf) this._loc;
-            return EntityUid.Invalid;
-        }
-
-        return null;
+    public DreamObject? GetAttachedLoc(){
+        return this._loc;
     }
 }

@@ -7,6 +7,7 @@ using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Profiling;
+using System.Linq;
 
 namespace OpenDreamClient.Rendering;
 

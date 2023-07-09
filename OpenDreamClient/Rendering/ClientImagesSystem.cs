@@ -1,11 +1,12 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 
 namespace OpenDreamClient.Rendering {
     sealed class ClientImagesSystem : SharedClientImagesSystem {
-        private readonly Dictionary<IconAppearance, List<DreamIcon>> TurfClientImages = new();
-        private readonly Dictionary<EntityUid, List<DreamIcon>> AMClientImages = new();
+        private readonly Dictionary<IconAppearance, List<uint>> TurfClientImages = new();
+        private readonly Dictionary<EntityUid, List<uint>> AMClientImages = new();
         private readonly Dictionary<uint, DreamIcon> _idToIcon = new();
         [Dependency] private readonly ClientAppearanceSystem clientAppearanceSystem = default!;
         [Dependency] private IEntityManager _entityManager = default!;
@@ -21,30 +22,44 @@ namespace OpenDreamClient.Rendering {
         }
 
         public bool TryGetClientImages(EntityUid entity, IconAppearance appearance, [NotNullWhen(true)] out List<DreamIcon>? result){
-            if(entity == EntityUid.Invalid)
-                return TurfClientImages.TryGetValue(appearance, out result);
-            else
-                return AMClientImages.TryGetValue(entity, out result);
-
+            result = null;
+            List<uint>? resultIDs;
+            if(entity == EntityUid.Invalid) {
+                if(!TurfClientImages.TryGetValue(appearance, out resultIDs))
+                    return false;
+            }
+            else {
+                if(!AMClientImages.TryGetValue(entity, out resultIDs))
+                    return false;
+            }
+            result = new List<DreamIcon>();
+            foreach(uint distinctID in resultIDs.Distinct())
+                if(_idToIcon.TryGetValue(distinctID, out DreamIcon? icon))
+                    result.Add(icon);
+            return result.Count > 0;
         }
 
         private void OnAddClientImage(AddClientImageEvent e) {
             if(e.AttachedEntity == EntityUid.Invalid)
                 clientAppearanceSystem.LoadAppearance(e.AttachedAppearance, appearance => {
                     if(!TurfClientImages.TryGetValue(appearance, out var iconList))
-                        iconList = new List<DreamIcon>();
-                    DreamIcon icon = new DreamIcon(e.ImageAppearance);
-                    iconList.Add(icon);
+                        iconList = new List<uint>();
+                    if(!_idToIcon.ContainsKey(e.ImageAppearance)){
+                        DreamIcon icon = new DreamIcon(e.ImageAppearance);
+                        _idToIcon[e.ImageAppearance] = icon;
+                    }
+                    iconList.Add(e.ImageAppearance);
                     TurfClientImages[appearance] = iconList;
-                    _idToIcon[e.ImageAppearance] = icon;
                 });
             else {
                 if(!AMClientImages.TryGetValue(e.AttachedEntity, out var iconList))
-                    iconList = new List<DreamIcon>();
-                DreamIcon icon = new DreamIcon(e.ImageAppearance);
-                iconList.Add(icon);
+                     iconList = new List<uint>();
+                if(!_idToIcon.ContainsKey(e.ImageAppearance)){
+                    DreamIcon icon = new DreamIcon(e.ImageAppearance);
+                    _idToIcon[e.ImageAppearance] = icon;
+                }
+                iconList.Add(e.ImageAppearance);
                 AMClientImages[e.AttachedEntity] = iconList;
-                _idToIcon[e.ImageAppearance] = icon;
             }
 
         }
@@ -53,21 +68,17 @@ namespace OpenDreamClient.Rendering {
             if(e.AttachedEntity == EntityUid.Invalid)
                 clientAppearanceSystem.LoadAppearance(e.AttachedAppearance, appearance => {
                     if(!TurfClientImages.TryGetValue(appearance, out var iconList))
-                        iconList = new List<DreamIcon>();
-                    if(_idToIcon.TryGetValue(e.ImageAppearance, out DreamIcon icon)) {
-                        iconList.Remove(icon);
-                        TurfClientImages[appearance] = iconList;
-                        _idToIcon.Remove(e.ImageAppearance);
-                    }
+                        return;
+                    iconList.Remove(e.ImageAppearance);
+                    TurfClientImages[appearance] = iconList;
+                    _idToIcon.Remove(e.ImageAppearance);
                 });
             else {
                 if(!AMClientImages.TryGetValue(e.AttachedEntity, out var iconList))
-                    iconList = new List<DreamIcon>();
-                if(_idToIcon.TryGetValue(e.ImageAppearance, out DreamIcon icon)) {
-                    iconList.Remove(icon);
-                    AMClientImages[e.AttachedEntity] = iconList;
-                    _idToIcon.Remove(e.ImageAppearance);
-                }
+                    return;
+                iconList.Remove(e.ImageAppearance);
+                AMClientImages[e.AttachedEntity] = iconList;
+                _idToIcon.Remove(e.ImageAppearance);
             }
         }
     }

@@ -177,6 +177,10 @@ public sealed class DreamObjectImage : DreamObject {
 
                 break;
             }
+            case "override": {
+                Appearance!.Override = value.IsTruthy();
+                break;
+            }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     AtomManager.SetAppearanceVar(Appearance!, varName, value);

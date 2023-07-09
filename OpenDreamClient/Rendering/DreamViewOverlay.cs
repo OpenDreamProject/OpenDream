@@ -165,7 +165,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 foreach (TileRef tileRef in tileRefs) {
                     var delta = tileRef.GridIndices - eyeTile.GridIndices;
                     var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
-
+                    if(appearance == null)
+                        continue;
                     var tile = new ViewAlgorithm.Tile {
                         Opaque = appearance.Opacity,
                         Luminosity = 0,
@@ -286,7 +287,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
             if(!string.IsNullOrEmpty(sprite.RenderTarget)) {
                 //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
-                IRenderTexture tmpRenderTarget;
+                IRenderTexture? tmpRenderTarget;
                 if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
                     tmpRenderTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
                     ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
@@ -489,6 +490,8 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
+            if(underlay.Appearance == null)
+                continue;
             tieBreaker++;
             if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) {//KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, false));
@@ -503,6 +506,8 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
+            if(overlay.Appearance == null)
+                continue;
             tieBreaker++;
 
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
@@ -571,7 +576,7 @@ internal sealed class DreamViewOverlay : Overlay {
             colorMatrix = new ColorMatrix(RGBA);
         else
             colorMatrix = iconMetaData.ColorMatrixToApply;
-        ShaderInstance blendAndColor;
+        ShaderInstance? blendAndColor;
         if(blendOverride != null || !_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out blendAndColor))
             blendAndColor = _blendmodeInstances[blendOverride == null ? BlendMode.BLEND_DEFAULT : blendOverride.Value];
         blendAndColor = blendAndColor.Duplicate();
@@ -580,13 +585,13 @@ internal sealed class DreamViewOverlay : Overlay {
         return blendAndColor;
     }
 
-    private (Action, Action) DrawiconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
+    private (Action, Action) DrawiconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null) {
         DreamIcon icon = iconMetaData.MainIcon;
 
         Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
-        Texture frame;
+        Texture? frame;
         if(textureOverride != null) {
             frame = textureOverride;
             //we flip this because GL's coordinate system is bottom-left first, and so render target textures are upside down
@@ -764,7 +769,7 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
-    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null, bool noMouseMap = false) {
+    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null, bool noMouseMap = false) {
 
         (Action iconDrawAction, Action mouseMapDrawAction) = DrawiconAction(handle, iconMetaData, positionOffset, textureOverride);
 
@@ -837,7 +842,9 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         MouseOpacity = MouseOpacity.Transparent;
     }
 
-    public int CompareTo(RendererMetaData other) {
+    public int CompareTo(RendererMetaData? other) {
+        if(other == null)
+            return 1;
         int val = 0;
 
         //Render target and source ordering is done first.

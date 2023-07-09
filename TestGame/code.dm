@@ -171,7 +171,7 @@
 		
 		src.client.images += i
 		spawn(20)
-			src.client.images.Remove(i)
+			src.client.images -= i
 			del(i)
 
 /mob/Stat()

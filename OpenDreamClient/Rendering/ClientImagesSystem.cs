@@ -22,15 +22,21 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnAddClientImage(AddClientImageEvent e) {
-            ClientImages[e.AttachedObject] ??= new List<DreamIcon>();
+            if(!ClientImages.TryGetValue(e.AttachedObject, out var iconList))
+                iconList = new List<DreamIcon>();
             DreamIcon icon = new DreamIcon(e.ImageAppearance);
-            ClientImages[e.AttachedObject].Add(icon);
+            iconList.Add(icon);
+            ClientImages[e.AttachedObject] = iconList;
             _idToIcon[e.ImageAppearance] = icon;
         }
 
         private void OnRemoveClientImage(RemoveClientImageEvent e) {
-            DreamIcon icon = _idToIcon[e.ImageAppearance];
-            ClientImages[e.AttachedObject].Remove(icon);
+            if(!_idToIcon.TryGetValue(e.ImageAppearance, out DreamIcon icon))
+                return;
+            if(!ClientImages.TryGetValue(e.AttachedObject, out var iconList))
+                return;
+            iconList.Remove(icon);
+            ClientImages[e.AttachedObject] = iconList;
             _idToIcon.Remove(e.ImageAppearance);
         }
     }

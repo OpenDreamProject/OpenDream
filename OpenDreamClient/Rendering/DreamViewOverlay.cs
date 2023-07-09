@@ -515,7 +515,8 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         //client images act as either an overlay or replace the main icon
-        if(_clientImages.TryGetValue(current.UID, out List<DreamIcon> attachedClientImages)){
+        //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
+        if(parentIcon == null && _clientImages.TryGetValue(current.UID, out List<DreamIcon> attachedClientImages)){
             foreach(DreamIcon CI in attachedClientImages){
                 if(CI.Appearance == null)
                     continue;

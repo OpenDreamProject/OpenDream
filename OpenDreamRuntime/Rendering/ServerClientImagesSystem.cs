@@ -21,8 +21,10 @@ namespace OpenDreamRuntime.Rendering {
             if(attachedEntity == null)
                 return;
             uint appID = serverAppearanceSystem.AddAppearance(imageObject.Appearance);
-            objectToImages[attachedEntity.Value] ??= new List<DreamObjectImage>();
-            objectToImages[attachedEntity.Value].Add(imageObject);
+            if(!objectToImages.TryGetValue(attachedEntity.Value, out var imageList))
+                imageList = new List<DreamObjectImage>();
+            imageList.Add(imageObject);
+            objectToImages[attachedEntity.Value] = imageList;
 
             RaiseNetworkEvent(new AddClientImageEvent(attachedEntity.Value, appID), connection.Session.ConnectedClient);
         }

@@ -61,8 +61,7 @@ public static class ViewAlgorithm {
             if (tile.DeltaX == 0 && tile.DeltaY == 0)
                 eye = tile;
         }
-        if(eye == null)
-            return;
+
         // TODO: Lummox mentions an optimization in step 3 and 4. Probably worthwhile.
 
         // Step 3, Diagonal shadow loop
@@ -101,7 +100,8 @@ public static class ViewAlgorithm {
         }
 
         // Step 5
-        eye!.Vis = 1;
+        if (eye != null)
+            eye.Vis = 1;
 
         // TODO: Step 6, Light loop
 

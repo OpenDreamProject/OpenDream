@@ -24,6 +24,7 @@ namespace DMCompiler.DM.Visitors {
             Reset();
 
             // Step 1: Define every type in the code. Collect proc and var declarations for later.
+            //          Also handles parent_type
             ProcessFile(astFile);
 
             // Step 2: Define every proc and proc override (but do not compile!)
@@ -156,6 +157,18 @@ namespace DMCompiler.DM.Visitors {
                     VarDefinitions.Add((DMObjectTree.GetDMObject(varDefinition.ObjectPath)!, varDefinition));
                     break;
                 case DMASTObjectVarOverride varOverride:
+                    // parent_type is treated as part of the object definition rather than an actual var override
+                    if (varOverride.VarName == "parent_type") {
+                        DMASTConstantPath? parentTypePath = varOverride.Value as DMASTConstantPath;
+                        if (parentTypePath == null)
+                            throw new CompileErrorException(varOverride.Location, "Expected a constant path");
+
+                        var parentType = DMObjectTree.GetDMObject(parentTypePath.Value.Path);
+
+                        DMObjectTree.GetDMObject(varOverride.ObjectPath)!.Parent = parentType;
+                        break;
+                    }
+
                     VarOverrides.Add((DMObjectTree.GetDMObject(varOverride.ObjectPath)!, varOverride));
                     break;
                 case DMASTProcDefinition procDefinition:
@@ -230,13 +243,6 @@ namespace DMCompiler.DM.Visitors {
         private static void ProcessVarOverride(DMObject? varObject, DMASTObjectVarOverride? varOverride) {
             try {
                 switch (varOverride.VarName) { // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
-                    case "parent_type": {
-                        DMASTConstantPath? parentType = varOverride.Value as DMASTConstantPath;
-
-                        if (parentType == null) throw new CompileErrorException(varOverride.Location, "Expected a constant path");
-                        varObject.Parent = DMObjectTree.GetDMObject(parentType.Value.Path);
-                        return;
-                    }
                     case "tag": {
                         if(varObject.IsSubtypeOf(DreamPath.Datum)) {
                             throw new CompileErrorException(varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");

@@ -1,7 +1,4 @@
-﻿#nullable enable
-//here's a fun fact: on linux systems, a null dereference error will cause a segfault, because of CEF for some ungodly reason
-//that means that we can, under no circumstances, allow for a null ref in any part of the client. Try/catch doesn't even work for it. Other exceptions are fine.
-using Robust.Client.Graphics;
+﻿using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
@@ -9,6 +6,7 @@ using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
 using OpenDreamShared.Rendering;
+using Robust.Client.GameObjects;
 using Robust.Shared.Profiling;
 
 namespace OpenDreamClient.Rendering;
@@ -17,8 +15,11 @@ namespace OpenDreamClient.Rendering;
 /// Overlay for rendering world atoms
 /// </summary>
 internal sealed class DreamViewOverlay : Overlay {
+    private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
+
+    public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+
     [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
@@ -26,25 +27,27 @@ internal sealed class DreamViewOverlay : Overlay {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
 
-    private EntityQuery<DMISpriteComponent> spriteQuery;
-    private EntityQuery<TransformComponent> xformQuery;
-    private EntityQuery<DreamMobSightComponent> mobSightQuery;
+    private readonly TransformSystem _transformSystem;
+    private readonly EntityLookupSystem _lookupSystem;
+    private readonly ClientAppearanceSystem _appearanceSystem;
+    private readonly ClientScreenOverlaySystem _screenOverlaySystem;
+
+    private readonly EntityQuery<DMISpriteComponent> spriteQuery;
+    private readonly EntityQuery<TransformComponent> xformQuery;
+    private readonly EntityQuery<DreamMobSightComponent> mobSightQuery;
 
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
-    private EntityLookupSystem? _lookupSystem;
-    private ClientAppearanceSystem? _appearanceSystem;
-    private ClientScreenOverlaySystem? _screenOverlaySystem;
-    private SharedTransformSystem? _transformSystem;
-    public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+
     public bool ScreenOverlayEnabled = true;
     public bool RenderTurfEnabled = true;
     public bool RenderEntityEnabled = true;
     public bool RenderPlayerEnabled = true;
     public bool MouseMapRenderEnabled = false;
+
     private IRenderTexture _mouseMapRenderTarget;
     public Texture MouseMap;
     public Dictionary<Color, RendererMetaData> MouseMapLookup = new();
@@ -53,10 +56,18 @@ internal sealed class DreamViewOverlay : Overlay {
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private Matrix3 _flipMatrix;
-    private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
-    public DreamViewOverlay() {
+    public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
+        ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem) {
         IoCManager.InjectDependencies(this);
+        _transformSystem = transformSystem;
+        _lookupSystem = lookupSystem;
+        _appearanceSystem = appearanceSystem;
+        _screenOverlaySystem = screenOverlaySystem;
+
+        spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+        mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
         MouseMap = Texture.Black;
         _mouseMapRenderTarget = RentRenderTarget(new Vector2i(64,64)); //this value won't ever be used, but we're very likely to need a 64x64 render target at some point, so may as well
@@ -74,9 +85,6 @@ internal sealed class DreamViewOverlay : Overlay {
         _blendmodeInstances.Add(BlendMode.BLEND_MULTIPLY, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
         _blendmodeInstances.Add(BlendMode.BLEND_INSET_OVERLAY, protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()); //BLEND_INSET_OVERLAY //TODO
 
-        spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
-        xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
-        mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
         _flipMatrix = Matrix3.Identity;
         _flipMatrix.R1C1 = -1;
     }
@@ -122,11 +130,6 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
-        _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
-        _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
-        _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
-        _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
-
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
 

@@ -57,10 +57,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
-        _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
-        _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
-        _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
-        _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
+
         MouseMap = Texture.Black;
         _mouseMapRenderTarget = RentRenderTarget(new Vector2i(64,64)); //this value won't ever be used, but we're very likely to need a 64x64 render target at some point, so may as well
         ReturnRenderTarget(_mouseMapRenderTarget); //return it to the rental immediately, since it'll get cleared in Draw()

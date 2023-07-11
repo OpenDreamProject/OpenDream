@@ -51,7 +51,7 @@ namespace OpenDreamClient.Input {
             if (entity == null)
                 return false;
 
-            if (entity.ClickUID == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
+            if (entity.ClickUid == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
                 // Grid coordinates are half a meter off from entity coordinates
                 mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
 
@@ -87,7 +87,7 @@ namespace OpenDreamClient.Input {
 
             // TODO: Take icon transformations into account
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
-            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, middle, shift, ctrl, alt, iconPosition));
+            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUid, screenLoc, middle, shift, ctrl, alt, iconPosition));
             return true;
         }
 

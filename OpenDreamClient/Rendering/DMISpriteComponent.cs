@@ -1,16 +1,14 @@
-﻿using JetBrains.Annotations;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map;
-using Robust.Shared.Physics;
 
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    sealed class DMISpriteComponent : SharedDMISpriteComponent {
+    internal sealed class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
-        [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
+        [ViewVariables] public ScreenLocation? ScreenLocation { get; set; }
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;

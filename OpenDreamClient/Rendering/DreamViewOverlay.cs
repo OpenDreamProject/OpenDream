@@ -35,10 +35,10 @@ internal sealed class DreamViewOverlay : Overlay {
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
-    private EntityLookupSystem _lookupSystem;
-    private ClientAppearanceSystem _appearanceSystem;
-    private ClientScreenOverlaySystem _screenOverlaySystem;
-    private SharedTransformSystem _transformSystem;
+    private EntityLookupSystem? _lookupSystem;
+    private ClientAppearanceSystem? _appearanceSystem;
+    private ClientScreenOverlaySystem? _screenOverlaySystem;
+    private SharedTransformSystem? _transformSystem;
     public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
     public bool ScreenOverlayEnabled = true;
     public bool RenderTurfEnabled = true;
@@ -106,9 +106,10 @@ internal sealed class DreamViewOverlay : Overlay {
         MouseMap = _mouseMapRenderTarget.Texture;
         ReturnRenderTarget(_mouseMapRenderTarget);
 
-        _appearanceSystem.CleanUpUnusedFilters();
-        _appearanceSystem.ResetFilterUsageFlags();
-
+        if(_appearanceSystem != null){
+            _appearanceSystem.CleanUpUnusedFilters();
+            _appearanceSystem.ResetFilterUsageFlags();
+        }
         //some render targets need to be kept until the end of the render cycle, so return them here.
         _renderSourceLookup.Clear();
 
@@ -129,7 +130,7 @@ internal sealed class DreamViewOverlay : Overlay {
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
 
-        Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
+        Box2 screenArea = Box2.CenteredAround(_transformSystem.GetWorldPosition(eyeTransform, xformQuery), args.WorldAABB.Size);
 
         _mapManager.TryFindGridAt(eyeTransform.MapPosition, out _, out var grid);
 
@@ -149,10 +150,10 @@ internal sealed class DreamViewOverlay : Overlay {
         int tValue = 0; //this exists purely because the tiebreaker var needs to exist somewhere, but it's set to 0 again before every unique call to ProcessIconComponents
 
         //self icon
-        if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
+        if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(eye, out var playerTransform)){
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis)){
                 tValue = 0;
-                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false, ref tValue));
+                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(eye, xformQuery) - 0.5f, eye, false, ref tValue));
             }
         }
 
@@ -252,7 +253,7 @@ internal sealed class DreamViewOverlay : Overlay {
                     }
 
                     tValue = 0;
-                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, sprite.Owner, false, ref tValue));
+                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, entity, false, ref tValue));
                 }
             }
         }
@@ -260,7 +261,9 @@ internal sealed class DreamViewOverlay : Overlay {
         //screen objects
         if(ScreenOverlayEnabled){
             using var _ = _prof.Group("screen objects");
-            foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
+            foreach (EntityUid uid in _screenOverlaySystem.ScreenObjects) {
+                if (!_entityManager.TryGetComponent(uid, out DMISpriteComponent? sprite) || sprite.ScreenLocation == null)
+                    continue;
                 if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager, seeInvis: seeVis))
                     continue;
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
@@ -270,7 +273,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
                         tValue = 0;
-                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true, ref tValue));
+                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), uid, true, ref tValue));
                     }
                 }
             }
@@ -730,7 +733,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
 
             foreach (DreamFilter filterId in icon.Appearance.Filters) {
-                ShaderInstance s = _appearanceSystem.GetFilterShader(filterId, _renderSourceLookup);
+                ShaderInstance s = _appearanceSystem!.GetFilterShader(filterId, _renderSourceLookup);
 
                 handle.RenderInRenderTarget(ping, () => {
                     handle.UseShader(s);

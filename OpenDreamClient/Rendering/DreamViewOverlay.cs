@@ -591,7 +591,9 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     private (Action, Action) DrawIconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null) {
-        DreamIcon icon = iconMetaData.MainIcon;
+        DreamIcon? icon = iconMetaData.MainIcon;
+        if (icon == null)
+            return (() => {}, () => {});
 
         Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
@@ -824,7 +826,7 @@ internal sealed class DreamViewOverlay : Overlay {
 }
 
 internal sealed class RendererMetaData : IComparable<RendererMetaData> {
-    public DreamIcon MainIcon;
+    public DreamIcon? MainIcon;
     public Vector2 Position;
     public int Plane; //true plane value may be different from appearance plane value, due to special flags
     public float Layer; //ditto for layer
@@ -847,11 +849,10 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
     public RendererMetaData() {
         Reset();
-        MainIcon ??= new DreamIcon(); //Reset actually sets this already, but suppress the warning
     }
 
     public void Reset() {
-        MainIcon = new DreamIcon();
+        MainIcon = null;
         Position = Vector2.Zero;
         Plane = 0;
         Layer = 0;
@@ -934,7 +935,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
         //FLOAT_LAYER must be sorted local to the thing they're floating on, and since all overlays/underlays share their parent's UID, we
         //can do that here.
-        if (MainIcon.Appearance?.Layer < 0 && other.MainIcon.Appearance?.Layer < 0) { //if these are FLOAT_LAYER, sort amongst them
+        if (MainIcon?.Appearance?.Layer < 0 && other.MainIcon?.Appearance?.Layer < 0) { //if these are FLOAT_LAYER, sort amongst them
             val = MainIcon.Appearance.Layer.CompareTo(other.MainIcon.Appearance.Layer);
             if (val != 0) {
                 return val;

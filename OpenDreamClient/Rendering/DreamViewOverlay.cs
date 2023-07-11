@@ -1,4 +1,5 @@
-﻿using Robust.Client.Graphics;
+﻿using System.Linq;
+using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
@@ -44,6 +45,8 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
     private readonly EntityQuery<DreamMobSightComponent> _mobSightQuery;
+
+    private readonly Dictionary<int, DreamPlane> _planes = new();
 
     private readonly ShaderInstance _blockColorInstance;
     private readonly ShaderInstance _colorInstance;
@@ -127,7 +130,7 @@ internal sealed class DreamViewOverlay : Overlay {
             ReturnRenderTarget(_renderTargetsToReturn.Pop());
 
         //RendererMetaData objects get reused instead of garbage collected
-        while( _rendererMetaDataToReturn.Count > 0)
+        while (_rendererMetaDataToReturn.Count > 0)
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
     }
 
@@ -135,7 +138,7 @@ internal sealed class DreamViewOverlay : Overlay {
         if (!_xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
 
-        Box2 screenArea = Box2.CenteredAround(_transformSystem.GetWorldPosition(eyeTransform, _xformQuery), args.WorldAABB.Size);
+        Box2 screenArea = Box2.CenteredAround(_transformSystem.GetWorldPosition(eyeTransform), args.WorldAABB.Size);
 
         _mapManager.TryFindGridAt(eyeTransform.MapPosition, out _, out var grid);
 
@@ -286,6 +289,8 @@ internal sealed class DreamViewOverlay : Overlay {
             }
         }
 
+        ClearPlanes();
+
         //early return if there's nothing to do
         if (sprites.Count == 0)
             return;
@@ -294,13 +299,11 @@ internal sealed class DreamViewOverlay : Overlay {
             sprites.Sort();
         }
 
-        //dict of planes to their plane-master (if they have one) and list of mouse-map and sprite draw actions on that plane in order, keyed by plane number
-        Dictionary<float, (RendererMetaData?, List<(Action, Action)>)> planesList = new(sprites.Count);
-
         //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
-
         var profGroup = _prof.Group("draw sprites");
         foreach (var sprite in sprites) {
+            var plane = GetPlane(sprite);
+
             if (!string.IsNullOrEmpty(sprite.RenderTarget)) {
                 //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
                 if (!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out var tmpRenderTarget)) {
@@ -310,29 +313,18 @@ internal sealed class DreamViewOverlay : Overlay {
                     _renderTargetsToReturn.Push(tmpRenderTarget);
                 }
 
-                if ((sprite.AppearanceFlags & AppearanceFlags.PlaneMaster) != 0) { //if this is also a PLANE_MASTER
-                    if (!planesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<(Action, Action)>) planeEntry)) {
-                        //if the plane hasn't already been created, store this sprite as the plane_master
-                        planesList[sprite.Plane] = (sprite, new List<(Action, Action)>());
-                    } else {
-                        //the plane has already been created, so just replace the planesList entry with this sprite as its plane master
-                        planesList[sprite.Plane] = (sprite, planeEntry.Item2);
-                    }
-                } else {//if not a PLANE_MASTER, draw the sprite to the render target
+                if (sprite.IsPlaneMaster) { //if this is also a plane master
+                    plane.Master = sprite;
+                } else { //if not a plane master, draw the sprite to the render target
                     //note we don't draw this to the mouse-map because that's handled when the RenderTarget is used as a source later
                     DrawIconNow(args.WorldHandle, tmpRenderTarget, sprite, ((args.WorldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f), null, true); //draw the sprite centered on the RenderTarget
                 }
             } else { //We are no longer dealing with RenderTargets, just regular old planes, so we collect the draw actions for batching
-                if (!planesList.TryGetValue(sprite.Plane, out (RendererMetaData?, List<(Action, Action)>) planeEntry)) {
-                    //this plane doesn't exist yet, it's probably the first reference to it.
-                    //Lets create it
-                    planeEntry = (null, new List<(Action, Action)>());
-                    planesList[sprite.Plane] = planeEntry;
-                }
-
-                if ((sprite.AppearanceFlags & AppearanceFlags.PlaneMaster) != 0) { //if this is a PLANE_MASTER, we don't render it, we just set the planeMaster value and move on
+                //if this is a plane master then we don't render it, we just set it as the plane's master
+                if (sprite.IsPlaneMaster) {
                     sprite.Position = Vector2.Zero; //plane masters should not have a position offset
-                    planesList[sprite.Plane] = (sprite, planeEntry.Item2);
+
+                    plane.Master = sprite;
                     continue;
                 }
 
@@ -344,8 +336,8 @@ internal sealed class DreamViewOverlay : Overlay {
                     drawActions = DrawIconAction(args.WorldHandle, sprite, -screenArea.BottomLeft);
                 }
 
-                planeEntry.Item2.Add(drawActions);
-                planesList[sprite.Plane] = planeEntry;
+                plane.IconDrawActions.Add(drawActions.Item1);
+                plane.MouseMapDrawActions.Add(drawActions.Item2);
             }
         }
         profGroup.Dispose();
@@ -355,43 +347,32 @@ internal sealed class DreamViewOverlay : Overlay {
         IRenderTexture baseTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
         ClearRenderTarget(baseTarget, args.WorldHandle, new Color());
 
-        //unfortunately, order is undefined when grabbing keys from a dictionary, so we have to sort them
-        List<float> planeKeys = new List<float>(planesList.Keys);
+        profGroup = _prof.Group("draw planes");
+        foreach (int planeIndex in _planes.Keys.Order()) {
+            var plane = _planes[planeIndex];
 
-        using (_prof.Group("sort planeKeys")) {
-            planeKeys.Sort();
-        }
-
-        profGroup = _prof.Group("draw planeKeys");
-        foreach (float plane in planeKeys) {
-            (RendererMetaData?, List<(Action,Action)>) planeEntry = planesList[plane];
             IRenderTexture planeTarget = baseTarget;
-
-            if (planeEntry.Item1 != null) {
+            if (plane.Master != null) {
                 //we got a plane master here, so rent out a texture and draw to that
                 planeTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
                 ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
             }
 
-            List<Action> mouseMapActions = new(planeEntry.Item2.Count);
-            List<Action> iconActions = new(planeEntry.Item2.Count);
-            foreach ((Action iconAction, Action mouseMapAction) in planeEntry.Item2) {
-                mouseMapActions.Add(mouseMapAction);
-                iconActions.Add(iconAction);
-            }
-
+            // Draw all icons
             args.WorldHandle.RenderInRenderTarget(planeTarget, () => {
-                foreach (Action a in iconActions)
-                    a();
-            }, null);
-            args.WorldHandle.RenderInRenderTarget(_mouseMapRenderTarget, () => {
-                foreach (Action a in mouseMapActions)
-                    a();
+                foreach (Action iconAction in plane.IconDrawActions)
+                    iconAction();
             }, null);
 
-            if (planeEntry.Item1 != null) {
-                //this was a plane master, so draw the plane onto the baseTarget and return it
-                DrawIconNow(args.WorldHandle, baseTarget, planeEntry.Item1, Vector2.Zero, planeTarget.Texture, noMouseMap: true);
+            // Draw all mouse maps
+            args.WorldHandle.RenderInRenderTarget(_mouseMapRenderTarget, () => {
+                foreach (Action mouseMapAction in plane.MouseMapDrawActions)
+                    mouseMapAction();
+            }, null);
+
+            if (plane.Master != null) {
+                //we had a plane master, so draw the plane onto the baseTarget and return it
+                DrawIconNow(args.WorldHandle, baseTarget, plane.Master, Vector2.Zero, planeTarget.Texture, noMouseMap: true);
                 ReturnRenderTarget(planeTarget);
             }
         }
@@ -476,7 +457,7 @@ internal sealed class DreamViewOverlay : Overlay {
         keepTogether |= ((current.AppearanceFlags & AppearanceFlags.KeepTogether) != 0); //KEEP_TOGETHER
 
         //if the render-target starts with *, we don't render it. If it doesn't we create a placeholder RenderMetaData to position it correctly
-        if (!string.IsNullOrEmpty(current.RenderTarget) && current.RenderTarget[0]!='*') {
+        if (!string.IsNullOrEmpty(current.RenderTarget) && current.RenderTarget[0] != '*') {
             RendererMetaData renderTargetPlaceholder = RentRendererMetaData();
 
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
@@ -792,6 +773,31 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
+    private void ClearPlanes() {
+        foreach (var pair in _planes) {
+            var plane = pair.Value;
+
+            // We can remove the plane if there was nothing on it last frame
+            if (plane.IconDrawActions.Count == 0 && plane.MouseMapDrawActions.Count == 0) {
+                _planes.Remove(pair.Key);
+                continue;
+            }
+
+            plane.Clear();
+        }
+    }
+
+    private DreamPlane GetPlane(RendererMetaData sprite) {
+        int planeIndex = sprite.Plane;
+        if (_planes.TryGetValue(planeIndex, out var plane))
+            return plane;
+
+        plane = new();
+
+        _planes.Add(planeIndex, plane);
+        return plane;
+    }
+
     private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null, bool noMouseMap = false) {
         (Action iconDrawAction, Action mouseMapDrawAction) = DrawIconAction(handle, iconMetaData, positionOffset, textureOverride);
 
@@ -836,6 +842,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public AppearanceFlags AppearanceFlags;
     public BlendMode BlendMode;
     public MouseOpacity MouseOpacity;
+
+    public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
 
     public RendererMetaData() {
         Reset();
@@ -887,8 +895,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
             return val;
         }
 
-        //PLANE_MASTER objects go first for any given plane
-        val = ((AppearanceFlags & AppearanceFlags.PlaneMaster) != 0).CompareTo((other.AppearanceFlags & AppearanceFlags.PlaneMaster) != 0); //appearance_flags & PLANE_MASTER
+        //Plane master objects go first for any given plane
+        val = IsPlaneMaster.CompareTo(IsPlaneMaster);
         if (val != 0) {
             return -val; //sign flip because we want 1 < -1
         }
@@ -1032,5 +1040,4 @@ public sealed class TogglePlayerRenderCommand : IConsoleCommand {
         }
     }
 }
-
 #endregion

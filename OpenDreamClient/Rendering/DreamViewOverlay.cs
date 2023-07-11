@@ -1,4 +1,7 @@
-﻿using Robust.Client.Graphics;
+﻿#nullable enable
+//here's a fun fact: on linux systems, a null dereference error will cause a segfault, because of CEF for some ungodly reason
+//that means that we can, under no circumstances, allow for a null ref in any part of the client. Try/catch doesn't even work for it. Other exceptions are fine.
+using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Map;
@@ -54,6 +57,14 @@ internal sealed class DreamViewOverlay : Overlay {
 
     public DreamViewOverlay() {
         IoCManager.InjectDependencies(this);
+        _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
+        _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
+        _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
+        _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
+        MouseMap = Texture.Black;
+        _mouseMapRenderTarget = RentRenderTarget(new Vector2i(64,64)); //this value won't ever be used, but we're very likely to need a 64x64 render target at some point, so may as well
+        ReturnRenderTarget(_mouseMapRenderTarget); //return it to the rental immediately, since it'll get cleared in Draw()
+
         _sawmill.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
@@ -819,6 +830,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
     public RendererMetaData() {
         Reset();
+        MainIcon ??= new DreamIcon(); //Reset actually sets this already, but suppress the warning
     }
 
     public void Reset(){

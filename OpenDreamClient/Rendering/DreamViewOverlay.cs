@@ -114,10 +114,9 @@ internal sealed class DreamViewOverlay : Overlay {
         MouseMap = _mouseMapRenderTarget.Texture;
         ReturnRenderTarget(_mouseMapRenderTarget);
 
-        if(_appearanceSystem != null){
-            _appearanceSystem.CleanUpUnusedFilters();
-            _appearanceSystem.ResetFilterUsageFlags();
-        }
+        _appearanceSystem.CleanUpUnusedFilters();
+        _appearanceSystem.ResetFilterUsageFlags();
+
         //some render targets need to be kept until the end of the render cycle, so return them here.
         _renderSourceLookup.Clear();
 
@@ -153,7 +152,7 @@ internal sealed class DreamViewOverlay : Overlay {
         int tValue = 0; //this exists purely because the tiebreaker var needs to exist somewhere, but it's set to 0 again before every unique call to ProcessIconComponents
 
         //self icon
-        if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(eye, out var playerTransform)){
+        if (spriteQuery.TryGetComponent(eye, out var player)){
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis)){
                 tValue = 0;
                 sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(eye, xformQuery) - 0.5f, eye, false, ref tValue));
@@ -736,14 +735,13 @@ internal sealed class DreamViewOverlay : Overlay {
 
 
             foreach (DreamFilter filterId in icon.Appearance.Filters) {
-                ShaderInstance s = _appearanceSystem!.GetFilterShader(filterId, _renderSourceLookup);
+                ShaderInstance s = _appearanceSystem.GetFilterShader(filterId, _renderSourceLookup);
 
                 handle.RenderInRenderTarget(ping, () => {
                     handle.UseShader(s);
                     handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size * 2));
                     handle.UseShader(null);
                 }, Color.Black.WithAlpha(0));
-
 
                 tmpHolder = ping;
                 ping = pong;
@@ -928,7 +926,6 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     }
 }
 
-
 public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
     public string Command => "togglescreenoverlay";
     public string Description => "Toggle rendering of screen objects";
@@ -1024,6 +1021,5 @@ public sealed class TogglePlayerRenderCommand : IConsoleCommand {
         }
     }
 }
-
 
 #endregion

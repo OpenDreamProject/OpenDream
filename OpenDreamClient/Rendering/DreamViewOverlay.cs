@@ -33,6 +33,7 @@ internal sealed class DreamViewOverlay : Overlay {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
+    [Dependency] private readonly IPrototypeManager _protoManager = default!;
     [Dependency] private readonly ProfManager _prof = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
@@ -78,16 +79,15 @@ internal sealed class DreamViewOverlay : Overlay {
         ReturnRenderTarget(_mouseMapRenderTarget); //return it to the rental immediately, since it'll get cleared in Draw()
 
         _sawmill.Debug("Loading shaders...");
-        var protoManager = IoCManager.Resolve<IPrototypeManager>();
-        _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
-        _colorInstance = protoManager.Index<ShaderPrototype>("color").InstanceUnique();
+        _blockColorInstance = _protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
+        _colorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendModeInstances = new(4) {
-            {BlendMode.Default, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT
-            {BlendMode.Overlay, protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY (same as BLEND_DEFAULT)
-            {BlendMode.Add, protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()}, //BLEND_ADD
-            {BlendMode.Subtract, protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()}, //BLEND_SUBTRACT
-            {BlendMode.Multiply, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()}, //BLEND_MULTIPLY
-            {BlendMode.InsertOverlay, protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
+            {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT
+            {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY (same as BLEND_DEFAULT)
+            {BlendMode.Add, _protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()}, //BLEND_ADD
+            {BlendMode.Subtract, _protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()}, //BLEND_SUBTRACT
+            {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()}, //BLEND_MULTIPLY
+            {BlendMode.InsertOverlay, _protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()} //BLEND_INSET_OVERLAY //TODO
         };
 
         _flipMatrix = Matrix3.Identity;
@@ -946,6 +946,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     }
 }
 
+#region Render Toggle Commands
 public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
     public string Command => "togglescreenoverlay";
     public string Description => "Toggle rendering of screen objects";
@@ -965,7 +966,6 @@ public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
     }
 }
 
-#region Render Toggle Commands
 public sealed class ToggleMouseOverlayCommand : IConsoleCommand {
     public string Command => "togglemouseoverlay";
     public string Description => "Toggle rendering of mouse click area for screen objects";

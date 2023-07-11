@@ -100,7 +100,8 @@ public static class ViewAlgorithm {
         }
 
         // Step 5
-        eye!.Vis = 1;
+        if (eye != null)
+            eye.Vis = 1;
 
         // TODO: Step 6, Light loop
 

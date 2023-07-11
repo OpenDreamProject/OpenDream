@@ -6,6 +6,7 @@ using OpenDreamShared.Dream;
 using Robust.Shared.Console;
 using Robust.Shared.Prototypes;
 using OpenDreamShared.Rendering;
+using Robust.Client.GameObjects;
 using Robust.Shared.Profiling;
 
 namespace OpenDreamClient.Rendering;
@@ -14,8 +15,11 @@ namespace OpenDreamClient.Rendering;
 /// Overlay for rendering world atoms
 /// </summary>
 internal sealed class DreamViewOverlay : Overlay {
+    private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
+
+    public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+
     [Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
     [Dependency] private readonly IClyde _clyde = default!;
@@ -23,25 +27,27 @@ internal sealed class DreamViewOverlay : Overlay {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
 
-    private EntityQuery<DMISpriteComponent> spriteQuery;
-    private EntityQuery<TransformComponent> xformQuery;
-    private EntityQuery<DreamMobSightComponent> mobSightQuery;
+    private readonly TransformSystem _transformSystem;
+    private readonly EntityLookupSystem _lookupSystem;
+    private readonly ClientAppearanceSystem _appearanceSystem;
+    private readonly ClientScreenOverlaySystem _screenOverlaySystem;
+
+    private readonly EntityQuery<DMISpriteComponent> spriteQuery;
+    private readonly EntityQuery<TransformComponent> xformQuery;
+    private readonly EntityQuery<DreamMobSightComponent> mobSightQuery;
 
     private ShaderInstance _blockColorInstance;
     private ShaderInstance _colorInstance;
     private Dictionary<BlendMode, ShaderInstance> _blendmodeInstances;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
-    private EntityLookupSystem _lookupSystem;
-    private ClientAppearanceSystem _appearanceSystem;
-    private ClientScreenOverlaySystem _screenOverlaySystem;
-    private SharedTransformSystem _transformSystem;
-    public override OverlaySpace Space => OverlaySpace.WorldSpaceBelowWorld;
+
     public bool ScreenOverlayEnabled = true;
     public bool RenderTurfEnabled = true;
     public bool RenderEntityEnabled = true;
     public bool RenderPlayerEnabled = true;
     public bool MouseMapRenderEnabled = false;
+
     private IRenderTexture _mouseMapRenderTarget;
     public Texture MouseMap;
     public Dictionary<Color, RendererMetaData> MouseMapLookup = new();
@@ -50,10 +56,23 @@ internal sealed class DreamViewOverlay : Overlay {
     private Stack<RendererMetaData> _rendererMetaDataRental = new();
     private Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private Matrix3 _flipMatrix;
-    private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
-    public DreamViewOverlay() {
+    public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
+        ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem) {
         IoCManager.InjectDependencies(this);
+        _transformSystem = transformSystem;
+        _lookupSystem = lookupSystem;
+        _appearanceSystem = appearanceSystem;
+        _screenOverlaySystem = screenOverlaySystem;
+
+        spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
+        xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
+        mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
+
+        MouseMap = Texture.Black;
+        _mouseMapRenderTarget = RentRenderTarget(new Vector2i(64,64)); //this value won't ever be used, but we're very likely to need a 64x64 render target at some point, so may as well
+        ReturnRenderTarget(_mouseMapRenderTarget); //return it to the rental immediately, since it'll get cleared in Draw()
+
         _sawmill.Debug("Loading shaders...");
         var protoManager = IoCManager.Resolve<IPrototypeManager>();
         _blockColorInstance = protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
@@ -66,9 +85,6 @@ internal sealed class DreamViewOverlay : Overlay {
         _blendmodeInstances.Add(BlendMode.BLEND_MULTIPLY, protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()); //BLEND_MULTIPLY
         _blendmodeInstances.Add(BlendMode.BLEND_INSET_OVERLAY, protoManager.Index<ShaderPrototype>("blend_inset_overlay").InstanceUnique()); //BLEND_INSET_OVERLAY //TODO
 
-        spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
-        xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
-        mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
         _flipMatrix = Matrix3.Identity;
         _flipMatrix.R1C1 = -1;
     }
@@ -113,15 +129,10 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
-        _transformSystem ??= _entitySystem.GetEntitySystem<SharedTransformSystem>();
-        _lookupSystem ??= _entitySystem.GetEntitySystem<EntityLookupSystem>();
-        _appearanceSystem ??= _entitySystem.GetEntitySystem<ClientAppearanceSystem>();
-        _screenOverlaySystem ??= _entitySystem.GetEntitySystem<ClientScreenOverlaySystem>();
-
         if (!xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
 
-        Box2 screenArea = Box2.CenteredAround(eyeTransform.WorldPosition, args.WorldAABB.Size);
+        Box2 screenArea = Box2.CenteredAround(_transformSystem.GetWorldPosition(eyeTransform, xformQuery), args.WorldAABB.Size);
 
         _mapManager.TryFindGridAt(eyeTransform.MapPosition, out _, out var grid);
 
@@ -141,10 +152,10 @@ internal sealed class DreamViewOverlay : Overlay {
         int tValue = 0; //this exists purely because the tiebreaker var needs to exist somewhere, but it's set to 0 again before every unique call to ProcessIconComponents
 
         //self icon
-        if (spriteQuery.TryGetComponent(eye, out var player) && xformQuery.TryGetComponent(player.Owner, out var playerTransform)){
+        if (spriteQuery.TryGetComponent(eye, out var player)){
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis)){
                 tValue = 0;
-                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(playerTransform.Owner, xformQuery) - 0.5f, player.Owner, false, ref tValue));
+                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(eye, xformQuery) - 0.5f, eye, false, ref tValue));
             }
         }
 
@@ -165,7 +176,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 foreach (TileRef tileRef in tileRefs) {
                     var delta = tileRef.GridIndices - eyeTile.GridIndices;
                     var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
-
+                    if(appearance == null)
+                        continue;
                     var tile = new ViewAlgorithm.Tile {
                         Opaque = appearance.Opacity,
                         Luminosity = 0,
@@ -243,7 +255,7 @@ internal sealed class DreamViewOverlay : Overlay {
                     }
 
                     tValue = 0;
-                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, sprite.Owner, false, ref tValue));
+                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, entity, false, ref tValue));
                 }
             }
         }
@@ -251,7 +263,9 @@ internal sealed class DreamViewOverlay : Overlay {
         //screen objects
         if(ScreenOverlayEnabled){
             using var _ = _prof.Group("screen objects");
-            foreach (DMISpriteComponent sprite in _screenOverlaySystem.EnumerateScreenObjects()) {
+            foreach (EntityUid uid in _screenOverlaySystem.ScreenObjects) {
+                if (!_entityManager.TryGetComponent(uid, out DMISpriteComponent? sprite) || sprite.ScreenLocation == null)
+                    continue;
                 if (!sprite.IsVisible(checkWorld: false, mapManager: _mapManager, seeInvis: seeVis))
                     continue;
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
@@ -261,7 +275,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
                         tValue = 0;
-                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), sprite.Owner, true, ref tValue));
+                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), uid, true, ref tValue));
                     }
                 }
             }
@@ -286,7 +300,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
             if(!string.IsNullOrEmpty(sprite.RenderTarget)) {
                 //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
-                IRenderTexture tmpRenderTarget;
+                IRenderTexture? tmpRenderTarget;
                 if(!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out tmpRenderTarget)){
                     tmpRenderTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
                     ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
@@ -489,6 +503,8 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
+            if(underlay.Appearance == null)
+                continue;
             tieBreaker++;
             if(!keepTogether || (underlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) {//KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
                 result.AddRange(ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current, false));
@@ -503,6 +519,8 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //overlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon overlay in icon.Overlays) {
+            if(overlay.Appearance == null)
+                continue;
             tieBreaker++;
 
             if(!keepTogether || (overlay.Appearance.AppearanceFlags & AppearanceFlags.KEEP_APART) != 0) //KEEP_TOGETHER wasn't set on our parent, or KEEP_APART
@@ -571,7 +589,7 @@ internal sealed class DreamViewOverlay : Overlay {
             colorMatrix = new ColorMatrix(RGBA);
         else
             colorMatrix = iconMetaData.ColorMatrixToApply;
-        ShaderInstance blendAndColor;
+        ShaderInstance? blendAndColor;
         if(blendOverride != null || !_blendmodeInstances.TryGetValue(iconMetaData.BlendMode, out blendAndColor))
             blendAndColor = _blendmodeInstances[blendOverride == null ? BlendMode.BLEND_DEFAULT : blendOverride.Value];
         blendAndColor = blendAndColor.Duplicate();
@@ -580,13 +598,13 @@ internal sealed class DreamViewOverlay : Overlay {
         return blendAndColor;
     }
 
-    private (Action, Action) DrawiconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null) {
+    private (Action, Action) DrawiconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null) {
         DreamIcon icon = iconMetaData.MainIcon;
 
         Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
-        Texture frame;
+        Texture? frame;
         if(textureOverride != null) {
             frame = textureOverride;
             //we flip this because GL's coordinate system is bottom-left first, and so render target textures are upside down
@@ -725,7 +743,6 @@ internal sealed class DreamViewOverlay : Overlay {
                     handle.UseShader(null);
                 }, Color.Black.WithAlpha(0));
 
-
                 tmpHolder = ping;
                 ping = pong;
                 pong = tmpHolder;
@@ -764,7 +781,7 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
-    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture textureOverride = null, bool noMouseMap = false) {
+    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null, bool noMouseMap = false) {
 
         (Action iconDrawAction, Action mouseMapDrawAction) = DrawiconAction(handle, iconMetaData, positionOffset, textureOverride);
 
@@ -814,6 +831,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
     public RendererMetaData() {
         Reset();
+        MainIcon ??= new DreamIcon(); //Reset actually sets this already, but suppress the warning
     }
 
     public void Reset(){
@@ -837,7 +855,9 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         MouseOpacity = MouseOpacity.Transparent;
     }
 
-    public int CompareTo(RendererMetaData other) {
+    public int CompareTo(RendererMetaData? other) {
+        if(other == null)
+            return 1;
         int val = 0;
 
         //Render target and source ordering is done first.
@@ -905,7 +925,6 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         return val;
     }
 }
-
 
 public sealed class ToggleScreenOverlayCommand : IConsoleCommand {
     public string Command => "togglescreenoverlay";
@@ -1002,6 +1021,5 @@ public sealed class TogglePlayerRenderCommand : IConsoleCommand {
         }
     }
 }
-
 
 #endregion

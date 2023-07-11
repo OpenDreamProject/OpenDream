@@ -402,11 +402,11 @@ internal sealed class DreamViewOverlay : Overlay {
         current.BlendMode = icon.Appearance.BlendMode;
         current.MouseOpacity = icon.Appearance.MouseOpacity;
 
-        Matrix3 iconAppearanceTransformMatrix = new(new[] { //reverse rotation transforms because of 180 flip from RenderTarget->world transform
+        Matrix3 iconAppearanceTransformMatrix = new( //reverse rotation transforms because of 180 flip from RenderTarget->world transform
             icon.Appearance.Transform[0], -icon.Appearance.Transform[1], icon.Appearance.Transform[4],
             -icon.Appearance.Transform[2], icon.Appearance.Transform[3], icon.Appearance.Transform[5],
             0, 0, 1
-        });
+        );
 
         if (parentIcon != null) {
             current.ClickUid = parentIcon.ClickUid;

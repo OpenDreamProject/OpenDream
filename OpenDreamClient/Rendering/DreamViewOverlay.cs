@@ -24,7 +24,7 @@ internal sealed class DreamViewOverlay : Overlay {
     public bool RenderPlayerEnabled = true;
     public bool MouseMapRenderEnabled;
 
-    public Texture MouseMap;
+    public Texture? MouseMap => _mouseMapRenderTarget?.Texture;
     public readonly Dictionary<Color, RendererMetaData> MouseMapLookup = new();
 
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
@@ -55,7 +55,8 @@ internal sealed class DreamViewOverlay : Overlay {
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
 
-    private IRenderTexture _mouseMapRenderTarget;
+    private IRenderTexture? _mouseMapRenderTarget;
+    private IRenderTexture? _baseRenderTarget;
     private readonly Dictionary<string, IRenderTexture> _renderSourceLookup = new();
     private readonly Stack<IRenderTexture> _renderTargetsToReturn = new();
     private readonly Stack<RendererMetaData> _rendererMetaDataRental = new();
@@ -74,10 +75,6 @@ internal sealed class DreamViewOverlay : Overlay {
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
         _mobSightQuery = _entityManager.GetEntityQuery<DreamMobSightComponent>();
 
-        MouseMap = Texture.Black;
-        _mouseMapRenderTarget = RentRenderTarget(new Vector2i(64,64)); //this value won't ever be used, but we're very likely to need a 64x64 render target at some point, so may as well
-        ReturnRenderTarget(_mouseMapRenderTarget); //return it to the rental immediately, since it'll get cleared in Draw()
-
         _sawmill.Debug("Loading shaders...");
         _blockColorInstance = _protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
@@ -95,30 +92,30 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     protected override void Draw(in OverlayDrawArgs args) {
-        EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
-        if (eye == null) return;
-
         using var _ = _prof.Group("Dream View Overlay");
+
+        EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
+        if (eye == null)
+            return;
+
+        var viewportSize = (Vector2i)(args.Viewport.Size / args.Viewport.RenderScale);
+
+        UpdateRenderTargets(viewportSize);
 
         //because we render everything in render targets, and then render those to the world, we've got to apply some transformations to all world draws
         //in order to correct for different coordinate systems and general weirdness
         args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
 
         //get our mouse map ready for drawing, and clear the hash table
-        _mouseMapRenderTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
-        ClearRenderTarget(_mouseMapRenderTarget, args.WorldHandle, Color.Transparent);
+        ClearRenderTarget(_mouseMapRenderTarget!, args.WorldHandle, Color.Transparent);
         MouseMapLookup.Clear();
 
         //Main drawing of sprites happens here
         try {
-            DrawAll(args, eye.Value);
+            DrawAll(args, eye.Value, viewportSize);
         } catch (Exception e) {
             _sawmill.Error($"Error occurred while rendering frame. Error details:\n{e.Message}\n{e.StackTrace}");
         }
-
-        //store our mouse map's image and return the render target
-        MouseMap = _mouseMapRenderTarget.Texture;
-        ReturnRenderTarget(_mouseMapRenderTarget);
 
         _appearanceSystem.CleanUpUnusedFilters();
         _appearanceSystem.ResetFilterUsageFlags();
@@ -134,7 +131,7 @@ internal sealed class DreamViewOverlay : Overlay {
             _rendererMetaDataRental.Push(_rendererMetaDataToReturn.Pop());
     }
 
-    private void DrawAll(OverlayDrawArgs args, EntityUid eye) {
+    private void DrawAll(OverlayDrawArgs args, EntityUid eye, Vector2i viewportSize) {
         if (!_xformQuery.TryGetComponent(eye, out var eyeTransform))
             return;
 
@@ -302,12 +299,12 @@ internal sealed class DreamViewOverlay : Overlay {
         //all sprites with render targets get handled first - these are ordered by sprites.Sort(), so we can just iterate normally
         var profGroup = _prof.Group("draw sprites");
         foreach (var sprite in sprites) {
-            var plane = GetPlane(sprite);
+            var plane = GetPlane(sprite.Plane, viewportSize);
 
             if (!string.IsNullOrEmpty(sprite.RenderTarget)) {
                 //if this sprite has a render target, draw it to a slate instead. If it needs to be drawn on the map, a second sprite instance will already have been created for that purpose
                 if (!_renderSourceLookup.TryGetValue(sprite.RenderTarget, out var tmpRenderTarget)) {
-                    tmpRenderTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
+                    tmpRenderTarget = RentRenderTarget(viewportSize);
                     ClearRenderTarget(tmpRenderTarget, args.WorldHandle, new Color());
                     _renderSourceLookup.Add(sprite.RenderTarget, tmpRenderTarget);
                     _renderTargetsToReturn.Push(tmpRenderTarget);
@@ -344,43 +341,37 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //Final draw
         //At this point, all the sprites have been organised on their planes, render targets have been drawn, now we just draw it all together!
-        IRenderTexture baseTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
-        ClearRenderTarget(baseTarget, args.WorldHandle, new Color());
+        ClearRenderTarget(_baseRenderTarget, args.WorldHandle, new Color());
 
         profGroup = _prof.Group("draw planes");
         foreach (int planeIndex in _planes.Keys.Order()) {
             var plane = _planes[planeIndex];
 
-            IRenderTexture planeTarget = baseTarget;
-            if (plane.Master != null) {
-                //we got a plane master here, so rent out a texture and draw to that
-                planeTarget = RentRenderTarget((Vector2i)(args.Viewport.Size / args.Viewport.RenderScale));
-                ClearRenderTarget(planeTarget, args.WorldHandle, new Color());
+            // Draw all icons
+            if (!MouseMapRenderEnabled) { // No need to draw the map if we're rendering the mouse map over it
+                args.WorldHandle.RenderInRenderTarget(plane.RenderTarget, () => {
+                    foreach (Action iconAction in plane.IconDrawActions)
+                        iconAction();
+                }, new Color());
+
+                if (plane.Master != null) {
+                    DrawIconNow(args.WorldHandle, _baseRenderTarget!, plane.Master, Vector2.Zero, plane.RenderTarget.Texture, noMouseMap: true);
+                } else {
+                    args.WorldHandle.DrawTexture(plane.RenderTarget.Texture, new Vector2(screenArea.Left, screenArea.Bottom * -1));
+                }
             }
 
-            // Draw all icons
-            args.WorldHandle.RenderInRenderTarget(planeTarget, () => {
-                foreach (Action iconAction in plane.IconDrawActions)
-                    iconAction();
-            }, null);
-
             // Draw all mouse maps
-            args.WorldHandle.RenderInRenderTarget(_mouseMapRenderTarget, () => {
+            args.WorldHandle.RenderInRenderTarget(_mouseMapRenderTarget!, () => {
                 foreach (Action mouseMapAction in plane.MouseMapDrawActions)
                     mouseMapAction();
             }, null);
-
-            if (plane.Master != null) {
-                //we had a plane master, so draw the plane onto the baseTarget and return it
-                DrawIconNow(args.WorldHandle, baseTarget, plane.Master, Vector2.Zero, planeTarget.Texture, noMouseMap: true);
-                ReturnRenderTarget(planeTarget);
-            }
         }
         profGroup.Dispose();
 
-        args.WorldHandle.DrawTexture(MouseMapRenderEnabled ? _mouseMapRenderTarget.Texture : baseTarget.Texture,
+        args.WorldHandle.DrawTexture(
+            MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
             new Vector2(screenArea.Left, screenArea.Bottom * -1));
-        ReturnRenderTarget(baseTarget);
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
@@ -572,7 +563,7 @@ internal sealed class DreamViewOverlay : Overlay {
         handle.RenderInRenderTarget(target, () => {}, clearColor);
     }
 
-    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, BlendMode? blendOverride = null) {
+    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null) {
         Color rgba = colorOverride ?? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply);
 
         ColorMatrix colorMatrix;
@@ -581,8 +572,8 @@ internal sealed class DreamViewOverlay : Overlay {
         else
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
-        if (blendOverride != null || !_blendModeInstances.TryGetValue(iconMetaData.BlendMode, out var blendAndColor))
-            blendAndColor = _blendModeInstances[blendOverride ?? BlendMode.Default];
+        if (!_blendModeInstances.TryGetValue(iconMetaData.BlendMode, out var blendAndColor))
+            blendAndColor = _blendModeInstances[BlendMode.Default];
 
         blendAndColor = blendAndColor.Duplicate();
         blendAndColor.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
@@ -775,6 +766,23 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
+    /// <summary>
+    /// Recreate all our render targets if our viewport size has changed
+    /// </summary>
+    private void UpdateRenderTargets(Vector2i size) {
+        if (_baseRenderTarget == null || _baseRenderTarget.Size != size) {
+            _baseRenderTarget?.Dispose();
+            _mouseMapRenderTarget?.Dispose();
+            _baseRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+            _mouseMapRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+
+            foreach (var plane in _planes.Values) {
+                plane.RenderTarget.Dispose();
+                plane.RenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+            }
+        }
+    }
+
     private void ClearPlanes() {
         foreach (var pair in _planes) {
             var plane = pair.Value;
@@ -789,13 +797,13 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
-    private DreamPlane GetPlane(RendererMetaData sprite) {
-        int planeIndex = sprite.Plane;
+    private DreamPlane GetPlane(int planeIndex, Vector2i viewportSize) {
         if (_planes.TryGetValue(planeIndex, out var plane))
             return plane;
 
-        plane = new();
+        var renderTarget = _clyde.CreateRenderTarget(viewportSize, new(RenderTargetColorFormat.Rgba8Srgb));
 
+        plane = new(renderTarget);
         _planes.Add(planeIndex, plane);
         return plane;
     }

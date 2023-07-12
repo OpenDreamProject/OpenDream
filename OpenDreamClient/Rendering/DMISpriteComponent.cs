@@ -35,7 +35,7 @@ namespace OpenDreamClient.Rendering {
             e.AABB = Icon.GetWorldAABB(sys.GetWorldPosition(transform));
         }
 
-        public bool IsVisible(bool checkWorld = true, IMapManager? mapManager = null, int seeInvis = 0) {
+        public bool IsVisible(bool checkWorld = true, int seeInvis = 0) {
             if (Icon.Appearance?.Invisibility > seeInvis) return false;
 
             if (checkWorld) {
@@ -44,7 +44,6 @@ namespace OpenDreamClient.Rendering {
                 if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
                     return false;
 
-                IoCManager.Resolve(ref mapManager);
                 if (transform.ParentUid != transform.GridUid)
                     return false;
             }

@@ -3,7 +3,7 @@ using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
-
+using System.Numerics;
 namespace OpenDreamClient.Interface.Controls;
 
 public abstract class InterfaceControl : InterfaceElement {

@@ -4,6 +4,7 @@ using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]

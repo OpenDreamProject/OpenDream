@@ -5,6 +5,7 @@ using Robust.Client.UserInterface.CustomControls;
 using Robust.Shared.Map;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Numerics;
 
 #nullable enable
 
@@ -195,7 +196,7 @@ public sealed class ScalingViewport : Control, IViewportControl {
                 Filter = StretchMode == ScalingViewportStretchMode.Bilinear,
             });
 
-        _viewport.RenderScale = (renderScale, renderScale);
+        _viewport.RenderScale = new Vector2(renderScale, renderScale);
 
         _viewport.Eye = _eye;
     }
@@ -241,7 +242,7 @@ public sealed class ScalingViewport : Control, IViewportControl {
         var drawBox = GetDrawBox();
         var scaleFactor = drawBox.Size / (Vector2)_viewport!.Size;
 
-        if (scaleFactor == (0, 0))
+        if (scaleFactor == Vector2.Zero)
             // Basically a nonsense scenario, at least make sure to return something that can be inverted.
             return Matrix3.Identity;
 

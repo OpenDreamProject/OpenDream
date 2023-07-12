@@ -1,6 +1,7 @@
 ﻿using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Client.Graphics;
 using Robust.Client.Utility;
+using System.Numerics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
 

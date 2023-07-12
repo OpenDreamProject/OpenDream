@@ -5,6 +5,7 @@ using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
+using System.Numerics;
 
 namespace OpenDreamClient.Resources.ResourceTypes {
     public sealed class DMIResource : DreamResource {

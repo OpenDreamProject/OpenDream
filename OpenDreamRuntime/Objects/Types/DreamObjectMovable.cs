@@ -3,6 +3,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
 using Robust.Shared.Utility;
+using System.Numerics;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -171,7 +172,7 @@ public class DreamObjectMovable : DreamObjectAtom {
         switch (loc) {
             case DreamObjectTurf turf: {
                 TransformSystem.SetParent(Entity, DreamMapManager.GetZLevelEntity(turf.Z));
-                TransformSystem.SetWorldPosition(Entity, (turf.X, turf.Y));
+                TransformSystem.SetWorldPosition(Entity, new Vector2(turf.X, turf.Y));
 
                 turf.Cell.Movables.Add(this);
                 break;

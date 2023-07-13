@@ -156,6 +156,13 @@ namespace OpenDreamRuntime {
             }
         }
 
+        /// <summary>
+        /// Casts the DreamValue to an integer without throwing exceptions. Useful where BYOND coerces things to integers.
+        /// </summary>
+        public int UnsafeGetValueAsInteger() {
+            return (int)_floatValue;
+        }
+
         public bool TryGetValueAsFloat(out float value) {
             if (Type == DreamValueType.Float) {
                 value = _floatValue;

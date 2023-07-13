@@ -157,7 +157,7 @@ namespace OpenDreamRuntime {
         }
 
         /// <summary>
-        /// Casts the DreamValue to an integer without throwing exceptions. Useful where BYOND coerces things to integers.
+        /// Casts the DreamValue to an integer without throwing exceptions. Useful where BYOND coerces non-integers to 0.
         /// </summary>
         public int UnsafeGetValueAsInteger() {
             return (int)_floatValue;

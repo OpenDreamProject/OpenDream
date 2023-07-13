@@ -1109,13 +1109,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Negate(DMProcState state) {
-            DreamValue value = state.Pop();
+            int value = state.Pop().UnsafeGetValueAsInteger();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.MustGetValueAsFloat())); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
-                default: throw new Exception("Invalid negate operation on " + value);
-            }
+            state.Push(new DreamValue(-value));
 
             return null;
         }

@@ -143,12 +143,12 @@ namespace OpenDreamClient.Rendering {
 
             AppearanceAnimation animation = _appearanceAnimation.Value;
             IconAppearance appearance = new IconAppearance(_appearance);
-            float factor = (float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks;
+            float factor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
             IconAppearance endAppearance = animation.EndAppearance;
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {
                 Vector2 startingOffset = appearance.PixelOffset;
-                Vector2 newPixelOffset = Vector2.LerpClamped(in startingOffset, endAppearance.PixelOffset, factor);
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
 
                 appearance.PixelOffset = (Vector2i)newPixelOffset;
             }

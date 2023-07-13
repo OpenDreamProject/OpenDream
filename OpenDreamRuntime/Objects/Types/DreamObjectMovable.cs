@@ -171,7 +171,7 @@ public class DreamObjectMovable : DreamObjectAtom {
         switch (loc) {
             case DreamObjectTurf turf: {
                 TransformSystem.SetParent(Entity, DreamMapManager.GetZLevelEntity(turf.Z));
-                TransformSystem.SetWorldPosition(Entity, (turf.X, turf.Y));
+                TransformSystem.SetWorldPosition(Entity, new Vector2(turf.X, turf.Y));
 
                 turf.Cell.Movables.Add(this);
                 break;

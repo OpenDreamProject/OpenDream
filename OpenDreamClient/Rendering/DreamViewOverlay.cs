@@ -155,7 +155,7 @@ internal sealed class DreamViewOverlay : Overlay {
         if (spriteQuery.TryGetComponent(eye, out var player)){
             if(RenderPlayerEnabled && player.IsVisible(mapManager: _mapManager, seeInvis: seeVis)){
                 tValue = 0;
-                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(eye, xformQuery) - 0.5f, eye, false, ref tValue));
+                sprites.AddRange(ProcessIconComponents(player.Icon, _transformSystem.GetWorldPosition(eye, xformQuery) - new Vector2(0.5f), eye, false, ref tValue));
             }
         }
 
@@ -170,7 +170,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 using var _ = _prof.Group("visible turfs");
 
                 var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
-                var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, (17, 17)));
+                var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(17, 17)));
 
                 // Gather up all the data the view algorithm needs
                 foreach (TileRef tileRef in tileRefs) {
@@ -222,7 +222,7 @@ internal sealed class DreamViewOverlay : Overlay {
                     MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
 
                     tValue = 0;
-                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - 1, EntityUid.Invalid, false, ref tValue));
+                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue));
                 }
             }
 
@@ -255,7 +255,7 @@ internal sealed class DreamViewOverlay : Overlay {
                     }
 
                     tValue = 0;
-                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - 0.5f, entity, false, ref tValue));
+                    sprites.AddRange(ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, ref tValue));
                 }
             }
         }
@@ -275,7 +275,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
                         tValue = 0;
-                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), uid, true, ref tValue));
+                        sprites.AddRange(ProcessIconComponents(sprite.Icon, position + iconSize * new Vector2(x, y), uid, true, ref tValue));
                     }
                 }
             }

@@ -62,6 +62,10 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private readonly Matrix3 _flipMatrix;
 
+    // Hardcoded for a 15x15 view (with 1 tile buffer on each side)
+    // Defined here so it isn't recreated every frame
+    private readonly ViewAlgorithm.Tile?[,] _tileInfo = new ViewAlgorithm.Tile?[17,17];
+
     public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
         ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem) {
         IoCManager.InjectDependencies(this);
@@ -681,9 +685,6 @@ internal sealed class DreamViewOverlay : Overlay {
     private ViewAlgorithm.Tile?[,] CalculateTileVisibility(MapGridComponent grid, HashSet<EntityUid> entities, TileRef eyeTile, int seeVis) {
         using var _ = _prof.Group("visible turfs");
 
-        // Hardcoded for a 15x15 view (with 1 tile buffer on each side)
-        var tiles = new ViewAlgorithm.Tile?[17, 17];
-
         var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
         var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, (17, 17)));
 
@@ -701,7 +702,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 DeltaY = delta.Y
             };
 
-            tiles[delta.X + 8, delta.Y + 8] = tile;
+            _tileInfo[delta.X + 8, delta.Y + 8] = tile;
         }
 
         // Apply entities' opacity
@@ -719,13 +720,13 @@ internal sealed class DreamViewOverlay : Overlay {
             if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
                 continue;
 
-            var tile = tiles[tilePos.X, tilePos.Y];
+            var tile = _tileInfo[tilePos.X, tilePos.Y];
             if (tile != null)
                 tile.Opaque |= sprite.Icon.Appearance.Opacity;
         }
 
-        ViewAlgorithm.CalculateVisibility(tiles);
-        return tiles;
+        ViewAlgorithm.CalculateVisibility(_tileInfo);
+        return _tileInfo;
     }
 
     private void CollectVisibleSprites(ViewAlgorithm.Tile?[,] tiles, MapGridComponent grid, TileRef eyeTile, HashSet<EntityUid> entities, int seeVis, SightFlags sight, Box2 worldAABB) {

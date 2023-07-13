@@ -157,7 +157,7 @@ internal sealed class DreamViewOverlay : Overlay {
         DrawPlanes(worldHandle, args.WorldAABB);
         worldHandle.DrawTexture(
             MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
-            args.WorldAABB.BottomLeft * (0, -1));
+            new Vector2(args.WorldAABB.Left, args.WorldAABB.Bottom * -1));
     }
 
     //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
@@ -658,7 +658,13 @@ internal sealed class DreamViewOverlay : Overlay {
                     if (plane.Master != null) {
                         DrawIconNow(handle, null, plane.Master, Vector2.Zero, plane.RenderTarget.Texture, noMouseMap: true);
                     } else {
-                        handle.DrawTexture(plane.RenderTarget.Texture, new Vector2(worldAABB.Left, worldAABB.Bottom * -1));
+                        var renderBox = new Box2(
+                            new Vector2(0, -_baseRenderTarget!.Size.Y),
+                            new Vector2(_baseRenderTarget.Size.X, 0)
+                        );
+
+                        handle.SetTransform(_flipMatrix);
+                        handle.DrawTextureRect(plane.RenderTarget.Texture, renderBox);
                     }
                 }
             }, null);

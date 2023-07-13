@@ -10,7 +10,6 @@ using OpenDreamShared.Network.Messages;
 using Robust.Server.GameObjects;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
-using System.Numerics;
 
 namespace OpenDreamRuntime {
     public sealed class DreamConnection {

@@ -3,7 +3,6 @@ using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
-using System.Numerics;
 
 namespace OpenDreamClient.Rendering {
     internal sealed class DreamIcon {

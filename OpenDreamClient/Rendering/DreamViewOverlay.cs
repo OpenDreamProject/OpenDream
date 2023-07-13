@@ -8,7 +8,6 @@ using Robust.Shared.Prototypes;
 using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Profiling;
-using System.Numerics;
 
 namespace OpenDreamClient.Rendering;
 

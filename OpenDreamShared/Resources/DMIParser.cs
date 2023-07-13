@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
 using System.Globalization;
-using System.Numerics;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {

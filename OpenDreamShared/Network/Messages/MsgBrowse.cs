@@ -2,7 +2,6 @@
 using Robust.Shared.Maths;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
-using System.Numerics;
 
 namespace OpenDreamShared.Network.Messages {
     public sealed class MsgBrowse : NetMessage {

@@ -1,10 +1,8 @@
-﻿using Robust.Shared.Maths;
-using Robust.Shared.Serialization;
+﻿using Robust.Shared.Serialization;
 using System;
 using System.Numerics;
 using System.Collections.Generic;
 using System.Globalization;
-using System.Numerics;
 
 namespace OpenDreamShared.Dream {
     [Serializable, NetSerializable]

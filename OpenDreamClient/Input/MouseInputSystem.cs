@@ -10,7 +10,6 @@ using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
-using System.Numerics;
 
 namespace OpenDreamClient.Input {
     internal sealed class MouseInputSystem : SharedMouseInputSystem {

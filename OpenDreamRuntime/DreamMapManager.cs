@@ -11,7 +11,6 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
 using Level = OpenDreamRuntime.IDreamMapManager.Level;
 using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
-using System.Numerics;
 
 namespace OpenDreamRuntime {
     internal sealed class DreamMapManager : IDreamMapManager {

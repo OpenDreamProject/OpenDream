@@ -5,7 +5,6 @@ using Robust.Client.UserInterface.CustomControls;
 using Robust.Shared.Map;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp.PixelFormats;
-using System.Numerics;
 
 #nullable enable
 

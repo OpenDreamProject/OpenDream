@@ -4,7 +4,6 @@ using Robust.Shared.Serialization;
 using System;
 using OpenDreamShared.Dream;
 using Robust.Shared.Maths;
-using System.Numerics;
 
 namespace OpenDreamShared.Input;
 

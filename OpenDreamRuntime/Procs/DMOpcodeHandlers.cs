@@ -1915,8 +1915,8 @@ namespace OpenDreamRuntime.Procs {
             var z = state.Pop();
             var y = state.Pop();
             var x = state.Pop();
-            if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
-                z.TryGetValueAsInteger(out var zInt)) {
+            if (x.TryGetValueAsInteger(out var xInt) && xInt > 0 && y.TryGetValueAsInteger(out var yInt) &&
+                yInt > 0 && z.TryGetValueAsInteger(out var zInt) && zInt > 0) {
                 state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
                 state.Push(new DreamValue(turf));
             } else {

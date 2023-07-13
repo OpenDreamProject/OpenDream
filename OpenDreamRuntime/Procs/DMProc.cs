@@ -82,7 +82,7 @@ namespace OpenDreamRuntime.Procs {
 
         #region Opcode Handlers
         //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
-        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler?> OpcodeHandlers = new Dictionary<DreamProcOpcode, OpcodeHandler?>(){
+        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new Dictionary<DreamProcOpcode, OpcodeHandler>(){
             {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
             {DreamProcOpcode.PushType, DMOpcodeHandlers.PushType},
             {DreamProcOpcode.PushString, DMOpcodeHandlers.PushString},
@@ -194,7 +194,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign}
         };
 
-        private static readonly OpcodeHandler?[] _opcodeHandlers;
+        private static readonly unsafe delegate*<DMProcState, ProcStatus?>[] _opcodeHandlers;
         #endregion
 
         public IDreamManager DreamManager => _proc.DreamManager;
@@ -226,12 +226,12 @@ namespace OpenDreamRuntime.Procs {
         public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
         /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
-        static DMProcState() {
+        static unsafe DMProcState() {
             int maxOpcode = (int)OpcodeHandlers.Keys.Max();
 
-            _opcodeHandlers = new OpcodeHandler?[maxOpcode + 1];
-            foreach (DreamProcOpcode dpo in OpcodeHandlers.Keys) {
-                _opcodeHandlers[(int) dpo] = OpcodeHandlers[dpo];
+            _opcodeHandlers = new delegate*<DMProcState, ProcStatus?>[maxOpcode + 1];
+            foreach (var (dpo, handler) in OpcodeHandlers) {
+                _opcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus?>) handler.Method.MethodHandle.GetFunctionPointer();
             }
         }
 
@@ -270,7 +270,7 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        public override ProcStatus Resume() {
+        public override unsafe ProcStatus Resume() {
             if (Instance?.Deleted == true) {
                 return ProcStatus.Returned;
             }
@@ -287,12 +287,12 @@ namespace OpenDreamRuntime.Procs {
 
                 int opcode = _proc.Bytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
-                if (handler is null)
+                if (handler == null)
                     throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
 
                 ProcStatus? status;
                 try {
-                    status = handler.Invoke(this);
+                    status = handler(this);
                 } catch (Exception e) {
                     if (!IsCatching())
                         throw;

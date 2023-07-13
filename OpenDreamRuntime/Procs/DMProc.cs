@@ -74,7 +74,7 @@ namespace OpenDreamRuntime.Procs {
     }
 
     public sealed class DMProcState : ProcState {
-        private delegate ProcStatus? OpcodeHandler(DMProcState state);
+        private delegate ProcStatus OpcodeHandler(DMProcState state);
 
         public static readonly Stack<DMProcState> Pool = new();
 
@@ -194,7 +194,7 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign}
         };
 
-        private static readonly unsafe delegate*<DMProcState, ProcStatus?>[] _opcodeHandlers;
+        private static readonly unsafe delegate*<DMProcState, ProcStatus>[] _opcodeHandlers;
         #endregion
 
         public IDreamManager DreamManager => _proc.DreamManager;
@@ -229,9 +229,9 @@ namespace OpenDreamRuntime.Procs {
         static unsafe DMProcState() {
             int maxOpcode = (int)OpcodeHandlers.Keys.Max();
 
-            _opcodeHandlers = new delegate*<DMProcState, ProcStatus?>[maxOpcode + 1];
+            _opcodeHandlers = new delegate*<DMProcState, ProcStatus>[maxOpcode + 1];
             foreach (var (dpo, handler) in OpcodeHandlers) {
-                _opcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus?>) handler.Method.MethodHandle.GetFunctionPointer();
+                _opcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
             }
         }
 
@@ -275,38 +275,40 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Returned;
             }
 
+#if TOOLS
             if (_firstResume) {
                 DebugManager.HandleFirstResume(this);
             }
-
             bool stepping = Thread.StepMode != null;
-            while (_pc < _proc.Bytecode.Length) {
+#endif
+
+            var procBytecode = _proc.Bytecode;
+            while (_pc < procBytecode.Length) {
+#if TOOLS
                 if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
                     DebugManager.HandleInstruction(this);
                 _firstResume = false;
+#endif
 
-                int opcode = _proc.Bytecode[_pc++];
+                int opcode = procBytecode[_pc++];
                 var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
                 if (handler == null)
-                    throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
+                    ThrowInvalidOpcode(opcode);
 
-                ProcStatus? status;
-                try {
-                    status = handler(this);
-                } catch (Exception e) {
-                    if (!IsCatching())
-                        throw;
+                var status = handler(this);
 
-                    CatchException(e);
-                    continue;
-                }
-
-                if (status != null) {
-                    return status.Value;
+                if (status != ProcStatus.Continue) {
+                    return status;
                 }
             }
 
             return ProcStatus.Returned;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidOpcode(int opcode) {
+            throw new InvalidOperationException(
+                $"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
         }
 
         public override void ReturnedInto(DreamValue value) {
@@ -418,11 +420,19 @@ namespace OpenDreamRuntime.Procs {
         public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
 
         public void Push(DreamValue value) {
-            _stack[_stackIndex++] = value;
+            _stack[_stackIndex] = value;
+            // ++ sucks for the compiler
+            _stackIndex += 1;
         }
 
         public DreamValue Pop() {
-            return _stack[--_stackIndex];
+            // -- sucks for the compiler
+            _stackIndex -= 1;
+            return _stack[_stackIndex];
+        }
+
+        public void PopDrop() {
+            _stackIndex -= 1;
         }
 
         /// <summary>
@@ -515,7 +525,7 @@ namespace OpenDreamRuntime.Procs {
             switch (reference.RefType) {
                 case DMReference.Type.Field: {
                     if (Peek() == DreamValue.Null) {
-                        Pop();
+                        PopDrop();
                         return true;
                     }
 
@@ -524,8 +534,8 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.ListIndex: {
                     DreamValue list = _stack[_stackIndex - 2];
                     if (list == DreamValue.Null) {
-                        Pop();
-                        Pop();
+                        PopDrop();
+                        PopDrop();
                         return true;
                     }
 
@@ -636,11 +646,11 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.SrcField:
                     return;
                 case DMReference.Type.Field:
-                    Pop();
+                    PopDrop();
                     return;
                 case DMReference.Type.ListIndex:
-                    Pop();
-                    Pop();
+                    PopDrop();
+                    PopDrop();
                     return;
                 default: throw new Exception($"Cannot pop stack values of reference type {reference.RefType}");
             }

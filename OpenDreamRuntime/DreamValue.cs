@@ -82,6 +82,8 @@ namespace OpenDreamRuntime {
             _refValue = appearance;
         }
 
+        public bool IsNull => Type == DreamValueType.DreamObject && _refValue == null;
+
         public static DreamValue CreateProcStub(IDreamObjectTree.TreeEntry type) {
             return new DreamValue {
                 Type = DreamValueType.ProcStub,
@@ -126,9 +128,14 @@ namespace OpenDreamRuntime {
         }
 
         public string MustGetValueAsString() {
-            if (Type == DreamValueType.String) {
-                return Unsafe.As<string>(_refValue)!;
-            }
+            if (Type != DreamValueType.String)
+                ThrowInvalidCastString();
+
+            return Unsafe.As<string>(_refValue)!;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowInvalidCastString() {
             throw new InvalidCastException("Value " + this + " was not the expected type of string");
         }
 
@@ -149,11 +156,7 @@ namespace OpenDreamRuntime {
         }
 
         public int MustGetValueAsInteger() {
-            try {
-                return (int) _floatValue;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException($"Value {this} was not the expected type of integer");
-            }
+            return (int) _floatValue;
         }
 
         public bool TryGetValueAsFloat(out float value) {
@@ -168,9 +171,14 @@ namespace OpenDreamRuntime {
 
         public float MustGetValueAsFloat() {
             if (Type != DreamValueType.Float)
-                throw new InvalidCastException($"Value {this} was not the expected type of float");
+                ThrowInvalidCastFloat();
 
             return _floatValue;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowInvalidCastFloat() {
+            throw new InvalidCastException($"Value {this} was not the expected type of float");
         }
 
         public bool TryGetValueAsDreamResource([NotNullWhen(true)] out DreamResource? value) {
@@ -201,17 +209,20 @@ namespace OpenDreamRuntime {
         }
 
         public DreamObject? MustGetValueAsDreamObject() {
-            try {
-                DreamObject? dreamObject = (DreamObject?) _refValue;
-                if (dreamObject?.Deleted == true) {
-                    _refValue = null;
-                    return null;
-                }
-
-                return dreamObject;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException($"Value {this} was not the expected type of DreamObject");
+            if (Type != DreamValueType.DreamObject) {
+                ThrowInvalidCastDreamObject();
             }
+
+            DreamObject? dreamObject = Unsafe.As<DreamObject>(_refValue);
+            if (dreamObject == null || dreamObject.Deleted)
+                return null;
+
+            return dreamObject;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowInvalidCastDreamObject() {
+            throw new InvalidCastException($"Value {this} was not the expected type of DreamObject");
         }
 
         public bool TryGetValueAsDreamObject<T>([NotNullWhen(true)] out T? dreamObject) where T : DreamObject {

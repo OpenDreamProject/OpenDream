@@ -9,6 +9,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {
+        Continue,
         Cancelled,
         Returned,
         Deferred,

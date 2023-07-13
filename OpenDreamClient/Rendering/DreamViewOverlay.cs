@@ -268,7 +268,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
-            if (underlay.Appearance == null)
+            if(underlay.Appearance == null)
                 continue;
 
             tieBreaker++;
@@ -378,7 +378,7 @@ internal sealed class DreamViewOverlay : Overlay {
         Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
-        Texture? frame;
+      ture? frame;
         if (textureOverride != null) {
             frame = textureOverride;
 
@@ -390,7 +390,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup != null && iconMetaData.KeepTogetherGroup.Count > 0) {
-            //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
+              Tex//store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
             Matrix3 ktParentTransform = iconMetaData.TransformToApply;
             Color ktParentColor = iconMetaData.ColorToApply;
             float ktParentAlpha = iconMetaData.AlphaToApply;
@@ -860,6 +860,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
     public RendererMetaData() {
         Reset();
+        MainIcon ??= new DreamIcon(); //Reset actually sets this already, but suppress the warning
     }
 
     public void Reset() {

@@ -744,12 +744,7 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue + 1));
-            } else {
-                //If it's not a number, it turns into 1
-                state.AssignReference(reference, new(1));
-            }
+            state.AssignReference(reference, new(value.MustGetValueAsInteger() + 1));
 
             state.Push(value);
             return null;
@@ -758,14 +753,9 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus? Decrement(DMProcState state) {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
-
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue - 1));
-            } else {
-                //If it's not a number, it turns into -1
-                state.AssignReference(reference, new(-1));
-            }
-
+            
+            state.AssignReference(reference, new(value.MustGetValueAsInteger() - 1));
+            
             state.Push(value);
             return null;
         }

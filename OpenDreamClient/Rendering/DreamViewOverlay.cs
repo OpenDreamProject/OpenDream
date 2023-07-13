@@ -158,7 +158,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //Final draw
         //At this point, all the sprites have been organised on their planes, render targets have been drawn, now we just draw it all together!
-        DrawPlanes(worldHandle, args.WorldAABB);
+        DrawPlanes(worldHandle);
         worldHandle.DrawTexture(
             MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
             new Vector2(args.WorldAABB.Left, args.WorldAABB.Bottom * -1));
@@ -378,7 +378,7 @@ internal sealed class DreamViewOverlay : Overlay {
         Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
 
-      ture? frame;
+        Texture? frame;
         if (textureOverride != null) {
             frame = textureOverride;
 
@@ -390,7 +390,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup != null && iconMetaData.KeepTogetherGroup.Count > 0) {
-              Tex//store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
+            //store the parent's transform, color, blend, and alpha - then clear them for drawing to the render target
             Matrix3 ktParentTransform = iconMetaData.TransformToApply;
             Color ktParentColor = iconMetaData.ColorToApply;
             float ktParentAlpha = iconMetaData.AlphaToApply;
@@ -649,7 +649,7 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
-    private void DrawPlanes(DrawingHandleWorld handle, Box2 worldAABB) {
+    private void DrawPlanes(DrawingHandleWorld handle) {
         if (!MouseMapRenderEnabled) { // No need to render the map if we're drawing the mouse map over it
             using var _ = _prof.Group("draw planes map");
 
@@ -686,7 +686,7 @@ internal sealed class DreamViewOverlay : Overlay {
         using var _ = _prof.Group("visible turfs");
 
         var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
-        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, (17, 17)));
+        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(17, 17)));
 
         // Gather up all the data the view algorithm needs
         foreach (TileRef tileRef in tileRefs) {
@@ -748,7 +748,7 @@ internal sealed class DreamViewOverlay : Overlay {
             MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
 
             tValue = 0;
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - 1, EntityUid.Invalid, false, ref tValue, _spriteContainer);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer);
         }
 
         // Visible entities
@@ -775,7 +775,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 }
 
                 tValue = 0;
-                ProcessIconComponents(sprite.Icon, worldPos - 0.5f, entity, false, ref tValue, _spriteContainer);
+                ProcessIconComponents(sprite.Icon, worldPos - new Vector2(0.5f), entity, false, ref tValue, _spriteContainer);
             }
         }
 
@@ -796,7 +796,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
                         tValue = 0;
-                        ProcessIconComponents(sprite.Icon, position + iconSize * (x, y), uid, true, ref tValue, _spriteContainer);
+                        ProcessIconComponents(sprite.Icon, position + iconSize * new Vector2(x, y), uid, true, ref tValue, _spriteContainer);
                     }
                 }
             }

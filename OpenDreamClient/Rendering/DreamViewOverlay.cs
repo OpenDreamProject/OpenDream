@@ -222,7 +222,7 @@ internal sealed class DreamViewOverlay : Overlay {
                     MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
 
                     tValue = 0;
-                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - new Vector2(1), EntityUid.Invalid, false, ref tValue));
+                    sprites.AddRange(ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue));
                 }
             }
 

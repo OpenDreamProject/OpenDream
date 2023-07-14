@@ -565,13 +565,19 @@ namespace OpenDreamRuntime.Procs {
         /// as well as what it's being indexed with.
         /// </summary>
         /// <param name="reference">A ListIndex DMReference</param>
-        public (DreamValue indexing, DreamValue index) GetIndexReferenceValues(DreamReference reference, bool peek = false) {
+        public void GetIndexReferenceValues(DreamReference reference, out DreamValue index, out DreamValue indexing, bool peek = false) {
             if (reference.Type != DMReference.Type.ListIndex)
-                throw new ArgumentException("Reference was not a ListIndex type");
+                ThrowReferenceNotListIndex();
 
-            DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
-            DreamValue indexing = peek ? _stack[_stackIndex - 2] : Pop();
-            return (indexing, index);
+            index = _stack[_stackIndex - 1];
+            indexing = _stack[_stackIndex - 2];
+            if (!peek)
+                _stackIndex -= 2;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowReferenceNotListIndex() {
+            throw new ArgumentException("Reference was not a ListIndex type");
         }
 
         public void AssignReference(DreamReference reference, DreamValue value) {
@@ -603,7 +609,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case DMReference.Type.ListIndex: {
-                    (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
+                    GetIndexReferenceValues(reference, out var index, out var indexing);
 
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                         dreamObject.OperatorIndexAssign(index, value);
@@ -632,15 +638,16 @@ namespace OpenDreamRuntime.Procs {
                     return DereferenceField(owner, ResolveString(reference.Value));
                 }
                 case DMReference.Type.SrcField: {
+                    var fieldName = ResolveString(reference.Value);
                     if (Instance == null)
-                        throw new Exception($"Cannot get field src.{ResolveString(reference.Value)} in global proc");
-                    if (!Instance.TryGetVariable(ResolveString(reference.Value), out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{ResolveString(reference.Value)}\"");
+                        throw new Exception($"Cannot get field src.{fieldName} in global proc");
+                    if (!Instance.TryGetVariable(fieldName, out var fieldValue))
+                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{fieldName}\"");
 
                     return fieldValue;
                 }
                 case DMReference.Type.ListIndex: {
-                    (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference, peek);
+                    GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
                     return GetIndex(indexing, index);
                 }

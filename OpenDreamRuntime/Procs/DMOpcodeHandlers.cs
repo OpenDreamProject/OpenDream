@@ -1686,7 +1686,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue right = state.Pop();
 
             if (leftRef.Type == DMReference.Type.ListIndex) {
-                (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
+                state.GetIndexReferenceValues(leftRef, out _, out var indexing, peek: true);
 
                 if (indexing.TryGetValueAsDreamObject<DreamObjectSavefile>(out _)) {
                     // Savefiles get some special treatment.
@@ -1714,7 +1714,7 @@ namespace OpenDreamRuntime.Procs {
             DreamReference rightRef = state.ReadReference();
 
             if (leftRef.Type == DMReference.Type.ListIndex) {
-                (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
+                state.GetIndexReferenceValues(leftRef, out _, out var indexing, peek: true);
 
                 if (indexing.TryGetValueAsDreamObject<DreamObjectSavefile>(out _)) {
                     // Savefiles get some special treatment.

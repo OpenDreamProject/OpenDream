@@ -39,7 +39,7 @@ namespace OpenDreamRuntime {
         public event EventHandler<Exception>? OnException;
 
         // Global state that may not really (really really) belong here
-        public List<DreamValue> Globals { get; set; } = new();
+        public DreamValue[] Globals { get; set; } = Array.Empty<DreamValue>();
         public List<string> GlobalNames { get; private set; } = new List<string>();
         public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
         public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
@@ -130,13 +130,12 @@ namespace OpenDreamRuntime {
             WorldInstance.InitSpawn(new());
 
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
-                Globals.Clear();
-                Globals.EnsureCapacity(jsonGlobals.GlobalCount);
+                Globals = new DreamValue[jsonGlobals.GlobalCount];
                 GlobalNames = jsonGlobals.Names;
 
                 for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
                     object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);
-                    Globals.Add(_objectTree.GetDreamValueFromJsonElement(globalValue));
+                    Globals[i] = _objectTree.GetDreamValueFromJsonElement(globalValue);
                 }
             }
 

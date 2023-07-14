@@ -15,7 +15,7 @@ namespace OpenDreamRuntime {
         public Exception? LastDMException { get; set; }
         public event EventHandler<Exception> OnException;
 
-        public List<DreamValue> Globals { get; }
+        public DreamValue[] Globals { get; }
         public List<string> GlobalNames { get; }
         public Dictionary<DreamObject, int> ReferenceIDs { get; }
         public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; }

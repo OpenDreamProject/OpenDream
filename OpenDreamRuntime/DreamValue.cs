@@ -18,19 +18,35 @@ using OpenDreamRuntime.Procs.Native;
 namespace OpenDreamRuntime {
     [JsonConverter(typeof(DreamValueJsonConverter))]
     public struct DreamValue : IEquatable<DreamValue> {
-        [Flags]
         public enum DreamValueType {
-            String = 1,
-            Float = 2,
-            DreamResource = 4,
-            DreamObject = 8,
-            DreamType = 16,
-            DreamProc = 32,
-            Appearance = 64,
+            // @formatter:off
+            String        = 1,
+            Float         = 2,
+            DreamResource = 3,
+            DreamObject   = 4,
+            DreamType     = 5,
+            DreamProc     = 6,
+            Appearance    = 7,
 
             // Special types for representing /datum/proc paths
-            ProcStub = 128,
-            VerbStub = 256
+            ProcStub      = 8,
+            VerbStub      = 9
+            // @formatter:on
+        }
+
+        [Flags]
+        public enum DreamValueTypeFlag {
+            // @formatter:off
+            String        = 1 << (DreamValueType.String        - 1),
+            Float         = 1 << (DreamValueType.Float         - 1),
+            DreamResource = 1 << (DreamValueType.DreamResource - 1),
+            DreamObject   = 1 << (DreamValueType.DreamObject   - 1),
+            DreamType     = 1 << (DreamValueType.DreamType     - 1),
+            DreamProc     = 1 << (DreamValueType.DreamProc     - 1),
+            Appearance    = 1 << (DreamValueType.Appearance    - 1),
+            ProcStub      = 1 << (DreamValueType.ProcStub      - 1),
+            VerbStub      = 1 << (DreamValueType.VerbStub      - 1)
+            // @formatter:on
         }
 
         public static readonly DreamValue Null = new DreamValue((DreamObject?) null);
@@ -346,8 +362,14 @@ namespace OpenDreamRuntime {
                     Debug.Assert(_refValue is string, "Failed to cast a DreamValueType.String as a string");
                     return Unsafe.As<string>(_refValue) != "";
                 default:
-                    throw new NotImplementedException($"Truthy evaluation for {this} is not implemented");
+                    ThrowTruthyNotImplemented();
+                    return false;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowTruthyNotImplemented() {
+            throw new NotImplementedException($"Truthy evaluation for {this} is not implemented");
         }
 
         public string Stringify() {

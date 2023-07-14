@@ -1,12 +1,12 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
-using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
 namespace OpenDreamRuntime.Procs.Native;
 internal static class DreamProcNativeMatrix {
 
     [DreamProc("Add")]
-    [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject)]
+    [DreamProcParameter("Matrix2", Type = DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_Add(NativeProc.State state) {
         DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
@@ -28,7 +28,7 @@ internal static class DreamProcNativeMatrix {
     }
 
     [DreamProc("Multiply")]
-    [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject | DreamValueType.Float)] // or "n"
+    [DreamProcParameter("Matrix2", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.Float)] // or "n"
     public static DreamValue NativeProc_Multiply(NativeProc.State state) {
         DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
@@ -50,8 +50,8 @@ internal static class DreamProcNativeMatrix {
     }
 
     [DreamProc("Scale")]
-    [DreamProcParameter("x", Type = DreamValueType.Float)]
-    [DreamProcParameter("y", Type = DreamValueType.Float)]
+    [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_Scale(NativeProc.State state) {
         state.GetArgument(0, "x").TryGetValueAsFloat(out var horizontalScale);
         if (!state.GetArgument(1, "y").TryGetValueAsFloat(out var verticalScale))
@@ -62,7 +62,7 @@ internal static class DreamProcNativeMatrix {
     }
 
     [DreamProc("Subtract")]
-    [DreamProcParameter("Matrix2", Type = DreamValueType.DreamObject)]
+    [DreamProcParameter("Matrix2", Type = DreamValueTypeFlag.DreamObject)]
     public static DreamValue NativeProc_Subtract(NativeProc.State state) {
         DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
@@ -75,8 +75,8 @@ internal static class DreamProcNativeMatrix {
 
 
     [DreamProc("Translate")]
-    [DreamProcParameter("x", Type = DreamValueType.Float)]
-    [DreamProcParameter("y", Type = DreamValueType.Float)]
+    [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+    [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_Translate(NativeProc.State state) {
         DreamValue xArgument = state.GetArgument(0, "x");
         if (xArgument.Equals(DreamValue.Null) || !xArgument.TryGetValueAsFloat(out float xTranslation)) {
@@ -103,7 +103,7 @@ internal static class DreamProcNativeMatrix {
     }
 
     [DreamProc("Turn")]
-    [DreamProcParameter("angle", Type = DreamValueType.Float)]
+    [DreamProcParameter("angle", Type = DreamValueTypeFlag.Float)]
     public static DreamValue NativeProc_Turn(NativeProc.State state) {
         DreamValue angleArg = state.GetArgument(0, "angle");
         if (!angleArg.TryGetValueAsFloat(out float angle)) {

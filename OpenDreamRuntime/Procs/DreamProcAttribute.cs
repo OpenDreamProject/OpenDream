@@ -11,7 +11,7 @@
     [AttributeUsage(AttributeTargets.Method, AllowMultiple = true)]
     sealed class DreamProcParameterAttribute : Attribute {
         public string Name;
-        public DreamValue.DreamValueType Type;
+        public DreamValue.DreamValueTypeFlag Type;
         public object? DefaultValue;
 
         public DreamProcParameterAttribute(string name) {

@@ -1,12 +1,12 @@
 ﻿using OpenDreamRuntime.Objects.Types;
-using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
 namespace OpenDreamRuntime.Procs.Native;
 
 internal static class DreamProcNativeSavefile {
     [DreamProc("ExportText")]
-    [DreamProcParameter("path", Type = DreamValueType.String)]
-    [DreamProcParameter("file", Type = DreamValueType.String | DreamValueType.DreamResource)]
+    [DreamProcParameter("path", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("file", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     public static DreamValue NativeProc_ExportText(NativeProc.State state) {
         // Implementing this correctly is a fair amount of effort, and the only use of it I'm aware of is icon2base64()
         // So this implements it just enough to get that working

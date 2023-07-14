@@ -3,7 +3,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using BlendType = OpenDreamRuntime.Objects.DreamIconOperationBlend.BlendType;
-using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeIcon {
@@ -18,12 +18,12 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Insert")]
-        [DreamProcParameter("new_icon", Type = DreamValueType.DreamObject)]
-        [DreamProcParameter("icon_state", Type = DreamValueType.String)]
-        [DreamProcParameter("dir", Type = DreamValueType.Float)]
-        [DreamProcParameter("frame", Type = DreamValueType.Float)]
-        [DreamProcParameter("moving", Type = DreamValueType.Float)]
-        [DreamProcParameter("delay", Type = DreamValueType.Float)]
+        [DreamProcParameter("new_icon", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("frame", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("moving", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("delay", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Insert(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
@@ -56,10 +56,10 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Blend")]
-        [DreamProcParameter("icon", Type = DreamValueType.DreamObject)]
-        [DreamProcParameter("function", Type = DreamValueType.Float, DefaultValue = (int)BlendType.Add)] // ICON_ADD
-        [DreamProcParameter("x", Type = DreamValueType.Float, DefaultValue = 1)]
-        [DreamProcParameter("y", Type = DreamValueType.Float, DefaultValue = 1)]
+        [DreamProcParameter("icon", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("function", Type = DreamValueTypeFlag.Float, DefaultValue = (int)BlendType.Add)] // ICON_ADD
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_Blend(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
@@ -77,8 +77,8 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Scale")]
-        [DreamProcParameter("width", Type = DreamValueType.Float)]
-        [DreamProcParameter("height", Type = DreamValueType.Float)]
+        [DreamProcParameter("width", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("height", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Scale(NativeProc.State state) {
             //TODO Figure out what happens when you pass the wrong types as args
 
@@ -92,7 +92,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Turn")]
-        [DreamProcParameter("angle", Type = DreamValueType.Float)]
+        [DreamProcParameter("angle", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Turn(NativeProc.State state) {
             DreamValue angleArg = state.GetArgument(0, "angle");
             if (!angleArg.TryGetValueAsFloat(out float angle)) {

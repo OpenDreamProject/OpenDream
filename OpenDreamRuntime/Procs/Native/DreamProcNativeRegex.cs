@@ -6,9 +6,9 @@ using OpenDreamRuntime.Objects.Types;
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeRegex {
         [DreamProc("Find")]
-        [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("start", Type = DreamValue.DreamValueType.Float | DreamValue.DreamValueType.DreamObject)] // BYOND docs say these are uppercase, they're not
-        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("haystack", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("start", Type = DreamValue.DreamValueTypeFlag.Float | DreamValue.DreamValueTypeFlag.DreamObject)] // BYOND docs say these are uppercase, they're not
+        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Find(NativeProc.State state) {
             DreamObjectRegex dreamRegex = (DreamObjectRegex)state.Src!;
             DreamValue haystack = state.GetArgument(0, "haystack");
@@ -119,10 +119,10 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Replace")]
-        [DreamProcParameter("haystack", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("replacement", Type = DreamValue.DreamValueType.String | DreamValue.DreamValueType.DreamProc)]
-        [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueType.Float)] // BYOND docs say these are uppercase, they're not
-        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("haystack", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("replacement", Type = DreamValue.DreamValueTypeFlag.String | DreamValue.DreamValueTypeFlag.DreamProc)]
+        [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueTypeFlag.Float)] // BYOND docs say these are uppercase, they're not
+        [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueTypeFlag.Float)]
         public static async Task<DreamValue> NativeProc_Replace(AsyncNativeProc.State state) {
             DreamValue haystack = state.GetArgument(0, "haystack");
             DreamValue replacement = state.GetArgument(1, "replacement");

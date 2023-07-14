@@ -7,10 +7,10 @@ using Robust.Server;
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeWorld {
         [DreamProc("Export")]
-        [DreamProcParameter("Addr", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("File", Type = DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("Persist", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)]
-        [DreamProcParameter("Clients", Type = DreamValue.DreamValueType.DreamObject)]
+        [DreamProcParameter("Addr", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("File", Type = DreamValue.DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("Persist", Type = DreamValue.DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("Clients", Type = DreamValue.DreamValueTypeFlag.DreamObject)]
         public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.State state) {
             var addr = state.GetArgument(0, "Addr").Stringify();
 
@@ -37,8 +37,8 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("GetConfig")]
-        [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
+        [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_GetConfig(NativeProc.State state) {
             state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
             var param = state.GetArgument(1, "param");
@@ -66,9 +66,9 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Profile")]
-        [DreamProcParameter("command", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("type", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("format", Type = DreamValue.DreamValueType.String)]
+        [DreamProcParameter("command", Type = DreamValue.DreamValueTypeFlag.Float)]
+        [DreamProcParameter("type", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("format", Type = DreamValue.DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_Profile(NativeProc.State state) {
             state.GetArgument(0, "command").TryGetValueAsInteger(out var command);
 
@@ -113,7 +113,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("Reboot")]
-        [DreamProcParameter("reason", Type = DreamValue.DreamValueType.Float)]
+        [DreamProcParameter("reason", Type = DreamValue.DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_Reboot(NativeProc.State state) {
             var server = IoCManager.Resolve<IBaseServer>();
 
@@ -122,9 +122,9 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("SetConfig")]
-        [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("value", Type = DreamValue.DreamValueType.String)]
+        [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("value", Type = DreamValue.DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_SetConfig(NativeProc.State state) {
             state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
             state.GetArgument(1, "param").TryGetValueAsString(out string param);

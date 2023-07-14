@@ -81,7 +81,7 @@ internal sealed class DreamViewOverlay : Overlay {
         _sawmill.Debug("Loading shaders...");
         _blockColorInstance = _protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
-        _blendModeInstances = new(4) {
+        _blendModeInstances = new(6) {
             {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT
             {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY (same as BLEND_DEFAULT)
             {BlendMode.Add, _protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()}, //BLEND_ADD
@@ -157,14 +157,14 @@ internal sealed class DreamViewOverlay : Overlay {
         ProcessSprites(worldHandle, viewportSize, args.WorldAABB);
 
         //Final draw
-        //At this point, all the sprites have been organised on their planes, render targets have been drawn, now we just draw it all together!
+        //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
         DrawPlanes(worldHandle);
         worldHandle.DrawTexture(
             MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
             new Vector2(args.WorldAABB.Left, args.WorldAABB.Bottom * -1));
     }
 
-    //handles underlays, overlays, appearance flags, images. Returns a list of icons and metadata for them to be sorted, so they can be drawn with DrawIcon()
+    //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
     private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, RendererMetaData? parentIcon = null, bool keepTogether = false) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
@@ -255,7 +255,7 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         //TODO check for images with override here
-        /* (image in client.images) {
+        /*foreach (image in client.images) {
             if (image.override && image.location == icon.owner)
                 current.MainIcon = image
             else
@@ -277,7 +277,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, result, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, result, current, keepTogether);
+                ProcessIconComponents(underlay, current.Position, uid, isScreen, ref tieBreaker, current.KeepTogetherGroup, current, keepTogether);
             }
         }
 
@@ -295,7 +295,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, result, current);
             } else {
                 current.KeepTogetherGroup ??= new();
-                ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, result, current, keepTogether);
+                ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current.KeepTogetherGroup, current, keepTogether);
             }
         }
 

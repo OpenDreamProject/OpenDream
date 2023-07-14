@@ -256,11 +256,17 @@ namespace OpenDreamRuntime {
         }
 
         public DreamList MustGetValueAsDreamList() {
-            try {
-                return (DreamList) _refValue!;
-            } catch (InvalidCastException) {
-                throw new InvalidCastException("Value " + this + " was not the expected type of DreamList");
+            if (_refValue is not DreamList dl) {
+                ThrowInvalidCastList();
+                return null!;
             }
+
+            return dl;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowInvalidCastList() {
+            throw new InvalidCastException("Value " + this + " was not the expected type of DreamList");
         }
 
         public bool TryGetValueAsType([NotNullWhen(true)] out IDreamObjectTree.TreeEntry? type) {

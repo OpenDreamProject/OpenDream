@@ -1,4 +1,4 @@
-using Robust.Client.UserInterface;
+using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls;
 
@@ -6,7 +6,7 @@ namespace OpenDreamClient.Interface.Controls;
 /// The control responsible for sizing & layout of verb panels in INFO controls
 /// Necessary because RT's grid control can't dynamically adjust the amount of columns
 /// </summary>
-public sealed class VerbPanelGrid : Control {
+public sealed class VerbPanelGrid : Container {
     private int _columns;
     private Vector2 _cellSize;
 

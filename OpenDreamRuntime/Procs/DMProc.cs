@@ -23,11 +23,11 @@ namespace OpenDreamRuntime.Procs {
         public readonly IDreamMapManager DreamMapManager;
         public readonly IDreamDebugManager DreamDebugManager;
         public readonly DreamResourceManager DreamResourceManager;
-        public readonly IDreamObjectTree ObjectTree;
+        public readonly DreamObjectTree ObjectTree;
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
+        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;

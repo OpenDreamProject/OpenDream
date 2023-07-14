@@ -11,7 +11,7 @@ namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectDefinition {
         // IoC dependencies & entity systems for DreamObjects to use
         public readonly IDreamManager DreamManager;
-        public readonly IDreamObjectTree ObjectTree;
+        public readonly DreamObjectTree ObjectTree;
         public readonly IAtomManager AtomManager;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IMapManager MapManager;
@@ -59,7 +59,7 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(IDreamManager dreamManager, IDreamObjectTree objectTree, IAtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, IDreamObjectTree.TreeEntry? treeEntry) {
+        public DreamObjectDefinition(IDreamManager dreamManager, DreamObjectTree objectTree, IAtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, IDreamObjectTree.TreeEntry? treeEntry) {
             DreamManager = dreamManager;
             ObjectTree = objectTree;
             AtomManager = atomManager;

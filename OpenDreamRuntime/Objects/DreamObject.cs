@@ -22,7 +22,7 @@ namespace OpenDreamRuntime.Objects {
 
         // Shortcuts to IoC dependencies & entity systems
         protected IDreamManager DreamManager => ObjectDefinition.DreamManager;
-        protected IDreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
+        protected DreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
         protected IAtomManager AtomManager => ObjectDefinition.AtomManager;
         protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
         protected IMapManager MapManager => ObjectDefinition.MapManager;

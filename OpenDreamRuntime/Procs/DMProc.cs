@@ -674,8 +674,14 @@ namespace OpenDreamRuntime.Procs {
                     PopDrop();
                     PopDrop();
                     return;
-                default: throw new Exception($"Cannot pop stack values of reference type {reference.Type}");
+                default: ThrowPopInvalidType(reference.Type);
+                    return;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowPopInvalidType(DMReference.Type type) {
+            throw new Exception($"Cannot pop stack values of reference type {type}");
         }
 
         public DreamValue DereferenceField(DreamValue owner, string field) {

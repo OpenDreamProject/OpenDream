@@ -744,6 +744,7 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
+            //If it's not a number, it turns into 1
             state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() + 1));
 
             state.Push(value);
@@ -754,6 +755,7 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
+            //If it's not a number, it turns into -1
             state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() - 1));
 
             state.Push(value);

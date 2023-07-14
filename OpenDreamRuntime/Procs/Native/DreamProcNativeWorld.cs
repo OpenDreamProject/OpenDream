@@ -45,7 +45,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             switch (config_set) {
                 case "env":
-                    if (param == DreamValue.Null) {
+                    if (param.IsNull) {
                         // DM ref says: "If no parameter is specified, a list of the names of all available parameters is returned."
                         // but apparently it's actually just null for "env".
                         return DreamValue.Null;

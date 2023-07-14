@@ -44,7 +44,7 @@ namespace OpenDreamRuntime {
                 if(!area.ObjectDefinition.IsSubtypeOf(_objectTree.Area)) throw new Exception("bad area");
 
                 _defaultArea = new MapObjectJson(area.Id);
-            } else if (worldDefinition.Variables["area"] == DreamValue.Null ||
+            } else if (worldDefinition.Variables["area"].IsNull ||
                      worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0) {
                 //TODO: Properly handle disabling default area
                 _defaultArea = new MapObjectJson(_objectTree.Area.Id);
@@ -57,7 +57,7 @@ namespace OpenDreamRuntime {
                 if (!turf.ObjectDefinition.IsSubtypeOf(_objectTree.Turf))
                     throw new Exception("bad turf");
                 _defaultTurf = turf;
-            } else if (worldDefinition.Variables["turf"] == DreamValue.Null ||
+            } else if (worldDefinition.Variables["turf"].IsNull ||
                        worldDefinition.Variables["turf"].TryGetValueAsInteger(out var turfInt) && turfInt == 0) {
                 //TODO: Properly handle disabling default turf
                 _defaultTurf = _objectTree.Turf;

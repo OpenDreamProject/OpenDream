@@ -15,7 +15,7 @@ internal static class DreamProcNativeSavefile {
         DreamValue path = state.GetArgument(0, "path");
         DreamValue file = state.GetArgument(1, "file");
 
-        if (!path.TryGetValueAsString(out var pathStr) || file != DreamValue.Null) {
+        if (!path.TryGetValueAsString(out var pathStr) || !file.IsNull) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 

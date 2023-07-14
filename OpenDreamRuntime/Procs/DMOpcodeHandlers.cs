@@ -719,7 +719,7 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     result = second;
                 }
-            } else if (second != DreamValue.Null) {
+            } else if (!second.IsNull) {
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                         result = new DreamValue(first.MustGetValueAsFloat() + second.MustGetValueAsFloat());
@@ -786,7 +786,7 @@ namespace OpenDreamRuntime.Procs {
                             DreamValue associativeValue = list.GetValue(value);
 
                             newList.AddValue(value);
-                            if (associativeValue != DreamValue.Null) newList.SetValue(value, associativeValue);
+                            if (!associativeValue.IsNull) newList.SetValue(value, associativeValue);
                         }
                     }
                 } else {
@@ -799,13 +799,13 @@ namespace OpenDreamRuntime.Procs {
                             DreamValue associativeValue = list.GetValue(value);
 
                             newList.AddValue(value);
-                            if (associativeValue != DreamValue.Null) newList.SetValue(value, associativeValue);
+                            if (!associativeValue.IsNull) newList.SetValue(value, associativeValue);
                         }
                     }
                 }
 
                 state.Push(new DreamValue(newList));
-            } else if (first != DreamValue.Null && second != DreamValue.Null) {
+            } else if (!first.IsNull && !second.IsNull) {
                 state.Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
             } else {
                 state.Push(new DreamValue(0));
@@ -834,12 +834,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
 
             if (first.Type == DreamValue.DreamValueType.DreamObject) {              // Object | y
-                if (first != DreamValue.Null) {
+                if (!first.IsNull) {
                     state.Push(first.MustGetValueAsDreamObject()!.OperatorOr(second));
                 } else {
                     state.Push(DreamValue.Null);
                 }
-            } else if (second != DreamValue.Null) {                                      // Non-Object | y
+            } else if (!second.IsNull) {                                      // Non-Object | y
                 switch (first.Type) {
                     case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
                         state.Push(new DreamValue(first.MustGetValueAsInteger() | second.MustGetValueAsInteger()));
@@ -994,7 +994,7 @@ namespace OpenDreamRuntime.Procs {
                 } else {
                     result = second;
                 }
-            } else if (second != DreamValue.Null) {
+            } else if (!second.IsNull) {
                 if (first.TryGetValueAsInteger(out var firstInt) && second.TryGetValueAsInteger(out var secondInt)) {
                     result = new DreamValue(firstInt | secondInt);
                 } else if (first.IsNull) {
@@ -1039,7 +1039,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue result;
             switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject when first != DreamValue.Null: {
+                case DreamValue.DreamValueType.DreamObject when !first.IsNull: {
                     state.PopReference(reference);
                     state.Push(first.MustGetValueAsDreamObject()!.OperatorMask(second));
 
@@ -1149,7 +1149,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue result;
             switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject when first != DreamValue.Null: {
+                case DreamValue.DreamValueType.DreamObject when !first.IsNull: {
                     state.PopReference(reference);
                     state.Push(first.MustGetValueAsDreamObject()!.OperatorRemove(second));
 
@@ -1789,7 +1789,7 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid browse_rsc() recipient");
             }
 
-            connection?.BrowseResource(file, (filename != DreamValue.Null) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
+            connection?.BrowseResource(file, (!filename.IsNull) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
             return ProcStatus.Continue;
         }
 
@@ -2393,7 +2393,7 @@ namespace OpenDreamRuntime.Procs {
                         newList.AddValue(value);
 
                         DreamValue associatedValue = inFirstList ? list.GetValue(value) : secondList.GetValue(value);
-                        if (associatedValue != DreamValue.Null) newList.SetValue(value, associatedValue);
+                        if (!associatedValue.IsNull) newList.SetValue(value, associatedValue);
                     }
                 }
 

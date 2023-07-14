@@ -133,11 +133,11 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal, string haystackString) {
-            if (startParam == DreamValue.Null) {
+            if (startParam.IsNull) {
                 if (isGlobal && regexInstance.GetVariable("text").TryGetValueAsString(out string? lastHaystack) && lastHaystack == haystackString) {
                     DreamValue nextVar = regexInstance.GetVariable("next");
 
-                    return (nextVar != DreamValue.Null) ? nextVar.GetValueAsInteger() : 1;
+                    return (!nextVar.IsNull) ? nextVar.GetValueAsInteger() : 1;
                 } else {
                     return 1;
                 }

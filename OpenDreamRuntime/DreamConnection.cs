@@ -276,7 +276,7 @@ namespace OpenDreamRuntime {
                 if (!file.TryGetValueAsDreamResource(out var soundResource)) {
                     if (file.TryGetValueAsString(out var soundPath)) {
                         soundResource = _resourceManager.LoadResource(soundPath);
-                    } else if (file != DreamValue.Null) {
+                    } else if (!file.IsNull) {
                         throw new ArgumentException($"Cannot output {value}", nameof(value));
                     }
                 }

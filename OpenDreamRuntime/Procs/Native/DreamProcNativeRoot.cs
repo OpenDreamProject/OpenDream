@@ -110,17 +110,17 @@ namespace OpenDreamRuntime.Procs.Native {
                 var pixelY = state.GetArgument(6, "pixel_y");
                 var dir = state.GetArgument(7, "dir");
 
-                if (pixelX != DreamValue.Null) {
+                if (!pixelX.IsNull) {
                     obj.SetVariableValue("pixel_x", pixelX);
                     pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
                 }
 
-                if (pixelY != DreamValue.Null) {
+                if (!pixelY.IsNull) {
                     obj.SetVariableValue("pixel_y", pixelY);
                     pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
                 }
 
-                if (dir != DreamValue.Null) {
+                if (!dir.IsNull) {
                     obj.SetVariableValue("dir", dir);
                     dir.TryGetValueAsInteger(out int dirValue);
                     appearance.Direction = (AtomDirection)dirValue;
@@ -307,7 +307,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(tmp);
             } else if (value.TryGetValueAsFloat(out float floatVal)) {
                 return new DreamValue(Math.Clamp(floatVal, lVal, hVal));
-            } else if (value == DreamValue.Null) {
+            } else if (value.IsNull) {
                 return new DreamValue(Math.Clamp(0.0, lVal, hVal));
             } else {
                 throw new Exception("Clamp expects a number or list");
@@ -539,7 +539,7 @@ namespace OpenDreamRuntime.Procs.Native {
             for (int i = 0; i < state.Proc.ArgumentNames.Count; i++) { // Every argument is a filter property
                 var propertyName = state.Proc.ArgumentNames[i];
                 var property = state.Arguments.Values[i];
-                if (property == DreamValue.Null)
+                if (property.IsNull)
                     continue;
 
                 attributes.Add(propertyName, new DreamValueDataNode(property));
@@ -895,7 +895,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(state.ObjectTree.CreateList(iconObj.Icon.States.Keys.ToArray()));
             } else if (state.ResourceManager.TryLoadIcon(arg, out var iconRsc)) {
                 return new DreamValue(state.ObjectTree.CreateList(iconRsc.DMI.States.Keys.ToArray()));
-            } else if (arg == DreamValue.Null) {
+            } else if (arg.IsNull) {
                 return DreamValue.Null;
             } else {
                 throw new Exception($"Bad icon {arg}");
@@ -1028,7 +1028,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_isnull(NativeProc.State state) {
             DreamValue value = state.GetArgument(0, "Val");
 
-            return new DreamValue((value == DreamValue.Null) ? 1 : 0);
+            return new DreamValue((value.IsNull) ? 1 : 0);
         }
 
         [DreamProc("isnum")]
@@ -1280,7 +1280,7 @@ namespace OpenDreamRuntime.Procs.Native {
             state.GetArgument(0, "X").TryGetValueAsFloat(out float x);
             DreamValue yValue = state.GetArgument(1, "Y");
 
-            if (yValue != DreamValue.Null) {
+            if (!yValue.IsNull) {
                 yValue.TryGetValueAsFloat(out float y);
 
                 return new DreamValue((float)Math.Log(y, x));
@@ -1467,15 +1467,15 @@ namespace OpenDreamRuntime.Procs.Native {
 
         private static DreamValue MaxComparison(DreamValue max, DreamValue value) {
             if (value.TryGetValueAsFloat(out var lFloat)) {
-                if (max == DreamValue.Null && lFloat >= 0)
+                if (max.IsNull && lFloat >= 0)
                     max = value;
                 else if (max.TryGetValueAsFloat(out var rFloat) && lFloat > rFloat)
                     max = value;
-            } else if (value == DreamValue.Null) {
+            } else if (value.IsNull) {
                 if (max.TryGetValueAsFloat(out var maxFloat) && maxFloat <= 0)
                     max = value;
             } else if (value.TryGetValueAsString(out var lString)) {
-                if (max == DreamValue.Null)
+                if (max.IsNull)
                     max = value;
                 else if (max.TryGetValueAsString(out var rString) && string.Compare(lString, rString, StringComparison.Ordinal) > 0)
                     max = value;
@@ -1553,7 +1553,7 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (value.TryGetValueAsString(out var lString) && min.TryGetValueAsString(out var rString)) {
                 if (string.Compare(lString, rString, StringComparison.Ordinal) < 0)
                     min = value;
-            } else if (value == DreamValue.Null) {
+            } else if (value.IsNull) {
                 min = value;
             } else {
                 throw new Exception($"Cannot compare {min} and {value}");
@@ -1899,7 +1899,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 end = Math.Max(end + text.Length + 1, start);
             }
 
-            if (needle == DreamValue.Null) { // Insert the replacement after each char except the last
+            if (needle.IsNull) { // Insert the replacement after each char except the last
                 if (!arg3) { // No change if no Replacement was given
                     return new DreamValue(text);
                 }
@@ -2003,7 +2003,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // TODO: There is a difference between passing null and not passing a fourth arg at all
             // Likely a compile-time difference
-            if (aValue == DreamValue.Null) {
+            if (aValue.IsNull) {
                 return new DreamValue($"#{r:X2}{g:X2}{b:X2}");
             } else {
                 aValue.TryGetValueAsInteger(out var a);
@@ -2154,7 +2154,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_shutdown(NativeProc.State state) {
             DreamValue addrValue = state.GetArgument(0, "Addr");
 
-            if (addrValue == DreamValue.Null) {
+            if (addrValue.IsNull) {
                 IoCManager.Resolve<ITaskManager>().RunOnMainThread(() => {
                     IoCManager.Resolve<IBaseServer>().Shutdown("shutdown() was called from DM code");
                 });
@@ -2435,7 +2435,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         private static void OutputToStatPanel(IDreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
-            if (name == DreamValue.Null && value.TryGetValueAsDreamList(out var list)) {
+            if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
                 foreach (var item in list.GetValues())
                     OutputToStatPanel(dreamManager, connection, name, item);
             } else {
@@ -2472,7 +2472,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (state.Usr is DreamObjectMob { Connection: {} connection }) {
                 connection.SetOutputStatPanel(panel);
-                if (name != DreamValue.Null || value != DreamValue.Null) {
+                if (!name.IsNull || !value.IsNull) {
                     OutputToStatPanel(state.DreamManager, connection, name, value);
                 }
 
@@ -2573,7 +2573,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             } else if (value.Type == DreamValueType.Float) {
                 return value;
-            } else if (value == DreamValue.Null) {
+            } else if (value.IsNull) {
                 return DreamValue.Null;
             } else {
                 throw new Exception($"Invalid argument to text2num: {value}");
@@ -3022,7 +3022,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_winset(NativeProc.State state) {
             DreamValue player = state.GetArgument(0, "player");
             DreamValue controlId = state.GetArgument(1, "control_id");
-            string winsetControlId = (controlId != DreamValue.Null) ? controlId.GetValueAsString() : null;
+            string winsetControlId = (!controlId.IsNull) ? controlId.GetValueAsString() : null;
             string winsetParams = state.GetArgument(2, "params").GetValueAsString();
 
             DreamConnection? connection = null;

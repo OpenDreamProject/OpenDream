@@ -129,7 +129,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                 break;
             }
             case "loc": {
-                if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newLoc) && value != DreamValue.Null)
+                if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newLoc) && !value.IsNull)
                     throw new Exception($"Invalid loc {value}");
 
                 SetLoc(newLoc);

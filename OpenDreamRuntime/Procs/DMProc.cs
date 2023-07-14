@@ -539,7 +539,7 @@ namespace OpenDreamRuntime.Procs {
         public bool IsNullDereference(DreamReference reference) {
             switch (reference.Type) {
                 case DMReference.Type.Field: {
-                    if (Peek() == DreamValue.Null) {
+                    if (Peek().IsNull) {
                         PopDrop();
                         return true;
                     }
@@ -548,7 +548,7 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.ListIndex: {
                     DreamValue list = _stack[_stackIndex - 2];
-                    if (list == DreamValue.Null) {
+                    if (list.IsNull) {
                         PopDrop();
                         PopDrop();
                         return true;
@@ -792,7 +792,7 @@ namespace OpenDreamRuntime.Procs {
                         var key = values[i*2];
                         var value = values[i*2+1];
 
-                        if (key == DreamValue.Null) {
+                        if (key.IsNull) {
                             arguments[i] = value;
                         } else {
                             string argumentName = key.MustGetValueAsString();

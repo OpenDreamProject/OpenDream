@@ -3,7 +3,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public interface IDreamValueEnumerator {
-        public bool Enumerate(DMProcState state, DMReference? reference);
+        public bool Enumerate(DMProcState state, DreamReference? reference);
     }
 
     /// <summary>
@@ -21,7 +21,7 @@ namespace OpenDreamRuntime.Procs {
             _step = step;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             _current += _step;
 
             bool successful = (_step > 0) ? _current <= _end : _current >= _end;
@@ -44,7 +44,7 @@ namespace OpenDreamRuntime.Procs {
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             bool success = _dreamObjectEnumerator.MoveNext();
             if (_filterType != null) {
                 while (success && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Procs {
             _dreamValueArray = dreamValueArray;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             _current++;
 
             bool success = _current < _dreamValueArray.Length;
@@ -95,7 +95,7 @@ namespace OpenDreamRuntime.Procs {
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             do {
                 _current++;
                 if (_current >= _dreamValueArray.Length) {
@@ -128,7 +128,7 @@ namespace OpenDreamRuntime.Procs {
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             do {
                 _current++;
                 if (_current >= _atomManager.AtomCount) {

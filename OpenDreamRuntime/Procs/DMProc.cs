@@ -490,29 +490,44 @@ namespace OpenDreamRuntime.Procs {
         public string ReadString() {
             int stringId = ReadInt();
 
+            return ResolveString(stringId);
+        }
+
+        public string ResolveString(int stringId) {
             return Proc.ObjectTree.Strings[stringId];
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public DMReference ReadReference() {
+        public DreamReference ReadReference() {
             DMReference.Type refType = (DMReference.Type)ReadByte();
 
             switch (refType) {
-                case DMReference.Type.Argument: return DMReference.CreateArgument(ReadByte());
-                case DMReference.Type.Local: return DMReference.CreateLocal(ReadByte());
-                case DMReference.Type.Global: return DMReference.CreateGlobal(ReadInt());
-                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(ReadInt());
-                case DMReference.Type.Field: return DMReference.CreateField(ReadString());
-                case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
-                case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(ReadString());
-                case DMReference.Type.Src: return DMReference.Src;
-                case DMReference.Type.Self: return DMReference.Self;
-                case DMReference.Type.Usr: return DMReference.Usr;
-                case DMReference.Type.Args: return DMReference.Args;
-                case DMReference.Type.SuperProc: return DMReference.SuperProc;
-                case DMReference.Type.ListIndex: return DMReference.ListIndex;
-                default: throw new Exception($"Invalid reference type {refType}");
+                case DMReference.Type.Src:
+                case DMReference.Type.Self:
+                case DMReference.Type.Usr:
+                case DMReference.Type.Args:
+                case DMReference.Type.SuperProc:
+                case DMReference.Type.ListIndex:
+                    return new DreamReference(refType, 0);
+                case DMReference.Type.Argument:
+                case DMReference.Type.Local:
+                    return new DreamReference(refType, ReadByte());
+                case DMReference.Type.Global:
+                case DMReference.Type.GlobalProc:
+                case DMReference.Type.Field:
+                case DMReference.Type.SrcField:
+                case DMReference.Type.SrcProc:
+                    return new DreamReference(refType, ReadInt());
+                default: {
+                    ThrowInvalidReferenceType(refType);
+                    return default;
+                }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidReferenceType(DMReference.Type type) {
+            throw new Exception($"Invalid reference type {type}");
         }
 
         public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
@@ -521,8 +536,8 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         #region References
-        public bool IsNullDereference(DMReference reference) {
-            switch (reference.RefType) {
+        public bool IsNullDereference(DreamReference reference) {
+            switch (reference.Type) {
                 case DMReference.Type.Field: {
                     if (Peek() == DreamValue.Null) {
                         PopDrop();
@@ -541,7 +556,7 @@ namespace OpenDreamRuntime.Procs {
 
                     return false;
                 }
-                default: throw new Exception($"Invalid dereference type {reference.RefType}");
+                default: throw new Exception($"Invalid dereference type {reference.Type}");
             }
         }
 
@@ -550,8 +565,8 @@ namespace OpenDreamRuntime.Procs {
         /// as well as what it's being indexed with.
         /// </summary>
         /// <param name="reference">A ListIndex DMReference</param>
-        public (DreamValue indexing, DreamValue index) GetIndexReferenceValues(DMReference reference, bool peek = false) {
-            if (reference.RefType != DMReference.Type.ListIndex)
+        public (DreamValue indexing, DreamValue index) GetIndexReferenceValues(DreamReference reference, bool peek = false) {
+            if (reference.Type != DMReference.Type.ListIndex)
                 throw new ArgumentException("Reference was not a ListIndex type");
 
             DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
@@ -559,13 +574,13 @@ namespace OpenDreamRuntime.Procs {
             return (indexing, index);
         }
 
-        public void AssignReference(DMReference reference, DreamValue value) {
-            switch (reference.RefType) {
+        public void AssignReference(DreamReference reference, DreamValue value) {
+            switch (reference.Type) {
                 case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: SetArgument(reference.Index, value); break;
-                case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Index] = value; break;
-                case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
-                case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
+                case DMReference.Type.Argument: SetArgument(reference.Value, value); break;
+                case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Value] = value; break;
+                case DMReference.Type.SrcField: Instance.SetVariable(ResolveString(reference.Value), value); break;
+                case DMReference.Type.Global: DreamManager.Globals[reference.Value] = value; break;
                 case DMReference.Type.Src:
                     //TODO: src can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Instance)) {
@@ -582,9 +597,9 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot assign field \"{reference.Name}\" on {owner}");
+                        throw new Exception($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
 
-                    ownerObj.SetVariable(reference.Name, value);
+                    ownerObj.SetVariable(ResolveString(reference.Value), value);
                     break;
                 }
                 case DMReference.Type.ListIndex: {
@@ -598,29 +613,29 @@ namespace OpenDreamRuntime.Procs {
 
                     break;
                 }
-                default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
+                default: throw new Exception($"Cannot assign to reference type {reference.Type}");
             }
         }
 
-        public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {
-            switch (reference.RefType) {
+        public DreamValue GetReferenceValue(DreamReference reference, bool peek = false) {
+            switch (reference.Type) {
                 case DMReference.Type.Src: return new(Instance);
                 case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
-                case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
-                case DMReference.Type.Argument: return _localVariables[reference.Index];
-                case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Index];
+                case DMReference.Type.Global: return DreamManager.Globals[reference.Value];
+                case DMReference.Type.Argument: return _localVariables[reference.Value];
+                case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Value];
                 case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
 
-                    return DereferenceField(owner, reference.Name);
+                    return DereferenceField(owner, ResolveString(reference.Value));
                 }
                 case DMReference.Type.SrcField: {
                     if (Instance == null)
-                        throw new Exception($"Cannot get field src.{reference.Name} in global proc");
-                    if (!Instance.TryGetVariable(reference.Name, out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{reference.Name}\"");
+                        throw new Exception($"Cannot get field src.{ResolveString(reference.Value)} in global proc");
+                    if (!Instance.TryGetVariable(ResolveString(reference.Value), out var fieldValue))
+                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{ResolveString(reference.Value)}\"");
 
                     return fieldValue;
                 }
@@ -629,12 +644,12 @@ namespace OpenDreamRuntime.Procs {
 
                     return GetIndex(indexing, index);
                 }
-                default: throw new Exception($"Cannot get value of reference type {reference.RefType}");
+                default: throw new Exception($"Cannot get value of reference type {reference.Type}");
             }
         }
 
-        public void PopReference(DMReference reference) {
-            switch (reference.RefType) {
+        public void PopReference(DreamReference reference) {
+            switch (reference.Type) {
                 case DMReference.Type.Src:
                 case DMReference.Type.Usr:
                 case DMReference.Type.Self:
@@ -652,7 +667,7 @@ namespace OpenDreamRuntime.Procs {
                     PopDrop();
                     PopDrop();
                     return;
-                default: throw new Exception($"Cannot pop stack values of reference type {reference.RefType}");
+                default: throw new Exception($"Cannot pop stack values of reference type {reference.Type}");
             }
         }
 

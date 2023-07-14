@@ -293,15 +293,15 @@ namespace OpenDreamShared.Dream.Procs {
             Self,
             Usr,
             Args,
+            SuperProc,
             ListIndex,
             Argument,
             Local,
             Global,
+            GlobalProc,
             Field,
             SrcField,
-            GlobalProc,
             SrcProc,
-            SuperProc
         }
 
         public Type RefType;

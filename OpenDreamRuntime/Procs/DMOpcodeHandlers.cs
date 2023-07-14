@@ -16,14 +16,14 @@ namespace OpenDreamRuntime.Procs {
     internal static class DMOpcodeHandlers {
         #region Values
         public static ProcStatus PushReferenceValue(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
 
             state.Push(state.GetReferenceValue(reference));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Assign(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue value = state.Pop();
 
             state.AssignReference(reference, value);
@@ -32,7 +32,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus AssignInto(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue value = state.Pop();
             DreamValue first = state.GetReferenceValue(reference);
 
@@ -213,7 +213,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus Enumerate(DMProcState state) {
             IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
-            DMReference outputRef = state.ReadReference();
+            DreamReference outputRef = state.ReadReference();
             int jumpToIfFailure = state.ReadInt();
 
             if (!enumerator.Enumerate(state, outputRef))
@@ -591,7 +591,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus PopReference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             state.PopReference(reference);
             return ProcStatus.Continue;
         }
@@ -695,7 +695,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Append(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
@@ -740,7 +740,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Increment(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
             if (value.TryGetValueAsInteger(out int intValue)) {
@@ -755,7 +755,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Decrement(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
             if (value.TryGetValueAsInteger(out int intValue)) {
@@ -876,7 +876,7 @@ namespace OpenDreamRuntime.Procs {
 
 
         public static ProcStatus BitShiftLeftReference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result;
@@ -911,7 +911,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus BitShiftRightReference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result;
@@ -940,7 +940,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus BitXorReference(DMProcState state) {
             DreamValue second = state.Pop();
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result = BitXorValues(state.Proc.ObjectTree, first, second);
 
@@ -980,7 +980,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Combine(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
@@ -1022,7 +1022,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus DivideReference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result = DivideValues(first, second);
@@ -1033,7 +1033,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Mask(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
@@ -1078,7 +1078,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus ModulusReference(DMProcState state) {
             DreamValue second = state.Pop();
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result = ModulusValues(first, second);
 
@@ -1089,7 +1089,7 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus ModulusModulusReference(DMProcState state) {
             DreamValue second = state.Pop();
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result = ModulusModulusValues(first, second);
 
@@ -1107,7 +1107,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus MultiplyReference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
             DreamValue result = MultiplyValues(first, second);
@@ -1143,7 +1143,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Remove(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
 
@@ -1328,12 +1328,12 @@ namespace OpenDreamRuntime.Procs {
 
         #region Flow
         public static ProcStatus Call(DMProcState state) {
-            DMReference procRef = state.ReadReference();
+            DreamReference procRef = state.ReadReference();
             var argumentInfo = state.ReadProcArguments();
 
             DreamObject instance;
             DreamProc proc;
-            switch (procRef.RefType) {
+            switch (procRef.Type) {
                 case DMReference.Type.Self: {
                     instance = state.Instance;
                     proc = state.Proc;
@@ -1353,18 +1353,18 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.GlobalProc: {
                     instance = null;
-                    proc = state.Proc.ObjectTree.Procs[procRef.Index];
+                    proc = state.Proc.ObjectTree.Procs[procRef.Value];
 
                     break;
                 }
                 case DMReference.Type.SrcProc: {
                     instance = state.Instance;
-                    if (!instance.TryGetProc(procRef.Name, out proc))
-                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{procRef.Name}\"");
+                    if (!instance.TryGetProc(state.ResolveString(procRef.Value), out proc))
+                        throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{state.ResolveString(procRef.Value)}\"");
 
                     break;
                 }
-                default: throw new Exception($"Invalid proc reference type {procRef.RefType}");
+                default: throw new Exception($"Invalid proc reference type {procRef.Type}");
             }
 
             DreamProcArguments arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
@@ -1513,7 +1513,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus JumpIfNullDereference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             int position = state.ReadInt();
 
             if (state.IsNullDereference(reference)) {
@@ -1525,7 +1525,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus JumpIfTrueReference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             int position = state.ReadInt();
 
             var value = state.GetReferenceValue(reference, true);
@@ -1540,7 +1540,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus JumpIfFalseReference(DMProcState state) {
-            DMReference reference = state.ReadReference();
+            DreamReference reference = state.ReadReference();
             int position = state.ReadInt();
 
             var value = state.GetReferenceValue(reference, true);
@@ -1574,7 +1574,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Try(DMProcState state) {
-            state.StartTryBlock(state.ReadInt(), state.ReadReference().Index);
+            state.StartTryBlock(state.ReadInt(), state.ReadReference().Value);
             return ProcStatus.Continue;
         }
 
@@ -1682,10 +1682,10 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus OutputReference(DMProcState state) {
-            DMReference leftRef = state.ReadReference();
+            DreamReference leftRef = state.ReadReference();
             DreamValue right = state.Pop();
 
-            if (leftRef.RefType == DMReference.Type.ListIndex) {
+            if (leftRef.Type == DMReference.Type.ListIndex) {
                 (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
 
                 if (indexing.TryGetValueAsDreamObject<DreamObjectSavefile>(out _)) {
@@ -1710,10 +1710,10 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Input(DMProcState state) {
-            DMReference leftRef = state.ReadReference();
-            DMReference rightRef = state.ReadReference();
+            DreamReference leftRef = state.ReadReference();
+            DreamReference rightRef = state.ReadReference();
 
-            if (leftRef.RefType == DMReference.Type.ListIndex) {
+            if (leftRef.Type == DMReference.Type.ListIndex) {
                 (DreamValue indexing, _) = state.GetIndexReferenceValues(leftRef, peek: true);
 
                 if (indexing.TryGetValueAsDreamObject<DreamObjectSavefile>(out _)) {

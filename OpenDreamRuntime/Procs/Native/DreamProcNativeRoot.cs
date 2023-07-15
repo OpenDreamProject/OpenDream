@@ -1012,6 +1012,17 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.True;
         }
 
+        [DreamProc("isobj")]
+        [DreamProcParameter("Loc1", Type = DreamValueTypeFlag.DreamObject)]
+        public static DreamValue NativeProc_isobj(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+            foreach (var arg in bundle.Arguments.Values) {
+                if (!arg.IsDreamObject<DreamObject>())
+                    return DreamValue.False;
+            }
+
+            return DreamValue.True;
+        }
+
         [DreamProc("ismovable")]
         [DreamProcParameter("Loc1", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_ismovable(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {

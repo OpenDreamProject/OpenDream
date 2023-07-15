@@ -15,8 +15,10 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        public DreamObjectDefinition ObjectDefinition { get; protected set; }
-        public bool Deleted { get; private set; }
+        public DreamObjectDefinition ObjectDefinition;
+
+        [Access(typeof(DreamObject))]
+        public bool Deleted;
 
         public virtual bool ShouldCallNew => true;
 

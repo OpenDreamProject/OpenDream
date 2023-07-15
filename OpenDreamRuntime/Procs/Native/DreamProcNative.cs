@@ -50,6 +50,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_islist);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isloc);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ismob);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isobj);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ismovable);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isnan);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isnull);

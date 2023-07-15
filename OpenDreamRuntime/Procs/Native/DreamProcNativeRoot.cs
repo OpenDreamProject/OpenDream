@@ -2926,7 +2926,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("viewers")]
         [DreamProcParameter("Depth", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
-        public static DreamValue NativeProc_viewers(NativeProc.State state) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_viewers(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) { //TODO: View obstruction (dense turfs)
             DreamValue depthValue = new DreamValue(5);
             DreamObject? center = null;
 
@@ -2949,7 +2949,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            center ??= state.Usr;
+            center ??= usr;
 
             DreamList view = state.ObjectTree.CreateList();
             if (center == null)

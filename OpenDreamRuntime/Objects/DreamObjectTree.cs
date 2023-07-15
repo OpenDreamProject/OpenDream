@@ -440,7 +440,7 @@ namespace OpenDreamRuntime.Objects {
             type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
         }
 
-        internal void SetFastNativeProc(TreeEntry type, FastNativeProc.HandlerFn func) {
+        internal void SetNativeProc(TreeEntry type, FastNativeProc.HandlerFn func) {
             var proc = CreateFastNativeProc(type.Path, func);
 
             type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);

@@ -76,21 +76,22 @@ window "outputwindow"
 		pos = 0,0
 		size = 640x480
 		is-pane = true
-	elem "output"
-		type = OUTPUT
-		pos = 0,0
-		size = 0x0
-		anchor1 = 0,0
-		anchor2 = 100,100
-		is-default = true
 	elem "input"
 		type = INPUT
-		pos = 0,460
+		pos = 0,440
 		size = 640x20
 		anchor1 = 0,100
 		anchor2 = 100,100
 		background-color = #d3b5b5
 		is-default = true
+	elem "bar"
+		type = BAR
+		value = 40
+		pos = 0,460
+		size = 640x20
+		anchor1 = 0,100
+		anchor2 = 100,100
+		is-slider = true
 
 window "statwindow"
 	elem "statwindow"

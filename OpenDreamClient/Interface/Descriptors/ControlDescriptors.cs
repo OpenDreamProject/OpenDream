@@ -76,6 +76,7 @@ public sealed class WindowDescriptor : ControlDescriptor {
             "LABEL" => typeof(ControlDescriptorLabel),
             "GRID" => typeof(ControlDescriptorGrid),
             "TAB" => typeof(ControlDescriptorTab),
+            "BAR" => typeof(ControlDescriptorBar),
             _ => null
         };
 
@@ -148,3 +149,24 @@ public sealed class ControlDescriptorGrid : ControlDescriptor {
 
 public sealed class ControlDescriptorTab : ControlDescriptor {
 }
+
+public sealed class ControlDescriptorBar : ControlDescriptor {
+    [DataField("width")]
+    public int? Width = 10; //width of the progress bar in pixels. In the default EAST dir, this is more accurately thought of as "height"
+    [DataField("dir")]
+    public string? Dir = "east"; //valid values: north/east/south/west/clockwise/cw/counterclockwise/ccw
+    [DataField("angle1")]
+    public int? Angle1 = 0; //start angle
+    [DataField("angle2")]
+    public int? Angle2 = 180; //end angle
+    [DataField("bar-color")]
+    public Color? BarColor = null; //insanely, the default is null which causes the bar not to render regardless of value
+    [DataField("is-slider")]
+    public bool IsSlider = false;
+    [DataField("value")]
+    public float? Value = 0f; //position of the progress bar
+    [DataField("on-change")]
+    public string? OnChange = null;
+
+}
+

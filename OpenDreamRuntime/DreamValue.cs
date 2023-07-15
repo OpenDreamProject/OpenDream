@@ -115,7 +115,10 @@ namespace OpenDreamRuntime {
             _refValue = appearance;
         }
 
-        public bool IsNull => Type == DreamValueType.DreamObject && _refValue == null;
+        public bool IsNull {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => Type == DreamValueType.DreamObject && _refValue == null;
+        }
 
         public static DreamValue CreateProcStub(IDreamObjectTree.TreeEntry type) {
             return new DreamValue {
@@ -178,30 +181,24 @@ namespace OpenDreamRuntime {
             return MustGetValueAsInteger();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetValueAsInteger(out int value) {
-            if (Type == DreamValueType.Float) {
-                value = (int) _floatValue;
-                return true;
-            } else {
-                value = 0;
-                return false;
-            }
+            value = (int)_floatValue;
+            return Type == DreamValueType.Float;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int MustGetValueAsInteger() {
             return (int) _floatValue;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetValueAsFloat(out float value) {
-            if (Type == DreamValueType.Float) {
-                value = _floatValue;
-                return true;
-            } else {
-                value = 0;
-                return false;
-            }
+            value = _floatValue;
+            return Type == DreamValueType.Float;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float MustGetValueAsFloat() {
             if (Type != DreamValueType.Float)
                 ThrowInvalidCastFloat();

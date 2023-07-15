@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -573,13 +574,13 @@ namespace OpenDreamRuntime.Procs {
                         list = listObject.GetVariable("contents").MustGetValueAsDreamList();
                     } else {
                         // BYOND ignores all floats, strings, types, etc. here and just returns 0.
-                        state.Push(new DreamValue(0));
+                        state.Push(DreamValue.False);
                     }
                 }
 
                 state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
             } else {
-                state.Push(new DreamValue(0));
+                state.Push(DreamValue.False);
             }
 
             return ProcStatus.Continue;
@@ -688,10 +689,16 @@ namespace OpenDreamRuntime.Procs {
             if (output.Type != 0) {
                 state.Push(output);
             } else {
-                throw new Exception("Invalid add operation on " + first + " and " + second);
+                ThrowInvalidAddOperation(first, second);
             }
 
             return ProcStatus.Continue;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidAddOperation(DreamValue first, DreamValue second)
+        {
+            throw new Exception("Invalid add operation on " + first + " and " + second);
         }
 
         public static ProcStatus Append(DMProcState state) {
@@ -743,12 +750,7 @@ namespace OpenDreamRuntime.Procs {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue + 1));
-            } else {
-                //If it's not a number, it turns into 1
-                state.AssignReference(reference, new(1));
-            }
+            state.AssignReference(reference, new(value.MustGetValueAsInteger() + 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -758,12 +760,7 @@ namespace OpenDreamRuntime.Procs {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue - 1));
-            } else {
-                //If it's not a number, it turns into -1
-                state.AssignReference(reference, new(-1));
-            }
+            state.AssignReference(reference, new(value.MustGetValueAsInteger() - 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -773,7 +770,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.TryGetValueAsDreamList(out DreamList list)) {
+            if (!first.IsDreamObject<DreamList>() && !first.IsNull && !second.IsNull) {
+                state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
+            } else if (first.TryGetValueAsDreamList(out DreamList list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
@@ -805,8 +804,6 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 state.Push(new DreamValue(newList));
-            } else if (!first.IsNull && !second.IsNull) {
-                state.Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
             } else {
                 state.Push(new DreamValue(0));
             }

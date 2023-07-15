@@ -590,22 +590,22 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Src:
                     //TODO: src can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Instance)) {
-                        throw new Exception($"Cannot assign src to {value}");
+                        ThrowCannotAssignSrcTo(value);
                     }
 
                     break;
                 case DMReference.Type.Usr:
                     //TODO: usr can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Usr)) {
-                        throw new Exception($"Cannot assign usr to {value}");
+                        ThrowCannotAssignUsrTo(value);
                     }
                     break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
+                        ThrowCannotAssignFieldOn(reference, owner);
 
-                    ownerObj.SetVariable(ResolveString(reference.Value), value);
+                    ownerObj!.SetVariable(ResolveString(reference.Value), value);
                     break;
                 }
                 case DMReference.Type.ListIndex: {
@@ -614,13 +614,40 @@ namespace OpenDreamRuntime.Procs {
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                         dreamObject.OperatorIndexAssign(index, value);
                     } else {
-                        throw new Exception($"Cannot assign to index {index} of {indexing}");
+                        ThrowCannotAssignListIndex(index, indexing);
                     }
 
                     break;
                 }
-                default: throw new Exception($"Cannot assign to reference type {reference.Type}");
+                default:
+                    ThrowCannotAssignReferenceType(reference);
+                    break;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignReferenceType(DreamReference reference) {
+            throw new Exception($"Cannot assign to reference type {reference.Type}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignListIndex(DreamValue index, DreamValue indexing) {
+            throw new Exception($"Cannot assign to index {index} of {indexing}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowCannotAssignFieldOn(DreamReference reference, DreamValue owner) {
+            throw new Exception($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignSrcTo(DreamValue value) {
+            throw new Exception($"Cannot assign src to {value}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignUsrTo(DreamValue value) {
+            throw new Exception($"Cannot assign usr to {value}");
         }
 
         public DreamValue GetReferenceValue(DreamReference reference, bool peek = false) {
@@ -640,9 +667,9 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.SrcField: {
                     var fieldName = ResolveString(reference.Value);
                     if (Instance == null)
-                        throw new Exception($"Cannot get field src.{fieldName} in global proc");
-                    if (!Instance.TryGetVariable(fieldName, out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{fieldName}\"");
+                        ThrowCannotGetFieldSrcGlobalProc(fieldName);
+                    if (!Instance!.TryGetVariable(fieldName, out var fieldValue))
+                        ThrowTypeHasNoField(fieldName);
 
                     return fieldValue;
                 }
@@ -651,8 +678,25 @@ namespace OpenDreamRuntime.Procs {
 
                     return GetIndex(indexing, index);
                 }
-                default: throw new Exception($"Cannot get value of reference type {reference.Type}");
+                default:
+                    ThrowCannotGetValueOfReferenceType(reference);
+                    return DreamValue.Null;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetValueOfReferenceType(DreamReference reference) {
+            throw new Exception($"Cannot get value of reference type {reference.Type}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetFieldSrcGlobalProc(string fieldName) {
+            throw new Exception($"Cannot get field src.{fieldName} in global proc");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowTypeHasNoField(string fieldName) {
+            throw new Exception($"Type {Instance!.ObjectDefinition!.Type} has no field called \"{fieldName}\"");
         }
 
         public void PopReference(DreamReference reference) {
@@ -687,19 +731,38 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue DereferenceField(DreamValue owner, string field) {
             if (owner.TryGetValueAsDreamObject(out var ownerObj) && ownerObj != null) {
                 if (!ownerObj.TryGetVariable(field, out var fieldValue))
-                    throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
+                    ThrowTypeHasNoField(field, ownerObj);
 
                 return fieldValue;
             } else if (owner.TryGetValueAsProc(out var ownerProc)) {
                 return ownerProc.GetField(field);
             } else if (owner.TryGetValueAsAppearance(out var appearance)) {
                 if (!Proc.AtomManager.IsValidAppearanceVar(field))
-                    throw new Exception($"Invalid appearance var \"{field}\"");
+                    ThrowInvalidAppearanceVar(field);
 
                 return Proc.AtomManager.GetAppearanceVar(appearance, field);
             }
 
+            ThrowCannotGetFieldFromOwner(owner, field);
+            return DreamValue.Null;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetFieldFromOwner(DreamValue owner, string field)
+        {
             throw new Exception($"Cannot get field \"{field}\" from {owner}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidAppearanceVar(string field)
+        {
+            throw new Exception($"Invalid appearance var \"{field}\"");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowTypeHasNoField(string field, DreamObject? ownerObj)
+        {
+            throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
         public DreamValue GetIndex(DreamValue indexing, DreamValue index) {
@@ -709,7 +772,7 @@ namespace OpenDreamRuntime.Procs {
 
             if (indexing.TryGetValueAsString(out string? strValue)) {
                 if (!index.TryGetValueAsInteger(out int strIndex))
-                    throw new Exception($"Attempted to index string with {index}");
+                    ThrowAttemptedToIndexString(index);
 
                 char c = strValue[strIndex - 1];
                 return new DreamValue(Convert.ToString(c));
@@ -720,8 +783,22 @@ namespace OpenDreamRuntime.Procs {
                     return dreamObject.OperatorIndex(index);
             }
 
+            ThrowCannotGetIndex(indexing, index);
+            return DreamValue.Null;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetIndex(DreamValue indexing, DreamValue index)
+        {
             throw new Exception($"Cannot get index {index} of {indexing}");
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowAttemptedToIndexString(DreamValue index)
+        {
+            throw new Exception($"Attempted to index string with {index}");
+        }
+
         #endregion References
 
         public IEnumerable<(string, DreamValue)> DebugArguments() {

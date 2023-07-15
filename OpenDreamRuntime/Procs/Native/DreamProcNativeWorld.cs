@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using Robust.Server;
 
@@ -39,7 +40,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("GetConfig")]
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
-        public static DreamValue NativeProc_GetConfig(NativeProc.State state) {
+        public static DreamValue NativeProc_GetConfig(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
             state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
             var param = state.GetArgument(1, "param");
 
@@ -69,7 +70,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("command", Type = DreamValue.DreamValueTypeFlag.Float)]
         [DreamProcParameter("type", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("format", Type = DreamValue.DreamValueTypeFlag.String)]
-        public static DreamValue NativeProc_Profile(NativeProc.State state) {
+        public static DreamValue NativeProc_Profile(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
             state.GetArgument(0, "command").TryGetValueAsInteger(out var command);
 
             string? type, format;
@@ -114,7 +115,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("Reboot")]
         [DreamProcParameter("reason", Type = DreamValue.DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_Reboot(NativeProc.State state) {
+        public static DreamValue NativeProc_Reboot(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
             var server = IoCManager.Resolve<IBaseServer>();
 
             server.Shutdown("/world.Reboot() was called but restarting is very broken");
@@ -125,7 +126,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("value", Type = DreamValue.DreamValueTypeFlag.String)]
-        public static DreamValue NativeProc_SetConfig(NativeProc.State state) {
+        public static DreamValue NativeProc_SetConfig(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
             state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
             state.GetArgument(1, "param").TryGetValueAsString(out string param);
             var value = state.GetArgument(2, "value");

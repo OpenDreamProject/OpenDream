@@ -15,15 +15,17 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        public DreamObjectDefinition ObjectDefinition { get; protected set; }
-        public bool Deleted { get; private set; }
+        public DreamObjectDefinition ObjectDefinition;
+
+        [Access(typeof(DreamObject))]
+        public bool Deleted;
 
         public virtual bool ShouldCallNew => true;
 
         // Shortcuts to IoC dependencies & entity systems
-        protected IDreamManager DreamManager => ObjectDefinition.DreamManager;
+        protected DreamManager DreamManager => ObjectDefinition.DreamManager;
         protected DreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
-        protected IAtomManager AtomManager => ObjectDefinition.AtomManager;
+        protected AtomManager AtomManager => ObjectDefinition.AtomManager;
         protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
         protected IMapManager MapManager => ObjectDefinition.MapManager;
         protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
@@ -107,7 +109,7 @@ namespace OpenDreamRuntime.Objects {
             HandleDeletion();
         }
 
-        public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
+        public bool IsSubtypeOf(TreeEntry ancestor) {
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 

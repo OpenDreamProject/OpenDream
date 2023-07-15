@@ -29,8 +29,8 @@ namespace Content.Tests
 
         private const string TESTS_DIRECTORY = "Tests";
 
-        [Dependency] private readonly IDreamManager _dreamMan = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamManager _dreamMan = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
 
         [Flags]

@@ -2,7 +2,7 @@
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNative {
-        public static void SetupNativeProcs(IDreamObjectTree objectTree) {
+        public static void SetupNativeProcs(DreamObjectTree objectTree) {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_alert);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_animate);
@@ -50,6 +50,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_islist);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isloc);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ismob);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isobj);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ismovable);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isnan);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_isnull);
@@ -163,8 +164,8 @@ namespace OpenDreamRuntime.Procs.Native {
         /// <summary>
         /// Sets a native proc that can be overriden by DM code
         /// </summary>
-        private static void SetOverridableNativeProc(IDreamObjectTree objectTree, IDreamObjectTree.TreeEntry type, NativeProc.HandlerFn func) {
-            var nativeProc = objectTree.CreateNativeProc(type.Path, func);
+        private static void SetOverridableNativeProc(DreamObjectTree objectTree, TreeEntry type, FastNativeProc.HandlerFn func) {
+            var nativeProc = objectTree.CreateFastNativeProc(type.Path, func);
 
             var proc = objectTree.World.ObjectDefinition.GetProc(nativeProc.Name);
             if (proc.SuperProc == null) { // This proc was never overriden so just replace it

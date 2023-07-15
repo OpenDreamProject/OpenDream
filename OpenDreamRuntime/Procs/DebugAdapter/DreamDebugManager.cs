@@ -10,8 +10,8 @@ using Robust.Server;
 namespace OpenDreamRuntime.Procs.DebugAdapter;
 
 internal sealed class DreamDebugManager : IDreamDebugManager {
-    [Dependency] private readonly IDreamManager _dreamManager = default!;
-    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+    [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
     [Dependency] private readonly IProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;

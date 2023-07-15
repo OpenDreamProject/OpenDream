@@ -18,8 +18,8 @@ namespace OpenDreamRuntime.Procs {
         public int Line { get; }
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
 
-        public readonly IAtomManager AtomManager;
-        public readonly IDreamManager DreamManager;
+        public readonly AtomManager AtomManager;
+        public readonly DreamManager DreamManager;
         public readonly IProcScheduler ProcScheduler;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IDreamDebugManager DreamDebugManager;
@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, IProcScheduler procScheduler)
+        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, IProcScheduler procScheduler)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
@@ -199,7 +199,7 @@ namespace OpenDreamRuntime.Procs {
         private static readonly unsafe delegate*<DMProcState, ProcStatus>[] _opcodeHandlers;
         #endregion
 
-        public IDreamManager DreamManager => _proc.DreamManager;
+        public DreamManager DreamManager => _proc.DreamManager;
         public IProcScheduler ProcScheduler => _proc.ProcScheduler;
         public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
@@ -232,9 +232,17 @@ namespace OpenDreamRuntime.Procs {
         static unsafe DMProcState() {
             int maxOpcode = (int)OpcodeHandlers.Keys.Max();
 
-            _opcodeHandlers = new delegate*<DMProcState, ProcStatus>[maxOpcode + 1];
+            _opcodeHandlers = new delegate*<DMProcState, ProcStatus>[256];
             foreach (var (dpo, handler) in OpcodeHandlers) {
                 _opcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
+            }
+
+            var invalid = DMOpcodeHandlers.Invalid;
+            var invalidPtr = (delegate*<DMProcState, ProcStatus>)invalid.Method.MethodHandle.GetFunctionPointer();
+
+            _opcodeHandlers[0] = invalidPtr;
+            for (int i = maxOpcode + 1; i < 256; i++) {
+                _opcodeHandlers[i] = invalidPtr;
             }
         }
 
@@ -286,32 +294,34 @@ namespace OpenDreamRuntime.Procs {
 #endif
 
             var procBytecode = _proc.Bytecode;
-            while (_pc < procBytecode.Length) {
+
+            if (procBytecode.Length == 0)
+                return ProcStatus.Returned;
+
+            fixed (delegate*<DMProcState, ProcStatus>* handlers = &_opcodeHandlers[0]) {
+                fixed (byte* bytecode = &procBytecode[0]) {
+                    var l = procBytecode.Length; // The length never changes so we stick it in a register.
+                    while (_pc < l) {
 #if TOOLS
-                if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
-                    DebugManager.HandleInstruction(this);
-                _firstResume = false;
+                        if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
+                            DebugManager.HandleInstruction(this);
+                        _firstResume = false;
 #endif
 
-                int opcode = procBytecode[_pc++];
-                var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
-                if (handler == null)
-                    ThrowInvalidOpcode(opcode);
+                        int opcode = bytecode[_pc];
+                        _pc += 1;
 
-                var status = handler(this);
+                        var handler = handlers[opcode];
+                        var status = handler(this);
 
-                if (status != ProcStatus.Continue) {
-                    return status;
+                        if (status != ProcStatus.Continue) {
+                            return status;
+                        }
+                    }
                 }
             }
 
             return ProcStatus.Returned;
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowInvalidOpcode(int opcode) {
-            throw new InvalidOperationException(
-                $"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
         }
 
         public override void ReturnedInto(DreamValue value) {
@@ -593,22 +603,22 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Src:
                     //TODO: src can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Instance)) {
-                        throw new Exception($"Cannot assign src to {value}");
+                        ThrowCannotAssignSrcTo(value);
                     }
 
                     break;
                 case DMReference.Type.Usr:
                     //TODO: usr can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Usr)) {
-                        throw new Exception($"Cannot assign usr to {value}");
+                        ThrowCannotAssignUsrTo(value);
                     }
                     break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
+                        ThrowCannotAssignFieldOn(reference, owner);
 
-                    ownerObj.SetVariable(ResolveString(reference.Value), value);
+                    ownerObj!.SetVariable(ResolveString(reference.Value), value);
                     break;
                 }
                 case DMReference.Type.ListIndex: {
@@ -617,13 +627,40 @@ namespace OpenDreamRuntime.Procs {
                     if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
                         dreamObject.OperatorIndexAssign(index, value);
                     } else {
-                        throw new Exception($"Cannot assign to index {index} of {indexing}");
+                        ThrowCannotAssignListIndex(index, indexing);
                     }
 
                     break;
                 }
-                default: throw new Exception($"Cannot assign to reference type {reference.Type}");
+                default:
+                    ThrowCannotAssignReferenceType(reference);
+                    break;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignReferenceType(DreamReference reference) {
+            throw new Exception($"Cannot assign to reference type {reference.Type}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignListIndex(DreamValue index, DreamValue indexing) {
+            throw new Exception($"Cannot assign to index {index} of {indexing}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowCannotAssignFieldOn(DreamReference reference, DreamValue owner) {
+            throw new Exception($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignSrcTo(DreamValue value) {
+            throw new Exception($"Cannot assign src to {value}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignUsrTo(DreamValue value) {
+            throw new Exception($"Cannot assign usr to {value}");
         }
 
         public DreamValue GetReferenceValue(DreamReference reference, bool peek = false) {
@@ -643,9 +680,9 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.SrcField: {
                     var fieldName = ResolveString(reference.Value);
                     if (Instance == null)
-                        throw new Exception($"Cannot get field src.{fieldName} in global proc");
-                    if (!Instance.TryGetVariable(fieldName, out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{fieldName}\"");
+                        ThrowCannotGetFieldSrcGlobalProc(fieldName);
+                    if (!Instance!.TryGetVariable(fieldName, out var fieldValue))
+                        ThrowTypeHasNoField(fieldName);
 
                     return fieldValue;
                 }
@@ -654,8 +691,25 @@ namespace OpenDreamRuntime.Procs {
 
                     return GetIndex(indexing, index);
                 }
-                default: throw new Exception($"Cannot get value of reference type {reference.Type}");
+                default:
+                    ThrowCannotGetValueOfReferenceType(reference);
+                    return DreamValue.Null;
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetValueOfReferenceType(DreamReference reference) {
+            throw new Exception($"Cannot get value of reference type {reference.Type}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetFieldSrcGlobalProc(string fieldName) {
+            throw new Exception($"Cannot get field src.{fieldName} in global proc");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowTypeHasNoField(string fieldName) {
+            throw new Exception($"Type {Instance!.ObjectDefinition!.Type} has no field called \"{fieldName}\"");
         }
 
         public void PopReference(DreamReference reference) {
@@ -690,19 +744,38 @@ namespace OpenDreamRuntime.Procs {
         public DreamValue DereferenceField(DreamValue owner, string field) {
             if (owner.TryGetValueAsDreamObject(out var ownerObj) && ownerObj != null) {
                 if (!ownerObj.TryGetVariable(field, out var fieldValue))
-                    throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
+                    ThrowTypeHasNoField(field, ownerObj);
 
                 return fieldValue;
             } else if (owner.TryGetValueAsProc(out var ownerProc)) {
                 return ownerProc.GetField(field);
             } else if (owner.TryGetValueAsAppearance(out var appearance)) {
                 if (!Proc.AtomManager.IsValidAppearanceVar(field))
-                    throw new Exception($"Invalid appearance var \"{field}\"");
+                    ThrowInvalidAppearanceVar(field);
 
                 return Proc.AtomManager.GetAppearanceVar(appearance, field);
             }
 
+            ThrowCannotGetFieldFromOwner(owner, field);
+            return DreamValue.Null;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetFieldFromOwner(DreamValue owner, string field)
+        {
             throw new Exception($"Cannot get field \"{field}\" from {owner}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidAppearanceVar(string field)
+        {
+            throw new Exception($"Invalid appearance var \"{field}\"");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowTypeHasNoField(string field, DreamObject? ownerObj)
+        {
+            throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
         public DreamValue GetIndex(DreamValue indexing, DreamValue index) {
@@ -712,7 +785,7 @@ namespace OpenDreamRuntime.Procs {
 
             if (indexing.TryGetValueAsString(out string? strValue)) {
                 if (!index.TryGetValueAsInteger(out int strIndex))
-                    throw new Exception($"Attempted to index string with {index}");
+                    ThrowAttemptedToIndexString(index);
 
                 char c = strValue[strIndex - 1];
                 return new DreamValue(Convert.ToString(c));
@@ -723,8 +796,22 @@ namespace OpenDreamRuntime.Procs {
                     return dreamObject.OperatorIndex(index);
             }
 
+            ThrowCannotGetIndex(indexing, index);
+            return DreamValue.Null;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetIndex(DreamValue indexing, DreamValue index)
+        {
             throw new Exception($"Cannot get index {index} of {indexing}");
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowAttemptedToIndexString(DreamValue index)
+        {
+            throw new Exception($"Attempted to index string with {index}");
+        }
+
         #endregion References
 
         public IEnumerable<(string, DreamValue)> DebugArguments() {

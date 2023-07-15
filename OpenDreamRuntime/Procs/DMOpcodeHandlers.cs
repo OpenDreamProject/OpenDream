@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -75,7 +76,7 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IAtomManager atomManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
+        private static IDreamValueEnumerator GetContentsEnumerator(DreamObjectTree objectTree, AtomManager atomManager, DreamValue value, TreeEntry? filterType) {
             if (!value.TryGetValueAsDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
@@ -573,13 +574,13 @@ namespace OpenDreamRuntime.Procs {
                         list = listObject.GetVariable("contents").MustGetValueAsDreamList();
                     } else {
                         // BYOND ignores all floats, strings, types, etc. here and just returns 0.
-                        state.Push(new DreamValue(0));
+                        state.Push(DreamValue.False);
                     }
                 }
 
                 state.Push(new DreamValue(list.ContainsValue(value) ? 1 : 0));
             } else {
-                state.Push(new DreamValue(0));
+                state.Push(DreamValue.False);
             }
 
             return ProcStatus.Continue;
@@ -688,10 +689,16 @@ namespace OpenDreamRuntime.Procs {
             if (output.Type != 0) {
                 state.Push(output);
             } else {
-                throw new Exception("Invalid add operation on " + first + " and " + second);
+                ThrowInvalidAddOperation(first, second);
             }
 
             return ProcStatus.Continue;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidAddOperation(DreamValue first, DreamValue second)
+        {
+            throw new Exception("Invalid add operation on " + first + " and " + second);
         }
 
         public static ProcStatus Append(DMProcState state) {
@@ -743,12 +750,7 @@ namespace OpenDreamRuntime.Procs {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue + 1));
-            } else {
-                //If it's not a number, it turns into 1
-                state.AssignReference(reference, new(1));
-            }
+            state.AssignReference(reference, new(value.MustGetValueAsInteger() + 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -758,12 +760,7 @@ namespace OpenDreamRuntime.Procs {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue - 1));
-            } else {
-                //If it's not a number, it turns into -1
-                state.AssignReference(reference, new(-1));
-            }
+            state.AssignReference(reference, new(value.MustGetValueAsInteger() - 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -773,7 +770,9 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.TryGetValueAsDreamList(out DreamList list)) {
+            if (!first.IsDreamObject<DreamList>() && !first.IsNull && !second.IsNull) {
+                state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
+            } else if (first.TryGetValueAsDreamList(out DreamList list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
 
                 if (second.TryGetValueAsDreamList(out DreamList secondList)) {
@@ -805,8 +804,6 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 state.Push(new DreamValue(newList));
-            } else if (!first.IsNull && !second.IsNull) {
-                state.Push(new DreamValue(first.GetValueAsInteger() & second.GetValueAsInteger()));
             } else {
                 state.Push(new DreamValue(0));
             }
@@ -1301,7 +1298,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus IsType(DMProcState state) {
             DreamValue typeValue = state.Pop();
             DreamValue value = state.Pop();
-            IDreamObjectTree.TreeEntry type;
+            TreeEntry type;
 
             if (typeValue.TryGetValueAsDreamObject(out var typeObject)) {
                 if (typeObject == null) {
@@ -1368,6 +1365,13 @@ namespace OpenDreamRuntime.Procs {
             }
 
             DreamProcArguments arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
+
+            if (proc is FastNativeProc p) {
+                // Skip a whole song and dance.
+                state.Push(p.FastCall(state.Thread, instance, state.Usr, arguments));
+                return ProcStatus.Continue;
+            }
+
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }
@@ -1394,6 +1398,11 @@ namespace OpenDreamRuntime.Procs {
 
                     if (proc != null) {
                         DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
+                        if (proc is FastNativeProc p) {
+                            // Skip a whole song and dance.
+                            state.Push(p.FastCall(state.Thread, dreamObject, state.Usr, arguments));
+                            return ProcStatus.Continue;
+                        }
                         state.Call(proc, dreamObject, arguments);
                         return ProcStatus.Called;
                     }
@@ -1404,6 +1413,13 @@ namespace OpenDreamRuntime.Procs {
                     var proc = source.MustGetValueAsProc();
 
                     DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
+
+                    if (proc is FastNativeProc p) {
+                        // Skip a whole song and dance.
+                        state.Push(p.FastCall(state.Thread, state.Instance, state.Usr, arguments));
+                        return ProcStatus.Continue;
+                    }
+
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
                 }
@@ -1461,6 +1477,10 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus Error(DMProcState state) {
             throw new Exception("Reached an error opcode");
+        }
+
+        public static ProcStatus Invalid(DMProcState state) {
+            throw new Exception("Reached an invalid opcode!");
         }
 
         public static ProcStatus Jump(DMProcState state) {
@@ -2218,6 +2238,12 @@ namespace OpenDreamRuntime.Procs {
 
             var arguments = state.CreateProcArguments(argumentValues, proc, argumentInfo.Type, argumentInfo.StackSize);
 
+            if (proc is FastNativeProc p) {
+                // Skip a whole song and dance.
+                state.Push(p.FastCall(state.Thread, instance, state.Usr, arguments));
+                return ProcStatus.Continue;
+            }
+
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }
@@ -2372,7 +2398,7 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static DreamValue BitXorValues(IDreamObjectTree objectTree, DreamValue first, DreamValue second) {
+        private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {
             if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = objectTree.CreateList();
                 List<DreamValue> values;

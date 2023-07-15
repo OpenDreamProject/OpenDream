@@ -23,12 +23,13 @@ namespace OpenDreamRuntime {
         public readonly bool IsVerb;
 
         // This is currently publicly settable because the loading code doesn't know what our super is until after we are instantiated
-        public DreamProc? SuperProc { set; get; }
+        public DreamProc? SuperProc;
 
-        public ProcAttributes Attributes { get; }
+        public readonly ProcAttributes Attributes;
 
-        public List<String>? ArgumentNames { get; }
-        public List<DMValueType>? ArgumentTypes { get; }
+        public readonly List<String>? ArgumentNames;
+
+        public readonly List<DMValueType>? ArgumentTypes;
 
         public string? VerbName { get; }
         public string? VerbCategory { get; } = string.Empty;
@@ -389,7 +390,7 @@ namespace OpenDreamRuntime {
         public void HandleException(Exception exception) {
             _current?.Cancel();
 
-            var dreamMan = IoCManager.Resolve<IDreamManager>();
+            var dreamMan = IoCManager.Resolve<DreamManager>();
             dreamMan.HandleException(exception);
 
             StringBuilder builder = new();

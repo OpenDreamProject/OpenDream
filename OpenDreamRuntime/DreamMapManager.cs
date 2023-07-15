@@ -13,10 +13,10 @@ using Level = OpenDreamRuntime.IDreamMapManager.Level;
 using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
 
 namespace OpenDreamRuntime {
-    internal sealed class DreamMapManager : IDreamMapManager {
-        [Dependency] private readonly IAtomManager _atomManager = default!;
+    public sealed class DreamMapManager : IDreamMapManager {
+        [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         // Set in Initialize
@@ -32,7 +32,7 @@ namespace OpenDreamRuntime {
 
         // Set in Initialize
         private MapObjectJson _defaultArea = default!;
-        private IDreamObjectTree.TreeEntry _defaultTurf = default!;
+        private TreeEntry _defaultTurf = default!;
 
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();

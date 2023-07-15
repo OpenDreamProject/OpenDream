@@ -9,31 +9,31 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("start", Type = DreamValue.DreamValueTypeFlag.Float | DreamValue.DreamValueTypeFlag.DreamObject)] // BYOND docs say these are uppercase, they're not
         [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_Find(NativeProc.State state) {
-            DreamObjectRegex dreamRegex = (DreamObjectRegex)state.Src!;
+        public static DreamValue NativeProc_Find(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
+            DreamObjectRegex dreamRegex = (DreamObjectRegex)src!;
             DreamValue haystack = state.GetArgument(0, "haystack");
 
             if (!haystack.TryGetValueAsString(out var haystackString)) {
                 haystackString = string.Empty;
             }
 
-            int next = GetNext(state.Src, state.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
+            int next = GetNext(src!, state.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
             int end = state.GetArgument(2, "end").GetValueAsInteger();
 
-            state.Src.SetVariable("text", haystack);
+            dreamRegex.SetVariable("text", haystack);
 
             if (end == 0) end = haystackString.Length;
             if (haystackString.Length <= next - 1) {
                 if (dreamRegex.IsGlobal) {
-                    state.Src.SetVariable("next", DreamValue.Null);
+                    dreamRegex.SetVariable("next", DreamValue.Null);
                 }
                 return new DreamValue(0);
             }
 
             Match match = dreamRegex.Regex.Match(haystackString, Math.Clamp(next - 1, 0, haystackString.Length), end - next + 1);
             if (match.Success) {
-                state.Src.SetVariable("index", new DreamValue(match.Index + 1));
-                state.Src.SetVariable("match", new DreamValue(match.Value));
+                dreamRegex.SetVariable("index", new DreamValue(match.Index + 1));
+                dreamRegex.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
                     DreamList groupList = state.ObjectTree.CreateList(match.Groups.Count);
 
@@ -41,17 +41,17 @@ namespace OpenDreamRuntime.Procs.Native {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));
                     }
 
-                    state.Src.SetVariable("group", new DreamValue(groupList));
+                    dreamRegex.SetVariable("group", new DreamValue(groupList));
                 }
 
                 if (dreamRegex.IsGlobal) {
-                    state.Src.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
+                    dreamRegex.SetVariable("next", new DreamValue(match.Index + match.Length + 1));
                 }
 
                 return new DreamValue(match.Index + 1);
             } else {
                 if (dreamRegex.IsGlobal) {
-                    state.Src.SetVariable("next", DreamValue.Null);
+                    dreamRegex.SetVariable("next", DreamValue.Null);
                 }
                 return new DreamValue(0);
             }

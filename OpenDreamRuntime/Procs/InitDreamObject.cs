@@ -5,8 +5,8 @@ namespace OpenDreamRuntime.Procs {
     sealed class InitDreamObjectState : ProcState {
         public static readonly Stack<InitDreamObjectState> Pool = new();
 
-        private readonly IDreamManager _dreamMan;
-        private readonly IDreamObjectTree _objectTree;
+        private readonly DreamManager _dreamMan;
+        private readonly DreamObjectTree _objectTree;
 
         enum Stage {
             // Need to call the object's (init) proc
@@ -19,7 +19,7 @@ namespace OpenDreamRuntime.Procs {
             Return,
         }
 
-        public InitDreamObjectState(IDreamManager dreamManager, IDreamObjectTree objectTree) {
+        public InitDreamObjectState(DreamManager dreamManager, DreamObjectTree objectTree) {
             _dreamMan = dreamManager;
             _objectTree = objectTree;
         }

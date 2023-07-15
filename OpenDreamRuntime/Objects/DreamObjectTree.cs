@@ -397,6 +397,14 @@ namespace OpenDreamRuntime.Objects {
             return proc;
         }
 
+        internal FastNativeProc CreateFastNativeProc(DreamPath owningType, FastNativeProc.HandlerFn func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new FastNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
+
+            Procs.Add(proc);
+            return proc;
+        }
+
         public AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
@@ -412,6 +420,13 @@ namespace OpenDreamRuntime.Objects {
             Procs[proc.Id] = proc;
         }
 
+        internal void SetGlobalNativeProc(FastNativeProc.HandlerFn func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
+            var proc = new FastNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
+
+            Procs[proc.Id] = proc;
+        }
+
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new AsyncNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
@@ -421,6 +436,12 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetNativeProc(TreeEntry type, NativeProc.HandlerFn func) {
             var proc = CreateNativeProc(type.Path, func);
+
+            type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
+        }
+
+        internal void SetFastNativeProc(TreeEntry type, FastNativeProc.HandlerFn func) {
+            var proc = CreateFastNativeProc(type.Path, func);
 
             type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
         }

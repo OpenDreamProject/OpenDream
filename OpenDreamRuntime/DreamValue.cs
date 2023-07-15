@@ -1,4 +1,4 @@
-using Dependency = Robust.Shared.IoC.DependencyAttribute;
+﻿using Dependency = Robust.Shared.IoC.DependencyAttribute;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
@@ -49,9 +49,26 @@ namespace OpenDreamRuntime {
             // @formatter:on
         }
 
-        public static readonly DreamValue Null = new DreamValue((DreamObject?) null);
-        public static DreamValue True => new DreamValue(1f);
-        public static DreamValue False => new DreamValue(0f);
+
+        public static DreamValue Null {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get {
+                return new DreamValue((DreamObject?) null);
+            }
+        }
+
+        public static DreamValue True {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get {
+                return new DreamValue(1f);
+            }
+        }
+        public static DreamValue False {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get {
+                return new DreamValue(0f);
+            }
+        }
 
         public DreamValueType Type { get; private init; }
 
@@ -216,7 +233,7 @@ namespace OpenDreamRuntime {
 
         public bool TryGetValueAsDreamObject(out DreamObject? dreamObject) {
             if (Type == DreamValueType.DreamObject) {
-                dreamObject = MustGetValueAsDreamObject();
+                dreamObject = MustGetValueAsDreamObject()!;
                 return true;
             } else {
                 dreamObject = null;
@@ -239,6 +256,11 @@ namespace OpenDreamRuntime {
         [MethodImpl(MethodImplOptions.NoInlining)]
         private void ThrowInvalidCastDreamObject() {
             throw new InvalidCastException($"Value {this} was not the expected type of DreamObject");
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsDreamObject<T>() where T : DreamObject {
+            return _refValue is T;
         }
 
         public bool TryGetValueAsDreamObject<T>([NotNullWhen(true)] out T? dreamObject) where T : DreamObject {

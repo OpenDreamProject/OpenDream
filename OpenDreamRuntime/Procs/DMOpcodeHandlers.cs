@@ -1368,6 +1368,13 @@ namespace OpenDreamRuntime.Procs {
             }
 
             DreamProcArguments arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
+
+            if (proc is FastNativeProc p) {
+                // Skip a whole song and dance.
+                state.Push(p.FastCall(state.Thread, instance, state.Usr, arguments));
+                return ProcStatus.Continue;
+            }
+
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;
         }
@@ -1394,6 +1401,11 @@ namespace OpenDreamRuntime.Procs {
 
                     if (proc != null) {
                         DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
+                        if (proc is FastNativeProc p) {
+                            // Skip a whole song and dance.
+                            state.Push(p.FastCall(state.Thread, dreamObject, state.Usr, arguments));
+                            return ProcStatus.Continue;
+                        }
                         state.Call(proc, dreamObject, arguments);
                         return ProcStatus.Called;
                     }
@@ -1404,6 +1416,13 @@ namespace OpenDreamRuntime.Procs {
                     var proc = source.MustGetValueAsProc();
 
                     DreamProcArguments arguments = state.PopProcArguments(proc, argumentsInfo.Type, argumentsInfo.StackSize);
+
+                    if (proc is FastNativeProc p) {
+                        // Skip a whole song and dance.
+                        state.Push(p.FastCall(state.Thread, state.Instance, state.Usr, arguments));
+                        return ProcStatus.Continue;
+                    }
+
                     state.Call(proc, state.Instance, arguments);
                     return ProcStatus.Called;
                 }
@@ -2219,6 +2238,12 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception($"Type {instance.ObjectDefinition.Type} has no proc called \"{name}\"");
 
             var arguments = state.CreateProcArguments(argumentValues, proc, argumentInfo.Type, argumentInfo.StackSize);
+
+            if (proc is FastNativeProc p) {
+                // Skip a whole song and dance.
+                state.Push(p.FastCall(state.Thread, instance, state.Usr, arguments));
+                return ProcStatus.Continue;
+            }
 
             state.Call(proc, instance, arguments);
             return ProcStatus.Called;

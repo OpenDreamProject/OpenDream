@@ -18,7 +18,7 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
-    internal partial class DreamManager : IDreamManager {
+    internal sealed partial class DreamManager : IDreamManager {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -121,7 +121,7 @@ namespace OpenDreamRuntime {
 
             _objectTree.LoadJson(json);
 
-            DreamProcNative.SetupNativeProcs(_objectTree);
+            DreamProcNative.SetupNativeProcs((DreamObjectTree)_objectTree);
 
             _dreamMapManager.Initialize();
             WorldInstance = new DreamObjectWorld(_objectTree.World.ObjectDefinition);

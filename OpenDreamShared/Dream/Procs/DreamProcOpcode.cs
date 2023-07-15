@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace OpenDreamShared.Dream.Procs {
-    public enum DreamProcOpcode {
+    public enum DreamProcOpcode : byte {
         BitShiftLeft = 0x1,
         PushType = 0x2,
         PushString = 0x3,

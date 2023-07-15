@@ -2,7 +2,7 @@
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNative {
-        public static void SetupNativeProcs(IDreamObjectTree objectTree) {
+        public static void SetupNativeProcs(DreamObjectTree objectTree) {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_alert);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_animate);
@@ -122,14 +122,14 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winexists);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Add);
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Copy);
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Cut);
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Find);
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Insert);
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Join);
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
-            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Add);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Copy);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Cut);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Find);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Insert);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Join);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
+            objectTree.SetFastNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Add);
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Invert);

@@ -1479,6 +1479,10 @@ namespace OpenDreamRuntime.Procs {
             throw new Exception("Reached an error opcode");
         }
 
+        public static ProcStatus Invalid(DMProcState state) {
+            throw new Exception("Reached an invalid opcode!");
+        }
+
         public static ProcStatus Jump(DMProcState state) {
             int position = state.ReadInt();
 

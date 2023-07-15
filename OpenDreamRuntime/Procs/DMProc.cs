@@ -229,9 +229,17 @@ namespace OpenDreamRuntime.Procs {
         static unsafe DMProcState() {
             int maxOpcode = (int)OpcodeHandlers.Keys.Max();
 
-            _opcodeHandlers = new delegate*<DMProcState, ProcStatus>[maxOpcode + 1];
+            _opcodeHandlers = new delegate*<DMProcState, ProcStatus>[256];
             foreach (var (dpo, handler) in OpcodeHandlers) {
                 _opcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
+            }
+
+            var invalid = DMOpcodeHandlers.Invalid;
+            var invalidPtr = (delegate*<DMProcState, ProcStatus>)invalid.Method.MethodHandle.GetFunctionPointer();
+
+            _opcodeHandlers[0] = invalidPtr;
+            for (int i = maxOpcode + 1; i < 256; i++) {
+                _opcodeHandlers[i] = invalidPtr;
             }
         }
 
@@ -291,9 +299,7 @@ namespace OpenDreamRuntime.Procs {
 #endif
 
                 int opcode = procBytecode[_pc++];
-                var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
-                if (handler == null)
-                    ThrowInvalidOpcode(opcode);
+                var handler = _opcodeHandlers[opcode];
 
                 var status = handler(this);
 

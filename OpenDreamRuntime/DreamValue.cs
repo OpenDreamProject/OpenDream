@@ -70,7 +70,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public DreamValueType Type { get; private init; }
+        public readonly DreamValueType Type;
 
         private object? _refValue;
         private readonly float _floatValue;
@@ -120,18 +120,23 @@ namespace OpenDreamRuntime {
             get => Type == DreamValueType.DreamObject && _refValue == null;
         }
 
+        private DreamValue(DreamValueType type, object refValue) {
+            Type = type;
+            _refValue = refValue;
+        }
+
         public static DreamValue CreateProcStub(IDreamObjectTree.TreeEntry type) {
-            return new DreamValue {
-                Type = DreamValueType.ProcStub,
-                _refValue = type
-            };
+            return new DreamValue(
+                DreamValueType.ProcStub,
+                type
+            );
         }
 
         public static DreamValue CreateVerbStub(IDreamObjectTree.TreeEntry type) {
-            return new DreamValue {
-                Type = DreamValueType.VerbStub,
-                _refValue = type
-            };
+            return new DreamValue(
+                DreamValueType.VerbStub,
+                type
+            );
         }
 
         public override string ToString() {

@@ -1636,14 +1636,12 @@ namespace OpenDreamRuntime.Procs {
                 // TODO: Does the rest of the proc get scheduled?
                 // Does the value of the delay mean anything?
             } else {
-                new Task(async () => {
-                    if (delayMilliseconds != 0) {
-                        await Task.Delay(delayMilliseconds);
-                    } else {
-                        await Task.Yield();
-                    }
+                async void Wait() {
+                    await state.ProcScheduler.CreateDelay(delay);
                     newContext.Resume();
-                }).Start(TaskScheduler.FromCurrentSynchronizationContext());
+                }
+
+                Wait();
             }
 
             state.Jump(jumpTo);

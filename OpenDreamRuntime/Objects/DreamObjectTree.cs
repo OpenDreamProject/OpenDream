@@ -56,6 +56,7 @@ namespace OpenDreamRuntime.Objects {
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
+        [Dependency] private readonly IProcScheduler _procScheduler = default!;
         private ServerAppearanceSystem? _appearanceSystem;
         private TransformSystem? _transformSystem;
 
@@ -66,7 +67,7 @@ namespace OpenDreamRuntime.Objects {
             Strings = json.Strings ?? new();
 
             if (json.GlobalInitProc is { } initProcDef) {
-                GlobalInitProc = new DMProc(0, DreamPath.Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
+                GlobalInitProc = new DMProc(0, DreamPath.Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
             } else {
                 GlobalInitProc = null;
             }
@@ -365,7 +366,7 @@ namespace OpenDreamRuntime.Objects {
         public DreamProc LoadProcJson(int id, DreamTypeJson[] types, ProcDefinitionJson procDefinition) {
             DreamPath owningType = new DreamPath(types[procDefinition.OwningTypeId].Path);
             return new DMProc(id, owningType, procDefinition, null, _dreamManager,
-                _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this);
+                _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
         }
 
         private void LoadProcsFromJson(DreamTypeJson[] types, ProcDefinitionJson[]? jsonProcs, int[]? jsonGlobalProcs) {

@@ -2179,19 +2179,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
         public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
             state.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
-            int delayMilliseconds = (int)(delay * 100);
 
-            // TODO: This may not be the proper behaviour, see https://www.byond.com/docs/ref/#/proc/sleep
-            // sleep(0) should sleep for the minimum amount of time possible, whereas
-            // sleep called with a negative value should do a backlog check, meaning it only sleeps
-            // when other events are backlogged
-            if (delayMilliseconds > 0) {
-                await Task.Delay(delayMilliseconds);
-            } else {
-                // TODO: This postpones execution until the next tick.
-                // It should instead start again in the current tick if possible.
-                await Task.Yield();
-            }
+            await IoCManager.Resolve<IProcScheduler>().CreateDelay(delay);
 
             return DreamValue.Null;
         }

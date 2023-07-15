@@ -291,30 +291,34 @@ namespace OpenDreamRuntime.Procs {
 #endif
 
             var procBytecode = _proc.Bytecode;
-            while (_pc < procBytecode.Length) {
+
+            if (procBytecode.Length == 0)
+                return ProcStatus.Returned;
+
+            fixed (delegate*<DMProcState, ProcStatus>* handlers = &_opcodeHandlers[0]) {
+                fixed (byte* bytecode = &procBytecode[0]) {
+                    var l = procBytecode.Length; // The length never changes so we stick it in a register.
+                    while (_pc < l) {
 #if TOOLS
-                if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
-                    DebugManager.HandleInstruction(this);
-                _firstResume = false;
+                        if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
+                            DebugManager.HandleInstruction(this);
+                        _firstResume = false;
 #endif
 
-                int opcode = procBytecode[_pc++];
-                var handler = _opcodeHandlers[opcode];
+                        int opcode = bytecode[_pc];
+                        _pc += 1;
 
-                var status = handler(this);
+                        var handler = handlers[opcode];
+                        var status = handler(this);
 
-                if (status != ProcStatus.Continue) {
-                    return status;
+                        if (status != ProcStatus.Continue) {
+                            return status;
+                        }
+                    }
                 }
             }
 
             return ProcStatus.Returned;
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowInvalidOpcode(int opcode) {
-            throw new InvalidOperationException(
-                $"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
         }
 
         public override void ReturnedInto(DreamValue value) {

@@ -74,7 +74,7 @@ namespace OpenDreamRuntime.Procs.Native {
             state.GetArgument(0, "command").TryGetValueAsInteger(out var command);
 
             string? type, format;
-            switch (state.Arguments.Count) {
+            switch (state.Arguments.Length) {
                 case 3:
                     state.GetArgument(1, "type").TryGetValueAsString(out type);
                     state.GetArgument(2, "format").TryGetValueAsString(out format);

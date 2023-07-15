@@ -7,57 +7,62 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs;
 
-public sealed class FastNativeProc : DreamProc
+public unsafe sealed class FastNativeProc : DreamProc
 {
-    internal delegate DreamValue HandlerFn(FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr);
+    public delegate DreamValue HandlerFn(FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr);
 
     private readonly DreamManager _dreamManager;
     private readonly AtomManager _atomManager;
-    private readonly DreamMapManager _mapManager;
+    private readonly IDreamMapManager _mapManager;
     private readonly DreamResourceManager _resourceManager;
     private readonly DreamObjectTree _objectTree;
 
-    internal ref struct FastNativeProcBundle {
+    public ref struct FastNativeProcBundle {
         public FastNativeProc Proc;
 
-        // TODO: Evaluate if it's faster to just entirely inline this.
-        public DreamProcArguments Arguments;
+        // NOTE: Deliberately not using DreamProcArguments here, tis slow.
+        public readonly ReadOnlySpan<DreamValue> Arguments;
 
         public DreamManager DreamManager => Proc._dreamManager;
         public AtomManager AtomManager => Proc._atomManager;
-        public DreamMapManager MapManager => Proc._mapManager;
+        public IDreamMapManager MapManager => Proc._mapManager;
         public DreamResourceManager ResourceManager => Proc._resourceManager;
         public DreamObjectTree ObjectTree => Proc._objectTree;
 
         public FastNativeProcBundle(FastNativeProc proc, DreamProcArguments arguments) {
             Proc = proc;
-            Arguments = arguments;
+            Arguments = arguments.Values;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining), Pure]
+        [Pure]
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
-            var r = Arguments.GetArgument(argumentPosition);
-            if (argumentPosition < Arguments.Values.Length && !r.IsNull)
-                return r;
+            if (Arguments.Length > argumentPosition) {
+                return Arguments[argumentPosition];
+            }
 
+            return GetArgumentFallback(argumentName);
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private DreamValue GetArgumentFallback(string argumentName) {
             return Proc._defaultArgumentValues?.TryGetValue(argumentName, out var argValue) == true ? argValue : DreamValue.Null;
         }
+
     }
 
     private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
-    private readonly HandlerFn _handler;
+    private readonly delegate*<FastNativeProcBundle, DreamObject?, DreamObject?, DreamValue> _handler;
 
-    internal FastNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, DreamObjectTree objectTree)
+    public unsafe FastNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, DreamObjectTree objectTree)
         : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
         _defaultArgumentValues = defaultArgumentValues;
-        _handler = handler;
+        _handler = (delegate*<FastNativeProcBundle, DreamObject?, DreamObject?, DreamValue>)handler.Method.MethodHandle.GetFunctionPointer();
 
-        // todo: remove the stupid OOP!! This shit shouldn't have to be internal all these interfaces are redundant as fuck
         _dreamManager = dreamManager;
-        _atomManager = (AtomManager)atomManager;
-        _mapManager = (DreamMapManager)mapManager;
+        _atomManager = atomManager;
+        _mapManager = mapManager;
         _resourceManager = resourceManager;
-        _objectTree = (DreamObjectTree)objectTree;
+        _objectTree = objectTree;
     }
 
     public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr,

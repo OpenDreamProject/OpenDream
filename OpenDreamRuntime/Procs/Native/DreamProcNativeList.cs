@@ -10,7 +10,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_Add(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
 
-            foreach (var argument in bundle.Arguments.Values) {
+            foreach (var argument in bundle.Arguments) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     foreach (DreamValue value in argumentList.GetValues()) {
                         list.AddValue(value);
@@ -68,10 +68,10 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = (DreamList)src!;
 
             if (index <= 0) index = list.GetLength() + 1;
-            if (bundle.Arguments.Count < 2) throw new Exception("No value given to insert");
+            if (bundle.Arguments.Length < 2) throw new Exception("No value given to insert");
 
-            for (var i = 1; i < bundle.Arguments.Values.Length; i++) {
-                var item = bundle.Arguments.Values[i];
+            for (var i = 1; i < bundle.Arguments.Length; i++) {
+                var item = bundle.Arguments[i];
 
                 if (item.TryGetValueAsDreamList(out var valueList)) {
                     foreach (DreamValue value in valueList.GetValues()) {
@@ -124,7 +124,7 @@ namespace OpenDreamRuntime.Procs.Native {
             DreamList list = (DreamList)src!;
             bool itemRemoved = false;
 
-            foreach (var argument in bundle.Arguments.Values) {
+            foreach (var argument in bundle.Arguments) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     foreach (DreamValue value in argumentList.GetValues()) {
                         if (list.ContainsValue(value)) {

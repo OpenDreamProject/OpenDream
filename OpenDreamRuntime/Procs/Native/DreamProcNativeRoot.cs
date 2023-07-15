@@ -1096,7 +1096,7 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.True;
         }
 
-        private static DreamValue CreateValueFromJsonElement(IDreamObjectTree objectTree, JsonElement jsonElement) {
+        private static DreamValue CreateValueFromJsonElement(DreamObjectTree objectTree, JsonElement jsonElement) {
             switch (jsonElement.ValueKind) {
                 case JsonValueKind.Array: {
                     DreamList list = objectTree.CreateList(jsonElement.GetArrayLength());
@@ -1144,7 +1144,7 @@ namespace OpenDreamRuntime.Procs.Native {
         /// </summary>
         /// <param name="writer">The json writer to encode into</param>
         /// <param name="value">The DreamValue to encode</param>
-        private static void JsonEncode(Utf8JsonWriter writer, IDreamObjectTree objectTree,  DreamValue value) {
+        private static void JsonEncode(Utf8JsonWriter writer, DreamObjectTree objectTree,  DreamValue value) {
             // In parity with DM, we give up and just print a 'null' at the maximum recursion.
             if (writer.CurrentDepth >= 20) {
                 writer.WriteNullValue();
@@ -1746,7 +1746,7 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(view);
         }
 
-        public static DreamList params2list(IDreamObjectTree objectTree, string queryString) {
+        public static DreamList params2list(DreamObjectTree objectTree, string queryString) {
             queryString = queryString.Replace(";", "&");
             NameValueCollection query = HttpUtility.ParseQueryString(queryString);
             DreamList list = objectTree.CreateList();
@@ -2471,7 +2471,7 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue((float)Math.Sqrt(a));
         }
 
-        private static void OutputToStatPanel(IDreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
+        private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
             if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
                 foreach (var item in list.GetValues())
                     OutputToStatPanel(dreamManager, connection, name, item);

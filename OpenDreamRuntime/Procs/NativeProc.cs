@@ -52,11 +52,11 @@ namespace OpenDreamRuntime.Procs {
             private NativeProc _proc = default!;
             public override NativeProc Proc => _proc;
 
-            public IDreamManager DreamManager => _proc._dreamManager;
-            public IAtomManager AtomManager => _proc._atomManager;
+            public DreamManager DreamManager => _proc._dreamManager;
+            public AtomManager AtomManager => _proc._atomManager;
             public IDreamMapManager MapManager => _proc._mapManager;
             public DreamResourceManager ResourceManager => _proc._resourceManager;
-            public IDreamObjectTree ObjectTree => _proc._objectTree;
+            public DreamObjectTree ObjectTree => _proc._objectTree;
 
             public void Initialize(NativeProc proc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
                 base.Initialize(thread, true);
@@ -98,16 +98,16 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private readonly IDreamManager _dreamManager;
-        private readonly IAtomManager _atomManager;
+        private readonly DreamManager _dreamManager;
+        private readonly AtomManager _atomManager;
         private readonly IDreamMapManager _mapManager;
         private readonly DreamResourceManager _resourceManager;
-        private readonly IDreamObjectTree _objectTree;
+        private readonly DreamObjectTree _objectTree;
 
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly HandlerFn _handler;
 
-        public NativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
+        public NativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, DreamObjectTree objectTree)
             : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _handler = handler;

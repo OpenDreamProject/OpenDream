@@ -164,7 +164,7 @@ namespace OpenDreamRuntime.Procs.Native {
         /// <summary>
         /// Sets a native proc that can be overriden by DM code
         /// </summary>
-        private static void SetOverridableNativeProc(DreamObjectTree objectTree, IDreamObjectTree.TreeEntry type, FastNativeProc.HandlerFn func) {
+        private static void SetOverridableNativeProc(DreamObjectTree objectTree, TreeEntry type, FastNativeProc.HandlerFn func) {
             var nativeProc = objectTree.CreateFastNativeProc(type.Path, func);
 
             var proc = objectTree.World.ObjectDefinition.GetProc(nativeProc.Name);

@@ -37,9 +37,9 @@ namespace OpenDreamRuntime.Procs {
     /// </summary>
     sealed class DreamObjectEnumerator : IDreamValueEnumerator {
         private readonly IEnumerator<DreamObject> _dreamObjectEnumerator;
-        private readonly IDreamObjectTree.TreeEntry? _filterType;
+        private readonly TreeEntry? _filterType;
 
-        public DreamObjectEnumerator(IEnumerable<DreamObject> dreamObjects, IDreamObjectTree.TreeEntry? filterType = null) {
+        public DreamObjectEnumerator(IEnumerable<DreamObject> dreamObjects, TreeEntry? filterType = null) {
             _dreamObjectEnumerator = dreamObjects.GetEnumerator();
             _filterType = filterType;
         }
@@ -87,10 +87,10 @@ namespace OpenDreamRuntime.Procs {
     /// </summary>
     sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
         private readonly DreamValue[] _dreamValueArray;
-        private readonly IDreamObjectTree.TreeEntry _filterType;
+        private readonly TreeEntry _filterType;
         private int _current = -1;
 
-        public FilteredDreamValueArrayEnumerator(DreamValue[] dreamValueArray, IDreamObjectTree.TreeEntry filterType) {
+        public FilteredDreamValueArrayEnumerator(DreamValue[] dreamValueArray, TreeEntry filterType) {
             _dreamValueArray = dreamValueArray;
             _filterType = filterType;
         }
@@ -119,11 +119,11 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/obj/item/I in world)</code>
     /// </summary>
     sealed class WorldContentsEnumerator : IDreamValueEnumerator {
-        private readonly IAtomManager _atomManager;
-        private readonly IDreamObjectTree.TreeEntry? _filterType;
+        private readonly AtomManager _atomManager;
+        private readonly TreeEntry? _filterType;
         private int _current = -1;
 
-        public WorldContentsEnumerator(IAtomManager atomManager, IDreamObjectTree.TreeEntry? filterType) {
+        public WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) {
             _atomManager = atomManager;
             _filterType = filterType;
         }

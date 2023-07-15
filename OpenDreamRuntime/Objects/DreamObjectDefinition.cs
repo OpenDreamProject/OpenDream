@@ -10,9 +10,9 @@ using Robust.Shared.Serialization.Manager;
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectDefinition {
         // IoC dependencies & entity systems for DreamObjects to use
-        public readonly IDreamManager DreamManager;
+        public readonly DreamManager DreamManager;
         public readonly DreamObjectTree ObjectTree;
-        public readonly IAtomManager AtomManager;
+        public readonly AtomManager AtomManager;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IMapManager MapManager;
         public readonly DreamResourceManager DreamResourceManager;
@@ -22,7 +22,7 @@ namespace OpenDreamRuntime.Objects {
         public readonly ServerAppearanceSystem? AppearanceSystem;
         public readonly TransformSystem? TransformSystem;
 
-        public readonly IDreamObjectTree.TreeEntry TreeEntry;
+        public readonly TreeEntry TreeEntry;
         public DreamPath Type => TreeEntry.Path;
         public DreamObjectDefinition? Parent => TreeEntry.ParentEntry?.ObjectDefinition;
         public int? InitializationProc;
@@ -59,7 +59,7 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(IDreamManager dreamManager, DreamObjectTree objectTree, IAtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, IDreamObjectTree.TreeEntry? treeEntry) {
+        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, TreeEntry? treeEntry) {
             DreamManager = dreamManager;
             ObjectTree = objectTree;
             AtomManager = atomManager;
@@ -145,7 +145,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
+        public bool IsSubtypeOf(TreeEntry ancestor) {
             // Unsigned underflow is desirable here
             return (TreeEntry.TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;
         }

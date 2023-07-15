@@ -18,8 +18,8 @@ namespace OpenDreamRuntime.Procs {
         public int Line { get; }
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
 
-        public readonly IAtomManager AtomManager;
-        public readonly IDreamManager DreamManager;
+        public readonly AtomManager AtomManager;
+        public readonly DreamManager DreamManager;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IDreamDebugManager DreamDebugManager;
         public readonly DreamResourceManager DreamResourceManager;
@@ -27,7 +27,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree)
+        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
@@ -197,7 +197,7 @@ namespace OpenDreamRuntime.Procs {
         private static readonly unsafe delegate*<DMProcState, ProcStatus>[] _opcodeHandlers;
         #endregion
 
-        public IDreamManager DreamManager => _proc.DreamManager;
+        public DreamManager DreamManager => _proc.DreamManager;
         public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
         /// <summary> This stores our 'src' value. May be null!</summary>

@@ -7,8 +7,8 @@ using Robust.Server.Player;
 
 namespace OpenDreamRuntime.Input {
     internal sealed class MouseInputSystem : SharedMouseInputSystem {
-        [Dependency] private readonly IAtomManager _atomManager = default!;
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly AtomManager _atomManager = default!;
+        [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
         public override void Initialize() {

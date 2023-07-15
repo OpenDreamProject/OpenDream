@@ -47,13 +47,13 @@ public sealed class FastNativeProc : DreamProc
     private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
     private readonly HandlerFn _handler;
 
-    internal FastNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
+    internal FastNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, DreamObjectTree objectTree)
         : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
         _defaultArgumentValues = defaultArgumentValues;
         _handler = handler;
 
         // todo: remove the stupid OOP!! This shit shouldn't have to be internal all these interfaces are redundant as fuck
-        _dreamManager = (DreamManager)dreamManager;
+        _dreamManager = dreamManager;
         _atomManager = (AtomManager)atomManager;
         _mapManager = (DreamMapManager)mapManager;
         _resourceManager = resourceManager;

@@ -76,7 +76,7 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        private static IDreamValueEnumerator GetContentsEnumerator(IDreamObjectTree objectTree, IAtomManager atomManager, DreamValue value, IDreamObjectTree.TreeEntry? filterType) {
+        private static IDreamValueEnumerator GetContentsEnumerator(DreamObjectTree objectTree, AtomManager atomManager, DreamValue value, TreeEntry? filterType) {
             if (!value.TryGetValueAsDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
@@ -1298,7 +1298,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus IsType(DMProcState state) {
             DreamValue typeValue = state.Pop();
             DreamValue value = state.Pop();
-            IDreamObjectTree.TreeEntry type;
+            TreeEntry type;
 
             if (typeValue.TryGetValueAsDreamObject(out var typeObject)) {
                 if (typeObject == null) {
@@ -2396,7 +2396,7 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static DreamValue BitXorValues(IDreamObjectTree objectTree, DreamValue first, DreamValue second) {
+        private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {
             if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = objectTree.CreateList();
                 List<DreamValue> values;

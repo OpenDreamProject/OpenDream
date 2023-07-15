@@ -171,6 +171,16 @@ public static class DreamStylesheet {
                 })
                 .Prop("font", notoSansFont10),
 
+            //BarControl - composed of ProgressBar and Slider
+            Element<ProgressBar>()
+                .Prop(ProgressBar.StylePropertyBackground, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(ProgressBar.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.Green, BorderThickness = new Thickness(1), BorderColor = Color.Black}),
+            Element<Slider>()
+                .Prop(Slider.StylePropertyBackground, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(Slider.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.Green, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(Slider.StylePropertyGrabber, new StyleBoxFlat { BackgroundColor = Color.Red, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(Slider.StylePropertyFill, new StyleBoxFlat { BackgroundColor = Color.Blue, BorderThickness = new Thickness(1), BorderColor = Color.Black}),
+
         });
     }
 }

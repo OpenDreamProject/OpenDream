@@ -87,8 +87,9 @@ window "outputwindow"
 	elem "bar"
 		type = BAR
 		value = 40
-		pos = 0,460
-		size = 640x20
+		pos = 0,0
+		size = 0x0
+		width=50
 		anchor1 = 0,100
 		anchor2 = 100,100
 		is-slider = true

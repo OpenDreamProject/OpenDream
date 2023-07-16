@@ -173,13 +173,13 @@ public static class DreamStylesheet {
 
             //BarControl - composed of ProgressBar and Slider
             Element<ProgressBar>()
-                .Prop(ProgressBar.StylePropertyBackground, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black})
-                .Prop(ProgressBar.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.Green, BorderThickness = new Thickness(1), BorderColor = Color.Black}),
+                .Prop(ProgressBar.StylePropertyBackground, new StyleBoxFlat { BackgroundColor = Color.LightGray, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(ProgressBar.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(1), BorderColor = Color.Black}),
             Element<Slider>()
-                .Prop(Slider.StylePropertyBackground, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black})
-                .Prop(Slider.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.Green, BorderThickness = new Thickness(1), BorderColor = Color.Black})
-                .Prop(Slider.StylePropertyGrabber, new StyleBoxFlat { BackgroundColor = Color.Red, BorderThickness = new Thickness(1), BorderColor = Color.Black})
-                .Prop(Slider.StylePropertyFill, new StyleBoxFlat { BackgroundColor = Color.Blue, BorderThickness = new Thickness(1), BorderColor = Color.Black}),
+                .Prop(Slider.StylePropertyBackground, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(Slider.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.LightGray, BorderThickness = new Thickness(1), BorderColor = Color.Black})
+                .Prop(Slider.StylePropertyGrabber, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(1), BorderColor = Color.Black, ContentMarginLeftOverride=10, ContentMarginRightOverride=10})
+                .Prop(Slider.StylePropertyFill, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(0), BorderColor = Color.Black}),
 
         });
     }

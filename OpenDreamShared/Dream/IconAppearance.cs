@@ -30,7 +30,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public ColorMatrix ColorMatrix = ColorMatrix.Identity;
         [ViewVariables] public float Layer = -1f;
         [ViewVariables] public int Plane = -32767;
-        [ViewVariables] public BlendMode BlendMode = BlendMode.BLEND_DEFAULT;
+        [ViewVariables] public BlendMode BlendMode = BlendMode.Default;
         [ViewVariables] public AppearanceFlags AppearanceFlags = AppearanceFlags.None;
         [ViewVariables] public int Invisibility;
         [ViewVariables] public bool Opacity;
@@ -236,27 +236,28 @@ namespace OpenDreamShared.Dream {
     }
 
     public enum BlendMode {
-        BLEND_DEFAULT,
-        BLEND_OVERLAY,
-        BLEND_ADD,
-        BLEND_SUBTRACT,
-        BLEND_MULTIPLY,
-        BLEND_INSET_OVERLAY
+        Default,
+        Overlay,
+        Add,
+        Subtract,
+        Multiply,
+        InsertOverlay
     }
 
+    [Flags]
     public enum AppearanceFlags {
         None = 0,
-        LONG_GLIDE = 1,
-        RESET_COLOR = 2,
-        RESET_ALPHA = 4,
-        RESET_TRANSFORM = 8,
-        NO_CLIENT_COLOR = 16,
-        KEEP_TOGETHER = 32,
-        KEEP_APART = 64,
-        PLANE_MASTER = 128,
-        TILE_BOUND = 256,
-        PIXEL_SCALE = 512,
-        PASS_MOUSE = 1024,
-        TILE_MOVER = 2048
+        LongGlide = 1,
+        ResetColor = 2,
+        ResetAlpha = 4,
+        ResetTransform = 8,
+        NoClientColor = 16,
+        KeepTogether = 32,
+        KeepApart = 64,
+        PlaneMaster = 128,
+        TileBound = 256,
+        PixelScale = 512,
+        PassMouse = 1024,
+        TileMover = 2048
     }
 }

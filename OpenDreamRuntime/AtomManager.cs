@@ -168,8 +168,8 @@ namespace OpenDreamRuntime {
                     value.TryGetValueAsInteger(out appearance.Plane);
                     break;
                 case "blend_mode":
-                    value.TryGetValueAsFloat(out float blendMode);
-                    appearance.BlendMode = Enum.IsDefined((BlendMode)blendMode) ? (BlendMode)blendMode : BlendMode.BLEND_DEFAULT;
+                    value.TryGetValueAsInteger(out int blendMode);
+                    appearance.BlendMode = Enum.IsDefined((BlendMode)blendMode) ? (BlendMode)blendMode : BlendMode.Default;
                     break;
                 case "appearance_flags":
                     value.TryGetValueAsInteger(out int flagsVar);

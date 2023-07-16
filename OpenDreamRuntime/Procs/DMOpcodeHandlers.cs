@@ -10,6 +10,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Random;
+using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs {
     internal static class DMOpcodeHandlers {
@@ -743,12 +744,8 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue + 1));
-            } else {
-                //If it's not a number, it turns into 1
-                state.AssignReference(reference, new(1));
-            }
+            //If it's not a number, it turns into 1
+            state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() + 1));
 
             state.Push(value);
             return null;
@@ -758,12 +755,8 @@ namespace OpenDreamRuntime.Procs {
             DMReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            if (value.TryGetValueAsInteger(out int intValue)) {
-                state.AssignReference(reference, new(intValue - 1));
-            } else {
-                //If it's not a number, it turns into -1
-                state.AssignReference(reference, new(-1));
-            }
+            //If it's not a number, it turns into -1
+            state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() - 1));
 
             state.Push(value);
             return null;
@@ -1118,13 +1111,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus? Negate(DMProcState state) {
-            DreamValue value = state.Pop();
+            int value = state.Pop().UnsafeGetValueAsInteger();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.MustGetValueAsFloat())); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
-                default: throw new Exception("Invalid negate operation on " + value);
-            }
+            state.Push(new DreamValue(-value));
 
             return null;
         }

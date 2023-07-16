@@ -16,14 +16,14 @@ public sealed class DreamObjectRegex : DreamObject {
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
 
-        DreamValue pattern = args.GetArgument(0);
-        DreamValue flags = args.GetArgument(1);
+        var pattern = args.GetArgument(0);
+        var flags = args.GetArgument(1);
 
         if (pattern.TryGetValueAsDreamObject<DreamObjectRegex>(out var copyFrom)) {
             Regex = copyFrom.Regex;
             IsGlobal = copyFrom.IsGlobal;
         } else if (pattern.TryGetValueAsString(out var patternString)) {
-            RegexOptions options = RegexOptions.None;
+            var options = RegexOptions.None;
             if (flags.TryGetValueAsString(out var flagsString)) {
                 if (flagsString.Contains('i')) options |= RegexOptions.IgnoreCase;
                 if (flagsString.Contains('m')) options |= RegexOptions.Multiline;

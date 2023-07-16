@@ -48,7 +48,6 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private bool CheckIfNullProc() {
-
             // We check for two possible patterns, entirely empty procs or pushing and returning self.
             if (Bytecode.Length == 0 || Bytecode is [(byte)DreamProcOpcode.PushReferenceValue, 0x01, (byte)DreamProcOpcode.Return])
                 return true;

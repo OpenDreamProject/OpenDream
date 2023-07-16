@@ -122,6 +122,9 @@ namespace OpenDreamShared.Dream.Procs {
         EnumerateNoAssign = 0x72,
         Gradient = 0x73,
         AssignInto = 0x74,
+        GetStep = 0x75,
+        Length = 0x76,
+        GetDir = 0x77,
     }
 
     /// <summary>

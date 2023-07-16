@@ -239,7 +239,10 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
             {DreamProcOpcode.Gradient, DMOpcodeHandlers.Gradient},
-            {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign}
+            {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign},
+            {DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep},
+            {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
+            {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
         };
 
         private static readonly unsafe delegate*<DMProcState, ProcStatus>[] _opcodeHandlers;

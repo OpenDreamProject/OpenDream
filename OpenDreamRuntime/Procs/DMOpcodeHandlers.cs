@@ -2607,5 +2607,87 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValue(returnVal.ToHex().ToLower());
         }
         #endregion Helpers
+
+        #region Builtins
+        public static ProcStatus GetStep(DMProcState state) {
+            var d = state.Pop();
+            var l = state.Pop();
+            if (!l.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc)) {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            d.TryGetValueAsInteger(out var dir);
+            if (dir >= 16) // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
+            {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            var locPos = state.Proc.AtomManager.GetAtomPosition(loc);
+
+            if (dir > 0) {
+                if ((dir & (int) AtomDirection.North) == (int) AtomDirection.North)
+                    locPos.Y += 1;
+                if ((dir & (int) AtomDirection.South) == (int) AtomDirection.South) // A dir of NORTH | SOUTH will cancel out
+                    locPos.Y -= 1;
+
+                if ((dir & (int) AtomDirection.East) == (int) AtomDirection.East)
+                    locPos.X += 1;
+                if ((dir & (int) AtomDirection.West) == (int) AtomDirection.West) // A dir of EAST | WEST will cancel out
+                    locPos.X -= 1;
+            }
+
+            state.Proc.DreamMapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
+            state.Push(new DreamValue(turf));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Length(DMProcState state) {
+            var o = state.Pop();
+            state.Push(DreamProcNativeRoot._length(o, true));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus GetDir(DMProcState state) {
+            var loc1r = state.Pop();
+            var loc2r = state.Pop();
+            if (!loc2r.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc1)) {
+                state.Push(new DreamValue(0));
+                return ProcStatus.Continue;
+            }
+
+            if (!loc1r.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc2)) {
+                state.Push(new DreamValue(0));
+                return ProcStatus.Continue;
+            }
+
+            var loc1Pos = state.Proc.AtomManager.GetAtomPosition(loc1);
+            var loc2Pos = state.Proc.AtomManager.GetAtomPosition(loc2);
+
+            if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
+            {
+                state.Push(new DreamValue(0));
+                return ProcStatus.Continue;
+            }
+
+            int direction = 0;
+
+            // East or West
+            if (loc2Pos.X < loc1Pos.X)
+                direction |= (int)AtomDirection.West;
+            else if (loc2Pos.X > loc1Pos.X)
+                direction |= (int)AtomDirection.East;
+
+            // North or South
+            if (loc2Pos.Y < loc1Pos.Y)
+                direction |= (int) AtomDirection.South;
+            else if (loc2Pos.Y > loc1Pos.Y)
+                direction |= (int) AtomDirection.North;
+
+            state.Push(new DreamValue(direction));
+            return ProcStatus.Continue;
+        }
+        #endregion Builtins
     }
 }

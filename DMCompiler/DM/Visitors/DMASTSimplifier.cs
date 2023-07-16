@@ -1,5 +1,6 @@
 using DMCompiler.Compiler.DM;
 using System;
+using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     public sealed class DMASTSimplifier : DMASTVisitor {
@@ -191,6 +192,12 @@ namespace DMCompiler.DM.Visitors {
             #region Comparators
             DMASTEqual equal = expression as DMASTEqual;
             if (equal != null) {
+                if (equal.B is DMASTConstantNull) {
+                    SimplifyExpression(ref equal.A);
+                    expression = new DMASTBuiltinProc1(DreamProcOpcode.IsNull, expression.Location, equal.A);
+                    return;
+                }
+
                 SimplifyExpression(ref equal.A);
                 SimplifyExpression(ref equal.B);
 
@@ -199,6 +206,12 @@ namespace DMCompiler.DM.Visitors {
 
             DMASTNotEqual notEqual = expression as DMASTNotEqual;
             if (notEqual != null) {
+                if (notEqual.B is DMASTConstantNull) {
+                    SimplifyExpression(ref notEqual.A);
+                    expression = new DMASTNot(expression.Location, new DMASTBuiltinProc1(DreamProcOpcode.IsNull, expression.Location, notEqual.A));
+                    return;
+                }
+
                 SimplifyExpression(ref notEqual.A);
                 SimplifyExpression(ref notEqual.B);
 

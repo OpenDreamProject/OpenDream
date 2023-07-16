@@ -317,6 +317,41 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // $proc$(a, b)
+    sealed class BuiltinProc2 : DMExpression {
+        private readonly DMExpression _a;
+        private readonly DMExpression _b;
+        private readonly DreamProcOpcode _op;
+
+        public BuiltinProc2(DreamProcOpcode op, Location location, DMExpression a, DMExpression b) : base(location) {
+            _a = a;
+            _b = b;
+            _op = op;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _a.EmitPushValue(dmObject, proc);
+            _b.EmitPushValue(dmObject, proc);
+            proc.WriteOpcode(_op);
+        }
+    }
+
+    // $proc$(a)
+    sealed class BuiltinProc1 : DMExpression {
+        private readonly DMExpression _expr;
+        private readonly DreamProcOpcode _op;
+
+        public BuiltinProc1(DreamProcOpcode op, Location location, DMExpression expr) : base(location) {
+            _expr = expr;
+            _op = op;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _expr.EmitPushValue(dmObject, proc);
+            proc.WriteOpcode(_op);
+        }
+    }
+
     // istype(x)
     sealed class IsTypeInferred : DMExpression {
         private readonly DMExpression _expr;

@@ -1048,6 +1048,8 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_isnull(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue value = bundle.GetArgument(0, "Val");
 
+            throw new NotImplementedException();
+
             return new DreamValue((value.IsNull) ? 1 : 0);
         }
 
@@ -1240,7 +1242,7 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(Encoding.UTF8.GetString(stream.AsSpan()));
         }
 
-        private static DreamValue _length(DreamValue value, bool countBytes) {
+        public static DreamValue _length(DreamValue value, bool countBytes) {
             if (value.TryGetValueAsString(out var str)) {
                 return new DreamValue(countBytes ? str.Length : str.EnumerateRunes().Count());
             } else if (value.TryGetValueAsDreamList(out var list)) {

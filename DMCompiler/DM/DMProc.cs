@@ -1028,6 +1028,11 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsType);
         }
 
+        public void GetStep() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.GetStep);
+        }
+
         public void LocateCoordinates() {
             ShrinkStack(2);
             WriteOpcode(DreamProcOpcode.LocateCoord);
@@ -1083,7 +1088,7 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.EndTry);
         }
 
-        private void WriteOpcode(DreamProcOpcode opcode) {
+        public void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
         }
 

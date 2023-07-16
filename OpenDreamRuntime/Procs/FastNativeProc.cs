@@ -65,6 +65,8 @@ public unsafe sealed class FastNativeProc : DreamProc
         _objectTree = objectTree;
     }
 
+    public int CallCount = 0;
+
     public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr,
         DreamProcArguments arguments)
     {
@@ -73,7 +75,7 @@ public unsafe sealed class FastNativeProc : DreamProc
 
     public DreamValue FastCall(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
         var bundle = new FastNativeProcBundle(this, arguments);
-
+        CallCount++;
         return _handler(bundle, src, usr);
     }
 }

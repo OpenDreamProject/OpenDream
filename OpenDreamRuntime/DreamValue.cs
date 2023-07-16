@@ -379,6 +379,11 @@ namespace OpenDreamRuntime {
                     Debug.Assert(_refValue is DreamObject or null, "Failed to cast a DreamValue's DreamObject");
                     return _refValue != null && Unsafe.As<DreamObject>(_refValue).Deleted == false;
                 }
+                case DreamValueType.Float:
+                    return _floatValue != 0;
+                case DreamValueType.String:
+                    Debug.Assert(_refValue is string, "Failed to cast a DreamValueType.String as a string");
+                    return Unsafe.As<string>(_refValue) != "";
                 case DreamValueType.DreamResource:
                 case DreamValueType.DreamType:
                 case DreamValueType.DreamProc:
@@ -386,11 +391,6 @@ namespace OpenDreamRuntime {
                 case DreamValueType.VerbStub:
                 case DreamValueType.Appearance:
                     return true;
-                case DreamValueType.Float:
-                    return _floatValue != 0;
-                case DreamValueType.String:
-                    Debug.Assert(_refValue is string, "Failed to cast a DreamValueType.String as a string");
-                    return Unsafe.As<string>(_refValue) != "";
                 default:
                     ThrowTruthyNotImplemented();
                     return false;

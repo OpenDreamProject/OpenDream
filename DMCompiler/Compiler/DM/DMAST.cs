@@ -222,6 +222,14 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitBuiltinProc1(DMASTBuiltinProc1 builtinProc1) {
+            throw new NotImplementedException();
+        }
+
+        public void VisitBuiltinProc2(DMASTBuiltinProc2 builtinProc2) {
+            throw new NotImplementedException();
+        }
+
         public void VisitImplicitIsType(DMASTImplicitIsType isType) {
             throw new NotImplementedException();
         }
@@ -1380,6 +1388,36 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitIsType(this);
+        }
+    }
+
+    public sealed class DMASTBuiltinProc1 : DMASTExpression {
+        public readonly DMASTExpression Value;
+        public readonly DreamProcOpcode Op;
+
+        public DMASTBuiltinProc1(DreamProcOpcode op, Location location, DMASTExpression value) : base(location) {
+            Value = value;
+            Op = op;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitBuiltinProc1(this);
+        }
+    }
+
+    public sealed class DMASTBuiltinProc2 : DMASTExpression {
+        public readonly DMASTExpression A;
+        public readonly DMASTExpression B;
+        public readonly DreamProcOpcode Op;
+
+        public DMASTBuiltinProc2(DreamProcOpcode op, Location location, DMASTExpression a, DMASTExpression b) : base(location) {
+            A = a;
+            B = b;
+            Op = op;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitBuiltinProc2(this);
         }
     }
 

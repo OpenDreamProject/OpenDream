@@ -477,6 +477,8 @@ namespace DMCompiler.DM.Visitors {
                     case List:
                     case Ternary:
                     case BinaryAnd:
+                    case BuiltinProc2:
+                    case BuiltinProc1:
                         return true;
                     default: return false;
                 }
@@ -771,6 +773,17 @@ namespace DMCompiler.DM.Visitors {
             var expr = DMExpression.Create(_dmObject, _proc, isType.Value, _inferredPath);
             var path = DMExpression.Create(_dmObject, _proc, isType.Type, _inferredPath);
             Result = new Expressions.IsType(isType.Location, expr, path);
+        }
+
+        public void VisitBuiltinProc1(DMASTBuiltinProc1 builtinProc1) {
+            var expr = DMExpression.Create(_dmObject, _proc, builtinProc1.Value, _inferredPath);
+            Result = new Expressions.BuiltinProc1(builtinProc1.Op, builtinProc1.Location, expr);
+        }
+
+        public void VisitBuiltinProc2(DMASTBuiltinProc2 builtinProc2) {
+            var a = DMExpression.Create(_dmObject, _proc, builtinProc2.A, _inferredPath);
+            var b = DMExpression.Create(_dmObject, _proc, builtinProc2.B, _inferredPath);
+            Result = new Expressions.BuiltinProc2(builtinProc2.Op, builtinProc2.Location, a, b);
         }
 
         public void VisitImplicitIsType(DMASTImplicitIsType isType) {

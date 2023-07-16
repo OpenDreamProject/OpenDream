@@ -219,17 +219,6 @@ namespace OpenDreamRuntime {
             try {
                 CurrentlyExecuting.Value!.Push(this);
                 while (_current != null) {
-                    bool TryCatchException(Exception exception) {
-                        if (!_stack.Any(x => x.IsCatching())) return false;
-
-                        while (!_current.IsCatching()) {
-                            PopProcState();
-                        }
-
-                        _current.CatchException(exception);
-                        return true;
-                    }
-
                     ProcStatus status;
                     try {
                         // _current.Resume may mutate our state!!!
@@ -292,6 +281,18 @@ namespace OpenDreamRuntime {
             }
 
             throw new InvalidOperationException();
+        }
+
+        private bool TryCatchException(Exception exception)
+        {
+            if (!_stack.Any(x => x.IsCatching())) return false;
+
+            while (!_current.IsCatching()) {
+                PopProcState();
+            }
+
+            _current.CatchException(exception);
+            return true;
         }
 
         public void PushProcState(ProcState state) {

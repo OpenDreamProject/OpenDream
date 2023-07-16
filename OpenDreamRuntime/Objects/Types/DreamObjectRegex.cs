@@ -45,7 +45,7 @@ public sealed class DreamObjectRegex : DreamObject {
         // Probably make this slightly saner
         // Just add chain calls as needed and pray performance doesnt explode
         regex = regex
-            .Replace("\\l", "[A-Za-z]")
-            .Replace("\\L", "[^A-Za-z\\n]");
+            .Replace("\\l", "[A-Za-z]") // ref: \l = Any letter A through Z, case-insensitive
+            .Replace("\\L", "[^A-Za-z\\n]"); // ref: \L = Any character except a letter or line break
     }
 }

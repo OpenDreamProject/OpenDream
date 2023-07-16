@@ -11,6 +11,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     public EntityUid Entity;
     public readonly DMISpriteComponent SpriteComponent;
 
+    // TODO: Cache this shit. GetWorldPosition is slow.
     public Vector2i Position => (Vector2i?)TransformSystem?.GetWorldPosition(_transformComponent) ?? (0, 0);
     public int X => Position.X;
     public int Y => Position.Y;

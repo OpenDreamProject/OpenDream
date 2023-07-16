@@ -2617,7 +2617,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            d.TryGetValueAsInteger(out var dir);
+            var dir = d.MustGetValueAsInteger();
             if (dir >= 16) // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
             {
                 state.Push(DreamValue.Null);
@@ -2626,17 +2626,15 @@ namespace OpenDreamRuntime.Procs {
 
             var locPos = state.Proc.AtomManager.GetAtomPosition(loc);
 
-            if (dir > 0) {
-                if ((dir & (int) AtomDirection.North) == (int) AtomDirection.North)
-                    locPos.Y += 1;
-                if ((dir & (int) AtomDirection.South) == (int) AtomDirection.South) // A dir of NORTH | SOUTH will cancel out
-                    locPos.Y -= 1;
+            if ((dir & (int) AtomDirection.North) != 0)
+                locPos.Y += 1;
+            if ((dir & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
+                locPos.Y -= 1;
 
-                if ((dir & (int) AtomDirection.East) == (int) AtomDirection.East)
-                    locPos.X += 1;
-                if ((dir & (int) AtomDirection.West) == (int) AtomDirection.West) // A dir of EAST | WEST will cancel out
-                    locPos.X -= 1;
-            }
+            if ((dir & (int) AtomDirection.East) != 0)
+                locPos.X += 1;
+            if ((dir & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
+                locPos.X -= 1;
 
             state.Proc.DreamMapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
             state.Push(new DreamValue(turf));

@@ -405,11 +405,17 @@ namespace OpenDreamRuntime {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (int X, int Y, int Z) GetAtomPosition(DreamObjectAtom atom) {
             return atom switch {
-                DreamObjectMovable movable => (movable.X, movable.Y, movable.Z),
+                DreamObjectMovable { Position: var pos, Z: var z } => (pos.X, pos.Y, z),
                 DreamObjectTurf turf => (turf.X, turf.Y, turf.Z),
                 DreamObjectArea area => (area.X, area.Y, area.Z),
-                _ => throw new Exception($"Cannot get the position of {atom}")
+                _ => ThrowCantGetPosition(atom)
             };
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static (int X, int Y, int) ThrowCantGetPosition(DreamObjectAtom atom)
+        {
+            throw new Exception($"Cannot get the position of {atom}");
         }
     }
 }

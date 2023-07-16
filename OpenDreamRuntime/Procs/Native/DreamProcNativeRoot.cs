@@ -920,7 +920,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("pixel_y", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_image(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
             DreamObject imageObject = bundle.ObjectTree.CreateObject(bundle.ObjectTree.Image);
-            imageObject.InitSpawn(new DreamProcArguments(bundle.Arguments)); // TODO: Don't create another thread
+            imageObject.InitSpawn(new DreamProcArguments(bundle.Arguments));
             return new DreamValue(imageObject);
         }
 

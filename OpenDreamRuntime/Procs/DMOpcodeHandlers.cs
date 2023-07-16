@@ -203,8 +203,14 @@ namespace OpenDreamRuntime.Procs {
             }
 
             DreamObject newObject = state.Proc.ObjectTree.CreateObject(objectType);
-            state.Thread.PushProcState(newObject.InitProc(state.Thread, state.Usr, arguments));
-            return ProcStatus.Called;
+            var s = newObject.InitProc(state.Thread, state.Usr, arguments);
+            if (s is not null) {
+                state.Thread.PushProcState(s);
+                return ProcStatus.Called;
+            }
+
+            state.Push(new DreamValue(newObject));
+            return ProcStatus.Continue;
         }
 
         public static ProcStatus DestroyEnumerator(DMProcState state) {

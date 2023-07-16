@@ -230,6 +230,12 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
+            if (ObjectDefinition.NoConstructors) {
+                // Skip thread spinup.
+                Initialize(creationArguments);
+                return;
+            }
+
             var thread = new DreamThread("new " + ObjectDefinition.Type);
             var procState = InitProc(thread, null, creationArguments);
 
@@ -237,8 +243,14 @@ namespace OpenDreamRuntime.Objects {
             thread.Resume();
         }
 
-        public ProcState InitProc(DreamThread thread, DreamObject? usr, DreamProcArguments arguments) {
+        public ProcState? InitProc(DreamThread thread, DreamObject? usr, DreamProcArguments arguments) {
             DebugTools.Assert(!Deleted, "Cannot call InitProc() on a deleted object");
+
+            if (ObjectDefinition.NoConstructors) {
+                // Skip thread spinup.
+                Initialize(arguments);
+                return null;
+            }
 
             if (!InitDreamObjectState.Pool.TryPop(out var state)) {
                 state = new InitDreamObjectState(ObjectDefinition.DreamManager, ObjectDefinition.ObjectTree);

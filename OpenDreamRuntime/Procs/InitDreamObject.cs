@@ -64,7 +64,7 @@ namespace OpenDreamRuntime.Procs {
                 case Stage.Init: {
                     _stage = Stage.OnObjectCreated;
 
-                    if (src.ObjectDefinition.InitializationProc == null) {
+                    if (src.ObjectDefinition.InitializationProc == null || _objectTree.Procs[src.ObjectDefinition.InitializationProc.Value] is DMProc { IsNullProc: true }) {
                         goto switch_start;
                     }
 
@@ -86,6 +86,9 @@ namespace OpenDreamRuntime.Procs {
 
                     if (src.ShouldCallNew) {
                         var newProc = src.GetProc("New");
+                        if (newProc is DMProc { IsNullProc: true})
+                            goto switch_start;
+
                         var newProcState = newProc.CreateState(Thread, src, _usr, new DreamProcArguments(_arguments.AsSpan(0, _argumentCount)));
                         Thread.PushProcState(newProcState);
                         return ProcStatus.Called;

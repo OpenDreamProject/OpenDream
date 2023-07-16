@@ -27,6 +27,7 @@ namespace OpenDreamRuntime.Procs {
         public readonly DreamObjectTree ObjectTree;
 
         private readonly int _maxStackSize;
+        public bool IsNullProc { get; private set; }
 
         public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, IProcScheduler procScheduler)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
@@ -35,6 +36,7 @@ namespace OpenDreamRuntime.Procs {
             Source = json.Source;
             Line = json.Line;
             _maxStackSize = json.MaxStackSize;
+            IsNullProc = CheckIfNullProc();
 
             AtomManager = atomManager;
             DreamManager = dreamManager;
@@ -45,7 +47,25 @@ namespace OpenDreamRuntime.Procs {
             ProcScheduler = procScheduler;
         }
 
-        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+        private bool CheckIfNullProc() {
+
+            // We check for two possible patterns, entirely empty procs or pushing and returning self.
+            if (Bytecode.Length == 0 || Bytecode is [(byte)DreamProcOpcode.PushReferenceValue, 0x01, (byte)DreamProcOpcode.Return])
+                return true;
+
+            return false;
+        }
+
+        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            if (IsNullProc) {
+                if (!NullProcState.Pool.TryPop(out var nullState)) {
+                    nullState = new NullProcState();
+                }
+
+                nullState.Initialize(this);
+                return nullState;
+            }
+
             if (!DMProcState.Pool.TryPop(out var state)) {
                 state = new DMProcState();
             }
@@ -72,6 +92,32 @@ namespace OpenDreamRuntime.Procs {
                 argumentTypes.AddRange(json.Arguments.Select(a => a.Type));
                 return argumentTypes;
             }
+        }
+    }
+
+    public sealed class NullProcState : ProcState {
+        public static readonly Stack<NullProcState> Pool = new();
+
+        public override DreamProc? Proc => _proc;
+
+        private DreamProc? _proc;
+
+        public override ProcStatus Resume() {
+            return ProcStatus.Returned; // do nothing heehoo
+        }
+
+        public override void AppendStackFrame(StringBuilder builder) {
+            throw new NotImplementedException();
+        }
+
+        public void Initialize(DMProc proc) {
+            _proc = proc;
+        }
+
+        public override void Dispose() {
+            base.Dispose();
+            _proc = null;
+            Pool.Push(this);
         }
     }
 

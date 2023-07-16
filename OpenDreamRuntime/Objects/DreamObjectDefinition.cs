@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -26,6 +27,16 @@ namespace OpenDreamRuntime.Objects {
         public DreamPath Type => TreeEntry.Path;
         public DreamObjectDefinition? Parent => TreeEntry.ParentEntry?.ObjectDefinition;
         public int? InitializationProc;
+        public bool NoConstructors {
+            get {
+                if (_noConstructors is not { } res)
+                    _noConstructors = CheckNoConstructors();
+
+                return _noConstructors.Value;
+            }
+        }
+
+        private bool? _noConstructors = null;
         public readonly Dictionary<string, int> Procs = new();
         public readonly Dictionary<string, int> OverridingProcs = new();
         public List<int>? Verbs;
@@ -82,6 +93,17 @@ namespace OpenDreamRuntime.Objects {
                 if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                     GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
             }
+        }
+
+        private bool CheckNoConstructors() {
+            var noInit = InitializationProc is null ||
+                         ObjectTree.Procs[InitializationProc.Value] is DMProc {IsNullProc: true};
+            var noNew = !TryGetProc("New", out var proc) || proc is DMProc {IsNullProc: true};
+            if (noInit && noNew) {
+                return true;
+            }
+
+            return false;
         }
 
         public void SetVariableDefinition(string variableName, DreamValue value) {

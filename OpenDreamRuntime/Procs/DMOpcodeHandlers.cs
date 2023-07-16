@@ -178,10 +178,10 @@ namespace OpenDreamRuntime.Procs {
             if (!val.TryGetValueAsType(out var objectType)) {
                 if (val.TryGetValueAsString(out var pathString)) {
                     if (!state.Proc.ObjectTree.TryGetTreeEntry(new DreamPath(pathString), out objectType)) {
-                        throw new Exception($"Cannot create unknown object {val}");
+                        ThrowCannotCreateUnknownObject(val);
                     }
                 } else {
-                    throw new Exception($"Cannot create object from invalid type {val}");
+                    ThrowCannotCreateObjectFromInvalid(val);
                 }
             }
 
@@ -194,7 +194,7 @@ namespace OpenDreamRuntime.Procs {
                 // So instead this will replace an existing turf's type and return that same turf
                 DreamValue loc = arguments.GetArgument(0);
                 if (!loc.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
-                    throw new Exception($"Invalid turf loc {loc}");
+                    ThrowInvalidTurfLoc(loc);
 
                 state.Proc.DreamMapManager.SetTurf(turf, objectDef, arguments);
 
@@ -211,6 +211,24 @@ namespace OpenDreamRuntime.Procs {
 
             state.Push(new DreamValue(newObject));
             return ProcStatus.Continue;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidTurfLoc(DreamValue loc)
+        {
+            throw new Exception($"Invalid turf loc {loc}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotCreateObjectFromInvalid(DreamValue val)
+        {
+            throw new Exception($"Cannot create object from invalid type {val}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotCreateUnknownObject(DreamValue val)
+        {
+            throw new Exception($"Cannot create unknown object {val}");
         }
 
         public static ProcStatus DestroyEnumerator(DMProcState state) {

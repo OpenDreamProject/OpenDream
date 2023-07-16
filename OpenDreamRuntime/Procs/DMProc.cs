@@ -526,7 +526,9 @@ namespace OpenDreamRuntime.Procs {
         #region Operands
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadByte() {
-            return _proc.Bytecode[_pc++];
+            var r = _proc.Bytecode[_pc];
+            _pc += 1;
+            return r;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -910,10 +912,10 @@ namespace OpenDreamRuntime.Procs {
             switch (argumentsType) {
                 case DMCallArgumentsType.None:
                     return new DreamProcArguments();
-                case DMCallArgumentsType.FromProcArguments:
-                    return new DreamProcArguments(GetArguments());
                 case DMCallArgumentsType.FromStack:
                     return new DreamProcArguments(values);
+                case DMCallArgumentsType.FromProcArguments:
+                    return new DreamProcArguments(GetArguments());
                 case DMCallArgumentsType.FromStackKeyed: {
                     if (argumentStackSize % 2 != 0)
                         throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));

@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
@@ -167,6 +168,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSubtypeOf(TreeEntry ancestor) {
             // Unsigned underflow is desirable here
             return (TreeEntry.TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;

@@ -1140,7 +1140,7 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Negate(DMProcState state) {
+        public static ProcStatus Negate(DMProcState state) {
             int value = state.Pop().UnsafeGetValueAsInteger();
 
             state.Push(new DreamValue(-value));

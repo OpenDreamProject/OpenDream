@@ -109,8 +109,7 @@ namespace Content.Tests
 
                 if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
                     Assert.That(returned.HasValue, Is.True);
-                    int returnInt = returned.Value.MustGetValueAsInteger();
-                    Assert.IsTrue(returnInt == 1, "Test was expected to return TRUE");
+                    Assert.IsTrue(returned.Value.IsTruthy(), "Test was expected to return TRUE");
                 }
 
                 Cleanup(compiledFile);

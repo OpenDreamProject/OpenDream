@@ -2,13 +2,13 @@ using System.Text;
 using OpenDreamRuntime.Objects;
 
 namespace OpenDreamRuntime.Procs {
-    sealed class InitDreamObjectState : ProcState {
+    internal sealed class InitDreamObjectState : ProcState {
         public static readonly Stack<InitDreamObjectState> Pool = new();
 
         private readonly DreamManager _dreamMan;
         private readonly DreamObjectTree _objectTree;
 
-        enum Stage {
+        private enum Stage {
             // Need to call the object's (init) proc
             Init,
 
@@ -43,7 +43,7 @@ namespace OpenDreamRuntime.Procs {
         public override DreamProc? Proc => null;
 
         public override void AppendStackFrame(StringBuilder builder) {
-            builder.AppendLine($"new {_dreamObject.ObjectDefinition?.Type}");
+            builder.AppendLine($"new {_dreamObject.ObjectDefinition.Type}");
         }
 
         public override void Dispose() {

@@ -7,8 +7,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs;
 
-public unsafe sealed class FastNativeProc : DreamProc
-{
+public sealed unsafe class FastNativeProc : DreamProc {
     public delegate DreamValue HandlerFn(FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr);
 
     private readonly DreamManager _dreamManager;
@@ -17,8 +16,8 @@ public unsafe sealed class FastNativeProc : DreamProc
     private readonly DreamResourceManager _resourceManager;
     private readonly DreamObjectTree _objectTree;
 
-    public ref struct FastNativeProcBundle {
-        public FastNativeProc Proc;
+    public readonly ref struct FastNativeProcBundle {
+        public readonly FastNativeProc Proc;
 
         // NOTE: Deliberately not using DreamProcArguments here, tis slow.
         public readonly ReadOnlySpan<DreamValue> Arguments;
@@ -47,13 +46,12 @@ public unsafe sealed class FastNativeProc : DreamProc
         private DreamValue GetArgumentFallback(string argumentName) {
             return Proc._defaultArgumentValues?.TryGetValue(argumentName, out var argValue) == true ? argValue : DreamValue.Null;
         }
-
     }
 
     private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
     private readonly delegate*<FastNativeProcBundle, DreamObject?, DreamObject?, DreamValue> _handler;
 
-    public unsafe FastNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, DreamObjectTree objectTree)
+    public FastNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, DreamObjectTree objectTree)
         : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
         _defaultArgumentValues = defaultArgumentValues;
         _handler = (delegate*<FastNativeProcBundle, DreamObject?, DreamObject?, DreamValue>)handler.Method.MethodHandle.GetFunctionPointer();
@@ -65,11 +63,10 @@ public unsafe sealed class FastNativeProc : DreamProc
         _objectTree = objectTree;
     }
 
-    public int CallCount = 0;
+    public int CallCount;
 
     public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr,
-        DreamProcArguments arguments)
-    {
+        DreamProcArguments arguments) {
         throw new NotImplementedException(); // By design.
     }
 

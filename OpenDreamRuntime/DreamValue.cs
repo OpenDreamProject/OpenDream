@@ -52,22 +52,17 @@ namespace OpenDreamRuntime {
 
         public static DreamValue Null {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get {
-                return new DreamValue((DreamObject?) null);
-            }
+            get => new DreamValue((DreamObject?) null);
         }
 
         public static DreamValue True {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get {
-                return new DreamValue(1f);
-            }
+            get => new DreamValue(1f);
         }
+
         public static DreamValue False {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get {
-                return new DreamValue(0f);
-            }
+            get => new DreamValue(0f);
         }
 
         public readonly DreamValueType Type;
@@ -194,13 +189,16 @@ namespace OpenDreamRuntime {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int MustGetValueAsInteger() {
+            if (Type != DreamValueType.Float)
+                ThrowInvalidCastFloat();
+
             return (int) _floatValue;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         /// <summary>
         /// Casts the DreamValue to an integer without throwing exceptions. Useful where BYOND coerces non-integers to 0.
         /// </summary>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int UnsafeGetValueAsInteger() {
             return (int)_floatValue;
         }
@@ -243,7 +241,7 @@ namespace OpenDreamRuntime {
 
         public bool TryGetValueAsDreamObject(out DreamObject? dreamObject) {
             if (Type == DreamValueType.DreamObject) {
-                dreamObject = MustGetValueAsDreamObject()!;
+                dreamObject = MustGetValueAsDreamObject();
                 return true;
             } else {
                 dreamObject = null;
@@ -400,14 +398,8 @@ namespace OpenDreamRuntime {
                 case DreamValueType.Appearance:
                     return true;
                 default:
-                    ThrowTruthyNotImplemented();
                     return false;
             }
-        }
-
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        private void ThrowTruthyNotImplemented() {
-            throw new NotImplementedException($"Truthy evaluation for {this} is not implemented");
         }
 
         public string Stringify() {
@@ -697,8 +689,6 @@ namespace OpenDreamRuntime {
 
     [TypeSerializer]
     public sealed class DreamValueMatrix3Serializer : ITypeReader<Matrix3, DreamValueDataNode> {
-        private readonly DreamObjectTree _objectTree = IoCManager.Resolve<DreamObjectTree>();
-
         public Matrix3 Read(ISerializationManager serializationManager,
             DreamValueDataNode node,
             IDependencyCollection dependencies,

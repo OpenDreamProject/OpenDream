@@ -283,18 +283,6 @@ namespace OpenDreamRuntime {
             throw new InvalidOperationException();
         }
 
-        private bool TryCatchException(Exception exception)
-        {
-            if (!_stack.Any(x => x.IsCatching())) return false;
-
-            while (!_current.IsCatching()) {
-                PopProcState();
-            }
-
-            _current.CatchException(exception);
-            return true;
-        }
-
         public void PushProcState(ProcState state) {
             if (_stack.Count >= MaxStackDepth) {
                 throw new DMError("stack depth limit reached");
@@ -417,6 +405,17 @@ namespace OpenDreamRuntime {
             foreach (var entry in _stack) {
                 yield return entry;
             }
+        }
+
+        private bool TryCatchException(Exception exception) {
+            if (!_stack.Any(x => x.IsCatching())) return false;
+
+            while (!_current.IsCatching()) {
+                PopProcState();
+            }
+
+            _current.CatchException(exception);
+            return true;
         }
     }
 }

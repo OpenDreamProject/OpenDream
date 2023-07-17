@@ -34,9 +34,7 @@ public sealed class DreamObjectRegex : DreamObject {
             for(var i = 0; i < patternString.Length; i++) {
                 parsingString += patternString[i];
                 if(parsingString == "\\\\") {
-                    patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "\\");
                     parsingString = "";
-                    i -= 1;
                     continue;
                 }
 

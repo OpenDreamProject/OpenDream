@@ -774,7 +774,8 @@ namespace OpenDreamRuntime.Procs {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            state.AssignReference(reference, new(value.MustGetValueAsInteger() + 1));
+            //If it's not a number, it turns into 1
+            state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() + 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -784,7 +785,8 @@ namespace OpenDreamRuntime.Procs {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
-            state.AssignReference(reference, new(value.MustGetValueAsInteger() - 1));
+            //If it's not a number, it turns into -1
+            state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() - 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -1138,14 +1140,10 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus Negate(DMProcState state) {
-            DreamValue value = state.Pop();
+        public static ProcStatus? Negate(DMProcState state) {
+            int value = state.Pop().UnsafeGetValueAsInteger();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(-value.MustGetValueAsFloat())); break;
-                case DreamValue.DreamValueType.DreamObject when value.IsNull: state.Push(new DreamValue(0.0f)); break;
-                default: throw new Exception("Invalid negate operation on " + value);
-            }
+            state.Push(new DreamValue(-value));
 
             return ProcStatus.Continue;
         }

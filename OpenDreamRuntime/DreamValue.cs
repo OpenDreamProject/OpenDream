@@ -198,6 +198,14 @@ namespace OpenDreamRuntime {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        /// <summary>
+        /// Casts the DreamValue to an integer without throwing exceptions. Useful where BYOND coerces non-integers to 0.
+        /// </summary>
+        public int UnsafeGetValueAsInteger() {
+            return (int)_floatValue;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool TryGetValueAsFloat(out float value) {
             value = _floatValue;
             return Type == DreamValueType.Float;

@@ -44,6 +44,12 @@ public sealed class DreamObjectRegex : DreamObject {
                     i += 6;
                     continue;
                 }
+
+                if(parsingString == "\\L") {
+                    patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[^A-Za-z\\n]");
+                    parsingString = "";
+                    i += 9;
+                }
             }
             Regex = new Regex(patternString, options);
         } else {

@@ -30,22 +30,26 @@ public sealed class DreamObjectRegex : DreamObject {
                 if (flagsString.Contains('g')) IsGlobal = true;
             }
 
-            ReplaceEscapeCodes(ref patternString);
+            var parsingString = "";
+            for(var i = 0; i < patternString.Length; i++) {
+                parsingString += patternString[i];
+                if(parsingString == "\\\\") {
+                    patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "\\");
+                    parsingString = "";
+                    i -= 1;
+                    continue;
+                }
+
+                if(parsingString == "\\l") {
+                    patternString = patternString.Remove(i-1, 2).Insert(i-1, "[A-Za-z]");
+                    parsingString = ""; 
+                    i += 6;
+                    continue;
+                }
+            }
             Regex = new Regex(patternString, options);
         } else {
             throw new Exception("Invalid regex pattern " + pattern);
         }
-    }
-
-    /// <summary>
-    /// Replaces escape codes that BYOND recognizes but C# doesn't
-    /// </summary>
-    private static void ReplaceEscapeCodes(ref string regex) {
-
-        // Probably make this slightly saner
-        // Just add chain calls as needed and pray performance doesnt explode
-        regex = regex
-            .Replace("\\l", "[A-Za-z]") // ref: \l = Any letter A through Z, case-insensitive
-            .Replace("\\L", "[^A-Za-z\\n]"); // ref: \L = Any character except a letter or line break
     }
 }

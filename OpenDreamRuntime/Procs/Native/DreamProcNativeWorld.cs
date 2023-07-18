@@ -40,29 +40,29 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("GetConfig")]
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
-        public static DreamValue NativeProc_GetConfig(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            var param = state.GetArgument(1, "param");
+        public static DreamValue NativeProc_GetConfig(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSet);
+            var param = bundle.GetArgument(1, "param");
 
-            switch (config_set) {
+            switch (configSet) {
                 case "env":
                     if (param.IsNull) {
                         // DM ref says: "If no parameter is specified, a list of the names of all available parameters is returned."
                         // but apparently it's actually just null for "env".
                         return DreamValue.Null;
-                    } else if (param.TryGetValueAsString(out string paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
+                    } else if (param.TryGetValueAsString(out var paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
                         return new DreamValue(strValue);
                     } else {
                         return DreamValue.Null;
                     }
                 case "admin":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + config_set);
+                    throw new NotSupportedException("Unsupported GetConfig config_set: " + configSet);
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + config_set);
+                    throw new NotSupportedException("Unsupported GetConfig config_set: " + configSet);
                 default:
-                    throw new ArgumentException("Incorrect GetConfig config_set: " + config_set);
+                    throw new ArgumentException("Incorrect GetConfig config_set: " + configSet);
             }
         }
 
@@ -70,18 +70,18 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("command", Type = DreamValue.DreamValueTypeFlag.Float)]
         [DreamProcParameter("type", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("format", Type = DreamValue.DreamValueTypeFlag.String)]
-        public static DreamValue NativeProc_Profile(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-            state.GetArgument(0, "command").TryGetValueAsInteger(out var command);
+        public static DreamValue NativeProc_Profile(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "command").TryGetValueAsInteger(out var command);
 
             string? type, format;
-            switch (state.Arguments.Length) {
+            switch (bundle.Arguments.Length) {
                 case 3:
-                    state.GetArgument(1, "type").TryGetValueAsString(out type);
-                    state.GetArgument(2, "format").TryGetValueAsString(out format);
+                    bundle.GetArgument(1, "type").TryGetValueAsString(out type);
+                    bundle.GetArgument(2, "format").TryGetValueAsString(out format);
                     break;
                 case 2:
                     type = null;
-                    state.GetArgument(1, "type").TryGetValueAsString(out format);
+                    bundle.GetArgument(1, "type").TryGetValueAsString(out format);
                     break;
                 default:
                     type = null;
@@ -94,7 +94,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (format == "json") {
                 return new("[]");
             } else { // Anything else gives a /list
-                DreamList dataList = state.ObjectTree.CreateList();
+                DreamList dataList = bundle.ObjectTree.CreateList();
 
                 if (type == "sendmaps") {
                     dataList.AddValue(new("name"));
@@ -115,7 +115,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("Reboot")]
         [DreamProcParameter("reason", Type = DreamValue.DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_Reboot(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Reboot(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var server = IoCManager.Resolve<IBaseServer>();
 
             server.Shutdown("/world.Reboot() was called but restarting is very broken");
@@ -126,24 +126,24 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("value", Type = DreamValue.DreamValueTypeFlag.String)]
-        public static DreamValue NativeProc_SetConfig(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            state.GetArgument(1, "param").TryGetValueAsString(out string param);
-            var value = state.GetArgument(2, "value");
+        public static DreamValue NativeProc_SetConfig(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSet);
+            bundle.GetArgument(1, "param").TryGetValueAsString(out var param);
+            var value = bundle.GetArgument(2, "value");
 
-            switch (config_set) {
+            switch (configSet) {
                 case "env":
-                    value.TryGetValueAsString(out string valueString);
+                    value.TryGetValueAsString(out var valueString);
                     Environment.SetEnvironmentVariable(param, valueString);
                     return DreamValue.Null;
                 case "admin":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + config_set);
+                    throw new NotSupportedException("Unsupported SetConfig config_set: " + configSet);
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + config_set);
+                    throw new NotSupportedException("Unsupported SetConfig config_set: " + configSet);
                 default:
-                    throw new ArgumentException("Incorrect SetConfig config_set: " + config_set);
+                    throw new ArgumentException("Incorrect SetConfig config_set: " + configSet);
             }
         }
     }

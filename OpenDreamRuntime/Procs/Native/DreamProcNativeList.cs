@@ -7,7 +7,7 @@ namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeList {
         [DreamProc("Add")]
         [DreamProcParameter("Item1")]
-        public static DreamValue NativeProc_Add(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Add(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
 
             foreach (var argument in bundle.Arguments) {
@@ -26,7 +26,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Copy")]
         [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_Copy(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Copy(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int start = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)src!;
@@ -38,7 +38,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Cut")]
         [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_Cut(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Cut(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int start = bundle.GetArgument(0, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(1, "End").MustGetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)src!;
@@ -51,7 +51,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Elem")]
         [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_Find(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Find(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue element = bundle.GetArgument(0, "Elem");
             int start = bundle.GetArgument(1, "Start").MustGetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(2, "End").MustGetValueAsInteger(); //1-indexed
@@ -63,7 +63,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Insert")]
         [DreamProcParameter("Index", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Item1")]
-        public static DreamValue NativeProc_Insert(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Insert(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             int index = bundle.GetArgument(0, "Index").MustGetValueAsInteger(); //1-indexed
             DreamList list = (DreamList)src!;
 
@@ -89,7 +89,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Glue", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_Join(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Join(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
             List<DreamValue> values = list.GetValues();
 
@@ -120,7 +120,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("Remove")]
         [DreamProcParameter("Item1")]
-        public static DreamValue NativeProc_Remove(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Remove(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
             bool itemRemoved = false;
 
@@ -148,7 +148,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("Swap")]
         [DreamProcParameter("Index1", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Index2", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_Swap(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Swap(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
             int index1 = bundle.GetArgument(0, "Index1").MustGetValueAsInteger();
             int index2 = bundle.GetArgument(1, "Index2").MustGetValueAsInteger();

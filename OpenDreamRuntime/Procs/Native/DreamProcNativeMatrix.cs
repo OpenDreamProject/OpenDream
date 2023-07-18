@@ -7,8 +7,8 @@ internal static class DreamProcNativeMatrix {
 
     [DreamProc("Add")]
     [DreamProcParameter("Matrix2", Type = DreamValueTypeFlag.DreamObject)]
-    public static DreamValue NativeProc_Add(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-        DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
+    public static DreamValue NativeProc_Add(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue possibleMatrix = bundle.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
             DreamObjectMatrix.AddMatrix((DreamObjectMatrix)src!, matrixArg);
             return new DreamValue(src!);
@@ -19,7 +19,7 @@ internal static class DreamProcNativeMatrix {
 
 
     [DreamProc("Invert")]
-    public static DreamValue NativeProc_Invert(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
+    public static DreamValue NativeProc_Invert(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         if (!DreamObjectMatrix.TryInvert((DreamObjectMatrix)src!)) {
             throw new ArgumentException("Matrix does not have a valid inversion for Invert()");
         }
@@ -29,8 +29,8 @@ internal static class DreamProcNativeMatrix {
 
     [DreamProc("Multiply")]
     [DreamProcParameter("Matrix2", Type = DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.Float)] // or "n"
-    public static DreamValue NativeProc_Multiply(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-        DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
+    public static DreamValue NativeProc_Multiply(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue possibleMatrix = bundle.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
             DreamObjectMatrix.MultiplyMatrix((DreamObjectMatrix)src!, matrixArg);
             return new DreamValue(src!);
@@ -52,9 +52,9 @@ internal static class DreamProcNativeMatrix {
     [DreamProc("Scale")]
     [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
     [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
-    public static DreamValue NativeProc_Scale(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-        state.GetArgument(0, "x").TryGetValueAsFloat(out var horizontalScale);
-        if (!state.GetArgument(1, "y").TryGetValueAsFloat(out var verticalScale))
+    public static DreamValue NativeProc_Scale(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        bundle.GetArgument(0, "x").TryGetValueAsFloat(out var horizontalScale);
+        if (!bundle.GetArgument(1, "y").TryGetValueAsFloat(out var verticalScale))
             verticalScale = horizontalScale;
 
         DreamObjectMatrix.ScaleMatrix((DreamObjectMatrix)src!, horizontalScale, verticalScale);
@@ -63,8 +63,8 @@ internal static class DreamProcNativeMatrix {
 
     [DreamProc("Subtract")]
     [DreamProcParameter("Matrix2", Type = DreamValueTypeFlag.DreamObject)]
-    public static DreamValue NativeProc_Subtract(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-        DreamValue possibleMatrix = state.GetArgument(0, "Matrix2");
+    public static DreamValue NativeProc_Subtract(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue possibleMatrix = bundle.GetArgument(0, "Matrix2");
         if (possibleMatrix.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrixArg)) {
             DreamObjectMatrix.SubtractMatrix((DreamObjectMatrix)src!, matrixArg);
             return new DreamValue(src!);
@@ -77,15 +77,15 @@ internal static class DreamProcNativeMatrix {
     [DreamProc("Translate")]
     [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
     [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
-    public static DreamValue NativeProc_Translate(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-        DreamValue xArgument = state.GetArgument(0, "x");
+    public static DreamValue NativeProc_Translate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue xArgument = bundle.GetArgument(0, "x");
         if (xArgument.Equals(DreamValue.Null) || !xArgument.TryGetValueAsFloat(out float xTranslation)) {
             xTranslation = 0; // Defaults to 0 on an invalid value or a passed null
         }
 
         float yTranslation;
         // If y is null or not provided, use the value of x. If it is otherwise invalid, treat it as 0.
-        DreamValue yArgument = state.GetArgument(1, "y");
+        DreamValue yArgument = bundle.GetArgument(1, "y");
         if (yArgument.Equals(DreamValue.Null)) { // Omitted or passed null
             yTranslation = xTranslation;
         } else if (!yArgument.TryGetValueAsFloat(out yTranslation)) { // An otherwise invalid value
@@ -104,12 +104,12 @@ internal static class DreamProcNativeMatrix {
 
     [DreamProc("Turn")]
     [DreamProcParameter("angle", Type = DreamValueTypeFlag.Float)]
-    public static DreamValue NativeProc_Turn(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
-        DreamValue angleArg = state.GetArgument(0, "angle");
+    public static DreamValue NativeProc_Turn(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        DreamValue angleArg = bundle.GetArgument(0, "angle");
         if (!angleArg.TryGetValueAsFloat(out float angle)) {
             return new DreamValue(src!); // Defaults to input on invalid angle
         }
-        return _NativeProc_TurnInternal(state.ObjectTree, (DreamObjectMatrix)src!, angle);
+        return _NativeProc_TurnInternal(bundle.ObjectTree, (DreamObjectMatrix)src!, angle);
     }
 
     /// <summary> Turns a given matrix a given amount of degrees clockwise. </summary>

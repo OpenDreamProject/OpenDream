@@ -390,7 +390,7 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func) {
+        internal NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new NativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
 
@@ -398,15 +398,7 @@ namespace OpenDreamRuntime.Objects {
             return proc;
         }
 
-        internal FastNativeProc CreateFastNativeProc(DreamPath owningType, FastNativeProc.HandlerFn func) {
-            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new FastNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
-
-            Procs.Add(proc);
-            return proc;
-        }
-
-        public AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
+        private AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
 
@@ -414,16 +406,9 @@ namespace OpenDreamRuntime.Objects {
             return proc;
         }
 
-        public void SetGlobalNativeProc(NativeProc.HandlerFn func) {
+        internal void SetGlobalNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new NativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
-
-            Procs[proc.Id] = proc;
-        }
-
-        internal void SetGlobalNativeProc(FastNativeProc.HandlerFn func) {
-            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new FastNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
 
             Procs[proc.Id] = proc;
         }
@@ -435,14 +420,8 @@ namespace OpenDreamRuntime.Objects {
             Procs[proc.Id] = proc;
         }
 
-        public void SetNativeProc(TreeEntry type, NativeProc.HandlerFn func) {
+        internal void SetNativeProc(TreeEntry type, NativeProc.HandlerFn func) {
             var proc = CreateNativeProc(type.Path, func);
-
-            type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
-        }
-
-        internal void SetNativeProc(TreeEntry type, FastNativeProc.HandlerFn func) {
-            var proc = CreateFastNativeProc(type.Path, func);
 
             type.ObjectDefinition.SetProcDefinition(proc.Name, proc.Id);
         }

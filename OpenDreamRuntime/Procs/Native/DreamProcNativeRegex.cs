@@ -9,16 +9,16 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("start", Type = DreamValue.DreamValueTypeFlag.Float | DreamValue.DreamValueTypeFlag.DreamObject)] // BYOND docs say these are uppercase, they're not
         [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_Find(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
+        public static DreamValue NativeProc_Find(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamObjectRegex dreamRegex = (DreamObjectRegex)src!;
-            DreamValue haystack = state.GetArgument(0, "haystack");
+            DreamValue haystack = bundle.GetArgument(0, "haystack");
 
             if (!haystack.TryGetValueAsString(out var haystackString)) {
                 haystackString = string.Empty;
             }
 
-            int next = GetNext(src!, state.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
-            int end = state.GetArgument(2, "end").GetValueAsInteger();
+            int next = GetNext(src!, bundle.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
+            int end = bundle.GetArgument(2, "end").GetValueAsInteger();
 
             dreamRegex.SetVariable("text", haystack);
 
@@ -35,7 +35,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 dreamRegex.SetVariable("index", new DreamValue(match.Index + 1));
                 dreamRegex.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = state.ObjectTree.CreateList(match.Groups.Count);
+                    DreamList groupList = bundle.ObjectTree.CreateList(match.Groups.Count);
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));

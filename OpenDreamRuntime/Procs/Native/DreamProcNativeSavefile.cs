@@ -8,13 +8,13 @@ internal static class DreamProcNativeSavefile {
     [DreamProc("ExportText")]
     [DreamProcParameter("path", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("file", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
-    public static DreamValue NativeProc_ExportText(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
+    public static DreamValue NativeProc_ExportText(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         // Implementing this correctly is a fair amount of effort, and the only use of it I'm aware of is icon2base64()
         // So this implements it just enough to get that working
 
         var savefile = (DreamObjectSavefile)src!;
-        DreamValue path = state.GetArgument(0, "path");
-        DreamValue file = state.GetArgument(1, "file");
+        DreamValue path = bundle.GetArgument(0, "path");
+        DreamValue file = bundle.GetArgument(1, "file");
 
         if (!path.TryGetValueAsString(out var pathStr) || !file.IsNull) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
@@ -25,7 +25,7 @@ internal static class DreamProcNativeSavefile {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
-        if (!state.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
+        if (!bundle.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
@@ -35,7 +35,7 @@ internal static class DreamProcNativeSavefile {
     }
 
     [DreamProc("Flush")]
-    public static DreamValue NativeProc_Flush(FastNativeProc.FastNativeProcBundle state, DreamObject? src, DreamObject? usr) {
+    public static DreamValue NativeProc_Flush(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         var savefile = (DreamObjectSavefile)src!;
 
         savefile.Flush();

@@ -396,9 +396,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
-            if (proc is FastNativeProc p) {
+            if (proc is NativeProc p) {
                 // Skip a whole song and dance.
-                Push(p.FastCall(Thread, Instance, Usr, arguments));
+                Push(p.Call(Thread, src, Usr, arguments));
                 return ProcStatus.Continue;
             }
 

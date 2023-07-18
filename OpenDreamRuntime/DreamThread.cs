@@ -47,8 +47,7 @@ namespace OpenDreamRuntime {
             ArgumentTypes = argumentTypes;
 
             VerbName = verbName;
-            if (verbCategory is not null)
-            {
+            if (verbCategory is not null) {
                 // (de)serialization meme to reduce JSON size
                 // It's string.Empty by default but we invert it to null to prevent serialization
                 // Explicit null becomes treated as string.Empty
@@ -92,7 +91,7 @@ namespace OpenDreamRuntime {
     }
 
     [Virtual]
-    class DMThrowException : Exception {
+    internal class DMThrowException : Exception {
         public readonly DreamValue Value;
 
         public DMThrowException(DreamValue value) : base(GetRuntimeMessage(value)) {
@@ -104,23 +103,23 @@ namespace OpenDreamRuntime {
 
             value.TryGetValueAsDreamObject(out var dreamObject);
             if (dreamObject?.TryGetVariable("name", out var nameVar) == true) {
-                name = nameVar.TryGetValueAsString(out name) ? name : String.Empty;
+                name = nameVar.TryGetValueAsString(out name) ? name : string.Empty;
             } else {
-                name = String.Empty;
+                name = string.Empty;
             }
 
             return name;
         }
     }
 
-    sealed class DMCrashRuntime : Exception {
+    internal sealed class DMCrashRuntime : Exception {
         public DMCrashRuntime(string message) : base(message) { }
     }
 
     /// <summary>
     /// This exception instantly terminates the entire thread of the proc.
     /// </summary>
-    sealed class DMError : Exception {
+    internal sealed class DMError : Exception {
         public DMError(string message)
             : base(message) {
         }
@@ -190,7 +189,7 @@ namespace OpenDreamRuntime {
         private const int MaxStackDepth = 400; // Same as BYOND but /world/loop_checks = 0 raises the limit
 
         private ProcState? _current;
-        private Stack<ProcState> _stack = new();
+        private readonly Stack<ProcState> _stack = new();
 
         // The amount of stack frames containing `WaitFor = false`
         private int _syncCount = 0;
@@ -404,7 +403,7 @@ namespace OpenDreamRuntime {
         }
 
         private bool TryCatchException(Exception exception) {
-            if (!_stack.Any(x => x.IsCatching())) return false;
+            if (!InspectStack().Any(x => x.IsCatching())) return false;
 
             while (!_current.IsCatching()) {
                 PopProcState();

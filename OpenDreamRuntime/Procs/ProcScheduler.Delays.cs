@@ -22,11 +22,6 @@ internal sealed partial class ProcScheduler {
             // They both delay execution and allow other sleeping procs in the current tick to run immediately.
             // We achieve this by putting the proc on the _deferredTasks lists, so it can be immediately executed again.
 
-            // If there's no other scheduled tasks, then just continue immediately.
-            if (_scheduled.Count == 0 && _deferredTasks.Count == 0) {
-                return Task.CompletedTask;
-            }
-
             var defTcs = new TaskCompletionSource();
             _deferredTasks.Enqueue(defTcs);
             return defTcs.Task;

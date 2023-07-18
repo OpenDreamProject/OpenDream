@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 
 namespace OpenDreamRuntime.Procs {
-    sealed partial class ProcScheduler : IProcScheduler {
+    internal sealed partial class ProcScheduler : IProcScheduler {
         private readonly HashSet<AsyncNativeProc.State> _sleeping = new();
         private readonly Queue<AsyncNativeProc.State> _scheduled = new();
         private AsyncNativeProc.State? _current;

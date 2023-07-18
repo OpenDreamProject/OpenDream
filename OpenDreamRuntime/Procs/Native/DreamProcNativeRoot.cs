@@ -93,25 +93,25 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("color", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
-        public static DreamValue NativeProc_animate(NativeProc.State state) {
+        public static DreamValue NativeProc_animate(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
             // TODO: Leaving out the Object var adds a new step to the previous animation
-            if (!state.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
+            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
                 return DreamValue.Null;
             // TODO: Is this the correct behavior for invalid time?
-            if (!state.GetArgument(1, "time").TryGetValueAsFloat(out float time))
+            if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
-            if (state.GetArgument(2, "loop").TryGetValueAsInteger(out int loop))
+            if (bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop))
                 return DreamValue.Null; // TODO: Looped animations are not implemented
-            if (state.GetArgument(3, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
+            if (bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
                 return DreamValue.Null; // TODO: Non-linear animation easing types are not implemented"
-            if (state.GetArgument(4, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
+            if (bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
                 return DreamValue.Null; // TODO: Animation flags are not implemented
 
-            state.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
-                var pixelX = state.GetArgument(5, "pixel_x");
-                var pixelY = state.GetArgument(6, "pixel_y");
-                var dir = state.GetArgument(7, "dir");
+            var pixelX = bundle.GetArgument(5, "pixel_x");
+            var pixelY = bundle.GetArgument(6, "pixel_y");
+            var dir = bundle.GetArgument(7, "dir");
 
+            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
                 if (!pixelX.IsNull) {
                     obj.SetVariableValue("pixel_x", pixelX);
                     pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
@@ -1047,8 +1047,6 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Val")]
         public static DreamValue NativeProc_isnull(FastNativeProc.FastNativeProcBundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue value = bundle.GetArgument(0, "Val");
-
-            throw new NotImplementedException();
 
             return new DreamValue((value.IsNull) ? 1 : 0);
         }

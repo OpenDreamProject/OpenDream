@@ -395,9 +395,16 @@ namespace OpenDreamRuntime.Procs {
             Result = value;
         }
 
-        public void Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
+        public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
+            if (proc is FastNativeProc p) {
+                // Skip a whole song and dance.
+                Push(p.FastCall(Thread, Instance, Usr, arguments));
+                return ProcStatus.Continue;
+            }
+
             var state = proc.CreateState(Thread, src, Usr, arguments);
             Thread.PushProcState(state);
+            return ProcStatus.Called;
         }
 
         public DreamThread Spawn() {

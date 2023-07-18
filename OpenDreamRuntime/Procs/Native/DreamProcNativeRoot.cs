@@ -2357,8 +2357,8 @@ namespace OpenDreamRuntime.Procs.Native {
             bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end);
             bundle.GetArgument(3, "Insert").TryGetValueAsString(out var insertText);
 
-            if(text == null)
-                if(String.IsNullOrEmpty(insertText))
+            if (text == null)
+                if (string.IsNullOrEmpty(insertText))
                     return DreamValue.Null;
                 else
                     return new DreamValue(insertText);

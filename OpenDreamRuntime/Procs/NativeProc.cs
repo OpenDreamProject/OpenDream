@@ -65,7 +65,7 @@ public sealed unsafe class NativeProc : DreamProc {
 
         [Pure]
         public DreamValue GetArgument(int argumentPosition, string argumentName) {
-            if (Arguments.Length > argumentPosition) {
+            if (Arguments.Length > argumentPosition && !Arguments[argumentPosition].IsNull) {
                 return Arguments[argumentPosition];
             }
 
@@ -100,7 +100,7 @@ public sealed unsafe class NativeProc : DreamProc {
 
     public DreamValue Call(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
         var bundle = new Bundle(this, arguments);
-        
+
         return _handler(bundle, src, usr);
     }
 }

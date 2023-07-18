@@ -225,12 +225,6 @@ namespace OpenDreamRuntime {
                     try {
                         // _current.Resume may mutate our state!!!
                         status = _current.Resume();
-                    } catch (DMCrashRuntime dmCrashRuntime) {
-                        //skip one level on the call stack because crash is being treated as an actual proc
-                        PopProcState();
-                        if (TryCatchException(dmCrashRuntime)) continue;
-                        HandleException(dmCrashRuntime);
-                        status = ProcStatus.Returned;
                     } catch (DMError dmError) {
                         CancelAll();
                         HandleException(dmError);

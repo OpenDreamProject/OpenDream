@@ -132,20 +132,20 @@ namespace Content.Tests
                     retValue = await callTask;
                     return DreamValue.Null;
                 } else {
-                    Assert.Fail($"No global proc named RunTest");
+                    Assert.Fail("No global proc named RunTest");
                     return DreamValue.Null;
                 }
             });
 
-            var Watch = new Stopwatch();
-            Watch.Start();
+            var watch = new Stopwatch();
+            watch.Start();
 
             // Tick until our inner call has finished
             while (!callTask.IsCompleted) {
                 _dreamMan.Update();
                 _taskManager.ProcessPendingTasks();
 
-                if (Watch.Elapsed.TotalMilliseconds > 500) {
+                if (watch.Elapsed.TotalMilliseconds > 500) {
                     Assert.Fail("Test timed out");
                 }
             }

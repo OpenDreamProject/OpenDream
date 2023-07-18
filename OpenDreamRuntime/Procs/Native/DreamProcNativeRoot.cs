@@ -405,7 +405,8 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_CRASH(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             bundle.GetArgument(0, "msg").TryGetValueAsString(out var message);
 
-            throw new DMCrashRuntime(message ?? String.Empty);
+            // BYOND doesn't give a message if the value is anything other than a string
+            throw new DMCrashRuntime(message ?? string.Empty);
         }
 
         [DreamProc("fcopy")]

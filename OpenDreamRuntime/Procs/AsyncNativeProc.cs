@@ -1,6 +1,5 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
@@ -27,7 +26,6 @@ namespace OpenDreamRuntime.Procs {
 
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;
-            private CancellationTokenSource? _scheduleCancellationToken;
 
             private ProcState? _callProcNotify;
             private TaskCompletionSource<DreamValue>? _callTcs;
@@ -88,11 +86,6 @@ namespace OpenDreamRuntime.Procs {
             public override void Dispose() {
                 base.Dispose();
 
-                // Cancel the scheduled continuation of this state if there is one
-                _scheduleCancellationToken?.Cancel();
-                _scheduleCancellationToken?.Dispose();
-                _scheduleCancellationToken = null;
-
                 Src = null!;
                 Usr = null!;
                 _argumentCount = 0;
@@ -107,30 +100,22 @@ namespace OpenDreamRuntime.Procs {
                 Pool.Push(this);
             }
 
-            private async Task InternalResumeAsync() {
-                Result = await _taskFunc(this);
-            }
-
             public override ProcStatus Resume() {
                 _inResume = true;
 
                 // We've just been created, start our task
                 if (_task == null) {
-                    // Pull execution of our task outside of StartNew to allow it to inline here
-                    _task = InternalResumeAsync();
+                    IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
+                    _task = procScheduler.Schedule(this, _taskFunc);
+                }
 
-                    // Shortcut: If our proc was synchronous, we don't need to schedule
-                    //           This also means we won't reach Resume on a finished proc through our continuation
-                    if (_task.IsCompleted) {
-                        if (_task.Exception != null) {
-                            throw _task.Exception;
-                        }
-
-                        return ProcStatus.Returned;
+                // If the task is finished, we're all done
+                if (_task.IsCompleted) {
+                    if (_task.Exception != null) {
+                        throw _task.Exception;
                     }
 
-                    IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
-                    _scheduleCancellationToken = procScheduler.Schedule(this, _task);
+                    return ProcStatus.Returned;
                 }
 
                 // We need to call a proc.
@@ -150,15 +135,6 @@ namespace OpenDreamRuntime.Procs {
                     _callResult = null;
 
                     callTcs.SetResult(callResult);
-                }
-
-                // If the task is finished, we're all done
-                if (_task.IsCompleted) {
-                    if (_task.Exception != null) {
-                        throw _task.Exception;
-                    }
-
-                    return ProcStatus.Returned;
                 }
 
                 // Otherwise, we are still pending

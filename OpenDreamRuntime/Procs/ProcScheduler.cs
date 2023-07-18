@@ -20,30 +20,30 @@ using System.Threading.Tasks;
 // but ah well. Works for now.
 //
 
-
 namespace OpenDreamRuntime.Procs {
     internal sealed partial class ProcScheduler : IProcScheduler {
         private readonly HashSet<AsyncNativeProc.State> _sleeping = new();
         private readonly Queue<AsyncNativeProc.State> _scheduled = new();
         private AsyncNativeProc.State? _current;
 
-        public CancellationTokenSource Schedule(AsyncNativeProc.State state, Task task) {
+        public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc) {
             CancellationTokenSource cancellationTokenSource = new();
             CancellationToken cancellationToken = cancellationTokenSource.Token;
 
-            _sleeping.Add(state);
-
-            async void Foo() {
-                await task;
-                _sleeping.Remove(state);
+            async Task Foo() {
+                state.Result = await taskFunc(state);
+                if (!_sleeping.Remove(state))
+                    return;
 
                 if (!cancellationToken.IsCancellationRequested)
                     _scheduled.Enqueue(state);
             }
 
-            Foo();
+            var task = Foo();
+            if (!task.IsCompleted) // No need to schedule the proc if it's already finished
+                _sleeping.Add(state);
 
-            return cancellationTokenSource;
+            return task;
         }
 
         public void Process() {
@@ -80,7 +80,7 @@ namespace OpenDreamRuntime.Procs {
     }
 
     public interface IProcScheduler {
-        public CancellationTokenSource Schedule(AsyncNativeProc.State state, Task task);
+        public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc);
 
         public void Process();
 

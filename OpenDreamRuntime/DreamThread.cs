@@ -131,7 +131,9 @@ namespace OpenDreamRuntime {
         public int Id { get; } = ++_idCounter;
 
         public DreamThread Thread { get; set; }
-        public DreamValue Result { protected set; get; } = DreamValue.Null;
+
+        [Access(typeof(ProcScheduler))]
+        public DreamValue Result = DreamValue.Null;
 
         public bool WaitFor { get; set; } = true;
 

@@ -101,6 +101,7 @@ public sealed unsafe class NativeProc : DreamProc {
     public DreamValue Call(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
         var bundle = new Bundle(this, arguments);
 
+        // TODO: Include this call in the thread's stack in error traces
         return _handler(bundle, src, usr);
     }
 }

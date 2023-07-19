@@ -27,16 +27,12 @@ namespace OpenDreamRuntime.Procs {
         private AsyncNativeProc.State? _current;
 
         public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc) {
-            CancellationTokenSource cancellationTokenSource = new();
-            CancellationToken cancellationToken = cancellationTokenSource.Token;
-
             async Task Foo() {
                 state.Result = await taskFunc(state);
                 if (!_sleeping.Remove(state))
                     return;
 
-                if (!cancellationToken.IsCancellationRequested)
-                    _scheduled.Enqueue(state);
+                _scheduled.Enqueue(state);
             }
 
             var task = Foo();

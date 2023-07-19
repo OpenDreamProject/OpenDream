@@ -214,20 +214,17 @@ namespace OpenDreamRuntime.Procs {
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowInvalidTurfLoc(DreamValue loc)
-        {
+        private static void ThrowInvalidTurfLoc(DreamValue loc) {
             throw new Exception($"Invalid turf loc {loc}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowCannotCreateObjectFromInvalid(DreamValue val)
-        {
+        private static void ThrowCannotCreateObjectFromInvalid(DreamValue val) {
             throw new Exception($"Cannot create object from invalid type {val}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowCannotCreateUnknownObject(DreamValue val)
-        {
+        private static void ThrowCannotCreateUnknownObject(DreamValue val) {
             throw new Exception($"Cannot create unknown object {val}");
         }
 
@@ -720,8 +717,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowInvalidAddOperation(DreamValue first, DreamValue second)
-        {
+        private static void ThrowInvalidAddOperation(DreamValue first, DreamValue second) {
             throw new Exception("Invalid add operation on " + first + " and " + second);
         }
 
@@ -798,10 +794,10 @@ namespace OpenDreamRuntime.Procs {
 
             if (!first.IsDreamObject<DreamList>() && !first.IsNull && !second.IsNull) {
                 state.Push(new DreamValue(first.MustGetValueAsInteger() & second.MustGetValueAsInteger()));
-            } else if (first.TryGetValueAsDreamList(out DreamList list)) {
+            } else if (first.TryGetValueAsDreamList(out var list)) {
                 DreamList newList = state.Proc.ObjectTree.CreateList();
 
-                if (second.TryGetValueAsDreamList(out DreamList secondList)) {
+                if (second.TryGetValueAsDreamList(out var secondList)) {
                     int len = list.GetLength();
 
                     for (int i = 1; i <= len; i++) {
@@ -1304,14 +1300,15 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus IsInRange(DMProcState state)
-        {
+        public static ProcStatus IsInRange(DMProcState state) {
             DreamValue end = state.Pop();
             DreamValue start = state.Pop();
             DreamValue var = state.Pop();
+
             if (var.Type != DreamValue.DreamValueType.Float) var = new DreamValue(0f);
             if (start.Type != DreamValue.DreamValueType.Float) start = new DreamValue(0f);
             if (end.Type != DreamValue.DreamValueType.Float) end = new DreamValue(0f);
+
             bool inRange = (IsEqual(start, var) || IsLessThan(start, var)) && (IsEqual(var, end) || IsLessThan(var, end));
             state.Push(new DreamValue(inRange ? 1 : 0));
             return ProcStatus.Continue;
@@ -1810,7 +1807,7 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception("Invalid browse_rsc() recipient");
             }
 
-            connection?.BrowseResource(file, (!filename.IsNull) ? filename.GetValueAsString() : Path.GetFileName(file.ResourcePath));
+            connection?.BrowseResource(file, filename.IsNull ? Path.GetFileName(file.ResourcePath) : filename.GetValueAsString());
             return ProcStatus.Continue;
         }
 
@@ -2584,14 +2581,14 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus GetStep(DMProcState state) {
             var d = state.Pop();
             var l = state.Pop();
+
             if (!l.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc)) {
                 state.Push(DreamValue.Null);
                 return ProcStatus.Continue;
             }
 
             var dir = d.MustGetValueAsInteger();
-            if (dir >= 16) // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
-            {
+            if (dir >= 16) { // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
                 state.Push(DreamValue.Null);
                 return ProcStatus.Continue;
             }
@@ -2615,19 +2612,21 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus Length(DMProcState state) {
             var o = state.Pop();
+
             state.Push(DreamProcNativeRoot._length(o, true));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus GetDir(DMProcState state) {
-            var loc1r = state.Pop();
-            var loc2r = state.Pop();
-            if (!loc2r.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc1)) {
+            var loc2R = state.Pop();
+            var loc1R = state.Pop();
+
+            if (!loc1R.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc1)) {
                 state.Push(new DreamValue(0));
                 return ProcStatus.Continue;
             }
 
-            if (!loc1r.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc2)) {
+            if (!loc2R.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc2)) {
                 state.Push(new DreamValue(0));
                 return ProcStatus.Continue;
             }
@@ -2635,8 +2634,7 @@ namespace OpenDreamRuntime.Procs {
             var loc1Pos = state.Proc.AtomManager.GetAtomPosition(loc1);
             var loc2Pos = state.Proc.AtomManager.GetAtomPosition(loc2);
 
-            if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
-            {
+            if (loc1Pos.Z != loc2Pos.Z) { // They must be on the same z-level
                 state.Push(new DreamValue(0));
                 return ProcStatus.Continue;
             }

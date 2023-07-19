@@ -775,7 +775,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
             //If it's not a number, it turns into 1
-            state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() + 1));
+            state.AssignReference(reference, new(value.UnsafeGetValueAsFloat() + 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -786,7 +786,7 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.GetReferenceValue(reference, peek: true);
 
             //If it's not a number, it turns into -1
-            state.AssignReference(reference, new(value.UnsafeGetValueAsInteger() - 1));
+            state.AssignReference(reference, new(value.UnsafeGetValueAsFloat() - 1));
 
             state.Push(value);
             return ProcStatus.Continue;
@@ -1141,7 +1141,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Negate(DMProcState state) {
-            int value = state.Pop().UnsafeGetValueAsInteger();
+            float value = state.Pop().UnsafeGetValueAsFloat();
 
             state.Push(new DreamValue(-value));
 

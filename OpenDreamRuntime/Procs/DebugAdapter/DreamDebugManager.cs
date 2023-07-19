@@ -142,7 +142,8 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     public void HandleInstruction(DMProcState state) {
-        // Stop if we're instruction stepping.
+        // TODO in part 2
+        /*// Stop if we're instruction stepping.
         bool stoppedOnStep = false;
         switch (state.Thread.StepMode) {
             case ThreadStepMode { Mode: StepMode.StepIn, FrameId: _, Granularity: SteppingGranularity.Instruction }:
@@ -161,11 +162,12 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonStep,
             });
-        }
+        }*/
     }
 
     public void HandleLineChange(DMProcState state, int line) {
-        if (_stopOnEntry) {
+        // TODO in part 2
+        /*if (_stopOnEntry) {
             _stopOnEntry = false;
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonEntry,
@@ -203,13 +205,14 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                 hit.Add(bp.Id);
             }
         }
+
         if (hit.Any()) {
             Output($"Breakpoint hit at {state.CurrentSource}:{line}");
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonBreakpoint,
                 HitBreakpointIds = hit,
             });
-        }
+        }*/
     }
 
     public void HandleException(DreamThread thread, Exception exception) {
@@ -369,19 +372,14 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private IEnumerable<(string Source, int Line)> IteratePossibleBreakpoints() {
         foreach (var proc in _objectTree.Procs.Concat(new[] { _objectTree.GlobalInitProc }).OfType<DMProc>()) {
-            string? source = proc.Source;
-            if (source != null) {
-                yield return (source, proc.Line);
-            }
-            foreach (var (_, instruction) in new ProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
-                switch (instruction) {
-                    case (DreamProcOpcode.DebugSource, string newSource):
-                        source = newSource;
-                        break;
-                    case (DreamProcOpcode.DebugLine, int line):
-                        yield return (source!, line);
-                        break;
-                }
+            string? source = null;
+            foreach (var sourceInfo in proc.SourceInfo) {
+                if (sourceInfo.File != null)
+                    source = _objectTree.Strings[sourceInfo.File.Value];
+                if (source == null)
+                    continue;
+
+                yield return (source, sourceInfo.Line);
             }
         }
     }
@@ -591,6 +589,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                 Line = line ?? 0,
                 Name = nameBuilder.ToString(),
             };
+
             if (frame is DMProcState dm) {
                 outputFrame.InstructionPointerReference = EncodeInstructionPointer(dm.Proc, dm.ProgramCounter);
             }
@@ -605,11 +604,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         if (source is null)
             return null;
 
-        var fname = Path.GetFileName(source);
+        var fName = Path.GetFileName(source);
         if (Path.IsPathRooted(source)) {
-            return new Source(fname, source);
+            return new Source(fName, source);
         } else {
-            return new Source(fname, Path.Join(RootPath, source));
+            return new Source(fName, Path.Join(RootPath, source));
         }
     }
 
@@ -760,32 +759,22 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             if (previousInstruction != null) {
                 previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ").ToLowerInvariant();
             }
+
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
                 Address = EncodeInstructionPointer(proc, offset),
                 Instruction = ProcDecoder.Format(instruction, type => _objectTree.Types[type].Path.ToString()),
             };
-            switch (instruction) {
-                case (DreamProcOpcode.DebugSource, string source):
-                    previousInstruction.Location = TranslateSource(source);
-                    break;
-                case (DreamProcOpcode.DebugLine, int line):
-                    previousInstruction.Line = line;
-                    break;
-            }
+
+            var sourceInfo = proc.GetSourceAtOffset(previousOffset);
+            previousInstruction.Location = TranslateSource(sourceInfo.Source);
+            previousInstruction.Line = sourceInfo.Line;
+
             output.Add(previousInstruction);
         }
+
         if (previousInstruction != null) {
             previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ").ToLowerInvariant();
-        }
-        if (output.Count > 0) {
-            output[0].Symbol = proc.ToString();
-            if (output[0].Location is null) {
-                output[0].Location = TranslateSource(proc.Source);
-            }
-            if (output[0].Line is null) {
-                output[0].Line = proc.Line;
-            }
         }
 
         // ... and THEN strip everything outside the requested range.

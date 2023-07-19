@@ -14,9 +14,9 @@ namespace OpenDreamRuntime.Procs {
     public sealed class DMProc : DreamProc {
         public readonly byte[] Bytecode;
 
-        public string? Source { get; }
-        public int Line { get; }
+        public readonly bool IsNullProc;
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
+        public readonly List<SourceInfoJson> SourceInfo;
 
         public readonly AtomManager AtomManager;
         public readonly DreamManager DreamManager;
@@ -27,14 +27,12 @@ namespace OpenDreamRuntime.Procs {
         public readonly DreamObjectTree ObjectTree;
 
         private readonly int _maxStackSize;
-        public bool IsNullProc { get; private set; }
 
         public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, IProcScheduler procScheduler)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
-            Source = json.Source;
-            Line = json.Line;
+            SourceInfo = json.SourceInfo;
             _maxStackSize = json.MaxStackSize;
             IsNullProc = CheckIfNullProc();
 
@@ -47,12 +45,22 @@ namespace OpenDreamRuntime.Procs {
             ProcScheduler = procScheduler;
         }
 
-        private bool CheckIfNullProc() {
-            // We check for two possible patterns, entirely empty procs or pushing and returning self.
-            if (Bytecode.Length == 0 || Bytecode is [(byte)DreamProcOpcode.PushReferenceValue, 0x01, (byte)DreamProcOpcode.Return])
-                return true;
+        public (string Source, int Line) GetSourceAtOffset(int offset) {
+            SourceInfoJson current = SourceInfo[0];
+            string source = ObjectTree.Strings[current.File!.Value];
 
-            return false;
+            int i = 0;
+            do {
+                var next = SourceInfo[i++];
+                if (next.Offset > offset)
+                    break;
+
+                current = next;
+                if (current.File != null)
+                    source = ObjectTree.Strings[current.File.Value];
+            } while (i < SourceInfo.Count);
+
+            return (source, current.Line);
         }
 
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
@@ -71,6 +79,14 @@ namespace OpenDreamRuntime.Procs {
 
             state.Initialize(this, thread, _maxStackSize, src, usr, arguments);
             return state;
+        }
+
+        private bool CheckIfNullProc() {
+            // We check for two possible patterns, entirely empty procs or pushing and returning self.
+            if (Bytecode.Length == 0 || Bytecode is [(byte)DreamProcOpcode.PushReferenceValue, 0x01, (byte)DreamProcOpcode.Return])
+                return true;
+
+            return false;
         }
 
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
@@ -192,8 +208,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.BitShiftRight, DMOpcodeHandlers.BitShiftRight},
             {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
             {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
-            {DreamProcOpcode.DebugSource, DMOpcodeHandlers.DebugSource},
-            {DreamProcOpcode.DebugLine, DMOpcodeHandlers.DebugLine},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
             {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
@@ -255,8 +269,6 @@ namespace OpenDreamRuntime.Procs {
         public DreamObject? Instance;
         public DreamObject? Usr;
         public int ArgumentCount;
-        public string? CurrentSource;
-        public int CurrentLine;
         private readonly Stack<int> _catchPosition = new();
         private readonly Stack<int> _catchVarIndex = new();
         public const int NoTryCatchVar = -1;
@@ -273,8 +285,6 @@ namespace OpenDreamRuntime.Procs {
 
         private DMProc _proc;
         public override DMProc Proc => _proc;
-
-        public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
 
         /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
         static unsafe DMProcState() {
@@ -302,8 +312,6 @@ namespace OpenDreamRuntime.Procs {
             Instance = other.Instance;
             Usr = other.Usr;
             ArgumentCount = other.ArgumentCount;
-            CurrentSource = other.CurrentSource;
-            CurrentLine = other.CurrentLine;
             _pc = other._pc;
             _firstResume = false;
 
@@ -318,8 +326,6 @@ namespace OpenDreamRuntime.Procs {
             Instance = instance;
             Usr = usr;
             ArgumentCount = Math.Max(arguments.Count, _proc.ArgumentNames?.Count ?? 0);
-            CurrentSource = _proc.Source;
-            CurrentLine = _proc.Line;
             _localVariables = _dreamValuePool.Rent(256);
             _stack = _dreamValuePool.Rent(maxStackSize);
             _firstResume = true;
@@ -384,7 +390,7 @@ namespace OpenDreamRuntime.Procs {
 
             builder.Append(Proc.Name);
             builder.Append(':');
-            builder.Append(CurrentLine);
+            builder.Append(Proc.GetSourceAtOffset(_pc - 1).Line);
         }
 
         public void Jump(int position) {
@@ -452,8 +458,6 @@ namespace OpenDreamRuntime.Procs {
             Instance = null;
             Usr = null;
             ArgumentCount = 0;
-            CurrentSource = null;
-            CurrentLine = 0;
             _enumeratorStack = null;
             _pc = 0;
             _proc = null;

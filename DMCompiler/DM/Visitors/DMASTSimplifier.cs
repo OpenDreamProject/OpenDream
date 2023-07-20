@@ -1,6 +1,5 @@
 using DMCompiler.Compiler.DM;
 using System;
-using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Visitors {
     public sealed class DMASTSimplifier : DMASTVisitor {

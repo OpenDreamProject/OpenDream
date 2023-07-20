@@ -1106,7 +1106,7 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.EndTry);
         }
 
-        public void WriteOpcode(DreamProcOpcode opcode) {
+        private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
         }
 

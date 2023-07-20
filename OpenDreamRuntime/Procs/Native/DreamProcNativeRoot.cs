@@ -2137,7 +2137,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
             state.GetArgument(0, "Delay").TryGetValueAsFloat(out float delay);
 
-            await IoCManager.Resolve<IProcScheduler>().CreateDelay(delay);
+            await state.ProcScheduler.CreateDelay(delay);
 
             return DreamValue.Null;
         }

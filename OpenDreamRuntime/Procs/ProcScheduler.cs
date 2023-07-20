@@ -1,5 +1,4 @@
-﻿using System.Threading;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 
 //
 // A quick note about how we get timing right here, since it is sensitive. (I don't know where else to write it down.)
@@ -20,81 +19,65 @@ using System.Threading.Tasks;
 // but ah well. Works for now.
 //
 
-namespace OpenDreamRuntime.Procs {
-    internal sealed partial class ProcScheduler : IProcScheduler {
-        private readonly HashSet<AsyncNativeProc.State> _sleeping = new();
-        private readonly Queue<AsyncNativeProc.State> _scheduled = new();
-        private AsyncNativeProc.State? _current;
+namespace OpenDreamRuntime.Procs;
 
-        public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc) {
-            async Task Foo() {
-                state.Result = await taskFunc(state);
-                if (!_sleeping.Remove(state))
-                    return;
+public sealed partial class ProcScheduler {
+    private readonly HashSet<AsyncNativeProc.State> _sleeping = new();
+    private readonly Queue<AsyncNativeProc.State> _scheduled = new();
+    private AsyncNativeProc.State? _current;
 
-                _scheduled.Enqueue(state);
-            }
+    public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc) {
+        async Task Foo() {
+            state.Result = await taskFunc(state);
+            if (!_sleeping.Remove(state))
+                return;
 
-            var task = Foo();
-            if (!task.IsCompleted) // No need to schedule the proc if it's already finished
-                _sleeping.Add(state);
-
-            return task;
+            _scheduled.Enqueue(state);
         }
 
-        public void Process() {
-            UpdateDelays();
+        var task = Foo();
+        if (!task.IsCompleted) // No need to schedule the proc if it's already finished
+            _sleeping.Add(state);
 
-            // Update all asynchronous tasks that have finished waiting and are ready to resume.
-            //
-            // Note that this is in a loop with _deferredTasks.
-            // If a proc calls sleep(1) or such, it gets put into _deferredTasks.
-            // When we drain the _deferredTasks lists, it'll indirectly schedule things into _scheduled again.
-            // This should all happen synchronously (see above).
-            while (_scheduled.Count > 0 || _deferredTasks.Count > 0) {
-                while (_scheduled.TryDequeue(out _current)) {
-                    _current.SafeResume();
-                }
+        return task;
+    }
 
-                while (_deferredTasks.TryDequeue(out var task)) {
-                    task.TrySetResult();
-                }
+    public void Process() {
+        UpdateDelays();
+
+        // Update all asynchronous tasks that have finished waiting and are ready to resume.
+        //
+        // Note that this is in a loop with _deferredTasks.
+        // If a proc calls sleep(1) or such, it gets put into _deferredTasks.
+        // When we drain the _deferredTasks lists, it'll indirectly schedule things into _scheduled again.
+        // This should all happen synchronously (see above).
+        while (_scheduled.Count > 0 || _deferredTasks.Count > 0) {
+            while (_scheduled.TryDequeue(out _current)) {
+                _current.SafeResume();
             }
-        }
 
-        public IEnumerable<DreamThread> InspectThreads() {
-            // TODO: We shouldn't need to check if Thread is null here
-            //       I think we're keeping disposed states somewhere here
-
-            if (_current?.Thread is not null) {
-                yield return _current.Thread;
-            }
-            foreach (var state in _scheduled) {
-                if (state.Thread == null)
-                    continue;
-                yield return state.Thread;
-            }
-            foreach (var state in _sleeping) {
-                if (state.Thread == null)
-                    continue;
-                yield return state.Thread;
+            while (_deferredTasks.TryDequeue(out var task)) {
+                task.TrySetResult();
             }
         }
     }
 
-    public interface IProcScheduler {
-        public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc);
+    public IEnumerable<DreamThread> InspectThreads() {
+        // TODO: We shouldn't need to check if Thread is null here
+        //       I think we're keeping disposed states somewhere here
 
-        public void Process();
-
-        public IEnumerable<DreamThread> InspectThreads();
-
-        /// <summary>
-        /// Create a task that will delay by an amount of time, following the rules for <c>sleep</c> and <c>spawn</c>.
-        /// </summary>
-        /// <param name="deciseconds">
-        /// The amount of time, in deciseconds, to sleep. Gets rounded down to a number of ticks.
-        /// </param>
-        Task CreateDelay(float deciseconds);
+        if (_current?.Thread is not null) {
+            yield return _current.Thread;
+        }
+        foreach (var state in _scheduled) {
+            if (state.Thread == null)
+                continue;
+            yield return state.Thread;
+        }
+        foreach (var state in _sleeping) {
+            if (state.Thread == null)
+                continue;
+            yield return state.Thread;
+        }
     }
 }

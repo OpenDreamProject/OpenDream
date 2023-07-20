@@ -20,7 +20,7 @@ namespace OpenDreamRuntime.Procs {
 
         public readonly AtomManager AtomManager;
         public readonly DreamManager DreamManager;
-        public readonly IProcScheduler ProcScheduler;
+        public readonly ProcScheduler ProcScheduler;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IDreamDebugManager DreamDebugManager;
         public readonly DreamResourceManager DreamResourceManager;
@@ -28,7 +28,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, IProcScheduler procScheduler)
+        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
@@ -295,7 +295,7 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         public DreamManager DreamManager => _proc.DreamManager;
-        public IProcScheduler ProcScheduler => _proc.ProcScheduler;
+        public ProcScheduler ProcScheduler => _proc.ProcScheduler;
         public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
         /// <summary> This stores our 'src' value. May be null!</summary>

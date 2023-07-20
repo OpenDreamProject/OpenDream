@@ -370,34 +370,34 @@ namespace DMCompiler.DM.Expressions {
 
     // get_step(ref, dir)
     internal sealed class GetStep : DMExpression {
-        private readonly DMExpression Ref;
-        private readonly DMExpression Dir;
+        private readonly DMExpression _ref;
+        private readonly DMExpression _dir;
 
         public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
-            Ref = refValue;
-            Dir = dir;
+            _ref = refValue;
+            _dir = dir;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            Ref.EmitPushValue(dmObject, proc);
-            Dir.EmitPushValue(dmObject, proc);
+            _ref.EmitPushValue(dmObject, proc);
+            _dir.EmitPushValue(dmObject, proc);
             proc.GetStep();
         }
     }
 
     // get_dir(loc1, loc2)
     internal sealed class GetDir : DMExpression {
-        private readonly DMExpression Loc1;
-        private readonly DMExpression Loc2;
+        private readonly DMExpression _loc1;
+        private readonly DMExpression _loc2;
 
         public GetDir(Location location, DMExpression loc1, DMExpression loc2) : base(location) {
-            Loc1 = loc1;
-            Loc2 = loc2;
+            _loc1 = loc1;
+            _loc2 = loc2;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            Loc1.EmitPushValue(dmObject, proc);
-            Loc2.EmitPushValue(dmObject, proc);
+            _loc1.EmitPushValue(dmObject, proc);
+            _loc2.EmitPushValue(dmObject, proc);
             proc.GetDir();
         }
     }

@@ -56,7 +56,7 @@ namespace OpenDreamRuntime.Objects {
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
-        [Dependency] private readonly IProcScheduler _procScheduler = default!;
+        [Dependency] private readonly ProcScheduler _procScheduler = default!;
         private ServerAppearanceSystem? _appearanceSystem;
         private TransformSystem? _transformSystem;
 
@@ -400,7 +400,7 @@ namespace OpenDreamRuntime.Objects {
 
         private AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
+            var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this, _procScheduler);
 
             Procs.Add(proc);
             return proc;
@@ -415,7 +415,7 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this);
+            var proc = new AsyncNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this, _procScheduler);
 
             Procs[proc.Id] = proc;
         }

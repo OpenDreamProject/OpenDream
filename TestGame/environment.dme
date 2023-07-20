@@ -8,7 +8,5 @@
 // BEGIN_INCLUDE
 #include "code.dm"
 #include "renderer_tests.dm"
-#include "sleep_test.dm"
-#include "timer_stress.dm"
 #include "map.dmm"
 // END_INCLUDE

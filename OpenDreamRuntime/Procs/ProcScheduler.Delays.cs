@@ -6,7 +6,7 @@ namespace OpenDreamRuntime.Procs;
 
 // Handles delay processing for sleep() and spawn().
 
-internal sealed partial class ProcScheduler {
+public sealed partial class ProcScheduler {
     [Dependency] private readonly IGameTiming _gameTiming = default!;
 
     private ValueList<DelayTicker> _tickers;
@@ -14,6 +14,12 @@ internal sealed partial class ProcScheduler {
     // This is for deferred tasks that need to fire in the current tick.
     private readonly Queue<TaskCompletionSource> _deferredTasks = new();
 
+    /// <summary>
+    /// Create a task that will delay by an amount of time, following the rules for <c>sleep</c> and <c>spawn</c>.
+    /// </summary>
+    /// <param name="deciseconds">
+    /// The amount of time, in deciseconds, to sleep. Gets rounded down to a number of ticks.
+    /// </param>
     public Task CreateDelay(float deciseconds) {
         if (deciseconds <= 0) {
             // When the delay is <= zero, we should run again in the current tick.

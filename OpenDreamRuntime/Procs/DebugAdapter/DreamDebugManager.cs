@@ -13,7 +13,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     [Dependency] private readonly DreamManager _dreamManager = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly IProcScheduler _procScheduler = default!;
+    [Dependency] private readonly ProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
 
     private ISawmill _sawmill = default!;

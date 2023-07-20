@@ -22,7 +22,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-        [Dependency] private readonly IProcScheduler _procScheduler = default!;
+        [Dependency] private readonly ProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;

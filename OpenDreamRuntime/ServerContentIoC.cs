@@ -9,7 +9,7 @@ namespace OpenDreamRuntime {
             IoCManager.Register<DreamManager>();
             IoCManager.Register<DreamObjectTree>();
             IoCManager.Register<AtomManager>();
-            IoCManager.Register<IProcScheduler, ProcScheduler>();
+            IoCManager.Register<ProcScheduler>();
             IoCManager.Register<DreamResourceManager>();
             IoCManager.Register<IDreamDebugManager, DreamDebugManager>();
 

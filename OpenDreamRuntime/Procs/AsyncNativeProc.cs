@@ -23,6 +23,7 @@ namespace OpenDreamRuntime.Procs {
             public DreamManager DreamManager => _proc._dreamManager;
             public DreamResourceManager ResourceManager => _proc._resourceManager;
             public DreamObjectTree ObjectTree => _proc._objectTree;
+            public ProcScheduler ProcScheduler => _proc._procScheduler;
 
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;
@@ -105,8 +106,7 @@ namespace OpenDreamRuntime.Procs {
 
                 // We've just been created, start our task
                 if (_task == null) {
-                    IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
-                    _task = procScheduler.Schedule(this, _taskFunc);
+                    _task = ProcScheduler.Schedule(this, _taskFunc);
                 }
 
                 // If the task is finished, we're all done
@@ -163,11 +163,12 @@ namespace OpenDreamRuntime.Procs {
         private readonly DreamManager _dreamManager;
         private readonly DreamResourceManager _resourceManager;
         private readonly DreamObjectTree _objectTree;
+        private readonly ProcScheduler _procScheduler;
 
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
-        public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, DreamManager dreamManager, DreamResourceManager resourceManager, DreamObjectTree objectTree)
+        public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, DreamManager dreamManager, DreamResourceManager resourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
             : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
@@ -175,6 +176,7 @@ namespace OpenDreamRuntime.Procs {
             _dreamManager = dreamManager;
             _resourceManager = resourceManager;
             _objectTree = objectTree;
+            _procScheduler = procScheduler;
         }
 
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {

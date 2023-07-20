@@ -400,7 +400,7 @@ namespace OpenDreamRuntime.Objects {
 
         private AsyncNativeProc CreateAsyncNativeProc(DreamPath owningType, Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this, _procScheduler);
+            var proc = new AsyncNativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func);
 
             Procs.Add(proc);
             return proc;
@@ -415,7 +415,7 @@ namespace OpenDreamRuntime.Objects {
 
         public void SetGlobalNativeProc(Func<AsyncNativeProc.State, Task<DreamValue>> func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new AsyncNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _dreamResourceManager, this, _procScheduler);
+            var proc = new AsyncNativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func);
 
             Procs[proc.Id] = proc;
         }

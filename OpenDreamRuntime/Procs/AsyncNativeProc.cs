@@ -5,11 +5,18 @@ using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class AsyncNativeProc : DreamProc {
         public sealed class State : ProcState {
             public static readonly Stack<State> Pool = new();
+
+            // IoC dependencies instead of proc fields because _proc can be null
+            [Dependency] public readonly DreamManager DreamManager = default!;
+            [Dependency] public readonly DreamResourceManager ResourceManager = default!;
+            [Dependency] public readonly DreamObjectTree ObjectTree = default!;
+            [Dependency] public readonly ProcScheduler ProcScheduler = default!;
 
             public DreamObject? Src;
             public DreamObject? Usr;
@@ -20,11 +27,6 @@ namespace OpenDreamRuntime.Procs {
             private AsyncNativeProc? _proc;
             public override DreamProc? Proc => _proc;
 
-            public DreamManager DreamManager => _proc._dreamManager;
-            public DreamResourceManager ResourceManager => _proc._resourceManager;
-            public DreamObjectTree ObjectTree => _proc._objectTree;
-            public ProcScheduler ProcScheduler => _proc._procScheduler;
-
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;
 
@@ -33,6 +35,10 @@ namespace OpenDreamRuntime.Procs {
             private DreamValue? _callResult;
 
             private bool _inResume;
+
+            public State() {
+                IoCManager.InjectDependencies(this);
+            }
 
             public void Initialize(AsyncNativeProc? proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
                 base.Initialize(thread, true);
@@ -160,23 +166,13 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private readonly DreamManager _dreamManager;
-        private readonly DreamResourceManager _resourceManager;
-        private readonly DreamObjectTree _objectTree;
-        private readonly ProcScheduler _procScheduler;
-
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
-        public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, DreamManager dreamManager, DreamResourceManager resourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
+        public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
             : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
-
-            _dreamManager = dreamManager;
-            _resourceManager = resourceManager;
-            _objectTree = objectTree;
-            _procScheduler = procScheduler;
         }
 
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {

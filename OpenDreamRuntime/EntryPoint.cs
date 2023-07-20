@@ -12,10 +12,12 @@ using Robust.Shared.Utility;
 using System.IO;
 using System.Linq;
 
+[module: System.Runtime.CompilerServices.SkipLocalsInit]
+
 namespace OpenDreamRuntime {
     public sealed class EntryPoint : GameServer {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;

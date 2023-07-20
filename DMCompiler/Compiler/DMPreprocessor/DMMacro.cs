@@ -4,7 +4,7 @@ using System.Text;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor {
-    class DMMacro {
+    internal class DMMacro {
         private readonly List<string> _parameters;
         private readonly List<Token> _tokens;
         private readonly string _overflowParameter;
@@ -89,7 +89,27 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         expandedTokens.Add(new Token(TokenType.DM_Preproc_ConstantString, tokenText,
                             Location.Unknown, tokenText.Substring(2, tokenText.Length - 3)));
                     } else {
-                        expandedTokens.AddRange(parameter);
+                        foreach (var parameterToken in parameter) {
+                            switch (parameterToken.Type) {
+                                case TokenType.DM_Preproc_Identifier:
+                                case TokenType.DM_Preproc_Number:
+                                    if (expandedTokens.Count == 0)
+                                        goto default;
+
+                                    // If the last token was an identifier, we need to combine the two
+                                    var lastToken = expandedTokens[^1];
+                                    if (lastToken.Type != TokenType.DM_Preproc_Identifier)
+                                        goto default;
+
+                                    // A new identifier made up of the last one and this identifier/number
+                                    expandedTokens[^1] = new Token(TokenType.DM_Preproc_Identifier,
+                                        lastToken.Text + parameterToken.Text, lastToken.Location, null);
+                                    break;
+                                default:
+                                    expandedTokens.Add(parameterToken);
+                                    break;
+                            }
+                        }
                     }
                 } else if (_overflowParameter != null && parameterName == _overflowParameter) {
                     for (int i = _overflowParameterIndex; i < parameters.Count; i++) {

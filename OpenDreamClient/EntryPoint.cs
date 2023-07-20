@@ -1,7 +1,6 @@
 using System.Globalization;
 using OpenDreamClient.Audio;
 using OpenDreamClient.Interface;
-using OpenDreamClient.Rendering;
 using OpenDreamClient.Resources;
 using OpenDreamClient.States;
 using OpenDreamShared;
@@ -67,8 +66,6 @@ namespace OpenDreamClient {
         public override void PostInit() {
             _lightManager.Enabled = false;
 
-            _overlayManager.AddOverlay(new DreamViewOverlay());
-
             // In PostInit() since the engine stylesheet gets set in Init()
             IoCManager.Resolve<IUserInterfaceManager>().Stylesheet = DreamStylesheet.Make();
 
@@ -95,7 +92,7 @@ namespace OpenDreamClient {
         // because we don't have an ITileDefinition for each tile.
         // This removes that overlay immediately after MapSystem adds it.
         // TODO: Fix this engine-side
-        private void OnEntitySystemLoaded(object sender, SystemChangedArgs e) {
+        private void OnEntitySystemLoaded(object? sender, SystemChangedArgs e) {
             if (e.System is not MapSystem)
                 return;
 

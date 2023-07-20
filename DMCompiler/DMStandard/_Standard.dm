@@ -50,6 +50,7 @@ proc/isinf(n)
 proc/islist(Object)
 proc/isloc(Loc1)
 proc/ismob(Loc1)
+proc/isobj(Loc1)
 proc/ismovable(Loc1)
 proc/isnan(n)
 proc/isnull(Val)
@@ -226,12 +227,6 @@ proc/jointext(list/List, Glue, Start = 1, End = 0)
 
 proc/lentext(T)
 	return length(T)
-
-proc/isobj(Loc1)
-	for(var/arg in args)
-		if (!istype(arg, /obj)) return 0
-
-	return 1
 
 proc/winshow(player, window, show=1)
 	winset(player, window, "is-visible=[show ? "true" : "false"]")

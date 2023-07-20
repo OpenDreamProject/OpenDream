@@ -1,6 +1,6 @@
-﻿using Robust.Shared.Maths;
-using Robust.Shared.Serialization;
+﻿using Robust.Shared.Serialization;
 using System;
+using System.Numerics;
 using System.Collections.Generic;
 using System.Globalization;
 
@@ -39,7 +39,7 @@ namespace OpenDreamShared.Dream {
         }
 
         public Vector2 GetViewPosition(Vector2 viewOffset, float iconSize) {
-            return viewOffset + (X - 1 + PixelOffsetX / iconSize, Y - 1 + PixelOffsetY / iconSize);
+            return viewOffset + new Vector2(X - 1 + PixelOffsetX / iconSize, Y - 1 + PixelOffsetY / iconSize);
         }
 
         public override string ToString() {

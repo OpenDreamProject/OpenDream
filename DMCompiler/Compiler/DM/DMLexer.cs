@@ -284,8 +284,8 @@ namespace DMCompiler.Compiler.DM {
                         case TokenType.DM_Preproc_Identifier: {
                             StringBuilder identifierTextBuilder = new StringBuilder();
 
-                            //An identifier can end up making being made out of multiple tokens
-                            //This is caused by preprocessor macros and escaped identifiers
+                            //An identifier can end up being made out of multiple tokens
+                            //This is caused by escaped identifiers
                             do {
                                 identifierTextBuilder.Append(GetCurrent().Text);
                             } while (ValidIdentifierComponents.Contains(Advance().Type) && !AtEndOfSource);

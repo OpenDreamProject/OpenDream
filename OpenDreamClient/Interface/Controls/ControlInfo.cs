@@ -144,12 +144,21 @@ internal sealed class StatPanel : InfoPanel {
 
 internal sealed class VerbPanel : InfoPanel {
     [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
-    private readonly GridContainer _grid;
+    private readonly VerbPanelGrid _grid;
 
     public VerbPanel(string name) : base(name) {
-        _grid = new GridContainer { Columns = 4 };
         IoCManager.InjectDependencies(this);
-        AddChild(_grid);
+
+        var scrollContainer = new ScrollContainer {
+            HScrollEnabled = false
+        };
+
+        _grid = new VerbPanelGrid {
+            VerticalAlignment = VAlignment.Top
+        };
+
+        scrollContainer.AddChild(_grid);
+        AddChild(scrollContainer);
     }
 
     public void RefreshVerbs() {
@@ -161,8 +170,8 @@ internal sealed class VerbPanel : InfoPanel {
 
             Button verbButton = new Button() {
                 Margin = new Thickness(2),
-                MinWidth = 100,
-                Text = verbName
+                Text = verbName,
+                TextAlign = Label.AlignMode.Center
             };
 
             verbButton.Label.Margin = new Thickness(6, 0, 6, 2);

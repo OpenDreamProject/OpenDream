@@ -222,11 +222,19 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
-        public void VisitBuiltinProc1(DMASTBuiltinProc1 builtinProc1) {
+        public void VisitIsNull(DMASTIsNull isNull) {
             throw new NotImplementedException();
         }
 
-        public void VisitBuiltinProc2(DMASTBuiltinProc2 builtinProc2) {
+        public void VisitLength(DMASTLength length) {
+            throw new NotImplementedException();
+        }
+
+        public void VisitGetStep(DMASTGetStep getStep) {
+            throw new NotImplementedException();
+        }
+
+        public void VisitGetDir(DMASTGetDir getDir) {
             throw new NotImplementedException();
         }
 
@@ -1391,33 +1399,55 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public sealed class DMASTBuiltinProc1 : DMASTExpression {
+    public sealed class DMASTIsNull : DMASTExpression {
         public readonly DMASTExpression Value;
-        public readonly DreamProcOpcode Op;
 
-        public DMASTBuiltinProc1(DreamProcOpcode op, Location location, DMASTExpression value) : base(location) {
+        public DMASTIsNull(Location location, DMASTExpression value) : base(location) {
             Value = value;
-            Op = op;
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitBuiltinProc1(this);
+            visitor.VisitIsNull(this);
         }
     }
 
-    public sealed class DMASTBuiltinProc2 : DMASTExpression {
-        public readonly DMASTExpression A;
-        public readonly DMASTExpression B;
-        public readonly DreamProcOpcode Op;
+    public sealed class DMASTLength : DMASTExpression {
+        public readonly DMASTExpression Value;
 
-        public DMASTBuiltinProc2(DreamProcOpcode op, Location location, DMASTExpression a, DMASTExpression b) : base(location) {
-            A = a;
-            B = b;
-            Op = op;
+        public DMASTLength(Location location, DMASTExpression value) : base(location) {
+            Value = value;
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitBuiltinProc2(this);
+            visitor.VisitLength(this);
+        }
+    }
+
+    public sealed class DMASTGetStep : DMASTExpression {
+        public readonly DMASTExpression Ref;
+        public readonly DMASTExpression Dir;
+
+        public DMASTGetStep(Location location, DMASTExpression refValue, DMASTExpression dir) : base(location) {
+            Ref = refValue;
+            Dir = dir;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitGetStep(this);
+        }
+    }
+
+    public sealed class DMASTGetDir : DMASTExpression {
+        public readonly DMASTExpression Loc1;
+        public readonly DMASTExpression Loc2;
+
+        public DMASTGetDir(Location location, DMASTExpression loc1, DMASTExpression loc2) : base(location) {
+            Loc1 = loc1;
+            Loc2 = loc2;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitGetDir(this);
         }
     }
 

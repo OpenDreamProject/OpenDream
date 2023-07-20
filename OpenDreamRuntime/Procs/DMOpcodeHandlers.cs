@@ -1673,6 +1673,348 @@ namespace OpenDreamRuntime.Procs {
         }
         #endregion Flow
 
+        #region Builtins
+        public static ProcStatus GetStep(DMProcState state) {
+            var d = state.Pop();
+            var l = state.Pop();
+
+            if (!l.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc)) {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            var dir = d.MustGetValueAsInteger();
+            if (dir >= 16) { // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            var locPos = state.Proc.AtomManager.GetAtomPosition(loc);
+
+            if ((dir & (int) AtomDirection.North) != 0)
+                locPos.Y += 1;
+            if ((dir & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
+                locPos.Y -= 1;
+
+            if ((dir & (int) AtomDirection.East) != 0)
+                locPos.X += 1;
+            if ((dir & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
+                locPos.X -= 1;
+
+            state.Proc.DreamMapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
+            state.Push(new DreamValue(turf));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Length(DMProcState state) {
+            var o = state.Pop();
+
+            state.Push(DreamProcNativeRoot._length(o, true));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus GetDir(DMProcState state) {
+            var loc2R = state.Pop();
+            var loc1R = state.Pop();
+
+            if (!loc1R.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc1)) {
+                state.Push(new DreamValue(0));
+                return ProcStatus.Continue;
+            }
+
+            if (!loc2R.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc2)) {
+                state.Push(new DreamValue(0));
+                return ProcStatus.Continue;
+            }
+
+            var loc1Pos = state.Proc.AtomManager.GetAtomPosition(loc1);
+            var loc2Pos = state.Proc.AtomManager.GetAtomPosition(loc2);
+
+            if (loc1Pos.Z != loc2Pos.Z) { // They must be on the same z-level
+                state.Push(new DreamValue(0));
+                return ProcStatus.Continue;
+            }
+
+            int direction = 0;
+
+            // East or West
+            if (loc2Pos.X < loc1Pos.X)
+                direction |= (int)AtomDirection.West;
+            else if (loc2Pos.X > loc1Pos.X)
+                direction |= (int)AtomDirection.East;
+
+            // North or South
+            if (loc2Pos.Y < loc1Pos.Y)
+                direction |= (int) AtomDirection.South;
+            else if (loc2Pos.Y > loc1Pos.Y)
+                direction |= (int) AtomDirection.North;
+
+            state.Push(new DreamValue(direction));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Gradient(DMProcState state) {
+            var argumentInfo = state.ReadProcArguments();
+
+            DreamValue gradientIndex = default, gradientColorSpace = DreamValue.Null;
+            List<DreamValue> gradientValues = new();
+
+            // Arguments need specially handled due to the fact that index can be either a keyed arg or the last arg
+            // This is kinda ridiculous...
+            if (argumentInfo.Type == DMCallArgumentsType.FromStackKeyed) {
+                var stack = state.PopCount(argumentInfo.StackSize);
+                var argumentCount = argumentInfo.StackSize / 2;
+
+                gradientValues.EnsureCapacity(argumentCount - 1);
+                for (int i = 0; i < argumentCount; i++) {
+                    var argumentKey = stack[i * 2];
+                    var argumentValue = stack[i * 2 + 1];
+
+                    if (argumentKey.TryGetValueAsString(out var argumentKeyStr)) {
+                        if (argumentKeyStr == "index") {
+                            gradientIndex = argumentValue;
+                            continue;
+                        }
+
+                        if (argumentKeyStr == "space") {
+                            gradientColorSpace = argumentValue;
+                            continue;
+                        }
+                    }
+
+                    if (i == argumentCount - 1 && gradientIndex == default) {
+                        gradientIndex = argumentValue;
+                        continue;
+                    }
+
+                    gradientValues.Add(argumentValue);
+                }
+            } else if (argumentInfo.Type == DMCallArgumentsType.FromArgumentList) {
+                if (!state.Pop().TryGetValueAsDreamList(out var argList))
+                    throw new Exception("Invalid gradient() arguments");
+
+                var argListValues = argList.GetValues();
+
+                gradientValues.EnsureCapacity(argListValues.Count - 1);
+                for (int i = 0; i < argListValues.Count; i++) {
+                    var value = argListValues[i];
+
+                    if (value.TryGetValueAsString(out var argumentKey)) {
+                        if (argumentKey == "index") {
+                            gradientIndex = argList.GetValue(value);
+                            continue;
+                        }
+
+                        if (argumentKey == "space") {
+                            gradientColorSpace = argList.GetValue(value);
+                            continue;
+                        }
+                    }
+
+                    if (i == argListValues.Count - 1 && gradientIndex == default) {
+                        gradientIndex = value;
+                        continue;
+                    }
+
+                    gradientValues.Add(value);
+                }
+            } else {
+                var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
+
+                gradientIndex = arguments.Values[^1];
+                for (int i = 0; i < arguments.Count - 1; i++) {
+                    gradientValues.Add(arguments.Values[i]);
+                }
+            }
+
+            if (gradientIndex == default)
+                throw new Exception("No gradient index given");
+
+            state.Push(CalculateGradient(gradientValues, gradientColorSpace, gradientIndex));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus LocateCoord(DMProcState state) {
+            var z = state.Pop();
+            var y = state.Pop();
+            var x = state.Pop();
+            if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
+                z.TryGetValueAsInteger(out var zInt)) {
+                state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
+                state.Push(new DreamValue(turf));
+            } else {
+                state.Push(DreamValue.Null);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Locate(DMProcState state) {
+            if (!state.Pop().TryGetValueAsDreamObject(out var container)) {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            DreamValue value = state.Pop();
+
+            DreamList? containerList;
+            if (container is DreamObjectAtom) {
+                container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
+            } else {
+                containerList = container as DreamList;
+            }
+
+            if (value.TryGetValueAsString(out var refString)) {
+                state.Push(state.DreamManager.LocateRef(refString));
+            } else if (value.TryGetValueAsType(out var ancestor)) {
+                if (containerList == null) {
+                    state.Push(DreamValue.Null);
+
+                    return ProcStatus.Continue;
+                }
+
+                foreach (DreamValue containerItem in containerList.GetValues()) {
+                    if (!containerItem.TryGetValueAsDreamObject(out DreamObject dmObject)) continue;
+
+                    if (dmObject.IsSubtypeOf(ancestor)) {
+                        state.Push(containerItem);
+
+                        return ProcStatus.Continue;
+                    }
+                }
+
+                state.Push(DreamValue.Null);
+            } else {
+                if (containerList == null) {
+                    state.Push(DreamValue.Null);
+
+                    return ProcStatus.Continue;
+                }
+
+                foreach (DreamValue containerItem in containerList.GetValues()) {
+                    if (IsEqual(containerItem, value)) {
+                        state.Push(containerItem);
+
+                        return ProcStatus.Continue;
+                    }
+                }
+
+                state.Push(DreamValue.Null);
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PickWeighted(DMProcState state) {
+            int count = state.ReadInt();
+
+            (DreamValue Value, float CumulativeWeight)[] values = new (DreamValue, float)[count];
+            float totalWeight = 0;
+            for (int i = 0; i < count; i++) {
+                DreamValue value = state.Pop();
+                if (!state.Pop().TryGetValueAsFloat(out var weight))
+                {
+                    // Breaking change, no clue what weight BYOND is giving to non-nums
+                    throw new Exception($"pick() weight '{weight}' is not a number");
+                }
+
+                totalWeight += weight;
+                values[i] = (value, totalWeight);
+            }
+
+            double pick = state.DreamManager.Random.NextDouble() * totalWeight;
+            for (int i = 0; i < values.Length; i++) {
+                if (pick < values[i].CumulativeWeight) {
+                    state.Push(values[i].Value);
+                    break;
+                }
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus PickUnweighted(DMProcState state) {
+            int count = state.ReadInt();
+
+            DreamValue picked;
+            if (count == 1) {
+                DreamValue value = state.Pop();
+
+                List<DreamValue> values;
+                if (value.TryGetValueAsDreamList(out var list)) {
+                    values = list.GetValues();
+                } else {
+                    state.Push(value);
+                    return ProcStatus.Continue;
+                }
+
+                if (values.Count == 0)
+                    throw new Exception("pick() from empty list");
+
+                picked = values[state.DreamManager.Random.Next(0, values.Count)];
+            } else {
+                int pickedIndex = state.DreamManager.Random.Next(0, count);
+
+                picked = state.PopCount(count)[pickedIndex];
+            }
+
+            state.Push(picked);
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Prob(DMProcState state) {
+            DreamValue P = state.Pop();
+
+            if (P.TryGetValueAsFloat(out float probability)) {
+                int result = (state.DreamManager.Random.Prob(probability / 100)) ? 1 : 0;
+
+                state.Push(new DreamValue(result));
+            } else {
+                state.Push(new DreamValue(0));
+            }
+
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus IsSaved(DMProcState state) {
+            DreamValue key = state.Pop();
+            DreamValue owner = state.Pop();
+
+            // number indices always evaluate to false here
+            if (key.TryGetValueAsFloat(out _)) {
+                state.Push(DreamValue.False);
+                return ProcStatus.Continue;
+            }
+
+            if (!key.TryGetValueAsString(out string property)) {
+                throw new Exception($"Invalid var for issaved() call: {key}");
+            }
+
+            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
+                state.Push(dreamObject.IsSaved(property) ? DreamValue.True : DreamValue.False);
+                return ProcStatus.Continue;
+            }
+
+            DreamObjectDefinition objectDefinition;
+            if (owner.TryGetValueAsDreamObject(out var dreamObject2)) {
+                objectDefinition = dreamObject2.ObjectDefinition;
+            } else if (owner.TryGetValueAsType(out var type)) {
+                objectDefinition = type.ObjectDefinition;
+            } else {
+                throw new Exception($"Invalid owner for issaved() call {owner}");
+            }
+
+            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
+            if (objectDefinition.GlobalVariables.ContainsKey(property)) {
+                state.Push(new DreamValue(0));
+            } else {
+                state.Push(new DreamValue(1));
+            }
+
+            return ProcStatus.Continue;
+        }
+        #endregion Builtins
+
         #region Others
         private static void PerformOutput(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamResource(out var resource)) {
@@ -1915,229 +2257,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus LocateCoord(DMProcState state) {
-            var z = state.Pop();
-            var y = state.Pop();
-            var x = state.Pop();
-            if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
-                z.TryGetValueAsInteger(out var zInt)) {
-                state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
-                state.Push(new DreamValue(turf));
-            } else {
-                state.Push(DreamValue.Null);
-            }
-
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus Locate(DMProcState state) {
-            if (!state.Pop().TryGetValueAsDreamObject(out var container)) {
-                state.Push(DreamValue.Null);
-                return ProcStatus.Continue;
-            }
-
-            DreamValue value = state.Pop();
-
-            DreamList? containerList;
-            if (container is DreamObjectAtom) {
-                container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
-            } else {
-                containerList = container as DreamList;
-            }
-
-            if (value.TryGetValueAsString(out var refString)) {
-                state.Push(state.DreamManager.LocateRef(refString));
-            } else if (value.TryGetValueAsType(out var ancestor)) {
-                if (containerList == null) {
-                    state.Push(DreamValue.Null);
-
-                    return ProcStatus.Continue;
-                }
-
-                foreach (DreamValue containerItem in containerList.GetValues()) {
-                    if (!containerItem.TryGetValueAsDreamObject(out DreamObject dmObject)) continue;
-
-                    if (dmObject.IsSubtypeOf(ancestor)) {
-                        state.Push(containerItem);
-
-                        return ProcStatus.Continue;
-                    }
-                }
-
-                state.Push(DreamValue.Null);
-            } else {
-                if (containerList == null) {
-                    state.Push(DreamValue.Null);
-
-                    return ProcStatus.Continue;
-                }
-
-                foreach (DreamValue containerItem in containerList.GetValues()) {
-                    if (IsEqual(containerItem, value)) {
-                        state.Push(containerItem);
-
-                        return ProcStatus.Continue;
-                    }
-                }
-
-                state.Push(DreamValue.Null);
-            }
-
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus Gradient(DMProcState state) {
-            var argumentInfo = state.ReadProcArguments();
-
-            DreamValue gradientIndex = default, gradientColorSpace = DreamValue.Null;
-            List<DreamValue> gradientValues = new();
-
-            // Arguments need specially handled due to the fact that index can be either a keyed arg or the last arg
-            // This is kinda ridiculous...
-            if (argumentInfo.Type == DMCallArgumentsType.FromStackKeyed) {
-                var stack = state.PopCount(argumentInfo.StackSize);
-                var argumentCount = argumentInfo.StackSize / 2;
-
-                gradientValues.EnsureCapacity(argumentCount - 1);
-                for (int i = 0; i < argumentCount; i++) {
-                    var argumentKey = stack[i * 2];
-                    var argumentValue = stack[i * 2 + 1];
-
-                    if (argumentKey.TryGetValueAsString(out var argumentKeyStr)) {
-                        if (argumentKeyStr == "index") {
-                            gradientIndex = argumentValue;
-                            continue;
-                        }
-
-                        if (argumentKeyStr == "space") {
-                            gradientColorSpace = argumentValue;
-                            continue;
-                        }
-                    }
-
-                    if (i == argumentCount - 1 && gradientIndex == default) {
-                        gradientIndex = argumentValue;
-                        continue;
-                    }
-
-                    gradientValues.Add(argumentValue);
-                }
-            } else if (argumentInfo.Type == DMCallArgumentsType.FromArgumentList) {
-                if (!state.Pop().TryGetValueAsDreamList(out var argList))
-                    throw new Exception("Invalid gradient() arguments");
-
-                var argListValues = argList.GetValues();
-
-                gradientValues.EnsureCapacity(argListValues.Count - 1);
-                for (int i = 0; i < argListValues.Count; i++) {
-                    var value = argListValues[i];
-
-                    if (value.TryGetValueAsString(out var argumentKey)) {
-                        if (argumentKey == "index") {
-                            gradientIndex = argList.GetValue(value);
-                            continue;
-                        }
-
-                        if (argumentKey == "space") {
-                            gradientColorSpace = argList.GetValue(value);
-                            continue;
-                        }
-                    }
-
-                    if (i == argListValues.Count - 1 && gradientIndex == default) {
-                        gradientIndex = value;
-                        continue;
-                    }
-
-                    gradientValues.Add(value);
-                }
-            } else {
-                var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
-
-                gradientIndex = arguments.Values[^1];
-                for (int i = 0; i < arguments.Count - 1; i++) {
-                    gradientValues.Add(arguments.Values[i]);
-                }
-            }
-
-            if (gradientIndex == default)
-                throw new Exception("No gradient index given");
-
-            state.Push(CalculateGradient(gradientValues, gradientColorSpace, gradientIndex));
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus PickWeighted(DMProcState state) {
-            int count = state.ReadInt();
-
-            (DreamValue Value, float CumulativeWeight)[] values = new (DreamValue, float)[count];
-            float totalWeight = 0;
-            for (int i = 0; i < count; i++) {
-                DreamValue value = state.Pop();
-                if (!state.Pop().TryGetValueAsFloat(out var weight))
-                {
-                    // Breaking change, no clue what weight BYOND is giving to non-nums
-                    throw new Exception($"pick() weight '{weight}' is not a number");
-                }
-
-                totalWeight += weight;
-                values[i] = (value, totalWeight);
-            }
-
-            double pick = state.DreamManager.Random.NextDouble() * totalWeight;
-            for (int i = 0; i < values.Length; i++) {
-                if (pick < values[i].CumulativeWeight) {
-                    state.Push(values[i].Value);
-                    break;
-                }
-            }
-
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus PickUnweighted(DMProcState state) {
-            int count = state.ReadInt();
-
-            DreamValue picked;
-            if (count == 1) {
-                DreamValue value = state.Pop();
-
-                List<DreamValue> values;
-                if (value.TryGetValueAsDreamList(out var list)) {
-                    values = list.GetValues();
-                } else {
-                    state.Push(value);
-                    return ProcStatus.Continue;
-                }
-
-                if (values.Count == 0)
-                    throw new Exception("pick() from empty list");
-
-                picked = values[state.DreamManager.Random.Next(0, values.Count)];
-            } else {
-                int pickedIndex = state.DreamManager.Random.Next(0, count);
-
-                picked = state.PopCount(count)[pickedIndex];
-            }
-
-            state.Push(picked);
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus Prob(DMProcState state) {
-            DreamValue P = state.Pop();
-
-            if (P.TryGetValueAsFloat(out float probability)) {
-                int result = (state.DreamManager.Random.Prob(probability / 100)) ? 1 : 0;
-
-                state.Push(new DreamValue(result));
-            } else {
-                state.Push(new DreamValue(0));
-            }
-
-            return ProcStatus.Continue;
-        }
-
         ///<summary>Right now this is used exclusively by addtext() calls, to concatenate its arguments together,
         ///but later it might make sense to have this be a simplification path for detected repetitive additions of strings,
         ///so as to slightly reduce the amount of re-allocation taking place.
@@ -2164,44 +2283,6 @@ namespace OpenDreamRuntime.Procs {
             }
 
             state.Push(new DreamValue(builder.ToString()));
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus IsSaved(DMProcState state) {
-            DreamValue key = state.Pop();
-            DreamValue owner = state.Pop();
-
-            // number indices always evaluate to false here
-            if (key.TryGetValueAsFloat(out _)) {
-                state.Push(DreamValue.False);
-                return ProcStatus.Continue;
-            }
-
-            if (!key.TryGetValueAsString(out string property)) {
-                throw new Exception($"Invalid var for issaved() call: {key}");
-            }
-
-            if (owner.TryGetValueAsDreamObject(out DreamObject dreamObject)) {
-                state.Push(dreamObject.IsSaved(property) ? DreamValue.True : DreamValue.False);
-                return ProcStatus.Continue;
-            }
-
-            DreamObjectDefinition objectDefinition;
-            if (owner.TryGetValueAsDreamObject(out var dreamObject2)) {
-                objectDefinition = dreamObject2.ObjectDefinition;
-            } else if (owner.TryGetValueAsType(out var type)) {
-                objectDefinition = type.ObjectDefinition;
-            } else {
-                throw new Exception($"Invalid owner for issaved() call {owner}");
-            }
-
-            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
-            if (objectDefinition.GlobalVariables.ContainsKey(property)) {
-                state.Push(new DreamValue(0));
-            } else {
-                state.Push(new DreamValue(1));
-            }
-
             return ProcStatus.Continue;
         }
 
@@ -2564,86 +2645,5 @@ namespace OpenDreamRuntime.Procs {
             return new DreamValue(returnVal.ToHex().ToLower());
         }
         #endregion Helpers
-
-        #region Builtins
-        public static ProcStatus GetStep(DMProcState state) {
-            var d = state.Pop();
-            var l = state.Pop();
-
-            if (!l.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc)) {
-                state.Push(DreamValue.Null);
-                return ProcStatus.Continue;
-            }
-
-            var dir = d.MustGetValueAsInteger();
-            if (dir >= 16) { // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
-                state.Push(DreamValue.Null);
-                return ProcStatus.Continue;
-            }
-
-            var locPos = state.Proc.AtomManager.GetAtomPosition(loc);
-
-            if ((dir & (int) AtomDirection.North) != 0)
-                locPos.Y += 1;
-            if ((dir & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
-                locPos.Y -= 1;
-
-            if ((dir & (int) AtomDirection.East) != 0)
-                locPos.X += 1;
-            if ((dir & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
-                locPos.X -= 1;
-
-            state.Proc.DreamMapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
-            state.Push(new DreamValue(turf));
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus Length(DMProcState state) {
-            var o = state.Pop();
-
-            state.Push(DreamProcNativeRoot._length(o, true));
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus GetDir(DMProcState state) {
-            var loc2R = state.Pop();
-            var loc1R = state.Pop();
-
-            if (!loc1R.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc1)) {
-                state.Push(new DreamValue(0));
-                return ProcStatus.Continue;
-            }
-
-            if (!loc2R.TryGetValueAsDreamObject<DreamObjectAtom>(out var loc2)) {
-                state.Push(new DreamValue(0));
-                return ProcStatus.Continue;
-            }
-
-            var loc1Pos = state.Proc.AtomManager.GetAtomPosition(loc1);
-            var loc2Pos = state.Proc.AtomManager.GetAtomPosition(loc2);
-
-            if (loc1Pos.Z != loc2Pos.Z) { // They must be on the same z-level
-                state.Push(new DreamValue(0));
-                return ProcStatus.Continue;
-            }
-
-            int direction = 0;
-
-            // East or West
-            if (loc2Pos.X < loc1Pos.X)
-                direction |= (int)AtomDirection.West;
-            else if (loc2Pos.X > loc1Pos.X)
-                direction |= (int)AtomDirection.East;
-
-            // North or South
-            if (loc2Pos.Y < loc1Pos.Y)
-                direction |= (int) AtomDirection.South;
-            else if (loc2Pos.Y > loc1Pos.Y)
-                direction |= (int) AtomDirection.North;
-
-            state.Push(new DreamValue(direction));
-            return ProcStatus.Continue;
-        }
-        #endregion Builtins
     }
 }

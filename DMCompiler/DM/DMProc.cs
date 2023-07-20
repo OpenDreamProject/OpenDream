@@ -1023,10 +1023,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsInRange);
         }
 
-        public void IsNull() {
-            WriteOpcode(DreamProcOpcode.IsNull);
-        }
-
         public void IsSaved() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsSaved);
@@ -1037,9 +1033,22 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsType);
         }
 
+        public void IsNull() {
+            WriteOpcode(DreamProcOpcode.IsNull);
+        }
+
+        public void Length() {
+            WriteOpcode(DreamProcOpcode.Length);
+        }
+
         public void GetStep() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.GetStep);
+        }
+
+        public void GetDir() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.GetDir);
         }
 
         public void LocateCoordinates() {

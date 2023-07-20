@@ -317,41 +317,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // $proc$(a, b)
-    sealed class BuiltinProc2 : DMExpression {
-        private readonly DMExpression _a;
-        private readonly DMExpression _b;
-        private readonly DreamProcOpcode _op;
-
-        public BuiltinProc2(DreamProcOpcode op, Location location, DMExpression a, DMExpression b) : base(location) {
-            _a = a;
-            _b = b;
-            _op = op;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            _a.EmitPushValue(dmObject, proc);
-            _b.EmitPushValue(dmObject, proc);
-            proc.WriteOpcode(_op);
-        }
-    }
-
-    // $proc$(a)
-    sealed class BuiltinProc1 : DMExpression {
-        private readonly DMExpression _expr;
-        private readonly DreamProcOpcode _op;
-
-        public BuiltinProc1(DreamProcOpcode op, Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-            _op = op;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            _expr.EmitPushValue(dmObject, proc);
-            proc.WriteOpcode(_op);
-        }
-    }
-
     // istype(x)
     sealed class IsTypeInferred : DMExpression {
         private readonly DMExpression _expr;
@@ -372,6 +337,68 @@ namespace DMCompiler.DM.Expressions {
             _expr.EmitPushValue(dmObject, proc);
             proc.PushType(typeId);
             proc.IsType();
+        }
+    }
+
+    // isnull(x)
+    internal sealed class IsNull : DMExpression {
+        private readonly DMExpression _value;
+
+        public IsNull(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.IsNull();
+        }
+    }
+
+    // length(x)
+    internal sealed class Length : DMExpression {
+        private readonly DMExpression _value;
+
+        public Length(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.Length();
+        }
+    }
+
+    // get_step(ref, dir)
+    internal sealed class GetStep : DMExpression {
+        private readonly DMExpression Ref;
+        private readonly DMExpression Dir;
+
+        public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
+            Ref = refValue;
+            Dir = dir;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            Ref.EmitPushValue(dmObject, proc);
+            Dir.EmitPushValue(dmObject, proc);
+            proc.GetStep();
+        }
+    }
+
+    // get_dir(loc1, loc2)
+    internal sealed class GetDir : DMExpression {
+        private readonly DMExpression Loc1;
+        private readonly DMExpression Loc2;
+
+        public GetDir(Location location, DMExpression loc1, DMExpression loc2) : base(location) {
+            Loc1 = loc1;
+            Loc2 = loc2;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            Loc1.EmitPushValue(dmObject, proc);
+            Loc2.EmitPushValue(dmObject, proc);
+            proc.GetDir();
         }
     }
 

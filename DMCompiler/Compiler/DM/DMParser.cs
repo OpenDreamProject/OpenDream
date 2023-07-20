@@ -2413,19 +2413,23 @@ namespace DMCompiler.Compiler.DM {
                     }
                     case "isnull": {
                         if (callParameters.Length != 1) Error("isnull() requires exactly 1 argument");
-                        return new DMASTBuiltinProc1(DreamProcOpcode.IsNull, identifier.Location, callParameters[0].Value);
+
+                        return new DMASTIsNull(identifier.Location, callParameters[0].Value);
                     }
                     case "get_step": {
                         if (callParameters.Length != 2) Error("get_step() requires exactly 2 arguments");
-                        return new DMASTBuiltinProc2(DreamProcOpcode.GetStep, identifier.Location, callParameters[0].Value, callParameters[1].Value);
+
+                        return new DMASTGetStep(identifier.Location, callParameters[0].Value, callParameters[1].Value);
                     }
                     case "get_dir": {
                         if (callParameters.Length != 2) Error("get_dir() requires exactly 2 arguments");
-                        return new DMASTBuiltinProc2(DreamProcOpcode.GetDir, identifier.Location, callParameters[0].Value, callParameters[1].Value);
+
+                        return new DMASTGetDir(identifier.Location, callParameters[0].Value, callParameters[1].Value);
                     }
                     case "length": {
                         if (callParameters.Length != 1) Error("length() requires exactly 1 argument");
-                        return new DMASTBuiltinProc1(DreamProcOpcode.Length, identifier.Location, callParameters[0].Value);
+
+                        return new DMASTLength(identifier.Location, callParameters[0].Value);
                     }
                     case "text": {
                         if (callParameters.Length == 0) Error("text() requires at least 1 argument");

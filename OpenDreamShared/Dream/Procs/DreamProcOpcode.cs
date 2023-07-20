@@ -125,6 +125,7 @@ namespace OpenDreamShared.Dream.Procs {
         GetStep = 0x75,
         Length = 0x76,
         GetDir = 0x77,
+        DebuggerBreakpoint = 0x78
     }
 
     /// <summary>

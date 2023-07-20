@@ -63,13 +63,20 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public IEnumerable<DreamThread> InspectThreads() {
-            if (_current is not null) {
+            // TODO: We shouldn't need to check if Thread is null here
+            //       I think we're keeping disposed states somewhere here
+
+            if (_current?.Thread is not null) {
                 yield return _current.Thread;
             }
             foreach (var state in _scheduled) {
+                if (state.Thread == null)
+                    continue;
                 yield return state.Thread;
             }
             foreach (var state in _sleeping) {
+                if (state.Thread == null)
+                    continue;
                 yield return state.Thread;
             }
         }

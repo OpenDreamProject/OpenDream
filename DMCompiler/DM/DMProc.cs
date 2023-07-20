@@ -362,12 +362,17 @@ namespace DMCompiler.DM {
                 Line = location.Line ?? -1
             };
 
+            var sourceFile = location.SourceFile.Replace('\\', '/');
+
             // Only write the source file if it has changed
-            if (_lastSourceFile != location.SourceFile) {
-                sourceInfo.File = DMObjectTree.AddString(location.SourceFile);
+            if (_lastSourceFile != sourceFile) {
+                sourceInfo.File = DMObjectTree.AddString(sourceFile);
+            } else if (_sourceInfo.Count > 0 && sourceInfo.Line == _sourceInfo[^1].Line) {
+                // Don't need to write this source info if it's the same source & line as the last
+                return;
             }
 
-            _lastSourceFile = location.SourceFile;
+            _lastSourceFile = sourceFile;
             _sourceInfo.Add(sourceInfo);
         }
 

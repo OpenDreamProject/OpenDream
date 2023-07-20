@@ -63,6 +63,38 @@ namespace OpenDreamRuntime.Procs {
             return (source, current.Line);
         }
 
+        /// <summary>
+        /// Checks if the given bytecode offset is the first on a line of the source code
+        /// </summary>
+        public bool IsOnLineChange(int offset) {
+            foreach (var sourceInfo in SourceInfo) {
+                if (sourceInfo.Offset == offset)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool TryGetOffsetAtSource(string source, int line, out int offset) {
+            string? currentSource = null;
+
+            int i = 0;
+            do {
+                var current = SourceInfo[i++];
+
+                if (current.File != null)
+                    currentSource = ObjectTree.Strings[current.File.Value];
+
+                if (currentSource == source && current.Line == line) {
+                    offset = current.Offset;
+                    return true;
+                }
+            } while (i < SourceInfo.Count);
+
+            offset = 0;
+            return false;
+        }
+
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
             if (IsNullProc) {
                 if (!NullProcState.Pool.TryPop(out var nullState)) {
@@ -145,7 +177,7 @@ namespace OpenDreamRuntime.Procs {
 
         #region Opcode Handlers
         //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
-        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> OpcodeHandlers = new Dictionary<DreamProcOpcode, OpcodeHandler>(){
+        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> _opcodeHandlers = new() {
             {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
             {DreamProcOpcode.PushType, DMOpcodeHandlers.PushType},
             {DreamProcOpcode.PushString, DMOpcodeHandlers.PushString},
@@ -256,9 +288,10 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep},
             {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
             {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
+            {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint}
         };
 
-        private static readonly unsafe delegate*<DMProcState, ProcStatus>[] _opcodeHandlers;
+        public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
         #endregion
 
         public DreamManager DreamManager => _proc.DreamManager;
@@ -288,19 +321,19 @@ namespace OpenDreamRuntime.Procs {
 
         /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
         static unsafe DMProcState() {
-            int maxOpcode = (int)OpcodeHandlers.Keys.Max();
+            int maxOpcode = (int)_opcodeHandlers.Keys.Max();
 
-            _opcodeHandlers = new delegate*<DMProcState, ProcStatus>[256];
-            foreach (var (dpo, handler) in OpcodeHandlers) {
-                _opcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
+            OpcodeHandlers = new delegate*<DMProcState, ProcStatus>[256];
+            foreach (var (dpo, handler) in _opcodeHandlers) {
+                OpcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
             }
 
             var invalid = DMOpcodeHandlers.Invalid;
             var invalidPtr = (delegate*<DMProcState, ProcStatus>)invalid.Method.MethodHandle.GetFunctionPointer();
 
-            _opcodeHandlers[0] = invalidPtr;
+            OpcodeHandlers[0] = invalidPtr;
             for (int i = maxOpcode + 1; i < 256; i++) {
-                _opcodeHandlers[i] = invalidPtr;
+                OpcodeHandlers[i] = invalidPtr;
             }
         }
 
@@ -343,8 +376,8 @@ namespace OpenDreamRuntime.Procs {
 #if TOOLS
             if (_firstResume) {
                 DebugManager.HandleFirstResume(this);
+                _firstResume = false;
             }
-            bool stepping = Thread.StepMode != null;
 #endif
 
             var procBytecode = _proc.Bytecode;
@@ -352,14 +385,13 @@ namespace OpenDreamRuntime.Procs {
             if (procBytecode.Length == 0)
                 return ProcStatus.Returned;
 
-            fixed (delegate*<DMProcState, ProcStatus>* handlers = &_opcodeHandlers[0]) {
+            fixed (delegate*<DMProcState, ProcStatus>* handlers = &OpcodeHandlers[0]) {
                 fixed (byte* bytecode = &procBytecode[0]) {
                     var l = procBytecode.Length; // The length never changes so we stick it in a register.
+
                     while (_pc < l) {
 #if TOOLS
-                        if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
-                            DebugManager.HandleInstruction(this);
-                        _firstResume = false;
+                        DebugManager.HandleInstruction(this);
 #endif
 
                         int opcode = bytecode[_pc];
@@ -390,6 +422,8 @@ namespace OpenDreamRuntime.Procs {
 
             builder.Append(Proc.Name);
             builder.Append(':');
+
+            // Subtract 1 because _pc may have been advanced to the next line
             builder.Append(Proc.GetSourceAtOffset(_pc - 1).Line);
         }
 

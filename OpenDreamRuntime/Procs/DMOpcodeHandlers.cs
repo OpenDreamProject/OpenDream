@@ -1667,10 +1667,13 @@ namespace OpenDreamRuntime.Procs {
             state.Jump(jumpTo);
             return ProcStatus.Continue;
         }
+
+        public static ProcStatus DebuggerBreakpoint(DMProcState state) {
+            return state.DebugManager.HandleBreakpoint(state);
+        }
         #endregion Flow
 
         #region Others
-
         private static void PerformOutput(DreamValue a, DreamValue b) {
             if (a.TryGetValueAsDreamResource(out var resource)) {
                 resource.Output(b);

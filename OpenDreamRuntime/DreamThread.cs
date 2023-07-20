@@ -136,8 +136,6 @@ namespace OpenDreamRuntime {
 
         public bool WaitFor { get; set; } = true;
 
-        public virtual (string?, int?) SourceLine => (null, null);
-
         public abstract DreamProc? Proc { get; }
 
         protected void Initialize(DreamThread thread, bool waitFor) {
@@ -172,7 +170,7 @@ namespace OpenDreamRuntime {
     }
 
     public sealed class DreamThread {
-        private static System.Threading.ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
+        private static readonly System.Threading.ThreadLocal<Stack<DreamThread>> CurrentlyExecuting = new(() => new(), trackAllValues: true);
         public static IEnumerable<DreamThread> InspectExecutingThreads() {
             return CurrentlyExecuting.Value!.Concat(CurrentlyExecuting.Values.SelectMany(x => x));
         }

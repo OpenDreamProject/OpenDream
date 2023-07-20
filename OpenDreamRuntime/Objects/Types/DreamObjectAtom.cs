@@ -118,7 +118,7 @@ public class DreamObjectAtom : DreamObject {
                     foreach (DreamValue overlayValue in valueList.GetValues()) {
                         Overlays.AddValue(overlayValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     Overlays.AddValue(value);
                 }
 
@@ -132,7 +132,7 @@ public class DreamObjectAtom : DreamObject {
                     foreach (DreamValue underlayValue in valueList.GetValues()) {
                         Underlays.AddValue(underlayValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     Underlays.AddValue(value);
                 }
 
@@ -145,7 +145,7 @@ public class DreamObjectAtom : DreamObject {
                     foreach (DreamValue verbValue in valueList.GetValues()) {
                         Verbs.AddValue(verbValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     Verbs.AddValue(value);
                 }
 
@@ -159,7 +159,7 @@ public class DreamObjectAtom : DreamObject {
                     foreach (DreamValue filterValue in valueList.GetValues()) {
                         Filters.AddValue(filterValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     Filters.AddValue(value);
                 }
 

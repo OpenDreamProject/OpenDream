@@ -29,8 +29,8 @@ namespace Content.Tests
 
         private const string TESTS_DIRECTORY = "Tests";
 
-        [Dependency] private readonly IDreamManager _dreamMan = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamManager _dreamMan = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
 
         [Flags]
@@ -109,8 +109,7 @@ namespace Content.Tests
 
                 if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
                     Assert.That(returned.HasValue, Is.True);
-                    int returnInt = returned.Value.MustGetValueAsInteger();
-                    Assert.IsTrue(returnInt == 1, "Test was expected to return TRUE");
+                    Assert.IsTrue(returned.Value.IsTruthy(), "Test was expected to return TRUE");
                 }
 
                 Cleanup(compiledFile);
@@ -133,20 +132,20 @@ namespace Content.Tests
                     retValue = await callTask;
                     return DreamValue.Null;
                 } else {
-                    Assert.Fail($"No global proc named RunTest");
+                    Assert.Fail("No global proc named RunTest");
                     return DreamValue.Null;
                 }
             });
 
-            var Watch = new Stopwatch();
-            Watch.Start();
+            var watch = new Stopwatch();
+            watch.Start();
 
             // Tick until our inner call has finished
             while (!callTask.IsCompleted) {
                 _dreamMan.Update();
                 _taskManager.ProcessPendingTasks();
 
-                if (Watch.Elapsed.TotalMilliseconds > 500) {
+                if (watch.Elapsed.TotalMilliseconds > 500) {
                     Assert.Fail("Test timed out");
                 }
             }

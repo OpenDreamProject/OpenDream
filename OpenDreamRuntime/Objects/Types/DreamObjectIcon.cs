@@ -19,7 +19,7 @@ public sealed class DreamObjectIcon : DreamObject {
         DreamValue frame = args.GetArgument(3);
         DreamValue moving = args.GetArgument(4);
 
-        if (icon != DreamValue.Null) {
+        if (!icon.IsNull) {
             // TODO: Could maybe have an alternative path for /icon values so the DMI doesn't have to be generated
             if (!DreamResourceManager.TryLoadIcon(icon, out var iconRsc))
                 throw new Exception($"Cannot create an icon from {icon}");

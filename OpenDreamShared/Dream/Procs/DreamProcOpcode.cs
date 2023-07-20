@@ -1,11 +1,11 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace OpenDreamShared.Dream.Procs {
-    public enum DreamProcOpcode {
+    public enum DreamProcOpcode : byte {
         BitShiftLeft = 0x1,
         PushType = 0x2,
         PushString = 0x3,
@@ -72,8 +72,8 @@ namespace OpenDreamShared.Dream.Procs {
         BitShiftRight = 0x40,
         CreateFilteredListEnumerator = 0x41,
         Power = 0x42,
-        DebugSource = 0x43,
-        DebugLine = 0x44,
+        //0x43,
+        //0x44
         Prompt = 0x45,
         Ftp = 0x46,
         Initial = 0x47,
@@ -122,6 +122,10 @@ namespace OpenDreamShared.Dream.Procs {
         EnumerateNoAssign = 0x72,
         Gradient = 0x73,
         AssignInto = 0x74,
+        GetStep = 0x75,
+        Length = 0x76,
+        GetDir = 0x77,
+        DebuggerBreakpoint = 0x78
     }
 
     /// <summary>
@@ -293,15 +297,15 @@ namespace OpenDreamShared.Dream.Procs {
             Self,
             Usr,
             Args,
+            SuperProc,
             ListIndex,
             Argument,
             Local,
             Global,
+            GlobalProc,
             Field,
             SrcField,
-            GlobalProc,
             SrcProc,
-            SuperProc
         }
 
         public Type RefType;

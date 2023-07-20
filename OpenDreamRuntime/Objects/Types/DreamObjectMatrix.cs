@@ -247,7 +247,7 @@ public sealed class DreamObjectMatrix : DreamObject {
     /// <param name="objectTree">The DM object tree, used to create a new matrix object.</param>
     /// <param name="matrix">The matrix to clone.</param>
     /// <returns>A clone of the given matrix.</returns>
-    public static DreamObjectMatrix MatrixClone(IDreamObjectTree objectTree, DreamObjectMatrix matrix) {
+    public static DreamObjectMatrix MatrixClone(DreamObjectTree objectTree, DreamObjectMatrix matrix) {
         var newMatrix = objectTree.CreateObject<DreamObjectMatrix>(matrix.ObjectDefinition.TreeEntry);
         var args = new DreamValue[6];
 
@@ -268,7 +268,7 @@ public sealed class DreamObjectMatrix : DreamObject {
     /// <see langword="FIXME:"/> actually call /New(), if necessary, when creating a matrix in this way.
     /// </remarks>
     /// <returns>A matrix created with a to f manually set to the floats given.</returns>
-    public static DreamObjectMatrix MakeMatrix(IDreamObjectTree objectTree, float a, float b, float c, float d, float e, float f) {
+    public static DreamObjectMatrix MakeMatrix(DreamObjectTree objectTree, float a, float b, float c, float d, float e, float f) {
         var newMatrix = objectTree.CreateObject<DreamObjectMatrix>(objectTree.Matrix);
         newMatrix.SetVariableValue("a", new(a));
         newMatrix.SetVariableValue("b", new(b));
@@ -281,8 +281,8 @@ public sealed class DreamObjectMatrix : DreamObject {
 
     /// <summary> Helper for the normal MakeMatrix that accepts a list of matrix values. </summary>
     /// <remarks> Be sure that all of the float array are valid values. </remarks>
-    /// <seealso cref="MakeMatrix(OpenDreamRuntime.Objects.IDreamObjectTree,float,float,float,float,float,float)"/>
-    public static DreamObjectMatrix MakeMatrix(IDreamObjectTree objectTree, float[] matrixValues) {
+    /// <seealso cref="MakeMatrix(DreamObjectTree,float,float,float,float,float,float)"/>
+    public static DreamObjectMatrix MakeMatrix(DreamObjectTree objectTree, float[] matrixValues) {
         return MakeMatrix(objectTree,
                           matrixValues[0], matrixValues[1], matrixValues[2],
                           matrixValues[3], matrixValues[4], matrixValues[5]);

@@ -819,11 +819,12 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Args:
                 case DMReference.Type.SrcField:
                     return;
-                case DMReference.Type.Field:
-                    PopDrop();
-                    return;
                 case DMReference.Type.ListIndex:
                     PopDrop();
+
+                    // Fallthrough to the below case ends up with more performant generated code
+                    goto case DMReference.Type.Field;
+                case DMReference.Type.Field:
                     PopDrop();
                     return;
                 default: ThrowPopInvalidType(reference.Type);

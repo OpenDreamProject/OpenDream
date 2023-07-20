@@ -857,20 +857,17 @@ namespace OpenDreamRuntime.Procs {
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowCannotGetFieldFromOwner(DreamValue owner, string field)
-        {
+        private static void ThrowCannotGetFieldFromOwner(DreamValue owner, string field) {
             throw new Exception($"Cannot get field \"{field}\" from {owner}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowInvalidAppearanceVar(string field)
-        {
+        private static void ThrowInvalidAppearanceVar(string field) {
             throw new Exception($"Invalid appearance var \"{field}\"");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowTypeHasNoField(string field, DreamObject? ownerObj)
-        {
+        private static void ThrowTypeHasNoField(string field, DreamObject? ownerObj) {
             throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
         }
 
@@ -897,14 +894,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowCannotGetIndex(DreamValue indexing, DreamValue index)
-        {
+        private static void ThrowCannotGetIndex(DreamValue indexing, DreamValue index) {
             throw new Exception($"Cannot get index {index} of {indexing}");
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
-        private static void ThrowAttemptedToIndexString(DreamValue index)
-        {
+        private static void ThrowAttemptedToIndexString(DreamValue index) {
             throw new Exception($"Attempted to index string with {index}");
         }
 

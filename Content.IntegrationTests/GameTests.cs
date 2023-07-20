@@ -18,7 +18,7 @@ namespace Content.IntegrationTests {
             var (client, server) = await StartConnectedServerClientPair();
             await RunTicksSync(client, server, 1000);
             Assert.IsTrue(server.IsAlive);
-            var manager = server.ResolveDependency<IDreamManager>();
+            var manager = server.ResolveDependency<DreamManager>();
             if(manager.LastDMException is not null) {
                 Assert.Fail($"Runtime occurred on server boot: {manager.LastDMException}");
             }

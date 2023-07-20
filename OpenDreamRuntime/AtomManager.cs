@@ -10,7 +10,7 @@ using Robust.Shared.Map;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime {
-    internal sealed class AtomManager : IAtomManager {
+    public sealed class AtomManager {
         public List<DreamObjectArea> Areas { get; } = new();
         public List<DreamObjectTurf> Turfs { get; } = new();
         public List<DreamObjectMovable> Movables { get; } = new();
@@ -20,7 +20,7 @@ namespace OpenDreamRuntime {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
@@ -405,42 +405,17 @@ namespace OpenDreamRuntime {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (int X, int Y, int Z) GetAtomPosition(DreamObjectAtom atom) {
             return atom switch {
-                DreamObjectMovable movable => (movable.X, movable.Y, movable.Z),
+                DreamObjectMovable { Position: var pos, Z: var z } => (pos.X, pos.Y, z),
                 DreamObjectTurf turf => (turf.X, turf.Y, turf.Z),
                 DreamObjectArea area => (area.X, area.Y, area.Z),
-                _ => throw new Exception($"Cannot get the position of {atom}")
+                _ => ThrowCantGetPosition(atom)
             };
         }
-    }
 
-    public interface IAtomManager {
-        public List<DreamObjectArea> Areas { get; }
-        public List<DreamObjectTurf> Turfs { get; }
-        public List<DreamObjectMovable> Movables { get; }
-        public List<DreamObjectMovable> Objects { get; }
-        public List<DreamObjectMob> Mobs { get; }
-        public int AtomCount { get; }
-
-        public DreamObject GetAtom(int index);
-
-        public EntityUid CreateMovableEntity(DreamObjectMovable movable);
-
-        public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);
-        public void DeleteMovableEntity(DreamObjectMovable movable);
-
-        public bool IsValidAppearanceVar(string varName);
-        public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value);
-        public DreamValue GetAppearanceVar(IconAppearance appearance, string varName);
-
-        public IconAppearance? MustGetAppearance(DreamObject atom);
-
-        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
-        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
-        public void SetAtomAppearance(DreamObject atom, IconAppearance appearance);
-        public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate);
-        public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
-        public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def);
-
-        public (int X, int Y, int Z) GetAtomPosition(DreamObjectAtom atom);
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static (int X, int Y, int) ThrowCantGetPosition(DreamObjectAtom atom)
+        {
+            throw new Exception($"Cannot get the position of {atom}");
+        }
     }
 }

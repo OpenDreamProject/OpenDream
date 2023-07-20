@@ -4,7 +4,7 @@ using Robust.Shared.Enums;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime {
-    internal sealed partial class DreamManager {
+    public sealed partial class DreamManager {
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         private readonly Dictionary<NetUserId, DreamConnection> _connections = new();

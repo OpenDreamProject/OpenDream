@@ -1,21 +1,22 @@
-﻿using OpenDreamRuntime.Objects.Types;
-using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
+﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
+using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 
 namespace OpenDreamRuntime.Procs.Native;
 
 internal static class DreamProcNativeSavefile {
     [DreamProc("ExportText")]
-    [DreamProcParameter("path", Type = DreamValueType.String)]
-    [DreamProcParameter("file", Type = DreamValueType.String | DreamValueType.DreamResource)]
-    public static DreamValue NativeProc_ExportText(NativeProc.State state) {
+    [DreamProcParameter("path", Type = DreamValueTypeFlag.String)]
+    [DreamProcParameter("file", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
+    public static DreamValue NativeProc_ExportText(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
         // Implementing this correctly is a fair amount of effort, and the only use of it I'm aware of is icon2base64()
         // So this implements it just enough to get that working
 
-        var savefile = (DreamObjectSavefile)state.Src!;
-        DreamValue path = state.GetArgument(0, "path");
-        DreamValue file = state.GetArgument(1, "file");
+        var savefile = (DreamObjectSavefile)src!;
+        DreamValue path = bundle.GetArgument(0, "path");
+        DreamValue file = bundle.GetArgument(1, "file");
 
-        if (!path.TryGetValueAsString(out var pathStr) || file != DreamValue.Null) {
+        if (!path.TryGetValueAsString(out var pathStr) || !file.IsNull) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
@@ -24,7 +25,7 @@ internal static class DreamProcNativeSavefile {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
-        if (!state.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
+        if (!bundle.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
@@ -34,8 +35,8 @@ internal static class DreamProcNativeSavefile {
     }
 
     [DreamProc("Flush")]
-    public static DreamValue NativeProc_Flush(NativeProc.State state) {
-        var savefile = (DreamObjectSavefile)state.Src!;
+    public static DreamValue NativeProc_Flush(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        var savefile = (DreamObjectSavefile)src!;
 
         savefile.Flush();
         return DreamValue.Null;

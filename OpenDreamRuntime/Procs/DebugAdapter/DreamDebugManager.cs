@@ -10,10 +10,10 @@ using Robust.Server;
 namespace OpenDreamRuntime.Procs.DebugAdapter;
 
 internal sealed class DreamDebugManager : IDreamDebugManager {
-    [Dependency] private readonly IDreamManager _dreamManager = default!;
-    [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+    [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly DreamResourceManager _resourceManager = default!;
-    [Dependency] private readonly IProcScheduler _procScheduler = default!;
+    [Dependency] private readonly ProcScheduler _procScheduler = default!;
     [Dependency] private readonly IBaseServer _server = default!;
 
     private ISawmill _sawmill = default!;
@@ -26,10 +26,8 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     // State
     private bool _stopped = false;
     private bool _terminated = false;
-    private DreamThread? _stoppedThread;
 
     public enum StepMode {
-        None,
         StepOver,  // aka "next"
         StepIn,
         StepOut,
@@ -46,20 +44,42 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     private bool _breakOnRuntimes = true;
 
     private sealed class FileBreakpointSlot {
-        public List<ActiveBreakpoint> Breakpoints = new();
-        //public DMProc Proc;
-        //public int BytecodeOffset;
+        public IReadOnlyList<ActiveBreakpoint> Breakpoints => _breakpoints;
+        public readonly DMProc Proc;
 
-        public FileBreakpointSlot() {}
+        private readonly List<ActiveBreakpoint> _breakpoints = new();
+
+        public FileBreakpointSlot(DMProc proc) {
+            Proc = proc;
+        }
+
+        public void ClearBreakpoints() {
+            // Set all the opcodes back to their original
+            foreach (var breakpoint in _breakpoints) {
+                Proc.Bytecode[breakpoint.BytecodeOffset] = breakpoint.OriginalOpcode;
+            }
+
+            _breakpoints.Clear();
+        }
+
+        public void AddBreakpoint(int offset, ActiveBreakpoint breakpoint) {
+            breakpoint.BytecodeOffset = offset;
+            breakpoint.OriginalOpcode = Proc.Bytecode[offset];
+            _breakpoints.Add(breakpoint);
+
+            // Replace the opcode with DebuggerBreakpoint so we know when we trip it
+            Proc.Bytecode[offset] = (byte)DreamProcOpcode.DebuggerBreakpoint;
+        }
     }
 
     private sealed class FunctionBreakpointSlot {
-        public List<ActiveBreakpoint> Breakpoints = new();
-        public FunctionBreakpointSlot() {}
+        public readonly List<ActiveBreakpoint> Breakpoints = new();
     }
 
     private struct ActiveBreakpoint {
         public int Id;
+        public int BytecodeOffset;
+        public byte OriginalOpcode;
         public string? Condition;
         public string? HitCondition;
         public string? LogMessage;
@@ -69,15 +89,15 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private Dictionary<string, Dictionary<int, FileBreakpointSlot>>? _possibleBreakpoints;
     private Dictionary<(string Type, string Proc), FunctionBreakpointSlot>? _possibleFunctionBreakpoints;
-    private Dictionary<int, DMProc> _disassemblyProcs = new();
+    private readonly Dictionary<int, DMProc> _disassemblyProcs = new();
 
     // Temporary data for a given Stop
     private Exception? _exception;
 
-    private Dictionary<int, WeakReference<ProcState>> _stackFramesById = new();
+    private readonly Dictionary<int, WeakReference<ProcState>> _stackFramesById = new();
 
     private int _variablesIdCounter = 0;
-    private Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> _variableReferences = new();
+    private readonly Dictionary<int, Func<RequestVariables, IEnumerable<Variable>>> _variableReferences = new();
     private int AllocVariableRef(Func<RequestVariables, IEnumerable<Variable>> func) {
         int id = ++_variablesIdCounter;
         _variableReferences[id] = func;
@@ -112,10 +132,19 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             LogLevel.Fatal or LogLevel.Error => OutputEvent.CategoryStderr,
             _ => OutputEvent.CategoryStdout,
         };
+
         Output(message, category);
     }
 
     public void HandleFirstResume(DMProcState state) {
+        if (_stopOnEntry) {
+            _stopOnEntry = false;
+            Stop(state.Thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonEntry,
+            });
+            return;
+        }
+
         if (_possibleFunctionBreakpoints == null)
             return;
 
@@ -132,27 +161,52 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
         if (hit != null) {
             Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
-            Stop(state.Thread,
-                new StoppedEvent {Reason = StoppedEvent.ReasonFunctionBreakpoint, HitBreakpointIds = hit});
-            return;
+            Stop(state.Thread, new StoppedEvent {
+                Reason = StoppedEvent.ReasonFunctionBreakpoint,
+                HitBreakpointIds = hit
+            });
         }
-
-        // Otherwise check for an instruction breakpoint
-        HandleInstruction(state);
     }
 
     public void HandleInstruction(DMProcState state) {
-        // Stop if we're instruction stepping.
+        if (state.Thread.StepMode == null)
+            return;
+
         bool stoppedOnStep = false;
-        switch (state.Thread.StepMode) {
-            case ThreadStepMode { Mode: StepMode.StepIn, FrameId: _, Granularity: SteppingGranularity.Instruction }:
-                stoppedOnStep = true;
+
+        switch (state.Thread.StepMode.Value.Granularity) {
+            case SteppingGranularity.Instruction:
+                switch (state.Thread.StepMode) {
+                    case { Mode: StepMode.StepIn }:
+                        stoppedOnStep = true;
+                        break;
+                    case { Mode: StepMode.StepOut, FrameId: var whenNotInStack }:
+                        stoppedOnStep = !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
+                        break;
+                    case { Mode: StepMode.StepOver, FrameId: var whenTop }:
+                        stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
+                        break;
+                }
+
                 break;
-            case ThreadStepMode { Mode: StepMode.StepOut, FrameId: int whenNotInStack, Granularity: SteppingGranularity.Instruction }:
-                stoppedOnStep = !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
-                break;
-            case ThreadStepMode { Mode: StepMode.StepOver, FrameId: int whenTop, Granularity: SteppingGranularity.Instruction }:
-                stoppedOnStep = state.Id == whenTop || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
+            case null:
+            case SteppingGranularity.Line:
+            case SteppingGranularity.Statement:
+                if (!state.Proc.IsOnLineChange(state.ProgramCounter))
+                    return;
+
+                switch (state.Thread.StepMode) {
+                    case { Mode: StepMode.StepIn }:
+                        stoppedOnStep = true;
+                        break;
+                    case { Mode: StepMode.StepOut, FrameId: var whenNotInStack }:
+                        stoppedOnStep = whenNotInStack == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
+                        break;
+                    case { Mode: StepMode.StepOver, FrameId: var whenTop }:
+                        stoppedOnStep = state.Id == whenTop || whenTop == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
+                        break;
+                }
+
                 break;
         }
 
@@ -164,51 +218,31 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         }
     }
 
-    public void HandleLineChange(DMProcState state, int line) {
-        if (_stopOnEntry) {
-            _stopOnEntry = false;
-            Stop(state.Thread, new StoppedEvent {
-                Reason = StoppedEvent.ReasonEntry,
-            });
-            return;
-        }
+    public ProcStatus HandleBreakpoint(DMProcState state) {
+        // Subtract 1 because it was advanced before running the opcode
+        var sourceLocation = state.Proc.GetSourceAtOffset(state.ProgramCounter - 1);
 
-        bool stoppedOnStep = false;
-        switch (state.Thread.StepMode) {
-            case ThreadStepMode { Mode: StepMode.StepIn, FrameId: _, Granularity: null or SteppingGranularity.Line or SteppingGranularity.Statement }:
-                stoppedOnStep = true;
-                break;
-            case ThreadStepMode { Mode: StepMode.StepOut, FrameId: int whenNotInStack, Granularity: null or SteppingGranularity.Line or SteppingGranularity.Statement }:
-                stoppedOnStep = whenNotInStack == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenNotInStack);
-                break;
-            case ThreadStepMode { Mode: StepMode.StepOver, FrameId: int whenTop, Granularity: null or SteppingGranularity.Line or SteppingGranularity.Statement }:
-                stoppedOnStep = state.Id == whenTop || whenTop == -1 || !state.Thread.InspectStack().Select(p => p.Id).Contains(whenTop);
-                break;
-        }
+        if (_possibleBreakpoints == null)
+            throw new Exception("Breakpoints not initialized");
+        if (!_possibleBreakpoints.TryGetValue(sourceLocation.Source, out var slots) ||
+            !slots.TryGetValue(sourceLocation.Line, out var slot))
+            throw new Exception($"No breakpoint slot at {sourceLocation.Source}:{sourceLocation.Line}");
+        if (slot.Breakpoints.Count != 1)
+            throw new Exception($"Either no breakpoints or more than 1 breakpoint at {sourceLocation.Source}:{sourceLocation.Line}");
 
-        if (stoppedOnStep) {
-            state.Thread.StepMode = null;
-            Stop(state.Thread, new StoppedEvent {
-                Reason = StoppedEvent.ReasonStep,
-            });
-            return;
-        }
+        var breakpoint = slot.Breakpoints[0];
 
-        if (state.CurrentSource is null || _possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(state.CurrentSource, out var fileSlots))
-            return;
-
-        var hit = new List<int>();
-        foreach (var bp in fileSlots[line].Breakpoints ?? Enumerable.Empty<ActiveBreakpoint>()) {
-            if (TestBreakpoint(bp)) {
-                hit.Add(bp.Id);
-            }
-        }
-        if (hit.Any()) {
-            Output($"Breakpoint hit at {state.CurrentSource}:{line}");
+        if (TestBreakpoint(breakpoint)) {
+            Output($"Breakpoint hit at {sourceLocation.Source}:{sourceLocation.Line}");
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonBreakpoint,
-                HitBreakpointIds = hit,
+                HitBreakpointIds = new[] { breakpoint.Id }
             });
+        }
+
+        // Execute the original opcode
+        unsafe {
+            return DMProcState.OpcodeHandlers[breakpoint.OriginalOpcode](state);
         }
     }
 
@@ -235,7 +269,6 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         if (_adapter == null || !CanStop())
             return;
 
-        _stoppedThread = thread;
         stoppedEvent.ThreadId = thread?.Id;
         stoppedEvent.AllThreadsStopped = true;
         _adapter.SendAll(stoppedEvent);
@@ -356,9 +389,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         _dreamManager.PreInitialize(reqLaunch.Arguments.JsonPath);
-        _possibleBreakpoints = IteratePossibleBreakpoints()
-            .GroupBy(pair => pair.Source, pair => pair.Line)
-            .ToDictionary(group => group.Key, group => group.Distinct().ToDictionary(line => line, _ => new FileBreakpointSlot()));
+        InitializePossibleBreakpoints();
         _possibleFunctionBreakpoints = IterateProcs()
             .Distinct()
             .ToDictionary(t => t, _ => new FunctionBreakpointSlot());
@@ -367,21 +398,24 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         reqLaunch.Respond(client);
     }
 
-    private IEnumerable<(string Source, int Line)> IteratePossibleBreakpoints() {
+    private void InitializePossibleBreakpoints() {
+        _possibleBreakpoints = new();
+
         foreach (var proc in _objectTree.Procs.Concat(new[] { _objectTree.GlobalInitProc }).OfType<DMProc>()) {
-            string? source = proc.Source;
-            if (source != null) {
-                yield return (source, proc.Line);
-            }
-            foreach (var (_, instruction) in new ProcDecoder(_objectTree.Strings, proc.Bytecode).Disassemble()) {
-                switch (instruction) {
-                    case (DreamProcOpcode.DebugSource, string newSource):
-                        source = newSource;
-                        break;
-                    case (DreamProcOpcode.DebugLine, int line):
-                        yield return (source!, line);
-                        break;
+            string? source = null;
+            foreach (var sourceInfo in proc.SourceInfo) {
+                if (sourceInfo.File != null)
+                    source = _objectTree.Strings[sourceInfo.File.Value];
+                if (source == null)
+                    continue;
+
+                if (!_possibleBreakpoints.TryGetValue(source, out var slots)) {
+                    slots = new();
+                    _possibleBreakpoints.Add(source, slots);
                 }
+
+                // TryAdd() because multiple procs can be defined on one line
+                slots.TryAdd(sourceInfo.Line, new(proc));
             }
         }
     }
@@ -417,7 +451,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         var setBreakpoints = reqSetBreakpoints.Arguments.Breakpoints;
-        var responseBreakpoints = new Protocol.Breakpoint[setBreakpoints?.Length ?? 0];
+        var responseBreakpoints = new Breakpoint[setBreakpoints?.Length ?? 0];
 
         sourcePath = Path.GetRelativePath(RootPath, sourcePath).Replace("\\", "/");
         if (_possibleBreakpoints is null || !_possibleBreakpoints.TryGetValue(sourcePath, out var fileSlots)) {
@@ -425,22 +459,24 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             for (int i = 0; i < responseBreakpoints.Length; ++i) {
                 responseBreakpoints[i] = new Breakpoint(message: $"Unknown file \"{sourcePath}\"");
             }
+
             reqSetBreakpoints.Respond(client, responseBreakpoints);
             return;
         }
 
+        // Remove all the current breakpoints
         foreach (var slot in fileSlots.Values) {
-            slot.Breakpoints.Clear();
+            slot.ClearBreakpoints();
         }
 
         // We've unset old breakpoints, so set new ones if needed.
         if (setBreakpoints != null) {
             for (int i = 0; i < setBreakpoints.Length; i++) {
                 SourceBreakpoint setBreakpoint = setBreakpoints[i];
-                if (fileSlots.TryGetValue(setBreakpoint.Line, out var slot)) {
+                if (fileSlots.TryGetValue(setBreakpoint.Line, out var slot) && slot.Proc.TryGetOffsetAtSource(sourcePath, setBreakpoint.Line, out var offset)) {
                     int id = ++_breakpointIdCounter;
 
-                    slot.Breakpoints.Add(new ActiveBreakpoint {
+                    slot.AddBreakpoint(offset, new ActiveBreakpoint {
                         Id = id,
                         Condition = setBreakpoint.Condition,
                         HitCondition = setBreakpoint.HitCondition,
@@ -459,7 +495,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private void HandleRequestSetFunctionBreakpoints(DebugAdapterClient client, RequestSetFunctionBreakpoints reqFuncBreakpoints) {
         var input = reqFuncBreakpoints.Arguments.Breakpoints;
-        var output = new Protocol.Breakpoint[input.Length];
+        var output = new Breakpoint[input.Length];
 
         foreach (var v in _possibleFunctionBreakpoints!.Values) {
             v.Breakpoints.Clear();
@@ -581,18 +617,20 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         var output = new List<StackFrame>();
         var nameBuilder = new System.Text.StringBuilder();
         foreach (var frame in thread.InspectStack()) {
-            var (source, line) = frame.SourceLine;
             nameBuilder.Clear();
             frame.AppendStackFrame(nameBuilder);
 
             var outputFrame = new StackFrame {
                 Id = frame.Id,
-                Source = TranslateSource(source),
-                Line = line ?? 0,
                 Name = nameBuilder.ToString(),
             };
+
             if (frame is DMProcState dm) {
+                var sourceInfo = dm.Proc.GetSourceAtOffset(dm.ProgramCounter);
+
                 outputFrame.InstructionPointerReference = EncodeInstructionPointer(dm.Proc, dm.ProgramCounter);
+                outputFrame.Source = TranslateSource(sourceInfo.Source);
+                outputFrame.Line = sourceInfo.Line;
             }
 
             output.Add(outputFrame);
@@ -605,11 +643,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         if (source is null)
             return null;
 
-        var fname = Path.GetFileName(source);
+        var fName = Path.GetFileName(source);
         if (Path.IsPathRooted(source)) {
-            return new Source(fname, source);
+            return new Source(fName, source);
         } else {
-            return new Source(fname, Path.Join(RootPath, source));
+            return new Source(fName, Path.Join(RootPath, source));
         }
     }
 
@@ -760,32 +798,22 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
             if (previousInstruction != null) {
                 previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset, offset - previousOffset).Replace("-", " ").ToLowerInvariant();
             }
+
             previousOffset = offset;
             previousInstruction = new DisassembledInstruction {
                 Address = EncodeInstructionPointer(proc, offset),
                 Instruction = ProcDecoder.Format(instruction, type => _objectTree.Types[type].Path.ToString()),
             };
-            switch (instruction) {
-                case (DreamProcOpcode.DebugSource, string source):
-                    previousInstruction.Location = TranslateSource(source);
-                    break;
-                case (DreamProcOpcode.DebugLine, int line):
-                    previousInstruction.Line = line;
-                    break;
-            }
+
+            var sourceInfo = proc.GetSourceAtOffset(previousOffset);
+            previousInstruction.Location = TranslateSource(sourceInfo.Source);
+            previousInstruction.Line = sourceInfo.Line;
+
             output.Add(previousInstruction);
         }
+
         if (previousInstruction != null) {
             previousInstruction.InstructionBytes = BitConverter.ToString(proc.Bytecode, previousOffset).Replace("-", " ").ToLowerInvariant();
-        }
-        if (output.Count > 0) {
-            output[0].Symbol = proc.ToString();
-            if (output[0].Location is null) {
-                output[0].Location = TranslateSource(proc.Source);
-            }
-            if (output[0].Line is null) {
-                output[0].Line = proc.Line;
-            }
         }
 
         // ... and THEN strip everything outside the requested range.
@@ -833,6 +861,6 @@ public interface IDreamDebugManager {
     public void HandleOutput(LogLevel logLevel, string message);
     public void HandleFirstResume(DMProcState dMProcState);
     public void HandleInstruction(DMProcState dMProcState);
-    public void HandleLineChange(DMProcState state, int line);
+    public ProcStatus HandleBreakpoint(DMProcState state);
     public void HandleException(DreamThread dreamThread, Exception exception);
 }

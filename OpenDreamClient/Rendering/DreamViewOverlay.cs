@@ -245,6 +245,7 @@ internal sealed class DreamViewOverlay : Overlay {
             RendererMetaData renderTargetPlaceholder = RentRendererMetaData();
 
             //transform, color, alpha, filters - they should all already have been applied, so we leave them null in the placeholder
+            renderTargetPlaceholder.MainIcon = current.MainIcon;
             renderTargetPlaceholder.Position = current.Position;
             renderTargetPlaceholder.Uid = current.Uid;
             renderTargetPlaceholder.ClickUid = current.Uid;
@@ -899,12 +900,12 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
         //Render target and source ordering is done first.
         //Anything with a render target goes first
-        //Anything with a render source which points to a render target must come *after* that render_target
         int val = (!string.IsNullOrEmpty(RenderTarget)).CompareTo(!string.IsNullOrEmpty(other.RenderTarget));
         if (val != 0) {
             return -val;
         }
 
+        //Anything with a render source which points to a render target must come *after* that render_target
         if (!string.IsNullOrEmpty(RenderSource) && RenderSource == other.RenderTarget) {
             return 1;
         }

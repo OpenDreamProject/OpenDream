@@ -18,15 +18,15 @@ using Robust.Shared.Configuration;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
-    internal partial class DreamManager : IDreamManager {
+    public sealed partial class DreamManager {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-        [Dependency] private readonly IProcScheduler _procScheduler = default!;
+        [Dependency] private readonly ProcScheduler _procScheduler = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IStatusHost _statusHost = default!;
         [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
@@ -39,7 +39,7 @@ namespace OpenDreamRuntime {
         public event EventHandler<Exception>? OnException;
 
         // Global state that may not really (really really) belong here
-        public List<DreamValue> Globals { get; set; } = new();
+        public DreamValue[] Globals { get; set; } = Array.Empty<DreamValue>();
         public List<string> GlobalNames { get; private set; } = new List<string>();
         public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
         public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
@@ -130,13 +130,12 @@ namespace OpenDreamRuntime {
             WorldInstance.InitSpawn(new());
 
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
-                Globals.Clear();
-                Globals.EnsureCapacity(jsonGlobals.GlobalCount);
+                Globals = new DreamValue[jsonGlobals.GlobalCount];
                 GlobalNames = jsonGlobals.Names;
 
                 for (int i = 0; i < jsonGlobals.GlobalCount; i++) {
                     object globalValue = jsonGlobals.Globals.GetValueOrDefault(i, null);
-                    Globals.Add(_objectTree.GetDreamValueFromJsonElement(globalValue));
+                    Globals[i] = _objectTree.GetDreamValueFromJsonElement(globalValue);
                 }
             }
 
@@ -291,5 +290,22 @@ namespace OpenDreamRuntime {
             LastDMException = e;
             OnException?.Invoke(this, e);
         }
+    }
+
+    public enum RefType : uint {
+        Null = 0x0,
+        DreamObjectTurf = 0x1000000,
+        DreamObject = 0x2000000,
+        DreamObjectMob = 0x3000000,
+        DreamObjectArea = 0x4000000,
+        DreamObjectClient = 0x5000000,
+        DreamObjectImage = 0xD000000,
+        DreamObjectList = 0xF000000,
+        DreamObjectDatum = 0x21000000,
+        String = 0x6000000,
+        DreamType = 0x9000000, //in byond type is from 0x8 to 0xb, but fuck that
+        DreamResource = 0x27000000, //Equivalent to file
+        DreamAppearance = 0x3A000000,
+        Proc = 0x26000000
     }
 }

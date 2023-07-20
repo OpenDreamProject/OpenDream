@@ -270,7 +270,7 @@ namespace DMCompiler.DM.Visitors {
                 DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
                 bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
                 if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
-                    if(!dmObject.HasProcNoInheritence(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
+                    if(!dmObject.HasProcNoInheritance(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
                         DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it");
                         return; // TODO: Maybe fallthrough since this error is a little pedantic?
                     }

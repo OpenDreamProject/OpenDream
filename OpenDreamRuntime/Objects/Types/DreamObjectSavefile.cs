@@ -62,7 +62,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 value = new DreamValue(0); //TODO: What's a savefile buffer?
                 return true;
             case "name":
-                value = new DreamValue(Resource.ResourcePath);
+                value = new DreamValue(Resource.ResourcePath ?? "[no path]");
                 return true;
             case "dir":
                 DreamList dirList = ObjectTree.CreateList();

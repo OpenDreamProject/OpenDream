@@ -13,10 +13,10 @@ using Level = OpenDreamRuntime.IDreamMapManager.Level;
 using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
 
 namespace OpenDreamRuntime {
-    internal sealed class DreamMapManager : IDreamMapManager {
-        [Dependency] private readonly IAtomManager _atomManager = default!;
+    public sealed class DreamMapManager : IDreamMapManager {
+        [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         // Set in Initialize
@@ -32,7 +32,7 @@ namespace OpenDreamRuntime {
 
         // Set in Initialize
         private MapObjectJson _defaultArea = default!;
-        private IDreamObjectTree.TreeEntry _defaultTurf = default!;
+        private TreeEntry _defaultTurf = default!;
 
         public void Initialize() {
             _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
@@ -44,7 +44,7 @@ namespace OpenDreamRuntime {
                 if(!area.ObjectDefinition.IsSubtypeOf(_objectTree.Area)) throw new Exception("bad area");
 
                 _defaultArea = new MapObjectJson(area.Id);
-            } else if (worldDefinition.Variables["area"] == DreamValue.Null ||
+            } else if (worldDefinition.Variables["area"].IsNull ||
                      worldDefinition.Variables["area"].TryGetValueAsInteger(out var areaInt) && areaInt == 0) {
                 //TODO: Properly handle disabling default area
                 _defaultArea = new MapObjectJson(_objectTree.Area.Id);
@@ -57,7 +57,7 @@ namespace OpenDreamRuntime {
                 if (!turf.ObjectDefinition.IsSubtypeOf(_objectTree.Turf))
                     throw new Exception("bad turf");
                 _defaultTurf = turf;
-            } else if (worldDefinition.Variables["turf"] == DreamValue.Null ||
+            } else if (worldDefinition.Variables["turf"].IsNull ||
                        worldDefinition.Variables["turf"].TryGetValueAsInteger(out var turfInt) && turfInt == 0) {
                 //TODO: Properly handle disabling default turf
                 _defaultTurf = _objectTree.Turf;

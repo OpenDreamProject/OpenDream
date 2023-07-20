@@ -109,7 +109,7 @@ public sealed class DreamObjectClient : DreamObject {
                     foreach (DreamValue screenValue in valueList.GetValues()) {
                         Screen.AddValue(screenValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     Screen.AddValue(value);
                 }
 
@@ -122,7 +122,7 @@ public sealed class DreamObjectClient : DreamObject {
                     foreach (DreamValue screenValue in valueList.GetValues()) {
                         Images.AddValue(screenValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     Images.AddValue(value);
                 }
 

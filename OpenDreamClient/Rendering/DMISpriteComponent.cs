@@ -18,16 +18,6 @@ namespace OpenDreamClient.Rendering {
             Icon.SizeChanged += OnIconSizeChanged;
         }
 
-        public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
-            if (curState == null)
-                return;
-
-            DMISpriteComponentState state = (DMISpriteComponentState)curState;
-
-            ScreenLocation = state.ScreenLocation;
-            Icon.SetAppearance(state.AppearanceId);
-        }
-
         public void GetAABB(TransformSystem sys, ref WorldAABBEvent e) {
             if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform)) {
                 return;

@@ -439,8 +439,8 @@ namespace OpenDreamRuntime.Objects.Types {
 
     // global.vars list
     sealed class DreamGlobalVars : DreamList {
-        [Dependency] private readonly IDreamManager _dreamMan = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamManager _dreamMan = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
 
         public override bool IsAssociative =>
             true; // We don't use the associative array but, yes, we behave like an associative list
@@ -504,7 +504,7 @@ namespace OpenDreamRuntime.Objects.Types {
     public sealed class VerbsList : DreamList {
         private readonly List<DreamProc> _verbs = new();
 
-        public VerbsList(IDreamObjectTree objectTree, DreamObject dreamObject) : base(objectTree.List.ObjectDefinition, 0) {
+        public VerbsList(DreamObjectTree objectTree, DreamObject dreamObject) : base(objectTree.List.ObjectDefinition, 0) {
             List<int>? verbs = dreamObject.ObjectDefinition.Verbs;
             if (verbs == null)
                 return;
@@ -561,7 +561,7 @@ namespace OpenDreamRuntime.Objects.Types {
     // atom.overlays or atom.underlays list
     // Operates on an atom's appearance
     public sealed class DreamOverlaysList : DreamList {
-        [Dependency] private readonly IAtomManager _atomManager = default!;
+        [Dependency] private readonly AtomManager _atomManager = default!;
         private readonly ServerAppearanceSystem? _appearanceSystem;
 
         private readonly DreamObject _atom;
@@ -663,7 +663,7 @@ namespace OpenDreamRuntime.Objects.Types {
             return appearance;
         }
 
-        public static IconAppearance? CreateOverlayAppearance(IAtomManager atomManager, DreamValue value, int? defaultIcon) {
+        public static IconAppearance? CreateOverlayAppearance(AtomManager atomManager, DreamValue value, int? defaultIcon) {
             IconAppearance overlay;
 
             if (value.TryGetValueAsString(out var iconState)) {
@@ -684,7 +684,7 @@ namespace OpenDreamRuntime.Objects.Types {
     // atom.filters list
     // Operates on an atom's appearance
     public sealed class DreamFilterList : DreamList {
-        [Dependency] private readonly IAtomManager _atomManager = default!;
+        [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
         private readonly DreamObjectAtom _atom;
@@ -775,13 +775,13 @@ namespace OpenDreamRuntime.Objects.Types {
 
     // client.screen list
     public sealed class ClientScreenList : DreamList {
-        private readonly IDreamObjectTree _objectTree;
+        private readonly DreamObjectTree _objectTree;
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
 
         private readonly DreamConnection _connection;
         private readonly List<DreamValue> _screenObjects = new();
 
-        public ClientScreenList(IDreamObjectTree objectTree, ServerScreenOverlaySystem? screenOverlaySystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
+        public ClientScreenList(DreamObjectTree objectTree, ServerScreenOverlaySystem? screenOverlaySystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
             _objectTree = objectTree;
             _screenOverlaySystem = screenOverlaySystem;
 
@@ -896,9 +896,9 @@ namespace OpenDreamRuntime.Objects.Types {
     // world.contents list
     // Operates on a list of all atoms
     public sealed class WorldContentsList : DreamList {
-        private readonly IAtomManager _atomManager;
+        private readonly AtomManager _atomManager;
 
-        public WorldContentsList(DreamObjectDefinition listDef, IAtomManager atomManager) : base(listDef, 0) {
+        public WorldContentsList(DreamObjectDefinition listDef, AtomManager atomManager) : base(listDef, 0) {
             _atomManager = atomManager;
         }
 

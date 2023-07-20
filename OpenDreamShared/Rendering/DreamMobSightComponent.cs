@@ -13,30 +13,16 @@ namespace OpenDreamShared.Rendering {
 
         public sbyte SeeInvisibility;
         public SightFlags Sight;
+    }
 
-        public override ComponentState GetComponentState() {
-            return new DreamMobSightComponentState(SeeInvisibility, Sight);
-        }
+    [Serializable, NetSerializable]
+    internal sealed class DreamMobSightComponentState : ComponentState {
+        public readonly sbyte SeeInvisibility;
+        public readonly SightFlags Sight;
 
-        public override void HandleComponentState(ComponentState? curState, ComponentState? nextState) {
-            if (curState == null)
-                return;
-
-            DreamMobSightComponentState state = (DreamMobSightComponentState)curState;
-
-            SeeInvisibility = state.SeeInvisibility;
-            Sight = state.Sight;
-        }
-
-        [Serializable, NetSerializable]
-        private sealed class DreamMobSightComponentState : ComponentState {
-            public readonly sbyte SeeInvisibility;
-            public readonly SightFlags Sight;
-
-            public DreamMobSightComponentState(sbyte seeInvisibility, SightFlags sight) {
-                SeeInvisibility = seeInvisibility;
-                Sight = sight;
-            }
+        public DreamMobSightComponentState(sbyte seeInvisibility, SightFlags sight) {
+            SeeInvisibility = seeInvisibility;
+            Sight = sight;
         }
     }
 }

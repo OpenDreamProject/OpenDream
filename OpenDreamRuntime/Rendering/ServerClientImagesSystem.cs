@@ -8,7 +8,7 @@ using OpenDreamRuntime.Objects;
 namespace OpenDreamRuntime.Rendering {
     public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         [Dependency] private readonly ServerAppearanceSystem serverAppearanceSystem = default!;
-        [Dependency] private readonly IAtomManager atomManager = default!;
+        [Dependency] private readonly AtomManager atomManager = default!;
 
         public override void Initialize() {
             SubscribeLocalEvent<ExpandPvsEvent>(HandleExpandPvsEvent);

@@ -55,12 +55,12 @@ namespace OpenDreamRuntime.Procs.Native {
                     } else {
                         return DreamValue.Null;
                     }
-                case "admin":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + configSet);
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + configSet);
+                case "admin":
+                    Logger.GetSawmill("opendream.world").Warning("Unsupported GetConfig config_set: " + configSet);
+                    return new(bundle.ObjectTree.CreateList());
                 default:
                     throw new ArgumentException("Incorrect GetConfig config_set: " + configSet);
             }
@@ -135,16 +135,18 @@ namespace OpenDreamRuntime.Procs.Native {
                 case "env":
                     value.TryGetValueAsString(out var valueString);
                     Environment.SetEnvironmentVariable(param, valueString);
-                    return DreamValue.Null;
-                case "admin":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + configSet);
+                    break;
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + configSet);
+                case "admin":
+                    Logger.GetSawmill("opendream.world").Warning("Unsupported SetConfig config_set: " + configSet);
+                    break;
                 default:
                     throw new ArgumentException("Incorrect SetConfig config_set: " + configSet);
             }
+
+            return DreamValue.Null;
         }
     }
 }

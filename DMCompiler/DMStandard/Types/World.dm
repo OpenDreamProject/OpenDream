@@ -10,6 +10,7 @@
 
 	var/name = "OpenDream World"
 	var/time
+	var/timezone = 0 as opendream_unimplemented
 	var/timeofday
 	var/realtime
 	var/tick_lag = 1
@@ -54,6 +55,7 @@
 	var/host as opendream_unimplemented
 	var/map_format = TOPDOWN_MAP as opendream_unimplemented
 	var/cache_lifespan = 30 as opendream_unimplemented
+	var/executor as opendream_unimplemented
 
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE

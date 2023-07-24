@@ -46,7 +46,7 @@ namespace OpenDreamRuntime.Resources {
 
         public virtual void Output(DreamValue value) {
             string? text;
-            if (value == DreamValue.Null) {
+            if (value.IsNull) {
                 text = string.Empty;
             } else if (!value.TryGetValueAsString(out text)) {
                 throw new Exception($"Invalid output operation '{ResourcePath}' << {value}");

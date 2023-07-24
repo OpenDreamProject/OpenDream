@@ -19,8 +19,8 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
 
-        private DreamViewOverlay _dreamViewOverlay;
-        private ContextMenuPopup _contextMenu;
+        private DreamViewOverlay? _dreamViewOverlay;
+        private ContextMenuPopup _contextMenu = default!;
 
         public override void Initialize() {
             _contextMenu = new ContextMenuPopup();
@@ -51,9 +51,9 @@ namespace OpenDreamClient.Input {
             if (entity == null)
                 return false;
 
-            if (entity.ClickUID == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
+            if (entity.ClickUid == EntityUid.Invalid && args.Function != EngineKeyFunctions.UIRightClick) { // Turf was clicked and not a right-click
                 // Grid coordinates are half a meter off from entity coordinates
-                mapCoords = new MapCoordinates(mapCoords.Position + 0.5f, mapCoords.MapId);
+                mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
 
                 if (_mapManager.TryFindGridAt(mapCoords, out _, out var grid)){
                     Vector2i position = grid.CoordinatesToTile(mapCoords);
@@ -87,8 +87,16 @@ namespace OpenDreamClient.Input {
 
             // TODO: Take icon transformations into account
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
-            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUID, screenLoc, middle, shift, ctrl, alt, iconPosition));
+            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUid, screenLoc, middle, shift, ctrl, alt, iconPosition));
             return true;
+        }
+
+        public void HandleStatClick(string atomRef, bool isMiddle) {
+            bool shift = _inputManager.IsKeyDown(Keyboard.Key.Shift);
+            bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
+            bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
+
+            RaiseNetworkEvent(new StatClickedEvent(atomRef, isMiddle, shift, ctrl, alt));
         }
 
         private RendererMetaData? GetEntityUnderMouse(Vector2 mousePos) {

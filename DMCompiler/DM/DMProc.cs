@@ -10,7 +10,7 @@ using System.Linq;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
-    sealed class DMProc {
+    internal sealed class DMProc {
         public class LocalVariable {
             public readonly int Id;
             public readonly bool IsParameter;
@@ -46,7 +46,6 @@ namespace DMCompiler.DM {
         }
 
         public class CodeLabel {
-            private static int idCounter = 0;
             public readonly int Id;
             public readonly string Name;
             public readonly long ByteOffset;
@@ -55,12 +54,12 @@ namespace DMCompiler.DM {
 
             public string LabelName => $"{Name}_{Id}_codelabel";
 
-            public CodeLabel(string name, long offset){
-                Id = idCounter;
+            private static int _idCounter = 0;
+
+            public CodeLabel(string name, long offset) {
+                Id = _idCounter++;
                 Name = name;
                 ByteOffset = offset;
-
-                idCounter += 1;
             }
         }
 
@@ -85,7 +84,6 @@ namespace DMCompiler.DM {
         public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
-        public List<CodeLabel> CodeLabels = new();
 
         public string? VerbName;
         public string? VerbCategory = string.Empty;
@@ -108,6 +106,9 @@ namespace DMCompiler.DM {
 
         private List<LocalVariableJson> _localVariableNames = new();
         private int _localVariableIdCounter;
+
+        private readonly List<SourceInfoJson> _sourceInfo = new();
+        private string? _lastSourceFile;
 
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
@@ -149,8 +150,7 @@ namespace DMCompiler.DM {
             procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
             procDefinition.IsVerb = IsVerb;
-            procDefinition.Source = _astDefinition?.Location.SourceFile?.Replace("\\", "/");
-            procDefinition.Line = _astDefinition?.Location.Line ?? 0;
+            procDefinition.SourceInfo = _sourceInfo;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None) {
                 procDefinition.Attributes = Attributes;
@@ -158,8 +158,7 @@ namespace DMCompiler.DM {
 
             procDefinition.VerbName = VerbName;
             // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
-            VerbCategory = VerbCategory switch
-            {
+            VerbCategory = VerbCategory switch {
                 "" => null,
                 null => string.Empty,
                 _ => VerbCategory
@@ -184,6 +183,7 @@ namespace DMCompiler.DM {
                     });
                 }
             }
+
             if (_localVariableNames.Count > 0) {
                 procDefinition.Locals = _localVariableNames;
             }
@@ -290,7 +290,6 @@ namespace DMCompiler.DM {
             }
 
             CodeLabel label = new CodeLabel(name, Bytecode.Position);
-            CodeLabels.Add(label); // For later static analysis
             _scopes.Peek().LocalCodeLabels.Add(name, label);
             return label;
         }
@@ -357,14 +356,24 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Error);
         }
 
-        public void DebugSource(string source) {
-            WriteOpcode(DreamProcOpcode.DebugSource);
-            WriteString(source.Replace("\\", "/"));
-        }
+        public void DebugSource(Location location) {
+            var sourceInfo = new SourceInfoJson() {
+                Offset = (int)_bytecodeWriter.BaseStream.Position,
+                Line = location.Line ?? -1
+            };
 
-        public void DebugLine(int line) {
-            WriteOpcode(DreamProcOpcode.DebugLine);
-            WriteInt(line);
+            var sourceFile = location.SourceFile.Replace('\\', '/');
+
+            // Only write the source file if it has changed
+            if (_lastSourceFile != sourceFile) {
+                sourceInfo.File = DMObjectTree.AddString(sourceFile);
+            } else if (_sourceInfo.Count > 0 && sourceInfo.Line == _sourceInfo[^1].Line) {
+                // Don't need to write this source info if it's the same source & line as the last
+                return;
+            }
+
+            _lastSourceFile = sourceFile;
+            _sourceInfo.Add(sourceInfo);
         }
 
         public void PushReferenceValue(DMReference reference) {
@@ -1014,10 +1023,6 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.IsInRange);
         }
 
-        public void IsNull() {
-            WriteOpcode(DreamProcOpcode.IsNull);
-        }
-
         public void IsSaved() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsSaved);
@@ -1026,6 +1031,24 @@ namespace DMCompiler.DM {
         public void IsType() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsType);
+        }
+
+        public void IsNull() {
+            WriteOpcode(DreamProcOpcode.IsNull);
+        }
+
+        public void Length() {
+            WriteOpcode(DreamProcOpcode.Length);
+        }
+
+        public void GetStep() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.GetStep);
+        }
+
+        public void GetDir() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.GetDir);
         }
 
         public void LocateCoordinates() {
@@ -1100,16 +1123,9 @@ namespace DMCompiler.DM {
         }
 
         private void WriteString(string value) {
-            int stringID;
+            int stringId = DMObjectTree.AddString(value);
 
-            if (!DMObjectTree.StringToStringID.TryGetValue(value, out stringID)) {
-                stringID = DMObjectTree.StringTable.Count;
-
-                DMObjectTree.StringTable.Add(value);
-                DMObjectTree.StringToStringID.Add(value, stringID);
-            }
-
-            WriteInt(stringID);
+            WriteInt(stringId);
         }
 
         private void WriteLabel(string labelName) {

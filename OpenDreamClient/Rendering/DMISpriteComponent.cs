@@ -1,16 +1,14 @@
-﻿using JetBrains.Annotations;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map;
-using Robust.Shared.Physics;
 
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    sealed class DMISpriteComponent : SharedDMISpriteComponent {
+    internal sealed class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
-        [ViewVariables] public ScreenLocation ScreenLocation { get; set; } = null;
+        [ViewVariables] public ScreenLocation? ScreenLocation { get; set; }
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;
@@ -20,16 +18,6 @@ namespace OpenDreamClient.Rendering {
             Icon.SizeChanged += OnIconSizeChanged;
         }
 
-        public override void HandleComponentState(ComponentState curState, ComponentState nextState) {
-            if (curState == null)
-                return;
-
-            DMISpriteComponentState state = (DMISpriteComponentState)curState;
-
-            ScreenLocation = state.ScreenLocation;
-            Icon.SetAppearance(state.AppearanceId);
-        }
-
         public void GetAABB(TransformSystem sys, ref WorldAABBEvent e) {
             if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform)) {
                 return;
@@ -37,7 +25,7 @@ namespace OpenDreamClient.Rendering {
             e.AABB = Icon.GetWorldAABB(sys.GetWorldPosition(transform));
         }
 
-        public bool IsVisible(bool checkWorld = true, IMapManager? mapManager = null, int seeInvis = 0) {
+        public bool IsVisible(bool checkWorld = true, int seeInvis = 0) {
             if (Icon.Appearance?.Invisibility > seeInvis) return false;
 
             if (checkWorld) {
@@ -46,7 +34,6 @@ namespace OpenDreamClient.Rendering {
                 if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform))
                     return false;
 
-                IoCManager.Resolve(ref mapManager);
                 if (transform.ParentUid != transform.GridUid)
                     return false;
             }
@@ -57,7 +44,7 @@ namespace OpenDreamClient.Rendering {
         private void OnIconSizeChanged() {
             _entityManager.TryGetComponent<TransformComponent>(Owner, out var transform);
             _lookupSystem ??= _entitySystemMan.GetEntitySystem<EntityLookupSystem>();
-            _lookupSystem?.FindAndAddToEntityTree(Owner, transform);
+            _lookupSystem?.FindAndAddToEntityTree(Owner, xform: transform);
         }
     }
 }

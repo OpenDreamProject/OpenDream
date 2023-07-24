@@ -11,6 +11,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     public EntityUid Entity;
     public readonly DMISpriteComponent SpriteComponent;
 
+    // TODO: Cache this shit. GetWorldPosition is slow.
     public Vector2i Position => (Vector2i?)TransformSystem?.GetWorldPosition(_transformComponent) ?? (0, 0);
     public int X => Position.X;
     public int Y => Position.Y;
@@ -129,7 +130,7 @@ public class DreamObjectMovable : DreamObjectAtom {
                 break;
             }
             case "loc": {
-                if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newLoc) && value != DreamValue.Null)
+                if (!value.TryGetValueAsDreamObject<DreamObjectAtom>(out var newLoc) && !value.IsNull)
                     throw new Exception($"Invalid loc {value}");
 
                 SetLoc(newLoc);
@@ -171,7 +172,7 @@ public class DreamObjectMovable : DreamObjectAtom {
         switch (loc) {
             case DreamObjectTurf turf: {
                 TransformSystem.SetParent(Entity, DreamMapManager.GetZLevelEntity(turf.Z));
-                TransformSystem.SetWorldPosition(Entity, (turf.X, turf.Y));
+                TransformSystem.SetWorldPosition(Entity, new Vector2(turf.X, turf.Y));
 
                 turf.Cell.Movables.Add(this);
                 break;

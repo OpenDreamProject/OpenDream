@@ -30,8 +30,6 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
             if (procDefinition.Body == null) return;
 
-            _proc.DebugSource(procDefinition.Location.SourceFile);
-
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
 
@@ -57,6 +55,10 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            if (procDefinition.Body.Statements.Length == 0) {
+                DMCompiler.Emit(WarningCode.EmptyProc, _proc.Location,"Empty proc detected - add an explicit \"return\" statement");
+            }
+
             ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             _proc.ResolveLabels();
         }
@@ -66,7 +68,7 @@ namespace DMCompiler.DM.Visitors {
         /// A.) are not marked opendream_unimplemented and <br/>
         /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
         /// </param>
-        public void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
+        private void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
             foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
                 Location loc = stmt.Location;
                 try {
@@ -91,10 +93,10 @@ namespace DMCompiler.DM.Visitors {
                 }
                 return;
             }
+
             foreach (DMASTProcStatement statement in block.Statements) {
-                if (statement.Location.Line != null) {
-                    _proc.DebugLine(statement.Location.Line.Value);
-                }
+                _proc.DebugSource(statement.Location);
+
                 try {
                     ProcessStatement(statement);
                 } catch (CompileAbortException e) {

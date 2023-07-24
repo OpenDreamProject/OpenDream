@@ -1,13 +1,14 @@
 ﻿using System.Collections.Specialized;
 using System.Web;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Input;
 using Robust.Server.Player;
 
 namespace OpenDreamRuntime.Input {
-    sealed class MouseInputSystem : SharedMouseInputSystem {
-        [Dependency] private readonly IAtomManager _atomManager = default!;
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
+    internal sealed class MouseInputSystem : SharedMouseInputSystem {
+        [Dependency] private readonly AtomManager _atomManager = default!;
+        [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
 
         public override void Initialize() {
@@ -15,6 +16,7 @@ namespace OpenDreamRuntime.Input {
 
             SubscribeNetworkEvent<EntityClickedEvent>(OnEntityClicked);
             SubscribeNetworkEvent<TurfClickedEvent>(OnTurfClicked);
+            SubscribeNetworkEvent<StatClickedEvent>(OnStatClicked);
         }
 
         private void OnEntityClicked(EntityClickedEvent e, EntitySessionEventArgs sessionEvent) {
@@ -29,6 +31,13 @@ namespace OpenDreamRuntime.Input {
                 return;
 
             HandleAtomClick(e, turf, sessionEvent);
+        }
+
+        private void OnStatClicked(StatClickedEvent e, EntitySessionEventArgs sessionEvent) {
+            if (!_dreamManager.LocateRef(e.AtomRef).TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+                return;
+
+            HandleAtomClick(e, dreamObject, sessionEvent);
         }
 
         private void HandleAtomClick(IAtomClickedEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {

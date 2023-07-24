@@ -3,7 +3,7 @@ using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public interface IDreamValueEnumerator {
-        public bool Enumerate(DMProcState state, DMReference? reference);
+        public bool Enumerate(DMProcState state, DreamReference? reference);
     }
 
     /// <summary>
@@ -21,7 +21,7 @@ namespace OpenDreamRuntime.Procs {
             _step = step;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             _current += _step;
 
             bool successful = (_step > 0) ? _current <= _end : _current >= _end;
@@ -37,14 +37,14 @@ namespace OpenDreamRuntime.Procs {
     /// </summary>
     sealed class DreamObjectEnumerator : IDreamValueEnumerator {
         private readonly IEnumerator<DreamObject> _dreamObjectEnumerator;
-        private readonly IDreamObjectTree.TreeEntry? _filterType;
+        private readonly TreeEntry? _filterType;
 
-        public DreamObjectEnumerator(IEnumerable<DreamObject> dreamObjects, IDreamObjectTree.TreeEntry? filterType = null) {
+        public DreamObjectEnumerator(IEnumerable<DreamObject> dreamObjects, TreeEntry? filterType = null) {
             _dreamObjectEnumerator = dreamObjects.GetEnumerator();
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             bool success = _dreamObjectEnumerator.MoveNext();
             if (_filterType != null) {
                 while (success && !_dreamObjectEnumerator.Current.IsSubtypeOf(_filterType)) {
@@ -71,7 +71,7 @@ namespace OpenDreamRuntime.Procs {
             _dreamValueArray = dreamValueArray;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             _current++;
 
             bool success = _current < _dreamValueArray.Length;
@@ -87,15 +87,15 @@ namespace OpenDreamRuntime.Procs {
     /// </summary>
     sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
         private readonly DreamValue[] _dreamValueArray;
-        private readonly IDreamObjectTree.TreeEntry _filterType;
+        private readonly TreeEntry _filterType;
         private int _current = -1;
 
-        public FilteredDreamValueArrayEnumerator(DreamValue[] dreamValueArray, IDreamObjectTree.TreeEntry filterType) {
+        public FilteredDreamValueArrayEnumerator(DreamValue[] dreamValueArray, TreeEntry filterType) {
             _dreamValueArray = dreamValueArray;
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             do {
                 _current++;
                 if (_current >= _dreamValueArray.Length) {
@@ -119,16 +119,16 @@ namespace OpenDreamRuntime.Procs {
     /// <code>for (var/obj/item/I in world)</code>
     /// </summary>
     sealed class WorldContentsEnumerator : IDreamValueEnumerator {
-        private readonly IAtomManager _atomManager;
-        private readonly IDreamObjectTree.TreeEntry? _filterType;
+        private readonly AtomManager _atomManager;
+        private readonly TreeEntry? _filterType;
         private int _current = -1;
 
-        public WorldContentsEnumerator(IAtomManager atomManager, IDreamObjectTree.TreeEntry? filterType) {
+        public WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) {
             _atomManager = atomManager;
             _filterType = filterType;
         }
 
-        public bool Enumerate(DMProcState state, DMReference? reference) {
+        public bool Enumerate(DMProcState state, DreamReference? reference) {
             do {
                 _current++;
                 if (_current >= _atomManager.AtomCount) {

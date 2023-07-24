@@ -1,15 +1,17 @@
 ﻿using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
+using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
+using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeWorld {
         [DreamProc("Export")]
-        [DreamProcParameter("Addr", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("File", Type = DreamValue.DreamValueType.DreamObject)]
-        [DreamProcParameter("Persist", Type = DreamValue.DreamValueType.Float, DefaultValue = 0)]
-        [DreamProcParameter("Clients", Type = DreamValue.DreamValueType.DreamObject)]
+        [DreamProcParameter("Addr", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("File", Type = DreamValue.DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("Persist", Type = DreamValue.DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("Clients", Type = DreamValue.DreamValueTypeFlag.DreamObject)]
         public static async Task<DreamValue> NativeProc_Export(AsyncNativeProc.State state) {
             var addr = state.GetArgument(0, "Addr").Stringify();
 
@@ -36,50 +38,52 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("GetConfig")]
-        [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
-        public static DreamValue NativeProc_GetConfig(NativeProc.State state) {
-            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            var param = state.GetArgument(1, "param");
+        [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
+        public static DreamValue NativeProc_GetConfig(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSetArg);
+            var param = bundle.GetArgument(1, "param");
 
-            switch (config_set) {
+            ProcessConfigSet(configSetArg, out _, out var configSet);
+
+            switch (configSet) {
                 case "env":
-                    if (param == DreamValue.Null) {
+                    if (param.IsNull) {
                         // DM ref says: "If no parameter is specified, a list of the names of all available parameters is returned."
                         // but apparently it's actually just null for "env".
                         return DreamValue.Null;
-                    } else if (param.TryGetValueAsString(out string paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
+                    } else if (param.TryGetValueAsString(out var paramString) && Environment.GetEnvironmentVariable(paramString) is string strValue) {
                         return new DreamValue(strValue);
                     } else {
                         return DreamValue.Null;
                     }
-                case "admin":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + config_set);
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + config_set);
+                case "admin":
+                    Logger.GetSawmill("opendream.world").Warning("Unsupported GetConfig config_set: " + configSet);
+                    return new(bundle.ObjectTree.CreateList());
                 default:
-                    throw new ArgumentException("Incorrect GetConfig config_set: " + config_set);
+                    throw new ArgumentException("Incorrect GetConfig config_set: " + configSet);
             }
         }
 
         [DreamProc("Profile")]
-        [DreamProcParameter("command", Type = DreamValue.DreamValueType.Float)]
-        [DreamProcParameter("type", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("format", Type = DreamValue.DreamValueType.String)]
-        public static DreamValue NativeProc_Profile(NativeProc.State state) {
-            state.GetArgument(0, "command").TryGetValueAsInteger(out var command);
+        [DreamProcParameter("command", Type = DreamValue.DreamValueTypeFlag.Float)]
+        [DreamProcParameter("type", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("format", Type = DreamValue.DreamValueTypeFlag.String)]
+        public static DreamValue NativeProc_Profile(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "command").TryGetValueAsInteger(out var command);
 
             string? type, format;
-            switch (state.Arguments.Count) {
+            switch (bundle.Arguments.Length) {
                 case 3:
-                    state.GetArgument(1, "type").TryGetValueAsString(out type);
-                    state.GetArgument(2, "format").TryGetValueAsString(out format);
+                    bundle.GetArgument(1, "type").TryGetValueAsString(out type);
+                    bundle.GetArgument(2, "format").TryGetValueAsString(out format);
                     break;
                 case 2:
                     type = null;
-                    state.GetArgument(1, "type").TryGetValueAsString(out format);
+                    bundle.GetArgument(1, "type").TryGetValueAsString(out format);
                     break;
                 default:
                     type = null;
@@ -92,7 +96,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (format == "json") {
                 return new("[]");
             } else { // Anything else gives a /list
-                DreamList dataList = state.ObjectTree.CreateList();
+                DreamList dataList = bundle.ObjectTree.CreateList();
 
                 if (type == "sendmaps") {
                     dataList.AddValue(new("name"));
@@ -111,28 +115,68 @@ namespace OpenDreamRuntime.Procs.Native {
             }
         }
 
-        [DreamProc("SetConfig")]
-        [DreamProcParameter("config_set", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("param", Type = DreamValue.DreamValueType.String)]
-        [DreamProcParameter("value", Type = DreamValue.DreamValueType.String)]
-        public static DreamValue NativeProc_SetConfig(NativeProc.State state) {
-            state.GetArgument(0, "config_set").TryGetValueAsString(out string config_set);
-            state.GetArgument(1, "param").TryGetValueAsString(out string param);
-            var value = state.GetArgument(2, "value");
+        [DreamProc("Reboot")]
+        [DreamProcParameter("reason", Type = DreamValue.DreamValueTypeFlag.Float)]
+        public static DreamValue NativeProc_Reboot(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            var server = IoCManager.Resolve<IBaseServer>();
 
-            switch (config_set) {
+            server.Shutdown("/world.Reboot() was called but restarting is very broken");
+            return DreamValue.Null;
+        }
+
+        [DreamProc("SetConfig")]
+        [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
+        [DreamProcParameter("value", Type = DreamValue.DreamValueTypeFlag.String)]
+        public static DreamValue NativeProc_SetConfig(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSetArg);
+            bundle.GetArgument(1, "param").TryGetValueAsString(out var param);
+            var value = bundle.GetArgument(2, "value");
+
+            ProcessConfigSet(configSetArg, out _, out var configSet);
+
+            switch (configSet) {
                 case "env":
-                    value.TryGetValueAsString(out string valueString);
+                    value.TryGetValueAsString(out var valueString);
                     Environment.SetEnvironmentVariable(param, valueString);
-                    return DreamValue.Null;
-                case "admin":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + config_set);
+                    break;
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + config_set);
+                case "admin":
+                    Logger.GetSawmill("opendream.world").Warning("Unsupported SetConfig config_set: " + configSet);
+                    break;
                 default:
-                    throw new ArgumentException("Incorrect SetConfig config_set: " + config_set);
+                    throw new ArgumentException("Incorrect SetConfig config_set: " + configSet);
+            }
+
+            return DreamValue.Null;
+        }
+
+        /// <summary>
+        /// Determines the specified configuration space and configuration set in a config_set argument
+        /// </summary>
+        private static void ProcessConfigSet(string value, out string? configSpace, out string configSet) {
+            int slash = value.IndexOf('/');
+
+            // No specified config space, default to USER
+            // TODO: Supposedly defaults to HOME in safe mode
+            if (slash == -1) {
+                configSpace = "USER";
+                configSet = value;
+                return;
+            }
+
+            configSpace = value.Substring(0, slash).ToUpperInvariant();
+            configSet = value.Substring(slash + 1);
+            switch (configSpace) {
+                case "SYSTEM":
+                case "USER":
+                case "HOME":
+                case "APP":
+                    return;
+                default:
+                    throw new ArgumentException($"There is no \"{configSpace}\" configuration space");
             }
         }
     }

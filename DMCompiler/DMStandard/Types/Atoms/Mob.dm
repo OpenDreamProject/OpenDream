@@ -15,6 +15,5 @@
 	layer = MOB_LAYER
 
 	proc/Login()
-		client.statobj = src
 
 	proc/Logout()

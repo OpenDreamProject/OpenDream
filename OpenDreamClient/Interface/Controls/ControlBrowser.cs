@@ -11,145 +11,145 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
 using Robust.Shared.Utility;
 
-namespace OpenDreamClient.Interface.Controls {
-    internal sealed class ControlBrowser : InterfaceControl {
-        private static readonly Dictionary<string, string> FileExtensionMimeTypes = new() {
-            { "css", "text/css" },
-            { "html", "text/html" },
-            { "htm", "text/html" },
-            { "png", "image/png" },
-            { "svg", "image/svg+xml" },
-            { "jpeg", "image/jpeg" },
-            { "jpg", "image/jpeg" },
-            { "js", "application/javascript" },
-            { "json", "application/json" },
-            { "ttf", "font/ttf" },
-            { "txt", "text/plain" }
-        };
+namespace OpenDreamClient.Interface.Controls;
 
-        [Dependency] private readonly IResourceManager _resourceManager = default!;
-        [Dependency] private readonly IClientNetManager _netManager = default!;
-        [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-        [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
+internal sealed class ControlBrowser : InterfaceControl {
+    private static readonly Dictionary<string, string> FileExtensionMimeTypes = new() {
+        { "css", "text/css" },
+        { "html", "text/html" },
+        { "htm", "text/html" },
+        { "png", "image/png" },
+        { "svg", "image/svg+xml" },
+        { "jpeg", "image/jpeg" },
+        { "jpg", "image/jpeg" },
+        { "js", "application/javascript" },
+        { "json", "application/json" },
+        { "ttf", "font/ttf" },
+        { "txt", "text/plain" }
+    };
 
-        private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
+    [Dependency] private readonly IResourceManager _resourceManager = default!;
+    [Dependency] private readonly IClientNetManager _netManager = default!;
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
-        private WebViewControl _webView;
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
 
-        public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
-            : base(controlDescriptor, window) {
-            IoCManager.InjectDependencies(this);
-        }
+    private WebViewControl _webView;
 
-        protected override Control CreateUIElement() {
-            _webView = new WebViewControl();
+    public ControlBrowser(ControlDescriptor controlDescriptor, ControlWindow window)
+        : base(controlDescriptor, window) {
+        IoCManager.InjectDependencies(this);
+    }
 
-            _webView.AddResourceRequestHandler(RequestHandler);
-            _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
+    protected override Control CreateUIElement() {
+        _webView = new WebViewControl();
 
-            return _webView;
-        }
+        _webView.AddResourceRequestHandler(RequestHandler);
+        _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
 
-        public override void Output(string value, string? jsFunction) {
-            if (jsFunction == null) return;
+        return _webView;
+    }
 
-            // Prepare the argument to be used in JS
-            value = HttpUtility.UrlDecode(value);
-            value = HttpUtility.JavaScriptStringEncode(value);
+    public override void Output(string value, string? jsFunction) {
+        if (jsFunction == null) return;
 
-            // Insert the values directly into JS and execute it (what could go wrong??)
-            _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
-        }
+        // Prepare the argument to be used in JS
+        value = HttpUtility.UrlDecode(value);
+        value = HttpUtility.JavaScriptStringEncode(value);
 
-        public void SetFileSource(ResPath filepath, bool userData) {
-            _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
-        }
+        // Insert the values directly into JS and execute it (what could go wrong??)
+        _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
+    }
 
-        private void BeforeBrowseHandler(IBeforeBrowseContext context) {
-            if (string.IsNullOrEmpty(_webView.Url))
-                return;
+    public void SetFileSource(ResPath filepath, bool userData) {
+        _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
+    }
 
-            Uri oldUri = new Uri(_webView.Url);
-            Uri newUri = new Uri(context.Url);
+    private void BeforeBrowseHandler(IBeforeBrowseContext context) {
+        if (string.IsNullOrEmpty(_webView.Url))
+            return;
 
-            if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
-                context.DoCancel();
+        Uri oldUri = new Uri(_webView.Url);
+        Uri newUri = new Uri(context.Url);
 
-                if (newUri.Host == "winset") { // Embedded winset. Ex: usr << browse("<a href=\"byond://winset?command=.quit\">Quit</a>", "window=quitbutton")
-                    // Strip the question mark out before parsing
-                    var queryParams = HttpUtility.ParseQueryString(newUri.Query.Substring(1));
+        if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
+            context.DoCancel();
 
-                    // We need to extract the control element (if one was included)
-                    string? element = queryParams.Get("element");
-                    queryParams.Remove("element");
+            if (newUri.Host == "winset") { // Embedded winset. Ex: usr << browse("<a href=\"byond://winset?command=.quit\">Quit</a>", "window=quitbutton")
+                // Strip the question mark out before parsing
+                var queryParams = HttpUtility.ParseQueryString(newUri.Query.Substring(1));
 
-                    // Wrap each parameter in quotes so the entire value is used
-                    foreach (var paramKey in queryParams.AllKeys) {
-                        var paramValue = queryParams[paramKey];
-                        if (paramValue == null)
-                            continue;
+                // We need to extract the control element (if one was included)
+                string? element = queryParams.Get("element");
+                queryParams.Remove("element");
 
-                        queryParams.Set(paramKey, $"\"{paramValue}\"");
-                    }
+                // Wrap each parameter in quotes so the entire value is used
+                foreach (var paramKey in queryParams.AllKeys) {
+                    var paramValue = queryParams[paramKey];
+                    if (paramValue == null)
+                        continue;
 
-                    // Reassemble the query params without element then convert to winset syntax
-                    var query = queryParams.ToString();
-                    query = HttpUtility.UrlDecode(query);
-                    query = query!.Replace('&', ';'); // TODO: More robust parsing
-
-                    // We can finally call winset
-                    _interfaceManager.WinSet(element, query);
-                    return;
+                    queryParams.Set(paramKey, $"\"{paramValue}\"");
                 }
 
-                var msg = new MsgTopic() { Query = newUri.Query };
-                _netManager.ClientSendMessage(msg);
-            }
-        }
+                // Reassemble the query params without element then convert to winset syntax
+                var query = queryParams.ToString();
+                query = HttpUtility.UrlDecode(query);
+                query = query!.Replace('&', ';'); // TODO: More robust parsing
 
-        private void RequestHandler(IRequestHandlerContext context) {
-            Uri newUri = new Uri(context.Url);
-
-            if (newUri.Scheme == "usr") {
-                Stream stream;
-                HttpStatusCode status;
-                var path = new ResPath(newUri.AbsolutePath);
-                try {
-                    stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
-                    status = HttpStatusCode.OK;
-                } catch (FileNotFoundException) {
-                    stream = Stream.Null;
-                    status = HttpStatusCode.NotFound;
-                } catch (Exception e) {
-                    _sawmill.Error($"Exception while loading file from usr://:\n{e}");
-                    stream = Stream.Null;
-                    status = HttpStatusCode.InternalServerError;
-                }
-
-                if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
-                    mimeType = "application/octet-stream";
-
-                context.DoRespondStream(stream, mimeType, status);
+                // We can finally call winset
+                _interfaceManager.WinSet(element, query);
                 return;
             }
+
+            var msg = new MsgTopic() { Query = newUri.Query };
+            _netManager.ClientSendMessage(msg);
         }
     }
 
-    public sealed class BrowseWinCommand : IConsoleCommand {
-        public string Command => "browsewin";
-        public string Description => "";
-        public string Help => "";
+    private void RequestHandler(IRequestHandlerContext context) {
+        Uri newUri = new Uri(context.Url);
 
-        public void Execute(IConsoleShell shell, string argStr, string[] args) {
-            if (args.Length != 1) {
-                shell.WriteError("Incorrect amount of arguments! Must be a single one.");
-                return;
+        if (newUri.Scheme == "usr") {
+            Stream stream;
+            HttpStatusCode status;
+            var path = new ResPath(newUri.AbsolutePath);
+            try {
+                stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
+                status = HttpStatusCode.OK;
+            } catch (FileNotFoundException) {
+                stream = Stream.Null;
+                status = HttpStatusCode.NotFound;
+            } catch (Exception e) {
+                _sawmill.Error($"Exception while loading file from usr://:\n{e}");
+                stream = Stream.Null;
+                status = HttpStatusCode.InternalServerError;
             }
 
-            var parameters = new BrowserWindowCreateParameters(1280, 720) {Url = args[0]};
+            if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
+                mimeType = "application/octet-stream";
 
-            var cef = IoCManager.Resolve<IWebViewManager>();
-            cef.CreateBrowserWindow(parameters);
+            context.DoRespondStream(stream, mimeType, status);
+            return;
         }
+    }
+}
+
+public sealed class BrowseWinCommand : IConsoleCommand {
+    public string Command => "browsewin";
+    public string Description => "";
+    public string Help => "";
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if (args.Length != 1) {
+            shell.WriteError("Incorrect amount of arguments! Must be a single one.");
+            return;
+        }
+
+        var parameters = new BrowserWindowCreateParameters(1280, 720) {Url = args[0]};
+
+        var cef = IoCManager.Resolve<IWebViewManager>();
+        cef.CreateBrowserWindow(parameters);
     }
 }

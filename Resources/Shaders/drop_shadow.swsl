@@ -25,7 +25,7 @@ void fragment() {
     vec4 final_shadow_color = vec4(shadow_color.rgb, shadow_color.a * sampled_shadow_alpha);
     
     // Mix the shadow with the initial image based on the image's alpha
-    COLOR.rgb = final_shadow_color.rgb * (1 - texture_color.a) + (texture_color.rgb / texture_color.a); //texture color need to be divided by alpha to account for alpha premultiplication in the overlay shader
+    COLOR.rgb = final_shadow_color.rgb * (1 - texture_color.a) + (texture_color.rgb / texture_color.a); //texture color needs to be divided by alpha to account for alpha premultiplication in the overlay shader
     COLOR.a = clamp(sampled_shadow_alpha * final_shadow_color.a + texture_color.a, 0, 1);
     COLOR.rgb *= COLOR.a;
 }

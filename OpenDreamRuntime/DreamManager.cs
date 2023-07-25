@@ -84,6 +84,9 @@ namespace OpenDreamRuntime {
         }
 
         public void Shutdown() {
+            // TODO: Respect not calling parent and aborting shutdown
+            WorldInstance.SpawnProc("Del");
+            ShutdownConnectionManager();
             Initialized = false;
         }
 

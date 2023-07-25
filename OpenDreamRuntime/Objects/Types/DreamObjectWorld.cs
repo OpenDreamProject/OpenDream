@@ -1,7 +1,12 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+using System.Text;
+
 using OpenDreamRuntime.Resources;
+
+using OpenDreamShared;
 using OpenDreamShared.Dream;
+
 using Robust.Server;
 using Robust.Shared;
 using Robust.Shared.Configuration;
@@ -39,7 +44,7 @@ public sealed class DreamObjectWorld : DreamObject {
 
             foreach (var bindAddress in binds) {
                 // EXTREMELY unlikely since RT does this same check on network startup
-                if (!IPAddress.TryParse(bindAddress.Trim(), out var address))  {
+                if (!IPAddress.TryParse(bindAddress.Trim(), out var address)) {
                     continue;
                 }
 
@@ -87,48 +92,66 @@ public sealed class DreamObjectWorld : DreamObject {
             case "log":
                 value = (Log != null) ? new(Log) : DreamValue.Null;
                 return true;
+
             case "params":
-                value = new(ObjectTree.CreateList()); // TODO
+                var configValue = _cfg.GetCVar(OpenDreamCVars.WorldParams);
+                var paramList = ObjectTree.CreateList();
+                foreach (var entry in configValue.Split("\\|", StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+                    paramList.AddValue(new DreamValue(entry));
+                value = new DreamValue(paramList);
                 return true;
+
             case "status":
             case "name":
                 value = new(string.Empty); // TODO
                 return true;
+
             case "contents":
                 value = new(new WorldContentsList(ObjectTree.List.ObjectDefinition, AtomManager));
                 return true;
+
             case "process":
                 value = new(Environment.ProcessId);
                 return true;
+
             case "tick_lag":
                 value = new(TickLag);
                 return true;
+
             case "fps":
                 value = new DreamValue(Fps);
                 return true;
+
             case "timeofday":
                 value = new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 return true;
+
             case "time":
                 value = new DreamValue((_gameTiming.CurTick.Value - DreamManager.InitializedTick.Value) * TickLag);
                 return true;
+
             case "realtime":
                 value = new DreamValue((DateTime.Now - new DateTime(2000, 1, 1)).Milliseconds / 100);
                 return true;
+
             case "tick_usage":
                 var tickUsage = (_gameTiming.RealTime - _gameTiming.LastTick) / _gameTiming.TickPeriod;
 
                 value = new DreamValue(tickUsage * 100);
                 return true;
+
             case "maxx":
                 value = new DreamValue(DreamMapManager.Size.X);
                 return true;
+
             case "maxy":
                 value = new DreamValue(DreamMapManager.Size.Y);
                 return true;
+
             case "maxz":
                 value = new DreamValue(DreamMapManager.Levels);
                 return true;
+
             case "address": // By address they mean, the local address we have on the network, not on the internet.
                 var host = Dns.GetHostEntry(Dns.GetHostName());
                 var ipType = DisplayIPv6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork;
@@ -142,9 +165,11 @@ public sealed class DreamObjectWorld : DreamObject {
 
                 value = DreamValue.Null;
                 return true;
+
             case "port":
                 value = new(_netManager.Port);
                 return true;
+
             case "url":
                 if (InternetAddress == null)
                     value = DreamValue.Null;
@@ -152,6 +177,7 @@ public sealed class DreamObjectWorld : DreamObject {
                     value = new(InternetAddress + ":" + _netManager.Port); // RIP "opendream://"
 
                 return true;
+
             case "internet_address":
                 IPAddress? address = InternetAddress;
                 // We don't need to do any logic with DisplayIPv6 since whatever this address is,
@@ -162,6 +188,7 @@ public sealed class DreamObjectWorld : DreamObject {
                     value = new(address.ToString());
 
                 return true;
+
             case "system_type":
                 //system_type value should match the defines in Defines.dm
                 if (Environment.OSVersion.Platform is PlatformID.Unix or PlatformID.MacOSX or PlatformID.Other)
@@ -170,6 +197,7 @@ public sealed class DreamObjectWorld : DreamObject {
                     value = new DreamValue(1); //Windows
 
                 return true;
+
             case "view":
                 // Number if square & centerable, string representation otherwise
                 if (_viewRange.IsSquare && _viewRange.IsCenterable) {
@@ -179,6 +207,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 }
 
                 return true;
+
             default:
                 // Note that invalid vars on /world will give null and not error in BYOND
                 // We don't replicate that
@@ -196,7 +225,6 @@ public sealed class DreamObjectWorld : DreamObject {
             case "maxy":
             case "mob":
             case "name":
-            case "params":
             case "sleep_offline":
             case "status":
             case "version":
@@ -207,23 +235,44 @@ public sealed class DreamObjectWorld : DreamObject {
 
             case "time": // Doesn't error, but doesn't affect its value either
                 break;
+
+            case "params":
+                if (!value.TryGetValueAsDreamList(out var list))
+                    break;
+                if (list.GetLength() > 0) {
+                    var newEntry = new StringBuilder();
+                    foreach (var entry in list.GetValues()) {
+                        if (!entry.TryGetValueAsString(out var stringEntry))
+                            continue;
+                        newEntry.Append(stringEntry);
+                        newEntry.Append("\\|");
+                    }
+                    _cfg.SetCVar(OpenDreamCVars.WorldParams, newEntry.ToString()[..^2]);
+                } else
+                    _cfg.SetCVar(OpenDreamCVars.WorldParams, "");
+                break;
+
             case "tick_lag":
                 if (!value.TryGetValueAsFloat(out var tickLag))
                     tickLag = 1; // An invalid tick_lag gets turned into 1
 
                 TickLag = tickLag;
                 break;
+
             case "fps":
                 SetFps(value);
                 break;
+
             case "maxz":
                 value.TryGetValueAsInteger(out var maxz);
 
                 DreamMapManager.SetZLevels(maxz);
                 break;
+
             case "log":
                 SetLog(value);
                 break;
+
             default:
                 throw new Exception($"Cannot set var \"{varName}\" on world");
         }

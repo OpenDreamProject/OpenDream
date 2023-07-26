@@ -1198,24 +1198,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_list2params(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if (!bundle.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list))
                 return new DreamValue(string.Empty);
-
-            StringBuilder paramBuilder = new StringBuilder();
-
-            List<DreamValue> values = list.GetValues();
-            foreach (DreamValue entry in values) {
-                if (list.ContainsKey(entry)) {
-                    paramBuilder.Append(
-                        $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(list.GetValue(entry).Stringify())}");
-                } else {
-                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Stringify()));
-                }
-
-                paramBuilder.Append('&');
-            }
-
-            //Remove trailing &
-            if (paramBuilder.Length > 0) paramBuilder.Remove(paramBuilder.Length - 1, 1);
-            return new DreamValue(paramBuilder.ToString());
+            return new DreamValue(list2params(list));
         }
 
         [DreamProc("log")]
@@ -1668,6 +1651,26 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(view);
+        }
+
+        public static string list2params(DreamList list) {
+            StringBuilder paramBuilder = new StringBuilder();
+
+            List<DreamValue> values = list.GetValues();
+            foreach (DreamValue entry in values) {
+                if (list.ContainsKey(entry)) {
+                    paramBuilder.Append(
+                        $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(list.GetValue(entry).Stringify())}");
+                } else {
+                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Stringify()));
+                }
+
+                paramBuilder.Append('&');
+            }
+
+            //Remove trailing &
+            if (paramBuilder.Length > 0) paramBuilder.Remove(paramBuilder.Length - 1, 1);
+            return paramBuilder.ToString();
         }
 
         public static DreamList params2list(DreamObjectTree objectTree, string queryString) {

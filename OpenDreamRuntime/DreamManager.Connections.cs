@@ -5,11 +5,8 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-
 using OpenDreamRuntime.Procs;
-
 using OpenDreamShared.Network.Messages;
-
 using Robust.Server.Player;
 using Robust.Shared;
 using Robust.Shared.Enums;
@@ -210,7 +207,6 @@ namespace OpenDreamRuntime {
 
                     e.Session.ConnectedClient.SendMessage(msgLoadInterface);
                     break;
-
                 case SessionStatus.InGame: {
                     if (!_connections.TryGetValue(e.Session.UserId, out var connection)) {
                         connection = new DreamConnection();
@@ -221,7 +217,6 @@ namespace OpenDreamRuntime {
                     connection.HandleConnection(e.Session);
                     break;
                 }
-
                 case SessionStatus.Disconnected: {
                     if (_connections.TryGetValue(e.Session.UserId, out var connection))
                         connection.HandleDisconnection();

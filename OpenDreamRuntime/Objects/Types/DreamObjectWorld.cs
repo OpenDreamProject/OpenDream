@@ -1,7 +1,5 @@
 ﻿using System.Net;
 using System.Net.Sockets;
-using System.Text;
-using System.Web;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
@@ -36,18 +34,7 @@ public sealed class DreamObjectWorld : DreamObject {
         set => _gameTiming.TickRate = (byte)value;
     }
 
-    private DreamList? _paramsCache;
-
-    private DreamList Params {
-        set {
-            _paramsCache = value;
-            _cfg.SetCVar(OpenDreamCVars.WorldParams, DreamProcNativeRoot.list2params(value));
-        }
-        get {
-            _paramsCache ??= DreamProcNativeRoot.params2list(ObjectTree, _cfg.GetCVar(OpenDreamCVars.WorldParams));
-            return _paramsCache;
-        }
-    }
+    private DreamValue Params;
 
     /// <summary> Determines whether we try to show IPv6 or IPv4 to the user during .address and .internet_address queries.</summary>
     private bool DisplayIPv6 {
@@ -92,12 +79,19 @@ public sealed class DreamObjectWorld : DreamObject {
 
             _viewRange = new ViewRange(viewInt);
         }
+
+        var worldParams = _cfg.GetCVar(OpenDreamCVars.WorldParams);
+        Params = worldParams != string.Empty ?
+            new DreamValue(DreamProcNativeRoot.params2list(ObjectTree, worldParams)) :
+            new DreamValue(ObjectTree.CreateList());
     }
+
     protected override void HandleDeletion() {
         base.HandleDeletion();
 
         _server.Shutdown("world was deleted");
     }
+
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "log":
@@ -105,7 +99,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 return true;
 
             case "params":
-                value = new DreamValue(Params);
+                value = Params;
                 return true;
 
             case "status":
@@ -221,6 +215,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 return base.TryGetVar(varName, out value);
         }
     }
+
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
             // Unimplemented writeable vars
@@ -243,14 +238,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 break;
 
             case "params":
-                if (!value.TryGetValueAsDreamList(out var list))
-                    break;
-                if (list.GetLength() == 0) {
-                    Params.Cut();
-                    _cfg.SetCVar(OpenDreamCVars.WorldParams, "");
-                } else {
-                    Params = list;
-                }
+                Params = value;
                 break;
 
             case "tick_lag":
@@ -278,6 +266,7 @@ public sealed class DreamObjectWorld : DreamObject {
                 throw new Exception($"Cannot set var \"{varName}\" on world");
         }
     }
+
     public override void OperatorOutput(DreamValue b) {
         foreach (DreamConnection connection in DreamManager.Connections) {
             connection.OutputDreamValue(b);

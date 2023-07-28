@@ -368,6 +368,7 @@ internal sealed class DreamViewOverlay : Overlay {
         blendAndColor = blendAndColor.Duplicate();
         blendAndColor.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
         blendAndColor.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
+        blendAndColor.SetParameter("isPlaneMaster", iconMetaData.IsPlaneMaster);
         return blendAndColor;
     }
 
@@ -502,6 +503,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 ShaderInstance colorShader = _colorInstance.Duplicate();
                 colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
                 colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
+                colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
                 handle.UseShader(colorShader);
 
                 handle.DrawTextureRect(frame,

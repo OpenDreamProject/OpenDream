@@ -51,7 +51,7 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
             _netManager.RegisterNetMessage<MsgSound>();
 
-            var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, _configManager.GetCVar(CVars.NetPort));
+            var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, _netManager.Port);
             _sawmill.Debug($"Binding World Topic at {worldTopicAddress}");
             _worldTopicSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) {
                 ReceiveTimeout = 5000,
@@ -106,12 +106,8 @@ namespace OpenDreamRuntime {
                         continue;
                     }
                     var remoteAddress = (pending.RemoteEndPoint as IPEndPoint)!.Address.ToString();
-                    var worldTopic = _objectTree.World.ObjectDefinition.GetProc("Topic");
                     _sawmill.Debug($"World Topic: '{remoteAddress}' -> '{topic}'");
-                    var topicResponse = worldTopic.Spawn(WorldInstance, new DreamProcArguments(
-                        new DreamValue(topic),
-                        new DreamValue(remoteAddress)
-                    ));
+                   var topicResponse = WorldInstance.SpawnProc("Topic", null, new(topic), new(remoteAddress));
                     if (topicResponse.IsNull) {
                         await pending.DisconnectAsync(false, cancellationToken);
                         continue;

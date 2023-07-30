@@ -5,8 +5,11 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+
 using OpenDreamRuntime.Procs;
+
 using OpenDreamShared.Network.Messages;
+
 using Robust.Server.Player;
 using Robust.Shared;
 using Robust.Shared.Enums;
@@ -69,96 +72,98 @@ namespace OpenDreamRuntime {
             _worldTopicCancellationToken!.Cancel();
         }
 
-        private async Task WorldTopicListener(CancellationToken cancellationToken) {
-            async Task<string?> ParseByondTopic(Socket from) {
-                var buffer = new byte[2];
-                await from.ReceiveAsync(buffer, cancellationToken);
-                if (!buffer.SequenceEqual(ByondTopicHeaderRaw)) {
-                    if (buffer.SequenceEqual(ByondTopicHeaderEncrypted))
-                        _sawmill.Warning("Encrypted World Topic request is not implemented.");
-                    return null;
+        private async Task ConsumeAndHandleWorldTopicSocket(Socket remote, CancellationToken cancellationToken) {
+            try {
+                async Task<string?> ParseByondTopic(Socket from) {
+                    var buffer = new byte[2];
+                    await from.ReceiveAsync(buffer, cancellationToken);
+                    if (!buffer.SequenceEqual(ByondTopicHeaderRaw)) {
+                        if (buffer.SequenceEqual(ByondTopicHeaderEncrypted))
+                            _sawmill.Warning("Encrypted World Topic request is not implemented.");
+                        return null;
+                    }
+
+                    await from.ReceiveAsync(buffer, cancellationToken);
+                    if (BitConverter.IsLittleEndian)
+                        buffer = buffer.Reverse().ToArray();
+                    var length = BitConverter.ToUInt16(buffer);
+
+                    buffer = new byte[length];
+                    var read = await from.ReceiveAsync(buffer, cancellationToken);
+                    if (read != buffer.Length) {
+                        _sawmill.Warning("failed to parse byond topic due to insufficient data read");
+                        return null;
+                    }
+
+                    return Encoding.ASCII.GetString(buffer[5..^1]);
                 }
 
-                await from.ReceiveAsync(buffer, cancellationToken);
+                var topic = await ParseByondTopic(remote);
+                if (topic is null) {
+                    return;
+                }
+                var remoteAddress = (remote.RemoteEndPoint as IPEndPoint)!.Address.ToString();
+                _sawmill.Debug($"World Topic: '{remoteAddress}' -> '{topic}'");
+                var topicResponse = WorldInstance.SpawnProc("Topic", null, new DreamValue(topic), new DreamValue(remoteAddress));
+                if (topicResponse.IsNull) {
+                    return;
+                }
+
+                byte[] responseData;
+                byte responseType;
+                switch (topicResponse.Type) {
+                    case DreamValue.DreamValueType.Float:
+                        responseType = 0x2a;
+                        responseData = BitConverter.GetBytes(topicResponse.MustGetValueAsFloat());
+                        if (BitConverter.IsLittleEndian)
+                            responseData = responseData.Reverse().ToArray();
+                        break;
+
+                    case DreamValue.DreamValueType.String:
+                        responseType = 0x06;
+                        responseData = Encoding.ASCII.GetBytes(topicResponse.MustGetValueAsString().Replace("\0", "")).Append((byte)0x00).ToArray();
+                        break;
+
+                    case DreamValue.DreamValueType.DreamResource:
+                    case DreamValue.DreamValueType.DreamObject:
+                    case DreamValue.DreamValueType.DreamType:
+                    case DreamValue.DreamValueType.DreamProc:
+                    case DreamValue.DreamValueType.Appearance:
+                    case DreamValue.DreamValueType.ProcStub:
+                    case DreamValue.DreamValueType.VerbStub:
+                    default:
+                        _sawmill.Warning($"Unimplemented /world/Topic response type: {topicResponse.Type}");
+                        return;
+                }
+
+                var totalLength = (ushort)(responseData.Length + 1);
+                var lengthData = BitConverter.GetBytes(totalLength);
                 if (BitConverter.IsLittleEndian)
-                    buffer = buffer.Reverse().ToArray();
-                var length = BitConverter.ToUInt16(buffer);
+                    lengthData = lengthData.Reverse().ToArray();
 
-                buffer = new byte[length];
-                var read = await from.ReceiveAsync(buffer, cancellationToken);
-                if (read != buffer.Length) {
-                    _sawmill.Warning("failed to parse byond topic due to insufficient data read");
-                    return null;
-                }
+                var responseBuffer = new List<byte>(ByondTopicHeaderRaw);
+                responseBuffer.AddRange(lengthData);
+                responseBuffer.Add(responseType);
+                responseBuffer.AddRange(responseData);
+                var responseActual = responseBuffer.ToArray();
 
-                return Encoding.ASCII.GetString(buffer[5..^1]);
+                var sent = await remote.SendAsync(responseActual, cancellationToken);
+                if (sent != responseActual.Length)
+                    _sawmill.Warning("Failed to reply to /world/Topic: response buffer not fully sent");
+
             }
+            finally {
+                await remote.DisconnectAsync(false, cancellationToken);
+            }
+        }
 
+        private async Task WorldTopicListener(CancellationToken cancellationToken) {
             if (_worldTopicSocket is null)
                 throw new InvalidOperationException("Attempted to start the World Topic Listener without a valid socket bind address.");
 
             while (!cancellationToken.IsCancellationRequested) {
-                try {
-                    var pending = await _worldTopicSocket.AcceptAsync(cancellationToken);
-                    var topic = await ParseByondTopic(pending);
-                    if (topic is null) {
-                        await pending.DisconnectAsync(false, cancellationToken);
-                        continue;
-                    }
-                    var remoteAddress = (pending.RemoteEndPoint as IPEndPoint)!.Address.ToString();
-                    _sawmill.Debug($"World Topic: '{remoteAddress}' -> '{topic}'");
-                   var topicResponse = WorldInstance.SpawnProc("Topic", null, new(topic), new(remoteAddress));
-                    if (topicResponse.IsNull) {
-                        await pending.DisconnectAsync(false, cancellationToken);
-                        continue;
-                    }
-
-                    byte[] responseData;
-                    byte responseType;
-                    switch (topicResponse.Type) {
-                        case DreamValue.DreamValueType.Float:
-                            responseType = 0x2a;
-                            responseData = BitConverter.GetBytes(topicResponse.MustGetValueAsFloat());
-                            if (BitConverter.IsLittleEndian)
-                                responseData = responseData.Reverse().ToArray();
-                            break;
-
-                        case DreamValue.DreamValueType.String:
-                            responseType = 0x06;
-                            responseData = Encoding.ASCII.GetBytes(topicResponse.MustGetValueAsString().Replace("\0", "")).Append((byte)0x00).ToArray();
-                            break;
-
-                        case DreamValue.DreamValueType.DreamResource:
-                        case DreamValue.DreamValueType.DreamObject:
-                        case DreamValue.DreamValueType.DreamType:
-                        case DreamValue.DreamValueType.DreamProc:
-                        case DreamValue.DreamValueType.Appearance:
-                        case DreamValue.DreamValueType.ProcStub:
-                        case DreamValue.DreamValueType.VerbStub:
-                        default:
-                            _sawmill.Warning($"Unimplemented /world/Topic response type: {topicResponse.Type}");
-                            await pending.DisconnectAsync(false, cancellationToken);
-                            continue;
-                    }
-
-                    var totalLength = (ushort)(responseData.Length + 1);
-                    var lengthData = BitConverter.GetBytes(totalLength);
-                    if (BitConverter.IsLittleEndian)
-                        lengthData = lengthData.Reverse().ToArray();
-
-                    var responseBuffer = new List<byte>(ByondTopicHeaderRaw);
-                    responseBuffer.AddRange(lengthData);
-                    responseBuffer.Add(responseType);
-                    responseBuffer.AddRange(responseData);
-                    var responseActual = responseBuffer.ToArray();
-
-                    var sent = await pending.SendAsync(responseActual, cancellationToken);
-                    if (sent != responseActual.Length)
-                        _sawmill.Warning("Failed to reply to /world/Topic: response buffer not fully sent");
-                    await pending.DisconnectAsync(false, cancellationToken);
-                } catch (Exception exception) when (exception is OperationCanceledException or IOException) {
-                    // no op
-                }
+                var pending = await _worldTopicSocket.AcceptAsync(cancellationToken);
+                _ = ConsumeAndHandleWorldTopicSocket(pending, cancellationToken);
             }
 
             _worldTopicSocket!.Dispose();
@@ -203,6 +208,7 @@ namespace OpenDreamRuntime {
 
                     e.Session.ConnectedClient.SendMessage(msgLoadInterface);
                     break;
+
                 case SessionStatus.InGame: {
                     if (!_connections.TryGetValue(e.Session.UserId, out var connection)) {
                         connection = new DreamConnection();
@@ -213,6 +219,7 @@ namespace OpenDreamRuntime {
                     connection.HandleConnection(e.Session);
                     break;
                 }
+
                 case SessionStatus.Disconnected: {
                     if (_connections.TryGetValue(e.Session.UserId, out var connection))
                         connection.HandleDisconnection();

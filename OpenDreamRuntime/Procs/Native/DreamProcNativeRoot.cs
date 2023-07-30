@@ -386,6 +386,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if (start == 0) return new DreamValue("");
             else if (start < 0) start += textElements.LengthInTextElements + 1;
 
+            if (start > textElements.LengthInTextElements)
+                return new(string.Empty);
+
             return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
         }
 

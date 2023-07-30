@@ -1164,17 +1164,18 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue result;
             switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject when !first.IsNull: {
+                case DreamValue.DreamValueType.DreamObject when !first.IsNull:
                     state.PopReference(reference);
                     state.Push(first.MustGetValueAsDreamObject()!.OperatorRemove(second));
 
                     return ProcStatus.Continue;
-                }
-                case DreamValue.DreamValueType.DreamObject when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(-second.MustGetValueAsFloat());
-                    break;
-                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.MustGetValueAsFloat() - second.MustGetValueAsFloat());
+                case DreamValue.DreamValueType.DreamObject when first.IsNull: // null is treated as 0
+                case DreamValue.DreamValueType.Float:
+                    if (second.Type != DreamValue.DreamValueType.Float && !second.IsNull)
+                        goto default;
+
+                    // UnsafeGetValueAsFloat() so that null is treated as 0.
+                    result = new DreamValue(first.UnsafeGetValueAsFloat() - second.UnsafeGetValueAsFloat());
                     break;
                 default:
                     throw new Exception($"Invalid remove operation on {first} and {second}");

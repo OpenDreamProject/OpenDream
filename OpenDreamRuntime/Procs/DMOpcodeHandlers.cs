@@ -2321,6 +2321,9 @@ namespace OpenDreamRuntime.Procs {
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
+                        case DreamValue.DreamValueType.DreamProc:
+                        case DreamValue.DreamValueType.ProcStub:
+                        case DreamValue.DreamValueType.VerbStub:
                         case DreamValue.DreamValueType.DreamType:
                         case DreamValue.DreamValueType.String:
                         case DreamValue.DreamValueType.Float: return false;

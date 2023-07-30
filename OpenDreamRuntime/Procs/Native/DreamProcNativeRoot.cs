@@ -89,6 +89,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("pixel_x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_z", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext_x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]

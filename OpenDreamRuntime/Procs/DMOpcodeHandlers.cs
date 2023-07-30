@@ -1874,9 +1874,16 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 foreach (DreamValue containerItem in containerList.GetValues()) {
-                    if (!containerItem.TryGetValueAsDreamObject(out DreamObject dmObject)) continue;
+                    DreamObjectDefinition itemDef;
+                    if (containerItem.TryGetValueAsType(out var type)) {
+                        itemDef = type.ObjectDefinition;
+                    } else if (containerItem.TryGetValueAsDreamObject(out var dmObject) && dmObject != null) {
+                        itemDef = dmObject.ObjectDefinition;
+                    } else {
+                        continue;
+                    }
 
-                    if (dmObject.IsSubtypeOf(ancestor)) {
+                    if (itemDef.IsSubtypeOf(ancestor)) {
                         state.Push(containerItem);
 
                         return ProcStatus.Continue;

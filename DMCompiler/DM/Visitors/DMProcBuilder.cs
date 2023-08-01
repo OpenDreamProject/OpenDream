@@ -30,8 +30,6 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
             if (procDefinition.Body == null) return;
 
-            _proc.DebugSource(procDefinition.Location.SourceFile);
-
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
 
@@ -57,6 +55,10 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            if (procDefinition.Body.Statements.Length == 0) {
+                DMCompiler.Emit(WarningCode.EmptyProc, _proc.Location,"Empty proc detected - add an explicit \"return\" statement");
+            }
+
             ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             _proc.ResolveLabels();
         }
@@ -66,7 +68,7 @@ namespace DMCompiler.DM.Visitors {
         /// A.) are not marked opendream_unimplemented and <br/>
         /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
         /// </param>
-        public void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
+        private void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
             foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
                 Location loc = stmt.Location;
                 try {
@@ -91,10 +93,10 @@ namespace DMCompiler.DM.Visitors {
                 }
                 return;
             }
+
             foreach (DMASTProcStatement statement in block.Statements) {
-                if (statement.Location.Line != null) {
-                    _proc.DebugLine(statement.Location.Line.Value);
-                }
+                _proc.DebugSource(statement.Location);
+
                 try {
                     ProcessStatement(statement);
                 } catch (CompileAbortException e) {
@@ -128,6 +130,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementFtp statementFtp: ProcessStatementFtp(statementFtp); break;
                 case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
                 case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
@@ -158,11 +161,14 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
-            _proc.Goto(statementGoto.Label.Identifier);
+            _proc.Goto(statementGoto.Label);
         }
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
-            _proc.AddLabel(statementLabel.Name + "_codelabel");
+            var codeLabel = _proc.TryAddCodeLabel(statementLabel.Name);
+            var labelName = codeLabel?.LabelName ?? statementLabel.Name;
+
+            _proc.AddLabel(labelName);
 
             if (statementLabel.Body is not null) {
                 _proc.StartScope();
@@ -170,7 +176,7 @@ namespace DMCompiler.DM.Visitors {
                     ProcessBlockInner(statementLabel.Body);
                 }
                 _proc.EndScope();
-                _proc.AddLabel(statementLabel.Name + "_end");
+                _proc.AddLabel(labelName + "_end");
             }
         }
 
@@ -279,7 +285,6 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
@@ -818,6 +823,13 @@ namespace DMCompiler.DM.Visitors {
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Message);
             DMExpression.Emit(_dmObject, _proc, statementOutputControl.Control);
             _proc.OutputControl();
+        }
+
+        public void ProcessStatementFtp(DMASTProcStatementFtp statementFtp) {
+            DMExpression.Emit(_dmObject, _proc, statementFtp.Receiver);
+            DMExpression.Emit(_dmObject, _proc, statementFtp.File);
+            DMExpression.Emit(_dmObject, _proc, statementFtp.Name);
+            _proc.Ftp();
         }
 
         public void ProcessStatementOutput(DMASTProcStatementOutput statementOutput) {

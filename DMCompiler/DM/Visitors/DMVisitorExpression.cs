@@ -136,10 +136,6 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        public void VisitIdentifierWrapped(DMASTIdentifierWrapped identifier) {
-            VisitIdentifier(identifier.Identifier);
-        }
-
         public void VisitVarDeclExpression(DMASTVarDeclExpression declExpr) {
             VisitIdentifier( new DMASTIdentifier(declExpr.Location, declExpr.DeclPath.Path.LastElement) );
         }
@@ -222,6 +218,15 @@ namespace DMCompiler.DM.Visitors {
                 DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
             }
             Result = new Expressions.Assignment(assign.Location, lhs, rhs);
+        }
+
+        public void VisitAssignInto(DMASTAssignInto assign) {
+            var lhs = DMExpression.Create(_dmObject, _proc, assign.Expression, _inferredPath);
+            var rhs = DMExpression.Create(_dmObject, _proc, assign.Value, lhs.NestedPath);
+            if(lhs.TryAsConstant(out _)) {
+                DMCompiler.Emit(WarningCode.WriteToConstant, assign.Expression.Location, "Cannot write to const var");
+            }
+            Result = new Expressions.AssignmentInto(assign.Location, lhs, rhs);
         }
 
         public void VisitNegate(DMASTNegate negate) {
@@ -391,13 +396,31 @@ namespace DMCompiler.DM.Visitors {
         public void VisitEqual(DMASTEqual equal) {
             var lhs = DMExpression.Create(_dmObject, _proc, equal.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, equal.B, _inferredPath);
-            Result = new Expressions.Equal(equal.Location, lhs, rhs);
+
+            // (x == null) can be changed to isnull(x) which compiles down to an opcode
+            // TODO: Bytecode optimizations instead
+            if (rhs is Null) {
+                Result = new IsNull(equal.Location, lhs);
+
+                return;
+            }
+
+            Result = new Equal(equal.Location, lhs, rhs);
         }
 
         public void VisitNotEqual(DMASTNotEqual notEqual) {
             var lhs = DMExpression.Create(_dmObject, _proc, notEqual.A, _inferredPath);
             var rhs = DMExpression.Create(_dmObject, _proc, notEqual.B, _inferredPath);
-            Result = new Expressions.NotEqual(notEqual.Location, lhs, rhs);
+
+            // (x != null) can be changed to !isnull(x) which compiles down to two opcodes
+            // TODO: Bytecode optimizations instead
+            if (rhs is Null) {
+                Result = new Not(notEqual.Location, new IsNull(notEqual.Location, lhs));
+
+                return;
+            }
+
+            Result = new NotEqual(notEqual.Location, lhs, rhs);
         }
 
         public void VisitEquivalent(DMASTEquivalent equivalent) {
@@ -466,10 +489,16 @@ namespace DMCompiler.DM.Visitors {
 
             static bool IsFuzzy(DMExpression expr) {
                 switch (expr) {
+                    case Dereference when expr.Path == null:
                     case ProcCall when expr.Path == null:
+                    case New when expr.Path == null:
                     case List:
                     case Ternary:
                     case BinaryAnd:
+                    case IsNull:
+                    case Length:
+                    case GetStep:
+                    case GetDir:
                         return true;
                     default: return false;
                 }
@@ -503,7 +532,7 @@ namespace DMCompiler.DM.Visitors {
 
                     var globalId = _dmObject.GetGlobalVariableId(firstOperation.Identifier.Identifier);
                     if (globalId == null) {
-                        throw new CompileErrorException(deref.Location, $"Invalid property global.{firstOperation.Identifier.Identifier}");
+                        throw new UnknownIdentifierException(deref.Location, $"global.{firstOperation.Identifier.Identifier}");
                     }
 
                     var property = DMObjectTree.Globals[globalId.Value];
@@ -577,7 +606,7 @@ namespace DMCompiler.DM.Visitors {
                             string field = astOperation.Identifier.Identifier;
 
                             if (prevPath == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\"");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             DMObject dmObject = DMObjectTree.GetDMObject(prevPath.Value, false);
@@ -610,7 +639,7 @@ namespace DMCompiler.DM.Visitors {
                             }
 
                             if (property == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\" on type {prevPath}");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
@@ -647,7 +676,7 @@ namespace DMCompiler.DM.Visitors {
                             ArgumentList argumentList = new(deref.Expression.Location, _dmObject, _proc, astOperation.Parameters, null);
 
                             if (prevPath == null) {
-                                throw new CompileErrorException(deref.Location, $"Invalid property \"{field}\"");
+                                throw new UnknownIdentifierException(deref.Location, field);
                             }
 
                             DMObject dmObject = DMObjectTree.GetDMObject(prevPath.Value, false);
@@ -774,6 +803,32 @@ namespace DMCompiler.DM.Visitors {
             }
 
             Result = new Expressions.IsTypeInferred(isType.Location, expr, expr.Path.Value);
+        }
+
+        public void VisitIsNull(DMASTIsNull isNull) {
+            var value = DMExpression.Create(_dmObject, _proc, isNull.Value, _inferredPath);
+
+            Result = new IsNull(isNull.Location, value);
+        }
+
+        public void VisitLength(DMASTLength length) {
+            var value = DMExpression.Create(_dmObject, _proc, length.Value, _inferredPath);
+
+            Result = new Length(length.Location, value);
+        }
+
+        public void VisitGetStep(DMASTGetStep getStep) {
+            var refExpression = DMExpression.Create(_dmObject, _proc, getStep.Ref, _inferredPath);
+            var dirExpression = DMExpression.Create(_dmObject, _proc, getStep.Dir, _inferredPath);
+
+            Result = new GetStep(getStep.Location, refExpression, dirExpression);
+        }
+
+        public void VisitGetDir(DMASTGetDir getDir) {
+            var loc1 = DMExpression.Create(_dmObject, _proc, getDir.Loc1, _inferredPath);
+            var loc2 = DMExpression.Create(_dmObject, _proc, getDir.Loc2, _inferredPath);
+
+            Result = new GetDir(getDir.Location, loc1, loc2);
         }
 
         public void VisitList(DMASTList list) {

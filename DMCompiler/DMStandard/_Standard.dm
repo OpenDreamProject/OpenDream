@@ -1,5 +1,3 @@
-//The first global in the runtime is always `world`
-//So keep this at the top
 /var/world/world = null
 
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
@@ -11,7 +9,7 @@ proc/arccos(X)
 proc/arcsin(X)
 proc/arctan(A)
 proc/ascii2text(N)
-proc/block(var/atom/Start, var/atom/End)
+proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ)
 proc/ceil(A)
 proc/ckey(Key)
 proc/ckeyEx(Text)
@@ -52,6 +50,7 @@ proc/isinf(n)
 proc/islist(Object)
 proc/isloc(Loc1)
 proc/ismob(Loc1)
+proc/isobj(Loc1)
 proc/ismovable(Loc1)
 proc/isnan(n)
 proc/isnull(Val)
@@ -228,12 +227,6 @@ proc/jointext(list/List, Glue, Start = 1, End = 0)
 
 proc/lentext(T)
 	return length(T)
-
-proc/isobj(Loc1)
-	for(var/arg in args)
-		if (!istype(arg, /obj)) return 0
-
-	return 1
 
 proc/winshow(player, window, show=1)
 	winset(player, window, "is-visible=[show ? "true" : "false"]")

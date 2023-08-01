@@ -1,16 +1,22 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class AsyncNativeProc : DreamProc {
         public sealed class State : ProcState {
             public static readonly Stack<State> Pool = new();
+
+            // IoC dependencies instead of proc fields because _proc can be null
+            [Dependency] public readonly DreamManager DreamManager = default!;
+            [Dependency] public readonly DreamResourceManager ResourceManager = default!;
+            [Dependency] public readonly DreamObjectTree ObjectTree = default!;
+            [Dependency] public readonly ProcScheduler ProcScheduler = default!;
 
             public DreamObject? Src;
             public DreamObject? Usr;
@@ -21,19 +27,18 @@ namespace OpenDreamRuntime.Procs {
             private AsyncNativeProc? _proc;
             public override DreamProc? Proc => _proc;
 
-            public IDreamManager DreamManager => _proc._dreamManager;
-            public DreamResourceManager ResourceManager => _proc._resourceManager;
-            public IDreamObjectTree ObjectTree => _proc._objectTree;
-
             private Func<State, Task<DreamValue>> _taskFunc;
             private Task? _task;
-            private CancellationTokenSource? _scheduleCancellationToken;
 
             private ProcState? _callProcNotify;
             private TaskCompletionSource<DreamValue>? _callTcs;
             private DreamValue? _callResult;
 
             private bool _inResume;
+
+            public State() {
+                IoCManager.InjectDependencies(this);
+            }
 
             public void Initialize(AsyncNativeProc? proc, Func<State, Task<DreamValue>> taskFunc, DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
                 base.Initialize(thread, true);
@@ -88,11 +93,6 @@ namespace OpenDreamRuntime.Procs {
             public override void Dispose() {
                 base.Dispose();
 
-                // Cancel the scheduled continuation of this state if there is one
-                _scheduleCancellationToken?.Cancel();
-                _scheduleCancellationToken?.Dispose();
-                _scheduleCancellationToken = null;
-
                 Src = null!;
                 Usr = null!;
                 _argumentCount = 0;
@@ -107,30 +107,21 @@ namespace OpenDreamRuntime.Procs {
                 Pool.Push(this);
             }
 
-            private async Task InternalResumeAsync() {
-                Result = await _taskFunc(this);
-            }
-
             public override ProcStatus Resume() {
                 _inResume = true;
 
                 // We've just been created, start our task
                 if (_task == null) {
-                    // Pull execution of our task outside of StartNew to allow it to inline here
-                    _task = InternalResumeAsync();
+                    _task = ProcScheduler.Schedule(this, _taskFunc);
+                }
 
-                    // Shortcut: If our proc was synchronous, we don't need to schedule
-                    //           This also means we won't reach Resume on a finished proc through our continuation
-                    if (_task.IsCompleted) {
-                        if (_task.Exception != null) {
-                            throw _task.Exception;
-                        }
-
-                        return ProcStatus.Returned;
+                // If the task is finished, we're all done
+                if (_task.IsCompleted) {
+                    if (_task.Exception != null) {
+                        throw _task.Exception;
                     }
 
-                    IProcScheduler procScheduler = IoCManager.Resolve<IProcScheduler>();
-                    _scheduleCancellationToken = procScheduler.Schedule(this, _task);
+                    return ProcStatus.Returned;
                 }
 
                 // We need to call a proc.
@@ -150,15 +141,6 @@ namespace OpenDreamRuntime.Procs {
                     _callResult = null;
 
                     callTcs.SetResult(callResult);
-                }
-
-                // If the task is finished, we're all done
-                if (_task.IsCompleted) {
-                    if (_task.Exception != null) {
-                        throw _task.Exception;
-                    }
-
-                    return ProcStatus.Returned;
                 }
 
                 // Otherwise, we are still pending
@@ -184,21 +166,13 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private readonly IDreamManager _dreamManager;
-        private readonly DreamResourceManager _resourceManager;
-        private readonly IDreamObjectTree _objectTree;
-
         private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
-        public AsyncNativeProc(DreamPath owningType, string name, List<String> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc, IDreamManager dreamManager, DreamResourceManager resourceManager, IDreamObjectTree objectTree)
-            : base(owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
+        public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
+            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
-
-            _dreamManager = dreamManager;
-            _resourceManager = resourceManager;
-            _objectTree = objectTree;
         }
 
         public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {

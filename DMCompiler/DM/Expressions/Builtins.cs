@@ -82,6 +82,8 @@ namespace DMCompiler.DM.Expressions {
             proc.PushType(typeId);
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
+
+        public override DreamPath? Path => _targetPath;
     }
 
     // locate()
@@ -335,6 +337,68 @@ namespace DMCompiler.DM.Expressions {
             _expr.EmitPushValue(dmObject, proc);
             proc.PushType(typeId);
             proc.IsType();
+        }
+    }
+
+    // isnull(x)
+    internal sealed class IsNull : DMExpression {
+        private readonly DMExpression _value;
+
+        public IsNull(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.IsNull();
+        }
+    }
+
+    // length(x)
+    internal sealed class Length : DMExpression {
+        private readonly DMExpression _value;
+
+        public Length(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.Length();
+        }
+    }
+
+    // get_step(ref, dir)
+    internal sealed class GetStep : DMExpression {
+        private readonly DMExpression _ref;
+        private readonly DMExpression _dir;
+
+        public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
+            _ref = refValue;
+            _dir = dir;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _ref.EmitPushValue(dmObject, proc);
+            _dir.EmitPushValue(dmObject, proc);
+            proc.GetStep();
+        }
+    }
+
+    // get_dir(loc1, loc2)
+    internal sealed class GetDir : DMExpression {
+        private readonly DMExpression _loc1;
+        private readonly DMExpression _loc2;
+
+        public GetDir(Location location, DMExpression loc1, DMExpression loc2) : base(location) {
+            _loc1 = loc1;
+            _loc2 = loc2;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _loc1.EmitPushValue(dmObject, proc);
+            _loc2.EmitPushValue(dmObject, proc);
+            proc.GetDir();
         }
     }
 

@@ -34,7 +34,7 @@
 	var/mouse_opacity = 1
 	var/infra_luminosity = 0 as opendream_unimplemented
 	var/luminosity = 0 as opendream_unimplemented
-	var/opacity = 0 as opendream_unimplemented
+	var/opacity = 0
 	var/matrix/transform
 	var/blend_mode = 0
 

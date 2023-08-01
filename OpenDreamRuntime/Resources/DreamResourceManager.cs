@@ -1,7 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using System.IO;
-using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Network.Messages;
 using OpenDreamShared.Resources;
 using Robust.Shared.Network;
@@ -11,7 +10,6 @@ using SixLabors.ImageSharp.PixelFormats;
 
 namespace OpenDreamRuntime.Resources {
     public sealed class DreamResourceManager {
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         public string RootPath { get; private set; }
@@ -21,7 +19,7 @@ namespace OpenDreamRuntime.Resources {
 
         private ISawmill _sawmill;
 
-        public void Initialize() {
+        public void PreInitialize() {
             _sawmill = Logger.GetSawmill("opendream.res");
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
@@ -31,15 +29,23 @@ namespace OpenDreamRuntime.Resources {
 
             // An empty resource path is the console
             _resourceCache.Add(new ConsoleOutputResource());
-            _resourcePathToId.Add(String.Empty, 0);
+            _resourcePathToId.Add(string.Empty, 0);
         }
 
-        public void SetDirectory(string directory) {
-            RootPath = directory;
+        public void Initialize(string rootPath, string[] resources) {
+            RootPath = rootPath;
             // Used to ensure external DLL calls see a consistent current directory.
             Directory.SetCurrentDirectory(RootPath);
 
             _sawmill.Debug($"Resource root path set to {RootPath}");
+
+            // Immediately build list of resources from rsc.
+            for (var i = 0; i < resources.Length; i++) {
+                var resource = resources[i];
+                var loaded = LoadResource(resource);
+                // Resource IDs must be consistent with the ordering, or else packaged resources will mismatch.
+                DebugTools.Assert(loaded.Id == i + 1, "Resource IDs not consistent!");
+            }
         }
 
         public bool DoesFileExist(string resourcePath) {
@@ -91,10 +97,8 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public bool TryLoadIcon(DreamValue value, [NotNullWhen(true)] out IconResource? icon) {
-            if (value.TryGetValueAsDreamObjectOfType(_objectTree.Icon, out var iconObj)) {
-                DreamIcon dreamIcon = DreamMetaObjectIcon.ObjectToDreamIcon[iconObj];
-
-                icon = dreamIcon.GenerateDMI();
+            if (value.TryGetValueAsDreamObject<DreamObjectIcon>(out var iconObj)) {
+                icon = iconObj.Icon.GenerateDMI();
                 return true;
             }
 

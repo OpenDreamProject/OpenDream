@@ -1,5 +1,5 @@
 ﻿using OpenDreamRuntime.Input;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared;
 using Robust.Server.ServerStatus;
@@ -9,10 +9,13 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Timing;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
+
+[module: System.Runtime.CompilerServices.SkipLocalsInit]
+
 namespace OpenDreamRuntime {
     public sealed class EntryPoint : GameServer {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;
@@ -43,7 +46,7 @@ namespace OpenDreamRuntime {
             _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // TODO: world.sleep_offline can control this
             _configManager.SetCVar(CVars.GridSplitting, false); // Grid splitting should never be used
 
-            _prototypeManager.LoadDirectory(new ResourcePath("/Resources/Prototypes"));
+            _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
         }
 
         public override void PostInit() {
@@ -61,7 +64,7 @@ namespace OpenDreamRuntime {
 
         protected override void Dispose(bool disposing) {
             // Write every savefile to disk
-            foreach (var savefile in DreamMetaObjectSavefile.ObjectToSavefile.Values) {
+            foreach (var savefile in DreamObjectSavefile.Savefiles) {
                 savefile.Flush();
             }
 

@@ -10,6 +10,7 @@
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
     <OutputType Condition="'$(FullRelease)' != 'True'">Exe</OutputType>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>

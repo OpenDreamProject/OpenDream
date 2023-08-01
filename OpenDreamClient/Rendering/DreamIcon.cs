@@ -5,21 +5,21 @@ using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
 
 namespace OpenDreamClient.Rendering {
-    sealed class DreamIcon {
+    internal sealed class DreamIcon {
         public delegate void SizeChangedEventHandler();
 
         public List<DreamIcon> Overlays { get; } = new();
         public List<DreamIcon> Underlays { get; } = new();
-        public event SizeChangedEventHandler SizeChanged;
-
-        public DMIResource DMI {
+        public event SizeChangedEventHandler? SizeChanged;
+        private ClientAppearanceSystem? appearanceSystem = null;
+        public DMIResource? DMI {
             get => _dmi;
             private set {
                 _dmi = value;
                 CheckSizeChange();
             }
         }
-        private DMIResource _dmi;
+        private DMIResource? _dmi;
 
         public int AnimationFrame {
             get {
@@ -29,17 +29,17 @@ namespace OpenDreamClient.Rendering {
         }
 
         [ViewVariables]
-        public IconAppearance Appearance {
+        public IconAppearance? Appearance {
             get => CalculateAnimatedAppearance();
             private set {
                 _appearance = value;
                 UpdateIcon();
             }
         }
-        private IconAppearance _appearance;
+        private IconAppearance? _appearance;
 
-        public AtlasTexture CurrentFrame {
-            get => DMI?.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[AnimationFrame];
+        public AtlasTexture? CurrentFrame {
+            get => (Appearance == null || DMI == null) ? null : DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[AnimationFrame];
         }
 
         private int _animationFrame;
@@ -63,7 +63,8 @@ namespace OpenDreamClient.Rendering {
                 return;
             }
 
-            ClientAppearanceSystem appearanceSystem = EntitySystem.Get<ClientAppearanceSystem>();
+            //for some reason, doing this as a dependency doesn't initialise it in time so a null ref happens
+            appearanceSystem ??= EntitySystem.Get<ClientAppearanceSystem>();
 
             appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
                 if (parentDir != null && appearance.InheritsDirection) {
@@ -88,15 +89,15 @@ namespace OpenDreamClient.Rendering {
             _appearanceAnimation = null;
         }
 
-        public Box2 GetWorldAABB(Vector2? worldPos) {
+        public Box2 GetWorldAABB(Vector2 worldPos) {
             Box2? aabb = null;
 
-            if (DMI != null) {
+            if (DMI != null && Appearance != null) {
                 Vector2 size = DMI.IconSize / (float)EyeManager.PixelsPerMeter;
                 Vector2 pixelOffset = Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
                 worldPos += pixelOffset;
-                aabb = Box2.CenteredAround(worldPos ?? Vector2.Zero, size);
+                aabb = Box2.CenteredAround(worldPos, size);
             }
 
             foreach (DreamIcon underlay in Underlays) {
@@ -117,7 +118,11 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void UpdateAnimation() {
-            DMIParser.ParsedDMIState dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
+            if(DMI == null || Appearance == null)
+                return;
+            DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
+            if(dmiState == null)
+                return;
             DMIParser.ParsedDMIFrame[] frames = dmiState.GetFrames(Appearance.Direction);
 
             if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;
@@ -132,18 +137,18 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        private IconAppearance CalculateAnimatedAppearance() {
-            if (_appearanceAnimation == null)
+        private IconAppearance? CalculateAnimatedAppearance() {
+            if (_appearanceAnimation == null || _appearance == null)
                 return _appearance;
 
             AppearanceAnimation animation = _appearanceAnimation.Value;
             IconAppearance appearance = new IconAppearance(_appearance);
-            float factor = (float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks;
+            float factor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
             IconAppearance endAppearance = animation.EndAppearance;
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {
                 Vector2 startingOffset = appearance.PixelOffset;
-                Vector2 newPixelOffset = Vector2.LerpClamped(in startingOffset, endAppearance.PixelOffset, factor);
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
 
                 appearance.PixelOffset = (Vector2i)newPixelOffset;
             }
@@ -159,14 +164,6 @@ namespace OpenDreamClient.Rendering {
             }
 
             return appearance;
-        }
-
-        private static int LayerSort(DreamIcon first, DreamIcon second) {
-            float diff = first.Appearance.Layer - second.Appearance.Layer;
-
-            if (diff < 0) return -1;
-            else if (diff > 0) return 1;
-            return 0;
         }
 
         private void UpdateIcon() {
@@ -202,13 +199,10 @@ namespace OpenDreamClient.Rendering {
 
                 Underlays.Add(underlay);
             }
-
-            Overlays.Sort(LayerSort);
-            Underlays.Sort(LayerSort);
         }
 
         private void CheckSizeChange() {
-            Box2 aabb = GetWorldAABB(null);
+            Box2 aabb = GetWorldAABB(Vector2.Zero);
 
             if (aabb != _cachedAABB) {
                 _cachedAABB = aabb;

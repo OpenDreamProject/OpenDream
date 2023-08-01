@@ -29,7 +29,7 @@ namespace OpenDreamClient.Input.ContextMenu {
             }
 
             Icon.Margin = new Thickness(2);
-            if (entityManager.TryGetComponent(entity, out DMISpriteComponent sprite)) {
+            if (entityManager.TryGetComponent(entity, out DMISpriteComponent? sprite)) {
                 Icon.Texture = sprite.Icon.CurrentFrame;
             }
 
@@ -44,7 +44,7 @@ namespace OpenDreamClient.Input.ContextMenu {
             _uiManager.ModalRoot.AddChild(_currentVerbMenu);
 
             Vector2 desiredSize = _currentVerbMenu.DesiredSize;
-            _currentVerbMenu.Open(UIBox2.FromDimensions((GlobalPosition.X + Size.X, GlobalPosition.Y), desiredSize));
+            _currentVerbMenu.Open(UIBox2.FromDimensions(new Vector2(GlobalPosition.X + Size.X, GlobalPosition.Y), desiredSize));
         }
 
         private void MouseExited(GUIMouseHoverEventArgs args) {

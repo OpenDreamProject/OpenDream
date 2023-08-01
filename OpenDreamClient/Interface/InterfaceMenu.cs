@@ -34,11 +34,11 @@ public sealed class InterfaceMenu : InterfaceElement {
             if (!MenuElements.TryGetValue(elementDescriptor.Category, out var parentMenu)) {
                 //if category is set but the parent element doesn't exist, create it
                 var parentMenuDescriptor = new MenuElementDescriptor() {
-                    Name = elementDescriptor.Category
+                    Id = elementDescriptor.Category
                 };
 
                 parentMenu = new(parentMenuDescriptor, this);
-                MenuElements.Add(parentMenu.Name, parentMenu);
+                MenuElements.Add(parentMenu.Id, parentMenu);
             }
 
             //now add this as a child
@@ -46,7 +46,7 @@ public sealed class InterfaceMenu : InterfaceElement {
             parentMenu.Children.Add(element);
         }
 
-        MenuElements.Add(element.Name, element);
+        MenuElements.Add(element.Id, element);
         CreateMenu(); // Update the menu to include the new child
     }
 
@@ -61,7 +61,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                 continue;
 
             MenuBar.Menu menu = new() {
-                Title = menuElement.Name
+                Title = menuElement.ElementDescriptor.Name
             };
 
             if (menu.Title?.StartsWith("&") ?? false)
@@ -78,7 +78,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         public readonly List<MenuElement> Children = new();
 
         private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
-        public string Category => MenuElementDescriptor.Category;
+        public string? Category => MenuElementDescriptor.Category;
         public string Command => MenuElementDescriptor.Command;
 
         private readonly InterfaceMenu _menu;
@@ -88,7 +88,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         }
 
         public MenuBar.MenuEntry CreateMenuEntry() {
-            string text = Name;
+            string text = ElementDescriptor.Name;
             if (text.StartsWith("&"))
                 text = text[1..]; //TODO: First character in name becomes a selection shortcut
 

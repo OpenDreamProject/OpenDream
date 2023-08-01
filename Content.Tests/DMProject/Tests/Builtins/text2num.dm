@@ -1,3 +1,6 @@
+// NaN != NaN in BYOND
+#define isnan(x) ( (x) != (x) )
+
 /proc/RunTest()
 	ASSERT(text2num(null) == null)
 	ASSERT(text2num("") == null)
@@ -31,3 +34,6 @@
 	ASSERT(text2num("0xA", 16) == 10)
 	ASSERT(text2num("0xA", 15) == 0)
 	ASSERT(text2num("0xA", 36) == 1198)
+
+	ASSERT(isnan(text2num("nan")))
+	ASSERT(isnan(text2num(" -nansomething")))

@@ -1,7 +1,6 @@
 using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
-using JetBrains.Annotations;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization.Manager.Attributes;
 

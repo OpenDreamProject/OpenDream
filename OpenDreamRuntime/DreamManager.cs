@@ -290,6 +290,7 @@ namespace OpenDreamRuntime {
 
             // Search for an object with this ref as its tag
             // Note that surrounding [] are stripped out at this point, this is intentional
+            // Doing locate("[abc]") is the same as locate("abc")
             if (Tags.TryGetValue(refString, out var tagList)) {
                 return new DreamValue(tagList.First());
             }

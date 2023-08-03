@@ -1,8 +1,6 @@
-﻿using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
-using Byond.TopicSender;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using Robust.Server;
@@ -20,36 +18,8 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!Uri.TryCreate(addr, UriKind.RelativeOrAbsolute, out var uri))
                 throw new ArgumentException("Unable to parse URI.");
 
-            if (uri.Scheme is not ("http" or "https" or "byond"))
-                throw new NotSupportedException($"Unknown scheme for world.Export: '{uri.Scheme}'");
-
-            if (uri.Scheme is "byond") {
-                var tenSecondTimeout = TimeSpan.FromSeconds(10);
-                var topicClient = new TopicClient(new SocketParameters {
-                    ConnectTimeout = tenSecondTimeout,
-                    DisconnectTimeout = tenSecondTimeout,
-                    ReceiveTimeout = tenSecondTimeout,
-                    SendTimeout = tenSecondTimeout,
-                });
-
-                var topicResponse = await topicClient.SendTopic(uri.Host, uri.Query[1..], Convert.ToUInt16(uri.Port));
-                switch (topicResponse.ResponseType) {
-                    case TopicResponseType.FloatResponse:
-                        return new DreamValue(topicResponse.FloatData!.Value);
-
-                    case TopicResponseType.StringResponse:
-                        return new DreamValue(topicResponse.StringData!);
-
-                    case TopicResponseType.UnknownResponse:
-                        var byteList = state.ObjectTree.CreateList();
-                        foreach (var @byte in topicResponse.RawData)
-                            byteList.AddValue(new DreamValue(@byte));
-                        return new DreamValue(byteList);
-
-                    default:
-                        throw new IOException($"Topic returned an unknown response type: '{topicResponse.ResponseType}'");
-                }
-            }
+            if (uri.Scheme is not ("http" or "https"))
+                throw new NotSupportedException("non-HTTP world.Export is not supported.");
 
             // TODO: Maybe cache HttpClient.
             var client = new HttpClient();

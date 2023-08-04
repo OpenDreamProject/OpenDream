@@ -195,8 +195,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
-                current.ColorToApply = parentIcon.ColorToApply;
-                current.ColorMatrixToApply = parentIcon.ColorMatrixToApply;
+                current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
+                ColorMatrix.Multiply(ref parentIcon.ColorMatrixToApply, ref icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
@@ -570,8 +570,7 @@ internal sealed class DreamViewOverlay : Overlay {
             _mouseMapRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
 
             foreach (var plane in _planes.Values) {
-                plane.RenderTarget.Dispose();
-                plane.RenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+                plane.SetMainRenderTarget(_clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb)));
             }
         } else {
             // Clear the mouse map lookup dictionary
@@ -624,7 +623,9 @@ internal sealed class DreamViewOverlay : Overlay {
                 }
 
                 if (sprite.IsPlaneMaster) { //if this is also a plane master
+                    sprite.Position = Vector2.Zero; //plane masters should not have a position offset
                     plane.Master = sprite;
+                    plane.SetTemporaryRenderTarget(tmpRenderTarget);
                 } else { //if not a plane master, draw the sprite to the render target
                     //note we don't draw this to the mouse-map because that's handled when the RenderTarget is used as a source later
                     DrawIconNow(handle, tmpRenderTarget, sprite, ((worldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f), null, true); //draw the sprite centered on the RenderTarget
@@ -633,8 +634,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 //if this is a plane master then we don't render it, we just set it as the plane's master
                 if (sprite.IsPlaneMaster) {
                     sprite.Position = Vector2.Zero; //plane masters should not have a position offset
-
                     plane.Master = sprite;
+
                     continue;
                 }
 
@@ -663,6 +664,10 @@ internal sealed class DreamViewOverlay : Overlay {
                     plane.Draw(handle);
 
                     if (plane.Master != null) {
+                        // Don't draw this to the base render target if it was rendered to another target
+                        if (!string.IsNullOrEmpty(plane.Master.RenderTarget))
+                            continue;
+
                         DrawIconNow(handle, null, plane.Master, Vector2.Zero, plane.RenderTarget.Texture, noMouseMap: true);
                     } else {
                         var renderBox = new Box2(

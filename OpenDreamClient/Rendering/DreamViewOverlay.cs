@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using OpenDreamClient.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
@@ -27,6 +28,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
@@ -62,9 +64,8 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private readonly Matrix3 _flipMatrix;
 
-    // Hardcoded for a 15x15 view (with 1 tile buffer on each side)
     // Defined here so it isn't recreated every frame
-    private readonly ViewAlgorithm.Tile?[,] _tileInfo = new ViewAlgorithm.Tile?[17,17];
+    private ViewAlgorithm.Tile?[,]? _tileInfo;
 
     public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
         ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem) {
@@ -693,14 +694,26 @@ internal sealed class DreamViewOverlay : Overlay {
     private ViewAlgorithm.Tile?[,] CalculateTileVisibility(MapGridComponent grid, HashSet<EntityUid> entities, TileRef eyeTile, int seeVis) {
         using var _ = _prof.Group("visible turfs");
 
+        var viewRange = _interfaceManager.View;
+        if (_tileInfo == null || _tileInfo.GetLength(0) != viewRange.Width + 2 || _tileInfo.GetLength(1) != viewRange.Height + 2) {
+            // _tileInfo hasn't been created yet or view range has changed, so create a new array.
+            // Leave a 1 tile buffer on each side
+            _tileInfo = new ViewAlgorithm.Tile[viewRange.Width + 2, viewRange.Height + 2];
+        }
+
         var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
-        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(17, 17)));
+        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(_tileInfo.GetLength(0), _tileInfo.GetLength(1))));
 
         // Gather up all the data the view algorithm needs
         foreach (TileRef tileRef in tileRefs) {
             var delta = tileRef.GridIndices - eyeTile.GridIndices;
             var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
             if (appearance == null)
+                continue;
+
+            int xIndex = delta.X + viewRange.CenterX;
+            int yIndex = delta.Y + viewRange.CenterY;
+            if (xIndex < 0 || yIndex < 0 || xIndex >= _tileInfo.GetLength(0) || yIndex >= _tileInfo.GetLength(1))
                 continue;
 
             var tile = new ViewAlgorithm.Tile {
@@ -710,7 +723,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 DeltaY = delta.Y
             };
 
-            _tileInfo[delta.X + 8, delta.Y + 8] = tile;
+            _tileInfo[xIndex, yIndex] = tile;
         }
 
         // Apply entities' opacity
@@ -724,8 +737,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 continue;
 
             var worldPos = _transformSystem.GetWorldPosition(entity, _xformQuery);
-            var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-            if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+            var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + viewRange.Center;
+            if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                 continue;
 
             var tile = _tileInfo[tilePos.X, tilePos.Y];
@@ -772,9 +785,9 @@ internal sealed class DreamViewOverlay : Overlay {
 
                 // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
                 // TODO: Differentiate between objs and mobs
-                if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0) {
-                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0 && _tileInfo != null) {
+                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + _interfaceManager.View.Center;
+                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                         continue;
 
                     var tile = tiles[tilePos.X, tilePos.Y];

@@ -524,9 +524,9 @@ internal sealed class DreamViewOverlay : Overlay {
             }
 
             if (icon.Appearance?.Filters.Count % 2 == 0) //if we have an even number of filters, we need to flip
-            tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, un-translate
-                                iconMetaData.TransformToApply * _flipMatrix *
-                                Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
+                tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, un-translate
+                                    iconMetaData.TransformToApply * _flipMatrix *
+                                    Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
 
             //then we return the Action that draws the actual icon with filters applied
             iconDrawAction = () => {

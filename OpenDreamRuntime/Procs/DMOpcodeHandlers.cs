@@ -1859,7 +1859,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             DreamList? containerList;
-            if (container is DreamObjectAtom) {
+            if (container is DreamObjectAtom or DreamObjectWorld) {
+                // TODO: Using world.contents for this is hilariously bad due to using WorldContentsList.GetValues()
                 container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
             } else {
                 containerList = container as DreamList;

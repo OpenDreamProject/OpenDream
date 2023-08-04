@@ -222,7 +222,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         ShowPrompt(prompt);
     }
-  
+
     private void RxBrowse(MsgBrowse pBrowse) {
         if (pBrowse.HtmlSource == null && pBrowse.Window != null) {
             //Closing a popup
@@ -560,7 +560,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             case WindowDescriptor windowDescriptor:
                 ControlWindow window = new ControlWindow(windowDescriptor);
 
-                Windows.Add(windowDescriptor.Name, window);
+                Windows.Add(windowDescriptor.Id, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }

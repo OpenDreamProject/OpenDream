@@ -62,6 +62,11 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public ViewRange View {
         get => _view;
         private set {
+            // Cap to a view range of 45x45
+            // Any larger causes crashes with RobustToolbox's GetPixel()
+            if (value.Width > 45 || value.Height > 45)
+                value = new(Math.Min(value.Width, 45), Math.Min(value.Height, 45));
+
             _view = value;
             DefaultMap?.UpdateViewRange(_view);
         }
@@ -233,7 +238,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         ShowPrompt(prompt);
     }
-  
+
     private void RxBrowse(MsgBrowse pBrowse) {
         if (pBrowse.HtmlSource == null && pBrowse.Window != null) {
             //Closing a popup

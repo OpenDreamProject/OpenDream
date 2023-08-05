@@ -30,8 +30,8 @@ public readonly struct ViewRange {
         Height = range * 2 + 1;
     }
 
-    public ViewRange(int x, int y) {
-        Width = x; Height = y;
+    public ViewRange(int w, int h) {
+        Width = w; Height = h;
     }
 
     public ViewRange(string range) {

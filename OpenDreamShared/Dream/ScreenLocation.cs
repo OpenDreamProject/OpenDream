@@ -30,8 +30,8 @@ public sealed class ScreenLocation {
     public int PixelOffsetX, PixelOffsetY;
     public ScreenLocation? Range;
 
-    public int RepeatX => Range?.X - X ?? 1;
-    public int RepeatY => Range?.Y - Y ?? 1;
+    public int RepeatX => Range?.X - X + 1 ?? 1;
+    public int RepeatY => Range?.Y - Y + 1 ?? 1;
 
     private static ISawmill Sawmill => Logger.GetSawmill("opendream.screen_loc_parser");
 
@@ -88,8 +88,9 @@ public sealed class ScreenLocation {
 
     public override string ToString() {
         string mapControl = MapControl != null ? $"{MapControl}:" : string.Empty;
+        string range = Range != null ? $" to {Range}" : string.Empty;
 
-        return $"{mapControl}{HorizontalAnchor}+{X+1}:{PixelOffsetX},{VerticalAnchor}+{Y+1}:{PixelOffsetY}";
+        return $"{mapControl}{HorizontalAnchor}+{X+1}:{PixelOffsetX},{VerticalAnchor}+{Y+1}:{PixelOffsetY}{range}";
     }
 
     private void ParseScreenLoc(string screenLoc) {
@@ -104,7 +105,7 @@ public sealed class ScreenLocation {
         if (mapControlSplitIndex != -1) {
             string mapControl = rangeSplit[0].Substring(0, mapControlSplitIndex);
 
-            if (mapControl.IndexOfAny(new[] { '+', '-'}) == -1 && !_keywords.Contains(mapControl)) {
+            if (char.IsAsciiLetter(mapControl[0]) && mapControl.IndexOfAny(new[] { '+', '-' }) == -1 && !_keywords.Contains(mapControl)) {
                 MapControl = mapControl;
                 coordinateSplit[0] = rangeSplit[0].Substring(mapControlSplitIndex + 1);
             }

@@ -102,7 +102,7 @@ public sealed class ScreenLocation {
             throw new Exception($"Invalid screen_loc \"{screenLoc}\"");
 
         int mapControlSplitIndex = coordinateSplit[0].IndexOf(':');
-        if (mapControlSplitIndex != -1) {
+        if (mapControlSplitIndex > 0) {
             string mapControl = rangeSplit[0].Substring(0, mapControlSplitIndex);
 
             if (char.IsAsciiLetter(mapControl[0]) && mapControl.IndexOfAny(new[] { '+', '-' }) == -1 && !_keywords.Contains(mapControl)) {

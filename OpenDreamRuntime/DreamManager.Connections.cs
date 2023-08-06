@@ -32,6 +32,7 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
             _netManager.RegisterNetMessage<MsgSound>();
+            _netManager.RegisterNetMessage<MsgUpdateClientInfo>();
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message) {

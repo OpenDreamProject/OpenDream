@@ -2,6 +2,7 @@
 using System.Text;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -11,6 +12,8 @@ public sealed class DreamObjectClient : DreamObject {
     public readonly VerbsList Verbs;
     public readonly DreamList Images; // TODO properly implement /client.images
 
+    public ViewRange View { get; private set; }
+
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem) : base(objectDefinition) {
         Connection = connection;
         Screen = new(ObjectTree, screenOverlaySystem, Connection);
@@ -18,6 +21,8 @@ public sealed class DreamObjectClient : DreamObject {
         Images = ObjectTree.CreateList();
 
         DreamManager.Clients.Add(this);
+
+        View = DreamManager.WorldInstance.DefaultView;
     }
 
     protected override void HandleDeletion() {
@@ -42,6 +47,15 @@ public sealed class DreamObjectClient : DreamObject {
                 return true;
             case "eye":
                 value = new(Connection.Eye);
+                return true;
+            case "view":
+                // Number if square & centerable, string representation otherwise
+                if (View is { IsSquare: true, IsCenterable: true }) {
+                    value = new DreamValue(View.Range);
+                } else {
+                    value = new DreamValue(View.ToString());
+                }
+
                 return true;
             case "computer_id": // FIXME: This is not secure! Whenever RT implements a more robust (heh) method of uniquely identifying computers, replace this impl with that.
                 MD5 md5 = MD5.Create();
@@ -100,6 +114,18 @@ public sealed class DreamObjectClient : DreamObject {
                 }
 
                 Connection.Eye = newEye as DreamObjectMovable;
+                break;
+            }
+            case "view": {
+                if (value.TryGetValueAsInteger(out var viewInt)) {
+                    View = new(viewInt);
+                } else if (value.TryGetValueAsString(out var viewStr)) {
+                    View = new(viewStr);
+                } else {
+                    View = DreamManager.WorldInstance.DefaultView;
+                }
+
+                Connection.SendClientInfoUpdate();
                 break;
             }
             case "screen": {

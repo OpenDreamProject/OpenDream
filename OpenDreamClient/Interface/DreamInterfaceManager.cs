@@ -580,7 +580,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             case WindowDescriptor windowDescriptor:
                 ControlWindow window = new ControlWindow(windowDescriptor);
 
-                Windows.Add(windowDescriptor.Name, window);
+                Windows.Add(windowDescriptor.Id, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }

@@ -31,19 +31,25 @@ internal sealed class ControlChild : InterfaceControl {
         if (_rightElement != null) _grid.Children.Remove(_rightElement.UIElement);
 
         if (!string.IsNullOrEmpty(controlDescriptor.Left)) {
-            _leftElement = _dreamInterface.Windows[controlDescriptor.Left];
-            _leftElement.UIElement.HorizontalExpand = true;
-            _leftElement.UIElement.VerticalExpand = true;
-            _grid.Children.Add(_leftElement.UIElement);
+            if(!_dreamInterface.Windows.TryGetValue(controlDescriptor.Left, out _leftElement)){
+                Logger.Error($"Invalid ID given for {controlDescriptor.Name}.LEFT: {controlDescriptor.Left}");
+            } else {
+                _leftElement.UIElement.HorizontalExpand = true;
+                _leftElement.UIElement.VerticalExpand = true;
+                _grid.Children.Add(_leftElement.UIElement);
+            }
         } else {
             _leftElement = null;
         }
 
         if (!string.IsNullOrEmpty(controlDescriptor.Right)) {
-            _rightElement = _dreamInterface.Windows[controlDescriptor.Right];
-            _rightElement.UIElement.HorizontalExpand = true;
-            _rightElement.UIElement.VerticalExpand = true;
-            _grid.Children.Add(_rightElement.UIElement);
+            if(!_dreamInterface.Windows.TryGetValue(controlDescriptor.Right, out _rightElement)){
+                Logger.Error($"Invalid ID given for {controlDescriptor.Name}.RIGHT: {controlDescriptor.Right}");
+            } else {
+                _rightElement.UIElement.HorizontalExpand = true;
+                _rightElement.UIElement.VerticalExpand = true;
+                _grid.Children.Add(_rightElement.UIElement);
+            }
         } else {
             _rightElement = null;
         }

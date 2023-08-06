@@ -88,7 +88,7 @@ namespace DMCompiler.DM {
         public string? VerbName;
         public string? VerbCategory = string.Empty;
         public string? VerbDesc;
-        public sbyte? Invisibility;
+        public sbyte Invisibility;
 
         private DMObject _dmObject;
         private DMASTProcDefinition? _astDefinition;

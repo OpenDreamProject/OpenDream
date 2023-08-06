@@ -248,9 +248,13 @@ namespace OpenDreamRuntime {
                 case "glide_size":
                     return new(appearance.GlideSize);
                 case "render_source":
-                    return new(appearance.RenderSource);
+                    return (appearance.RenderSource != null)
+                        ? new DreamValue(appearance.RenderSource)
+                        : DreamValue.Null;
                 case "render_target":
-                    return new(appearance.RenderTarget);
+                    return (appearance.RenderTarget != null)
+                        ? new DreamValue(appearance.RenderTarget)
+                        : DreamValue.Null;
                 // TODO: overlays, underlays, filters, transform
                 //       Those are handled separately by whatever is calling GetAppearanceVar currently
                 default:

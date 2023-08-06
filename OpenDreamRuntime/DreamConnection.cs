@@ -113,6 +113,8 @@ namespace OpenDreamRuntime {
 
             Client = client;
             Client.InitSpawn(new());
+
+            SendClientInfoUpdate();
         }
 
         public void HandleDisconnection() {
@@ -215,6 +217,14 @@ namespace OpenDreamRuntime {
                     _currentlyUpdatingStat = false;
                 }
             });
+        }
+
+        public void SendClientInfoUpdate() {
+            MsgUpdateClientInfo msg = new() {
+                View = Client!.View
+            };
+
+            Session?.ConnectedClient.SendMessage(msg);
         }
 
         public void SetOutputStatPanel(string name) {

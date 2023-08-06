@@ -222,15 +222,16 @@ namespace OpenDreamRuntime.Objects {
 
                             if (jsonElement.TryGetProperty("values", out JsonElement values)) {
                                 foreach (JsonElement listValue in values.EnumerateArray()) {
-                                    list.AddValue(GetDreamValueFromJsonElement(listValue));
-                                }
-                            }
+                                    if (listValue.ValueKind == JsonValueKind.Object) { // key/value pair
+                                        if (!listValue.TryGetProperty("key", out var jsonKey) ||
+                                            !listValue.TryGetProperty("value", out var jsonValue))
+                                            throw new Exception("List value was missing a key or value property");
 
-                            if (jsonElement.TryGetProperty("associatedValues", out JsonElement associatedValues)) {
-                                foreach (JsonProperty associatedValue in associatedValues.EnumerateObject()) {
-                                    DreamValue key = new DreamValue(associatedValue.Name);
-
-                                    list.SetValue(key, GetDreamValueFromJsonElement(associatedValue.Value));
+                                        list.SetValue(GetDreamValueFromJsonElement(jsonKey),
+                                            GetDreamValueFromJsonElement(jsonValue), allowGrowth: true);
+                                    } else {
+                                        list.AddValue(GetDreamValueFromJsonElement(listValue));
+                                    }
                                 }
                             }
 

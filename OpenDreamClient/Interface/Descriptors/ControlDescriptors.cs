@@ -98,7 +98,7 @@ public sealed class WindowDescriptor : ControlDescriptor {
     }
 
     public WindowDescriptor WithVisible(ISerializationManager serializationManager, bool visible) {
-        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Name);
+        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Id);
 
         copy.IsVisible = visible;
         return copy;

@@ -82,6 +82,7 @@
 	proc/Import()
 		set opendream_unimplemented = TRUE
 	proc/Topic(T,Addr,Master,Keys)
+		set opendream_unimplemented = TRUE
 
 	proc/SetScores()
 		set opendream_unimplemented = TRUE

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using OpenDreamClient.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
@@ -27,6 +28,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
@@ -62,9 +64,8 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private readonly Matrix3 _flipMatrix;
 
-    // Hardcoded for a 15x15 view (with 1 tile buffer on each side)
     // Defined here so it isn't recreated every frame
-    private readonly ViewAlgorithm.Tile?[,] _tileInfo = new ViewAlgorithm.Tile?[17,17];
+    private ViewAlgorithm.Tile?[,]? _tileInfo;
 
     public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
         ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem) {
@@ -195,8 +196,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
-                current.ColorToApply = parentIcon.ColorToApply;
-                current.ColorMatrixToApply = parentIcon.ColorMatrixToApply;
+                current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
+                ColorMatrix.Multiply(ref parentIcon.ColorMatrixToApply, ref icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
@@ -570,8 +571,7 @@ internal sealed class DreamViewOverlay : Overlay {
             _mouseMapRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
 
             foreach (var plane in _planes.Values) {
-                plane.RenderTarget.Dispose();
-                plane.RenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+                plane.SetMainRenderTarget(_clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb)));
             }
         } else {
             // Clear the mouse map lookup dictionary
@@ -624,7 +624,9 @@ internal sealed class DreamViewOverlay : Overlay {
                 }
 
                 if (sprite.IsPlaneMaster) { //if this is also a plane master
+                    sprite.Position = Vector2.Zero; //plane masters should not have a position offset
                     plane.Master = sprite;
+                    plane.SetTemporaryRenderTarget(tmpRenderTarget);
                 } else { //if not a plane master, draw the sprite to the render target
                     //note we don't draw this to the mouse-map because that's handled when the RenderTarget is used as a source later
                     DrawIconNow(handle, tmpRenderTarget, sprite, ((worldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f), null, true); //draw the sprite centered on the RenderTarget
@@ -633,8 +635,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 //if this is a plane master then we don't render it, we just set it as the plane's master
                 if (sprite.IsPlaneMaster) {
                     sprite.Position = Vector2.Zero; //plane masters should not have a position offset
-
                     plane.Master = sprite;
+
                     continue;
                 }
 
@@ -663,6 +665,10 @@ internal sealed class DreamViewOverlay : Overlay {
                     plane.Draw(handle);
 
                     if (plane.Master != null) {
+                        // Don't draw this to the base render target if it was rendered to another target
+                        if (!string.IsNullOrEmpty(plane.Master.RenderTarget))
+                            continue;
+
                         DrawIconNow(handle, null, plane.Master, Vector2.Zero, plane.RenderTarget.Texture, noMouseMap: true);
                     } else {
                         var renderBox = new Box2(
@@ -688,14 +694,26 @@ internal sealed class DreamViewOverlay : Overlay {
     private ViewAlgorithm.Tile?[,] CalculateTileVisibility(MapGridComponent grid, HashSet<EntityUid> entities, TileRef eyeTile, int seeVis) {
         using var _ = _prof.Group("visible turfs");
 
+        var viewRange = _interfaceManager.View;
+        if (_tileInfo == null || _tileInfo.GetLength(0) != viewRange.Width + 2 || _tileInfo.GetLength(1) != viewRange.Height + 2) {
+            // _tileInfo hasn't been created yet or view range has changed, so create a new array.
+            // Leave a 1 tile buffer on each side
+            _tileInfo = new ViewAlgorithm.Tile[viewRange.Width + 2, viewRange.Height + 2];
+        }
+
         var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
-        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(17, 17)));
+        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(_tileInfo.GetLength(0), _tileInfo.GetLength(1))));
 
         // Gather up all the data the view algorithm needs
         foreach (TileRef tileRef in tileRefs) {
             var delta = tileRef.GridIndices - eyeTile.GridIndices;
             var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
             if (appearance == null)
+                continue;
+
+            int xIndex = delta.X + viewRange.CenterX;
+            int yIndex = delta.Y + viewRange.CenterY;
+            if (xIndex < 0 || yIndex < 0 || xIndex >= _tileInfo.GetLength(0) || yIndex >= _tileInfo.GetLength(1))
                 continue;
 
             var tile = new ViewAlgorithm.Tile {
@@ -705,7 +723,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 DeltaY = delta.Y
             };
 
-            _tileInfo[delta.X + 8, delta.Y + 8] = tile;
+            _tileInfo[xIndex, yIndex] = tile;
         }
 
         // Apply entities' opacity
@@ -719,8 +737,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 continue;
 
             var worldPos = _transformSystem.GetWorldPosition(entity, _xformQuery);
-            var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-            if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+            var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + viewRange.Center;
+            if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                 continue;
 
             var tile = _tileInfo[tilePos.X, tilePos.Y];
@@ -767,9 +785,9 @@ internal sealed class DreamViewOverlay : Overlay {
 
                 // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
                 // TODO: Differentiate between objs and mobs
-                if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0) {
-                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0 && _tileInfo != null) {
+                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + _interfaceManager.View.Center;
+                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                         continue;
 
                     var tile = tiles[tilePos.X, tilePos.Y];
@@ -794,7 +812,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                     continue;
 
-                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft , EyeManager.PixelsPerMeter);
+                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft, _interfaceManager.View, EyeManager.PixelsPerMeter);
                 Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {

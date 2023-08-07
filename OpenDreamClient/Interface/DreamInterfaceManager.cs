@@ -10,6 +10,7 @@ using OpenDreamClient.Interface.DMF;
 using OpenDreamClient.Interface.Prompts;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Dream;
 using Robust.Client;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
@@ -60,7 +61,21 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public Dictionary<string, InterfaceMenu> Menus { get; } = new();
     public Dictionary<string, InterfaceMacroSet> MacroSets { get; } = new();
 
+    public ViewRange View {
+        get => _view;
+        private set {
+            // Cap to a view range of 45x45
+            // Any larger causes crashes with RobustToolbox's GetPixel()
+            if (value.Width > 45 || value.Height > 45)
+                value = new(Math.Min(value.Width, 45), Math.Min(value.Height, 45));
+
+            _view = value;
+            DefaultMap?.UpdateViewRange(_view);
+        }
+    }
+
     private readonly Dictionary<string, BrowsePopup> _popupWindows = new();
+    private ViewRange _view = new(5);
 
     public void LoadInterfaceFromSource(string source) {
         DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
@@ -128,6 +143,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
+        _netManager.RegisterNetMessage<MsgUpdateClientInfo>(RxUpdateClientInfo);
     }
 
     private void RxUpdateStatPanels(MsgUpdateStatPanels message) {
@@ -225,7 +241,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         ShowPrompt(prompt);
     }
-  
+
     private void RxBrowse(MsgBrowse pBrowse) {
         if (pBrowse.HtmlSource == null && pBrowse.Window != null) {
             //Closing a popup
@@ -330,6 +346,10 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         LoadInterfaceFromSource(interfaceText);
         _netManager.ClientSendMessage(new MsgAckLoadInterface());
+    }
+
+    private void RxUpdateClientInfo(MsgUpdateClientInfo msg) {
+        View = msg.View;
     }
 
     private void ShowPrompt(PromptWindow prompt) {
@@ -617,7 +637,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             case WindowDescriptor windowDescriptor:
                 ControlWindow window = new ControlWindow(windowDescriptor);
 
-                Windows.Add(windowDescriptor.Name, window);
+                Windows.Add(windowDescriptor.Id, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }
@@ -645,6 +665,7 @@ public interface IDreamInterfaceManager {
     public ControlOutput? DefaultOutput { get; }
     public ControlInfo? DefaultInfo { get; }
     public ControlMap? DefaultMap { get; }
+    public ViewRange View { get; }
 
     void Initialize();
     void FrameUpdate(FrameEventArgs frameEventArgs);

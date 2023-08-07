@@ -26,11 +26,11 @@ internal sealed class ControlChild : InterfaceControl {
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        var newLeftElement = !string.IsNullOrEmpty(ChildDescriptor.Left)
-            ? _dreamInterface.Windows[ChildDescriptor.Left].UIElement
+        var newLeftElement = !_dreamInterface.Windows.TryGetValue(ChildDescriptor.Left, out var leftWindow)
+            ? leftWindow.UIElement
             : null;
-        var newRightElement = !string.IsNullOrEmpty(ChildDescriptor.Right)
-            ? _dreamInterface.Windows[ChildDescriptor.Right].UIElement
+        var newRightElement = !_dreamInterface.Windows.TryGetValue(ChildDescriptor.Right, out var rightWindow)
+            ? rightWindow.UIElement
             : null;
 
         if (newLeftElement != _leftElement) {

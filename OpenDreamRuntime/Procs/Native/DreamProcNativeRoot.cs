@@ -2968,6 +2968,30 @@ namespace OpenDreamRuntime.Procs.Native {
             return await connection.WinExists(controlId);
         }
 
+        [DreamProc("winget")]
+        [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
+        public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.State state) {
+            DreamValue player = state.GetArgument(0, "player");
+            state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId);
+            if (!state.GetArgument(2, "params").TryGetValueAsString(out var paramsValue))
+                return new(string.Empty);
+
+            DreamConnection? connection = null;
+            if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
+                connection = mob.Connection;
+            } else if (player.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                connection = client.Connection;
+            }
+
+            if (connection == null) {
+                throw new Exception($"Invalid client {player}");
+            }
+
+            return await connection.WinGet(controlId, paramsValue);
+        }
+
         [DreamProc("winset")]
         [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]

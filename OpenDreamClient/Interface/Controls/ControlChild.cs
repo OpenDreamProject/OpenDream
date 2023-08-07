@@ -33,35 +33,35 @@ internal sealed class ControlChild : InterfaceControl {
             ? rightWindow.UIElement
             : null;
 
-        if (newLeftElement != _leftElement) {
+        if (newLeftElement != _leftElement || _grid.ChildCount == 0) {
             if (_leftElement != null)
                 _grid.Children.Remove(_leftElement);
 
             if (newLeftElement != null) {
                 _leftElement = newLeftElement;
-                _leftElement.HorizontalExpand = true;
-                _leftElement.VerticalExpand = true;
             } else {
                 // SplitContainer will have a size of 0x0 if there aren't 2 controls
                 _leftElement = new Control();
             }
 
+            _leftElement.HorizontalExpand = true;
+            _leftElement.VerticalExpand = true;
             _grid.Children.Add(_leftElement);
         }
 
-        if (newRightElement != _rightElement) {
+        if (newRightElement != _rightElement || _grid.ChildCount == 1) {
             if (_rightElement != null)
                 _grid.Children.Remove(_rightElement);
 
             if (newRightElement != null) {
                 _rightElement = newRightElement;
-                _rightElement.HorizontalExpand = true;
-                _rightElement.VerticalExpand = true;
             } else {
                 // SplitContainer will have a size of 0x0 if there aren't 2 controls
                 _rightElement = new Control();
             }
 
+            _rightElement.HorizontalExpand = true;
+            _rightElement.VerticalExpand = true;
             _grid.Children.Add(_rightElement);
         }
 

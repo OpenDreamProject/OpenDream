@@ -15,17 +15,13 @@ public class DreamObjectAtom : DreamObject {
     public DreamList? VisContents; // TODO: Implement
 
     public DreamObjectAtom(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
+        ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
+        ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
+
         Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
         Verbs = new(ObjectTree, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
-    }
-
-    public override void Initialize(DreamProcArguments args) {
-        base.Initialize(args);
-
-        ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
-        ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

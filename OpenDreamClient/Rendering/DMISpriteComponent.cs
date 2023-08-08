@@ -18,13 +18,6 @@ namespace OpenDreamClient.Rendering {
             Icon.SizeChanged += OnIconSizeChanged;
         }
 
-        public void GetAABB(TransformSystem sys, ref WorldAABBEvent e) {
-            if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform)) {
-                return;
-            }
-            e.AABB = Icon.GetWorldAABB(sys.GetWorldPosition(transform));
-        }
-
         public bool IsVisible(bool checkWorld = true, int seeInvis = 0) {
             if (Icon.Appearance?.Invisibility > seeInvis) return false;
 

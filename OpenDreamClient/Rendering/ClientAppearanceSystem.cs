@@ -81,7 +81,11 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
-            comp.GetAABB(_transformSystem, ref e);
+            Box2? aabb = null;
+
+            comp.Icon.GetWorldAABB(_transformSystem.GetWorldPosition(uid), ref aabb);
+            if (aabb != null)
+                e.AABB = aabb.Value;
         }
 
         public void ResetFilterUsageFlags() {

@@ -21,6 +21,7 @@ public sealed class DreamObjectClient : DreamObject {
     }
 
     protected override void HandleDeletion() {
+        Connection.Session?.ConnectedClient.Disconnect("Your client object was deleted");
         DreamManager.Clients.Remove(this);
 
         base.HandleDeletion();

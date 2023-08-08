@@ -525,8 +525,15 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         var elementIds = controlId.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
 
         if (elementIds.Length == 0) {
-            _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
-            return string.Empty;
+            switch (queryValue) {
+                // The server will actually never query this because it can predict the answer to be "true"
+                // But also have it here in case a local winget ever wants it
+                case "hwmode":
+                    return "true";
+                default:
+                    _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
+                    return string.Empty;
+            }
         } else if (elementIds.Length == 1) {
             return GetProperty(elementIds[0]);
         }

@@ -2989,6 +2989,11 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new Exception($"Invalid client {player}");
             }
 
+            if (string.IsNullOrEmpty(controlId) && paramsValue == "hwmode") {
+                // Don't even bother querying the client, we don't have a non-hwmode
+                return new("true");
+            }
+
             return await connection.WinGet(controlId, paramsValue);
         }
 

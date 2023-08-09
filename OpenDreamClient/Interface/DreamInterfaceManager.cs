@@ -458,8 +458,13 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             if (CheckParserErrors())
                 return;
 
+            // id=abc overrides the elements of other winsets without an element
+            string? elementOverride = winSets.FirstOrNull(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
+
             foreach (DMFWinSet winSet in winSets) {
-                if (winSet.Element == null) {
+                string? elementId = winSet.Element ?? elementOverride;
+
+                if (elementId == null) {
                     if (winSet.Attribute == "command") {
                         DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
 
@@ -468,7 +473,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
                 } else {
-                    InterfaceElement? element = FindElementWithId(winSet.Element);
+                    InterfaceElement? element = FindElementWithId(elementId);
                     MappingDataNode node = new() {
                         {winSet.Attribute, winSet.Value}
                     };

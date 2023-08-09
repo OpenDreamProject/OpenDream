@@ -451,6 +451,19 @@ namespace OpenDreamRuntime {
             return task;
         }
 
+        public Task<DreamValue> WinGet(string controlId, string queryValue) {
+            var task = MakePromptTask(out var promptId);
+            var msg = new MsgWinGet() {
+                PromptId = promptId,
+                ControlId = controlId,
+                QueryValue = queryValue
+            };
+
+            Session.ConnectedClient.SendMessage(msg);
+
+            return task;
+        }
+
         public Task<DreamValue> Alert(String title, String message, String button1, String button2, String button3) {
             var task = MakePromptTask(out var promptId);
             var msg = new MsgAlert() {

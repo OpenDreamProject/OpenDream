@@ -112,6 +112,8 @@ public sealed class ControlDescriptorChild : ControlDescriptor {
     public string? Right;
     [DataField("is-vert")]
     public bool IsVert;
+    [DataField("splitter")]
+    public float Splitter = 50f;
 }
 
 public sealed class ControlDescriptorInput : ControlDescriptor {

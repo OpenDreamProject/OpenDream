@@ -32,6 +32,10 @@ public sealed class DreamObjectRegex : DreamObject {
 
             var parsingString = "";
             for(var i = 0; i < patternString.Length; i++) {
+                if (!parsingString.StartsWith('\\') && patternString[i] == '\\') {
+                    parsingString = "\\";
+                    continue;
+                }
                 parsingString += patternString[i];
                 if(parsingString == "\\\\") {
                     parsingString = "";
@@ -49,6 +53,7 @@ public sealed class DreamObjectRegex : DreamObject {
                     patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[^A-Za-z\\n]");
                     parsingString = "";
                     i += 9;
+                    continue;
                 }
             }
             Regex = new Regex(patternString, options);

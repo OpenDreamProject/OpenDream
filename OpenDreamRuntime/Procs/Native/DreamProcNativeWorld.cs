@@ -41,8 +41,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("config_set", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_GetConfig(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSet);
+            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSetArg);
             var param = bundle.GetArgument(1, "param");
+
+            ProcessConfigSet(configSetArg, out _, out var configSet);
 
             switch (configSet) {
                 case "env":
@@ -55,12 +57,12 @@ namespace OpenDreamRuntime.Procs.Native {
                     } else {
                         return DreamValue.Null;
                     }
-                case "admin":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + configSet);
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported GetConfig config_set: " + configSet);
+                case "admin":
+                    Logger.GetSawmill("opendream.world").Warning("Unsupported GetConfig config_set: " + configSet);
+                    return new(bundle.ObjectTree.CreateList());
                 default:
                     throw new ArgumentException("Incorrect GetConfig config_set: " + configSet);
             }
@@ -127,23 +129,54 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("param", Type = DreamValue.DreamValueTypeFlag.String)]
         [DreamProcParameter("value", Type = DreamValue.DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_SetConfig(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSet);
+            bundle.GetArgument(0, "config_set").TryGetValueAsString(out var configSetArg);
             bundle.GetArgument(1, "param").TryGetValueAsString(out var param);
             var value = bundle.GetArgument(2, "value");
+
+            ProcessConfigSet(configSetArg, out _, out var configSet);
 
             switch (configSet) {
                 case "env":
                     value.TryGetValueAsString(out var valueString);
                     Environment.SetEnvironmentVariable(param, valueString);
-                    return DreamValue.Null;
-                case "admin":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + configSet);
+                    break;
                 case "ban":
                 case "keyban":
                 case "ipban":
-                    throw new NotSupportedException("Unsupported SetConfig config_set: " + configSet);
+                case "admin":
+                    Logger.GetSawmill("opendream.world").Warning("Unsupported SetConfig config_set: " + configSet);
+                    break;
                 default:
                     throw new ArgumentException("Incorrect SetConfig config_set: " + configSet);
+            }
+
+            return DreamValue.Null;
+        }
+
+        /// <summary>
+        /// Determines the specified configuration space and configuration set in a config_set argument
+        /// </summary>
+        private static void ProcessConfigSet(string value, out string? configSpace, out string configSet) {
+            int slash = value.IndexOf('/');
+
+            // No specified config space, default to USER
+            // TODO: Supposedly defaults to HOME in safe mode
+            if (slash == -1) {
+                configSpace = "USER";
+                configSet = value;
+                return;
+            }
+
+            configSpace = value.Substring(0, slash).ToUpperInvariant();
+            configSet = value.Substring(slash + 1);
+            switch (configSpace) {
+                case "SYSTEM":
+                case "USER":
+                case "HOME":
+                case "APP":
+                    return;
+                default:
+                    throw new ArgumentException($"There is no \"{configSpace}\" configuration space");
             }
         }
     }

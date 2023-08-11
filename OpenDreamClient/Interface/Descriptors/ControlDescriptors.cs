@@ -99,7 +99,7 @@ public sealed class WindowDescriptor : ControlDescriptor {
     }
 
     public WindowDescriptor WithVisible(ISerializationManager serializationManager, bool visible) {
-        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Name);
+        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Id);
 
         copy.IsVisible = visible;
         return copy;
@@ -113,6 +113,8 @@ public sealed class ControlDescriptorChild : ControlDescriptor {
     public string? Right;
     [DataField("is-vert")]
     public bool IsVert;
+    [DataField("splitter")]
+    public float Splitter = 50f;
 }
 
 public sealed class ControlDescriptorInput : ControlDescriptor {

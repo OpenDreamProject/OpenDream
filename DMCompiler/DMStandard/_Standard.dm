@@ -119,6 +119,7 @@ proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id)
+proc/winget(player, control_id, params)
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"

@@ -89,6 +89,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("pixel_x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_z", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext_x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
@@ -386,6 +388,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if (start == 0) return new DreamValue("");
             else if (start < 0) start += textElements.LengthInTextElements + 1;
 
+            if (start > textElements.LengthInTextElements)
+                return new(string.Empty);
+
             return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
         }
 
@@ -413,12 +418,18 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fcopy(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var arg1 = bundle.GetArgument(0, "Src");
 
-            string? srcFile;
-            if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
-                srcFile = arg1Rsc.ResourcePath;
+            DreamResource? srcFile = null;
+            if (bundle.ResourceManager.TryLoadIcon(arg1, out var icon)) {
+                srcFile = icon;
+            } else if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
+                srcFile = arg1Rsc;
             } else if (arg1.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
-                srcFile = savefile.Resource.ResourcePath;
-            } else if (!arg1.TryGetValueAsString(out srcFile)) {
+                srcFile = savefile.Resource;
+            } else if (arg1.TryGetValueAsString(out var srcPath)) {
+                srcFile = bundle.ResourceManager.LoadResource(srcPath);
+            }
+
+            if (srcFile?.ResourceData == null) {
                 throw new Exception($"Bad src file {arg1}");
             }
 
@@ -435,12 +446,18 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fcopy_rsc(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var arg1 = bundle.GetArgument(0, "File");
 
-            string filePath;
-            if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
+            if (bundle.ResourceManager.TryLoadIcon(arg1, out var icon))
+                return new(icon);
+
+            string? filePath;
+            if (arg1.TryGetValueAsDreamResource(out var arg1Rsc)) {
                 filePath = arg1Rsc.ResourcePath;
-            } else if (!arg1.TryGetValueAsString(out filePath)) {
-                return DreamValue.Null;
+            } else {
+                arg1.TryGetValueAsString(out filePath);
             }
+
+            if (filePath == null)
+                return DreamValue.Null;
 
             return new DreamValue(bundle.ResourceManager.LoadResource(filePath));
         }
@@ -1078,7 +1095,7 @@ namespace OpenDreamRuntime.Procs.Native {
         /// </summary>
         /// <param name="writer">The json writer to encode into</param>
         /// <param name="value">The DreamValue to encode</param>
-        private static void JsonEncode(Utf8JsonWriter writer, DreamObjectTree objectTree,  DreamValue value) {
+        private static void JsonEncode(Utf8JsonWriter writer, DreamValue value) {
             // In parity with DM, we give up and just print a 'null' at the maximum recursion.
             if (writer.CurrentDepth >= 20) {
                 writer.WriteNullValue();
@@ -1110,7 +1127,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         if (list.ContainsKey(listValue)) {
                             writer.WritePropertyName(key);
-                            JsonEncode(writer, objectTree, list.GetValue(listValue));
+                            JsonEncode(writer, list.GetValue(listValue));
                         } else {
                             writer.WriteNull(key);
                         }
@@ -1121,7 +1138,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     writer.WriteStartArray();
 
                     foreach (DreamValue listValue in list.GetValues()) {
-                        JsonEncode(writer, objectTree, listValue);
+                        JsonEncode(writer, listValue);
                     }
 
                     writer.WriteEndArray();
@@ -1168,7 +1185,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // "\"" instead of "\u0022"
             });
 
-            JsonEncode(jsonWriter, bundle.ObjectTree, bundle.GetArgument(0, "Value"));
+            JsonEncode(jsonWriter, bundle.GetArgument(0, "Value"));
             jsonWriter.Flush();
 
             return new DreamValue(Encoding.UTF8.GetString(stream.AsSpan()));
@@ -1198,24 +1215,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_list2params(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if (!bundle.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list))
                 return new DreamValue(string.Empty);
-
-            StringBuilder paramBuilder = new StringBuilder();
-
-            List<DreamValue> values = list.GetValues();
-            foreach (DreamValue entry in values) {
-                if (list.ContainsKey(entry)) {
-                    paramBuilder.Append(
-                        $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(list.GetValue(entry).Stringify())}");
-                } else {
-                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Stringify()));
-                }
-
-                paramBuilder.Append('&');
-            }
-
-            //Remove trailing &
-            if (paramBuilder.Length > 0) paramBuilder.Remove(paramBuilder.Length - 1, 1);
-            return new DreamValue(paramBuilder.ToString());
+            return new DreamValue(list2params(list));
         }
 
         [DreamProc("log")]
@@ -1668,6 +1668,26 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(view);
+        }
+
+        public static string list2params(DreamList list) {
+            StringBuilder paramBuilder = new StringBuilder();
+
+            List<DreamValue> values = list.GetValues();
+            foreach (DreamValue entry in values) {
+                if (list.ContainsKey(entry)) {
+                    paramBuilder.Append(
+                        $"{HttpUtility.UrlEncode(entry.Stringify())}={HttpUtility.UrlEncode(list.GetValue(entry).Stringify())}");
+                } else {
+                    paramBuilder.Append(HttpUtility.UrlEncode(entry.Stringify()));
+                }
+
+                paramBuilder.Append('&');
+            }
+
+            //Remove trailing &
+            if (paramBuilder.Length > 0) paramBuilder.Remove(paramBuilder.Length - 1, 1);
+            return paramBuilder.ToString();
         }
 
         public static DreamList params2list(DreamObjectTree objectTree, string queryString) {
@@ -2952,6 +2972,35 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return await connection.WinExists(controlId);
+        }
+
+        [DreamProc("winget")]
+        [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
+        public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.State state) {
+            DreamValue player = state.GetArgument(0, "player");
+            state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId);
+            if (!state.GetArgument(2, "params").TryGetValueAsString(out var paramsValue))
+                return new(string.Empty);
+
+            DreamConnection? connection = null;
+            if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
+                connection = mob.Connection;
+            } else if (player.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                connection = client.Connection;
+            }
+
+            if (connection == null) {
+                throw new Exception($"Invalid client {player}");
+            }
+
+            if (string.IsNullOrEmpty(controlId) && paramsValue == "hwmode") {
+                // Don't even bother querying the client, we don't have a non-hwmode
+                return new("true");
+            }
+
+            return await connection.WinGet(controlId, paramsValue);
         }
 
         [DreamProc("winset")]

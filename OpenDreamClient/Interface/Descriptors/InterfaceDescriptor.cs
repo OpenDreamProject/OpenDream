@@ -33,7 +33,7 @@ public class ElementDescriptor {
     protected string? _name;
 
     public string Id {
-        get => _id;
+        get => string.IsNullOrEmpty(_id) ? _id = Guid.NewGuid().ToString() : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.
         init => _id = value;
     }
 

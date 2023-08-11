@@ -1,12 +1,9 @@
 ﻿using Robust.Shared.Maths;
-using Robust.Shared.Physics.Dynamics.Joints;
 using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace OpenDreamShared.Dream;
 /// <summary>
@@ -18,7 +15,6 @@ namespace OpenDreamShared.Dream;
 /// </remarks>
 [Serializable, NetSerializable, StructLayout(LayoutKind.Sequential)]
 public struct ColorMatrix {
-
     public float c11;
     public float c12;
     public float c13;
@@ -263,5 +259,66 @@ public struct ColorMatrix {
                c52 == other.c52 &&
                c53 == other.c53 &&
                c54 == other.c54;
+    }
+
+    /// <summary>
+    /// Multiplies two instances.
+    /// </summary>
+    /// <param name="left">The left operand of the multiplication.</param>
+    /// <param name="right">The right operand of the multiplication.</param>
+    /// <param name="result">A new instance that is the result of the multiplication</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static void Multiply(ref ColorMatrix left, ref ColorMatrix right, out ColorMatrix result) {
+        float lM11 = left.c11,
+            lM12 = left.c12,
+            lM13 = left.c13,
+            lM14 = left.c14,
+            lM21 = left.c21,
+            lM22 = left.c22,
+            lM23 = left.c23,
+            lM24 = left.c24,
+            lM31 = left.c31,
+            lM32 = left.c32,
+            lM33 = left.c33,
+            lM34 = left.c34,
+            lM41 = left.c41,
+            lM42 = left.c42,
+            lM43 = left.c43,
+            lM44 = left.c44,
+            rM11 = right.c11,
+            rM12 = right.c12,
+            rM13 = right.c13,
+            rM14 = right.c14,
+            rM21 = right.c21,
+            rM22 = right.c22,
+            rM23 = right.c23,
+            rM24 = right.c24,
+            rM31 = right.c31,
+            rM32 = right.c32,
+            rM33 = right.c33,
+            rM34 = right.c34,
+            rM41 = right.c41,
+            rM42 = right.c42,
+            rM43 = right.c43,
+            rM44 = right.c44;
+
+        result = new() {
+            c11 = lM11 * rM11 + lM12 * rM21 + lM13 * rM31 + lM14 * rM41,
+            c12 = lM11 * rM12 + lM12 * rM22 + lM13 * rM32 + lM14 * rM42,
+            c13 = lM11 * rM13 + lM12 * rM23 + lM13 * rM33 + lM14 * rM43,
+            c14 = lM11 * rM14 + lM12 * rM24 + lM13 * rM34 + lM14 * rM44,
+            c21 = lM21 * rM11 + lM22 * rM21 + lM23 * rM31 + lM24 * rM41,
+            c22 = lM21 * rM12 + lM22 * rM22 + lM23 * rM32 + lM24 * rM42,
+            c23 = lM21 * rM13 + lM22 * rM23 + lM23 * rM33 + lM24 * rM43,
+            c24 = lM21 * rM14 + lM22 * rM24 + lM23 * rM34 + lM24 * rM44,
+            c31 = lM31 * rM11 + lM32 * rM21 + lM33 * rM31 + lM34 * rM41,
+            c32 = lM31 * rM12 + lM32 * rM22 + lM33 * rM32 + lM34 * rM42,
+            c33 = lM31 * rM13 + lM32 * rM23 + lM33 * rM33 + lM34 * rM43,
+            c34 = lM31 * rM14 + lM32 * rM24 + lM33 * rM34 + lM34 * rM44,
+            c41 = lM41 * rM11 + lM42 * rM21 + lM43 * rM31 + lM44 * rM41,
+            c42 = lM41 * rM12 + lM42 * rM22 + lM43 * rM32 + lM44 * rM42,
+            c43 = lM41 * rM13 + lM42 * rM23 + lM43 * rM33 + lM44 * rM43,
+            c44 = lM41 * rM14 + lM42 * rM24 + lM43 * rM34 + lM44 * rM44
+        };
     }
 }

@@ -1164,17 +1164,18 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue result;
             switch (first.Type) {
-                case DreamValue.DreamValueType.DreamObject when !first.IsNull: {
+                case DreamValue.DreamValueType.DreamObject when !first.IsNull:
                     state.PopReference(reference);
                     state.Push(first.MustGetValueAsDreamObject()!.OperatorRemove(second));
 
                     return ProcStatus.Continue;
-                }
-                case DreamValue.DreamValueType.DreamObject when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(-second.MustGetValueAsFloat());
-                    break;
-                case DreamValue.DreamValueType.Float when second.Type == DreamValue.DreamValueType.Float:
-                    result = new DreamValue(first.MustGetValueAsFloat() - second.MustGetValueAsFloat());
+                case DreamValue.DreamValueType.DreamObject when first.IsNull: // null is treated as 0
+                case DreamValue.DreamValueType.Float:
+                    if (second.Type != DreamValue.DreamValueType.Float && !second.IsNull)
+                        goto default;
+
+                    // UnsafeGetValueAsFloat() so that null is treated as 0.
+                    result = new DreamValue(first.UnsafeGetValueAsFloat() - second.UnsafeGetValueAsFloat());
                     break;
                 default:
                     throw new Exception($"Invalid remove operation on {first} and {second}");
@@ -1858,7 +1859,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             DreamList? containerList;
-            if (container is DreamObjectAtom) {
+            if (container is DreamObjectAtom or DreamObjectWorld) {
+                // TODO: Using world.contents for this is hilariously bad due to using WorldContentsList.GetValues()
                 container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
             } else {
                 containerList = container as DreamList;
@@ -1874,9 +1876,16 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 foreach (DreamValue containerItem in containerList.GetValues()) {
-                    if (!containerItem.TryGetValueAsDreamObject(out DreamObject dmObject)) continue;
+                    DreamObjectDefinition itemDef;
+                    if (containerItem.TryGetValueAsType(out var type)) {
+                        itemDef = type.ObjectDefinition;
+                    } else if (containerItem.TryGetValueAsDreamObject(out var dmObject) && dmObject != null) {
+                        itemDef = dmObject.ObjectDefinition;
+                    } else {
+                        continue;
+                    }
 
-                    if (dmObject.IsSubtypeOf(ancestor)) {
+                    if (itemDef.IsSubtypeOf(ancestor)) {
                         state.Push(containerItem);
 
                         return ProcStatus.Continue;
@@ -2316,10 +2325,14 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsEqual(DreamValue first, DreamValue second) {
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject firstValue = first.MustGetValueAsDreamObject();
+                    DreamObject? firstValue = first.MustGetValueAsDreamObject();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
+                        case DreamValue.DreamValueType.Appearance:
+                        case DreamValue.DreamValueType.DreamProc:
+                        case DreamValue.DreamValueType.ProcStub:
+                        case DreamValue.DreamValueType.VerbStub:
                         case DreamValue.DreamValueType.DreamType:
                         case DreamValue.DreamValueType.String:
                         case DreamValue.DreamValueType.Float: return false;

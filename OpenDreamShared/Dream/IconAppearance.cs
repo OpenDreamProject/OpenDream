@@ -198,12 +198,8 @@ namespace OpenDreamShared.Dream {
             // TODO: the BYOND compiler enforces valid colors *unless* it's a map edit, in which case an empty string is allowed
             ColorMatrix = ColorMatrix.Identity; // reset our color matrix if we had one
 
-            if (color == string.Empty) {
-                Color = Color.White;
-                return;
-            }
             if (!ColorHelpers.TryParseColor(color, out Color)) {
-                throw new ArgumentException($"Invalid color '{color}'");
+                Color = Color.White;
             }
         }
         /// <summary>

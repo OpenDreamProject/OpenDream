@@ -111,6 +111,8 @@ namespace OpenDreamRuntime {
 
             Client = client;
             Client.InitSpawn(new());
+
+            SendClientInfoUpdate();
         }
 
         public void HandleDisconnection() {
@@ -213,6 +215,14 @@ namespace OpenDreamRuntime {
                     _currentlyUpdatingStat = false;
                 }
             });
+        }
+
+        public void SendClientInfoUpdate() {
+            MsgUpdateClientInfo msg = new() {
+                View = Client!.View
+            };
+
+            Session?.ConnectedClient.SendMessage(msg);
         }
 
         public void SetOutputStatPanel(string name) {
@@ -434,6 +444,19 @@ namespace OpenDreamRuntime {
             var msg = new MsgWinExists() {
                 PromptId = promptId,
                 ControlId = controlId
+            };
+
+            Session.ConnectedClient.SendMessage(msg);
+
+            return task;
+        }
+
+        public Task<DreamValue> WinGet(string controlId, string queryValue) {
+            var task = MakePromptTask(out var promptId);
+            var msg = new MsgWinGet() {
+                PromptId = promptId,
+                ControlId = controlId,
+                QueryValue = queryValue
             };
 
             Session.ConnectedClient.SendMessage(msg);

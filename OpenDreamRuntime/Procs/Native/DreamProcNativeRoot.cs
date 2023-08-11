@@ -418,12 +418,18 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fcopy(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var arg1 = bundle.GetArgument(0, "Src");
 
-            string? srcFile;
-            if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
-                srcFile = arg1Rsc.ResourcePath;
+            DreamResource? srcFile = null;
+            if (bundle.ResourceManager.TryLoadIcon(arg1, out var icon)) {
+                srcFile = icon;
+            } else if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
+                srcFile = arg1Rsc;
             } else if (arg1.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
-                srcFile = savefile.Resource.ResourcePath;
-            } else if (!arg1.TryGetValueAsString(out srcFile)) {
+                srcFile = savefile.Resource;
+            } else if (arg1.TryGetValueAsString(out var srcPath)) {
+                srcFile = bundle.ResourceManager.LoadResource(srcPath);
+            }
+
+            if (srcFile?.ResourceData == null) {
                 throw new Exception($"Bad src file {arg1}");
             }
 

@@ -34,8 +34,8 @@ namespace OpenDreamShared.Resources {
             /// <param name="stateName">The requested state's name</param>
             /// <returns>The requested state, default state, or null</returns>
             public ParsedDMIState? GetStateOrDefault(string? stateName) {
-                if (String.IsNullOrEmpty(stateName) || !States.TryGetValue(stateName, out var state)) {
-                    States.TryGetValue(String.Empty, out state);
+                if (string.IsNullOrEmpty(stateName) || !States.TryGetValue(stateName, out var state)) {
+                    States.TryGetValue(string.Empty, out state);
                 }
 
                 return state;
@@ -272,7 +272,32 @@ namespace OpenDreamShared.Resources {
                 }
             }
 
-            throw new Exception("Could not find a DMI description");
+            if (imageSize != null) {
+                // No DMI description found, but we do have an image header
+                // So treat this PNG as a single icon frame spanning the whole image
+
+                var desc = new ParsedDMIDescription() {
+                    Width = (int)imageSize.Value.X,
+                    Height = (int)imageSize.Value.Y,
+                    States = new()
+                };
+
+                var state = new ParsedDMIState() {
+                    Name = string.Empty
+                };
+
+                var frame = new ParsedDMIFrame() {
+                    X = 0,
+                    Y = 0,
+                    Delay = 1
+                };
+
+                state.Directions.Add(AtomDirection.South, new [] { frame });
+                desc.States.Add(state.Name, state);
+                return desc;
+            }
+
+            throw new Exception("PNG is missing an image header");
         }
 
         private static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {

@@ -2325,10 +2325,11 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsEqual(DreamValue first, DreamValue second) {
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject firstValue = first.MustGetValueAsDreamObject();
+                    DreamObject? firstValue = first.MustGetValueAsDreamObject();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
+                        case DreamValue.DreamValueType.Appearance:
                         case DreamValue.DreamValueType.DreamProc:
                         case DreamValue.DreamValueType.ProcStub:
                         case DreamValue.DreamValueType.VerbStub:

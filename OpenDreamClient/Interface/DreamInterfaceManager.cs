@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Text;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
@@ -43,6 +44,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IInputManager _inputManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly ITimerManager _timerManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -137,6 +139,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
         _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
         _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
+        _netManager.RegisterNetMessage<MsgWinGet>(RxWinGet);
         _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
@@ -295,6 +298,19 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         };
 
         _netManager.ClientSendMessage(response);
+    }
+
+    private void RxWinGet(MsgWinGet message) {
+        // Run this later to ensure any pending UI measurements have occured
+        _timerManager.AddTimer(new Timer(100, false, () => {
+            MsgPromptResponse response = new() {
+                PromptId = message.PromptId,
+                Type = DMValueType.Text,
+                Value = WinGet(message.ControlId, message.QueryValue)
+            };
+
+            _netManager.ClientSendMessage(response);
+        }));
     }
 
     private void RxFtp(MsgFtp message) {
@@ -492,6 +508,54 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
+    public string WinGet(string controlId, string queryValue) {
+        string GetProperty(string elementId) {
+            var element = FindElementWithId(elementId);
+            if (element == null) {
+                _sawmill.Error($"Could not winget element {elementId} because it does not exist");
+                return string.Empty;
+            }
+
+            if (!element.TryGetProperty(queryValue, out var value))
+                _sawmill.Error($"Could not winget property {queryValue} on {element.Id}");
+
+            return value;
+        }
+
+        var elementIds = controlId.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (elementIds.Length == 0) {
+            switch (queryValue) {
+                // The server will actually never query this because it can predict the answer to be "true"
+                // But also have it here in case a local winget ever wants it
+                case "hwmode":
+                    return "true";
+                default:
+                    _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
+                    return string.Empty;
+            }
+        } else if (elementIds.Length == 1) {
+            return GetProperty(elementIds[0]);
+        }
+
+        var result = new StringBuilder(elementIds.Length * 6 - 1);
+
+        for (int i = 0; i < elementIds.Length; i++) {
+            var elementId = elementIds[i];
+
+            result.Append(elementId);
+            result.Append('.');
+            result.Append(queryValue);
+            result.Append('=');
+            result.Append(GetProperty(elementId));
+
+            if (i != elementIds.Length - 1)
+                result.Append(';');
+        }
+
+        return result.ToString();
+    }
+
     public void WinClone(string controlId, string cloneId) {
         ElementDescriptor? elementDescriptor = InterfaceDescriptor.GetElementDescriptor(controlId);
 
@@ -580,7 +644,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             case WindowDescriptor windowDescriptor:
                 ControlWindow window = new ControlWindow(windowDescriptor);
 
-                Windows.Add(windowDescriptor.Name, window);
+                Windows.Add(windowDescriptor.Id, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }

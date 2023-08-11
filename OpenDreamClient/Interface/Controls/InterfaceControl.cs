@@ -60,6 +60,19 @@ public abstract class InterfaceControl : InterfaceElement {
         //UIControl.IsEnabled = !_controlDescriptor.IsDisabled;
     }
 
+    public override bool TryGetProperty(string property, out string value) {
+        switch (property) {
+            case "size":
+                value = $"{UIElement.Size.X}x{UIElement.Size.Y}";
+                return true;
+            case "is-disabled":
+                value = ControlDescriptor.IsDisabled.ToString();
+                return true;
+            default:
+                return base.TryGetProperty(property, out value);
+        }
+    }
+
     public virtual void Output(string value, string? data) {
 
     }

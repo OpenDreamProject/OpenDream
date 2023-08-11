@@ -912,7 +912,14 @@ namespace OpenDreamRuntime.Objects.Types {
         }
 
         public override List<DreamValue> GetValues() {
-            throw new NotImplementedException("Getting all values of the world contents list is not implemented");
+            List<DreamValue> values = new(AtomManager.AtomCount);
+
+            values.AddRange(AtomManager.Areas.Select(area => new DreamValue(area)));
+            values.AddRange(AtomManager.Turfs.Select(turf => new DreamValue(turf)));
+            values.AddRange(AtomManager.Movables.Select(movable => new DreamValue(movable)));
+            values.AddRange(AtomManager.Objects.Select(obj => new DreamValue(obj)));
+            values.AddRange(AtomManager.Mobs.Select(mob => new DreamValue(mob)));
+            return values;
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {

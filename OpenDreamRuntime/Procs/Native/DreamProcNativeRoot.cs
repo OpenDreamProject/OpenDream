@@ -418,12 +418,18 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fcopy(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var arg1 = bundle.GetArgument(0, "Src");
 
-            string? srcFile;
-            if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
-                srcFile = arg1Rsc.ResourcePath;
+            DreamResource? srcFile = null;
+            if (bundle.ResourceManager.TryLoadIcon(arg1, out var icon)) {
+                srcFile = icon;
+            } else if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
+                srcFile = arg1Rsc;
             } else if (arg1.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
-                srcFile = savefile.Resource.ResourcePath;
-            } else if (!arg1.TryGetValueAsString(out srcFile)) {
+                srcFile = savefile.Resource;
+            } else if (arg1.TryGetValueAsString(out var srcPath)) {
+                srcFile = bundle.ResourceManager.LoadResource(srcPath);
+            }
+
+            if (srcFile?.ResourceData == null) {
                 throw new Exception($"Bad src file {arg1}");
             }
 
@@ -2966,6 +2972,35 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return await connection.WinExists(controlId);
+        }
+
+        [DreamProc("winget")]
+        [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
+        public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.State state) {
+            DreamValue player = state.GetArgument(0, "player");
+            state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId);
+            if (!state.GetArgument(2, "params").TryGetValueAsString(out var paramsValue))
+                return new(string.Empty);
+
+            DreamConnection? connection = null;
+            if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
+                connection = mob.Connection;
+            } else if (player.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                connection = client.Connection;
+            }
+
+            if (connection == null) {
+                throw new Exception($"Invalid client {player}");
+            }
+
+            if (string.IsNullOrEmpty(controlId) && paramsValue == "hwmode") {
+                // Don't even bother querying the client, we don't have a non-hwmode
+                return new("true");
+            }
+
+            return await connection.WinGet(controlId, paramsValue);
         }
 
         [DreamProc("winset")]

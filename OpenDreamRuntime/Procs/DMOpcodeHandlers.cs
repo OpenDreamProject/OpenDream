@@ -1859,7 +1859,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             DreamList? containerList;
-            if (container is DreamObjectAtom) {
+            if (container is DreamObjectAtom or DreamObjectWorld) {
+                // TODO: Using world.contents for this is hilariously bad due to using WorldContentsList.GetValues()
                 container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
             } else {
                 containerList = container as DreamList;
@@ -2324,10 +2325,11 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsEqual(DreamValue first, DreamValue second) {
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject firstValue = first.MustGetValueAsDreamObject();
+                    DreamObject? firstValue = first.MustGetValueAsDreamObject();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
+                        case DreamValue.DreamValueType.Appearance:
                         case DreamValue.DreamValueType.DreamProc:
                         case DreamValue.DreamValueType.ProcStub:
                         case DreamValue.DreamValueType.VerbStub:

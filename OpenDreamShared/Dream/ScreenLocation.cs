@@ -37,8 +37,8 @@ public sealed class ScreenLocation {
 
     private static string[] _keywords = {
         "CENTER",
-        "WEST", "EAST",
-        "NORTH", "SOUTH",
+        "WEST", "EAST", "LEFT", "RIGHT",
+        "NORTH", "SOUTH", "TOP", "BOTTOM",
         "TOPLEFT", "TOPRIGHT",
         "BOTTOMLEFT", "BOTTOMRIGHT"
     };

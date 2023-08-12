@@ -9,6 +9,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
+using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
@@ -106,6 +107,10 @@ namespace OpenDreamRuntime {
             DreamCompiledJson? json = JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
             if (json == null)
                 return false;
+
+            if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash())) {
+                _sawmill.Warning("Compiler opcode version does not match the runtime version! This may cause issues!");
+            }
 
             if (json.Maps == null || json.Maps.Count == 0) throw new ArgumentException("No maps were given");
             if (json.Maps.Count > 1) {

@@ -3,6 +3,7 @@
 namespace OpenDreamShared.Json;
 
 public sealed class DreamCompiledJson {
+    public DreamCompiledJsonMetadata Metadata { get; set; }
     public List<string>? Strings { get; set; }
     public string[]? Resources { get; set; }
     public int[]? GlobalProcs { get; set; }
@@ -12,4 +13,11 @@ public sealed class DreamCompiledJson {
     public string? Interface { get; set; }
     public DreamTypeJson[]? Types { get; set; }
     public ProcDefinitionJson[]? Procs { get; set; }
+}
+
+public sealed class DreamCompiledJsonMetadata {
+    /// <summary>
+    ///  Hash of all the <c>DreamProcOpcode</c>s
+    /// </summary>
+    public string Version { get; set; }
 }

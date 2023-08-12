@@ -16,6 +16,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using JetBrains.Annotations;
 using DMCompiler.Compiler;
+using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
 
 namespace DMCompiler {
@@ -272,6 +273,7 @@ namespace DMCompiler {
         private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
             var jsonRep = DMObjectTree.CreateJsonRepresentation();
             DreamCompiledJson compiledDream = new DreamCompiledJson {
+                Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
                 Strings = DMObjectTree.StringTable,
                 Resources = DMObjectTree.Resources.ToArray(),
                 Maps = maps,

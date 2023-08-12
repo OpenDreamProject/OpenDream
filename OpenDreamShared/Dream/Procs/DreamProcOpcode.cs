@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
+using System.Security.Cryptography;
 using System.Text;
 
 namespace OpenDreamShared.Dream.Procs {
@@ -396,6 +397,22 @@ namespace OpenDreamShared.Dream.Procs {
                 bytePool.Add(usedInt);
             }
             return false;
+        }
+
+        /// <summary>
+        /// Calculates a hash of all the <c>DreamProcOpcode</c>s for warning on incompatibilities.
+        /// </summary>
+        /// <returns>A MD5 hash string</returns>
+        public static string GetOpcodesHash() {
+            Array allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
+            byte[] opcodesList = new byte[allOpcodes.Length];
+
+            for (int i = 0; i < allOpcodes.Length; i++) {
+                opcodesList[i] = (byte)allOpcodes.GetValue(i)!;
+            }
+
+            byte[] hashBytes = MD5.HashData(opcodesList);
+            return BitConverter.ToString(hashBytes).Replace("-", "");
         }
     }
 }

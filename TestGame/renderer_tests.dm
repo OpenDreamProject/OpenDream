@@ -74,7 +74,7 @@
 		src.loc = AM
 		AM << "You picked up [src]"
 		var/mutable_appearance/ma = new(src.icon, src.icon_state)
-		ma.alpha = 50
+		ma.alpha = 100
 		AM.overlays += ma
 
 //simple underlay

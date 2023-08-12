@@ -73,9 +73,7 @@
 	Crossed(var/atom/movable/AM)
 		src.loc = AM
 		AM << "You picked up [src]"
-		var/mutable_appearance/ma = new(src.icon, src.icon_state)
-		ma.alpha = 100
-		AM.overlays += ma
+		AM.overlays += image(src.icon, AM.loc, src.icon_state)	
 
 //simple underlay
 /obj/plaque/simple_underlay_test 

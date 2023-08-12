@@ -405,13 +405,15 @@ namespace OpenDreamShared.Dream.Procs {
         /// <returns>A MD5 hash string</returns>
         public static string GetOpcodesHash() {
             Array allOpcodes = Enum.GetValues(typeof(DreamProcOpcode));
-            byte[] opcodesList = new byte[allOpcodes.Length];
+            List<byte> opcodesBytes = new List<byte>();
 
-            for (int i = 0; i < allOpcodes.Length; i++) {
-                opcodesList[i] = (byte)allOpcodes.GetValue(i)!;
+            foreach (var value in allOpcodes) {
+                byte[] nameBytes = Encoding.ASCII.GetBytes(value.ToString()!);
+                opcodesBytes.AddRange(nameBytes);
+                opcodesBytes.Add((byte)value);
             }
 
-            byte[] hashBytes = MD5.HashData(opcodesList);
+            byte[] hashBytes = MD5.HashData(opcodesBytes.ToArray());
             return BitConverter.ToString(hashBytes).Replace("-", "");
         }
     }

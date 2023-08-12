@@ -31,24 +31,28 @@ namespace OpenDreamRuntime {
         private ServerAppearanceSystem? _appearanceSystem;
 
         public DreamObject GetAtom(int index) {
+            // Order of world.contents:
+            //  Mobs + Movables + Areas + Turfs
+
+            if (index < Mobs.Count)
+                return Mobs[index];
+
+            // TODO: Movables and objects should be mixed together here
+            index -= Mobs.Count;
+            if (index < Objects.Count)
+                return Objects[index];
+
+            index -= Objects.Count;
+            if (index < Movables.Count)
+                return Movables[index];
+
+            index -= Movables.Count;
             if (index < Areas.Count)
                 return Areas[index];
 
             index -= Areas.Count;
             if (index < Turfs.Count)
                 return Turfs[index];
-
-            index -= Turfs.Count;
-            if (index < Movables.Count)
-                return Movables[index];
-
-            index -= Movables.Count;
-            if (index < Objects.Count)
-                return Objects[index];
-
-            index -= Objects.Count;
-            if (index < Mobs.Count)
-                return Mobs[index];
 
             throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
         }

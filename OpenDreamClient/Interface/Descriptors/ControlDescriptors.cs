@@ -41,9 +41,9 @@ public sealed class WindowDescriptor : ControlDescriptor {
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 
-    public WindowDescriptor(string name, List<ControlDescriptor>? controlDescriptors = null) {
+    public WindowDescriptor(string id, List<ControlDescriptor>? controlDescriptors = null) {
         ControlDescriptors = controlDescriptors ?? new();
-        Name = name;
+        Id = id;
     }
 
     [UsedImplicitly]
@@ -90,15 +90,15 @@ public sealed class WindowDescriptor : ControlDescriptor {
         return child;
     }
 
-    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._name = name;
+        copy._id = id;
         return copy;
     }
 
     public WindowDescriptor WithVisible(ISerializationManager serializationManager, bool visible) {
-        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Name);
+        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Id);
 
         copy.IsVisible = visible;
         return copy;
@@ -112,6 +112,8 @@ public sealed class ControlDescriptorChild : ControlDescriptor {
     public string? Right;
     [DataField("is-vert")]
     public bool IsVert;
+    [DataField("splitter")]
+    public float Splitter = 50f;
 }
 
 public sealed class ControlDescriptorInput : ControlDescriptor {
@@ -128,6 +130,8 @@ public sealed class ControlDescriptorOutput : ControlDescriptor {
 }
 
 public sealed class ControlDescriptorInfo : ControlDescriptor {
+    [DataField("allow-html")]
+    public bool AllowHtml = true; // Supposedly false by default, but it isn't if you're not using BYOND's default skin
 }
 
 public sealed class ControlDescriptorMap : ControlDescriptor {

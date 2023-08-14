@@ -32,7 +32,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_RightShiftEquals,
             TokenType.DM_XorEquals,
             TokenType.DM_ModulusEquals,
-            TokenType.DM_ModulusModulusEquals
+            TokenType.DM_ModulusModulusEquals,
+            TokenType.DM_AssignInto
         };
 
         /// <remarks>This (and other similar TokenType[] sets here) is public because <see cref="DMPreprocessorParser"/> needs it.</remarks>
@@ -111,6 +112,44 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Comma
         };
 
+        private static readonly TokenType[] OperatorOverloadTypes = {
+            TokenType.DM_And,
+            TokenType.DM_AndEquals,
+            TokenType.DM_AssignInto,
+            TokenType.DM_Bar,
+            TokenType.DM_BarEquals,
+            TokenType.DM_DoubleSquareBracket,
+            TokenType.DM_DoubleSquareBracketEquals,
+            TokenType.DM_GreaterThan,
+            TokenType.DM_GreaterThanEquals,
+            TokenType.DM_RightShift,
+            TokenType.DM_RightShiftEquals,
+            TokenType.DM_LeftShift,
+            TokenType.DM_LeftShiftEquals,
+            TokenType.DM_LessThan,
+            TokenType.DM_LessThanEquals,
+            TokenType.DM_Minus,
+            TokenType.DM_MinusEquals,
+            TokenType.DM_MinusMinus,
+            TokenType.DM_Modulus,
+            TokenType.DM_ModulusEquals,
+            TokenType.DM_ModulusModulus,
+            TokenType.DM_ModulusModulusEquals,
+            TokenType.DM_Plus,
+            TokenType.DM_PlusEquals,
+            TokenType.DM_PlusPlus,
+            TokenType.DM_Slash,
+            TokenType.DM_SlashEquals,
+            TokenType.DM_Star,
+            TokenType.DM_StarEquals,
+            TokenType.DM_StarStar,
+            TokenType.DM_Tilde,
+            TokenType.DM_TildeEquals,
+            TokenType.DM_TildeExclamation,
+            TokenType.DM_Xor,
+            TokenType.DM_XorEquals,
+        };
+
         public DMASTFile File() {
             var loc = Current().Location;
             List<DMASTStatement> statements = new();
@@ -174,22 +213,22 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_LeftParenthesis)) {
                     DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
                     BracketWhitespace();
-                    var parameters = DefinitionParameters();
+                    var parameters = DefinitionParameters(out var wasIndeterminate);
 
                     if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
-                        !Check(TokenType.DM_IndeterminateArgs)) {
+                        !wasIndeterminate) {
                         if (parameters.Count > 0) // Separate error handling mentions the missing right-paren
                             Error($"error: {parameters.Last().Name}: missing comma ',' or right-paren ')'", false);
-                        parameters.AddRange(DefinitionParameters());
+                        parameters.AddRange(DefinitionParameters(out wasIndeterminate));
                     }
-                    if (!Check(TokenType.DM_IndeterminateArgs) && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
+                    if (!wasIndeterminate && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                         // BYOND doesn't specify the arg
                         Error($"error: bad argument definition '{Current().PrintableText}'", false);
                         Advance();
                         BracketWhitespace();
                         Check(TokenType.DM_Comma);
                         BracketWhitespace();
-                        parameters.AddRange(DefinitionParameters());
+                        parameters.AddRange(DefinitionParameters(out _));
                     }
 
                     BracketWhitespace();
@@ -204,7 +243,18 @@ namespace DMCompiler.Compiler.DM {
                             procBlock = new DMASTProcBlockInner(loc, procStatement);
                         }
                     }
+                    if(path.IsOperator) {
+                        DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
 
+                        List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
+                        Location tokenLoc = procBlock.Location;
+                        //add ". = src" as the first expression in the operator
+                        DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc, new DMASTAssign(tokenLoc,new DMASTCallableSelf(tokenLoc), new DMASTIdentifier(tokenLoc, "src")));
+                        procStatements.Insert(0, assignEqSrc);
+
+                        procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
+
+                    }
                     statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                 }
 
@@ -311,16 +361,34 @@ namespace DMCompiler.Compiler.DM {
             string? pathElement = PathElement();
             if (pathElement != null) {
                 List<string> pathElements = new() { pathElement };
-
+                bool operatorFlag = false;
                 while (pathElement != null && Check(TokenType.DM_Slash)) {
                     pathElement = PathElement();
 
                     if (pathElement != null) {
+                        if(pathElement == "operator") {
+                            Token operatorToken = Current();
+                            if(Current().Type == TokenType.DM_Slash) {
+                                //Up to this point, it's ambiguous whether it's a slash to mean operator/(), like the division operator overload
+                                //or "operator" just being used as a normal type name, as in a/operator/b/c/d
+                                Token peekToken = Advance();
+                                if (peekToken.Type == TokenType.DM_LeftParenthesis) { // Disambiguated as an overload
+                                    operatorFlag = true;
+                                    pathElement += operatorToken.PrintableText;
+                                } else { //Otherwise it's just a normal path, resume
+                                    ReuseToken(operatorToken);
+                                    Error(WarningCode.SoftReservedKeyword, "Using \"operator\" as a path element is ambiguous");
+                                }
+                            } else if(Check(OperatorOverloadTypes)) {
+                                operatorFlag = true;
+                                pathElement+=operatorToken.PrintableText;
+                            }
+                        }
                         pathElements.Add(pathElement);
                     }
                 }
 
-                return new DMASTPath(firstToken.Location, new DreamPath(pathType, pathElements.ToArray()));
+                return new DMASTPath(firstToken.Location, new DreamPath(pathType, pathElements.ToArray()), operatorFlag);
             } else if (hasPathTypeToken) {
                 if (expression) ReuseToken(firstToken);
 
@@ -344,7 +412,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression? PathArray(ref DreamPath path) {
-            if (Current().Type == TokenType.DM_LeftBracket) {
+            if (Current().Type == TokenType.DM_LeftBracket || Current().Type == TokenType.DM_DoubleSquareBracket) {
                 var loc = Current().Location;
 
                 // Trying to use path.IsDescendantOf(DreamPath.List) here doesn't work
@@ -356,16 +424,21 @@ namespace DMCompiler.Compiler.DM {
 
                 List<DMASTCallParameter> sizes = new(2); // Most common is 1D or 2D lists
 
-                while (Check(TokenType.DM_LeftBracket)) {
-                    Whitespace();
+                while (true) {
+                    if(Check(TokenType.DM_DoubleSquareBracket))
+                        Whitespace();
+                    else if(Check(TokenType.DM_LeftBracket)) {
+                        Whitespace();
+                        var size = Expression();
+                        if (size is not null) {
+                            sizes.Add(new DMASTCallParameter(size.Location, size));
+                        }
 
-                    var size = Expression();
-                    if (size is not null) {
-                        sizes.Add(new DMASTCallParameter(size.Location, size));
+                        ConsumeRightBracket();
+                        Whitespace();
                     }
-
-                    ConsumeRightBracket();
-                    Whitespace();
+                    else
+                        break;
                 }
 
                 if (sizes.Count > 0) {
@@ -572,10 +645,10 @@ namespace DMCompiler.Compiler.DM {
                         return new DMASTProcStatementInput(loc, rightShift.A, rightShift.B);
                     case DMASTLeftShift leftShift: {
                         // A left shift on its own becomes a special "output" statement
-                        // Or something else depending on what's on the right ( browse(), browse_rsc(), or output() )
-                        if (leftShift.B is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
+                        // Or something else depending on what's on the right ( browse(), browse_rsc(), output(), etc )
+                        if (leftShift.B.GetUnwrapped() is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
                             switch (identifier.Identifier) {
-                                case "browse":
+                                case "browse": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
                                         Error("browse() requires 1 or 2 parameters");
 
@@ -584,7 +657,8 @@ namespace DMCompiler.Compiler.DM {
                                         ? procCall.Parameters[1].Value
                                         : new DMASTConstantNull(loc);
                                     return new DMASTProcStatementBrowse(loc, leftShift.A, body, options);
-                                case "browse_rsc":
+                                }
+                                case "browse_rsc": {
                                     if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
                                         Error("browse_rsc() requires 1 or 2 parameters");
 
@@ -593,12 +667,25 @@ namespace DMCompiler.Compiler.DM {
                                         ? procCall.Parameters[1].Value
                                         : new DMASTConstantNull(loc);
                                     return new DMASTProcStatementBrowseResource(loc, leftShift.A, file, filepath);
-                                case "output":
-                                    if (procCall.Parameters.Length != 2) Error("output() requires 2 parameters");
+                                }
+                                case "output": {
+                                    if (procCall.Parameters.Length != 2)
+                                        Error("output() requires 2 parameters");
 
                                     DMASTExpression msg = procCall.Parameters[0].Value;
                                     DMASTExpression control = procCall.Parameters[1].Value;
                                     return new DMASTProcStatementOutputControl(loc, leftShift.A, msg, control);
+                                }
+                                case "ftp": {
+                                    if (procCall.Parameters.Length is not 1 and not 2)
+                                        Error("ftp() requires 1 or 2 parameters");
+
+                                    DMASTExpression file = procCall.Parameters[0].Value;
+                                    DMASTExpression name = (procCall.Parameters.Length == 2)
+                                        ? procCall.Parameters[1].Value
+                                        : new DMASTConstantNull(loc);
+                                    return new DMASTProcStatementFtp(loc, leftShift.A, file, name);
+                                }
                             }
                         }
 
@@ -835,8 +922,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementReturn? Return() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Return)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTExpression? value = Expression();
 
@@ -847,8 +935,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementBreak? Break() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Break)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTIdentifier? label = Identifier();
 
@@ -859,8 +948,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementContinue? Continue() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Continue)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTIdentifier? label = Identifier();
 
@@ -871,8 +961,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementGoto? Goto() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Goto)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTIdentifier? label = Identifier();
 
@@ -883,8 +974,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementDel? Del() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Del)) {
-                var loc = Current().Location;
                 Whitespace();
                 bool hasParenthesis = Check(TokenType.DM_LeftParenthesis);
                 Whitespace();
@@ -900,18 +992,19 @@ namespace DMCompiler.Compiler.DM {
 
         /// <returns>Either a <see cref="DMASTProcStatementSet"/> or a DMASTAggregate that acts as a container for them. May be null.</returns>
         public DMASTProcStatement? Set() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Set)) {
                 Whitespace();
 
                 DMASTProcStatementSet[] sets = ProcSetEnd(true);
-                Token setBlockToken = Current();
                 if (sets.Length == 0) {
                     Error("Expected set declaration");
                     return null;
                 }
 
                 if (sets.Length > 1)
-                    return new DMASTAggregate<DMASTProcStatementSet>(setBlockToken.Location, sets);
+                    return new DMASTAggregate<DMASTProcStatementSet>(loc, sets);
                 return sets[0];
             }
 
@@ -919,8 +1012,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementSpawn? Spawn() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Spawn)) {
-                var loc = Current().Location;
                 Whitespace();
                 bool hasArg = Check(TokenType.DM_LeftParenthesis);
                 DMASTExpression? delay = null;
@@ -955,8 +1049,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementIf? If() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_If)) {
-                var loc = Current().Location;
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 BracketWhitespace();
@@ -1007,10 +1102,10 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatement? For() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_For)) {
                 Whitespace();
-
-                var loc = Current().Location;
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
 
@@ -1116,8 +1211,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatement? While() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_While)) {
-                var loc = Current().Location;
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
@@ -1148,8 +1244,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementDoWhile? DoWhile() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Do)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTProcBlockInner? body = ProcBlock();
 
@@ -1181,8 +1278,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementSwitch? Switch() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Switch)) {
-                var loc = Current().Location;
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
@@ -1328,8 +1426,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementTryCatch? TryCatch() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Try)) {
-                var loc = Current().Location;
                 Whitespace();
 
                 DMASTProcBlockInner? tryBody = ProcBlock();
@@ -1369,8 +1468,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementThrow? Throw() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Throw)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTExpression? value = Expression();
 
@@ -1385,12 +1485,6 @@ namespace DMCompiler.Compiler.DM {
             Newline();
 
             DMASTProcBlockInner? body = ProcBlock();
-            if (body == null) {
-                var loc = Current().Location;
-                DMASTProcStatement? statement = ProcStatement();
-
-                if (statement != null) body = new DMASTProcBlockInner(loc, statement);
-            }
 
             return new DMASTProcStatementLabel(expression.Location, expression.Identifier, body);
         }
@@ -1499,9 +1593,9 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public List<DMASTDefinitionParameter> DefinitionParameters() {
+        public List<DMASTDefinitionParameter> DefinitionParameters(out bool wasIndeterminate) {
             List<DMASTDefinitionParameter> parameters = new();
-            DMASTDefinitionParameter? parameter = DefinitionParameter();
+            DMASTDefinitionParameter? parameter = DefinitionParameter(out wasIndeterminate);
 
             if (parameter != null) parameters.Add(parameter);
 
@@ -1509,7 +1603,7 @@ namespace DMCompiler.Compiler.DM {
 
             while (Check(TokenType.DM_Comma)) {
                 BracketWhitespace();
-                parameter = DefinitionParameter();
+                parameter = DefinitionParameter(out wasIndeterminate);
 
                 if (parameter != null)
                 {
@@ -1524,7 +1618,7 @@ namespace DMCompiler.Compiler.DM {
                         BracketWhitespace();
                         Check(TokenType.DM_Comma);
                         BracketWhitespace();
-                        parameters.AddRange(DefinitionParameters());
+                        parameters.AddRange(DefinitionParameters(out wasIndeterminate));
                     }
                 }
             }
@@ -1532,7 +1626,7 @@ namespace DMCompiler.Compiler.DM {
             return parameters;
         }
 
-        public DMASTDefinitionParameter? DefinitionParameter() {
+        public DMASTDefinitionParameter? DefinitionParameter(out bool wasIndeterminate) {
             DMASTPath? path = Path();
 
             if (path != null) {
@@ -1555,10 +1649,12 @@ namespace DMCompiler.Compiler.DM {
                     possibleValues = Expression();
                 }
 
+                wasIndeterminate = false;
+
                 return new DMASTDefinitionParameter(loc, path, value, type, possibleValues);
             }
 
-            Check(TokenType.DM_IndeterminateArgs);
+            wasIndeterminate = Check(TokenType.DM_IndeterminateArgs);
 
             return null;
         }
@@ -1630,6 +1726,7 @@ namespace DMCompiler.Compiler.DM {
                             case TokenType.DM_XorEquals: return new DMASTXorAssign(token.Location, expression, value);
                             case TokenType.DM_ModulusEquals: return new DMASTModulusAssign(token.Location, expression, value);
                             case TokenType.DM_ModulusModulusEquals: return new DMASTModulusModulusAssign(token.Location, expression, value);
+                            case TokenType.DM_AssignInto: return new DMASTAssignInto(token.Location, expression, value);
                         }
                     } else {
                         Error("Expected a value");
@@ -1984,10 +2081,8 @@ namespace DMCompiler.Compiler.DM {
 
                 if (inner is null) {
                     inner = new DMASTVoid(token.Location);
-                }
-
-                if (inner is DMASTIdentifier identifier) {
-                    inner = new DMASTIdentifierWrapped(identifier.Location, identifier);
+                } else {
+                    inner = new DMASTExpressionWrapped(inner.Location, inner);
                 }
 
                 return inner;
@@ -2315,6 +2410,26 @@ namespace DMCompiler.Compiler.DM {
                             Error("istype() requires 1 or 2 arguments");
                             break;
                         }
+                    }
+                    case "isnull": {
+                        if (callParameters.Length != 1) Error("isnull() requires exactly 1 argument");
+
+                        return new DMASTIsNull(identifier.Location, callParameters[0].Value);
+                    }
+                    case "get_step": {
+                        if (callParameters.Length != 2) Error("get_step() requires exactly 2 arguments");
+
+                        return new DMASTGetStep(identifier.Location, callParameters[0].Value, callParameters[1].Value);
+                    }
+                    case "get_dir": {
+                        if (callParameters.Length != 2) Error("get_dir() requires exactly 2 arguments");
+
+                        return new DMASTGetDir(identifier.Location, callParameters[0].Value, callParameters[1].Value);
+                    }
+                    case "length": {
+                        if (callParameters.Length != 1) Error("length() requires exactly 1 argument");
+
+                        return new DMASTLength(identifier.Location, callParameters[0].Value);
                     }
                     case "text": {
                         if (callParameters.Length == 0) Error("text() requires at least 1 argument");

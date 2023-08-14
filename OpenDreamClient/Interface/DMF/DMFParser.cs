@@ -79,14 +79,14 @@ public sealed class DMFParser : Parser<char> {
         return new InterfaceDescriptor(windowDescriptors, macroSetDescriptors, menuDescriptors);
     }
 
-    public WindowDescriptor? Window() {
+    private WindowDescriptor? Window() {
         if (Check(TokenType.DMF_Window)) {
-            Token windowNameToken = Current();
-            Consume(TokenType.DMF_Value, "Expected a window name");
-            string windowName = windowNameToken.Text;
+            Token windowIdToken = Current();
+            Consume(TokenType.DMF_Value, "Expected a window id");
+            string windowId = windowIdToken.Text;
             Newline();
 
-            WindowDescriptor window = new(windowName);
+            WindowDescriptor window = new(windowId);
             while (Element(window)) {}
 
             return window;
@@ -95,19 +95,19 @@ public sealed class DMFParser : Parser<char> {
         return null;
     }
 
-    public bool Element(WindowDescriptor window) {
+    private bool Element(WindowDescriptor window) {
         if (Check(TokenType.DMF_Elem)) {
-            Token elementNameToken = Current();
-            Consume(TokenType.DMF_Value, "Expected an element name");
-            string elementName = elementNameToken.Text;
+            Token elementIdToken = Current();
+            Consume(TokenType.DMF_Value, "Expected an element id");
+            string elementId = elementIdToken.Text;
             Newline();
 
             var attributes = Attributes();
-            attributes.Add("name", elementName);
+            attributes.Add("id", elementId);
 
             var control = window.CreateChildDescriptor(_serializationManager, attributes);
             if (control == null)
-                Error($"Element '{elementName}' does not have a valid 'type' attribute");
+                Error($"Element '{elementId}' does not have a valid 'type' attribute");
 
             return true;
         }
@@ -115,13 +115,13 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public MacroSetDescriptor? MacroSet() {
+    private MacroSetDescriptor? MacroSet() {
         if (Check(TokenType.DMF_Macro)) {
-            Token macroSetNameToken = Current();
-            Consume(TokenType.DMF_Value, "Expected a macro set name");
+            Token macroSetIdToken = Current();
+            Consume(TokenType.DMF_Value, "Expected a macro set id");
             Newline();
 
-            MacroSetDescriptor macroSet = new(macroSetNameToken.Text);
+            MacroSetDescriptor macroSet = new(macroSetIdToken.Text);
             while (Macro(macroSet)) { }
 
             return macroSet;
@@ -130,14 +130,16 @@ public sealed class DMFParser : Parser<char> {
         }
     }
 
-    public bool Macro(MacroSetDescriptor macroSet) {
+    private bool Macro(MacroSetDescriptor macroSet) {
         if (Check(TokenType.DMF_Elem)) {
             Token macroIdToken = Current();
             bool hasId = Check(TokenType.DMF_Value);
             Newline();
 
             var attributes = Attributes();
+
             if (hasId) attributes.Add("id", macroIdToken.Text);
+            else attributes.Add("id", attributes.Get("name"));
 
             macroSet.CreateChildDescriptor(_serializationManager, attributes);
             return true;
@@ -146,13 +148,13 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public MenuDescriptor? Menu() {
+    private MenuDescriptor? Menu() {
         if (Check(TokenType.DMF_Menu)) {
-            Token menuNameToken = Current();
-            Consume(TokenType.DMF_Value, "Expected a menu name");
+            Token menuIdToken = Current();
+            Consume(TokenType.DMF_Value, "Expected a menu id");
             Newline();
 
-            var menu = new MenuDescriptor(menuNameToken.Text);
+            var menu = new MenuDescriptor(menuIdToken.Text);
             while (MenuElement(menu)) { }
 
             return menu;
@@ -161,15 +163,16 @@ public sealed class DMFParser : Parser<char> {
         return null;
     }
 
-    public bool MenuElement(MenuDescriptor menu) {
+    private bool MenuElement(MenuDescriptor menu) {
         if (Check(TokenType.DMF_Elem)) {
-            Token elementNameToken = Current();
+            Token elementIdToken = Current();
             bool hasId = Check(TokenType.DMF_Value);
             Newline();
 
             var attributes = Attributes();
-            //TODO: Name and Id are separate
-            if (hasId && !attributes.Has("name")) attributes.Add("name", elementNameToken.Text);
+
+            if (hasId) attributes.Add("id", elementIdToken.Text);
+            else attributes.Add("id", attributes.Get("name"));
 
             menu.CreateChildDescriptor(_serializationManager, attributes);
             return true;
@@ -178,7 +181,7 @@ public sealed class DMFParser : Parser<char> {
         return false;
     }
 
-    public bool TryGetAttribute(out string? element, [NotNullWhen(true)] out string? key, [NotNullWhen(true)] out string? token) {
+    private bool TryGetAttribute(out string? element, [NotNullWhen(true)] out string? key, [NotNullWhen(true)] out string? token) {
         element = null;
         key = null;
         token = null;
@@ -190,7 +193,7 @@ public sealed class DMFParser : Parser<char> {
                 attributeToken = Current();
 
                 if (!Check(_attributeTokenTypes)) {
-                    Error("Expected attribute name");
+                    Error("Expected attribute id");
 
                     return false;
                 }
@@ -226,7 +229,7 @@ public sealed class DMFParser : Parser<char> {
 
         while (TryGetAttribute(out var element, out var key, out var value)) {
             if (element != null) {
-                Error($"Element name \"{element}\" is not valid here");
+                Error($"Element id \"{element}\" is not valid here");
                 continue;
             }
 
@@ -239,7 +242,7 @@ public sealed class DMFParser : Parser<char> {
         return node;
     }
 
-    public void Newline() {
+    private void Newline() {
         while (Check(TokenType.Newline) || Check(TokenType.DMF_Semicolon)) {
         }
     }

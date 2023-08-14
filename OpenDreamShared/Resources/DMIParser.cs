@@ -7,7 +7,6 @@ using System.Linq;
 using System.Text;
 using OpenDreamShared.Dream;
 using System.Globalization;
-using JetBrains.Annotations;
 
 namespace OpenDreamShared.Resources {
     public static class DMIParser {
@@ -34,9 +33,9 @@ namespace OpenDreamShared.Resources {
             /// <remarks>The default state could also not exist</remarks>
             /// <param name="stateName">The requested state's name</param>
             /// <returns>The requested state, default state, or null</returns>
-            public ParsedDMIState? GetStateOrDefault(string stateName) {
-                if (String.IsNullOrEmpty(stateName) || !States.TryGetValue(stateName, out var state)) {
-                    States.TryGetValue(String.Empty, out state);
+            public ParsedDMIState? GetStateOrDefault(string? stateName) {
+                if (string.IsNullOrEmpty(stateName) || !States.TryGetValue(stateName, out var state)) {
+                    States.TryGetValue(string.Empty, out state);
                 }
 
                 return state;
@@ -74,9 +73,11 @@ namespace OpenDreamShared.Resources {
 
         public sealed class ParsedDMIState {
             public string Name;
-            public Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
             public bool Loop = true;
             public bool Rewind = false;
+
+            // TODO: This can only contain either 1, 4, or 8 directions. Enforcing this could simplify some things.
+            public readonly Dictionary<AtomDirection, ParsedDMIFrame[]> Directions = new();
 
             /// <summary>
             /// The amount of animation frames this state has
@@ -113,12 +114,25 @@ namespace OpenDreamShared.Resources {
                 text.AppendLine("\"");
 
                 text.Append("\tdirs = ");
-                text.Append(Directions.Count);
+                text.Append(GetExportedDirectionCount(Directions.Keys));
                 text.AppendLine();
 
                 text.Append("\tframes = ");
                 text.Append(FrameCount);
                 text.AppendLine();
+
+                if (Directions.Count > 0) {
+                    text.Append("\tdelay = ");
+                    var frames = Directions.Values.First(); // Delays should be the same in each direction
+                    for (int i = 0; i < frames.Length; i++) {
+                        var delay = frames[i].Delay / 100; // Convert back to deciseconds
+
+                        text.Append(delay.ToString(CultureInfo.InvariantCulture));
+                        if (i != frames.Length - 1)
+                            text.Append(',');
+                    }
+                    text.AppendLine();
+                }
 
                 if (!Loop) {
                     text.AppendLine("\tloop = 0");
@@ -134,8 +148,9 @@ namespace OpenDreamShared.Resources {
             /// </summary>
             /// <param name="dir">Which direction to get. Every direction if null.</param>
             /// <param name="frame">Which frame to get. Every frame if null.</param>
+            /// <param name="asSouth">If dir isn't null, return the frames as facing south</param>
             /// <returns>A dictionary containing the specified frames for each specified direction</returns>
-            public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null) {
+            public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null, bool asSouth = false) {
                 Dictionary<AtomDirection, ParsedDMIFrame[]> directions;
                 if (dir == null) { // Get every direction
                     directions = new(Directions);
@@ -145,8 +160,7 @@ namespace OpenDreamShared.Resources {
                     if (!Directions.TryGetValue(dir.Value, out var frames))
                         frames = Array.Empty<ParsedDMIFrame>();
 
-                    // Getting only one direction will give it to you with AtomDirection.South
-                    directions.Add(AtomDirection.South, frames);
+                    directions.Add(asSouth ? AtomDirection.South : dir.Value, frames);
                 }
 
                 if (frame != null) { // Only get a specified frame
@@ -165,6 +179,36 @@ namespace OpenDreamShared.Resources {
         public sealed class ParsedDMIFrame {
             public int X, Y;
             public float Delay;
+        }
+
+        /// <summary>
+        /// The total directions present in an exported DMI.<br/>
+        /// An icon state in a DMI must contain either 1, 4, or 8 directions.
+        /// </summary>
+        public static int GetExportedDirectionCount(IEnumerable<AtomDirection> directions) {
+            // If we have any of these directions then we export 8 directions
+            foreach (var direction in directions) {
+                switch (direction) {
+                    case AtomDirection.Northeast:
+                    case AtomDirection.Southeast:
+                    case AtomDirection.Southwest:
+                    case AtomDirection.Northwest:
+                        return 8;
+                }
+            }
+
+            // Any of these means 4 directions
+            foreach (var direction in directions) {
+                switch (direction) {
+                    case AtomDirection.North:
+                    case AtomDirection.East:
+                    case AtomDirection.West:
+                        return 4;
+                }
+            }
+
+            // Otherwise, 1 direction (just south)
+            return 1;
         }
 
         public static ParsedDMIDescription ParseDMI(Stream stream) {
@@ -228,7 +272,32 @@ namespace OpenDreamShared.Resources {
                 }
             }
 
-            throw new Exception("Could not find a DMI description");
+            if (imageSize != null) {
+                // No DMI description found, but we do have an image header
+                // So treat this PNG as a single icon frame spanning the whole image
+
+                var desc = new ParsedDMIDescription() {
+                    Width = (int)imageSize.Value.X,
+                    Height = (int)imageSize.Value.Y,
+                    States = new()
+                };
+
+                var state = new ParsedDMIState() {
+                    Name = string.Empty
+                };
+
+                var frame = new ParsedDMIFrame() {
+                    X = 0,
+                    Y = 0,
+                    Delay = 1
+                };
+
+                state.Directions.Add(AtomDirection.South, new [] { frame });
+                desc.States.Add(state.Name, state);
+                return desc;
+            }
+
+            throw new Exception("PNG is missing an image header");
         }
 
         private static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {

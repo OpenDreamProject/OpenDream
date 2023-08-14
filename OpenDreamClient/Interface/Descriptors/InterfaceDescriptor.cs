@@ -26,13 +26,18 @@ public class ElementDescriptor {
     [DataField("type")]
     public string _type;
 
-    [DataField("name")]
-    protected string _name;
+    [DataField("id")]
+    protected string _id;
 
-    public string Name {
-        get => _name;
-        init => _name = value;
+    [DataField("name")]
+    protected string? _name;
+
+    public string Id {
+        get => string.IsNullOrEmpty(_id) ? _id = Guid.NewGuid().ToString() : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.
+        init => _id = value;
     }
+
+    public string Name => _name ?? Id;
 
     public string Type {
         get => _type;
@@ -43,7 +48,7 @@ public class ElementDescriptor {
         throw new InvalidOperationException($"{this} cannot create a child descriptor");
     }
 
-    public virtual ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+    public virtual ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         throw new InvalidOperationException($"{this} cannot create a copy of itself");
     }
 

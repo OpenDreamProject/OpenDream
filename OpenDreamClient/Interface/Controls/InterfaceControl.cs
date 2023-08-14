@@ -4,62 +4,76 @@ using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls {
-    public abstract class InterfaceControl : InterfaceElement {
-        public readonly Control UIElement;
-        public bool IsDefault => ControlDescriptor.IsDefault;
-        public Vector2i? Size => ControlDescriptor.Size;
-        public Vector2i? Pos => ControlDescriptor.Pos;
-        public Vector2i? Anchor1 => ControlDescriptor.Anchor1;
-        public Vector2i? Anchor2 => ControlDescriptor.Anchor2;
+namespace OpenDreamClient.Interface.Controls;
 
-        protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
+public abstract class InterfaceControl : InterfaceElement {
+    public readonly Control UIElement;
+    public bool IsDefault => ControlDescriptor.IsDefault;
+    public Vector2i? Size => ControlDescriptor.Size;
+    public Vector2i? Pos => ControlDescriptor.Pos;
+    public Vector2i? Anchor1 => ControlDescriptor.Anchor1;
+    public Vector2i? Anchor2 => ControlDescriptor.Anchor2;
 
-        private readonly ControlWindow _window;
+    protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
 
-        [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
-        protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor) {
-            IoCManager.InjectDependencies(this);
+    private readonly ControlWindow _window;
 
-            _window = window;
-            UIElement = CreateUIElement();
+    [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
+    protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor) {
+        IoCManager.InjectDependencies(this);
 
-            UpdateElementDescriptor();
-        }
+        _window = window;
+        UIElement = CreateUIElement();
 
-        protected abstract Control CreateUIElement();
+        UpdateElementDescriptor();
+    }
 
-        protected override void UpdateElementDescriptor() {
-            UIElement.Name = ControlDescriptor.Name;
+    protected abstract Control CreateUIElement();
 
-            var pos = ControlDescriptor.Pos.GetValueOrDefault();
-            LayoutContainer.SetMarginLeft(UIElement, pos.X);
-            LayoutContainer.SetMarginTop(UIElement, pos.Y);
+    protected override void UpdateElementDescriptor() {
+        UIElement.Name = ControlDescriptor.Name;
 
-            if (ControlDescriptor.Size is { } size)
-                UIElement.SetSize = size;
+        var pos = ControlDescriptor.Pos.GetValueOrDefault();
+        LayoutContainer.SetMarginLeft(UIElement, pos.X);
+        LayoutContainer.SetMarginTop(UIElement, pos.Y);
 
-            _window?.UpdateAnchors();
+        if (ControlDescriptor.Size is { } size)
+            UIElement.SetSize = size;
 
-            if (ControlDescriptor.BackgroundColor is { } bgColor)
-            {
-                var styleBox = new StyleBoxFlat { BackgroundColor = bgColor };
+        _window?.UpdateAnchors();
 
-                switch (UIElement)
-                {
-                    case PanelContainer panel:
-                        panel.PanelOverride = styleBox;
-                        break;
-                }
+        if (ControlDescriptor.BackgroundColor is { } bgColor) {
+            var styleBox = new StyleBoxFlat {BackgroundColor = bgColor};
+
+            switch (UIElement) {
+                case PanelContainer panel:
+                    panel.PanelOverride = styleBox;
+                    break;
+                case LineEdit lineEdit:
+                    lineEdit.StyleBoxOverride = styleBox;
+                    break;
             }
-
-            UIElement.Visible = ControlDescriptor.IsVisible;
-            // TODO: enablement
-            //UIControl.IsEnabled = !_controlDescriptor.IsDisabled;
         }
 
-        public virtual void Output(string value, string? data) {
+        UIElement.Visible = ControlDescriptor.IsVisible;
+        // TODO: enablement
+        //UIControl.IsEnabled = !_controlDescriptor.IsDisabled;
+    }
 
+    public override bool TryGetProperty(string property, out string value) {
+        switch (property) {
+            case "size":
+                value = $"{UIElement.Size.X}x{UIElement.Size.Y}";
+                return true;
+            case "is-disabled":
+                value = ControlDescriptor.IsDisabled.ToString();
+                return true;
+            default:
+                return base.TryGetProperty(property, out value);
         }
+    }
+
+    public virtual void Output(string value, string? data) {
+
     }
 }

@@ -82,6 +82,8 @@ namespace DMCompiler.DM.Expressions {
             proc.PushType(typeId);
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
+
+        public override DreamPath? Path => _targetPath;
     }
 
     // locate()
@@ -338,6 +340,68 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // isnull(x)
+    internal sealed class IsNull : DMExpression {
+        private readonly DMExpression _value;
+
+        public IsNull(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.IsNull();
+        }
+    }
+
+    // length(x)
+    internal sealed class Length : DMExpression {
+        private readonly DMExpression _value;
+
+        public Length(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.Length();
+        }
+    }
+
+    // get_step(ref, dir)
+    internal sealed class GetStep : DMExpression {
+        private readonly DMExpression _ref;
+        private readonly DMExpression _dir;
+
+        public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
+            _ref = refValue;
+            _dir = dir;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _ref.EmitPushValue(dmObject, proc);
+            _dir.EmitPushValue(dmObject, proc);
+            proc.GetStep();
+        }
+    }
+
+    // get_dir(loc1, loc2)
+    internal sealed class GetDir : DMExpression {
+        private readonly DMExpression _loc1;
+        private readonly DMExpression _loc2;
+
+        public GetDir(Location location, DMExpression loc1, DMExpression loc2) : base(location) {
+            _loc1 = loc1;
+            _loc2 = loc2;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _loc1.EmitPushValue(dmObject, proc);
+            _loc2.EmitPushValue(dmObject, proc);
+            proc.GetDir();
+        }
+    }
+
     // list(...)
     sealed class List : DMExpression {
         private readonly (DMExpression? Key, DMExpression Value)[] _values;
@@ -376,8 +440,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool TryAsJsonRepresentation(out object? json) {
-            List<object?> list = new();
-            Dictionary<string, object?> associatedValues = new();
+            List<object?> values = new();
 
             foreach (var value in _values) {
                 if (!value.Value.TryAsJsonRepresentation(out var jsonValue)) {
@@ -386,22 +449,26 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 if (value.Key != null) {
-                    if (value.Key is not Expressions.String keyString) { //Only string keys are supported
+                    // Null key is not supported here
+                    if (!value.Key.TryAsJsonRepresentation(out var jsonKey) || jsonKey == null) {
                         json = null;
                         return false;
                     }
 
-                    associatedValues.Add(keyString.Value, jsonValue);
+                    values.Add(new Dictionary<object, object?> {
+                        { "key", jsonKey },
+                        { "value", jsonValue }
+                    });
                 } else {
-                    list.Add(jsonValue);
+                    values.Add(jsonValue);
                 }
             }
 
-            Dictionary<string, object> jsonRepresentation = new();
-            jsonRepresentation.Add("type", JsonVariableType.List);
-            if (list.Count > 0) jsonRepresentation.Add("values", list);
-            if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
-            json = jsonRepresentation;
+            json = new Dictionary<string, object> {
+                { "type", JsonVariableType.List },
+                { "values", values }
+            };
+
             return true;
         }
     }

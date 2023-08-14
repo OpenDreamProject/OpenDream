@@ -155,6 +155,12 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementOutput.B);
         }
 
+        public void VisitProcStatementFtp(DMASTProcStatementFtp statementFtp) {
+            SimplifyExpression(ref statementFtp.Receiver);
+            SimplifyExpression(ref statementFtp.File);
+            SimplifyExpression(ref statementFtp.Name);
+        }
+
         public void VisitProcStatementInput(DMASTProcStatementInput statementInput) {
             SimplifyExpression(ref statementInput.A);
             SimplifyExpression(ref statementInput.B);
@@ -176,6 +182,11 @@ namespace DMCompiler.DM.Visitors {
 
         private void SimplifyExpression(ref DMASTExpression expression) {
             if (expression == null || expression is DMASTExpressionConstant || expression is DMASTCallable) return;
+
+            if (expression is DMASTExpressionWrapped wrapped) {
+                SimplifyExpression(ref wrapped.Expression);
+                return;
+            }
 
             #region Comparators
             DMASTEqual equal = expression as DMASTEqual;

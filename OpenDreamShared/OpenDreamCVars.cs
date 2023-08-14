@@ -18,5 +18,8 @@ namespace OpenDreamShared {
 
         public static readonly CVarDef<bool> SpoofIEUserAgent =
             CVarDef.Create("opendream.spoof_ie_user_agent", true, CVar.CLIENTONLY);
+
+        public static readonly CVarDef<string> WorldParams =
+            CVarDef.Create("opendream.world_params", string.Empty, CVar.SERVERONLY);
     }
 }

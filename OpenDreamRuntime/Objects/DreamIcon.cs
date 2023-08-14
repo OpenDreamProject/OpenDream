@@ -1,5 +1,6 @@
-﻿using System.IO;
-using OpenDreamRuntime.Objects.MetaObjects;
+﻿using System.Buffers;
+using System.IO;
+using System.Linq;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
@@ -15,13 +16,16 @@ using ParsedDMIFrame = OpenDreamShared.Resources.DMIParser.ParsedDMIFrame;
 namespace OpenDreamRuntime.Objects;
 
 public sealed class DreamIcon {
+    private static readonly ArrayPool<Rgba32> PixelArrayPool = ArrayPool<Rgba32>.Shared;
+
     public int Width, Height;
     public readonly Dictionary<string, IconState> States = new();
 
     private readonly DreamResourceManager _resourceManager;
 
-    private int _frameCount;
     private IconResource? _cachedDMI;
+
+    private int FrameCount => States.Values.Sum(state => state.Frames * DMIParser.GetExportedDirectionCount(state.Directions.Keys));
 
     /// <summary>
     /// A list of operations to be applied when generating the DMI, along with what frames to apply them on
@@ -34,38 +38,6 @@ public sealed class DreamIcon {
     public sealed class IconState {
         public int Frames;
         public readonly Dictionary<AtomDirection, List<IconFrame>> Directions = new();
-
-        /// <summary>
-        /// The total directions present in an exported DMI.<br/>
-        /// An icon state in a DMI must contain either 1, 4, or 8 directions.
-        /// </summary>
-        public int ExportedDirectionCount {
-            get {
-                // If we have any of these directions then we export 8 directions
-                foreach (var direction in Directions.Keys) {
-                    switch (direction) {
-                        case AtomDirection.Northeast:
-                        case AtomDirection.Southeast:
-                        case AtomDirection.Southwest:
-                        case AtomDirection.Northwest:
-                            return 8;
-                    }
-                }
-
-                // Any of these means 4 directions
-                foreach (var direction in Directions.Keys) {
-                    switch (direction) {
-                        case AtomDirection.North:
-                        case AtomDirection.East:
-                        case AtomDirection.West:
-                            return 4;
-                    }
-                }
-
-                // Otherwise, 1 direction
-                return 1;
-            }
-        }
     }
 
     /// <summary>
@@ -74,21 +46,22 @@ public sealed class DreamIcon {
     /// </summary>
     public sealed class IconFrame {
         /// <summary>
-        /// The image this icon frame originally comes from
+        /// The image this icon frame originally comes from<br/>
+        /// Null if empty
         /// </summary>
-        public Image<Rgba32> Image;
+        public readonly Image<Rgba32>? Image;
 
         /// <summary>
         /// The DMI information about this icon frame
         /// </summary>
-        public ParsedDMIFrame DMIFrame;
+        public readonly ParsedDMIFrame DMIFrame;
 
         /// <summary>
         /// The size of the original icon frame
         /// </summary>
-        public int Width, Height;
+        public readonly int Width, Height;
 
-        public IconFrame(Image<Rgba32> image, ParsedDMIFrame dmiFrame, int width, int height) {
+        public IconFrame(Image<Rgba32>? image, ParsedDMIFrame dmiFrame, int width, int height) {
             Image = image;
             DMIFrame = dmiFrame;
             Width = width;
@@ -110,15 +83,17 @@ public sealed class DreamIcon {
         if (_cachedDMI != null)
             return _cachedDMI;
 
+        int frameCount = FrameCount;
+
         int frameWidth = Width, frameHeight = Height;
-        if (_frameCount == 0) { // No frames creates a blank 32x32 image (TODO: should be world.icon_size)
+        if (frameCount == 0) { // No frames creates a blank 32x32 image (TODO: should be world.icon_size)
             frameWidth = 32;
             frameHeight = 32;
         }
 
         Dictionary<string, ParsedDMIState> dmiStates = new(States.Count);
-        int span = frameWidth * Math.Max(_frameCount, 1);
-        Rgba32[] pixels = new Rgba32[span * frameHeight];
+        int span = frameWidth * Math.Max(frameCount, 1);
+        Rgba32[] pixels = PixelArrayPool.Rent(span * frameHeight);
 
         int currentFrame = 0;
         foreach (var iconStatePair in States) {
@@ -127,7 +102,7 @@ public sealed class DreamIcon {
 
             dmiStates.Add(newState.Name, newState);
 
-            int exportedDirectionCount = iconState.ExportedDirectionCount;
+            int exportedDirectionCount = DMIParser.GetExportedDirectionCount(iconState.Directions.Keys);
             for (int directionIndex = 0; directionIndex < exportedDirectionCount; directionIndex++) {
                 AtomDirection direction = DMIParser.DMIFrameDirections[directionIndex];
                 int firstFrame = currentFrame;
@@ -136,13 +111,15 @@ public sealed class DreamIcon {
                 if (!iconState.Directions.TryGetValue(direction, out var frames))
                     continue; // Blank frames
 
-                var newFrames = DrawFrames(pixels, firstFrame, frames);
+                var newFrames = DrawFrames(pixels, firstFrame, frames, direction);
                 newState.Directions.Add(direction, newFrames);
             }
         }
 
         Image<Rgba32> dmiImage = Image.LoadPixelData(pixels, span, frameHeight);
         ParsedDMIDescription newDescription = new() {Width = frameWidth, Height = frameHeight, States = dmiStates};
+
+        PixelArrayPool.Return(pixels, clearArray: true);
 
         using (MemoryStream dmiImageStream = new MemoryStream()) {
             var pngTextData = new PngTextData("Description", newDescription.ExportAsText(), null, null);
@@ -158,13 +135,15 @@ public sealed class DreamIcon {
     }
 
     public void ApplyOperation(IDreamIconOperation operation) {
+        operation.OnApply(this);
+
         // The operation gets applied to every current frame, but not any inserted after this
-        _operations.Add( (_frameCount, operation) );
+        _operations.Add( (FrameCount, operation) );
         _cachedDMI = null;
     }
 
     public void InsertStates(IconResource icon, DreamValue state, DreamValue dir, DreamValue frame,
-        bool useStateName = true) {
+        bool isConstructor = false) {
         bool copyingAllDirs = !dir.TryGetValueAsInteger(out var dirVal);
         bool copyingAllStates = !state.TryGetValueAsString(out var copyingState);
         bool copyingAllFrames = !frame.TryGetValueAsInteger(out var copyingFrame);
@@ -182,28 +161,30 @@ public sealed class DreamIcon {
         if (copyingAllStates) {
             foreach (var copyStateName in icon.DMI.States.Keys) {
                 InsertState(icon, copyStateName, copyStateName,
-                    copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
+                    copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
+                    isConstructor: isConstructor);
             }
         } else {
-            InsertState(icon, useStateName ? copyingState! : String.Empty, copyingState!,
-                copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame);
+            InsertState(icon, isConstructor ? string.Empty : copyingState!, copyingState!,
+                copyingAllDirs ? null : copyingDirection, copyingAllFrames ? null : copyingFrame,
+                isConstructor: isConstructor);
         }
     }
 
     private void InsertState(IconResource icon, string stateName, string copyingState, AtomDirection? dir = null,
-        int? frame = null) {
+        int? frame = null, bool isConstructor = false) {
         ParsedDMIState? inserting = icon.DMI.GetStateOrDefault(copyingState);
         if (inserting == null)
             return;
 
-        Dictionary<AtomDirection, ParsedDMIFrame[]> insertingDirections = inserting.GetFrames(dir, frame - 1);
+        // TODO: Passing "asSouth: isConstructor" here would be the correct behavior
+        // But that currently breaks /icon.Insert(other_icon, dir=...) in some important cases
+        var insertingDirections = inserting.GetFrames(dir, frame - 1, asSouth: false);
 
         if (!States.TryGetValue(stateName, out var iconState)) {
             iconState = new IconState();
             States.Add(stateName, iconState);
         }
-
-        _frameCount -= iconState.Frames * iconState.ExportedDirectionCount;
 
         foreach (var insertingPair in insertingDirections) {
             List<IconFrame> iconFrames = new(insertingPair.Value.Length);
@@ -216,14 +197,13 @@ public sealed class DreamIcon {
             iconState.Frames = Math.Max(iconState.Frames, iconFrames.Count);
         }
 
-        _frameCount += iconState.Frames * iconState.ExportedDirectionCount;
         _cachedDMI = null;
     }
 
-    private ParsedDMIFrame[] DrawFrames(Rgba32[] pixels, int firstFrameIndex, List<IconFrame> frames) {
+    private ParsedDMIFrame[] DrawFrames(Rgba32[] pixels, int firstFrameIndex, List<IconFrame> frames, AtomDirection dir) {
         ParsedDMIFrame[] newFrames = new ParsedDMIFrame[frames.Count];
         int x = firstFrameIndex * Width;
-        int imageSpan = _frameCount * Width;
+        int imageSpan = FrameCount * Width;
 
         for (var frameIndex = 0; frameIndex < frames.Count; frameIndex++) {
             var frame = frames[frameIndex];
@@ -233,40 +213,42 @@ public sealed class DreamIcon {
                 continue; // Empty frame
 
             ParsedDMIFrame dmiFrame = frame.DMIFrame;
-            Image<Rgba32> image = frame.Image;
+            Image<Rgba32>? image = frame.Image;
             int srcFrameX = dmiFrame.X, srcFrameY = dmiFrame.Y;
-            if (frame.Width != Width || frame.Height != Height) { // Resize the frame to match our size
-                // There is no way this is performant with a large number of frames...
-                // TODO: Try to reduce the amount of cloned images here somehow
-                image = image.Clone();
-                image.Mutate(mutator => {
-                    mutator.Crop(new Rectangle(srcFrameX, srcFrameY, frame.Width, frame.Height));
-                    mutator.Resize(Width, Height);
-                    srcFrameX = 0;
-                    srcFrameY = 0;
+            if (image != null) {
+                if (frame.Width != Width || frame.Height != Height) { // Resize the frame to match our size
+                    // There is no way this is performant with a large number of frames...
+                    // TODO: Try to reduce the amount of cloned images here somehow
+                    image = image.Clone();
+                    image.Mutate(mutator => {
+                        mutator.Crop(new Rectangle(srcFrameX, srcFrameY, frame.Width, frame.Height));
+                        mutator.Resize(Width, Height);
+                        srcFrameX = 0;
+                        srcFrameY = 0;
+                    });
+                }
+
+                // Copy the frame from the original image to the new one
+                image?.ProcessPixelRows(accessor => {
+                    for (int y = 0; y < Height; y++) {
+                        var rowSpan = accessor.GetRowSpan(srcFrameY + y);
+
+                        for (int frameX = 0; frameX < Width; frameX++) {
+                            int pixelLocation = (y * imageSpan) + x + frameX;
+
+                            pixels[pixelLocation] = rowSpan[srcFrameX + frameX];
+                        }
+                    }
                 });
             }
 
-            // Copy the frame from the original image to the new one
-            image.ProcessPixelRows(accessor => {
-                for (int y = 0; y < Height; y++) {
-                    var rowSpan = accessor.GetRowSpan(srcFrameY + y);
+            foreach (var operation in _operations) {
+                if (operation.AppliedFrames <= firstFrameIndex + frameIndex)
+                    break; // operation.AppliedFrames should be in ascending order; we can quit now
 
-                    for (int frameX = 0; frameX < Width; frameX++) {
-                        int pixelLocation = (y * imageSpan) + x + frameX;
-
-                        pixels[pixelLocation] = rowSpan[srcFrameX + frameX];
-                    }
-                }
-
-                foreach (var operation in _operations) {
-                    if (operation.AppliedFrames <= firstFrameIndex + frameIndex)
-                        break; // operation.AppliedFrames should be in ascending order; we can quit now
-
-                    var bounds = UIBox2i.FromDimensions(x, 0, Width, Height);
-                    operation.Operation.ApplyToFrame(pixels, imageSpan, firstFrameIndex + frameIndex, bounds);
-                }
-            });
+                var bounds = UIBox2i.FromDimensions(x, 0, Width, Height);
+                operation.Operation.ApplyToFrame(pixels, imageSpan, frameIndex, dir, bounds);
+            }
 
             x += Width;
         }
@@ -276,7 +258,8 @@ public sealed class DreamIcon {
 }
 
 public interface IDreamIconOperation {
-    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds);
+    public void OnApply(DreamIcon icon);
+    public void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds);
 }
 
 [Virtual]
@@ -304,7 +287,9 @@ public class DreamIconOperationBlend : IDreamIconOperation {
             throw new NotImplementedException($"\"{_type}\" blending is not implemented");
     }
 
-    public virtual void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
+    public virtual void OnApply(DreamIcon icon) { }
+
+    public virtual void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
         throw new NotImplementedException();
     }
 
@@ -361,7 +346,7 @@ public class DreamIconOperationBlend : IDreamIconOperation {
 
 public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
     private readonly Image<Rgba32> _blending;
-    private readonly ParsedDMIDescription _blendingDescription;
+    private readonly ParsedDMIState? _blendingState;
 
     public DreamIconOperationBlendImage(BlendType type, int xOffset, int yOffset, DreamValue blending) : base(type, xOffset, yOffset) {
         //TODO: Find a way to get rid of this!
@@ -372,49 +357,55 @@ public sealed class DreamIconOperationBlendImage : DreamIconOperationBlend {
         }
 
         _blending = blendingIcon.Texture;
-        _blendingDescription = blendingIcon.DMI;
+        _blendingState = blendingIcon.DMI.States.Values.FirstOrDefault();
     }
 
-    public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
-        _blending.ProcessPixelRows(accessor => {
-            // The first frame of the source image blends with the first frame of the destination image
-            // The second frame blends with the second, and so on
-            // TODO: What happens if each icon state has a different number of frames?
-            (int X, int Y)? srcFramePos = CalculateFramePosition(frame);
-            if (srcFramePos == null)
-                return;
+    public override void OnApply(DreamIcon icon) {
+        if (_blendingState == null)
+            return;
 
+        // If any states in the icon have less directions than the one we're blending onto it,
+        // We give them the new directions.
+        foreach (var state in icon.States.Values) {
+            foreach (var dir in _blendingState.Directions.Keys) {
+                if (!state.Directions.ContainsKey(dir)) { // Direction doesn't exist, add it
+                    var newFrames = new List<DreamIcon.IconFrame>(state.Frames);
+
+                    // Create the empty frames
+                    for (int i = 0; i < state.Frames; i++) {
+                        newFrames.Add(new(null, new ParsedDMIFrame(), icon.Width, icon.Height));
+                    }
+
+                    state.Directions.Add(dir, newFrames);
+                }
+            }
+        }
+
+        // TODO: We add frames too
+    }
+
+    public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
+        if (_blendingState?.Directions.TryGetValue(dir, out var blendingDirFrames) is not true)
+            return;
+        if (blendingDirFrames.Length <= frame)
+            return;
+
+        var blendingFrame = blendingDirFrames[frame];
+
+        _blending.ProcessPixelRows(accessor => {
             // TODO: x & y offsets
 
             for (int y = bounds.Top; y < bounds.Bottom; y++) {
-                var row = accessor.GetRowSpan(srcFramePos.Value.Y + y - bounds.Top);
+                var row = accessor.GetRowSpan(blendingFrame.Y + y - bounds.Top);
 
                 for (int x = bounds.Left; x < bounds.Right; x++) {
                     int dstPixelPosition = (y * imageSpan) + x;
-                    Rgba32 dst = pixels[dstPixelPosition];
-                    Rgba32 src = row[srcFramePos.Value.X + x - bounds.Left];
+                    Rgba32 src = row[blendingFrame.X + x - bounds.Left];
 
                     BlendPixel(pixels, dstPixelPosition, src);
                 }
             }
         });
-    }
-
-    /// <summary>
-    /// Calculate the position of a frame in the image used to blend
-    /// </summary>
-    /// <param name="frame">The frame's index</param>
-    /// <returns>The frame's position, or null if there is no such frame</returns>
-    private (int X, int Y)? CalculateFramePosition(int frame) {
-        int totalRows = _blending.Height / _blendingDescription.Height;
-        int framesPerRow = _blending.Width / _blendingDescription.Width;
-        int row = frame / framesPerRow;
-        int column = frame - (row * framesPerRow);
-
-        if (row >= totalRows)
-            return null;
-
-        return (column * _blendingDescription.Width, row * _blendingDescription.Height);
     }
 }
 
@@ -425,7 +416,7 @@ public sealed class DreamIconOperationBlendColor : DreamIconOperationBlend {
         _color = new Rgba32(color.RByte, color.GByte, color.BByte, color.AByte);
     }
 
-    public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, UIBox2i bounds) {
+    public override void ApplyToFrame(Rgba32[] pixels, int imageSpan, int frame, AtomDirection dir, UIBox2i bounds) {
         // TODO: x & y offsets
 
         for (int y = bounds.Top; y < bounds.Bottom; y++) {

@@ -41,8 +41,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private readonly Stack<bool?> _lastIfEvaluations = new(16);
         private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above var isn't empty at exit
 
-        private static readonly TokenType[] DirectiveTypes =
-        {
+        private static readonly TokenType[] DirectiveTypes = {
             TokenType.DM_Preproc_Include,
             TokenType.DM_Preproc_Define,
             TokenType.DM_Preproc_Undefine,
@@ -256,7 +255,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             source = source.Replace("\r\n", "\n");
             source += '\n';
 
-            _lexerStack.Push(new DMPreprocessorLexer(includeDir, file, source));
+            _lexerStack.Push(new DMPreprocessorLexer(includeDir, file.Replace('\\', Path.DirectorySeparatorChar), source));
         }
 
         private bool VerifyDirectiveUsage(Token token) {

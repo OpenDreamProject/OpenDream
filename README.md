@@ -26,7 +26,7 @@ There's 3 main parts: Compiler, Server, and Client
 
 **Compiler:** Run `DMCompiler.exe`, and pass any number of .dm or .dme files to compile as arguments. Optional arguments can be found [here](https://github.com/wixoaGit/OpenDream/wiki/Compiler-Options).
 
-**Server:** Run `OpenDreamServer.exe` and pass the compiled JSON file you got as a result of running the compiler above as an argument like this: `--cvar opendream.json_path=C:/path/to/compiler/output.json`
+**Server:** Run `OpenDreamServer.exe` and pass the compiled JSON file you got as a result of running the compiler above as an argument like this: `OpenDreamServer.exe C:/path/to/compiler/output.json`
 
 **Client:** Run `OpenDreamClient.exe`. You will be prompted to choose a server address, port, and username. The defaults should work for a locally hosted server.
 

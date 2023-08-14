@@ -3,23 +3,22 @@ using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
-namespace OpenDreamClient.Interface.Controls {
-    sealed class ControlInput : InterfaceControl
-    {
-        private LineEdit _textBox;
+namespace OpenDreamClient.Interface.Controls;
 
-        public ControlInput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+internal sealed class ControlInput : InterfaceControl {
+    private LineEdit _textBox;
 
-        protected override Control CreateUIElement() {
-            _textBox = new LineEdit();
-            _textBox.OnTextEntered += TextBox_OnSubmit;
+    public ControlInput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
-            return _textBox;
-        }
+    protected override Control CreateUIElement() {
+        _textBox = new LineEdit();
+        _textBox.OnTextEntered += TextBox_OnSubmit;
 
-        private void TextBox_OnSubmit(LineEdit.LineEditEventArgs lineEditEventArgs) {
-            EntitySystem.Get<DreamCommandSystem>().RunCommand(_textBox.Text);
-            _textBox.Clear();
-        }
+        return _textBox;
+    }
+
+    private void TextBox_OnSubmit(LineEdit.LineEditEventArgs lineEditEventArgs) {
+        EntitySystem.Get<DreamCommandSystem>().RunCommand(_textBox.Text);
+        _textBox.Clear();
     }
 }

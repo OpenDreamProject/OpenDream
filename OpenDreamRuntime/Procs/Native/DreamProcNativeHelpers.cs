@@ -2,6 +2,7 @@
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
+using System.Text;
 
 namespace OpenDreamRuntime.Procs.Native;
 

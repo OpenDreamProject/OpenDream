@@ -144,11 +144,12 @@ namespace OpenDreamShared.Resources {
             }
 
             /// <summary>
-            /// Get this state's frames
+            /// Get this state's frames<br/>
             /// </summary>
             /// <param name="dir">Which direction to get. Every direction if null.</param>
             /// <param name="frame">Which frame to get. Every frame if null.</param>
             /// <param name="asSouth">If dir isn't null, return the frames as facing south</param>
+            /// <remarks>Invalid dir/frame args will give empty arrays</remarks>
             /// <returns>A dictionary containing the specified frames for each specified direction</returns>
             public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null, bool asSouth = false) {
                 Dictionary<AtomDirection, ParsedDMIFrame[]> directions;
@@ -165,10 +166,12 @@ namespace OpenDreamShared.Resources {
 
                 if (frame != null) { // Only get a specified frame
                     foreach (var direction in directions) {
-                        ParsedDMIFrame[] newFrames = new ParsedDMIFrame[1];
-
-                        newFrames[0] = direction.Value[frame.Value];
-                        directions[direction.Key] = newFrames;
+                        if (direction.Value.Length > frame.Value) {
+                            directions[direction.Key] = new[] { direction.Value[frame.Value] };
+                        } else {
+                            // Frame doesn't exist
+                            directions[direction.Key] = Array.Empty<ParsedDMIFrame>();
+                        }
                     }
                 }
 

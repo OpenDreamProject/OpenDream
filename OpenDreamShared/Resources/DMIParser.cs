@@ -144,7 +144,7 @@ namespace OpenDreamShared.Resources {
             }
 
             /// <summary>
-            /// Get this state's frames<br/>
+            /// Get this state's frames
             /// </summary>
             /// <param name="dir">Which direction to get. Every direction if null.</param>
             /// <param name="frame">Which frame to get. Every frame if null.</param>

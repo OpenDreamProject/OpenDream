@@ -1573,11 +1573,11 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!number.TryGetValueAsFloat(out float floatNum)) {
                 return new DreamValue("0");
             }
-            if(bundle.Arguments.Count == 1) {
+            if(bundle.Arguments.Length == 1) {
                 return new DreamValue(floatNum.ToString("g6"));
             }
 
-            if(bundle.Arguments.Count == 2) {
+            if(bundle.Arguments.Length == 2) {
                 var sigFig = bundle.GetArgument(1, "A");
                 if(sigFig == DreamValue.Null) {
                     return new DreamValue(floatNum.ToString("g6"));
@@ -1585,9 +1585,9 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(floatNum.ToString('g' + sigFig.ToString()));
             }
 
-            if(state.Arguments.Count == 3) {
-                var digits = state.GetArgument(1, "A").MustGetValueAsInteger();
-                var radix = state.GetArgument(2, "B").MustGetValueAsInteger();
+            if(bundle.Arguments.Length == 3) {
+                var digits = bundle.GetArgument(1, "A").MustGetValueAsInteger();
+                var radix = bundle.GetArgument(2, "B").MustGetValueAsInteger();
                 var intNum = (int)floatNum;
                 return new DreamValue(DreamProcNativeHelpers.ToBase(intNum, radix).PadLeft(digits, '0'));
             }

@@ -318,8 +318,7 @@ internal static partial class DreamProcNativeHelpers {
             value = Math.Abs(value);
         }
 
-        while (value > 0)
-        {
+        while (value > 0) {
             resString.Insert(0, radixArray[value % radix]);
             value /= radix;
         }

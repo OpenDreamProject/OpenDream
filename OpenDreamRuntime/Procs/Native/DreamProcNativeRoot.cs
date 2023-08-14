@@ -1578,11 +1578,10 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if(bundle.Arguments.Length == 2) {
-                var sigFig = bundle.GetArgument(1, "A");
-                if(sigFig == DreamValue.Null) {
+                if(!bundle.GetArgument(1, "A").TryGetValueAsInteger(out var sigFig)) {
                     return new DreamValue(floatNum.ToString("g6"));
                 }
-                return new DreamValue(floatNum.ToString('g' + sigFig.ToString()));
+                return new DreamValue(floatNum.ToString($"g{sigFig}"));
             }
 
             if(bundle.Arguments.Length == 3) {

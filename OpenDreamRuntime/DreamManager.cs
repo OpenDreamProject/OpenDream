@@ -109,7 +109,7 @@ namespace OpenDreamRuntime {
                 return false;
 
             if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash())) {
-                _sawmill.Error("Compiler opcode version does not match the runtime version! This may cause issues!");
+                _sawmill.Error("Compiler opcode version does not match the runtime version!");
             }
 
             if (json.Maps == null || json.Maps.Count == 0) throw new ArgumentException("No maps were given");

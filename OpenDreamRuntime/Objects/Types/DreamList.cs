@@ -836,14 +836,11 @@ namespace OpenDreamRuntime.Objects.Types {
 
 // client.images list
     public sealed class ClientImagesList : DreamList {
-        private readonly DreamObjectTree _objectTree;
         private readonly ServerClientImagesSystem? _clientImagesSystem;
-
         private readonly DreamConnection _connection;
         private readonly List<DreamValue> _imageObjects = new();
 
         public ClientImagesList(DreamObjectTree objectTree, ServerClientImagesSystem? clientImagesSystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
-            _objectTree = objectTree;
             _clientImagesSystem = clientImagesSystem;
             _connection = connection;
         }

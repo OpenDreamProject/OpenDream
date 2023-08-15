@@ -40,7 +40,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
-        [ViewVariables] public List<uint> ClientImages = new(); //this just holds a list of all clientimage appearance ids associated with this one, it is not filtered by client
+        [ViewVariables] public List<uint> ClientImages = new(); //this just holds a list of all clientimage appearance ids associated with this one, it is not filtered by client. This is to make the appearance hash unique.
         [ViewVariables] public List<DreamFilter> Filters = new();
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
         [ViewVariables] public float[] Transform = new float[6] {   1, 0,   // a d

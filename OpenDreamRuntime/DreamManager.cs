@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Text.Json;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
@@ -106,6 +107,10 @@ namespace OpenDreamRuntime {
             DreamCompiledJson? json = JsonSerializer.Deserialize<DreamCompiledJson>(jsonSource);
             if (json == null)
                 return false;
+
+            if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash())) {
+                _sawmill.Error("Compiler opcode version does not match the runtime version!");
+            }
 
             if (json.Maps == null || json.Maps.Count == 0) throw new ArgumentException("No maps were given");
             if (json.Maps.Count > 1) {

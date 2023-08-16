@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;

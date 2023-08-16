@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel;
-using OpenDreamShared.Dream.Procs;
+using OpenDreamShared.Dream;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;

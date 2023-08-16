@@ -788,6 +788,10 @@ namespace OpenDreamRuntime.Objects.Types {
             _connection = connection;
         }
 
+        public override bool ContainsValue(DreamValue value) {
+            return _screenObjects.Contains(value);
+        }
+
         public override DreamValue GetValue(DreamValue key) {
             if (!key.TryGetValueAsInteger(out var screenIndex) || screenIndex < 1 || screenIndex > _screenObjects.Count)
                 throw new Exception($"Invalid index into screen list: {key}");
@@ -911,11 +915,11 @@ namespace OpenDreamRuntime.Objects.Types {
         public override List<DreamValue> GetValues() {
             List<DreamValue> values = new(AtomManager.AtomCount);
 
-            values.AddRange(AtomManager.Areas.Select(area => new DreamValue(area)));
-            values.AddRange(AtomManager.Turfs.Select(turf => new DreamValue(turf)));
+            values.AddRange(AtomManager.Mobs.Select(mob => new DreamValue(mob)));
             values.AddRange(AtomManager.Movables.Select(movable => new DreamValue(movable)));
             values.AddRange(AtomManager.Objects.Select(obj => new DreamValue(obj)));
-            values.AddRange(AtomManager.Mobs.Select(mob => new DreamValue(mob)));
+            values.AddRange(AtomManager.Areas.Select(area => new DreamValue(area)));
+            values.AddRange(AtomManager.Turfs.Select(turf => new DreamValue(turf)));
             return values;
         }
 

@@ -3,8 +3,8 @@ using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {

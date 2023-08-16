@@ -788,6 +788,10 @@ namespace OpenDreamRuntime.Objects.Types {
             _connection = connection;
         }
 
+        public override bool ContainsValue(DreamValue value) {
+            return _screenObjects.Contains(value);
+        }
+
         public override DreamValue GetValue(DreamValue key) {
             if (!key.TryGetValueAsInteger(out var screenIndex) || screenIndex < 1 || screenIndex > _screenObjects.Count)
                 throw new Exception($"Invalid index into screen list: {key}");

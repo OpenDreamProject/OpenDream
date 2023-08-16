@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;

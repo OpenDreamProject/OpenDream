@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using System;
 using System.Linq;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)

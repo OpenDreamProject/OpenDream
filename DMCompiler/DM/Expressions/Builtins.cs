@@ -3,7 +3,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
-using OpenDreamShared.Dream.Procs;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"

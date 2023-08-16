@@ -14,9 +14,7 @@ using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using JetBrains.Annotations;
-using DMCompiler.Compiler;
-using OpenDreamShared.Dream.Procs;
+using DMCompiler.Bytecode;
 using Robust.Shared.Utility;
 
 namespace DMCompiler {
@@ -44,8 +42,8 @@ namespace DMCompiler {
             if (settings.SuppressUnimplementedWarnings) {
                 ForcedWarning("Unimplemented proc & var warnings are currently suppressed");
             }
-            if(OpenDreamShared.Dream.Procs.OpcodeVerifier.AreOpcodesInvalid())
-            {
+
+            if(OpcodeVerifier.AreOpcodesInvalid()) {
                 ForcedError("Some opcodes have the same byte value! Output assembly may be corrupted.");
             }
 

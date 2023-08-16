@@ -2,8 +2,8 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     /// <remarks>

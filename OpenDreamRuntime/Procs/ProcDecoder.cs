@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using OpenDreamShared.Dream.Procs;
+using DMCompiler.Bytecode;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Procs;
 

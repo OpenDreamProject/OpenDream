@@ -125,6 +125,10 @@ public sealed class DreamObjectWorld : DreamObject {
             case "timeofday":
                 value = new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 return true;
+            
+            case "timezone":
+                value = new DreamValue((int)DateTimeOffset.Now.Offset.TotalHours);
+                return true;
 
             case "time":
                 value = new DreamValue((_gameTiming.CurTick.Value - DreamManager.InitializedTick.Value) * TickLag);

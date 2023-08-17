@@ -23,11 +23,11 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
         _idToIcon.Clear();
     }
 
-    public bool TryGetClientImages(EntityUid entity, Vector3 tileCoords, [NotNullWhen(true)] out List<DreamIcon>? result){
+    public bool TryGetClientImages(EntityUid entity, Vector3? tileCoords, [NotNullWhen(true)] out List<DreamIcon>? result){
         result = null;
         List<uint>? resultIDs;
-        if(entity == EntityUid.Invalid) {
-            if(!TurfClientImages.TryGetValue(tileCoords, out resultIDs))
+        if(entity == EntityUid.Invalid && tileCoords is not null) {
+            if(!TurfClientImages.TryGetValue(tileCoords.Value, out resultIDs))
                 return false;
         } else {
             if(!AMClientImages.TryGetValue(entity, out resultIDs))

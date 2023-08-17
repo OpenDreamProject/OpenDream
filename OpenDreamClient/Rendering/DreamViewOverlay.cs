@@ -170,7 +170,7 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
-    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, RendererMetaData? parentIcon = null, bool keepTogether = false) {
+    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
 
@@ -301,7 +301,7 @@ internal sealed class DreamViewOverlay : Overlay {
         //client images act as either an overlay or replace the main icon
         //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
         //note also that we use position and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
-        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, new Vector3(position.X, position.Y, 1), out List<DreamIcon>? attachedClientImages)){
+        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<DreamIcon>? attachedClientImages)){
             foreach(DreamIcon CI in attachedClientImages){
                 if(CI.Appearance == null)
                     continue;
@@ -780,7 +780,9 @@ internal sealed class DreamViewOverlay : Overlay {
             MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
 
             tValue = 0;
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer);
+            //goes here
+            Vector3 turfCoords = new Vector3(tileRef.X, tileRef.Y, (int) worldPos.MapId);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, turfCoords: turfCoords);
         }
 
         // Visible entities

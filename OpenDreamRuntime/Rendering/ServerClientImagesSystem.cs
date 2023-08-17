@@ -23,11 +23,8 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         if(loc is DreamObjectMovable movable)
             locEntity = movable.Entity;
 
-        _atomManager.TryCreateAppearanceFrom(new DreamValue(loc), out IconAppearance? locAppearance);
-        if(locAppearance == null)
-            return; //this could only happen if loc was invalid, so that's fine
         _atomManager.UpdateAppearance(loc, appearance => {appearance.ClientImages.Add(imageAppearanceID);});
-        if(!_atomManager.TryGetAppearance(loc, out locAppearance)) //get the updated appearance
+        if(!_atomManager.TryGetAppearance(loc, out var locAppearance)) //get the updated appearance
             return;
 
         locAppearanceID = _serverAppearanceSystem.AddAppearance(locAppearance);
@@ -48,11 +45,8 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         if(loc is DreamObjectMovable)
             locEntity = ((DreamObjectMovable)loc).Entity;
 
-        _atomManager.TryCreateAppearanceFrom(new DreamValue(loc), out IconAppearance? locAppearance);
-        if(locAppearance == null)
-            return; //this could only happen if loc was invalid, so that's fine
         _atomManager.UpdateAppearance(loc, appearance => {appearance.ClientImages.Remove(imageAppearanceID);});
-        if(!_atomManager.TryGetAppearance(loc, out locAppearance)) //get the updated appearance
+        if(!_atomManager.TryGetAppearance(loc, out var locAppearance)) //get the updated appearance
             return;
         locAppearanceID = _serverAppearanceSystem.AddAppearance(locAppearance);
 

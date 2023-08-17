@@ -12,6 +12,7 @@ using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using System.Linq;
+using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
 
@@ -299,8 +300,8 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //client images act as either an overlay or replace the main icon
         //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
-
-        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, current.MainIcon.Appearance, out List<DreamIcon>? attachedClientImages)){
+        //note also that we use position and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
+        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, new Vector3(position.X, position.Y, 1), out List<DreamIcon>? attachedClientImages)){
             foreach(DreamIcon CI in attachedClientImages){
                 if(CI.Appearance == null)
                     continue;

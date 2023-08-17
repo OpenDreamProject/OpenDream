@@ -4,6 +4,7 @@ using OpenDreamShared.Dream;
 using Robust.Server.GameStates;
 using Robust.Server.Player;
 using OpenDreamRuntime.Objects;
+using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamRuntime.Rendering;
 public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
@@ -16,20 +17,17 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
             return;
 
         EntityUid locEntity = EntityUid.Invalid;
+        Vector3 turfCoords = Vector3.Zero;
         uint locAppearanceID = 0;
 
         uint imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
 
         if(loc is DreamObjectMovable movable)
             locEntity = movable.Entity;
+        else if(loc is DreamObjectTurf turf)
+            turfCoords = new Vector3(turf.X, turf.Y, turf.Z);
 
-        _atomManager.UpdateAppearance(loc, appearance => {appearance.ClientImages.Add(imageAppearanceID);});
-        if(!_atomManager.TryGetAppearance(loc, out var locAppearance)) //get the updated appearance
-            return;
-
-        locAppearanceID = _serverAppearanceSystem.AddAppearance(locAppearance);
-
-        RaiseNetworkEvent(new AddClientImageEvent(locEntity, locAppearanceID, imageAppearanceID), connection.Session.ConnectedClient);
+        RaiseNetworkEvent(new AddClientImageEvent(locEntity, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
     }
 
     public void RemoveImageObject(DreamConnection connection, DreamObjectImage imageObject) {
@@ -38,22 +36,16 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
             return;
 
         EntityUid locEntity = EntityUid.Invalid;
-        uint locAppearanceID = 0;
+        Vector3 turfCoords = Vector3.Zero;
 
         uint imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
 
         if(loc is DreamObjectMovable)
             locEntity = ((DreamObjectMovable)loc).Entity;
+        else if(loc is DreamObjectTurf turf)
+            turfCoords = new Vector3(turf.X, turf.Y, turf.Z);
 
-        _atomManager.UpdateAppearance(loc, appearance => {appearance.ClientImages.Remove(imageAppearanceID);});
-        if(!_atomManager.TryGetAppearance(loc, out var locAppearance)) //get the updated appearance
-            return;
-        locAppearanceID = _serverAppearanceSystem.AddAppearance(locAppearance);
 
-        _atomManager.TryCreateAppearanceFrom(new DreamValue(loc), out IconAppearance? attachedAppearance);
-        if(attachedAppearance == null)
-            return;
-
-        RaiseNetworkEvent(new RemoveClientImageEvent(locEntity, locAppearanceID, imageAppearanceID), connection.Session.ConnectedClient);
+        RaiseNetworkEvent(new RemoveClientImageEvent(locEntity, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
     }
 }

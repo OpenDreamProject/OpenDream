@@ -34,7 +34,7 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
                 return false;
         }
         result = new List<DreamIcon>();
-        foreach(uint distinctID in resultIDs.Distinct())
+        foreach(uint distinctID in resultIDs)
             if(_idToIcon.TryGetValue(distinctID, out DreamIcon? icon))
                 result.Add(icon);
         return result.Count > 0;

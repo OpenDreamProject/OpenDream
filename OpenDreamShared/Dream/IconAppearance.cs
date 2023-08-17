@@ -40,7 +40,6 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
-        [ViewVariables] public List<uint> ClientImages = new(); //this just holds a list of all clientimage appearance ids associated with this one, it is not filtered by client. This is to make the appearance hash unique.
         [ViewVariables] public List<DreamFilter> Filters = new();
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
         [ViewVariables] public float[] Transform = new float[6] {   1, 0,   // a d
@@ -70,7 +69,6 @@ namespace OpenDreamShared.Dream {
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<uint>(appearance.Overlays);
             Underlays = new List<uint>(appearance.Underlays);
-            ClientImages = new List<uint>(appearance.ClientImages);
             Filters = new List<DreamFilter>(appearance.Filters);
             Override = appearance.Override;
 
@@ -106,7 +104,6 @@ namespace OpenDreamShared.Dream {
             if (appearance.Underlays.Count != Underlays.Count) return false;
             if (appearance.Filters.Count != Filters.Count) return false;
             if (appearance.Override != Override) return false;
-            if (appearance.ClientImages.Count != ClientImages.Count) return false;
 
             for (int i = 0; i < Filters.Count; i++) {
                 if (appearance.Filters[i] != Filters[i]) return false;
@@ -118,10 +115,6 @@ namespace OpenDreamShared.Dream {
 
             for (int i = 0; i < Underlays.Count; i++) {
                 if (appearance.Underlays[i] != Underlays[i]) return false;
-            }
-
-            for (int i = 0; i < ClientImages.Count; i++) {
-                if (appearance.ClientImages[i] != ClientImages[i]) return false;
             }
 
             for (int i = 0; i < 6; i++) {
@@ -187,10 +180,6 @@ namespace OpenDreamShared.Dream {
 
             foreach (int underlay in Underlays) {
                 hashCode.Add(underlay);
-            }
-
-            foreach (uint clientImage in ClientImages) {
-                hashCode.Add(clientImage);
             }
 
             foreach (DreamFilter filter in Filters) {

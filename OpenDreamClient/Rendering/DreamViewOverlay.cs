@@ -300,7 +300,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //client images act as either an overlay or replace the main icon
         //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
-        //note also that we use position and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
+        //note also that we use turfCoords and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
         if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<DreamIcon>? attachedClientImages)){
             foreach(DreamIcon CI in attachedClientImages){
                 if(CI.Appearance == null)

@@ -11,6 +11,8 @@ using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
+using System.Linq;
+using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
 
@@ -42,6 +44,7 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly EntityLookupSystem _lookupSystem;
     private readonly ClientAppearanceSystem _appearanceSystem;
     private readonly ClientScreenOverlaySystem _screenOverlaySystem;
+    private readonly ClientImagesSystem _clientImagesSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
@@ -68,12 +71,13 @@ internal sealed class DreamViewOverlay : Overlay {
     private ViewAlgorithm.Tile?[,]? _tileInfo;
 
     public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
-        ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem) {
+        ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem, ClientImagesSystem clientImagesSystem) {
         IoCManager.InjectDependencies(this);
         _transformSystem = transformSystem;
         _lookupSystem = lookupSystem;
         _appearanceSystem = appearanceSystem;
         _screenOverlaySystem = screenOverlaySystem;
+        _clientImagesSystem = clientImagesSystem;
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -166,7 +170,7 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
-    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, RendererMetaData? parentIcon = null, bool keepTogether = false) {
+    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
 
@@ -256,13 +260,6 @@ internal sealed class DreamViewOverlay : Overlay {
             result.Add(renderTargetPlaceholder);
         }
 
-        //TODO check for images with override here
-        /*foreach (image in client.images) {
-            if (image.override && image.location == icon.owner)
-                current.MainIcon = image
-            else
-                add like overlays?
-        }*/
 
         //TODO vis_contents
         //click uid should be set to current.uid again
@@ -298,6 +295,20 @@ internal sealed class DreamViewOverlay : Overlay {
             } else {
                 current.KeepTogetherGroup ??= new();
                 ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current.KeepTogetherGroup, current, keepTogether);
+            }
+        }
+
+        //client images act as either an overlay or replace the main icon
+        //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
+        //note also that we use turfCoords and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
+        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<DreamIcon>? attachedClientImages)){
+            foreach(DreamIcon CI in attachedClientImages){
+                if(CI.Appearance == null)
+                    continue;
+                if(CI.Appearance.Override)
+                    current.MainIcon = CI;
+                else
+                    ProcessIconComponents(CI, current.Position, uid, isScreen, ref tieBreaker, result, current, false);
             }
         }
 
@@ -769,7 +780,9 @@ internal sealed class DreamViewOverlay : Overlay {
             MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
 
             tValue = 0;
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer);
+            //pass the turf coords for client.images lookup
+            Vector3 turfCoords = new Vector3(tileRef.X, tileRef.Y, (int) worldPos.MapId);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, turfCoords: turfCoords);
         }
 
         // Visible entities

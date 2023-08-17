@@ -837,6 +837,63 @@ namespace OpenDreamRuntime.Objects.Types {
         }
     }
 
+
+// client.images list
+    public sealed class ClientImagesList : DreamList {
+        private readonly ServerClientImagesSystem? _clientImagesSystem;
+        private readonly DreamConnection _connection;
+        private readonly List<DreamValue> _imageObjects = new();
+
+        public ClientImagesList(DreamObjectTree objectTree, ServerClientImagesSystem? clientImagesSystem, DreamConnection connection) : base(objectTree.List.ObjectDefinition, 0) {
+            _clientImagesSystem = clientImagesSystem;
+            _connection = connection;
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var imageIndex) || imageIndex < 1 || imageIndex > _imageObjects.Count)
+                throw new Exception($"Invalid index into client images list: {key}");
+
+            return _imageObjects[imageIndex - 1];
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot write to an index of a client images list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
+                return;
+
+            _clientImagesSystem?.AddImageObject(_connection, image);
+            _imageObjects.Add(value);
+        }
+
+        public override void RemoveValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObject<DreamObjectImage>(out var image))
+                return;
+
+            _clientImagesSystem?.RemoveImageObject(_connection, image);
+            _imageObjects.Remove(value);
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            if (end == 0 || end > _imageObjects.Count + 1) end = _imageObjects.Count + 1;
+
+            for (int i = start - 1; i < end - 1; i++) {
+                if (!_imageObjects[i].TryGetValueAsDreamObject<DreamObjectImage>(out var image))
+                    continue;
+
+                _clientImagesSystem?.RemoveImageObject(_connection, image);
+            }
+
+            _imageObjects.RemoveRange(start - 1, end - start);
+        }
+
+        public override int GetLength() {
+            return _imageObjects.Count;
+        }
+    }
+
     // world.contents list
     // Operates on a list of all atoms
     public sealed class WorldContentsList : DreamList {

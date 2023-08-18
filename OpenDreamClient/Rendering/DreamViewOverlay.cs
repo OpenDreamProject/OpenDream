@@ -11,7 +11,6 @@ using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
-using System.Linq;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
@@ -162,8 +161,9 @@ internal sealed class DreamViewOverlay : Overlay {
         ProcessSprites(worldHandle, viewportSize, args.WorldAABB);
 
         //Final draw
-        //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
         DrawPlanes(worldHandle);
+
+        //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
         worldHandle.DrawTexture(
             MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
             new Vector2(args.WorldAABB.Left, args.WorldAABB.Bottom * -1));
@@ -483,7 +483,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 handle.UseShader(null);
             };
 
-            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
+            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent && !iconMetaData.ShouldPassMouse) {
                 mouseMapDrawAction = () => {
                     handle.UseShader(_blockColorInstance);
                     handle.SetTransform(tmpTranslation);
@@ -551,7 +551,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 handle.UseShader(null);
             };
 
-            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
+            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent && !iconMetaData.ShouldPassMouse) {
                 mouseMapDrawAction = () => {
                     handle.UseShader(_blockColorInstance);
                     handle.SetTransform(tmpTranslation);
@@ -653,7 +653,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
                 //add this sprite for rendering
                 (Action,Action) drawActions;
-                if (!string.IsNullOrEmpty(sprite.RenderSource) && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)) {
+                if (!sprite.HasRenderSource && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)) {
                     drawActions = DrawIconAction(handle, sprite, (-worldAABB.BottomLeft)-(worldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
                 } else {
                     drawActions = DrawIconAction(handle, sprite, -worldAABB.BottomLeft);
@@ -891,6 +891,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public MouseOpacity MouseOpacity;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
+    public bool HasRenderSource => string.IsNullOrEmpty(RenderSource);
+    public bool ShouldPassMouse => HasRenderSource && (AppearanceFlags & AppearanceFlags.PassMouse) != 0;
 
     public RendererMetaData() {
         Reset();
@@ -929,7 +931,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         }
 
         //Anything with a render source which points to a render target must come *after* that render_target
-        if (!string.IsNullOrEmpty(RenderSource) && RenderSource == other.RenderTarget) {
+        if (!HasRenderSource && RenderSource == other.RenderTarget) {
             return 1;
         }
 

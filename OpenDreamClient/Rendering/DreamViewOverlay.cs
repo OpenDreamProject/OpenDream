@@ -653,7 +653,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
                 //add this sprite for rendering
                 (Action,Action) drawActions;
-                if (!sprite.HasRenderSource && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)) {
+                if (sprite.HasRenderSource && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)) {
                     drawActions = DrawIconAction(handle, sprite, (-worldAABB.BottomLeft)-(worldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
                 } else {
                     drawActions = DrawIconAction(handle, sprite, -worldAABB.BottomLeft);
@@ -891,7 +891,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public MouseOpacity MouseOpacity;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
-    public bool HasRenderSource => string.IsNullOrEmpty(RenderSource);
+    public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
     public bool ShouldPassMouse => HasRenderSource && (AppearanceFlags & AppearanceFlags.PassMouse) != 0;
 
     public RendererMetaData() {
@@ -931,7 +931,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         }
 
         //Anything with a render source which points to a render target must come *after* that render_target
-        if (!HasRenderSource && RenderSource == other.RenderTarget) {
+        if (HasRenderSource && RenderSource == other.RenderTarget) {
             return 1;
         }
 

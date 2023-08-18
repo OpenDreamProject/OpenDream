@@ -260,11 +260,6 @@ internal sealed class DreamViewOverlay : Overlay {
             result.Add(renderTargetPlaceholder);
         }
 
-
-        //TODO vis_contents
-        //click uid should be set to current.uid again
-        //dont forget the vis_flags
-
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
             if (underlay.Appearance == null)
@@ -310,6 +305,16 @@ internal sealed class DreamViewOverlay : Overlay {
                 else
                     ProcessIconComponents(CI, current.Position, uid, isScreen, ref tieBreaker, result, current, false);
             }
+        }
+
+        foreach (var visContent in icon.Appearance.VisContents) {
+            if (!_spriteQuery.TryGetComponent(visContent, out var sprite))
+                continue;
+
+            ProcessIconComponents(sprite.Icon, position, visContent, false, ref tieBreaker, result, current, keepTogether);
+
+            // TODO: click uid should be set to current.uid again
+            // TODO: vis_flags
         }
 
         //TODO maptext - note colour + transform apply

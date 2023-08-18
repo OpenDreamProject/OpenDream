@@ -12,6 +12,7 @@ public sealed class DreamObjectClient : DreamObject {
     public readonly ClientImagesList Images;
     public readonly VerbsList Verbs;
     public ViewRange View { get; private set; }
+
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
         Screen = new(ObjectTree, screenOverlaySystem, Connection);

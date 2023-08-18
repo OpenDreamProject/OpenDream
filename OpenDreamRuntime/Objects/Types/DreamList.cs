@@ -3,6 +3,7 @@ using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using Robust.Server.GameStates;
 using Robust.Shared.Serialization.Manager;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
@@ -678,6 +679,83 @@ namespace OpenDreamRuntime.Objects.Types {
 
             overlay.Icon ??= defaultIcon;
             return overlay;
+        }
+    }
+
+    // atom.vis_contents list
+    // Operates on an atom's appearance
+    public sealed class DreamVisContentsList : DreamList {
+        [Dependency] private readonly AtomManager _atomManager = default!;
+        private readonly PvsOverrideSystem? _pvsOverrideSystem;
+
+        private readonly List<DreamObjectAtom> _visContents = new();
+        private readonly DreamObject _atom;
+
+        public DreamVisContentsList(DreamObjectDefinition listDef, PvsOverrideSystem? pvsOverrideSystem, DreamObject atom) : base(listDef, 0) {
+            IoCManager.InjectDependencies(this);
+
+            _pvsOverrideSystem = pvsOverrideSystem;
+            _atom = atom;
+        }
+
+        public override List<DreamValue> GetValues() {
+            var values = new List<DreamValue>(_visContents.Count);
+
+            foreach (var visContent in _visContents) {
+                values.Add(new(visContent));
+            }
+
+            return values;
+        }
+
+        public override void Cut(int start = 1, int end = 0) {
+            int count = _visContents.Count + 1;
+            if (end == 0 || end > count) end = count;
+
+            _visContents.RemoveRange(start - 1, end - start);
+            _atomManager.UpdateAppearance(_atom, appearance => {
+                appearance.VisContents.RemoveRange(start - 1, end - start);
+            });
+        }
+
+        public override DreamValue GetValue(DreamValue key) {
+            if (!key.TryGetValueAsInteger(out var visContentsIndex) || visContentsIndex < 1)
+                throw new Exception($"Invalid index into vis_contents list: {key}");
+            if (visContentsIndex > _visContents.Count)
+                throw new Exception($"Atom only has {_visContents.Count} vis_contents element(s), cannot index {visContentsIndex}");
+
+            return new DreamValue(_visContents[visContentsIndex - 1]);
+        }
+
+        public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+            throw new Exception("Cannot write to an index of a vis_contents list");
+        }
+
+        public override void AddValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+                throw new Exception($"Cannot add {value} to a vis_contents list"); // TODO: Turfs can also be added
+
+            // TODO: Only override the entity's visibility if its parent atom is visible
+            _pvsOverrideSystem.AddGlobalOverride(movable.Entity);
+
+            _visContents.Add(movable);
+            _atomManager.UpdateAppearance(_atom, appearance => {
+                appearance.VisContents.Add(movable.Entity);
+            });
+        }
+
+        public override void RemoveValue(DreamValue value) {
+            if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
+                return;
+
+            _visContents.Remove(movable);
+            _atomManager.UpdateAppearance(_atom, appearance => {
+                appearance.VisContents.Remove(movable.Entity);
+            });
+        }
+
+        public override int GetLength() {
+            return _visContents.Count;
         }
     }
 

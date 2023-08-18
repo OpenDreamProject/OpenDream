@@ -4,8 +4,10 @@ using Robust.Shared.ViewVariables;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using Robust.Shared.GameObjects;
 
 namespace OpenDreamShared.Dream {
+    // TODO: Wow this is huge! Probably look into splitting this by most used/least used to reduce the size of these
     [Serializable, NetSerializable]
     public sealed class IconAppearance : IEquatable<IconAppearance> {
         [ViewVariables] public int? Icon;
@@ -40,6 +42,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<uint> Overlays = new();
         [ViewVariables] public List<uint> Underlays = new();
+        [ViewVariables] public List<EntityUid> VisContents = new();
         [ViewVariables] public List<DreamFilter> Filters = new();
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
         [ViewVariables] public float[] Transform = new float[6] {   1, 0,   // a d
@@ -69,6 +72,7 @@ namespace OpenDreamShared.Dream {
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<uint>(appearance.Overlays);
             Underlays = new List<uint>(appearance.Underlays);
+            VisContents = new List<EntityUid>(appearance.VisContents);
             Filters = new List<DreamFilter>(appearance.Filters);
             Override = appearance.Override;
 
@@ -77,9 +81,9 @@ namespace OpenDreamShared.Dream {
             }
         }
 
-        public override bool Equals(object obj) => obj is IconAppearance appearance && Equals(appearance);
+        public override bool Equals(object? obj) => obj is IconAppearance appearance && Equals(appearance);
 
-        public bool Equals(IconAppearance appearance) {
+        public bool Equals(IconAppearance? appearance) {
             if (appearance == null) return false;
 
             if (appearance.Icon != Icon) return false;
@@ -91,7 +95,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Alpha != Alpha) return false;
             if (appearance.GlideSize != GlideSize) return false;
             if (!appearance.ColorMatrix.Equals(ColorMatrix)) return false;
-            if (appearance.Layer != Layer) return false;
+            if (!appearance.Layer.Equals(Layer)) return false;
             if (appearance.Plane != Plane) return false;
             if (appearance.RenderSource != RenderSource) return false;
             if (appearance.RenderTarget != RenderTarget) return false;
@@ -102,6 +106,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.MouseOpacity != MouseOpacity) return false;
             if (appearance.Overlays.Count != Overlays.Count) return false;
             if (appearance.Underlays.Count != Underlays.Count) return false;
+            if (appearance.VisContents.Count != VisContents.Count) return false;
             if (appearance.Filters.Count != Filters.Count) return false;
             if (appearance.Override != Override) return false;
 
@@ -117,8 +122,12 @@ namespace OpenDreamShared.Dream {
                 if (appearance.Underlays[i] != Underlays[i]) return false;
             }
 
+            for (int i = 0; i < VisContents.Count; i++) {
+                if (appearance.VisContents[i] != VisContents[i]) return false;
+            }
+
             for (int i = 0; i < 6; i++) {
-                if (appearance.Transform[i] != Transform[i]) return false;
+                if (!appearance.Transform[i].Equals(Transform[i])) return false;
             }
 
             return true;
@@ -180,6 +189,10 @@ namespace OpenDreamShared.Dream {
 
             foreach (int underlay in Underlays) {
                 hashCode.Add(underlay);
+            }
+
+            foreach (int visContent in VisContents) {
+                hashCode.Add(visContent);
             }
 
             foreach (DreamFilter filter in Filters) {

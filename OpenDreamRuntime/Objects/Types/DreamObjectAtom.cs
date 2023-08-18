@@ -1,5 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -9,10 +8,10 @@ public class DreamObjectAtom : DreamObject {
     public string? Desc;
     public readonly DreamOverlaysList Overlays;
     public readonly DreamOverlaysList Underlays;
+    public readonly DreamVisContentsList VisContents;
     public readonly VerbsList Verbs;
     public readonly DreamFilterList Filters;
     public DreamList? VisLocs; // TODO: Implement
-    public DreamList? VisContents; // TODO: Implement
 
     public DreamObjectAtom(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
@@ -20,6 +19,7 @@ public class DreamObjectAtom : DreamObject {
 
         Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+        VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
         Verbs = new(ObjectTree, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
     }
@@ -75,7 +75,6 @@ public class DreamObjectAtom : DreamObject {
                 value = new(VisLocs);
                 return true;
             case "vis_contents":
-                VisContents ??= ObjectTree.CreateList();
                 value = new(VisContents);
                 return true;
 
@@ -130,6 +129,20 @@ public class DreamObjectAtom : DreamObject {
                     }
                 } else if (!value.IsNull) {
                     Underlays.AddValue(value);
+                }
+
+                break;
+            }
+            case "vis_contents": {
+                VisContents.Cut();
+
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    // TODO: This should postpone UpdateAppearance until after everything is added
+                    foreach (DreamValue visContentsValue in valueList.GetValues()) {
+                        VisContents.AddValue(visContentsValue);
+                    }
+                } else if (!value.IsNull) {
+                    VisContents.AddValue(value);
                 }
 
                 break;

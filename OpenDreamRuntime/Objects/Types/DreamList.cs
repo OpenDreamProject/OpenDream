@@ -732,15 +732,24 @@ namespace OpenDreamRuntime.Objects.Types {
         }
 
         public override void AddValue(DreamValue value) {
-            if (!value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable))
-                throw new Exception($"Cannot add {value} to a vis_contents list"); // TODO: Turfs can also be added
+            EntityUid entity;
+            if (value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable)) {
+                _visContents.Add(movable);
+                entity = movable.Entity;
+            } else if (value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf)) {
+                _visContents.Add(turf);
+                entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
+            } else {
+                throw new Exception($"Cannot add {value} to a vis_contents list");
+            }
 
             // TODO: Only override the entity's visibility if its parent atom is visible
-            _pvsOverrideSystem.AddGlobalOverride(movable.Entity);
+            if (entity != EntityUid.Invalid)
+                _pvsOverrideSystem?.AddGlobalOverride(entity);
 
-            _visContents.Add(movable);
             _atomManager.UpdateAppearance(_atom, appearance => {
-                appearance.VisContents.Add(movable.Entity);
+                // Add even an invalid UID to keep this and _visContents in sync
+                appearance.VisContents.Add(entity);
             });
         }
 

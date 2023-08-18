@@ -666,9 +666,7 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     private void DrawPlanes(DrawingHandleWorld handle) {
-        if (!MouseMapRenderEnabled) { // No need to render the map if we're drawing the mouse map over it
-            using var _ = _prof.Group("draw planes map");
-
+        using (var _ = _prof.Group("draw planes map")) {
             handle.RenderInRenderTarget(_baseRenderTarget!, () => {
                 foreach (int planeIndex in _planes.Keys.Order()) {
                     var plane = _planes[planeIndex];

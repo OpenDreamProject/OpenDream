@@ -396,6 +396,9 @@ namespace DMCompiler.DM.Expressions {
                 _filePath = filePath;
             }
 
+            // Compile-time resources always use forward slashes
+            _filePath = _filePath.Replace('\\', '/');
+
             DMObjectTree.Resources.Add(_filePath);
         }
 

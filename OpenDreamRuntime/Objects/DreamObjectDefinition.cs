@@ -5,6 +5,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
@@ -23,6 +24,7 @@ namespace OpenDreamRuntime.Objects {
         public readonly ISerializationManager SerializationManager;
         public readonly ServerAppearanceSystem? AppearanceSystem;
         public readonly TransformSystem? TransformSystem;
+        public readonly PvsOverrideSystem? PvsOverrideSystem;
 
         public readonly TreeEntry TreeEntry;
         public DreamPath Type => TreeEntry.Path;
@@ -59,6 +61,7 @@ namespace OpenDreamRuntime.Objects {
             SerializationManager = copyFrom.SerializationManager;
             AppearanceSystem = copyFrom.AppearanceSystem;
             TransformSystem = copyFrom.TransformSystem;
+            PvsOverrideSystem = copyFrom.PvsOverrideSystem;
 
             TreeEntry = copyFrom.TreeEntry;
             InitializationProc = copyFrom.InitializationProc;
@@ -71,7 +74,7 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, TreeEntry? treeEntry) {
+        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, TreeEntry? treeEntry) {
             DreamManager = dreamManager;
             ObjectTree = objectTree;
             AtomManager = atomManager;
@@ -83,6 +86,7 @@ namespace OpenDreamRuntime.Objects {
             SerializationManager = serializationManager;
             AppearanceSystem = appearanceSystem;
             TransformSystem = transformSystem;
+            PvsOverrideSystem = pvsOverrideSystem;
 
             TreeEntry = treeEntry;
 

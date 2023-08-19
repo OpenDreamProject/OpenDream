@@ -7,6 +7,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
@@ -34,6 +35,7 @@ namespace OpenDreamRuntime.Objects {
         protected ISerializationManager SerializationManager => ObjectDefinition.SerializationManager;
         protected ServerAppearanceSystem? AppearanceSystem => ObjectDefinition.AppearanceSystem;
         protected TransformSystem? TransformSystem => ObjectDefinition.TransformSystem;
+        protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
 

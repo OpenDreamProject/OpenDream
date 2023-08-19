@@ -1,7 +1,7 @@
 ﻿/client
 	var/list/verbs = null
 	var/list/screen = null
-	var/list/images = list() 
+	var/list/images = null
 	var/list/vars
 
 	var/atom/statobj

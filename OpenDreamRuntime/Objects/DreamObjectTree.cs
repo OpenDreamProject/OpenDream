@@ -9,11 +9,11 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Manager.Exceptions;
-using TreeEntry = OpenDreamRuntime.Objects.TreeEntry;
 
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectTree {
@@ -59,10 +59,12 @@ namespace OpenDreamRuntime.Objects {
         [Dependency] private readonly ProcScheduler _procScheduler = default!;
         private ServerAppearanceSystem? _appearanceSystem;
         private TransformSystem? _transformSystem;
+        private PvsOverrideSystem? _pvsOverrideSystem;
 
         public void LoadJson(DreamCompiledJson json) {
             _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
             _entitySystemManager.TryGetEntitySystem(out _transformSystem);
+            _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
 
             Strings = json.Strings ?? new();
 
@@ -304,7 +306,7 @@ namespace OpenDreamRuntime.Objects {
             foreach (TreeEntry type in GetAllDescendants(Root)) {
                 int typeId = pathToTypeId[type.Path];
                 DreamTypeJson jsonType = types[typeId];
-                var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, type);
+                var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, type);
 
                 type.ObjectDefinition = definition;
                 type.TreeIndex = treeIndex++;

@@ -126,8 +126,13 @@ namespace OpenDreamRuntime {
                     value.TryGetValueAsString(out appearance.IconState);
                     break;
                 case "dir":
-                    //TODO figure out the weird inconsistencies with this being internally clamped
                     value.TryGetValueAsInteger(out var dir);
+
+                    if (dir <= 0) // Ignore any sets <= 0 or non-number
+                        break;
+
+                    if (dir > 0xFF) // Clamp to 1 byte
+                        dir = 0xFF;
 
                     appearance.Direction = (AtomDirection)dir;
                     break;

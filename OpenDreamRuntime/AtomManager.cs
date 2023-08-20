@@ -100,13 +100,13 @@ namespace OpenDreamRuntime {
                 case "glide_size":
                 case "render_source":
                 case "render_target":
+                case "transform":
                     return true;
 
                 // Get/SetAppearanceVar doesn't handle these
                 case "overlays":
                 case "underlays":
                 case "filters":
-                case "transform":
                 default:
                     return false;
             }
@@ -193,7 +193,14 @@ namespace OpenDreamRuntime {
                 case "render_target":
                     value.TryGetValueAsString(out appearance.RenderTarget);
                     break;
-                // TODO: overlays, underlays, filters, transform
+                case "transform":
+                    float[] transformArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transform)
+                        ? DreamObjectMatrix.MatrixToTransformFloatArray(transform)
+                        : DreamObjectMatrix.IdentityMatrixArray;
+
+                    appearance.Transform = transformArray;
+                    break;
+                // TODO: overlays, underlays, filters
                 //       Those are handled separately by whatever is calling SetAppearanceVar currently
                 default:
                     throw new ArgumentException($"Invalid appearance var {varName}");
@@ -259,7 +266,14 @@ namespace OpenDreamRuntime {
                     return (appearance.RenderTarget != null)
                         ? new DreamValue(appearance.RenderTarget)
                         : DreamValue.Null;
-                // TODO: overlays, underlays, filters, transform
+                case "transform":
+                    var transform = appearance.Transform;
+                    var matrix = DreamObjectMatrix.MakeMatrix(_objectTree,
+                        transform[0], transform[2], transform[4],
+                        transform[1], transform[3], transform[5]);
+
+                    return new(matrix);
+                // TODO: overlays, underlays, filters
                 //       Those are handled separately by whatever is calling GetAppearanceVar currently
                 default:
                     throw new ArgumentException($"Invalid appearance var {varName}");

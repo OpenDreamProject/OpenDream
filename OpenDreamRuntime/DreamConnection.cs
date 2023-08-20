@@ -5,6 +5,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.GameObjects;
@@ -19,6 +20,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
+        private readonly ServerClientImagesSystem? _clientImagesSystem;
         private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
@@ -101,11 +103,12 @@ namespace OpenDreamRuntime {
             IoCManager.InjectDependencies(this);
 
             _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
+            _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);
             _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
         public void HandleConnection(IPlayerSession session) {
-            var client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem);
+            var client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem, _clientImagesSystem);
 
             Session = session;
 

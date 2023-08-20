@@ -1565,16 +1565,34 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("num2text")]
         [DreamProcParameter("N")]
-        [DreamProcParameter("Digits", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("Radix", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("B", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_num2text(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue number = bundle.GetArgument(0, "N");
 
-            if (number.TryGetValueAsFloat(out float floatValue)) {
-                return new DreamValue(floatValue.ToString(CultureInfo.InvariantCulture));
-            } else {
+            if (!number.TryGetValueAsFloat(out float floatNum)) {
                 return new DreamValue("0");
             }
+            if(bundle.Arguments.Length == 1) {
+                return new DreamValue(floatNum.ToString("g6"));
+            }
+
+            if(bundle.Arguments.Length == 2) {
+                if(!bundle.GetArgument(1, "A").TryGetValueAsInteger(out var sigFig)) {
+                    return new DreamValue(floatNum.ToString("g6"));
+                }
+                return new DreamValue(floatNum.ToString($"g{sigFig}"));
+            }
+
+            if(bundle.Arguments.Length == 3) {
+                var digits = bundle.GetArgument(1, "A").MustGetValueAsInteger();
+                var radix = bundle.GetArgument(2, "B").MustGetValueAsInteger();
+                var intNum = (int)floatNum;
+                return new DreamValue(DreamProcNativeHelpers.ToBase(intNum, radix).PadLeft(digits, '0'));
+            }
+
+            // Maybe an exception is better?
+            return new DreamValue("0");
         }
 
         [DreamProc("orange")]

@@ -1,7 +1,6 @@
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
 
 namespace DMCompiler.DM.Visitors {

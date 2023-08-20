@@ -53,8 +53,9 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_Find(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue element = bundle.GetArgument(0, "Elem");
-            int start = bundle.GetArgument(1, "Start").MustGetValueAsInteger(); //1-indexed
-            int end = bundle.GetArgument(2, "End").MustGetValueAsInteger(); //1-indexed
+            if (!bundle.GetArgument(1, "Start").TryGetValueAsInteger(out var start)) //1-indexed
+                start = 1; // 1 if non-number
+            bundle.GetArgument(2, "End").TryGetValueAsInteger(out var end); //1-indexed, 0 if non-number
             DreamList list = (DreamList)src!;
 
             return new(list.FindValue(element, start, end));

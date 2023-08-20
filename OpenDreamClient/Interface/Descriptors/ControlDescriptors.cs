@@ -1,7 +1,10 @@
 ﻿using JetBrains.Annotations;
+using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Serialization.Markdown.Validation;
 using Robust.Shared.Serialization.Markdown.Value;
+using Robust.Shared.Serialization.TypeSerializers.Interfaces;
 
 namespace OpenDreamClient.Interface.Descriptors;
 
@@ -15,7 +18,7 @@ public class ControlDescriptor : ElementDescriptor {
     public Vector2i? Anchor1;
     [DataField("anchor2")]
     public Vector2i? Anchor2;
-    [DataField("background-color")]
+    [DataField("background-color", customTypeSerializer: typeof(DMFColorSerializer))]
     public Color? BackgroundColor;
     [DataField("is-visible")]
     public bool IsVisible = true;
@@ -149,4 +152,31 @@ public sealed class ControlDescriptorGrid : ControlDescriptor {
 }
 
 public sealed class ControlDescriptorTab : ControlDescriptor {
+}
+
+
+public sealed class DMFColorSerializer : ITypeReader<Color, ValueDataNode> {
+    public Color Read(ISerializationManager serializationManager,
+        ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<Color>? instanceProvider = null) {
+
+        if(node.Value.Equals("none", StringComparison.OrdinalIgnoreCase))
+            return Color.Transparent;
+
+        var deserializedColor = Color.TryFromName(node.Value, out var color)
+                ? color :
+                Color.TryFromHex(node.Value);
+
+        if (deserializedColor is null)
+            throw new Exception($"Value {node.Value} was not a valid DMF color value!");
+        else
+            return deserializedColor.Value;
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node, IDependencyCollection dependencies, ISerializationContext? context = null) {
+        throw new NotImplementedException();
+    }
 }

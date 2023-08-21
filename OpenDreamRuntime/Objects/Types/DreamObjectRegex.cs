@@ -34,8 +34,12 @@ public sealed class DreamObjectRegex : DreamObject {
                 if (patternString[i] != '\\')
                     continue;
 
+                ++i; // Move to the first char of the escape code
+                if (i >= patternString.Length)
+                    throw new Exception($"Invalid escape code at end of regex {pattern}");
+
                 // BYOND recognizes some escape codes C# doesn't. We replace those with their equivalent here.
-                switch (patternString[++i]) {
+                switch (patternString[i]) {
                     case 'l': // Any letter A through Z, case-insensitive
                         patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[A-Za-z]");
                         i += 6;

@@ -6,7 +6,6 @@
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
-  <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>
     <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />
     <ProjectReference Include="..\OpenDreamPackaging\OpenDreamPackaging.csproj" />

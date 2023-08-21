@@ -1057,8 +1057,8 @@ namespace OpenDreamRuntime.Procs.Native {
                     // For handling special values expressed as single-property objects
                     // Such as float-point values Infinity and NaN
                     var first = enumerator.Current;
-                    var has_second = enumerator.MoveNext();
-                    if (!has_second) {
+                    var hasSecond = enumerator.MoveNext();
+                    if (!hasSecond) {
                         switch(first.Name) {
                             case "__number__": {
                                 var raw = first.Value.GetString();
@@ -1073,7 +1073,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     DreamValue v1 = CreateValueFromJsonElement(objectTree, first.Value);
                     list.SetValue(new DreamValue(first.Name), v1);
 
-                    if(!has_second)
+                    if(!hasSecond)
                         return new DreamValue(list);
 
                     var second = enumerator.Current;

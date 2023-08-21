@@ -30,32 +30,23 @@ public sealed class DreamObjectRegex : DreamObject {
                 if (flagsString.Contains('g')) IsGlobal = true;
             }
 
-            var parsingString = "";
             for(var i = 0; i < patternString.Length; i++) {
-                if (!parsingString.StartsWith('\\') && patternString[i] == '\\') {
-                    parsingString = "\\";
+                if (patternString[i] != '\\')
                     continue;
-                }
-                parsingString += patternString[i];
-                if(parsingString == "\\\\") {
-                    parsingString = "";
-                    continue;
-                }
 
-                if(parsingString == "\\l") {
-                    patternString = patternString.Remove(i-1, 2).Insert(i-1, "[A-Za-z]");
-                    parsingString = ""; 
-                    i += 6;
-                    continue;
-                }
-
-                if(parsingString == "\\L") {
-                    patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[^A-Za-z\\n]");
-                    parsingString = "";
-                    i += 9;
-                    continue;
+                // BYOND recognizes some escape codes C# doesn't. We replace those with their equivalent here.
+                switch (patternString[++i]) {
+                    case 'l': // Any letter A through Z, case-insensitive
+                        patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[A-Za-z]");
+                        i += 6;
+                        break;
+                    case 'L': // Any character except a letter or line break
+                        patternString = patternString.Remove(i - 1, 2).Insert(i - 1, "[^A-Za-z\\n]");
+                        i += 9;
+                        break;
                 }
             }
+
             Regex = new Regex(patternString, options);
         } else {
             throw new Exception("Invalid regex pattern " + pattern);

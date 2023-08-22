@@ -361,6 +361,9 @@ namespace DMCompiler.DM.Expressions {
         private bool _isAmbiguous;
 
         public Resource(Location location, string filePath) : base(location) {
+            // Compile-time resources always use forward slashes
+            filePath = filePath.Replace('\\', '/');
+
             string? finalFilePath = null;
 
             var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? "/";
@@ -395,9 +398,6 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
                 _filePath = filePath;
             }
-
-            // Compile-time resources always use forward slashes
-            _filePath = _filePath.Replace('\\', '/');
 
             DMObjectTree.Resources.Add(_filePath);
         }

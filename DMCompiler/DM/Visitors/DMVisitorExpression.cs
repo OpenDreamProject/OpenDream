@@ -598,7 +598,6 @@ namespace DMCompiler.DM.Visitors {
                         _ => throw new InvalidOperationException(),
                     };
                 }
-
                 switch (operation.Kind) {
                     case DMASTDereference.OperationKind.Field:
                     case DMASTDereference.OperationKind.FieldSafe: {
@@ -618,6 +617,10 @@ namespace DMCompiler.DM.Visitors {
                                 operation.Identifier = field;
                                 operation.GlobalId = null;
                                 operation.Path = property.Type;
+                                if (operation.Kind == DMASTDereference.OperationKind.Field &&
+                                    dmObject.IsSubtypeOf(DreamPath.Client)) {
+                                    DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,"Unsafe \"client\" access. Use the \"?.\" operator instead");
+                                }
                             } else {
                                 var globalId = dmObject.GetGlobalVariableId(field);
                                 if (globalId != null) {

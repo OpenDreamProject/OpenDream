@@ -1836,17 +1836,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus LocateCoord(DMProcState state) {
-            var z = state.Pop();
-            var y = state.Pop();
-            var x = state.Pop();
-            if (x.TryGetValueAsInteger(out var xInt) && xInt > 0 && y.TryGetValueAsInteger(out var yInt) &&
-                yInt > 0 && z.TryGetValueAsInteger(out var zInt) && zInt > 0) {
-                state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
-                state.Push(new DreamValue(turf));
-            } else {
-                state.Push(DreamValue.Null);
-            }
+            var z = (int)state.Pop().UnsafeGetValueAsFloat();
+            var y = (int)state.Pop().UnsafeGetValueAsFloat();
+            var x = (int)state.Pop().UnsafeGetValueAsFloat();
 
+            state.Proc.DreamMapManager.TryGetTurfAt((x, y), z, out var turf);
+            state.Push(new DreamValue(turf));
             return ProcStatus.Continue;
         }
 

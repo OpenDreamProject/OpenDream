@@ -361,6 +361,9 @@ namespace DMCompiler.DM.Expressions {
         private bool _isAmbiguous;
 
         public Resource(Location location, string filePath) : base(location) {
+            // Treat backslashes as forward slashes on Linux
+            filePath = filePath.Replace('\\', '/');
+
             string? finalFilePath = null;
 
             var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? "/";
@@ -395,6 +398,10 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
                 _filePath = filePath;
             }
+
+            // Path operations give backslashes on Windows, so do this again
+            // Compile-time resources always use forward slashes
+            _filePath = _filePath.Replace('\\', '/');
 
             DMObjectTree.Resources.Add(_filePath);
         }

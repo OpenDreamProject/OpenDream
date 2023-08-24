@@ -3,7 +3,7 @@ using Robust.Server.Player;
 
 namespace OpenDreamRuntime.Input {
     sealed class DreamCommandSystem : SharedDreamCommandSystem {
-        [Dependency] private readonly IDreamManager _dreamManager = default!;
+        [Dependency] private readonly DreamManager _dreamManager = default!;
 
         private readonly List<(string Command, IPlayerSession session)> _repeatingCommands = new();
 

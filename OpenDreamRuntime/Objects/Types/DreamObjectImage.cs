@@ -39,7 +39,7 @@ public sealed class DreamObjectImage : DreamObject {
         if (!AtomManager.TryCreateAppearanceFrom(icon, out Appearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
             Appearance = new IconAppearance();
-            if (icon != DreamValue.Null)
+            if (!icon.IsNull)
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
@@ -52,7 +52,7 @@ public sealed class DreamObjectImage : DreamObject {
 
         foreach (string argName in IconCreationArgs) {
             var arg = args.GetArgument(argIndex++);
-            if (arg == DreamValue.Null)
+            if (arg.IsNull)
                 continue;
 
             AtomManager.SetAppearanceVar(Appearance, argName, arg);
@@ -139,7 +139,7 @@ public sealed class DreamObjectImage : DreamObject {
                     foreach (DreamValue overlayValue in valueList.GetValues()) {
                         _overlays.AddValue(overlayValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     _overlays.AddValue(value);
                 }
 
@@ -171,10 +171,14 @@ public sealed class DreamObjectImage : DreamObject {
                     foreach (DreamValue underlayValue in valueList.GetValues()) {
                         _underlays.AddValue(underlayValue);
                     }
-                } else if (value != DreamValue.Null) {
+                } else if (!value.IsNull) {
                     _underlays.AddValue(value);
                 }
 
+                break;
+            }
+            case "override": {
+                Appearance!.Override = value.IsTruthy();
                 break;
             }
             default:
@@ -186,5 +190,9 @@ public sealed class DreamObjectImage : DreamObject {
                 base.SetVar(varName, value);
                 break;
         }
+    }
+
+    public DreamObject? GetAttachedLoc(){
+        return this._loc;
     }
 }

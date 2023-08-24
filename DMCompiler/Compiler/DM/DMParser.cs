@@ -4,7 +4,6 @@ using System.Linq;
 using DMCompiler.Compiler.DMPreprocessor;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
@@ -922,8 +921,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementReturn? Return() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Return)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTExpression? value = Expression();
 
@@ -934,8 +934,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementBreak? Break() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Break)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTIdentifier? label = Identifier();
 
@@ -946,8 +947,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementContinue? Continue() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Continue)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTIdentifier? label = Identifier();
 
@@ -958,8 +960,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementGoto? Goto() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Goto)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTIdentifier? label = Identifier();
 
@@ -970,8 +973,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementDel? Del() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Del)) {
-                var loc = Current().Location;
                 Whitespace();
                 bool hasParenthesis = Check(TokenType.DM_LeftParenthesis);
                 Whitespace();
@@ -987,18 +991,19 @@ namespace DMCompiler.Compiler.DM {
 
         /// <returns>Either a <see cref="DMASTProcStatementSet"/> or a DMASTAggregate that acts as a container for them. May be null.</returns>
         public DMASTProcStatement? Set() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Set)) {
                 Whitespace();
 
                 DMASTProcStatementSet[] sets = ProcSetEnd(true);
-                Token setBlockToken = Current();
                 if (sets.Length == 0) {
                     Error("Expected set declaration");
                     return null;
                 }
 
                 if (sets.Length > 1)
-                    return new DMASTAggregate<DMASTProcStatementSet>(setBlockToken.Location, sets);
+                    return new DMASTAggregate<DMASTProcStatementSet>(loc, sets);
                 return sets[0];
             }
 
@@ -1006,8 +1011,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementSpawn? Spawn() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Spawn)) {
-                var loc = Current().Location;
                 Whitespace();
                 bool hasArg = Check(TokenType.DM_LeftParenthesis);
                 DMASTExpression? delay = null;
@@ -1042,8 +1048,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementIf? If() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_If)) {
-                var loc = Current().Location;
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 BracketWhitespace();
@@ -1094,10 +1101,10 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatement? For() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_For)) {
                 Whitespace();
-
-                var loc = Current().Location;
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
 
@@ -1203,8 +1210,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatement? While() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_While)) {
-                var loc = Current().Location;
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
@@ -1235,8 +1243,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementDoWhile? DoWhile() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Do)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTProcBlockInner? body = ProcBlock();
 
@@ -1268,8 +1277,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementSwitch? Switch() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Switch)) {
-                var loc = Current().Location;
                 Whitespace();
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
@@ -1415,8 +1425,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementTryCatch? TryCatch() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Try)) {
-                var loc = Current().Location;
                 Whitespace();
 
                 DMASTProcBlockInner? tryBody = ProcBlock();
@@ -1456,8 +1467,9 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTProcStatementThrow? Throw() {
+            var loc = Current().Location;
+
             if (Check(TokenType.DM_Throw)) {
-                var loc = Current().Location;
                 Whitespace();
                 DMASTExpression? value = Expression();
 
@@ -2397,6 +2409,26 @@ namespace DMCompiler.Compiler.DM {
                             Error("istype() requires 1 or 2 arguments");
                             break;
                         }
+                    }
+                    case "isnull": {
+                        if (callParameters.Length != 1) Error("isnull() requires exactly 1 argument");
+
+                        return new DMASTIsNull(identifier.Location, callParameters[0].Value);
+                    }
+                    case "get_step": {
+                        if (callParameters.Length != 2) Error("get_step() requires exactly 2 arguments");
+
+                        return new DMASTGetStep(identifier.Location, callParameters[0].Value, callParameters[1].Value);
+                    }
+                    case "get_dir": {
+                        if (callParameters.Length != 2) Error("get_dir() requires exactly 2 arguments");
+
+                        return new DMASTGetDir(identifier.Location, callParameters[0].Value, callParameters[1].Value);
+                    }
+                    case "length": {
+                        if (callParameters.Length != 1) Error("length() requires exactly 1 argument");
+
+                        return new DMASTLength(identifier.Location, callParameters[0].Value);
                     }
                     case "text": {
                         if (callParameters.Length == 0) Error("text() requires at least 1 argument");

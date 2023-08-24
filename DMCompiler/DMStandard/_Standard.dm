@@ -50,6 +50,7 @@ proc/isinf(n)
 proc/islist(Object)
 proc/isloc(Loc1)
 proc/ismob(Loc1)
+proc/isobj(Loc1)
 proc/ismovable(Loc1)
 proc/isnan(n)
 proc/isnull(Val)
@@ -68,7 +69,7 @@ proc/max(A)
 proc/md5(T)
 proc/min(A)
 proc/nonspantext(Haystack, Needles, Start = 1)
-proc/num2text(N, Digits, Radix)
+proc/num2text(N, A, B)
 proc/orange(Dist = 5, Center = usr)
 proc/oview(Dist = 5, Center = usr)
 proc/oviewers(Depth = 5, Center = usr)
@@ -118,6 +119,7 @@ proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
 proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id)
+proc/winget(player, control_id, params)
 proc/winset(player, control_id, params)
 
 #include "Defines.dm"
@@ -226,12 +228,6 @@ proc/jointext(list/List, Glue, Start = 1, End = 0)
 
 proc/lentext(T)
 	return length(T)
-
-proc/isobj(Loc1)
-	for(var/arg in args)
-		if (!istype(arg, /obj)) return 0
-
-	return 1
 
 proc/winshow(player, window, show=1)
 	winset(player, window, "is-visible=[show ? "true" : "false"]")

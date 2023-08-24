@@ -34,8 +34,8 @@ namespace OpenDreamShared.Resources {
             /// <param name="stateName">The requested state's name</param>
             /// <returns>The requested state, default state, or null</returns>
             public ParsedDMIState? GetStateOrDefault(string? stateName) {
-                if (String.IsNullOrEmpty(stateName) || !States.TryGetValue(stateName, out var state)) {
-                    States.TryGetValue(String.Empty, out state);
+                if (string.IsNullOrEmpty(stateName) || !States.TryGetValue(stateName, out var state)) {
+                    States.TryGetValue(string.Empty, out state);
                 }
 
                 return state;
@@ -149,6 +149,7 @@ namespace OpenDreamShared.Resources {
             /// <param name="dir">Which direction to get. Every direction if null.</param>
             /// <param name="frame">Which frame to get. Every frame if null.</param>
             /// <param name="asSouth">If dir isn't null, return the frames as facing south</param>
+            /// <remarks>Invalid dir/frame args will give empty arrays</remarks>
             /// <returns>A dictionary containing the specified frames for each specified direction</returns>
             public Dictionary<AtomDirection, ParsedDMIFrame[]> GetFrames(AtomDirection? dir = null, int? frame = null, bool asSouth = false) {
                 Dictionary<AtomDirection, ParsedDMIFrame[]> directions;
@@ -165,10 +166,12 @@ namespace OpenDreamShared.Resources {
 
                 if (frame != null) { // Only get a specified frame
                     foreach (var direction in directions) {
-                        ParsedDMIFrame[] newFrames = new ParsedDMIFrame[1];
-
-                        newFrames[0] = direction.Value[frame.Value];
-                        directions[direction.Key] = newFrames;
+                        if (direction.Value.Length > frame.Value) {
+                            directions[direction.Key] = new[] { direction.Value[frame.Value] };
+                        } else {
+                            // Frame doesn't exist
+                            directions[direction.Key] = Array.Empty<ParsedDMIFrame>();
+                        }
                     }
                 }
 
@@ -272,7 +275,32 @@ namespace OpenDreamShared.Resources {
                 }
             }
 
-            throw new Exception("Could not find a DMI description");
+            if (imageSize != null) {
+                // No DMI description found, but we do have an image header
+                // So treat this PNG as a single icon frame spanning the whole image
+
+                var desc = new ParsedDMIDescription() {
+                    Width = (int)imageSize.Value.X,
+                    Height = (int)imageSize.Value.Y,
+                    States = new()
+                };
+
+                var state = new ParsedDMIState() {
+                    Name = string.Empty
+                };
+
+                var frame = new ParsedDMIFrame() {
+                    X = 0,
+                    Y = 0,
+                    Delay = 1
+                };
+
+                state.Directions.Add(AtomDirection.South, new [] { frame });
+                desc.States.Add(state.Name, state);
+                return desc;
+            }
+
+            throw new Exception("PNG is missing an image header");
         }
 
         private static ParsedDMIDescription ParseDMIDescription(string dmiDescription, uint imageWidth) {

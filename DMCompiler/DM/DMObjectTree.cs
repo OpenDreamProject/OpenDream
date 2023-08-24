@@ -2,10 +2,10 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
@@ -22,12 +22,12 @@ namespace DMCompiler.DM {
         /// </summary>
         public static HashSet<string> SeenGlobalProcDefinition = new();
         public static List<string> StringTable = new();
-        public static Dictionary<string, int> StringToStringID = new();
         public static DMProc GlobalInitProc;
         public static HashSet<string> Resources = new();
         public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
-        private static Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
+        private static readonly Dictionary<string, int> StringToStringId = new();
+        private static readonly Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
 
         private static Dictionary<DreamPath, int> _pathToTypeId = new();
         private static int _dmObjectIdCounter = 0;
@@ -48,13 +48,24 @@ namespace DMCompiler.DM {
             GlobalProcs.Clear();
             SeenGlobalProcDefinition.Clear();
             StringTable.Clear();
-            StringToStringID.Clear();
+            StringToStringId.Clear();
 
             _globalInitAssigns.Clear();
             _pathToTypeId.Clear();
             _dmObjectIdCounter = 0;
             _dmProcIdCounter = 0;
             GlobalInitProc = new(-1, Root, null);
+        }
+
+        public static int AddString(string value) {
+            if (!StringToStringId.TryGetValue(value, out var stringId)) {
+                stringId = StringTable.Count;
+
+                StringTable.Add(value);
+                StringToStringId.Add(value, stringId);
+            }
+
+            return stringId;
         }
 
         public static DMProc CreateDMProc(DMObject dmObject, DMASTProcDefinition? astDefinition) {
@@ -187,10 +198,7 @@ namespace DMCompiler.DM {
             foreach (var globals in _globalInitAssigns.Values) {
                 foreach (var assign in globals) {
                     try {
-                        if (assign.Value.Location.Line is int line) {
-                            GlobalInitProc.DebugSource(assign.Value.Location.SourceFile);
-                            GlobalInitProc.DebugLine(line);
-                        }
+                        GlobalInitProc.DebugSource(assign.Value.Location);
 
                         assign.Value.EmitPushValue(Root, GlobalInitProc);
                         GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));

@@ -4,13 +4,11 @@ using System.Text;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor {
-
-
     /// <summary>
     /// This class acts as the first layer of digestion for the compiler, <br/>
     /// taking in raw text and outputting vague tokens descriptive enough for the preprocessor to run on them.
     /// </summary>
-    sealed class DMPreprocessorLexer : TextLexer {
+    internal sealed class DMPreprocessorLexer : TextLexer {
         public string IncludeDirectory;
 
         public DMPreprocessorLexer(string includeDirectory, string sourceName, string source) : base(sourceName, source) {

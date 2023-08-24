@@ -4,7 +4,7 @@ using Robust.Shared.Enums;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime {
-    internal sealed partial class DreamManager {
+    public sealed partial class DreamManager {
         [Dependency] private readonly IServerNetManager _netManager = default!;
 
         private readonly Dictionary<NetUserId, DreamConnection> _connections = new();
@@ -28,10 +28,12 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgWinSet>();
             _netManager.RegisterNetMessage<MsgWinClone>();
             _netManager.RegisterNetMessage<MsgWinExists>();
+            _netManager.RegisterNetMessage<MsgWinGet>();
             _netManager.RegisterNetMessage<MsgFtp>();
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
             _netManager.RegisterNetMessage<MsgSound>();
+            _netManager.RegisterNetMessage<MsgUpdateClientInfo>();
         }
 
         private void RxSelectStatPanel(MsgSelectStatPanel message) {

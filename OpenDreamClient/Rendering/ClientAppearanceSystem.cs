@@ -81,7 +81,11 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
-            comp.GetAABB(_transformSystem, ref e);
+            Box2? aabb = null;
+
+            comp.Icon.GetWorldAABB(_transformSystem.GetWorldPosition(uid), ref aabb);
+            if (aabb != null)
+                e.AABB = aabb.Value;
         }
 
         public void ResetFilterUsageFlags() {
@@ -102,19 +106,8 @@ namespace OpenDreamClient.Rendering {
                 var protoManager = IoCManager.Resolve<IPrototypeManager>();
 
                 instance = protoManager.Index<ShaderPrototype>(filter.FilterType).InstanceUnique();
-                IRenderTexture renderSourceTexture;
                 switch (filter) {
                     case DreamFilterAlpha alpha:
-                        if(!String.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out renderSourceTexture))
-                            instance.SetParameter("mask_texture", renderSourceTexture.Texture);
-                        else if(alpha.Icon != 0){
-                            _dreamResourceManager.LoadResourceAsync<DMIResource>(alpha.Icon, (DMIResource rsc) => {
-                                    instance.SetParameter("mask_texture", rsc.Texture);
-                                });
-                        }
-                        else{
-                            instance.SetParameter("mask_texture", Texture.Transparent);
-                        }
                         instance.SetParameter("x",alpha.X);
                         instance.SetParameter("y",alpha.Y);
                         instance.SetParameter("flags",alpha.Flags);
@@ -134,16 +127,6 @@ namespace OpenDreamClient.Rendering {
                         break;
                     }
                     case DreamFilterDisplace displace:
-                        if(!String.IsNullOrEmpty(displace.RenderSource) && renderSourceLookup.TryGetValue(displace.RenderSource, out renderSourceTexture))
-                            instance.SetParameter("displacement_map", renderSourceTexture.Texture);
-                        else if(displace.Icon != 0){
-                            _dreamResourceManager.LoadResourceAsync<DMIResource>(displace.Icon, (DMIResource rsc) => {
-                                    instance.SetParameter("displacement_map", rsc.Texture);
-                                });
-                        }
-                        else{
-                            instance.SetParameter("displacement_map", Texture.Transparent);
-                        }
                         instance.SetParameter("size", displace.Size);
                         instance.SetParameter("x", displace.X);
                         instance.SetParameter("y", displace.Y);
@@ -175,6 +158,34 @@ namespace OpenDreamClient.Rendering {
                     case DreamFilterGreyscale greyscale:
                         break;
                 }
+            }
+
+            // Texture parameters need reset because different render targets can be used each frame
+            switch (filter) {
+                case DreamFilterAlpha alpha:
+                    if (!string.IsNullOrEmpty(alpha.RenderSource) && renderSourceLookup.TryGetValue(alpha.RenderSource, out var renderSourceTexture))
+                        instance.SetParameter("mask_texture", renderSourceTexture.Texture);
+                    else if (alpha.Icon != 0) {
+                        _dreamResourceManager.LoadResourceAsync<DMIResource>(alpha.Icon, rsc => {
+                            instance.SetParameter("mask_texture", rsc.Texture);
+                        });
+                    } else {
+                        instance.SetParameter("mask_texture", Texture.Transparent);
+                    }
+
+                    break;
+                case DreamFilterDisplace displace:
+                    if (!string.IsNullOrEmpty(displace.RenderSource) && renderSourceLookup.TryGetValue(displace.RenderSource, out renderSourceTexture)) {
+                        instance.SetParameter("displacement_map", renderSourceTexture.Texture);
+                    } else if (displace.Icon != 0) {
+                        _dreamResourceManager.LoadResourceAsync<DMIResource>(displace.Icon, rsc => {
+                            instance.SetParameter("displacement_map", rsc.Texture);
+                        });
+                    } else {
+                        instance.SetParameter("displacement_map", Texture.Transparent);
+                    }
+
+                    break;
             }
 
             filter.Used = true;

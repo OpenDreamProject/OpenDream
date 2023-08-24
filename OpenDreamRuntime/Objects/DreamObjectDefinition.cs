@@ -1,8 +1,11 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Runtime.CompilerServices;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
@@ -10,9 +13,9 @@ using Robust.Shared.Serialization.Manager;
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectDefinition {
         // IoC dependencies & entity systems for DreamObjects to use
-        public readonly IDreamManager DreamManager;
-        public readonly IDreamObjectTree ObjectTree;
-        public readonly IAtomManager AtomManager;
+        public readonly DreamManager DreamManager;
+        public readonly DreamObjectTree ObjectTree;
+        public readonly AtomManager AtomManager;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IMapManager MapManager;
         public readonly DreamResourceManager DreamResourceManager;
@@ -21,11 +24,22 @@ namespace OpenDreamRuntime.Objects {
         public readonly ISerializationManager SerializationManager;
         public readonly ServerAppearanceSystem? AppearanceSystem;
         public readonly TransformSystem? TransformSystem;
+        public readonly PvsOverrideSystem? PvsOverrideSystem;
 
-        public readonly IDreamObjectTree.TreeEntry TreeEntry;
+        public readonly TreeEntry TreeEntry;
         public DreamPath Type => TreeEntry.Path;
         public DreamObjectDefinition? Parent => TreeEntry.ParentEntry?.ObjectDefinition;
         public int? InitializationProc;
+        public bool NoConstructors {
+            get {
+                if (_noConstructors is not { } res)
+                    _noConstructors = CheckNoConstructors();
+
+                return _noConstructors.Value;
+            }
+        }
+
+        private bool? _noConstructors = null;
         public readonly Dictionary<string, int> Procs = new();
         public readonly Dictionary<string, int> OverridingProcs = new();
         public List<int>? Verbs;
@@ -47,6 +61,7 @@ namespace OpenDreamRuntime.Objects {
             SerializationManager = copyFrom.SerializationManager;
             AppearanceSystem = copyFrom.AppearanceSystem;
             TransformSystem = copyFrom.TransformSystem;
+            PvsOverrideSystem = copyFrom.PvsOverrideSystem;
 
             TreeEntry = copyFrom.TreeEntry;
             InitializationProc = copyFrom.InitializationProc;
@@ -59,7 +74,7 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(IDreamManager dreamManager, IDreamObjectTree objectTree, IAtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, IDreamObjectTree.TreeEntry? treeEntry) {
+        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, TreeEntry? treeEntry) {
             DreamManager = dreamManager;
             ObjectTree = objectTree;
             AtomManager = atomManager;
@@ -71,6 +86,7 @@ namespace OpenDreamRuntime.Objects {
             SerializationManager = serializationManager;
             AppearanceSystem = appearanceSystem;
             TransformSystem = transformSystem;
+            PvsOverrideSystem = pvsOverrideSystem;
 
             TreeEntry = treeEntry;
 
@@ -82,6 +98,17 @@ namespace OpenDreamRuntime.Objects {
                 if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                     GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
             }
+        }
+
+        private bool CheckNoConstructors() {
+            var noInit = InitializationProc is null ||
+                         ObjectTree.Procs[InitializationProc.Value] is DMProc {IsNullProc: true};
+            var noNew = !TryGetProc("New", out var proc) || proc is DMProc {IsNullProc: true};
+            if (noInit && noNew) {
+                return true;
+            }
+
+            return false;
         }
 
         public void SetVariableDefinition(string variableName, DreamValue value) {
@@ -145,7 +172,8 @@ namespace OpenDreamRuntime.Objects {
             }
         }
 
-        public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsSubtypeOf(TreeEntry ancestor) {
             // Unsigned underflow is desirable here
             return (TreeEntry.TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;
         }

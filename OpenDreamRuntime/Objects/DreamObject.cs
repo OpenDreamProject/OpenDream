@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
@@ -15,15 +16,17 @@ using Robust.Shared.Utility;
 namespace OpenDreamRuntime.Objects {
     [Virtual]
     public class DreamObject {
-        public DreamObjectDefinition ObjectDefinition { get; protected set; }
-        public bool Deleted { get; private set; }
+        public DreamObjectDefinition ObjectDefinition;
+
+        [Access(typeof(DreamObject))]
+        public bool Deleted;
 
         public virtual bool ShouldCallNew => true;
 
         // Shortcuts to IoC dependencies & entity systems
-        protected IDreamManager DreamManager => ObjectDefinition.DreamManager;
-        protected IDreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
-        protected IAtomManager AtomManager => ObjectDefinition.AtomManager;
+        protected DreamManager DreamManager => ObjectDefinition.DreamManager;
+        protected DreamObjectTree ObjectTree => ObjectDefinition.ObjectTree;
+        protected AtomManager AtomManager => ObjectDefinition.AtomManager;
         protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
         protected IMapManager MapManager => ObjectDefinition.MapManager;
         protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
@@ -32,6 +35,7 @@ namespace OpenDreamRuntime.Objects {
         protected ISerializationManager SerializationManager => ObjectDefinition.SerializationManager;
         protected ServerAppearanceSystem? AppearanceSystem => ObjectDefinition.AppearanceSystem;
         protected TransformSystem? TransformSystem => ObjectDefinition.TransformSystem;
+        protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
 
@@ -107,7 +111,7 @@ namespace OpenDreamRuntime.Objects {
             HandleDeletion();
         }
 
-        public bool IsSubtypeOf(IDreamObjectTree.TreeEntry ancestor) {
+        public bool IsSubtypeOf(TreeEntry ancestor) {
             return ObjectDefinition.IsSubtypeOf(ancestor);
         }
 
@@ -228,6 +232,12 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public void InitSpawn(DreamProcArguments creationArguments) {
+            if (ObjectDefinition.NoConstructors) {
+                // Skip thread spinup.
+                Initialize(creationArguments);
+                return;
+            }
+
             var thread = new DreamThread("new " + ObjectDefinition.Type);
             var procState = InitProc(thread, null, creationArguments);
 

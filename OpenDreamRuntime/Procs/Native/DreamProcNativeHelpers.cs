@@ -2,6 +2,7 @@
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
+using System.Text;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -9,6 +10,13 @@ namespace OpenDreamRuntime.Procs.Native;
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
 internal static partial class DreamProcNativeHelpers {
+    private static readonly char[] radixArray = new char[36] {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+        'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+        'w', 'x', 'y', 'z'
+    };
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -28,7 +36,7 @@ internal static partial class DreamProcNativeHelpers {
     /// <returns>Turfs, in the correct, parity order for the above procs.</returns>
     public static IEnumerable<DreamObjectTurf> MakeViewSpiral(DreamObjectAtom center, ViewRange distance) {
         var mapMgr = IoCManager.Resolve<IDreamMapManager>();
-        var atomMgr = IoCManager.Resolve<IAtomManager>();
+        var atomMgr = IoCManager.Resolve<AtomManager>();
         var centerPos = atomMgr.GetAtomPosition(center);
 
         int widthRange = (distance.Width - 1) >> 1; // TODO: Make rectangles work.
@@ -128,15 +136,15 @@ internal static partial class DreamProcNativeHelpers {
     /// If a range argument is passed, like "11x4", then THAT is what we have to deal with.
     /// </remarks>
     /// <returns>The center (which may not be the turf), the distance along the x-axis, and the distance along the y-axis to iterate.</returns>
-    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamObjectAtom? usr, DreamProcArguments arguments) {
-        if(arguments.Count == 0) {
+    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamObjectAtom? usr, ReadOnlySpan<DreamValue> arguments) {
+        if(arguments.Length == 0) {
             return (usr, new ViewRange(5,5));
         }
 
         ViewRange range = new ViewRange(5,5);
         DreamObjectAtom? center = usr;
 
-        foreach (var arg in arguments.Values) {
+        foreach (var arg in arguments) {
             if(arg.TryGetValueAsDreamObject<DreamObjectAtom>(out var centerObject)) {
                 center = centerObject;
             } else if(arg.TryGetValueAsInteger(out int distValue)) {
@@ -151,7 +159,7 @@ internal static partial class DreamProcNativeHelpers {
         return (center, range);
     }
 
-    public static ViewAlgorithm.Tile?[,] CollectViewData(IAtomManager atomManager, IDreamMapManager mapManager, (int X, int Y, int Z) eyePos, ViewRange range) {
+    public static ViewAlgorithm.Tile?[,] CollectViewData(AtomManager atomManager, IDreamMapManager mapManager, (int X, int Y, int Z) eyePos, ViewRange range) {
         var tiles = new ViewAlgorithm.Tile?[range.Width, range.Height];
 
         for (int viewX = 0; viewX < range.Width; viewX++) {
@@ -190,7 +198,7 @@ internal static partial class DreamProcNativeHelpers {
     /// <see langword="TODO:"/> This proc is DEFINITELY incomplete. <br/>
     /// </remarks>
     /// <returns>True if observer can see obj. False if not.</returns>
-    public static bool IsObjectVisible(IAtomManager atomManager, IDreamObjectTree objectTree, DreamObjectAtom obj, DreamObject observer) {
+    public static bool IsObjectVisible(AtomManager atomManager, DreamObjectTree objectTree, DreamObjectAtom obj, DreamObject observer) {
         if(obj == observer) // Not proven to be true, but makes intuitive sense.
             return true;
         if (!atomManager.TryGetAppearance(obj, out var appearance))
@@ -297,6 +305,31 @@ internal static partial class DreamProcNativeHelpers {
         }
     }
 
+    public static string ToBase(int value, int radix) {
+        if(radix > 36) {
+            throw new ArgumentOutOfRangeException(nameof(radix), "radix is above 36");
+        }
+
+        StringBuilder resString = new();
+        bool wasNegative = false; // Theres likely a better way
+
+        if(value < 0) {
+            wasNegative = true;
+            value = Math.Abs(value);
+        }
+
+        while (value > 0) {
+            resString.Insert(0, radixArray[value % radix]);
+            value /= radix;
+        }
+
+        if(wasNegative) {
+            resString.Insert(0, '-');
+        }
+
+        return new string(resString.ToString());
+    }
+  
     /// <summary>
     /// Returns the string with all non-alphanumeric characters (except @) removed, and all letters converted to lowercase.
     /// Mirrors the behaviour of BYOND's ckey() proc.

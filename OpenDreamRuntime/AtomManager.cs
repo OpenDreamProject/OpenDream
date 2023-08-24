@@ -10,7 +10,7 @@ using Robust.Shared.Map;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime {
-    internal sealed class AtomManager : IAtomManager {
+    public sealed class AtomManager {
         public List<DreamObjectArea> Areas { get; } = new();
         public List<DreamObjectTurf> Turfs { get; } = new();
         public List<DreamObjectMovable> Movables { get; } = new();
@@ -20,7 +20,7 @@ namespace OpenDreamRuntime {
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-        [Dependency] private readonly IDreamObjectTree _objectTree = default!;
+        [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
@@ -31,24 +31,28 @@ namespace OpenDreamRuntime {
         private ServerAppearanceSystem? _appearanceSystem;
 
         public DreamObject GetAtom(int index) {
+            // Order of world.contents:
+            //  Mobs + Movables + Areas + Turfs
+
+            if (index < Mobs.Count)
+                return Mobs[index];
+
+            // TODO: Movables and objects should be mixed together here
+            index -= Mobs.Count;
+            if (index < Objects.Count)
+                return Objects[index];
+
+            index -= Objects.Count;
+            if (index < Movables.Count)
+                return Movables[index];
+
+            index -= Movables.Count;
             if (index < Areas.Count)
                 return Areas[index];
 
             index -= Areas.Count;
             if (index < Turfs.Count)
                 return Turfs[index];
-
-            index -= Turfs.Count;
-            if (index < Movables.Count)
-                return Movables[index];
-
-            index -= Movables.Count;
-            if (index < Objects.Count)
-                return Objects[index];
-
-            index -= Objects.Count;
-            if (index < Mobs.Count)
-                return Mobs[index];
 
             throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
         }
@@ -96,13 +100,13 @@ namespace OpenDreamRuntime {
                 case "glide_size":
                 case "render_source":
                 case "render_target":
+                case "transform":
                     return true;
 
                 // Get/SetAppearanceVar doesn't handle these
                 case "overlays":
                 case "underlays":
                 case "filters":
-                case "transform":
                 default:
                     return false;
             }
@@ -122,8 +126,13 @@ namespace OpenDreamRuntime {
                     value.TryGetValueAsString(out appearance.IconState);
                     break;
                 case "dir":
-                    //TODO figure out the weird inconsistencies with this being internally clamped
                     value.TryGetValueAsInteger(out var dir);
+
+                    if (dir <= 0) // Ignore any sets <= 0 or non-number
+                        break;
+
+                    if (dir > 0xFF) // Clamp to 1 byte
+                        dir = 0xFF;
 
                     appearance.Direction = (AtomDirection)dir;
                     break;
@@ -168,8 +177,8 @@ namespace OpenDreamRuntime {
                     value.TryGetValueAsInteger(out appearance.Plane);
                     break;
                 case "blend_mode":
-                    value.TryGetValueAsFloat(out float blendMode);
-                    appearance.BlendMode = Enum.IsDefined((BlendMode)blendMode) ? (BlendMode)blendMode : BlendMode.BLEND_DEFAULT;
+                    value.TryGetValueAsInteger(out int blendMode);
+                    appearance.BlendMode = Enum.IsDefined((BlendMode)blendMode) ? (BlendMode)blendMode : BlendMode.Default;
                     break;
                 case "appearance_flags":
                     value.TryGetValueAsInteger(out int flagsVar);
@@ -189,7 +198,14 @@ namespace OpenDreamRuntime {
                 case "render_target":
                     value.TryGetValueAsString(out appearance.RenderTarget);
                     break;
-                // TODO: overlays, underlays, filters, transform
+                case "transform":
+                    float[] transformArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transform)
+                        ? DreamObjectMatrix.MatrixToTransformFloatArray(transform)
+                        : DreamObjectMatrix.IdentityMatrixArray;
+
+                    appearance.Transform = transformArray;
+                    break;
+                // TODO: overlays, underlays, filters
                 //       Those are handled separately by whatever is calling SetAppearanceVar currently
                 default:
                     throw new ArgumentException($"Invalid appearance var {varName}");
@@ -248,10 +264,21 @@ namespace OpenDreamRuntime {
                 case "glide_size":
                     return new(appearance.GlideSize);
                 case "render_source":
-                    return new(appearance.RenderSource);
+                    return (appearance.RenderSource != null)
+                        ? new DreamValue(appearance.RenderSource)
+                        : DreamValue.Null;
                 case "render_target":
-                    return new(appearance.RenderTarget);
-                // TODO: overlays, underlays, filters, transform
+                    return (appearance.RenderTarget != null)
+                        ? new DreamValue(appearance.RenderTarget)
+                        : DreamValue.Null;
+                case "transform":
+                    var transform = appearance.Transform;
+                    var matrix = DreamObjectMatrix.MakeMatrix(_objectTree,
+                        transform[0], transform[2], transform[4],
+                        transform[1], transform[3], transform[5]);
+
+                    return new(matrix);
+                // TODO: overlays, underlays, filters
                 //       Those are handled separately by whatever is calling GetAppearanceVar currently
                 default:
                     throw new ArgumentException($"Invalid appearance var {varName}");
@@ -405,42 +432,17 @@ namespace OpenDreamRuntime {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public (int X, int Y, int Z) GetAtomPosition(DreamObjectAtom atom) {
             return atom switch {
-                DreamObjectMovable movable => (movable.X, movable.Y, movable.Z),
+                DreamObjectMovable { Position: var pos, Z: var z } => (pos.X, pos.Y, z),
                 DreamObjectTurf turf => (turf.X, turf.Y, turf.Z),
                 DreamObjectArea area => (area.X, area.Y, area.Z),
-                _ => throw new Exception($"Cannot get the position of {atom}")
+                _ => ThrowCantGetPosition(atom)
             };
         }
-    }
 
-    public interface IAtomManager {
-        public List<DreamObjectArea> Areas { get; }
-        public List<DreamObjectTurf> Turfs { get; }
-        public List<DreamObjectMovable> Movables { get; }
-        public List<DreamObjectMovable> Objects { get; }
-        public List<DreamObjectMob> Mobs { get; }
-        public int AtomCount { get; }
-
-        public DreamObject GetAtom(int index);
-
-        public EntityUid CreateMovableEntity(DreamObjectMovable movable);
-
-        public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable);
-        public void DeleteMovableEntity(DreamObjectMovable movable);
-
-        public bool IsValidAppearanceVar(string varName);
-        public void SetAppearanceVar(IconAppearance appearance, string varName, DreamValue value);
-        public DreamValue GetAppearanceVar(IconAppearance appearance, string varName);
-
-        public IconAppearance? MustGetAppearance(DreamObject atom);
-
-        public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance);
-        public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update);
-        public void SetAtomAppearance(DreamObject atom, IconAppearance appearance);
-        public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate);
-        public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance);
-        public IconAppearance GetAppearanceFromDefinition(DreamObjectDefinition def);
-
-        public (int X, int Y, int Z) GetAtomPosition(DreamObjectAtom atom);
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static (int X, int Y, int) ThrowCantGetPosition(DreamObjectAtom atom)
+        {
+            throw new Exception($"Cannot get the position of {atom}");
+        }
     }
 }

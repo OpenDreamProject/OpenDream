@@ -642,9 +642,10 @@ namespace OpenDreamRuntime.Objects.Types {
 
             _atomManager.UpdateAppearance(_atom, appearance => {
                 IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
-                overlayAppearance ??= new IconAppearance();
+                if (overlayAppearance == null || !_appearanceSystem.TryGetAppearanceId(overlayAppearance, out var id))
+                    return;
 
-                GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance));
+                GetOverlaysList(appearance).Remove(id);
             });
         }
 

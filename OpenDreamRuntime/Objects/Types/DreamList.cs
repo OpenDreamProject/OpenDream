@@ -595,7 +595,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
         public override void Cut(int start = 1, int end = 0) {
             _atomManager.UpdateAppearance(_atom, appearance => {
-                List<uint> overlaysList = GetOverlaysList(appearance);
+                List<int> overlaysList = GetOverlaysList(appearance);
                 int count = overlaysList.Count + 1;
                 if (end == 0 || end > count) end = count;
 
@@ -608,14 +608,14 @@ namespace OpenDreamRuntime.Objects.Types {
                 throw new Exception($"Invalid index into {(_isUnderlays ? "underlays" : "overlays")} list: {key}");
 
             IconAppearance appearance = GetAppearance();
-            List<uint> overlaysList = GetOverlaysList(appearance);
+            List<int> overlaysList = GetOverlaysList(appearance);
             if (overlayIndex > overlaysList.Count)
                 throw new Exception($"Atom only has {overlaysList.Count} {(_isUnderlays ? "underlay" : "overlay")}(s), cannot index {overlayIndex}");
 
             if (_appearanceSystem == null)
                 return DreamValue.Null;
 
-            uint overlayId = GetOverlaysList(appearance)[overlayIndex - 1];
+            int overlayId = GetOverlaysList(appearance)[overlayIndex - 1];
             IconAppearance overlayAppearance = _appearanceSystem.MustGetAppearance(overlayId);
             return new DreamValue(overlayAppearance);
         }
@@ -653,7 +653,7 @@ namespace OpenDreamRuntime.Objects.Types {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private List<uint> GetOverlaysList(IconAppearance appearance) =>
+        private List<int> GetOverlaysList(IconAppearance appearance) =>
             _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
         private IconAppearance GetAppearance() {

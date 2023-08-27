@@ -153,7 +153,7 @@ namespace OpenDreamRuntime {
         }
 
         public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
-            uint appearanceId = _appearanceSystem.AddAppearance(appearance);
+            int appearanceId = _appearanceSystem.AddAppearance(appearance);
             if (appearanceId > ushort.MaxValue - 1) {
                 // TODO: Maybe separate appearance IDs and turf IDs to prevent this possibility
                 _sawmill.Error($"Failed to set turf's appearance at ({turf.X}, {turf.Y}) because its appearance ID was greater than {ushort.MaxValue - 1}");

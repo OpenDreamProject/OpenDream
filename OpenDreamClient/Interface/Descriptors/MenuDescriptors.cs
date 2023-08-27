@@ -42,7 +42,7 @@ public sealed partial class MenuElementDescriptor : ElementDescriptor {
     [DataField("category")]
     public string? Category {
         get => _category;
-        private set { throw new NotImplementedException(); }
+        private set { _category = value; }
     }
 
     [DataField("can-check")]

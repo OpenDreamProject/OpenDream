@@ -223,8 +223,7 @@ public sealed class ScalingViewport : Control, IViewportControl {
         return _viewport!.LocalToWorld(matrix.Transform(coords));
     }
 
-    public MapCoordinates PixelToMap(Vector2 coords)
-    {
+    public MapCoordinates PixelToMap(Vector2 coords) {
         if (_eye == null)
             return default;
 

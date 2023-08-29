@@ -41,10 +41,10 @@ namespace OpenDreamClient.Input {
             bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
             bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
 
-            Vector2 screenLocPos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size;
-            screenLocPos *= viewport.ViewportSize;
-            screenLocPos.Y = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
-            ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocPos.Y, 32); // TODO: icon_size other than 32
+            Vector2 screenLocPos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+
+            var screenLocY = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
+            ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocY, 32); // TODO: icon_size other than 32
 
             MapCoordinates mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
             RendererMetaData? entity = GetEntityUnderMouse(screenLocPos);

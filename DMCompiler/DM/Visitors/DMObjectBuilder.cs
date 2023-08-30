@@ -53,7 +53,7 @@ namespace DMCompiler.DM.Visitors {
                             DMExpression expression = DMExpression.Create(procStatic.DMObject, procStatic.Proc,
                                 procStatic.VarDecl.Value, procStatic.VarDecl.Type);
 
-                            DMObjectTree.AddGlobalInitAssign(procStatic.DMObject, procStatic.Id, expression);
+                            DMObjectTree.AddGlobalInitAssign(procStatic.Id, expression);
                         } catch (UnknownIdentifierException e) {
                             // For step 5
                             lateProcVarDefs.Add((procStatic.DMObject, procStatic.Proc, procStatic.VarDecl, procStatic.Id, e));
@@ -115,7 +115,7 @@ namespace DMCompiler.DM.Visitors {
                         DMExpression expression =
                             DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
 
-                        DMObjectTree.AddGlobalInitAssign(varDef.Item1, varDef.Item4, expression);
+                        DMObjectTree.AddGlobalInitAssign(varDef.Item4, expression);
 
                         // Success! Remove this one from the list
                         lateProcVarDefs.RemoveAt(i--);
@@ -507,7 +507,7 @@ namespace DMCompiler.DM.Visitors {
                 int? globalId = currentObject.GetGlobalVariableId(variable.Name);
                 if (globalId == null) throw new CompileAbortException(expression?.Location ?? Location.Unknown, $"Invalid global {currentObject.Path}.{variable.Name}");
 
-                DMObjectTree.AddGlobalInitAssign(currentObject, globalId.Value, expression);
+                DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
             } else {
                 var initLoc = expression.Location;
                 Expressions.Field field = new Expressions.Field(initLoc, variable);

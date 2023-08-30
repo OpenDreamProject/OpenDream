@@ -16,3 +16,7 @@
 	ASSERT(num2text(999999) == "999999")
 	ASSERT(num2text(999999.9) == "1e+06")
 	ASSERT(num2text(1000000) == "1e+06")
+	
+	// Zero/Negative MinDigits
+	ASSERT(num2text(1, 0, 10) == "1")
+	ASSERT(num2text(1, -1, 10) == "1")

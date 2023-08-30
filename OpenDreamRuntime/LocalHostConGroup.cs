@@ -35,17 +35,9 @@ namespace OpenDreamRuntime {
         public bool CanAdminReloadPrototypes(IPlayerSession session) {
             return IsLocal(session);
         }
-
-
-
+        
         private static bool IsLocal(IPlayerSession player) {
-            var ep = player.ConnectedClient.RemoteEndPoint;
-            var addr = ep.Address;
-            if (addr.IsIPv4MappedToIPv6) {
-                addr = addr.MapToIPv4();
-            }
-
-            return Equals(addr, IPAddress.Loopback) || Equals(addr, IPAddress.IPv6Loopback);
+            return IsLocal(player.ConnectedClient);
         }
 
         private static bool IsLocal(INetChannel client) {

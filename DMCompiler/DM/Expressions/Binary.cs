@@ -428,11 +428,6 @@ namespace DMCompiler.DM.Expressions {
                 return true;
             }
 
-            if (RHS.TryAsConstant(out var rhs)) {
-                constant = rhs;
-                return true;
-            }
-
             constant = null;
             return false;
         }

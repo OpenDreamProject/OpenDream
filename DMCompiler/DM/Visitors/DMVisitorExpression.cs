@@ -14,7 +14,7 @@ namespace DMCompiler.DM.Visitors {
             // Only global vars and procs available
             Static,
 
-            // Only global procs available
+            // Only constant global vars and global procs available
             FirstPassStatic
         }
 
@@ -131,15 +131,12 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
-                        int? procGlobalId = _proc?.GetGlobalVariableId(name);
-                        if (procGlobalId != null) {
-                            Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[procGlobalId.Value].Type, procGlobalId.Value);
-                            return;
-                        }
+                        int? globalId = _proc?.GetGlobalVariableId(name) ?? _dmObject?.GetGlobalVariableId(name);
 
-                        int? globalId = _dmObject?.GetGlobalVariableId(name);
                         if (globalId != null) {
-                            Result = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                            var global = new Expressions.GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+
+                            Result = global;
                             return;
                         }
                     }

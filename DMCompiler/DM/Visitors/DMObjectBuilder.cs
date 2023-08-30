@@ -41,7 +41,7 @@ namespace DMCompiler.DM.Visitors {
             // Step 3: Create static vars
             List<(DMObject, DMASTObjectVarDefinition, UnknownIdentifierException e)> lateVarDefs = new();
             List<(DMObject, DMProc, DMASTProcStatementVarDeclaration, int, UnknownIdentifierException e)> lateProcVarDefs = new();
-            for (int i = 0; i < StaticObjectVars.Count; i++) {
+            for (int i = 0; i <= StaticObjectVars.Count; i++) {
                 // Static vars are initialized in code-order, except proc statics are all lumped together
                 if (i == _firstProcGlobal) {
                     foreach (var procStatic in StaticProcVars) {
@@ -65,10 +65,13 @@ namespace DMCompiler.DM.Visitors {
                     }
                 }
 
+                if (i == StaticObjectVars.Count)
+                    break;
+
                 var objectStatic = StaticObjectVars[i];
 
                 try {
-                    ProcessVarDefinition(objectStatic.DMObject, objectStatic.VarDecl, true);
+                    ProcessVarDefinition(objectStatic.DMObject, objectStatic.VarDecl);
                 } catch (UnknownIdentifierException e) {
                     lateVarDefs.Add((objectStatic.DMObject, objectStatic.VarDecl, e)); // For step 5
                 }
@@ -77,7 +80,7 @@ namespace DMCompiler.DM.Visitors {
             // Step 4: Define non-static vars
             foreach (var varDef in VarDefinitions) {
                 try {
-                    ProcessVarDefinition(varDef.Item1, varDef.Item2, false);
+                    ProcessVarDefinition(varDef.Item1, varDef.Item2);
                 } catch (UnknownIdentifierException e) {
                     lateVarDefs.Add((varDef.Item1, varDef.Item2, e)); // For step 5
                 }
@@ -93,7 +96,7 @@ namespace DMCompiler.DM.Visitors {
                     var varDef = lateVarDefs[i];
 
                     try {
-                        ProcessVarDefinition(varDef.Item1, varDef.Item2, false);
+                        ProcessVarDefinition(varDef.Item1, varDef.Item2);
 
                         // Success! Remove this one from the list
                         lateVarDefs.RemoveAt(i--);
@@ -228,7 +231,7 @@ namespace DMCompiler.DM.Visitors {
             if (objectDefinition.InnerBlock != null) ProcessBlockInner(objectDefinition.InnerBlock, newCurrentObject);
         }
 
-        private static void ProcessVarDefinition(DMObject? varObject, DMASTObjectVarDefinition? varDefinition, bool isFirstPassStatic) {
+        private static void ProcessVarDefinition(DMObject? varObject, DMASTObjectVarDefinition? varDefinition) {
             DMVariable? variable = null;
 
             //DMObjects store two bundles of variables; the statics in GlobalVariables and the non-statics in Variables.
@@ -249,9 +252,7 @@ namespace DMCompiler.DM.Visitors {
             DMExpression expression;
             try {
                 if (varDefinition.IsGlobal)
-                    DMVisitorExpression.CurrentScopeMode = isFirstPassStatic
-                        ? DMVisitorExpression.ScopeMode.FirstPassStatic
-                        : DMVisitorExpression.ScopeMode.Static;
+                    DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Static; // FirstPassStatic is not used for object vars
 
                 expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
                     varDefinition.Value, varDefinition.Type);

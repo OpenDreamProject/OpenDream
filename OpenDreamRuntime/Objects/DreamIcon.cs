@@ -25,7 +25,7 @@ public sealed class DreamIcon {
 
     private IconResource? _cachedDMI;
 
-    private int FrameCount => States.Values.Sum(state => state.Frames * DMIParser.GetExportedDirectionCount(state.Directions.Keys));
+    private int FrameCount => States.Values.Sum(state => state.Frames * DMIParser.GetExportedDirectionCount(state.Directions));
 
     /// <summary>
     /// A list of operations to be applied when generating the DMI, along with what frames to apply them on
@@ -102,7 +102,7 @@ public sealed class DreamIcon {
 
             dmiStates.Add(newState.Name, newState);
 
-            int exportedDirectionCount = DMIParser.GetExportedDirectionCount(iconState.Directions.Keys);
+            int exportedDirectionCount = DMIParser.GetExportedDirectionCount(iconState.Directions);
             for (int directionIndex = 0; directionIndex < exportedDirectionCount; directionIndex++) {
                 AtomDirection direction = DMIParser.DMIFrameDirections[directionIndex];
                 int firstFrame = currentFrame;

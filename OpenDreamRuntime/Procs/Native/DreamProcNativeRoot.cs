@@ -1608,6 +1608,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!number.TryGetValueAsFloat(out float floatNum)) {
                 return new DreamValue("0");
             }
+
             if(bundle.Arguments.Length == 1) {
                 return new DreamValue(floatNum.ToString("g6"));
             }
@@ -1620,9 +1621,10 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if(bundle.Arguments.Length == 3) {
-                var digits = bundle.GetArgument(1, "A").MustGetValueAsInteger();
+                var digits = Math.Max(bundle.GetArgument(1, "A").MustGetValueAsInteger(), 0);
                 var radix = bundle.GetArgument(2, "B").MustGetValueAsInteger();
                 var intNum = (int)floatNum;
+
                 return new DreamValue(DreamProcNativeHelpers.ToBase(intNum, radix).PadLeft(digits, '0'));
             }
 

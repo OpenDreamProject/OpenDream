@@ -52,7 +52,7 @@ namespace OpenDreamRuntime {
 
         public bool CheckInvokable(CommandSpec command, ICommonSession? user, out IConError? error) {
             error = null;
-            if (user is null) return false;
+            if (user is null) return true; // Server console
             return IsLocal(user.ConnectedClient);
         }
 

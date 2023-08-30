@@ -11,7 +11,7 @@ public sealed class DMISpriteSystem : EntitySystem {
     }
 
     private void GetComponentState(EntityUid uid, DMISpriteComponent component, ref ComponentGetState args) {
-        uint? appearanceId = null;
+        int? appearanceId = null;
         if (component.Appearance != null) {
             appearanceId = _appearance.AddAppearance(component.Appearance);
         }

@@ -104,24 +104,37 @@ namespace DMDisassembler {
 
         private static void List(string[] args) {
             if (args.Length < 2) {
-                Console.WriteLine("list procs|children");
-
-                return;
-            }
-
-            if (_selectedType == null) {
-                Console.WriteLine(NoTypeSelectedMessage);
+                Console.WriteLine("list procs|globals");
 
                 return;
             }
 
             string what = args[1];
-            if (what == "procs") {
-                foreach (string procName in _selectedType.Procs.Keys) {
-                    Console.WriteLine(procName);
-                }
-            } else if (what == "children") {
-                Console.WriteLine("Unimplemented");
+            switch (what) {
+                case "procs":
+                    if (_selectedType == null) {
+                        Console.WriteLine(NoTypeSelectedMessage);
+                        break;
+                    }
+
+                    foreach (string procName in _selectedType.Procs.Keys) {
+                        Console.WriteLine(procName);
+                    }
+
+                    break;
+                case "globals":
+                    if (CompiledJson.Globals == null) {
+                        Console.WriteLine("There are no globals");
+                        break;
+                    }
+
+                    for (int i = 0; i < CompiledJson.Globals.GlobalCount; i++) {
+                        Console.Write(i);
+                        Console.Write(": ");
+                        Console.WriteLine(CompiledJson.Globals.Names[i]);
+                    }
+
+                    break;
             }
         }
 

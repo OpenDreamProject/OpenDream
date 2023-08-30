@@ -19,7 +19,10 @@ namespace DMCompiler.DM.Visitors {
             VarDefinitions.Clear();
             VarOverrides.Clear();
             ProcDefinitions.Clear();
+            StaticObjectVars.Clear();
             StaticProcVars.Clear();
+
+            _firstProcGlobal = -1;
         }
 
         public static void BuildObjectTree(DMASTFile astFile) {

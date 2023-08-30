@@ -50,8 +50,7 @@ namespace OpenDreamRuntime {
             return Equals(addr, IPAddress.Loopback) || Equals(addr, IPAddress.IPv6Loopback);
         }
 
-        public bool CheckInvokable(CommandSpec command, ICommonSession? user, out IConError? error)
-        {
+        public bool CheckInvokable(CommandSpec command, ICommonSession? user, out IConError? error) {
             error = null;
             if (user is null) return false;
             return IsLocal(user.ConnectedClient);

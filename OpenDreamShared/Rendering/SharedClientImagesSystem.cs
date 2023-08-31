@@ -13,9 +13,9 @@ public class SharedClientImagesSystem : EntitySystem {
     public sealed class AddClientImageEvent : EntityEventArgs {
         public Vector3 TurfCoords;
         public EntityUid AttachedEntity; //if this is EntityUid.Invalid (ie, a turf) use the TurfCoords instead
-        public uint ImageAppearance;
+        public int ImageAppearance;
 
-        public AddClientImageEvent(EntityUid attachedEntity, Vector3 turfCoords, uint imageAppearance) {
+        public AddClientImageEvent(EntityUid attachedEntity, Vector3 turfCoords, int imageAppearance) {
             TurfCoords = turfCoords;
             ImageAppearance = imageAppearance;
             AttachedEntity = attachedEntity;
@@ -26,9 +26,9 @@ public class SharedClientImagesSystem : EntitySystem {
     public sealed class RemoveClientImageEvent : EntityEventArgs {
         public Vector3 TurfCoords;
         public EntityUid AttachedEntity; //if this is EntityUid.Invalid (ie, a turf) use the TurfCoords instead
-        public uint ImageAppearance;
+        public int ImageAppearance;
 
-        public RemoveClientImageEvent(EntityUid attachedEntity, Vector3 turfCoords, uint imageAppearance) {
+        public RemoveClientImageEvent(EntityUid attachedEntity, Vector3 turfCoords, int imageAppearance) {
             TurfCoords = turfCoords;
             ImageAppearance = imageAppearance;
             AttachedEntity = attachedEntity;

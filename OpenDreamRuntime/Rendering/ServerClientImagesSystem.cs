@@ -18,9 +18,9 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
 
         EntityUid locEntity = EntityUid.Invalid;
         Vector3 turfCoords = Vector3.Zero;
-        uint locAppearanceID = 0;
+        int locAppearanceID = 0;
 
-        uint imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
+        int imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
 
         if(loc is DreamObjectMovable movable)
             locEntity = movable.Entity;
@@ -38,7 +38,7 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         EntityUid locEntity = EntityUid.Invalid;
         Vector3 turfCoords = Vector3.Zero;
 
-        uint imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
+        int imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
 
         if(loc is DreamObjectMovable)
             locEntity = ((DreamObjectMovable)loc).Entity;

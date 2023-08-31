@@ -4,7 +4,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly int X, Y, Z;
     public readonly IDreamMapManager.Cell Cell;
     public readonly TurfContentsList Contents;
-    public uint AppearanceId;
+    public int AppearanceId;
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z, IDreamMapManager.Cell cell) : base(objectDefinition) {
         X = x;

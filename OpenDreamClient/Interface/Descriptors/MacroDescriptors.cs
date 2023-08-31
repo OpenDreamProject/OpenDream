@@ -4,7 +4,7 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface.Descriptors;
 
-public sealed class MacroSetDescriptor : ElementDescriptor {
+public sealed partial class MacroSetDescriptor : ElementDescriptor {
     private readonly List<MacroDescriptor> _macros = new();
     public IReadOnlyList<MacroDescriptor> Macros => _macros;
 
@@ -34,7 +34,7 @@ public sealed class MacroSetDescriptor : ElementDescriptor {
 }
 
 [UsedImplicitly]
-public sealed class MacroDescriptor : ElementDescriptor {
+public sealed partial class MacroDescriptor : ElementDescriptor {
     [DataField("command")]
-    public string Command  { get; init; }
+    public string Command  { get; private set; }
 }

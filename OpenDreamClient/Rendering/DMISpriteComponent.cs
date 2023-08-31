@@ -6,7 +6,7 @@ using Robust.Shared.Map;
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    internal sealed class DMISpriteComponent : SharedDMISpriteComponent {
+    internal sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation? ScreenLocation { get; set; }
 

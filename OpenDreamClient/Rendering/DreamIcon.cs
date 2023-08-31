@@ -49,11 +49,11 @@ namespace OpenDreamClient.Rendering {
 
         public DreamIcon() { }
 
-        public DreamIcon(uint appearanceId, AtomDirection? parentDir = null) {
+        public DreamIcon(int appearanceId, AtomDirection? parentDir = null) {
             SetAppearance(appearanceId, parentDir);
         }
 
-        public void SetAppearance(uint? appearanceId, AtomDirection? parentDir = null) {
+        public void SetAppearance(int? appearanceId, AtomDirection? parentDir = null) {
             // End any animations that are currently happening
             // Note that this isn't faithful to the original behavior
             EndAppearanceAnimation();
@@ -177,7 +177,7 @@ namespace OpenDreamClient.Rendering {
             }
 
             Overlays.Clear();
-            foreach (uint overlayId in Appearance.Overlays) {
+            foreach (int overlayId in Appearance.Overlays) {
                 DreamIcon overlay = new DreamIcon(overlayId, Appearance.Direction);
                 overlay.SizeChanged += CheckSizeChange;
 
@@ -185,7 +185,7 @@ namespace OpenDreamClient.Rendering {
             }
 
             Underlays.Clear();
-            foreach (uint underlayId in Appearance.Underlays) {
+            foreach (int underlayId in Appearance.Underlays) {
                 DreamIcon underlay = new DreamIcon(underlayId, Appearance.Direction);
                 underlay.SizeChanged += CheckSizeChange;
 

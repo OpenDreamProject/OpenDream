@@ -275,7 +275,7 @@ namespace DMCompiler.Compiler.DM {
                     while (true) {
                         Whitespace();
 
-                        var value = PathArray(ref varPath);
+                        DMASTExpression? value = PathArray(ref varPath);
 
                         if (Check(TokenType.DM_Equals)) {
                             if (value != null) Warning("List doubly initialized");
@@ -410,7 +410,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTExpression? PathArray(ref DreamPath path) {
+        public DMASTDimensionalList? PathArray(ref DreamPath path) {
             if (Current().Type == TokenType.DM_LeftBracket || Current().Type == TokenType.DM_DoubleSquareBracket) {
                 var loc = Current().Location;
 
@@ -421,7 +421,7 @@ namespace DMCompiler.Compiler.DM {
                     path = new DreamPath("/" + String.Join("/", elements));
                 }
 
-                List<DMASTCallParameter> sizes = new(2); // Most common is 1D or 2D lists
+                List<DMASTExpression> sizes = new(2); // Most common is 1D or 2D lists
 
                 while (true) {
                     if(Check(TokenType.DM_DoubleSquareBracket))
@@ -430,18 +430,17 @@ namespace DMCompiler.Compiler.DM {
                         Whitespace();
                         var size = Expression();
                         if (size is not null) {
-                            sizes.Add(new DMASTCallParameter(size.Location, size));
+                            sizes.Add(size);
                         }
 
                         ConsumeRightBracket();
                         Whitespace();
-                    }
-                    else
+                    } else
                         break;
                 }
 
                 if (sizes.Count > 0) {
-                    return new DMASTNewPath(loc, new DMASTPath(loc, DreamPath.List), sizes.ToArray());
+                    return new DMASTDimensionalList(loc, sizes);
                 }
             }
 

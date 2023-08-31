@@ -864,6 +864,17 @@ namespace DMCompiler.DM.Visitors {
             Result = new Expressions.List(list.Location, values);
         }
 
+        public void VisitDimensionalList(DMASTDimensionalList list) {
+            var sizes = new DMExpression[list.Sizes.Count];
+            for (int i = 0; i < sizes.Length; i++) {
+                var sizeExpr = DMExpression.Create(_dmObject, _proc, list.Sizes[i], _inferredPath);
+
+                sizes[i] = sizeExpr;
+            }
+
+            Result = new DimensionalList(list.Location, sizes);
+        }
+
         public void VisitNewList(DMASTNewList newList) {
             DMExpression[] expressions = new DMExpression[newList.Parameters.Length];
 

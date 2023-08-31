@@ -178,7 +178,12 @@ namespace DMCompiler.DM.Visitors {
                     var dmObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath)!;
 
                     if (varDefinition.IsGlobal) {
-                        StaticObjectVars.Add((dmObject, varDefinition));
+                        // var/static/list/L[1][2][3] and list() both come first in global init order
+                        if (varDefinition.Value is DMASTDimensionalList ||
+                            (varDefinition.Value is DMASTList list && list.AllValuesConstant()))
+                            StaticObjectVars.Insert(0, (dmObject, varDefinition));
+                        else
+                            StaticObjectVars.Add((dmObject, varDefinition));
                     } else {
                         VarDefinitions.Add((dmObject, varDefinition));
                     }
@@ -493,6 +498,7 @@ namespace DMCompiler.DM.Visitors {
                 },
 
                 Expressions.List => true,
+                Expressions.DimensionalList => true,
                 Expressions.NewList => true,
                 Expressions.NewPath => true,
                 // TODO: Check for circular reference loops here

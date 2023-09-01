@@ -72,8 +72,8 @@ namespace OpenDreamRuntime.Objects {
 
             Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
             GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
-            ConstVariables = new HashSet<string>(copyFrom.ConstVariables);
-            TmpVariables = new HashSet<string>(copyFrom.TmpVariables);
+            ConstVariables = copyFrom.ConstVariables is not null ? new HashSet<string>(copyFrom.ConstVariables) : null;
+            TmpVariables = copyFrom.TmpVariables is not null ? new HashSet<string>(copyFrom.TmpVariables) : null;
             Procs = new Dictionary<string, int>(copyFrom.Procs);
             OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
             if (copyFrom.Verbs != null)

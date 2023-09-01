@@ -14,7 +14,7 @@ namespace DMCompiler.DM.Visitors {
             // Only global vars and procs available
             Static,
 
-            // Only constant global vars and global procs available
+            // Only global procs available
             FirstPassStatic
         }
 

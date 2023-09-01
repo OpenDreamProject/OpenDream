@@ -473,6 +473,31 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // Value of var/list/L[1][2][3]
+    internal sealed class DimensionalList : DMExpression {
+        private readonly DMExpression[] _sizes;
+
+        public DimensionalList(Location location, DMExpression[] sizes) : base(location) {
+            _sizes = sizes;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            // This basically emits new /list(1, 2, 3)
+
+            if (!DMObjectTree.TryGetTypeId(DreamPath.List, out var listTypeId)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, "Could not get type ID of /list");
+                return;
+            }
+
+            foreach (var size in _sizes) {
+                size.EmitPushValue(dmObject, proc);
+            }
+
+            proc.PushType(listTypeId);
+            proc.CreateObject(DMCallArgumentsType.FromStack, _sizes.Length);
+        }
+    }
+
     // newlist(...)
     sealed class NewList : DMExpression {
         private readonly DMExpression[] _parameters;

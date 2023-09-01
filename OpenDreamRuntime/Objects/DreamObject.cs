@@ -171,8 +171,6 @@ namespace OpenDreamRuntime.Objects {
         }
 
         protected virtual void SetVar(string varName, DreamValue value) {
-            if(ObjectDefinition.ConstVariables.Contains(varName))
-                throw new Exception($"Cannot set const var \"{varName}\"");
             switch (varName) {
                 case "type":
                 case "parent_type":
@@ -184,6 +182,8 @@ namespace OpenDreamRuntime.Objects {
                     Tag = newTag;
                     break;
                 default:
+                    if(ObjectDefinition.ConstVariables.Contains(varName))
+                        throw new Exception($"Cannot set const var \"{varName}\" on {ObjectDefinition.Type}");
                     if (!ObjectDefinition.Variables.ContainsKey(varName))
                         throw new Exception($"Cannot set var \"{varName}\" on {ObjectDefinition.Type}");
 

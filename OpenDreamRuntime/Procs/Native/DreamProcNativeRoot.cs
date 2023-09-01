@@ -2567,24 +2567,14 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_text2num(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue value = bundle.GetArgument(0, "T");
 
-            if (value.TryGetValueAsString(out var text)) {
+            if (value.TryGetValueAsString(out string? valueAsString)) {
                 bundle.GetArgument(1, "radix").TryGetValueAsInteger(out var radix);
-                if (radix < 2)
-                    throw new Exception($"Invalid radix: {radix}");
+                valueAsString = valueAsString.Trim();
 
-                text = text.Trim();
-                if (text.Length == 0)
-                    return DreamValue.Null;
-
-                try {
-                    if (radix == 10) {
-                        return new DreamValue(Convert.ToSingle(text, CultureInfo.InvariantCulture));
-                    } else {
-                        return new DreamValue(Convert.ToInt32(text, radix));
-                    }
-                } catch (FormatException) {
-                    return DreamValue.Null; //No digits, return null
-                }
+                double? valueAsDouble = DreamProcNativeHelpers.StringToDouble(valueAsString, radix);
+                if (valueAsDouble.HasValue)
+                    return new DreamValue(valueAsDouble.Value);
+                return DreamValue.Null;
             } else if (value.Type == DreamValueType.Float) {
                 return value;
             } else if (value.IsNull) {

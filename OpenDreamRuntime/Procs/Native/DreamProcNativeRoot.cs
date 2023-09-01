@@ -418,12 +418,18 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fcopy(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var arg1 = bundle.GetArgument(0, "Src");
 
-            string? srcFile;
-            if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
-                srcFile = arg1Rsc.ResourcePath;
+            DreamResource? srcFile = null;
+            if (bundle.ResourceManager.TryLoadIcon(arg1, out var icon)) {
+                srcFile = icon;
+            } else if (arg1.TryGetValueAsDreamResource(out DreamResource? arg1Rsc)) {
+                srcFile = arg1Rsc;
             } else if (arg1.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
-                srcFile = savefile.Resource.ResourcePath;
-            } else if (!arg1.TryGetValueAsString(out srcFile)) {
+                srcFile = savefile.Resource;
+            } else if (arg1.TryGetValueAsString(out var srcPath)) {
+                srcFile = bundle.ResourceManager.LoadResource(srcPath);
+            }
+
+            if (srcFile?.ResourceData == null) {
                 throw new Exception($"Bad src file {arg1}");
             }
 
@@ -440,12 +446,18 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_fcopy_rsc(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var arg1 = bundle.GetArgument(0, "File");
 
-            string filePath;
-            if (arg1.TryGetValueAsDreamResource(out DreamResource arg1Rsc)) {
+            if (bundle.ResourceManager.TryLoadIcon(arg1, out var icon))
+                return new(icon);
+
+            string? filePath;
+            if (arg1.TryGetValueAsDreamResource(out var arg1Rsc)) {
                 filePath = arg1Rsc.ResourcePath;
-            } else if (!arg1.TryGetValueAsString(out filePath)) {
-                return DreamValue.Null;
+            } else {
+                arg1.TryGetValueAsString(out filePath);
             }
+
+            if (filePath == null)
+                return DreamValue.Null;
 
             return new DreamValue(bundle.ResourceManager.LoadResource(filePath));
         }
@@ -1049,8 +1061,43 @@ namespace OpenDreamRuntime.Procs.Native {
                     return new DreamValue(list);
                 }
                 case JsonValueKind.Object: {
+                    // Stick to using an enumerator because getting an array, specially of an
+                    // object in a plaintext notation of unconstrained size, causes lot of
+                    // heap allocation, so avoid that.
+                    var enumerator = jsonElement.EnumerateObject();
                     DreamList list = objectTree.CreateList();
 
+                    // The object contained nothing.
+                    if(!enumerator.MoveNext())
+                        return new DreamValue(list);
+
+                    // For handling special values expressed as single-property objects
+                    // Such as float-point values Infinity and NaN
+                    var first = enumerator.Current;
+                    var hasSecond = enumerator.MoveNext();
+                    if (!hasSecond) {
+                        switch(first.Name) {
+                            case "__number__": {
+                                var raw = first.Value.GetString();
+                                var val = raw != null ? float.Parse(raw) : float.NaN;
+                                return new DreamValue(val);
+                            }
+                            default: break;
+                        }
+                    }
+                    // It was not a single-property? Or the property was not special?
+                    // FANTASTIC. STOP PRETENDING BEING A PARSER AND INSERT THEM IN A LIST
+                    DreamValue v1 = CreateValueFromJsonElement(objectTree, first.Value);
+                    list.SetValue(new DreamValue(first.Name), v1);
+
+                    if(!hasSecond)
+                        return new DreamValue(list);
+
+                    var second = enumerator.Current;
+                    DreamValue v2 = CreateValueFromJsonElement(objectTree, second.Value);
+                    list.SetValue(new DreamValue(second.Name), v2);
+
+                    // Enumerate the damn rest of the godawful fucking shitty JSON
                     foreach (JsonProperty childProperty in jsonElement.EnumerateObject()) {
                         DreamValue value = CreateValueFromJsonElement(objectTree, childProperty.Value);
 
@@ -1083,7 +1130,7 @@ namespace OpenDreamRuntime.Procs.Native {
         /// </summary>
         /// <param name="writer">The json writer to encode into</param>
         /// <param name="value">The DreamValue to encode</param>
-        private static void JsonEncode(Utf8JsonWriter writer, DreamObjectTree objectTree,  DreamValue value) {
+        private static void JsonEncode(Utf8JsonWriter writer, DreamValue value) {
             // In parity with DM, we give up and just print a 'null' at the maximum recursion.
             if (writer.CurrentDepth >= 20) {
                 writer.WriteNullValue();
@@ -1115,7 +1162,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         if (list.ContainsKey(listValue)) {
                             writer.WritePropertyName(key);
-                            JsonEncode(writer, objectTree, list.GetValue(listValue));
+                            JsonEncode(writer, list.GetValue(listValue));
                         } else {
                             writer.WriteNull(key);
                         }
@@ -1126,7 +1173,7 @@ namespace OpenDreamRuntime.Procs.Native {
                     writer.WriteStartArray();
 
                     foreach (DreamValue listValue in list.GetValues()) {
-                        JsonEncode(writer, objectTree, listValue);
+                        JsonEncode(writer, listValue);
                     }
 
                     writer.WriteEndArray();
@@ -1173,7 +1220,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // "\"" instead of "\u0022"
             });
 
-            JsonEncode(jsonWriter, bundle.ObjectTree, bundle.GetArgument(0, "Value"));
+            JsonEncode(jsonWriter, bundle.GetArgument(0, "Value"));
             jsonWriter.Flush();
 
             return new DreamValue(Encoding.UTF8.GetString(stream.AsSpan()));
@@ -1553,16 +1600,36 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("num2text")]
         [DreamProcParameter("N")]
-        [DreamProcParameter("Digits", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("Radix", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("B", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_num2text(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue number = bundle.GetArgument(0, "N");
 
-            if (number.TryGetValueAsFloat(out float floatValue)) {
-                return new DreamValue(floatValue.ToString(CultureInfo.InvariantCulture));
-            } else {
+            if (!number.TryGetValueAsFloat(out float floatNum)) {
                 return new DreamValue("0");
             }
+
+            if(bundle.Arguments.Length == 1) {
+                return new DreamValue(floatNum.ToString("g6"));
+            }
+
+            if(bundle.Arguments.Length == 2) {
+                if(!bundle.GetArgument(1, "A").TryGetValueAsInteger(out var sigFig)) {
+                    return new DreamValue(floatNum.ToString("g6"));
+                }
+                return new DreamValue(floatNum.ToString($"g{sigFig}"));
+            }
+
+            if(bundle.Arguments.Length == 3) {
+                var digits = Math.Max(bundle.GetArgument(1, "A").MustGetValueAsInteger(), 0);
+                var radix = bundle.GetArgument(2, "B").MustGetValueAsInteger();
+                var intNum = (int)floatNum;
+
+                return new DreamValue(DreamProcNativeHelpers.ToBase(intNum, radix).PadLeft(digits, '0'));
+            }
+
+            // Maybe an exception is better?
+            return new DreamValue("0");
         }
 
         [DreamProc("orange")]
@@ -2950,6 +3017,35 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return await connection.WinExists(controlId);
+        }
+
+        [DreamProc("winget")]
+        [DreamProcParameter("player", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("control_id", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("params", Type = DreamValueTypeFlag.String)]
+        public static async Task<DreamValue> NativeProc_winget(AsyncNativeProc.State state) {
+            DreamValue player = state.GetArgument(0, "player");
+            state.GetArgument(1, "control_id").TryGetValueAsString(out var controlId);
+            if (!state.GetArgument(2, "params").TryGetValueAsString(out var paramsValue))
+                return new(string.Empty);
+
+            DreamConnection? connection = null;
+            if (player.TryGetValueAsDreamObject<DreamObjectMob>(out var mob)) {
+                connection = mob.Connection;
+            } else if (player.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                connection = client.Connection;
+            }
+
+            if (connection == null) {
+                throw new Exception($"Invalid client {player}");
+            }
+
+            if (string.IsNullOrEmpty(controlId) && paramsValue == "hwmode") {
+                // Don't even bother querying the client, we don't have a non-hwmode
+                return new("true");
+            }
+
+            return await connection.WinGet(controlId, paramsValue);
         }
 
         [DreamProc("winset")]

@@ -1,5 +1,6 @@
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamShared.Dream;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Interface;
@@ -17,6 +18,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public ControlInfo? DefaultInfo => null;
     public ControlMap? DefaultMap => null;
     public InterfaceDescriptor InterfaceDescriptor { get; }
+    public ViewRange View => new(5);
 
     public void Initialize() {
 

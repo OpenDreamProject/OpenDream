@@ -4,7 +4,6 @@ using System.Linq;
 using DMCompiler.Compiler.DMPreprocessor;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using String = System.String;
 
 namespace DMCompiler.Compiler.DM {

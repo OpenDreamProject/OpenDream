@@ -25,7 +25,7 @@ public sealed class DreamIcon {
 
     private IconResource? _cachedDMI;
 
-    private int FrameCount => States.Values.Sum(state => state.Frames * DMIParser.GetExportedDirectionCount(state.Directions.Keys));
+    private int FrameCount => States.Values.Sum(state => state.Frames * DMIParser.GetExportedDirectionCount(state.Directions));
 
     /// <summary>
     /// A list of operations to be applied when generating the DMI, along with what frames to apply them on
@@ -102,7 +102,7 @@ public sealed class DreamIcon {
 
             dmiStates.Add(newState.Name, newState);
 
-            int exportedDirectionCount = DMIParser.GetExportedDirectionCount(iconState.Directions.Keys);
+            int exportedDirectionCount = DMIParser.GetExportedDirectionCount(iconState.Directions);
             for (int directionIndex = 0; directionIndex < exportedDirectionCount; directionIndex++) {
                 AtomDirection direction = DMIParser.DMIFrameDirections[directionIndex];
                 int firstFrame = currentFrame;
@@ -183,10 +183,12 @@ public sealed class DreamIcon {
 
         if (!States.TryGetValue(stateName, out var iconState)) {
             iconState = new IconState();
-            States.Add(stateName, iconState);
         }
 
         foreach (var insertingPair in insertingDirections) {
+            if (insertingPair.Value.Length == 0)
+                continue;
+
             List<IconFrame> iconFrames = new(insertingPair.Value.Length);
 
             foreach (var dmiFrame in insertingPair.Value) {
@@ -195,6 +197,11 @@ public sealed class DreamIcon {
 
             iconState.Directions[insertingPair.Key] = iconFrames;
             iconState.Frames = Math.Max(iconState.Frames, iconFrames.Count);
+        }
+
+        // Only add the state if it contains any frames
+        if (!States.ContainsKey(stateName) && iconState.Frames > 0) {
+            States.Add(stateName, iconState);
         }
 
         _cachedDMI = null;

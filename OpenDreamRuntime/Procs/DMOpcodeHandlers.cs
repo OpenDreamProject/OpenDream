@@ -4,12 +4,12 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Random;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
@@ -1836,17 +1836,12 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus LocateCoord(DMProcState state) {
-            var z = state.Pop();
-            var y = state.Pop();
-            var x = state.Pop();
-            if (x.TryGetValueAsInteger(out var xInt) && y.TryGetValueAsInteger(out var yInt) &&
-                z.TryGetValueAsInteger(out var zInt)) {
-                state.Proc.DreamMapManager.TryGetTurfAt((xInt, yInt), zInt, out var turf);
-                state.Push(new DreamValue(turf));
-            } else {
-                state.Push(DreamValue.Null);
-            }
+            var z = (int)state.Pop().UnsafeGetValueAsFloat();
+            var y = (int)state.Pop().UnsafeGetValueAsFloat();
+            var x = (int)state.Pop().UnsafeGetValueAsFloat();
 
+            state.Proc.DreamMapManager.TryGetTurfAt((x, y), z, out var turf);
+            state.Push(new DreamValue(turf));
             return ProcStatus.Continue;
         }
 
@@ -1859,7 +1854,8 @@ namespace OpenDreamRuntime.Procs {
             DreamValue value = state.Pop();
 
             DreamList? containerList;
-            if (container is DreamObjectAtom) {
+            if (container is DreamObjectAtom or DreamObjectWorld) {
+                // TODO: Using world.contents for this is hilariously bad due to using WorldContentsList.GetValues()
                 container.GetVariable("contents").TryGetValueAsDreamList(out containerList);
             } else {
                 containerList = container as DreamList;
@@ -2324,10 +2320,11 @@ namespace OpenDreamRuntime.Procs {
         private static bool IsEqual(DreamValue first, DreamValue second) {
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject firstValue = first.MustGetValueAsDreamObject();
+                    DreamObject? firstValue = first.MustGetValueAsDreamObject();
 
                     switch (second.Type) {
                         case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
+                        case DreamValue.DreamValueType.Appearance:
                         case DreamValue.DreamValueType.DreamProc:
                         case DreamValue.DreamValueType.ProcStub:
                         case DreamValue.DreamValueType.VerbStub:

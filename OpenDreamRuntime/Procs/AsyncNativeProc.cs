@@ -170,7 +170,7 @@ namespace OpenDreamRuntime.Procs {
         private readonly Func<State, Task<DreamValue>> _taskFunc;
 
         public AsyncNativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, Func<State, Task<DreamValue>> taskFunc)
-            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, null) {
+            : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, 0) {
             _defaultArgumentValues = defaultArgumentValues;
             _taskFunc = taskFunc;
         }

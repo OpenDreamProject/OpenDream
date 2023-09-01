@@ -22,6 +22,7 @@ public sealed class DreamObjectWorld : DreamObject {
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.world");
 
+    public readonly ViewRange DefaultView;
     public DreamResource? Log;
 
     private double TickLag {
@@ -59,8 +60,6 @@ public sealed class DreamObjectWorld : DreamObject {
     /// <summary> Tries to return the address of the server, as it appears over the internet. May return null.</summary>
     private IPAddress? InternetAddress => null; //TODO: Implement this!
 
-    private ViewRange _viewRange;
-
     public DreamObjectWorld(DreamObjectDefinition objectDefinition) :
         base(objectDefinition) {
         IoCManager.InjectDependencies(this);
@@ -70,14 +69,14 @@ public sealed class DreamObjectWorld : DreamObject {
 
         DreamValue view = objectDefinition.Variables["view"];
         if (view.TryGetValueAsString(out var viewString)) {
-            _viewRange = new ViewRange(viewString);
+            DefaultView = new ViewRange(viewString);
         } else {
             if (!view.TryGetValueAsInteger(out var viewInt)) {
-                _sawmill.Warning("world.view did not contain a valid value. A default of 7 is being used.");
-                viewInt = 7;
+                _sawmill.Warning("world.view did not contain a valid value. A default of 5 is being used.");
+                viewInt = 5;
             }
 
-            _viewRange = new ViewRange(viewInt);
+            DefaultView = new ViewRange(viewInt);
         }
 
         var worldParams = _cfg.GetCVar(OpenDreamCVars.WorldParams);
@@ -125,6 +124,10 @@ public sealed class DreamObjectWorld : DreamObject {
 
             case "timeofday":
                 value = new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
+                return true;
+            
+            case "timezone":
+                value = new DreamValue((int)DateTimeOffset.Now.Offset.TotalHours);
                 return true;
 
             case "time":
@@ -201,10 +204,10 @@ public sealed class DreamObjectWorld : DreamObject {
 
             case "view":
                 // Number if square & centerable, string representation otherwise
-                if (_viewRange.IsSquare && _viewRange.IsCenterable) {
-                    value = new DreamValue(_viewRange.Range);
+                if (DefaultView.IsSquare && DefaultView.IsCenterable) {
+                    value = new DreamValue(DefaultView.Range);
                 } else {
-                    value = new DreamValue(_viewRange.ToString());
+                    value = new DreamValue(DefaultView.ToString());
                 }
 
                 return true;

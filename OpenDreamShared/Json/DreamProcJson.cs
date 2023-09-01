@@ -1,5 +1,6 @@
 ﻿using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamShared.Json {
     public sealed class ProcDefinitionJson {
@@ -16,7 +17,7 @@ namespace OpenDreamShared.Json {
         public string? VerbName { get; set; }
         public string? VerbCategory { get; set; } = null;
         public string? VerbDesc { get; set; }
-        public sbyte? Invisibility { get; set; }
+        public sbyte Invisibility { get; set; }
     }
 
     public sealed class ProcArgumentJson {

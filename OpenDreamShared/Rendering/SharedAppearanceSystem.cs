@@ -8,19 +8,19 @@ namespace OpenDreamShared.Rendering {
     public abstract class SharedAppearanceSystem : EntitySystem {
         [Serializable, NetSerializable]
         public sealed class AllAppearancesEvent : EntityEventArgs {
-            public Dictionary<uint, IconAppearance> Appearances = new();
+            public Dictionary<int, IconAppearance> Appearances = new();
 
-            public AllAppearancesEvent(Dictionary<uint, IconAppearance> appearances) {
+            public AllAppearancesEvent(Dictionary<int, IconAppearance> appearances) {
               Appearances = appearances;
             }
         }
 
         [Serializable, NetSerializable]
         public sealed class NewAppearanceEvent : EntityEventArgs {
-            public uint AppearanceId { get; }
+            public int AppearanceId { get; }
             public IconAppearance Appearance { get; }
 
-            public NewAppearanceEvent(uint appearanceID, IconAppearance appearance) {
+            public NewAppearanceEvent(int appearanceID, IconAppearance appearance) {
                 AppearanceId = appearanceID;
                 Appearance = appearance;
             }
@@ -29,10 +29,10 @@ namespace OpenDreamShared.Rendering {
         [Serializable, NetSerializable]
         public sealed class AnimationEvent : EntityEventArgs {
             public EntityUid Entity;
-            public uint TargetAppearanceId;
+            public int TargetAppearanceId;
             public TimeSpan Duration;
 
-            public AnimationEvent(EntityUid entity, uint targetAppearanceId, TimeSpan duration) {
+            public AnimationEvent(EntityUid entity, int targetAppearanceId, TimeSpan duration) {
                 Entity = entity;
                 TargetAppearanceId = targetAppearanceId;
                 Duration = duration;

@@ -9,7 +9,7 @@
 	var/default_verb_category = "Commands"
 
 	var/tag
-	var/type = /client
+	var/const/type = /client
 
 	var/mob/mob
 	var/atom/eye

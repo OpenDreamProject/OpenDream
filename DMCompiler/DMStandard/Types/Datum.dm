@@ -1,5 +1,5 @@
 ﻿/datum
-	var/type
+	var/const/type
 	var/parent_type
 
 	var/list/vars

@@ -2567,7 +2567,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_text2num(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue value = bundle.GetArgument(0, "T");
 
-            if (value.TryGetValueAsString(out string valueAsString)) {
+            if (value.TryGetValueAsString(out string? valueAsString)) {
                 bundle.GetArgument(1, "radix").TryGetValueAsInteger(out var radix);
                 valueAsString = valueAsString.Trim();
 

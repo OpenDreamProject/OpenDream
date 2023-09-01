@@ -315,15 +315,12 @@ internal static partial class DreamProcNativeHelpers {
         if (radix < 2 || radix > 36)
             throw new Exception($"Invalid radix: {radix}");
 
-        bool negative = false;
-        if (value[0] == '-' || value[0] == '+') {
-            if (value[0] == '-')
-                negative = true;
+        bool negative = value[0] == '-';
+        if (negative || value[0] == '+')
             value = value.Slice(1);
-        }
 
         if (value.StartsWith("nan", StringComparison.CurrentCultureIgnoreCase)) {
-            return negative ? -Double.NaN : Double.NaN;
+            return negative ? -double.NaN : double.NaN;
         }
 
         if (value.StartsWith("0x")) {
@@ -333,11 +330,10 @@ internal static partial class DreamProcNativeHelpers {
             }
         }
 
-        int letterDigitsVariaty = Math.Max(radix - 10, 0);
+        int letterDigitsVariety = Math.Max(radix - 10, 0);
 
-        double result = 0;
+        double? result = null;
         int fractionalGrade = 0;
-        bool resultInited = false;
 
         foreach (char c in value) {
             if (c == '.') {
@@ -348,12 +344,10 @@ internal static partial class DreamProcNativeHelpers {
             }
 
             int digit = c;
-            if (c < '0' || c > '9') {
-                if (letterDigitsVariaty == 0)
-                    break;
-                if (c >= 'A' && c < 'A' + letterDigitsVariaty) {
+            if (!char.IsAsciiDigit(c)) {
+                if (c >= 'A' && c < 'A' + letterDigitsVariety) {
                     digit -= 'A' - 10;
-                } else if (c >= 'a' && c <= 'a' + letterDigitsVariaty) {
+                } else if (c >= 'a' && c <= 'a' + letterDigitsVariety) {
                     digit -= 'a' - 10;
                 } else {
                     break;
@@ -361,9 +355,8 @@ internal static partial class DreamProcNativeHelpers {
             } else {
                 digit -= '0';
             }
-            if (!resultInited) {
-                resultInited = true;
-            }
+
+            result ??= 0;
             if (fractionalGrade == 0)
                 result = result * radix + digit;
             else {
@@ -372,9 +365,7 @@ internal static partial class DreamProcNativeHelpers {
             }
         }
 
-        if (!resultInited)
-            return null;
-        if (negative)
+        if (negative && result != null)
             result *= -1;
 
         return result;

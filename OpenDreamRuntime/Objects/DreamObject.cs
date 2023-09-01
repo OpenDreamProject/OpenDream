@@ -121,7 +121,6 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual bool IsSaved(string name) {
-            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
             return ObjectDefinition.Variables.ContainsKey(name) && !ObjectDefinition.GlobalVariables.ContainsKey(name)
                 && !ObjectDefinition.ConstVariables.Contains(name) && !ObjectDefinition.TmpVariables.Contains(name);
         }

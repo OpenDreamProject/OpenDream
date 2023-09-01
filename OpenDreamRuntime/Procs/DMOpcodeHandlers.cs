@@ -2008,8 +2008,7 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception($"Invalid owner for issaved() call {owner}");
             }
 
-            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
-            if (objectDefinition.GlobalVariables.ContainsKey(property)) {
+            if (objectDefinition.GlobalVariables.ContainsKey(property) || objectDefinition.ConstVariables.Contains(property) || objectDefinition.TmpVariables.Contains(property)) {
                 state.Push(new DreamValue(0));
             } else {
                 state.Push(new DreamValue(1));

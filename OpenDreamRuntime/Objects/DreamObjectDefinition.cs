@@ -103,6 +103,10 @@ namespace OpenDreamRuntime.Objects {
                     Verbs = new List<int>(Parent.Verbs);
                 if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                     GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
+                if (Parent.ConstVariables != null)
+                    ConstVariables = new HashSet<string>(Parent.ConstVariables);
+                if (Parent.TmpVariables != null)
+                    TmpVariables = new HashSet<string>(Parent.TmpVariables);
             }
         }
 

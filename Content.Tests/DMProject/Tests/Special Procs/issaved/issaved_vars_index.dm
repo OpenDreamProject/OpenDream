@@ -11,6 +11,7 @@
 
 /proc/RunTest()
 	var/obj/o/test = new
+	ASSERT(!issaved(test.type))
 	ASSERT(issaved(test.A))
 	ASSERT(!issaved(test.B))
 

@@ -49,9 +49,9 @@ namespace OpenDreamRuntime.Objects {
         // Maps /static variables from name to their index in the global variable table.
         public readonly Dictionary<string, int> GlobalVariables = new();
         // Contains hashes of variables that are tagged /const.
-        public readonly HashSet<string> ConstVariables = new();
+        public HashSet<string>? ConstVariables = null;
         // Contains hashes of variables that are tagged /tmp.
-        public readonly HashSet<string> TmpVariables = new();
+        public HashSet<string>? TmpVariables = null;
 
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
             DreamManager = copyFrom.DreamManager;

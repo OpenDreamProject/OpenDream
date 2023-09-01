@@ -14,4 +14,3 @@
 /proc/RunTest()
 	var/obj/o = new
 	o.log_vars()
-	ASSERT(FALSE) // To ensure this test fails until it's been revisited (in case we add CI to check broken tests)

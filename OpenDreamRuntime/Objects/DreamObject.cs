@@ -122,7 +122,8 @@ namespace OpenDreamRuntime.Objects {
 
         public virtual bool IsSaved(string name) {
             //TODO: Add support for var/const/ and var/tmp/ once those are properly in
-            return ObjectDefinition.Variables.ContainsKey(name) && !ObjectDefinition.GlobalVariables.ContainsKey(name);
+            return ObjectDefinition.Variables.ContainsKey(name) && !ObjectDefinition.GlobalVariables.ContainsKey(name)
+                && !ObjectDefinition.ConstVariables.Contains(name) && !ObjectDefinition.TmpVariables.Contains(name);
         }
 
         public bool HasVariable(string name) {
@@ -171,6 +172,8 @@ namespace OpenDreamRuntime.Objects {
         }
 
         protected virtual void SetVar(string varName, DreamValue value) {
+            if(ObjectDefinition.ConstVariables.Contains(varName))
+                throw new Exception($"Cannot set const var \"{varName}\"");
             switch (varName) {
                 case "type":
                 case "parent_type":

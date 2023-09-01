@@ -227,8 +227,12 @@ namespace DMCompiler.DM.Visitors {
                 if (varDefinition.IsStatic) {
                     variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
                 } else {
-                    variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst,varDefinition.ValType);
+                    variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst, varDefinition.IsTmp, varDefinition.ValType);
                     varObject.Variables[variable.Name] = variable;
+                    if(varDefinition.IsConst)
+                        varObject.ConstVariables.Add(varDefinition.Name);
+                    if(varDefinition.IsTmp)
+                        varObject.TmpVariables.Add(varDefinition.Name);
                 }
             }
 

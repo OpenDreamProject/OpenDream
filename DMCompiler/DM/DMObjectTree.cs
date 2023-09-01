@@ -173,7 +173,7 @@ namespace DMCompiler.DM {
         public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
             int id = Globals.Count;
 
-            global = new DMVariable(type, name, true, isConst, valType);
+            global = new DMVariable(type, name, true, isConst, false, valType);
             Globals.Add(global);
             return id;
         }

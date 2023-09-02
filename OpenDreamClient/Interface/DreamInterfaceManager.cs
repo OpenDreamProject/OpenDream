@@ -481,7 +481,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     if (element != null) {
                         element.PopulateElementDescriptor(node, _serializationManager);
                     } else {
-                        _sawmill.Error($"Invalid element \"{controlId}\"");
+                        _sawmill.Error($"Invalid element \"{elementId}\"");
                     }
                 }
             }

@@ -7,25 +7,25 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
 
         public void RunCommand(string command) {
-            string[] split = command.Split(" ");
-            string verb = split[0];
-
-            switch (verb) {
-                case ".quit":
+            switch (command) {
+                case string x when x.StartsWith(".quit"):
                     IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
                     break;
 
-                case ".screenshot":
+                case string x when x.StartsWith(".screenshot"):
+                    string[] split = command.Split(" ");
                     _interfaceManager.SaveScreenshot(split.Length == 1 || split[1] != "auto");
                     break;
 
-                case ".configure":
+                case string x when x.StartsWith(".configure"):
                     Log.Warning(".configure command is not implemented");
                     break;
 
-                case ".winset":
+                case string x when x.StartsWith(".winset"):
                     // Everything after .winset, excluding the space and quotes
-                    string winsetParams = command.Substring(verb.Length + 2, command.Length - verb.Length - 3);
+                    string winsetParams = command.Substring(7); //clip .winset
+                    winsetParams = winsetParams.Trim(); //clip space
+                    winsetParams = winsetParams.Trim('\"'); //clip quotes
 
                     _interfaceManager.WinSet(null, winsetParams);
                     break;

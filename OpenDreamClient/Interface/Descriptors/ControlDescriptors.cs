@@ -138,6 +138,10 @@ public sealed partial class ControlDescriptorInfo : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorMap : ControlDescriptor {
+    [DataField("on-show")]
+    public string? OnShowCommand;
+    [DataField("on-hide")]
+    public string? OnHideCommand;
 }
 
 public sealed partial class ControlDescriptorBrowser : ControlDescriptor {

@@ -39,4 +39,18 @@ public sealed class ControlMap : InterfaceControl {
             }
         }
     }
+
+    public void OnShowEvent() {
+        ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
+        if (controlDescriptor.OnShowCommand != null) {
+            EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.OnShowCommand);
+        }
+    }
+
+    public void OnHideEvent() {
+        ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
+        if (controlDescriptor.OnHideCommand != null) {
+            EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.OnHideCommand);
+        }
+    }
 }

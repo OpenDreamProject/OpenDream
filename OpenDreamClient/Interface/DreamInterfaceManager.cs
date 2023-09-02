@@ -535,6 +535,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 // But also have it here in case a local winget ever wants it
                 case "hwmode":
                     return "true";
+                case "windows":
+                    return string.Join(';', Windows.Keys);
                 default:
                     _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
                     return string.Empty;

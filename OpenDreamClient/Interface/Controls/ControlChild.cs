@@ -64,6 +64,10 @@ internal sealed class ControlChild : InterfaceControl {
 
             _grid.Children.Add(_rightElement);
         }
+        if(_leftElement is not null)
+            _leftElement.SetPositionFirst();
+        if(_rightElement is not null)
+            _rightElement.SetPositionLast();
 
         UpdateGrid();
     }

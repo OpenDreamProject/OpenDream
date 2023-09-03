@@ -25,6 +25,7 @@ using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
+using static OpenDreamShared.Input.SharedDreamCommandSystem;
 
 namespace OpenDreamClient.Interface;
 
@@ -430,6 +431,40 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
+    public void RunCommand(string command){
+        switch (command) {
+                case string x when x.StartsWith(".quit"):
+                    IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                    break;
+
+                case string x when x.StartsWith(".screenshot"):
+                    string[] split = command.Split(" ");
+                    SaveScreenshot(split.Length == 1 || split[1] != "auto");
+                    break;
+
+                case string x when x.StartsWith(".configure"):
+                    _sawmill.Warning(".configure command is not implemented");
+                    break;
+
+                case string x when x.StartsWith(".winset"):
+                    // Everything after .winset, excluding the space and quotes
+                    string winsetParams = command.Substring(7); //clip .winset
+                    winsetParams = winsetParams.Trim(); //clip space
+                    winsetParams = winsetParams.Trim('\"'); //clip quotes
+
+                    WinSet(null, winsetParams);
+                    break;
+
+                default: {
+                    // Send the entire command to the server.
+                    // It has more info about argument types so it can parse it better than we can.
+                    //RaiseNetworkEvent(new CommandEvent(command));
+                    EntitySystem.Get<DreamCommandSystem>().SendServerCommand(command);
+                    break;
+                }
+            }
+    }
+
     public void WinSet(string? controlId, string winsetParams) {
         DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
         DMFParser parser = new DMFParser(lexer, _serializationManager);
@@ -684,5 +719,7 @@ public interface IDreamInterfaceManager {
     InterfaceElement? FindElementWithId(string id);
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
+
+    void RunCommand(string command);
     void WinSet(string? controlId, string winsetParams);
 }

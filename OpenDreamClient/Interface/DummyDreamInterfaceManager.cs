@@ -43,4 +43,8 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void WinSet(string? controlId, string winsetParams) {
 
     }
+
+    public void RunCommand(string command) {
+
+    }
 }

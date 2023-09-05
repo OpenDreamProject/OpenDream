@@ -372,26 +372,28 @@ namespace OpenDreamRuntime.Procs {
                         nextInterpIndex++;
                         continue;
                     }
-                    case StringFormatEncoder.FormatSuffix.StringifyNoArticle:
-                    {
-                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                    case StringFormatEncoder.FormatSuffix.StringifyNoArticle: {
+                        if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                             formattedString.Append(dreamObject.GetNameUnformatted());
+                        } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
+                            formattedString.Append(interpStr);
                         }
 
                         // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured
                         if(postPrefix != null) { // Cursed Hack
-                            switch(postPrefix) {
+                            switch (postPrefix) {
                                 case StringFormatEncoder.FormatSuffix.LowerRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, false);
                                     break;
                                 case StringFormatEncoder.FormatSuffix.UpperRoman:
                                     ToRoman(ref formattedString, interps, nextInterpIndex, true);
                                     break;
-                                default: break;
                             }
+
                             postPrefix = null;
                         }
-                        //Things that aren't objects just print nothing in this case
+
+                        //Things that aren't objects or strings just print nothing in this case
                         prevInterpIndex = nextInterpIndex;
                         nextInterpIndex++;
                         continue;
@@ -414,33 +416,40 @@ namespace OpenDreamRuntime.Procs {
                         continue;
                     }
                     case StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle:
-                    case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle:
-                    {
-                        bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle; // saves some wordiness with the ternaries below
-                        if (interps[nextInterpIndex].TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null)
-                        {
-                            bool hasName = dreamObject.TryGetVariable("name", out var objectName);
-                            string nameStr = objectName.Stringify();
-                            if (!hasName) continue; // datums that lack a name var don't use articles
-                            if (DreamObject.StringIsProper(nameStr)) continue; // Proper nouns don't need articles, I guess.
+                    case StringFormatEncoder.FormatSuffix.LowerIndefiniteArticle: {
+                        var interpValue = interps[nextInterpIndex];
+                        string displayName;
+                        bool isPlural = false;
 
-                            if (dreamObject.TryGetVariable("gender", out var gender)) // Aayy babe whats ya pronouns
-                            {
-                                if (gender.TryGetValueAsString(out var str) && str == "plural") // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
-                                {
-                                    formattedString.Append(wasCapital ? "Some" : "some");
-                                    continue;
-                                }
+                        if (interpValue.TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
+                            displayName = dreamObject.GetRawName();
+
+                            // Aayy babe whats ya pronouns
+                            if (dreamObject.TryGetVariable("gender", out var gender) &&
+                                gender.TryGetValueAsString(out var genderStr)) {
+                                // NOTE: In Byond, this part does not work if var/gender is not a native property of this object.
+                                isPlural = (genderStr == "plural");
                             }
-                            if (DreamObject.StringStartsWithVowel(nameStr))
-                            {
-                                formattedString.Append(wasCapital ? "An " : "an ");
-                                continue;
-                            }
-                            formattedString.Append(wasCapital ? "A " : "a ");
-                            continue;
+                        } else if (interpValue.TryGetValueAsString(out var interpStr)) {
+                            displayName = interpStr;
+                        } else {
+                            break;
                         }
-                        continue;
+
+                        if (DreamObject.StringIsProper(displayName))
+                            break; // Proper nouns don't need articles, I guess.
+
+                        // saves some wordiness with the ternaries below
+                        bool wasCapital = formatType == StringFormatEncoder.FormatSuffix.UpperIndefiniteArticle;
+
+                        if (isPlural)
+                            formattedString.Append(wasCapital ? "Some " : "some ");
+                        else if (DreamObject.StringStartsWithVowel(displayName))
+                            formattedString.Append(wasCapital ? "An " : "an ");
+                        else
+                            formattedString.Append(wasCapital ? "A " : "a ");
+
+                        break;
                     }
                     //Suffix macros
                     case StringFormatEncoder.FormatSuffix.UpperSubjectPronoun:

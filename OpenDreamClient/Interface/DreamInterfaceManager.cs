@@ -25,6 +25,7 @@ using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
+using System.Linq;
 
 namespace OpenDreamClient.Interface;
 
@@ -536,7 +537,25 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 case "hwmode":
                     return "true";
                 case "windows":
-                    return string.Join(';', Windows.Keys);
+                    var windowEnum = Windows.Values.GetEnumerator();
+                    List<string> windowIds = new();
+                    if(windowEnum.Current.UIElement.Parent is null){
+                        windowIds.Add(windowEnum.Current.Id);
+                        windowEnum.MoveNext();
+                    }
+                    return string.Join(';', windowIds);
+                case "panes":
+                    var paneEnum = Windows.Values.GetEnumerator();
+                    List<string> paneIds = new();
+                    if(paneEnum.Current.UIElement.Parent is null){
+                        paneIds.Add(paneEnum.Current.Id);
+                        paneEnum.MoveNext();
+                    }
+                    return string.Join(';', paneIds);
+                case "menus":
+                    return string.Join(';', Menus.Keys);
+                case "macros":
+                    return string.Join(';', MacroSets.Keys);
                 default:
                     _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
                     return string.Empty;

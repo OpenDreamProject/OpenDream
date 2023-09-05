@@ -376,7 +376,7 @@ namespace OpenDreamRuntime.Procs {
                         if (interps[nextInterpIndex].TryGetValueAsDreamObject<DreamObject>(out var dreamObject)) {
                             formattedString.Append(dreamObject.GetNameUnformatted());
                         } else if (interps[nextInterpIndex].TryGetValueAsString(out var interpStr)) {
-                            formattedString.Append(interpStr);
+                            formattedString.Append(StringFormatEncoder.RemoveFormatting(interpStr));
                         }
 
                         // NOTE probably should put this above the TryGetAsDreamObject function and continue if formatting has occured

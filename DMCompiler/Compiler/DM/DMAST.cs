@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -187,6 +188,10 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public void VisitList(DMASTList list) {
+            throw new NotImplementedException();
+        }
+
+        public void VisitDimensionalList(DMASTDimensionalList list) {
             throw new NotImplementedException();
         }
 
@@ -1293,6 +1298,28 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitList(this);
+        }
+
+        public bool AllValuesConstant() {
+            return Values.All(value => value is {
+                Key: DMASTExpressionConstant,
+                Value: DMASTExpressionConstant
+            });
+        }
+    }
+
+    /// <summary>
+    /// Represents the value of a var defined as <code>var/list/L[1][2][3]</code>
+    /// </summary>
+    public sealed class DMASTDimensionalList : DMASTExpression {
+        public readonly List<DMASTExpression> Sizes;
+
+        public DMASTDimensionalList(Location location, List<DMASTExpression> sizes) : base(location) {
+            Sizes = sizes;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitDimensionalList(this);
         }
     }
 

@@ -538,6 +538,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return "true";
                 case "windows":
                     var windowEnum = Windows.Values.GetEnumerator();
+                    if(windowEnum.Current is null)
+                        return string.Empty;
                     List<string> windowIds = new();
                     if(windowEnum.Current.UIElement.Parent is null){
                         windowIds.Add(windowEnum.Current.Id);
@@ -546,6 +548,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return string.Join(';', windowIds);
                 case "panes":
                     var paneEnum = Windows.Values.GetEnumerator();
+                    if(paneEnum.Current is null)
+                        return string.Empty;
                     List<string> paneIds = new();
                     if(paneEnum.Current.UIElement.Parent is null){
                         paneIds.Add(paneEnum.Current.Id);

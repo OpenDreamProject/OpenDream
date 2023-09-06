@@ -538,23 +538,25 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return "true";
                 case "windows":
                     var windowEnum = Windows.Values.GetEnumerator();
-                    if(windowEnum.Current is null)
+                    if(!windowEnum.MoveNext())
                         return string.Empty;
                     List<string> windowIds = new();
-                    if(windowEnum.Current.UIElement.Parent is null){
-                        windowIds.Add(windowEnum.Current.Id);
-                        windowEnum.MoveNext();
-                    }
+                    do {
+                        if(!((WindowDescriptor)windowEnum.Current.ElementDescriptor).IsPane){
+                            windowIds.Add(windowEnum.Current.Id);
+                        }
+                    } while(windowEnum.MoveNext());
                     return string.Join(';', windowIds);
                 case "panes":
                     var paneEnum = Windows.Values.GetEnumerator();
-                    if(paneEnum.Current is null)
+                    if(!paneEnum.MoveNext())
                         return string.Empty;
                     List<string> paneIds = new();
-                    if(paneEnum.Current.UIElement.Parent is null){
-                        paneIds.Add(paneEnum.Current.Id);
-                        paneEnum.MoveNext();
-                    }
+                    do{
+                        if(((WindowDescriptor)paneEnum.Current.ElementDescriptor).IsPane){
+                            paneIds.Add(paneEnum.Current.Id);
+                        }
+                    } while(paneEnum.MoveNext());
                     return string.Join(';', paneIds);
                 case "menus":
                     return string.Join(';', Menus.Keys);

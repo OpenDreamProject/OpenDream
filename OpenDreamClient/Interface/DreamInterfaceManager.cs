@@ -537,27 +537,11 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 case "hwmode":
                     return "true";
                 case "windows":
-                    var windowEnum = Windows.Values.GetEnumerator();
-                    if(!windowEnum.MoveNext())
-                        return string.Empty;
-                    List<string> windowIds = new();
-                    do {
-                        if(!((WindowDescriptor)windowEnum.Current.ElementDescriptor).IsPane){
-                            windowIds.Add(windowEnum.Current.Id);
-                        }
-                    } while(windowEnum.MoveNext());
-                    return string.Join(';', windowIds);
+                    return string.Join(';',
+                        Windows.Where(pair => !((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
                 case "panes":
-                    var paneEnum = Windows.Values.GetEnumerator();
-                    if(!paneEnum.MoveNext())
-                        return string.Empty;
-                    List<string> paneIds = new();
-                    do{
-                        if(((WindowDescriptor)paneEnum.Current.ElementDescriptor).IsPane){
-                            paneIds.Add(paneEnum.Current.Id);
-                        }
-                    } while(paneEnum.MoveNext());
-                    return string.Join(';', paneIds);
+                    return string.Join(';',
+                        Windows.Where(pair => ((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
                 case "menus":
                     return string.Join(';', Menus.Keys);
                 case "macros":

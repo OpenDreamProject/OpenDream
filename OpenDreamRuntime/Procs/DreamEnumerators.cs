@@ -1,9 +1,11 @@
 ﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public interface IDreamValueEnumerator {
         public bool Enumerate(DMProcState state, DreamReference? reference);
+        public void EndEnumeration();
     }
 
     /// <summary>
@@ -29,6 +31,9 @@ namespace OpenDreamRuntime.Procs {
                 state.AssignReference(reference.Value, new DreamValue(_current));
 
             return successful;
+        }
+
+        void IDreamValueEnumerator.EndEnumeration() {
         }
     }
 
@@ -57,6 +62,9 @@ namespace OpenDreamRuntime.Procs {
                 state.AssignReference(reference.Value, new DreamValue(_dreamObjectEnumerator.Current));
             return success;
         }
+
+        void IDreamValueEnumerator.EndEnumeration() {
+        }
     }
 
     /// <summary>
@@ -78,6 +86,9 @@ namespace OpenDreamRuntime.Procs {
             if (reference != null)
                 state.AssignReference(reference.Value, success ? _dreamValueArray[_current] : DreamValue.Null); // Assign regardless of success
             return success;
+        }
+
+        void IDreamValueEnumerator.EndEnumeration() {
         }
     }
 
@@ -112,6 +123,9 @@ namespace OpenDreamRuntime.Procs {
                 }
             } while (true);
         }
+
+        void IDreamValueEnumerator.EndEnumeration() {
+        }
     }
 
     /// <summary>
@@ -126,6 +140,24 @@ namespace OpenDreamRuntime.Procs {
         public WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) {
             _atomManager = atomManager;
             _filterType = filterType;
+            if(filterType is not null)
+                if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Area))
+                    atomManager.Areas.StartBuffering();
+                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Mob))
+                    atomManager.Mobs.StartBuffering();
+                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Obj))
+                    atomManager.Objects.StartBuffering();
+                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Turf))
+                    atomManager.Turfs.StartBuffering();
+                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Movable))
+                    atomManager.Movables.StartBuffering();
+            else {
+                atomManager.Areas.StartBuffering();
+                atomManager.Mobs.StartBuffering();
+                atomManager.Objects.StartBuffering();
+                atomManager.Turfs.StartBuffering();
+                atomManager.Movables.StartBuffering();
+            }
         }
 
         public bool Enumerate(DMProcState state, DreamReference? reference) {
@@ -144,6 +176,27 @@ namespace OpenDreamRuntime.Procs {
                     return true;
                 }
             } while (true);
+        }
+
+        void IDreamValueEnumerator.EndEnumeration() {
+            if(_filterType is not null)
+                if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Area))
+                    _atomManager.Areas.FinishBuffering();
+                else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Mob))
+                    _atomManager.Mobs.FinishBuffering();
+                else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Obj))
+                    _atomManager.Objects.FinishBuffering();
+                else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Turf))
+                    _atomManager.Turfs.FinishBuffering();
+                else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Movable))
+                    _atomManager.Movables.FinishBuffering();
+            else {
+                _atomManager.Areas.FinishBuffering();
+                _atomManager.Mobs.FinishBuffering();
+                _atomManager.Objects.FinishBuffering();
+                _atomManager.Turfs.FinishBuffering();
+                _atomManager.Movables.FinishBuffering();
+            }
         }
     }
 }

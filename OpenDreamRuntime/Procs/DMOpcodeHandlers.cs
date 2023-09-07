@@ -85,17 +85,6 @@ namespace OpenDreamRuntime.Procs {
                     if (dreamObject is DreamObjectAtom) {
                         list = dreamObject.GetVariable("contents").MustGetValueAsDreamList();
                     } else if (dreamObject is DreamObjectWorld) {
-                        // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
-                        if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
-                            return new DreamObjectEnumerator(atomManager.Areas, filterType);
-                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
-                            return new DreamObjectEnumerator(atomManager.Turfs, filterType);
-                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Obj) == true) {
-                            return new DreamObjectEnumerator(atomManager.Objects, filterType);
-                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Mob) == true) {
-                            return new DreamObjectEnumerator(atomManager.Mobs, filterType);
-                        }
-
                         return new WorldContentsEnumerator(atomManager, filterType);
                     }
                 }
@@ -238,8 +227,10 @@ namespace OpenDreamRuntime.Procs {
             DreamReference outputRef = state.ReadReference();
             int jumpToIfFailure = state.ReadInt();
 
-            if (!enumerator.Enumerate(state, outputRef))
+            if (!enumerator.Enumerate(state, outputRef)) {
+                enumerator.EndEnumeration();
                 state.Jump(jumpToIfFailure);
+            }
 
             return ProcStatus.Continue;
         }
@@ -248,8 +239,10 @@ namespace OpenDreamRuntime.Procs {
             IDreamValueEnumerator enumerator = state.EnumeratorStack.Peek();
             int jumpToIfFailure = state.ReadInt();
 
-            if (!enumerator.Enumerate(state, null))
+            if (!enumerator.Enumerate(state, null)) {
+                enumerator.EndEnumeration();
                 state.Jump(jumpToIfFailure);
+            }
 
             return ProcStatus.Continue;
         }

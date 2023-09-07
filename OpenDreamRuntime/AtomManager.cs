@@ -10,12 +10,55 @@ using Robust.Shared.Map;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime {
+
+    /// <summary>
+    /// A list that can be buffered to prevent changes from being applied until FinishBuffering is called.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public sealed class BufferedList<T> : List<T> {
+        private bool _isBuffering = false;
+        private List<T> _bufferedAdds = new();
+        private List<T> _bufferedRemoves = new();
+        public new void Add(T Value) {
+            if (!_isBuffering) {
+                base.Add(Value);
+            }
+            _bufferedRemoves.Remove(Value);
+            _bufferedAdds.Add(Value);
+        }
+
+        public new void Remove(T Value) {
+            if (!_isBuffering) {
+                base.Remove(Value);
+            }
+            _bufferedAdds.Remove(Value);
+            _bufferedRemoves.Remove(Value);
+        }
+
+        public void StartBuffering() {
+            _isBuffering = true;
+        }
+
+        public void FinishBuffering() {
+            _isBuffering = false;
+            foreach (var item in _bufferedAdds)
+            {
+                base.Add(item);
+            }
+            foreach (var item in _bufferedRemoves)
+            {
+                base.Remove(item);
+            }
+            _bufferedAdds.Clear();
+            _bufferedRemoves.Clear();
+        }
+    }
     public sealed class AtomManager {
-        public List<DreamObjectArea> Areas { get; } = new();
-        public List<DreamObjectTurf> Turfs { get; } = new();
-        public List<DreamObjectMovable> Movables { get; } = new();
-        public List<DreamObjectMovable> Objects { get; } = new();
-        public List<DreamObjectMob> Mobs { get; } = new();
+        public BufferedList<DreamObjectArea> Areas { get; } = new();
+        public BufferedList<DreamObjectTurf> Turfs { get; } = new();
+        public BufferedList<DreamObjectMovable> Movables { get; } = new();
+        public BufferedList<DreamObjectMovable> Objects { get; } = new();
+        public BufferedList<DreamObjectMob> Mobs { get; } = new();
         public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
 
         [Dependency] private readonly IEntityManager _entityManager = default!;

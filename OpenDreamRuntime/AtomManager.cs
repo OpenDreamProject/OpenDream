@@ -23,8 +23,8 @@ namespace OpenDreamRuntime {
             if (!_isBuffering) {
                 base.Add(Value);
             }
-            _bufferedRemoves.Remove(Value);
-            _bufferedAdds.Add(Value);
+            if(!_bufferedRemoves.Remove(Value)) //if we don't already have a remove queued, add it, otherwise we're just undoing a remove
+                _bufferedAdds.Add(Value);
         }
 
         public new void Remove(T Value) {

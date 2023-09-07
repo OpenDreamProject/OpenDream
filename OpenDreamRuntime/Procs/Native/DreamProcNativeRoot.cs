@@ -168,17 +168,13 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_arctan(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            DreamValue A = bundle.GetArgument(0, "A");
-            DreamValue x = bundle.GetArgument(0, "x");
-            DreamValue y = bundle.GetArgument(1, "y");
+            bundle.GetArgument(0, "x").TryGetValueAsFloat(out float x);
             double atan;
-            if(y == DreamValue.Null){
-                A.TryGetValueAsFloat(out float Afloat);
-                atan = Math.Atan(Afloat);
+            if (bundle.Arguments.Length == 1) {
+                atan = Math.Atan(x);
             } else {
-                x.TryGetValueAsFloat(out float xfloat);
-                y.TryGetValueAsFloat(out float yfloat);
-                atan = Math.Atan2(yfloat, xfloat);
+                bundle.GetArgument(1, "y").TryGetValueAsFloat(out float y);
+                atan = Math.Atan2(y, x);
             }
             return new DreamValue((float)(atan * 180 / Math.PI));
         }

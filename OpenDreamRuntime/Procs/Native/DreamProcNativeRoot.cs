@@ -165,7 +165,6 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("arctan")]
-        [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_arctan(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {

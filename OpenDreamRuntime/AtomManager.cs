@@ -22,19 +22,32 @@ namespace OpenDreamRuntime {
         public new void Add(T Value) {
             if (!_isBuffering) {
                 base.Add(Value);
+                return;
             }
             if(!_bufferedRemoves.Remove(Value)) //if we don't already have a remove queued, add it, otherwise we're just undoing a remove
                 _bufferedAdds.Add(Value);
         }
 
+        public new void AddRange(IEnumerable<T> collection) {
+            if (!_isBuffering) {
+                base.AddRange(collection);
+                return;
+            }
+            foreach (var item in collection)
+            {
+                if(!_bufferedRemoves.Remove(item)) //if we don't already have a remove queued, add it, otherwise we're just undoing a remove
+                    _bufferedAdds.Add(item);
+            }
+        }
+
         public new void Remove(T Value) {
             if (!_isBuffering) {
                 base.Remove(Value);
+                return;
             }
             _bufferedAdds.Remove(Value);
             _bufferedRemoves.Remove(Value);
         }
-
         public void StartBuffering() {
             _isBuffering = true;
         }

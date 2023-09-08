@@ -1,6 +1,6 @@
 ﻿/world
-	var/list/contents = null
-	var/list/vars
+	var/const/list/contents = null
+	var/const/list/vars
 
 	var/log = null
 

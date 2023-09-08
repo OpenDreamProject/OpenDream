@@ -40,13 +40,29 @@ namespace OpenDreamRuntime {
             }
         }
 
+        /// <summary>
+        /// Removes the first instance of the given value, replacing it with the last value in the list. This is done to avoid shifting the entire list.
+        /// </summary>
+        /// <param name="Value"></param>
+        /// <returns></returns>
+        private bool RemoveSwapLast(T Value) {
+            int index = IndexOf(Value);
+            if (index == -1)
+                return false;
+            var old = this[index];
+            var replacement = this[this.Count - 1];
+            this[index] = replacement;
+            base.RemoveAt(this.Count - 1);
+            return true;
+        }
+
         public new void Remove(T Value) {
             if (!_isBuffering) {
-                base.Remove(Value);
+                RemoveSwapLast(Value);
                 return;
             }
             _bufferedAdds.Remove(Value);
-            _bufferedRemoves.Remove(Value);
+            _bufferedRemoves.Add(Value);
         }
         public void StartBuffering() {
             _isBuffering = true;
@@ -60,7 +76,7 @@ namespace OpenDreamRuntime {
             }
             foreach (var item in _bufferedRemoves)
             {
-                base.Remove(item);
+                RemoveSwapLast(item);
             }
             _bufferedAdds.Clear();
             _bufferedRemoves.Clear();

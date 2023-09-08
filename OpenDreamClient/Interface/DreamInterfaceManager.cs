@@ -26,6 +26,7 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using static OpenDreamShared.Input.SharedDreamCommandSystem;
+using System.Linq;
 
 namespace OpenDreamClient.Interface;
 
@@ -570,6 +571,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 // But also have it here in case a local winget ever wants it
                 case "hwmode":
                     return "true";
+                case "windows":
+                    return string.Join(';',
+                        Windows.Where(pair => !((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
+                case "panes":
+                    return string.Join(';',
+                        Windows.Where(pair => ((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
+                case "menus":
+                    return string.Join(';', Menus.Keys);
+                case "macros":
+                    return string.Join(';', MacroSets.Keys);
                 default:
                     _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
                     return string.Empty;

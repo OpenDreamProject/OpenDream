@@ -44,6 +44,13 @@
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
 		src.add_client_image()
 
+	verb/winget_test()
+		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
+		usr << "panes: [json_encode(winget(usr, null, "panes"))]"
+		usr << "menus: [json_encode(winget(usr, null, "menus"))]"
+		usr << "macros: [json_encode(winget(usr, null, "macros"))]"
+
+
 	verb/rotate()
 		for(var/i in 1 to 8)
 			src.transform = src.transform.Turn(45)

@@ -6,7 +6,9 @@
 /proc/RunTest()
 	new /obj/one(locate(1,1,1))
 	new /obj/one(locate(1,1,1))
-	var/start_world_count = length(world.contents)
+	var/start_world_count = 0
+	for(var/obj/O in world)
+		start_world_count++
 	var/obj/onehandle = new /obj/one(locate(1,1,1))
 	onehandle.name = "one \ref[onehandle]"
 

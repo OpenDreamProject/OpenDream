@@ -170,7 +170,7 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 DreamObject atom = _atomManager.GetAtom(_current);
-                if (_filterType == null || atom.IsSubtypeOf(_filterType)) {
+                if (!atom.Deleted && (_filterType == null || atom.IsSubtypeOf(_filterType))) {
                     if (reference != null)
                         state.AssignReference(reference.Value, new DreamValue(atom));
                     return true;

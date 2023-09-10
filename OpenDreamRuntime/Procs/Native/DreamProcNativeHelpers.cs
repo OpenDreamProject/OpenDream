@@ -1,4 +1,5 @@
-﻿using OpenDreamRuntime.Objects;
+﻿using System.Runtime.CompilerServices;
+using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
@@ -152,14 +153,17 @@ internal static partial class DreamProcNativeHelpers {
                 range = new ViewRange(distValue);
             } else if (arg.TryGetValueAsString(out var distString)) {
                 range = new ViewRange(distString);
-            } else if (arg.IsNull) {
-                range = dreamMan.WorldInstance.DefaultView;
-            } else {
-                throw new Exception($"Invalid argument: {arg}");
+            } else if (!arg.IsNull) { // null range arg is handled by DefaultView above
+                ThrowBadViewArg(arg);
             }
         }
 
         return (center, range);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static void ThrowBadViewArg(DreamValue arg) {
+        throw new Exception($"Invalid argument: {arg}");
     }
 
     public static ViewAlgorithm.Tile?[,] CollectViewData(AtomManager atomManager, IDreamMapManager mapManager, (int X, int Y, int Z) eyePos, ViewRange range) {

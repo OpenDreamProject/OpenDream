@@ -136,12 +136,13 @@ internal static partial class DreamProcNativeHelpers {
     /// If a range argument is passed, like "11x4", then THAT is what we have to deal with.
     /// </remarks>
     /// <returns>The center (which may not be the turf), the distance along the x-axis, and the distance along the y-axis to iterate.</returns>
-    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamObjectAtom? usr, ReadOnlySpan<DreamValue> arguments) {
+    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamManager dreamMan, DreamObjectAtom? usr, ReadOnlySpan<DreamValue> arguments) {
+        ViewRange range = dreamMan.WorldInstance.DefaultView;
+
         if(arguments.Length == 0) {
-            return (usr, new ViewRange(5,5));
+            return (usr, range);
         }
 
-        ViewRange range = new ViewRange(5,5);
         DreamObjectAtom? center = usr;
 
         foreach (var arg in arguments) {
@@ -149,8 +150,10 @@ internal static partial class DreamProcNativeHelpers {
                 center = centerObject;
             } else if(arg.TryGetValueAsInteger(out int distValue)) {
                 range = new ViewRange(distValue);
-            } else if(arg.TryGetValueAsString(out var distString)) {
+            } else if (arg.TryGetValueAsString(out var distString)) {
                 range = new ViewRange(distString);
+            } else if (arg.IsNull) {
+                range = dreamMan.WorldInstance.DefaultView;
             } else {
                 throw new Exception($"Invalid argument: {arg}");
             }

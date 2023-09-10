@@ -1642,7 +1642,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
@@ -1661,7 +1661,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_oview(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList view = bundle.ObjectTree.CreateList();
 
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return new(view);
 
@@ -1833,7 +1833,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_range(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
@@ -2883,7 +2883,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_view(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList view = bundle.ObjectTree.CreateList();
 
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return new(view);
 

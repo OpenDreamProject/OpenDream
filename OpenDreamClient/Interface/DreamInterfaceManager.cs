@@ -375,6 +375,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 window = Windows[windowId];
             } else if (_popupWindows.TryGetValue(windowId, out var popup)) {
                 window = popup.WindowElement;
+            } else if (Menus.TryGetValue(windowId, out var menu)) {
+                if(menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                    return menuElement;
             }
 
             if (window != null) {

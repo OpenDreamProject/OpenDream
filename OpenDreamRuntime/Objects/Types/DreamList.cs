@@ -142,7 +142,12 @@ namespace OpenDreamRuntime.Objects.Types {
 
         //Does not include associations
         public virtual bool ContainsValue(DreamValue value) {
-            return _values.Contains(value);
+            for (int i = 0; i < _values.Count; i++) {
+                if (_values[i].Equals(value))
+                    return true;
+            }
+
+            return false;
         }
 
         public virtual bool ContainsKey(DreamValue value) {

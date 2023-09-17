@@ -21,7 +21,7 @@ public class SharedMouseInputSystem : EntitySystem {
 
     [Serializable, NetSerializable]
     public sealed class EntityClickedEvent : EntityEventArgs, IAtomClickedEvent {
-        public EntityUid EntityUid { get; }
+        public NetEntity NetEntity { get; }
         public ScreenLocation ScreenLoc { get; }
         public bool Middle { get; }
         public bool Shift { get; }
@@ -30,8 +30,8 @@ public class SharedMouseInputSystem : EntitySystem {
         public int IconX { get; }
         public int IconY { get; }
 
-        public EntityClickedEvent(EntityUid entityUid, ScreenLocation screenLoc, bool middle, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
-            EntityUid = entityUid;
+        public EntityClickedEvent(NetEntity netEntity, ScreenLocation screenLoc, bool middle, bool shift, bool ctrl, bool alt, Vector2i iconPos) {
+            NetEntity = netEntity;
             ScreenLoc = screenLoc;
             Middle = middle;
             Shift = shift;

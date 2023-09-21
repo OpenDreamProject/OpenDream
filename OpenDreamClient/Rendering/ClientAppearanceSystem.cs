@@ -72,7 +72,8 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnAnimation(AnimationEvent e) {
-            if (!_entityManager.TryGetComponent<DMISpriteComponent>(e.Entity, out var sprite))
+            EntityUid ent = _entityManager.GetEntity(e.Entity);
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(ent, out var sprite))
                 return;
 
             LoadAppearance(e.TargetAppearanceId, targetAppearance => {

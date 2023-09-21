@@ -636,7 +636,20 @@ namespace DMCompiler.Compiler.DM {
             if (expression != null) {
                 switch (expression) {
                     case DMASTIdentifier identifier:
-                        Check(TokenType.DM_Colon);
+                        // This could be a sleep without parentheses
+                        if (!Check(TokenType.DM_Colon) && !leadingColon && identifier.Identifier == "sleep") {
+                            var procIdentifier = new DMASTCallableProcIdentifier(expression.Location, "sleep");
+                            var sleepTime = Expression();
+                            if (sleepTime == null) // The argument is optional
+                                sleepTime = new DMASTConstantNull(Location.Internal);
+
+                            // TODO: Make sleep an opcode
+                            expression = new DMASTProcCall(expression.Location, procIdentifier,
+                                new[] { new DMASTCallParameter(sleepTime.Location, sleepTime) });
+                            break;
+                        }
+
+                        // But it was a label
                         return Label(identifier);
                     case DMASTRightShift rightShift:
                         // A right shift on its own becomes a special "input" statement

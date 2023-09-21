@@ -41,7 +41,8 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
     }
 
     private void OnAddClientImage(AddClientImageEvent e) {
-        if(e.AttachedEntity == EntityUid.Invalid) {
+        EntityUid ent = _entityManager.GetEntity(e.AttachedEntity);
+        if(ent == EntityUid.Invalid) {
             if(!TurfClientImages.TryGetValue(e.TurfCoords, out var iconList))
                 iconList = new List<int>();
             if(!_idToIcon.ContainsKey(e.ImageAppearance)){
@@ -51,30 +52,31 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
             iconList.Add(e.ImageAppearance);
             TurfClientImages[e.TurfCoords] = iconList;
         } else {
-            if(!AMClientImages.TryGetValue(e.AttachedEntity, out var iconList))
+            if(!AMClientImages.TryGetValue(ent, out var iconList))
                 iconList = new List<int>();
             if(!_idToIcon.ContainsKey(e.ImageAppearance)){
                 DreamIcon icon = new DreamIcon(e.ImageAppearance);
                 _idToIcon[e.ImageAppearance] = icon;
             }
             iconList.Add(e.ImageAppearance);
-            AMClientImages[e.AttachedEntity] = iconList;
+            AMClientImages[ent] = iconList;
         }
 
     }
 
     private void OnRemoveClientImage(RemoveClientImageEvent e) {
-        if(e.AttachedEntity == EntityUid.Invalid) {
+        EntityUid ent = _entityManager.GetEntity(e.AttachedEntity);
+        if(ent == EntityUid.Invalid) {
                 if(!TurfClientImages.TryGetValue(e.TurfCoords, out var iconList))
                     return;
                 iconList.Remove(e.ImageAppearance);
                 TurfClientImages[e.TurfCoords] = iconList;
                 _idToIcon.Remove(e.ImageAppearance);
         } else {
-            if(!AMClientImages.TryGetValue(e.AttachedEntity, out var iconList))
+            if(!AMClientImages.TryGetValue(ent, out var iconList))
                 return;
             iconList.Remove(e.ImageAppearance);
-            AMClientImages[e.AttachedEntity] = iconList;
+            AMClientImages[ent] = iconList;
             _idToIcon.Remove(e.ImageAppearance);
         }
     }

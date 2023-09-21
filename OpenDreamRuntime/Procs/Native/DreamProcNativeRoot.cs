@@ -165,11 +165,17 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("arctan")]
-        [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_arctan(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "A").TryGetValueAsFloat(out float a);
-            double atan = Math.Atan(a);
-
+            bundle.GetArgument(0, "x").TryGetValueAsFloat(out float x);
+            double atan;
+            if (bundle.Arguments.Length == 1) {
+                atan = Math.Atan(x);
+            } else {
+                bundle.GetArgument(1, "y").TryGetValueAsFloat(out float y);
+                atan = Math.Atan2(y, x);
+            }
             return new DreamValue((float)(atan * 180 / Math.PI));
         }
 
@@ -685,8 +691,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("findlasttext")]
         [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
-        [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_findlasttext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             // TODO This is for handling nulls, check if it works right for other bad types
             int failCount = 0;
@@ -700,26 +706,33 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new DreamValue(failCount == 2 ? 1 : 0);
             }
 
-            int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
-            int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
+            int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //chars from the end
+            int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed from the beginning
+            int actualstart;
+            int actualcount;
 
-            if (end == 0) {
-                end = text.Length + 1;
-            }
+            if(start > 0)
+                actualstart = start-1;
+            else
+                actualstart = (text.Length-1) + start;
+            actualstart += needle.Length-1;
+            actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
-            int needleIndex = text.LastIndexOf(needle, end - 1, end - start, StringComparison.OrdinalIgnoreCase);
-            if (needleIndex != -1) {
-                return new DreamValue(needleIndex + 1); //1-indexed
-            } else {
-                return new DreamValue(0);
-            }
+            if(end > 0)
+                actualcount = actualstart - (end-1);
+            else
+                actualcount  = actualstart - ((text.Length-1) + (end));
+            actualcount += needle.Length-1;
+            actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
+            int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.OrdinalIgnoreCase);
+            return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
         }
 
         [DreamProc("findlasttextEx")]
         [DreamProcParameter("Haystack", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
-        [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
-        [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         public static DreamValue NativeProc_findlasttextEx(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             // TODO This is for handling nulls, check if it works right for other bad types
             int failCount = 0;
@@ -735,17 +748,24 @@ namespace OpenDreamRuntime.Procs.Native {
 
             int start = bundle.GetArgument(2, "Start").GetValueAsInteger(); //1-indexed
             int end = bundle.GetArgument(3, "End").GetValueAsInteger(); //1-indexed
+            int actualstart;
+            int actualcount;
 
-            if (end == 0) {
-                end = text.Length + 1;
-            }
+            if(start > 0)
+                actualstart = start-1;
+            else
+                actualstart = (text.Length-1) + start;
+            actualstart += needle.Length-1;
+            actualstart = Math.Max(Math.Min(text.Length, actualstart),0);
 
-            int needleIndex = text.LastIndexOf(needle, end - 1, end - start, StringComparison.InvariantCulture);
-            if (needleIndex != -1) {
-                return new DreamValue(needleIndex + 1); //1-indexed
-            } else {
-                return new DreamValue(0);
-            }
+            if(end > 0)
+                actualcount = actualstart - (end-1);
+            else
+                actualcount  = actualstart - ((text.Length-1) + (end));
+            actualcount += needle.Length-1;
+            actualcount = Math.Max(Math.Min(actualstart+1, actualcount),0);
+            int needleIndex = text.LastIndexOf(needle, actualstart, actualcount, StringComparison.InvariantCulture);
+            return new DreamValue(needleIndex + 1); //1-indexed, or 0 if not found (LastIndexOf returns -1 if not found)
         }
 
         [DreamProc("flick")]
@@ -2567,24 +2587,14 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_text2num(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamValue value = bundle.GetArgument(0, "T");
 
-            if (value.TryGetValueAsString(out var text)) {
+            if (value.TryGetValueAsString(out string? valueAsString)) {
                 bundle.GetArgument(1, "radix").TryGetValueAsInteger(out var radix);
-                if (radix < 2)
-                    throw new Exception($"Invalid radix: {radix}");
+                valueAsString = valueAsString.Trim();
 
-                text = text.Trim();
-                if (text.Length == 0)
-                    return DreamValue.Null;
-
-                try {
-                    if (radix == 10) {
-                        return new DreamValue(Convert.ToSingle(text, CultureInfo.InvariantCulture));
-                    } else {
-                        return new DreamValue(Convert.ToInt32(text, radix));
-                    }
-                } catch (FormatException) {
-                    return DreamValue.Null; //No digits, return null
-                }
+                double? valueAsDouble = DreamProcNativeHelpers.StringToDouble(valueAsString, radix);
+                if (valueAsDouble.HasValue)
+                    return new DreamValue(valueAsDouble.Value);
+                return DreamValue.Null;
             } else if (value.Type == DreamValueType.Float) {
                 return value;
             } else if (value.IsNull) {

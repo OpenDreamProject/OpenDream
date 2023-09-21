@@ -692,6 +692,7 @@ namespace OpenDreamRuntime.Objects.Types {
     // Operates on an atom's appearance
     public sealed class DreamVisContentsList : DreamList {
         [Dependency] private readonly AtomManager _atomManager = default!;
+        [Dependency] private IEntityManager _entityManager = default!;
         private readonly PvsOverrideSystem? _pvsOverrideSystem;
 
         private readonly List<DreamObjectAtom> _visContents = new();
@@ -755,7 +756,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
             _atomManager.UpdateAppearance(_atom, appearance => {
                 // Add even an invalid UID to keep this and _visContents in sync
-                appearance.VisContents.Add(entity);
+                appearance.VisContents.Add(_entityManager.GetNetEntity(entity));
             });
         }
 
@@ -765,7 +766,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
             _visContents.Remove(movable);
             _atomManager.UpdateAppearance(_atom, appearance => {
-                appearance.VisContents.Remove(movable.Entity);
+                appearance.VisContents.Remove(_entityManager.GetNetEntity(movable.Entity));
             });
         }
 

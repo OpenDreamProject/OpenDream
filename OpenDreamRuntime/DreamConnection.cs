@@ -328,15 +328,15 @@ namespace OpenDreamRuntime {
 
             switch (command) {
                 //TODO: Maybe move these verbs to DM code?
-                case ".north": Client?.SpawnProc("North"); break;
-                case ".east": Client?.SpawnProc("East"); break;
-                case ".south": Client?.SpawnProc("South"); break;
-                case ".west": Client?.SpawnProc("West"); break;
-                case ".northeast": Client?.SpawnProc("Northeast"); break;
-                case ".southeast": Client?.SpawnProc("Southeast"); break;
-                case ".southwest": Client?.SpawnProc("Southwest"); break;
-                case ".northwest": Client?.SpawnProc("Northwest"); break;
-                case ".center": Client?.SpawnProc("Center"); break;
+                case ".north": Client?.SpawnProc("North", Mob); break;
+                case ".east": Client?.SpawnProc("East", Mob); break;
+                case ".south": Client?.SpawnProc("South", Mob); break;
+                case ".west": Client?.SpawnProc("West", Mob); break;
+                case ".northeast": Client?.SpawnProc("Northeast", Mob); break;
+                case ".southeast": Client?.SpawnProc("Southeast", Mob); break;
+                case ".southwest": Client?.SpawnProc("Southwest", Mob); break;
+                case ".northwest": Client?.SpawnProc("Northwest", Mob); break;
+                case ".center": Client?.SpawnProc("Center", Mob); break;
 
                 default: {
                     if (_availableVerbs.TryGetValue(command, out var value)) {

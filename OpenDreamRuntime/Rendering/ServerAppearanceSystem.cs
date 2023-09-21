@@ -51,7 +51,7 @@ namespace OpenDreamRuntime.Rendering {
             return _appearanceToId.TryGetValue(appearance, out appearanceId);
         }
 
-        public void Animate(EntityUid entity, IconAppearance targetAppearance, TimeSpan duration) {
+        public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration) {
             int appearanceId = AddAppearance(targetAppearance);
 
             RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration));

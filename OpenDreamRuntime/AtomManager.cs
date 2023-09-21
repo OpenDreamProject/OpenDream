@@ -344,7 +344,9 @@ namespace OpenDreamRuntime {
             // Don't send the updated appearance to clients, they will animate it
             movable.SpriteComponent.SetAppearance(appearance, dirty: false);
 
-            AppearanceSystem.Animate(movable.Entity, appearance, duration);
+            NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
+
+            AppearanceSystem.Animate(ent, appearance, duration);
         }
 
         public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {

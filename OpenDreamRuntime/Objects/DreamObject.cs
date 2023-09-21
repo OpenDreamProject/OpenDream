@@ -280,8 +280,6 @@ namespace OpenDreamRuntime.Objects {
                         return true;
                     case StringFormatEncoder.FormatSuffix.Improper:
                         return false;
-                    default:
-                        break;
                 }
             }
 
@@ -316,9 +314,7 @@ namespace OpenDreamRuntime.Objects {
             if (this is DreamObjectClient client)
                 return client.Connection.Session!.Name;
 
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
-                return ObjectDefinition.Type.ToString();
-
+            var name = GetRawName();
             bool isProper = StringIsProper(name);
             name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
             if(!isProper) {
@@ -339,9 +335,18 @@ namespace OpenDreamRuntime.Objects {
         /// Similar to <see cref="GetDisplayName"/> except it just returns the name as plaintext, with formatting removed. No article or anything.
         /// </summary>
         public string GetNameUnformatted() {
+            return StringFormatEncoder.RemoveFormatting(GetRawName());
+        }
+
+        /// <summary>
+        /// Returns the name of this object with no formatting evaluated
+        /// </summary>
+        /// <returns></returns>
+        public string GetRawName() {
             if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
-                return ObjectDefinition?.Type.ToString() ?? String.Empty;
-            return StringFormatEncoder.RemoveFormatting(name);
+                return ObjectDefinition.Type.ToString();
+
+            return name;
         }
         #endregion Name Helpers
 

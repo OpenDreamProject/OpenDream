@@ -3,7 +3,7 @@ using OpenDreamShared.Rendering;
 
 namespace OpenDreamRuntime.Rendering {
     [RegisterComponent]
-    public sealed class DMISpriteComponent : SharedDMISpriteComponent {
+    public sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables]
         public ScreenLocation? ScreenLocation {
             get => _screenLocation;

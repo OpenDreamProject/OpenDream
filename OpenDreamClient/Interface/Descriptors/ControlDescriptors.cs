@@ -9,7 +9,7 @@ using Robust.Shared.Serialization.TypeSerializers.Interfaces;
 namespace OpenDreamClient.Interface.Descriptors;
 
 [Virtual]
-public class ControlDescriptor : ElementDescriptor {
+public partial class ControlDescriptor : ElementDescriptor {
     [DataField("pos")]
     public Vector2i? Pos;
     [DataField("size")]
@@ -28,7 +28,7 @@ public class ControlDescriptor : ElementDescriptor {
     public bool IsDisabled;
 }
 
-public sealed class WindowDescriptor : ControlDescriptor {
+public sealed partial class WindowDescriptor : ControlDescriptor {
     [DataField("is-pane")]
     public bool IsPane;
     [DataField("icon")]
@@ -38,9 +38,9 @@ public sealed class WindowDescriptor : ControlDescriptor {
     [DataField("title")]
     public string? Title;
     [DataField("macro")]
-    public string? Macro { get; init; }
+    public string? Macro { get; private set; }
     [DataField("on-close")]
-    public string? OnClose { get; init; }
+    public string? OnClose { get; private set; }
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 
@@ -109,7 +109,7 @@ public sealed class WindowDescriptor : ControlDescriptor {
     }
 }
 
-public sealed class ControlDescriptorChild : ControlDescriptor {
+public sealed partial class ControlDescriptorChild : ControlDescriptor {
     [DataField("left")]
     public string? Left;
     [DataField("right")]
@@ -120,39 +120,39 @@ public sealed class ControlDescriptorChild : ControlDescriptor {
     public float Splitter = 50f;
 }
 
-public sealed class ControlDescriptorInput : ControlDescriptor {
+public sealed partial class ControlDescriptorInput : ControlDescriptor {
 }
 
-public sealed class ControlDescriptorButton : ControlDescriptor {
+public sealed partial class ControlDescriptorButton : ControlDescriptor {
     [DataField("text")]
     public string? Text;
     [DataField("command")]
     public string? Command;
 }
 
-public sealed class ControlDescriptorOutput : ControlDescriptor {
+public sealed partial class ControlDescriptorOutput : ControlDescriptor {
 }
 
-public sealed class ControlDescriptorInfo : ControlDescriptor {
+public sealed partial class ControlDescriptorInfo : ControlDescriptor {
     [DataField("allow-html")]
     public bool AllowHtml = true; // Supposedly false by default, but it isn't if you're not using BYOND's default skin
 }
 
-public sealed class ControlDescriptorMap : ControlDescriptor {
+public sealed partial class ControlDescriptorMap : ControlDescriptor {
 }
 
-public sealed class ControlDescriptorBrowser : ControlDescriptor {
+public sealed partial class ControlDescriptorBrowser : ControlDescriptor {
 }
 
-public sealed class ControlDescriptorLabel : ControlDescriptor {
+public sealed partial class ControlDescriptorLabel : ControlDescriptor {
     [DataField("text")]
     public string? Text;
 }
 
-public sealed class ControlDescriptorGrid : ControlDescriptor {
+public sealed partial class ControlDescriptorGrid : ControlDescriptor {
 }
 
-public sealed class ControlDescriptorTab : ControlDescriptor {
+public sealed partial class ControlDescriptorTab : ControlDescriptor {
 }
 
 

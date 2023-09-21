@@ -8,7 +8,10 @@ namespace DMCompiler.DM.Visitors {
         private static readonly List<(DMObject, DMASTObjectVarDefinition)> VarDefinitions = new();
         private static readonly List<(DMObject, DMASTObjectVarOverride)> VarOverrides = new();
         private static readonly List<(DMObject?, DMASTProcDefinition)> ProcDefinitions = new();
+        private static readonly List<(DMObject DMObject, DMASTObjectVarDefinition VarDecl)> StaticObjectVars = new();
         private static readonly List<(DMObject DMObject, DMProc Proc, int Id, DMASTProcStatementVarDeclaration VarDecl)> StaticProcVars = new();
+
+        private static int _firstProcGlobal = -1;
 
         public static void Reset() {
             DMObjectTree.Reset(); // Blank the object tree
@@ -16,7 +19,10 @@ namespace DMCompiler.DM.Visitors {
             VarDefinitions.Clear();
             VarOverrides.Clear();
             ProcDefinitions.Clear();
+            StaticObjectVars.Clear();
             StaticProcVars.Clear();
+
+            _firstProcGlobal = -1;
         }
 
         public static void BuildObjectTree(DMASTFile astFile) {
@@ -32,30 +38,46 @@ namespace DMCompiler.DM.Visitors {
                 ProcessProcDefinition(procDef.Item2, procDef.Item1);
             }
 
-            // Step 3: Create the static vars inside procs
+            // Step 3: Create static vars
+            List<(DMObject, DMASTObjectVarDefinition, UnknownIdentifierException e)> lateVarDefs = new();
             List<(DMObject, DMProc, DMASTProcStatementVarDeclaration, int, UnknownIdentifierException e)> lateProcVarDefs = new();
-            foreach (var staticVar in StaticProcVars) {
-                if (staticVar.VarDecl.Value == null)
-                    continue;
+            for (int i = 0; i <= StaticObjectVars.Count; i++) {
+                // Static vars are initialized in code-order, except proc statics are all lumped together
+                if (i == _firstProcGlobal) {
+                    foreach (var procStatic in StaticProcVars) {
+                        if (procStatic.VarDecl.Value == null)
+                            continue;
+
+                        try {
+                            DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.FirstPassStatic;
+                            DMExpression expression = DMExpression.Create(procStatic.DMObject, procStatic.Proc,
+                                procStatic.VarDecl.Value, procStatic.VarDecl.Type);
+
+                            DMObjectTree.AddGlobalInitAssign(procStatic.Id, expression);
+                        } catch (UnknownIdentifierException e) {
+                            // For step 5
+                            lateProcVarDefs.Add((procStatic.DMObject, procStatic.Proc, procStatic.VarDecl, procStatic.Id, e));
+                        } catch (CompileErrorException e) {
+                            DMCompiler.Emit(e.Error);
+                        } finally {
+                            DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
+                        }
+                    }
+                }
+
+                if (i == StaticObjectVars.Count)
+                    break;
+
+                var objectStatic = StaticObjectVars[i];
 
                 try {
-                    DMVisitorExpression._scopeMode = "static";
-                    DMExpression expression = DMExpression.Create(staticVar.DMObject, staticVar.Proc,
-                        staticVar.VarDecl.Value, staticVar.VarDecl.Type);
-
-                    DMObjectTree.AddGlobalInitAssign(staticVar.DMObject, staticVar.Id, expression);
+                    ProcessVarDefinition(objectStatic.DMObject, objectStatic.VarDecl);
                 } catch (UnknownIdentifierException e) {
-                    // For step 5
-                    lateProcVarDefs.Add((staticVar.DMObject, staticVar.Proc, staticVar.VarDecl, staticVar.Id, e));
-                } catch (CompileErrorException e) {
-                    DMCompiler.Emit(e.Error);
-                } finally {
-                    DMVisitorExpression._scopeMode = "normal";
+                    lateVarDefs.Add((objectStatic.DMObject, objectStatic.VarDecl, e)); // For step 5
                 }
             }
 
-            // Step 4: Define vars
-            List<(DMObject, DMASTObjectVarDefinition, UnknownIdentifierException e)> lateVarDefs = new();
+            // Step 4: Define non-static vars
             foreach (var varDef in VarDefinitions) {
                 try {
                     ProcessVarDefinition(varDef.Item1, varDef.Item2);
@@ -89,18 +111,18 @@ namespace DMCompiler.DM.Visitors {
                     var varDecl = varDef.Item3;
 
                     try {
-                        DMVisitorExpression._scopeMode = "static";
+                        DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Static;
                         DMExpression expression =
                             DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
 
-                        DMObjectTree.AddGlobalInitAssign(varDef.Item1, varDef.Item4, expression);
+                        DMObjectTree.AddGlobalInitAssign(varDef.Item4, expression);
 
                         // Success! Remove this one from the list
                         lateProcVarDefs.RemoveAt(i--);
                     } catch (UnknownIdentifierException e) {
                         // Keep it in the list, try again after the rest have been processed
                     } finally {
-                        DMVisitorExpression._scopeMode = "normal";
+                        DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
                     }
                 }
             } while ((lateVarDefs.Count + lateProcVarDefs.Count) != lastLateVarDefCount); // As long as the lists are getting smaller, keep trying
@@ -153,7 +175,19 @@ namespace DMCompiler.DM.Visitors {
                     break;
 
                 case DMASTObjectVarDefinition varDefinition:
-                    VarDefinitions.Add((DMObjectTree.GetDMObject(varDefinition.ObjectPath)!, varDefinition));
+                    var dmObject = DMObjectTree.GetDMObject(varDefinition.ObjectPath)!;
+
+                    if (varDefinition.IsGlobal) {
+                        // var/static/list/L[1][2][3] and list() both come first in global init order
+                        if (varDefinition.Value is DMASTDimensionalList ||
+                            (varDefinition.Value is DMASTList list && list.AllValuesConstant()))
+                            StaticObjectVars.Insert(0, (dmObject, varDefinition));
+                        else
+                            StaticObjectVars.Add((dmObject, varDefinition));
+                    } else {
+                        VarDefinitions.Add((dmObject, varDefinition));
+                    }
+
                     break;
                 case DMASTObjectVarOverride varOverride:
                     // parent_type is treated as part of the object definition rather than an actual var override
@@ -171,6 +205,17 @@ namespace DMCompiler.DM.Visitors {
                     VarOverrides.Add((DMObjectTree.GetDMObject(varOverride.ObjectPath)!, varOverride));
                     break;
                 case DMASTProcDefinition procDefinition:
+                    if (procDefinition.Body != null) {
+                        foreach (var stmt in GetStatements(procDefinition.Body)) {
+                            // TODO multiple var definitions.
+                            if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
+                                if (_firstProcGlobal == -1)
+                                    _firstProcGlobal = StaticObjectVars.Count;
+                                break;
+                            }
+                        }
+                    }
+
                     ProcDefinitions.Add((currentObject, procDefinition));
                     break;
                 case DMASTMultipleObjectVarDefinitions multipleVarDefinitions: {
@@ -211,7 +256,9 @@ namespace DMCompiler.DM.Visitors {
 
             DMExpression expression;
             try {
-                DMVisitorExpression._scopeMode = varDefinition.IsGlobal ? "static" : "normal";
+                if (varDefinition.IsGlobal)
+                    DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Static; // FirstPassStatic is not used for object vars
+
                 expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
                     varDefinition.Value, varDefinition.Type);
             } catch (UnknownIdentifierException) {
@@ -220,7 +267,7 @@ namespace DMCompiler.DM.Visitors {
                 DMCompiler.Emit(e.Error);
                 return;
             } finally {
-                DMVisitorExpression._scopeMode = "normal";
+                DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
             }
 
             if (variable is null) {
@@ -321,7 +368,7 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        // TODO Move this to an appropriate location
+        // TODO: Remove this entirely
         public static IEnumerable<DMASTProcStatement> GetStatements(DMASTProcBlockInner block) {
             foreach (var stmt in block.Statements) {
                 yield return stmt;
@@ -380,17 +427,19 @@ namespace DMCompiler.DM.Visitors {
         /// A filter proc above <see cref="SetVariableValue"/> <br/>
         /// which checks first to see if overriding this thing's value is valid (as in the case of const and <see cref="DMValueType.CompiletimeReadonly"/>)
         /// </summary>
-        private static void OverrideVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value)
-        {
-            if(variable.IsConst)
-            {
-                DMCompiler.Emit(WarningCode.WriteToConstant, value.Location, $"Var {variable.Name} is const and cannot be modified");
+        private static void OverrideVariableValue(DMObject currentObject, ref DMVariable variable,
+            DMASTExpression value) {
+            if (variable.IsConst) {
+                DMCompiler.Emit(WarningCode.WriteToConstant, value.Location,
+                    $"Var {variable.Name} is const and cannot be modified");
                 return;
             }
-            if((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly)
-            {
-                DMCompiler.Emit(WarningCode.WriteToConstant, value.Location, $"Var {variable.Name} is a native read-only value which cannot be modified");
+
+            if ((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
+                DMCompiler.Emit(WarningCode.WriteToConstant, value.Location,
+                    $"Var {variable.Name} is a native read-only value which cannot be modified");
             }
+
             SetVariableValue(currentObject, ref variable, value);
         }
 
@@ -398,13 +447,17 @@ namespace DMCompiler.DM.Visitors {
         /// Handles setting a variable to a value (when called by itself, this assumes the statement is a declaration and not a re-assignment)
         /// </summary>
         /// <param name="variable">This parameter may be modified if a new variable had to be instantiated in the case of an override.</param>
-        /// <exception cref="CompileErrorException"></exception>
+        /// <exception cref="CompileErrorException" />
         private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value) {
-            DMVisitorExpression._scopeMode = variable.IsGlobal ? "static" : "normal";
-            DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
-            DMVisitorExpression._scopeMode = "normal";
+            try {
+                if (variable.IsGlobal)
+                    DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Static;
 
-            SetVariableValue(currentObject, ref variable, value.Location, expression);
+                DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+                SetVariableValue(currentObject, ref variable, value.Location, expression);
+            } finally {
+                DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
+            }
         }
 
         private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression) {
@@ -445,6 +498,7 @@ namespace DMCompiler.DM.Visitors {
                 },
 
                 Expressions.List => true,
+                Expressions.DimensionalList => true,
                 Expressions.NewList => true,
                 Expressions.NewPath => true,
                 // TODO: Check for circular reference loops here
@@ -459,7 +513,7 @@ namespace DMCompiler.DM.Visitors {
                 int? globalId = currentObject.GetGlobalVariableId(variable.Name);
                 if (globalId == null) throw new CompileAbortException(expression?.Location ?? Location.Unknown, $"Invalid global {currentObject.Path}.{variable.Name}");
 
-                DMObjectTree.AddGlobalInitAssign(currentObject, globalId.Value, expression);
+                DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
             } else {
                 var initLoc = expression.Location;
                 Expressions.Field field = new Expressions.Field(initLoc, variable);

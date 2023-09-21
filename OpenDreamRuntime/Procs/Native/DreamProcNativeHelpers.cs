@@ -305,6 +305,72 @@ internal static partial class DreamProcNativeHelpers {
         }
     }
 
+    /// <remarks>
+    /// It's a very BYONDish converter. Probably, you don't want to reuse it somewhere aside from the text2num implementation
+    /// </remarks>
+    public static double? StringToDouble(ReadOnlySpan<char> value, int radix) {
+        if (value == null || value.IsEmpty)
+            return null;
+
+        if (radix < 2 || radix > 36)
+            throw new Exception($"Invalid radix: {radix}");
+
+        bool negative = value[0] == '-';
+        if (negative || value[0] == '+')
+            value = value.Slice(1);
+
+        if (value.StartsWith("nan", StringComparison.CurrentCultureIgnoreCase)) {
+            return negative ? -double.NaN : double.NaN;
+        }
+
+        if (value.StartsWith("0x")) {
+            if (radix == 10 || radix == 16) {
+                radix = 16;
+                value = value.Slice(2);
+            }
+        }
+
+        int letterDigitsVariety = Math.Max(radix - 10, 0);
+
+        double? result = null;
+        int fractionalGrade = 0;
+
+        foreach (char c in value) {
+            if (c == '.') {
+                if (fractionalGrade != 0)
+                    break;
+                fractionalGrade = 1;
+                continue;
+            }
+
+            int digit = c;
+            if (!char.IsAsciiDigit(c)) {
+                if (c >= 'A' && c < 'A' + letterDigitsVariety) {
+                    digit -= 'A' - 10;
+                } else if (c >= 'a' && c <= 'a' + letterDigitsVariety) {
+                    digit -= 'a' - 10;
+                } else {
+                    break;
+                }
+            } else {
+                digit -= '0';
+            }
+
+            result ??= 0;
+            if (fractionalGrade == 0)
+                result = result * radix + digit;
+            else {
+                result += digit / Math.Pow(radix, fractionalGrade);
+                fractionalGrade++;
+            }
+        }
+
+        if (negative && result != null)
+            result *= -1;
+
+        return result;
+    }
+
     public static string ToBase(int value, int radix) {
         if(radix > 36) {
             throw new ArgumentOutOfRangeException(nameof(radix), "radix is above 36");
@@ -329,7 +395,7 @@ internal static partial class DreamProcNativeHelpers {
 
         return new string(resString.ToString());
     }
-  
+
     /// <summary>
     /// Returns the string with all non-alphanumeric characters (except @) removed, and all letters converted to lowercase.
     /// Mirrors the behaviour of BYOND's ckey() proc.

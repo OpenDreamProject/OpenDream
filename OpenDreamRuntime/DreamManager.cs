@@ -283,7 +283,7 @@ namespace OpenDreamRuntime {
                         return new DreamValue(resource);
                     case RefType.DreamAppearance:
                         _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearance((uint)refId, out IconAppearance? appearance)
+                        return _appearanceSystem.TryGetAppearance(refId, out IconAppearance? appearance)
                             ? new DreamValue(appearance)
                             : DreamValue.Null;
                     case RefType.Proc:

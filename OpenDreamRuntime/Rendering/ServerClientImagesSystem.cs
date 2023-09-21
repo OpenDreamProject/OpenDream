@@ -18,16 +18,17 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
 
         EntityUid locEntity = EntityUid.Invalid;
         Vector3 turfCoords = Vector3.Zero;
-        uint locAppearanceID = 0;
+        int locAppearanceID = 0;
 
-        uint imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
+        int imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
 
         if(loc is DreamObjectMovable movable)
             locEntity = movable.Entity;
         else if(loc is DreamObjectTurf turf)
             turfCoords = new Vector3(turf.X, turf.Y, turf.Z);
 
-        RaiseNetworkEvent(new AddClientImageEvent(locEntity, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
+        NetEntity ent = GetNetEntity(locEntity);
+        RaiseNetworkEvent(new AddClientImageEvent(ent, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
     }
 
     public void RemoveImageObject(DreamConnection connection, DreamObjectImage imageObject) {
@@ -38,7 +39,7 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         EntityUid locEntity = EntityUid.Invalid;
         Vector3 turfCoords = Vector3.Zero;
 
-        uint imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
+        int imageAppearanceID = _serverAppearanceSystem.AddAppearance(imageObject.Appearance!);
 
         if(loc is DreamObjectMovable)
             locEntity = ((DreamObjectMovable)loc).Entity;
@@ -46,6 +47,7 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
             turfCoords = new Vector3(turf.X, turf.Y, turf.Z);
 
 
-        RaiseNetworkEvent(new RemoveClientImageEvent(locEntity, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
+        NetEntity ent = GetNetEntity(locEntity);
+        RaiseNetworkEvent(new RemoveClientImageEvent(ent, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
     }
 }

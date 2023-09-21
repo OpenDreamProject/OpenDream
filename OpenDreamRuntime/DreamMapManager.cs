@@ -153,15 +153,10 @@ namespace OpenDreamRuntime {
         }
 
         public void SetTurfAppearance(DreamObjectTurf turf, IconAppearance appearance) {
-            uint appearanceId = _appearanceSystem.AddAppearance(appearance);
-            if (appearanceId > ushort.MaxValue - 1) {
-                // TODO: Maybe separate appearance IDs and turf IDs to prevent this possibility
-                _sawmill.Error($"Failed to set turf's appearance at ({turf.X}, {turf.Y}) because its appearance ID was greater than {ushort.MaxValue - 1}");
-                return;
-            }
+            int appearanceId = _appearanceSystem.AddAppearance(appearance);
 
             var level = _levels[turf.Z - 1];
-            ushort turfId = (ushort) (appearanceId + 1); // +1 because 0 is used for empty turfs
+            int turfId = (appearanceId + 1); // +1 because 0 is used for empty turfs
             level.QueuedTileUpdates[(turf.X, turf.Y)] = new Tile(turfId);
             turf.AppearanceId = appearanceId;
         }

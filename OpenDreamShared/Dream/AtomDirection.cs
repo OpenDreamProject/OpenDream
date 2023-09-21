@@ -1,19 +1,19 @@
 ﻿using Robust.Shared.Serialization;
 using System;
 
-namespace OpenDreamShared.Dream {
-    [Serializable, NetSerializable, Flags]
-    public enum AtomDirection {
-        None = 0,
+namespace OpenDreamShared.Dream;
 
-        North = 1,
-        South = 2,
-        East = 4,
-        West = 8,
+[Serializable, NetSerializable, Flags]
+public enum AtomDirection : byte {
+    None = 0,
 
-        Northeast = North | East,
-        Southeast = South | East,
-        Southwest = South | West,
-        Northwest = North | West
-    }
+    North = 1,
+    South = 2,
+    East = 4,
+    West = 8,
+
+    Northeast = North | East,
+    Southeast = South | East,
+    Southwest = South | West,
+    Northwest = North | West
 }

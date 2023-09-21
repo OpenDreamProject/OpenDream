@@ -47,17 +47,6 @@ public class DreamObjectAtom : DreamObject {
 
                 value = new(appearanceCopy);
                 return true;
-            case "transform":{
-                var appearance = AtomManager.MustGetAppearance(this)!;
-
-                var transform = appearance.Transform;
-                var matrix = DreamObjectMatrix.MakeMatrix(ObjectTree,
-                    transform[0], transform[2], transform[4],
-                    transform[1], transform[3], transform[5]);
-
-                value = new(matrix);
-                return true;
-            }
             case "overlays":
                 value = new(Overlays);
                 return true;
@@ -175,7 +164,7 @@ public class DreamObjectAtom : DreamObject {
                 break;
             }
             default:
-                if (AtomManager.IsValidAppearanceVar(varName) || varName == "transform") {
+                if (AtomManager.IsValidAppearanceVar(varName)) {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
                     var appearance = AtomManager.MustGetAppearance(this);
 
@@ -183,16 +172,7 @@ public class DreamObjectAtom : DreamObject {
                     // TODO: We can probably avoid cloning while the DMISpriteComponent is dirty
                     appearance = (appearance != null) ? new(appearance) : new();
 
-                    if (varName == "transform") {
-                        float[] matrixArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrix)
-                            ? DreamObjectMatrix.MatrixToTransformFloatArray(matrix)
-                            : DreamObjectMatrix.IdentityMatrixArray;
-
-                        appearance.Transform = matrixArray;
-                    } else {
-                        AtomManager.SetAppearanceVar(appearance, varName, value);
-                    }
-
+                    AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;
                 }

@@ -142,7 +142,12 @@ namespace OpenDreamRuntime.Objects.Types {
 
         //Does not include associations
         public virtual bool ContainsValue(DreamValue value) {
-            return _values.Contains(value);
+            for (int i = 0; i < _values.Count; i++) {
+                if (_values[i].Equals(value))
+                    return true;
+            }
+
+            return false;
         }
 
         public virtual bool ContainsKey(DreamValue value) {
@@ -183,7 +188,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
         public void Resize(int size) {
             if (size > _values.Count) {
-                _values.Capacity = size;
+                _values.EnsureCapacity(size);
 
                 for (int i = _values.Count; i < size; i++) {
                     AddValue(DreamValue.Null);
@@ -595,7 +600,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
         public override void Cut(int start = 1, int end = 0) {
             _atomManager.UpdateAppearance(_atom, appearance => {
-                List<uint> overlaysList = GetOverlaysList(appearance);
+                List<int> overlaysList = GetOverlaysList(appearance);
                 int count = overlaysList.Count + 1;
                 if (end == 0 || end > count) end = count;
 
@@ -608,14 +613,14 @@ namespace OpenDreamRuntime.Objects.Types {
                 throw new Exception($"Invalid index into {(_isUnderlays ? "underlays" : "overlays")} list: {key}");
 
             IconAppearance appearance = GetAppearance();
-            List<uint> overlaysList = GetOverlaysList(appearance);
+            List<int> overlaysList = GetOverlaysList(appearance);
             if (overlayIndex > overlaysList.Count)
                 throw new Exception($"Atom only has {overlaysList.Count} {(_isUnderlays ? "underlay" : "overlay")}(s), cannot index {overlayIndex}");
 
             if (_appearanceSystem == null)
                 return DreamValue.Null;
 
-            uint overlayId = GetOverlaysList(appearance)[overlayIndex - 1];
+            int overlayId = GetOverlaysList(appearance)[overlayIndex - 1];
             IconAppearance overlayAppearance = _appearanceSystem.MustGetAppearance(overlayId);
             return new DreamValue(overlayAppearance);
         }
@@ -642,9 +647,10 @@ namespace OpenDreamRuntime.Objects.Types {
 
             _atomManager.UpdateAppearance(_atom, appearance => {
                 IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
-                overlayAppearance ??= new IconAppearance();
+                if (overlayAppearance == null || !_appearanceSystem.TryGetAppearanceId(overlayAppearance, out var id))
+                    return;
 
-                GetOverlaysList(appearance).Remove(_appearanceSystem.AddAppearance(overlayAppearance));
+                GetOverlaysList(appearance).Remove(id);
             });
         }
 
@@ -653,7 +659,7 @@ namespace OpenDreamRuntime.Objects.Types {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        private List<uint> GetOverlaysList(IconAppearance appearance) =>
+        private List<int> GetOverlaysList(IconAppearance appearance) =>
             _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
         private IconAppearance GetAppearance() {
@@ -686,6 +692,7 @@ namespace OpenDreamRuntime.Objects.Types {
     // Operates on an atom's appearance
     public sealed class DreamVisContentsList : DreamList {
         [Dependency] private readonly AtomManager _atomManager = default!;
+        [Dependency] private IEntityManager _entityManager = default!;
         private readonly PvsOverrideSystem? _pvsOverrideSystem;
 
         private readonly List<DreamObjectAtom> _visContents = new();
@@ -749,7 +756,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
             _atomManager.UpdateAppearance(_atom, appearance => {
                 // Add even an invalid UID to keep this and _visContents in sync
-                appearance.VisContents.Add(entity);
+                appearance.VisContents.Add(_entityManager.GetNetEntity(entity));
             });
         }
 
@@ -759,7 +766,7 @@ namespace OpenDreamRuntime.Objects.Types {
 
             _visContents.Remove(movable);
             _atomManager.UpdateAppearance(_atom, appearance => {
-                appearance.VisContents.Remove(movable.Entity);
+                appearance.VisContents.Remove(_entityManager.GetNetEntity(movable.Entity));
             });
         }
 

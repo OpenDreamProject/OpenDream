@@ -6,9 +6,9 @@ using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
 sealed class ClientImagesSystem : SharedClientImagesSystem {
-    private readonly Dictionary<Vector3, List<uint>> TurfClientImages = new();
-    private readonly Dictionary<EntityUid, List<uint>> AMClientImages = new();
-    private readonly Dictionary<uint, DreamIcon> _idToIcon = new();
+    private readonly Dictionary<Vector3, List<int>> TurfClientImages = new();
+    private readonly Dictionary<EntityUid, List<int>> AMClientImages = new();
+    private readonly Dictionary<int, DreamIcon> _idToIcon = new();
     [Dependency] private readonly ClientAppearanceSystem _clientAppearanceSystem = default!;
     [Dependency] private IEntityManager _entityManager = default!;
 
@@ -25,7 +25,7 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
 
     public bool TryGetClientImages(EntityUid entity, Vector3? tileCoords, [NotNullWhen(true)] out List<DreamIcon>? result){
         result = null;
-        List<uint>? resultIDs;
+        List<int>? resultIDs;
         if(entity == EntityUid.Invalid && tileCoords is not null) {
             if(!TurfClientImages.TryGetValue(tileCoords.Value, out resultIDs))
                 return false;
@@ -34,16 +34,17 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
                 return false;
         }
         result = new List<DreamIcon>();
-        foreach(uint distinctID in resultIDs)
+        foreach(int distinctID in resultIDs)
             if(_idToIcon.TryGetValue(distinctID, out DreamIcon? icon))
                 result.Add(icon);
         return result.Count > 0;
     }
 
     private void OnAddClientImage(AddClientImageEvent e) {
-        if(e.AttachedEntity == EntityUid.Invalid) {
+        EntityUid ent = _entityManager.GetEntity(e.AttachedEntity);
+        if(ent == EntityUid.Invalid) {
             if(!TurfClientImages.TryGetValue(e.TurfCoords, out var iconList))
-                iconList = new List<uint>();
+                iconList = new List<int>();
             if(!_idToIcon.ContainsKey(e.ImageAppearance)){
                 DreamIcon icon = new DreamIcon(e.ImageAppearance);
                 _idToIcon[e.ImageAppearance] = icon;
@@ -51,30 +52,31 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
             iconList.Add(e.ImageAppearance);
             TurfClientImages[e.TurfCoords] = iconList;
         } else {
-            if(!AMClientImages.TryGetValue(e.AttachedEntity, out var iconList))
-                iconList = new List<uint>();
+            if(!AMClientImages.TryGetValue(ent, out var iconList))
+                iconList = new List<int>();
             if(!_idToIcon.ContainsKey(e.ImageAppearance)){
                 DreamIcon icon = new DreamIcon(e.ImageAppearance);
                 _idToIcon[e.ImageAppearance] = icon;
             }
             iconList.Add(e.ImageAppearance);
-            AMClientImages[e.AttachedEntity] = iconList;
+            AMClientImages[ent] = iconList;
         }
 
     }
 
     private void OnRemoveClientImage(RemoveClientImageEvent e) {
-        if(e.AttachedEntity == EntityUid.Invalid) {
+        EntityUid ent = _entityManager.GetEntity(e.AttachedEntity);
+        if(ent == EntityUid.Invalid) {
                 if(!TurfClientImages.TryGetValue(e.TurfCoords, out var iconList))
                     return;
                 iconList.Remove(e.ImageAppearance);
                 TurfClientImages[e.TurfCoords] = iconList;
                 _idToIcon.Remove(e.ImageAppearance);
         } else {
-            if(!AMClientImages.TryGetValue(e.AttachedEntity, out var iconList))
+            if(!AMClientImages.TryGetValue(ent, out var iconList))
                 return;
             iconList.Remove(e.ImageAppearance);
-            AMClientImages[e.AttachedEntity] = iconList;
+            AMClientImages[ent] = iconList;
             _idToIcon.Remove(e.ImageAppearance);
         }
     }

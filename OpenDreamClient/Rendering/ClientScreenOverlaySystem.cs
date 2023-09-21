@@ -16,11 +16,13 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnAddScreenObject(AddScreenObjectEvent e) {
-            ScreenObjects.Add(e.ScreenObject);
+            EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
+            ScreenObjects.Add(ent);
         }
 
         private void OnRemoveScreenObject(RemoveScreenObjectEvent e) {
-            ScreenObjects.Remove(e.ScreenObject);
+            EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
+            ScreenObjects.Remove(ent);
         }
     }
 }

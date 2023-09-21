@@ -114,7 +114,7 @@ namespace OpenDreamShared.Resources {
                 text.AppendLine("\"");
 
                 text.Append("\tdirs = ");
-                text.Append(GetExportedDirectionCount(Directions.Keys));
+                text.Append(GetExportedDirectionCount(Directions));
                 text.AppendLine();
 
                 text.Append("\tframes = ");
@@ -188,26 +188,17 @@ namespace OpenDreamShared.Resources {
         /// The total directions present in an exported DMI.<br/>
         /// An icon state in a DMI must contain either 1, 4, or 8 directions.
         /// </summary>
-        public static int GetExportedDirectionCount(IEnumerable<AtomDirection> directions) {
+        public static int GetExportedDirectionCount<T>(Dictionary<AtomDirection, T> directions) {
             // If we have any of these directions then we export 8 directions
-            foreach (var direction in directions) {
-                switch (direction) {
-                    case AtomDirection.Northeast:
-                    case AtomDirection.Southeast:
-                    case AtomDirection.Southwest:
-                    case AtomDirection.Northwest:
-                        return 8;
-                }
+            if (directions.ContainsKey(AtomDirection.Northeast) || directions.ContainsKey(AtomDirection.Southeast) ||
+                directions.ContainsKey(AtomDirection.Southwest) || directions.ContainsKey(AtomDirection.Northwest)) {
+                return 8;
             }
 
-            // Any of these means 4 directions
-            foreach (var direction in directions) {
-                switch (direction) {
-                    case AtomDirection.North:
-                    case AtomDirection.East:
-                    case AtomDirection.West:
-                        return 4;
-                }
+            // Any of these (without the above) means 4 directions
+            if (directions.ContainsKey(AtomDirection.North) || directions.ContainsKey(AtomDirection.East) ||
+                directions.ContainsKey(AtomDirection.West)) {
+                return 4;
             }
 
             // Otherwise, 1 direction (just south)

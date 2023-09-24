@@ -156,7 +156,7 @@ public sealed partial class ControlDescriptorTab : ControlDescriptor {
 }
 
 
-public sealed class ControlDescriptorBar : ControlDescriptor {
+public sealed partial class ControlDescriptorBar : ControlDescriptor {
     [DataField("width")]
     public int? Width = 10; //width of the progress bar in pixels. In the default EAST dir, this is more accurately thought of as "height"
     [DataField("dir")]

@@ -127,7 +127,7 @@ public sealed class InterfaceMenu : InterfaceElement {
 
             menuButton.OnPressed += () => {
                     if(MenuElementDescriptor.CanCheck)
-                        if(MenuElementDescriptor.Group != null)
+                        if(!String.IsNullOrEmpty(MenuElementDescriptor.Group))
                             _menu.SetGroupChecked(MenuElementDescriptor.Group, MenuElementDescriptor.Id);
                         else
                             MenuElementDescriptor.IsChecked = !MenuElementDescriptor.IsChecked;

@@ -364,24 +364,32 @@ namespace DMCompiler.DM.Expressions {
             // Treat backslashes as forward slashes on Linux
             filePath = filePath.Replace('\\', '/');
 
-            string? finalFilePath = null;
-
-            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? "/";
+            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
             if (string.IsNullOrEmpty(outputDir))
                 outputDir = "./";
 
+            string? finalFilePath = null;
+
             var fileName = System.IO.Path.GetFileName(filePath);
             var fileDir = System.IO.Path.GetDirectoryName(filePath) ?? string.Empty;
-            var directory = FindDirectory(outputDir, fileDir);
-            if (directory != null) {
-                // Perform a case-insensitive search for the file
-                finalFilePath = FindFile(directory, fileName);
+
+            // Search every defined FILE_DIR
+            foreach (string resourceDir in DMCompiler.ResourceDirectories) {
+                var directory = FindDirectory(resourceDir, fileDir);
+
+                if (directory != null) {
+                    // Perform a case-insensitive search for the file
+                    finalFilePath = FindFile(directory, fileName);
+
+                    if (finalFilePath != null)
+                        break;
+                }
             }
 
-            // Search relative to the source file if it wasn't in the project's directory
+            // Search relative to the source file if it wasn't in one of the FILE_DIRs
             if (finalFilePath == null) {
                 var sourceDir = System.IO.Path.Combine(outputDir, System.IO.Path.GetDirectoryName(Location.SourceFile) ?? string.Empty);
-                directory = FindDirectory(sourceDir, fileDir);
+                var directory = FindDirectory(sourceDir, fileDir);
 
                 if (directory != null)
                     finalFilePath = FindFile(directory, fileName);

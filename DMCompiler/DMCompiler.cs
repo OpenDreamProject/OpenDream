@@ -20,11 +20,13 @@ using Robust.Shared.Utility;
 namespace DMCompiler {
     //TODO: Make this not a static class
     public static class DMCompiler {
-        public static int ErrorCount = 0;
-        public static int WarningCount = 0;
+        public static int ErrorCount;
+        public static int WarningCount;
         public static DMCompilerSettings Settings;
+        public static IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
 
-        private static DMCompilerConfiguration Config;
+        private static readonly DMCompilerConfiguration Config = new();
+        private static readonly List<string> _resourceDirectories = new();
         private static DateTime _compileStartTime;
 
         public static bool Compile(DMCompilerSettings settings) {
@@ -32,7 +34,8 @@ namespace DMCompiler {
             WarningCount = 0;
             Settings = settings;
             if (Settings.Files == null) return false;
-            Config = new();
+            Config.Reset();
+            _resourceDirectories.Clear();
 
             //TODO: Only use InvariantCulture where necessary instead of it being the default
             CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
@@ -50,25 +53,18 @@ namespace DMCompiler {
             DMPreprocessor preprocessor = Preprocess(settings.Files, settings.MacroDefines);
             bool successfulCompile = preprocessor is not null && Compile(preprocessor);
 
-            if (successfulCompile)
-            {
+            if (successfulCompile) {
                 //Output file is the first file with the extension changed to .json
                 string outputFile = Path.ChangeExtension(settings.Files[0], "json");
                 List<DreamMapJson> maps = ConvertMaps(preprocessor.IncludedMaps);
 
-                if (ErrorCount > 0)
-                {
+                if (ErrorCount > 0) {
                     successfulCompile = false;
-                }
-                else
-                {
+                } else {
                     var output = SaveJson(maps, preprocessor.IncludedInterface, outputFile);
-                    if (ErrorCount > 0)
-                    {
+                    if (ErrorCount > 0) {
                         successfulCompile = false;
-                    }
-                    else
-                    {
+                    } else {
                         Console.WriteLine($"Compilation succeeded with {WarningCount} warnings");
                         Console.WriteLine(output);
                     }
@@ -80,13 +76,19 @@ namespace DMCompiler {
             }
 
             TimeSpan duration = DateTime.Now - _compileStartTime;
-            Console.WriteLine($"Total time: {duration.ToString(@"mm\:ss")}");
+            Console.WriteLine($"Total time: {duration:mm\\:ss}");
 
             return successfulCompile;
         }
 
-        private static DMPreprocessor? Preprocess(List<string> files, Dictionary<string, string> macroDefines) {
-            DMPreprocessor? build() {
+        public static void AddResourceDirectory(string dir) {
+            dir = dir.Replace('\\', Path.DirectorySeparatorChar);
+            
+            _resourceDirectories.Add(dir);
+        }
+
+        private static DMPreprocessor? Preprocess(List<string> files, Dictionary<string, string>? macroDefines) {
+            DMPreprocessor? Build() {
                 DMPreprocessor preproc = new DMPreprocessor(true);
                 if (macroDefines != null) {
                     foreach (var (key, value) in macroDefines) {
@@ -130,7 +132,7 @@ namespace DMCompiler {
             if (Settings.DumpPreprocessor) {
                 //Preprocessing is done twice because the output is used up when dumping it
                 StringBuilder result = new();
-                foreach (Token t in build()) {
+                foreach (Token t in Build()) {
                     result.Append(t.Text);
                 }
 
@@ -140,7 +142,8 @@ namespace DMCompiler {
                 File.WriteAllText(outputPath, result.ToString());
                 Console.WriteLine($"Preprocessor output dumped to {outputPath}");
             }
-            return build();
+
+            return Build();
         }
 
         private static bool Compile(IEnumerable<Token> preprocessedTokens) {
@@ -152,11 +155,6 @@ namespace DMCompiler {
 
             foreach (CompilerEmission warning in dmParser.Emissions) {
                 Emit(warning);
-            }
-
-            if (astFile is null) {
-                VerbosePrint("Parsing failed, exiting compilation");
-                return false;
             }
 
             DMASTSimplifier astSimplifier = new DMASTSimplifier();
@@ -190,7 +188,7 @@ namespace DMCompiler {
         /// <summary> Emits the given warning, according to its ErrorLevel as set in our config. </summary>
         /// <returns> True if the warning was an error, false if not.</returns>
         public static bool Emit(WarningCode code, Location loc, string message) {
-            ErrorLevel level = Config.errorConfig[code];
+            ErrorLevel level = Config.ErrorConfig[code];
             Emit(new CompilerEmission(level, code, loc, message));
             return level == ErrorLevel.Error;
         }
@@ -328,7 +326,7 @@ namespace DMCompiler {
         public static void DefineFatalErrors() {
             foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
                 if((int)code < 1_000) {
-                    Config.errorConfig[code] = ErrorLevel.Error;
+                    Config.ErrorConfig[code] = ErrorLevel.Error;
                 }
             }
         }
@@ -338,32 +336,32 @@ namespace DMCompiler {
         /// </summary>
         public static void CheckAllPragmasWereSet() {
             foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
-                if (!Config.errorConfig.ContainsKey(code)) {
+                if (!Config.ErrorConfig.ContainsKey(code)) {
                     ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
-                    Config.errorConfig.Add(code, ErrorLevel.Disabled);
+                    Config.ErrorConfig.Add(code, ErrorLevel.Disabled);
                 }
             }
         }
 
         public static void SetPragma(WarningCode code, ErrorLevel level) {
-            Config.errorConfig[code] = level;
+            Config.ErrorConfig[code] = level;
         }
 
         public static ErrorLevel CodeToLevel(WarningCode code) {
-            bool didFind = Config.errorConfig.TryGetValue(code, out var ret);
+            bool didFind = Config.ErrorConfig.TryGetValue(code, out var ret);
             DebugTools.Assert(didFind);
             return ret;
         }
     }
 
     public struct DMCompilerSettings {
-        public List<string> Files = null;
+        public List<string>? Files = null;
         public bool SuppressUnimplementedWarnings = false;
         public bool NoticesEnabled = false;
         public bool DumpPreprocessor = false;
         public bool NoStandard = false;
         public bool Verbose = false;
-        public Dictionary<string, string> MacroDefines = null;
+        public Dictionary<string, string>? MacroDefines = null;
         /// <summary> A user-provided pragma config file, if one was provided. </summary>
         public string? PragmaFileOverride = null;
 
@@ -375,10 +373,11 @@ namespace DMCompiler {
         }
     }
 
-    class DMCompilerConfiguration {
-        public Dictionary<WarningCode, ErrorLevel> errorConfig;
-        public DMCompilerConfiguration() {
-            errorConfig = new(Enum.GetValues<WarningCode>().Length);
+    internal class DMCompilerConfiguration {
+        public readonly Dictionary<WarningCode, ErrorLevel> ErrorConfig = new(Enum.GetValues<WarningCode>().Length);
+
+        public void Reset() {
+            ErrorConfig.Clear();
         }
     }
 }

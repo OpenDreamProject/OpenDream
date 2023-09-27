@@ -16,6 +16,21 @@ public sealed class ControlMap : InterfaceControl {
 
     public ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+
+        ControlDescriptorMap mapDescriptor = (ControlDescriptorMap)ElementDescriptor;
+
+        Viewport.StretchMode = mapDescriptor.ZoomMode switch {
+            "blur" => ScalingViewportStretchMode.Bilinear,
+            "distort" => ScalingViewportStretchMode.Nearest,
+
+            // TODO: "tries to keep the look of individual pixels,
+            //          but will adjust to non-integer zooms (like 1.1x) by blending neighboring pixels"
+            "normal" or _ => ScalingViewportStretchMode.Nearest
+        };
+    }
+
     public void UpdateViewRange(ViewRange view) {
         Viewport.ViewportSize = (Math.Max(view.Width, 1) * 32, Math.Max(view.Height, 1) * 32);
     }

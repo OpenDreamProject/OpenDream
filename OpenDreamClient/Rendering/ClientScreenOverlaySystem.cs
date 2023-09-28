@@ -15,22 +15,14 @@ namespace OpenDreamClient.Rendering {
             ScreenObjects.Clear();
         }
 
-        public IEnumerable<DMISpriteComponent> EnumerateScreenObjects() {
-            foreach (EntityUid uid in ScreenObjects) {
-                if (_entityManager.TryGetComponent(uid, out DMISpriteComponent sprite)) {
-                    if (sprite.ScreenLocation == null) continue;
-
-                    yield return sprite;
-                }
-            }
-        }
-
         private void OnAddScreenObject(AddScreenObjectEvent e) {
-            ScreenObjects.Add(e.ScreenObject);
+            EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
+            ScreenObjects.Add(ent);
         }
 
         private void OnRemoveScreenObject(RemoveScreenObjectEvent e) {
-            ScreenObjects.Remove(e.ScreenObject);
+            EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
+            ScreenObjects.Remove(ent);
         }
     }
 }

@@ -1,3 +1,15 @@
+#define TURF_PLANE -10
+
+/obj/plane_master
+	appearance_flags = PLANE_MASTER
+	
+/obj/plane_master/turf
+	screen_loc = "1,1"
+	plane = TURF_PLANE
+
+	New()
+		src.filters = filter(type="displace", size=100, icon=icon('icons/displace.dmi',"lense"))					
+
 /mob/verb/examine(atom/thing as obj|mob in world)
 	set category = null
 	usr << "This is [thing]. [thing.desc]"
@@ -6,7 +18,7 @@
 	icon = 'icons/turf.dmi'
 	icon_state = "turf"
 	layer = TURF_LAYER
-	plane = -1
+	plane = TURF_PLANE
 
 /turf/blue
 	icon_state = "turf_blue"
@@ -30,6 +42,14 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+		src.add_client_image()
+
+	verb/winget_test()
+		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
+		usr << "panes: [json_encode(winget(usr, null, "panes"))]"
+		usr << "menus: [json_encode(winget(usr, null, "menus"))]"
+		usr << "macros: [json_encode(winget(usr, null, "macros"))]"
+
 
 	verb/rotate()
 		for(var/i in 1 to 8)
@@ -113,7 +133,7 @@
 			src.filters = null
 			usr << "Filters cleared"
 		else
-			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "color", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "drop_shadow")
+			var/selected = input("Pick a filter", "Choose a filter to apply (with demo settings)", null) as null|anything in list("alpha", "alpha-swap", "alpha-inverse", "alpha-both", "color", "displace", "outline", "greyscale", "blur", "outline/grey", "grey/outline", "drop_shadow")
 			if(isnull(selected))
 				src.filters = null
 				usr << "No filter selected, filters cleared"
@@ -140,6 +160,8 @@
 					src.filters = filter(type="color", color=list("#de0000","#000000","#00ad00"))
 				if("drop_shadow")
 					src.filters = filter(type="drop_shadow", size=2)
+				if("displace")
+					src.client.screen += new /obj/plane_master/turf 
 			usr << "Applied [selected] filter"
 
 	verb/toggle_see_invisibility()
@@ -153,10 +175,15 @@
 	verb/add_client_image()
 		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
 		i.loc = src
+		i.override = 1
+		
 		src.client.images += i
-		spawn(20)
-			src.client.images.Remove(i)
-			del(i)
+		world.log << "override added"
+		for(var/turf/T in range(src, 2))
+			var/image/turf_image = image(icon = 'icons/hanoi.dmi', loc=T, icon_state="1")
+			src.client.images += turf_image
+		spawn(50)
+			src.client.images.Cut()
 
 /mob/Stat()
 	if (statpanel("Status"))

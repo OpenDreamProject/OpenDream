@@ -4,13 +4,13 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface.Descriptors;
 
-public sealed class MenuDescriptor : ElementDescriptor {
+public sealed partial class MenuDescriptor : ElementDescriptor {
     private readonly List<MenuElementDescriptor> _elements = new();
     public IReadOnlyList<MenuElementDescriptor> Elements => _elements;
 
-    public MenuDescriptor(string name) {
+    public MenuDescriptor(string id) {
         Type = "MENU";
-        Name = name;
+        Id = id;
     }
 
     [UsedImplicitly]
@@ -25,28 +25,36 @@ public sealed class MenuDescriptor : ElementDescriptor {
         return menuElement;
     }
 
-    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._name = name;
+        copy._id = id;
         return copy;
     }
 }
 
-public sealed class MenuElementDescriptor : ElementDescriptor {
-    private string _category;
+public sealed partial class MenuElementDescriptor : ElementDescriptor {
+    private string? _category;
 
     [DataField("command")]
-    public string Command { get; init; }
+    public string Command { get; private set; }
 
     [DataField("category")]
-    public string Category {
+    public string? Category {
         get => _category;
-        init => _category = value;
+        private set { _category = value; }
     }
 
     [DataField("can-check")]
-    public bool CanCheck { get; init; }
+    public bool CanCheck { get; private set; }
+
+    [DataField("is-checked")]
+    public bool IsChecked { get; set; }
+
+    [DataField("group")]
+    public string? Group { get; private set; }
+    [DataField("index")]
+    public int Index { get; private set; }
 
     public MenuElementDescriptor WithCategory(ISerializationManager serialization, string category) {
         var copy = serialization.CreateCopy(this, notNullableOverride: true);

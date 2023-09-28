@@ -1,12 +1,9 @@
-﻿using DMCompiler.DM.Visitors;
-using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
-using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
     /// <remarks>
@@ -14,7 +11,7 @@ namespace DMCompiler.DM {
     /// but rather stores the compile-time information necessary to describe a certain object definition, <br/>
     /// including its procs, vars, path, parent, etc.
     /// </remarks>
-    class DMObject {
+    internal sealed class DMObject {
         public int Id;
         public DreamPath Path;
         public DMObject? Parent;
@@ -24,14 +21,13 @@ namespace DMCompiler.DM {
         public Dictionary<string, DMVariable> VariableOverrides = new();
         public Dictionary<string, int> GlobalVariables = new();
         /// <summary>A list of var and verb initializations implicitly done before the user's New() is called.</summary>
+        public HashSet<string> ConstVariables = new();
+        public HashSet<string> TmpVariables = new();
         public List<DMExpression> InitializationProcExpressions = new();
         public int? InitializationProc;
 
         public bool IsRoot => Path == DreamPath.Root;
 
-        public List<DMASTObjectVarOverride>? danglingOverrides = null; // Overrides waiting for the LateVarDef event to happen
-
-        private bool _isSubscribedToVarDef = false;
         private List<DMProc>? _verbs;
 
         public DMObject(int id, DreamPath path, DMObject? parent) {
@@ -44,57 +40,6 @@ namespace DMCompiler.DM {
             if (!Procs.ContainsKey(name)) Procs.Add(name, new List<int>(1));
 
             Procs[name].Add(proc.Id);
-        }
-
-        private void HandleLateVarDef(object? sender, DMVariable varDefined) {
-            DMObject? maybeAncestor = sender as DMObject;
-            if (maybeAncestor == null || danglingOverrides == null)
-                return;
-
-            for(int i = 0; i < danglingOverrides.Count; ++i) {
-                var varOverride = danglingOverrides[i];
-
-                // FINALLY we can do this
-                if (varOverride.VarName == varDefined.Name) {
-                    if (IsSubtypeOf(maybeAncestor.Path)) { // Resolves the ambiguous var override
-                        // Thank god DMObjectBuilder is static, amirite?
-                        DMObjectBuilder.OverrideVariableValue(this, ref varDefined, varOverride.Value); // I'd like to mark DMObjectBuilder as a friend class but that's not a thing in C# so
-                        VariableOverrides[varDefined.Name] = varDefined;
-                        danglingOverrides.RemoveAt(i);
-                        break;
-                    }
-                }
-            }
-
-            // Unsubscribe if we're done doing this
-            if (danglingOverrides.Count == 0) {
-                DebugTools.Assert(danglingOverrides.Count == 0);
-                DMObjectBuilder.VarDefined -= HandleLateVarDef;
-                _isSubscribedToVarDef = false;
-            }
-        }
-
-        public void WaitForLateVarDefinition(DMASTObjectVarOverride varOverride) {
-            danglingOverrides ??= new List<DMASTObjectVarOverride>();
-
-            for(int i = 0; i < danglingOverrides.Count; ++i) {
-                var otherOverride = danglingOverrides[i];
-
-                if(otherOverride.VarName == varOverride.VarName) {
-                    // This looks like an override for ANOTHER override.
-                    // Meaning we're probably already subscribed or... something?
-                    // Whatever. I guess we're the real override, now.
-                    danglingOverrides[i] = varOverride;
-                    // NOTE: This doesn't work quite right if DMObjectBuilder ever starts evaluating object definitions in a different order than how they appear in the source code.
-                    return;
-                }
-            }
-
-            danglingOverrides.Add(varOverride);
-            if (_isSubscribedToVarDef == false) {
-                DMObjectBuilder.VarDefined += HandleLateVarDef; // GOD I hope this works
-                _isSubscribedToVarDef = true;
-            }
         }
 
         ///<remarks>
@@ -142,26 +87,8 @@ namespace DMCompiler.DM {
             return Parent?.HasProc(name) ?? false;
         }
 
-        public bool HasProcNoInheritence(string name) {
+        public bool HasProcNoInheritance(string name) {
             return Procs.ContainsKey(name);
-        }
-
-        /// <summary>
-        /// Slightly more nuanced than HasProc, makes sure that one of the DMProcs we have in this hierarchy is the original definition.
-        /// </summary>
-        /// <returns>True if we could find a definition, false if not.</returns>
-        public bool HasProcDefined(string name) {
-            if(Procs.TryGetValue(name, out var IDList)) {
-                // You'd expect us to be able to just index into the first entry,
-                // but, no, it can seriously be in {override, override, definition, override} order
-                foreach (int ID in IDList) {
-                    DMProc proc = DMObjectTree.AllProcs[ID];
-                    if((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
-                        return true;
-                    }
-                }
-            }
-            return Parent?.HasProcDefined(name) ?? false;
         }
 
         public List<int>? GetProcs(string name) {
@@ -204,18 +131,9 @@ namespace DMCompiler.DM {
                 InitializationProc = init.Id;
                 init.Call(DMReference.SuperProc, DMCallArgumentsType.None, 0);
 
-                string? lastSource = null;
                 foreach (DMExpression expression in InitializationProcExpressions) {
                     try {
-                        if (expression.Location.Line is int line) {
-                            // Only emit DebugSource when source changes
-                            if (expression.Location.SourceFile != lastSource) {
-                                init.DebugSource(expression.Location.SourceFile);
-                                lastSource = expression.Location.SourceFile;
-                            }
-
-                            init.DebugLine(line);
-                        }
+                        init.DebugSource(expression.Location);
 
                         expression.EmitPushValue(this, init);
                     } catch (CompileErrorException e) {
@@ -251,6 +169,14 @@ namespace DMCompiler.DM {
 
             if (GlobalVariables.Count > 0) {
                 typeJson.GlobalVariables = GlobalVariables;
+            }
+
+            if (ConstVariables.Count > 0) {
+                typeJson.ConstVariables = ConstVariables;
+            }
+
+            if (TmpVariables.Count > 0) {
+                typeJson.TmpVariables = TmpVariables;
             }
 
             if (InitializationProc != null) {

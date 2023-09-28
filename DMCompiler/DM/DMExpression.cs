@@ -3,8 +3,8 @@ using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM {
     abstract class DMExpression {
@@ -64,10 +64,21 @@ namespace DMCompiler.DM {
         // May throw if this expression is unable to be pushed to the stack
         public abstract void EmitPushValue(DMObject dmObject, DMProc proc);
 
+        public enum ShortCircuitMode {
+            // If a dereference is short-circuited due to a null conditional, the short-circuit label should be jumped to with null NOT on top of the stack
+            PopNull,
+
+            // If a dereference is short-circuited due to a null conditional, the short-circuit label should be jumped to with null still on the top of the stack
+            KeepNull,
+        }
+
+        public virtual bool CanReferenceShortCircuit() => false;
+
         // Emits a reference that is to be used in an opcode that assigns/gets a value
         // May throw if this expression is unable to be referenced
-        public virtual (DMReference Reference, bool Conditional) EmitReference(DMObject dmObject, DMProc proc) {
-            throw new CompileAbortException(Location, $"Cannot reference r-value");
+        // The emitted code will jump to endLabel after pushing `null` to the stack in the event of a short-circuit
+        public virtual DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+            throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
         public virtual string GetNameof(DMObject dmObject, DMProc proc) {
@@ -75,11 +86,13 @@ namespace DMCompiler.DM {
         }
 
         public virtual DreamPath? Path => null;
+
+        public virtual DreamPath? NestedPath => Path;
     }
 
     // (a, b, c, ...)
     // This isn't an expression, it's just a helper class for working with argument lists
-    class ArgumentList {
+    sealed class ArgumentList {
         public readonly (string? Name, DMExpression Expr)[] Expressions;
         public int Length => Expressions.Length;
         public Location Location;

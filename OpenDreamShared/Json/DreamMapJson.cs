@@ -23,7 +23,7 @@ namespace OpenDreamShared.Json {
 
     public sealed class MapObjectJson {
         public int Type { get; set; }
-        public Dictionary<string, object> VarOverrides { get; set; }
+        public Dictionary<string, object>? VarOverrides { get; set; }
 
         public MapObjectJson(int type) {
             Type = type;

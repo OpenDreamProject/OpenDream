@@ -23,12 +23,16 @@ void fragment() {
         ratio = input_size/mask_size;
         new_color = zTexture(UV);   
         mask_color = texture(mask_texture, (-ratio/2.0+0.5)+UV*ratio);
-    }  
+    }
+    
+    // The mask is the average of RGB multiplied by A
+    // Haven't actually tested this in BYOND, but it does give us behavior seen in SS13
+    highp float mask = (mask_color.r + mask_color.g + mask_color.b) / 3 * mask_color.a;
 
     if(mask_invert_flag){
-        new_color.a *= 1.0-mask_color.a;
+        new_color.a *= 1.0-mask;
     } else {
-        new_color.a *= mask_color.a;
+        new_color.a *= mask;
     }
 
     COLOR = new_color;

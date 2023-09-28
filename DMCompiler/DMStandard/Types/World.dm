@@ -1,5 +1,5 @@
 ﻿/world
-	var/list/contents = list()
+	var/list/contents = null
 	var/list/vars
 
 	var/log = null
@@ -10,6 +10,7 @@
 
 	var/name = "OpenDream World"
 	var/time
+	var/timezone = 0 as opendream_unimplemented
 	var/timeofday
 	var/realtime
 	var/tick_lag = 1
@@ -37,7 +38,7 @@
 	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
 	var/process
-	var/list/params = list() as opendream_unimplemented
+	var/list/params = null as opendream_unimplemented
 
 	var/sleep_offline = 0 as opendream_unimplemented
 
@@ -54,6 +55,7 @@
 	var/host as opendream_unimplemented
 	var/map_format = TOPDOWN_MAP as opendream_unimplemented
 	var/cache_lifespan = 30 as opendream_unimplemented
+	var/executor as opendream_unimplemented
 
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE

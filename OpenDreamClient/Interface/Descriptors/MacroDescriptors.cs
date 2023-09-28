@@ -4,13 +4,13 @@ using Robust.Shared.Serialization.Markdown.Mapping;
 
 namespace OpenDreamClient.Interface.Descriptors;
 
-public sealed class MacroSetDescriptor : ElementDescriptor {
+public sealed partial class MacroSetDescriptor : ElementDescriptor {
     private readonly List<MacroDescriptor> _macros = new();
     public IReadOnlyList<MacroDescriptor> Macros => _macros;
 
-    public MacroSetDescriptor(string name) {
+    public MacroSetDescriptor(string id) {
         Type = "MACRO_SET";
-        Name = name;
+        Id = id;
     }
 
     [UsedImplicitly]
@@ -25,24 +25,16 @@ public sealed class MacroSetDescriptor : ElementDescriptor {
         return macro;
     }
 
-    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string name) {
+    public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._name = name;
+        copy._id = id;
         return copy;
     }
 }
 
 [UsedImplicitly]
-public sealed class MacroDescriptor : ElementDescriptor {
-    public string Id {
-        get => _id ?? Command;
-        init => _id = value;
-    }
-
-    [DataField("id")]
-    private readonly string _id;
-
+public sealed partial class MacroDescriptor : ElementDescriptor {
     [DataField("command")]
-    public string Command  { get; init; }
+    public string Command  { get; private set; }
 }

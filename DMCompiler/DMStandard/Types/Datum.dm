@@ -1,8 +1,8 @@
 ﻿/datum
-	var/type
-	var/parent_type
+	var/const/type
+	var/tmp/parent_type
 
-	var/list/vars
+	var/const/list/vars
 
 	var/tag
 
@@ -13,4 +13,7 @@
 	proc/Topic(href, href_list)
 
 	proc/Read(savefile/F)
+		set opendream_unimplemented = TRUE
+
+	proc/Write(savefile/F)
 		set opendream_unimplemented = TRUE

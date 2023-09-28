@@ -6,7 +6,7 @@ using System.Collections.Generic;
 using DMCompiler.Compiler.DM;
 
 namespace DMCompiler.Compiler.DMM {
-    class DMMParser : DMParser {
+    sealed class DMMParser : DMParser {
         private int _cellNameLength = -1;
         private HashSet<DreamPath> _skippedTypes = new();
 

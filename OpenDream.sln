@@ -7,7 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{72
 	ProjectSection(SolutionItems) = preProject
 		TestGame\code.dm = TestGame\code.dm
 		TestGame\environment.dme = TestGame\environment.dme
-		TestGame\interface.dmf = TestGame\interface.dmf
 		TestGame\map.dmm = TestGame\map.dmm
 		TestGame\renderer_tests.dm = TestGame\renderer_tests.dm
 	EndProjectSection
@@ -16,6 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68
 	ProjectSection(SolutionItems) = preProject
 		TestGame\icons\mob.dmi = TestGame\icons\mob.dmi
 		TestGame\icons\turf.dmi = TestGame\icons\turf.dmi
+		TestGame\icons\displace.dmi = TestGame\icons\displace.dmi
 	EndProjectSection
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DMCompiler", "DMCompiler\DMCompiler.csproj", "{5CE157DB-7811-499B-97B7-11AC3C2C728F}"
@@ -92,6 +92,10 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robust.Packaging", "RobustToolbox\Robust.Packaging\Robust.Packaging.csproj", "{F3735A7F-44A2-4BEE-ADD6-952577D4DC33}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robust.Shared.CompNetworkGenerator", "RobustToolbox\Robust.Shared.CompNetworkGenerator\Robust.Shared.CompNetworkGenerator.csproj", "{D080D3FA-CE53-40D2-AC9A-940FD9EB5055}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamPackaging", "OpenDreamPackaging\OpenDreamPackaging.csproj", "{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robust.Serialization.Generator", "RobustToolbox\Robust.Serialization.Generator\Robust.Serialization.Generator.csproj", "{366AA569-0889-491B-AB00-F038EAEC5221}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -402,6 +406,26 @@ Global
 		{D080D3FA-CE53-40D2-AC9A-940FD9EB5055}.Release|x64.Build.0 = Release|Any CPU
 		{D080D3FA-CE53-40D2-AC9A-940FD9EB5055}.Tools|Any CPU.ActiveCfg = Tools|Any CPU
 		{D080D3FA-CE53-40D2-AC9A-940FD9EB5055}.Tools|Any CPU.Build.0 = Tools|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Debug|x64.Build.0 = Debug|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Release|x64.ActiveCfg = Release|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Release|x64.Build.0 = Release|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Tools|Any CPU.ActiveCfg = Debug|Any CPU
+		{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}.Tools|Any CPU.Build.0 = Debug|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Debug|x64.Build.0 = Debug|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Release|Any CPU.Build.0 = Release|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Release|x64.ActiveCfg = Release|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Release|x64.Build.0 = Release|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Tools|Any CPU.ActiveCfg = Debug|Any CPU
+		{366AA569-0889-491B-AB00-F038EAEC5221}.Tools|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

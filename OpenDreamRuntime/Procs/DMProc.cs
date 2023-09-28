@@ -1,8 +1,10 @@
 using System.Buffers;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Objects.MetaObjects;
+using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -13,26 +15,27 @@ namespace OpenDreamRuntime.Procs {
     public sealed class DMProc : DreamProc {
         public readonly byte[] Bytecode;
 
-        public string? Source { get; }
-        public int Line { get; }
+        public readonly bool IsNullProc;
         public IReadOnlyList<LocalVariableJson> LocalNames { get; }
+        public readonly List<SourceInfoJson> SourceInfo;
 
-        public readonly IAtomManager AtomManager;
-        public readonly IDreamManager DreamManager;
+        public readonly AtomManager AtomManager;
+        public readonly DreamManager DreamManager;
+        public readonly ProcScheduler ProcScheduler;
         public readonly IDreamMapManager DreamMapManager;
         public readonly IDreamDebugManager DreamDebugManager;
         public readonly DreamResourceManager DreamResourceManager;
-        public readonly IDreamObjectTree ObjectTree;
+        public readonly DreamObjectTree ObjectTree;
 
         private readonly int _maxStackSize;
 
-        public DMProc(DreamPath owningType, ProcDefinitionJson json, string? name, IDreamManager dreamManager, IAtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, IDreamObjectTree objectTree)
-            : base(owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility) {
+        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
+            : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
-            Source = json.Source;
-            Line = json.Line;
+            SourceInfo = json.SourceInfo;
             _maxStackSize = json.MaxStackSize;
+            IsNullProc = CheckIfNullProc();
 
             AtomManager = atomManager;
             DreamManager = dreamManager;
@@ -40,15 +43,83 @@ namespace OpenDreamRuntime.Procs {
             DreamDebugManager = dreamDebugManager;
             DreamResourceManager = dreamResourceManager;
             ObjectTree = objectTree;
+            ProcScheduler = procScheduler;
         }
 
-        public override DMProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+        public (string Source, int Line) GetSourceAtOffset(int offset) {
+            SourceInfoJson current = SourceInfo[0];
+            string source = ObjectTree.Strings[current.File!.Value];
+
+            int i = 0;
+            do {
+                var next = SourceInfo[i++];
+                if (next.Offset > offset)
+                    break;
+
+                current = next;
+                if (current.File != null)
+                    source = ObjectTree.Strings[current.File.Value];
+            } while (i < SourceInfo.Count);
+
+            return (source, current.Line);
+        }
+
+        /// <summary>
+        /// Checks if the given bytecode offset is the first on a line of the source code
+        /// </summary>
+        public bool IsOnLineChange(int offset) {
+            foreach (var sourceInfo in SourceInfo) {
+                if (sourceInfo.Offset == offset)
+                    return true;
+            }
+
+            return false;
+        }
+
+        public bool TryGetOffsetAtSource(string source, int line, out int offset) {
+            string? currentSource = null;
+
+            int i = 0;
+            do {
+                var current = SourceInfo[i++];
+
+                if (current.File != null)
+                    currentSource = ObjectTree.Strings[current.File.Value];
+
+                if (currentSource == source && current.Line == line) {
+                    offset = current.Offset;
+                    return true;
+                }
+            } while (i < SourceInfo.Count);
+
+            offset = 0;
+            return false;
+        }
+
+        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
+            if (IsNullProc) {
+                if (!NullProcState.Pool.TryPop(out var nullState)) {
+                    nullState = new NullProcState();
+                }
+
+                nullState.Initialize(this);
+                return nullState;
+            }
+
             if (!DMProcState.Pool.TryPop(out var state)) {
                 state = new DMProcState();
             }
 
             state.Initialize(this, thread, _maxStackSize, src, usr, arguments);
             return state;
+        }
+
+        private bool CheckIfNullProc() {
+            // We check for two possible patterns, entirely empty procs or pushing and returning self.
+            if (Bytecode.Length == 0 || Bytecode is [(byte)DreamProcOpcode.PushReferenceValue, 0x01, (byte)DreamProcOpcode.Return])
+                return true;
+
+            return false;
         }
 
         private static List<string>? GetArgumentNames(ProcDefinitionJson json) {
@@ -72,8 +143,34 @@ namespace OpenDreamRuntime.Procs {
         }
     }
 
+    public sealed class NullProcState : ProcState {
+        public static readonly Stack<NullProcState> Pool = new();
+
+        public override DreamProc? Proc => _proc;
+
+        private DreamProc? _proc;
+
+        public override ProcStatus Resume() {
+            return ProcStatus.Returned; // do nothing heehoo
+        }
+
+        public override void AppendStackFrame(StringBuilder builder) {
+            throw new NotImplementedException();
+        }
+
+        public void Initialize(DMProc proc) {
+            _proc = proc;
+        }
+
+        public override void Dispose() {
+            base.Dispose();
+            _proc = null;
+            Pool.Push(this);
+        }
+    }
+
     public sealed class DMProcState : ProcState {
-        delegate ProcStatus? OpcodeHandler(DMProcState state);
+        private delegate ProcStatus OpcodeHandler(DMProcState state);
 
         public static readonly Stack<DMProcState> Pool = new();
 
@@ -81,7 +178,7 @@ namespace OpenDreamRuntime.Procs {
 
         #region Opcode Handlers
         //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
-        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler?> OpcodeHandlers = new Dictionary<DreamProcOpcode, OpcodeHandler?>(){
+        private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> _opcodeHandlers = new() {
             {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
             {DreamProcOpcode.PushType, DMOpcodeHandlers.PushType},
             {DreamProcOpcode.PushString, DMOpcodeHandlers.PushString},
@@ -144,9 +241,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.BitShiftRight, DMOpcodeHandlers.BitShiftRight},
             {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
             {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
-            {DreamProcOpcode.DebugSource, DMOpcodeHandlers.DebugSource},
-            {DreamProcOpcode.DebugLine, DMOpcodeHandlers.DebugLine},
             {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
+            {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
             {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
             {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
             {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},
@@ -174,6 +270,15 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
             {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
             {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
+            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
+            {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
+            {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},
+            {DreamProcOpcode.JumpIfTrueReference, DMOpcodeHandlers.JumpIfTrueReference},
+            {DreamProcOpcode.JumpIfFalseReference, DMOpcodeHandlers.JumpIfFalseReference},
+            {DreamProcOpcode.DereferenceField, DMOpcodeHandlers.DereferenceField},
+            {DreamProcOpcode.DereferenceIndex, DMOpcodeHandlers.DereferenceIndex},
+            {DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall},
+            {DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference},
             {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},
             {DreamProcOpcode.BitShiftRightReference, DMOpcodeHandlers.BitShiftRightReference},
             {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
@@ -190,21 +295,25 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Sqrt, DMOpcodeHandlers.Sqrt},
             {DreamProcOpcode.Log, DMOpcodeHandlers.Log},
             {DreamProcOpcode.LogE, DMOpcodeHandlers.LogE},
-            {DreamProcOpcode.Abs, DMOpcodeHandlers.Abs}
+            {DreamProcOpcode.Abs, DMOpcodeHandlers.Abs},
+            {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign},
+            {DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep},
+            {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
+            {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
+            {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint}
         };
 
-        private static readonly OpcodeHandler?[] _opcodeHandlers;
+        public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
         #endregion
 
-        public IDreamManager DreamManager => _proc.DreamManager;
+        public DreamManager DreamManager => _proc.DreamManager;
+        public ProcScheduler ProcScheduler => _proc.ProcScheduler;
         public IDreamDebugManager DebugManager => _proc.DreamDebugManager;
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;
         public DreamObject? Usr;
         public int ArgumentCount;
-        public string? CurrentSource;
-        public int CurrentLine;
         private readonly Stack<int> _catchPosition = new();
         private readonly Stack<int> _catchVarIndex = new();
         public const int NoTryCatchVar = -1;
@@ -222,15 +331,21 @@ namespace OpenDreamRuntime.Procs {
         private DMProc _proc;
         public override DMProc Proc => _proc;
 
-        public override (string?, int?) SourceLine => (CurrentSource, CurrentLine);
-
         /// Static initializer for maintainer friendly OpcodeHandlers to performance friendly _opcodeHandlers
-        static DMProcState() {
-            int maxOpcode = (int)OpcodeHandlers.Keys.Max();
+        static unsafe DMProcState() {
+            int maxOpcode = (int)_opcodeHandlers.Keys.Max();
 
-            _opcodeHandlers = new OpcodeHandler?[maxOpcode + 1];
-            foreach (DreamProcOpcode dpo in OpcodeHandlers.Keys) {
-                _opcodeHandlers[(int) dpo] = OpcodeHandlers[dpo];
+            OpcodeHandlers = new delegate*<DMProcState, ProcStatus>[256];
+            foreach (var (dpo, handler) in _opcodeHandlers) {
+                OpcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
+            }
+
+            var invalid = DMOpcodeHandlers.Invalid;
+            var invalidPtr = (delegate*<DMProcState, ProcStatus>)invalid.Method.MethodHandle.GetFunctionPointer();
+
+            OpcodeHandlers[0] = invalidPtr;
+            for (int i = maxOpcode + 1; i < 256; i++) {
+                OpcodeHandlers[i] = invalidPtr;
             }
         }
 
@@ -242,8 +357,6 @@ namespace OpenDreamRuntime.Procs {
             Instance = other.Instance;
             Usr = other.Usr;
             ArgumentCount = other.ArgumentCount;
-            CurrentSource = other.CurrentSource;
-            CurrentLine = other.CurrentLine;
             _pc = other._pc;
             _firstResume = false;
 
@@ -258,8 +371,6 @@ namespace OpenDreamRuntime.Procs {
             Instance = instance;
             Usr = usr;
             ArgumentCount = Math.Max(arguments.Count, _proc.ArgumentNames?.Count ?? 0);
-            CurrentSource = _proc.Source;
-            CurrentLine = _proc.Line;
             _localVariables = _dreamValuePool.Rent(256);
             _stack = _dreamValuePool.Rent(maxStackSize);
             _firstResume = true;
@@ -269,39 +380,42 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        public override ProcStatus Resume() {
+        public override unsafe ProcStatus Resume() {
             if (Instance?.Deleted == true) {
                 return ProcStatus.Returned;
             }
 
+#if TOOLS
             if (_firstResume) {
                 DebugManager.HandleFirstResume(this);
-            }
-
-            bool stepping = Thread.StepMode != null;
-            while (_pc < _proc.Bytecode.Length) {
-                if (stepping && !_firstResume) // HandleFirstResume does this for us on the first resume
-                    DebugManager.HandleInstruction(this);
                 _firstResume = false;
+            }
+#endif
 
-                int opcode = _proc.Bytecode[_pc++];
-                var handler = opcode < _opcodeHandlers.Length ? _opcodeHandlers[opcode] : null;
-                if (handler is null)
-                    throw new Exception($"Attempted to call non-existent Opcode method for opcode 0x{opcode:X2}");
+            var procBytecode = _proc.Bytecode;
 
-                ProcStatus? status;
-                try {
-                    status = handler.Invoke(this);
-                } catch (Exception e) {
-                    if (!IsCatching())
-                        throw;
+            if (procBytecode.Length == 0)
+                return ProcStatus.Returned;
 
-                    CatchException(e);
-                    continue;
-                }
+            fixed (delegate*<DMProcState, ProcStatus>* handlers = &OpcodeHandlers[0]) {
+                fixed (byte* bytecode = &procBytecode[0]) {
+                    var l = procBytecode.Length; // The length never changes so we stick it in a register.
 
-                if (status != null) {
-                    return status.Value;
+                    while (_pc < l) {
+#if TOOLS
+                        DebugManager.HandleInstruction(this);
+#endif
+
+                        int opcode = bytecode[_pc];
+                        _pc += 1;
+
+                        var handler = handlers[opcode];
+                        var status = handler(this);
+
+                        if (status != ProcStatus.Continue) {
+                            return status;
+                        }
+                    }
                 }
             }
 
@@ -320,7 +434,9 @@ namespace OpenDreamRuntime.Procs {
 
             builder.Append(Proc.Name);
             builder.Append(':');
-            builder.Append(CurrentLine);
+
+            // Subtract 1 because _pc may have been advanced to the next line
+            builder.Append(Proc.GetSourceAtOffset(_pc - 1).Line);
         }
 
         public void Jump(int position) {
@@ -331,9 +447,16 @@ namespace OpenDreamRuntime.Procs {
             Result = value;
         }
 
-        public void Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
+        public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
+            if (proc is NativeProc p) {
+                // Skip a whole song and dance.
+                Push(p.Call(Thread, src, Usr, arguments));
+                return ProcStatus.Continue;
+            }
+
             var state = proc.CreateState(Thread, src, Usr, arguments);
             Thread.PushProcState(state);
+            return ProcStatus.Called;
         }
 
         public DreamThread Spawn() {
@@ -381,8 +504,6 @@ namespace OpenDreamRuntime.Procs {
             Instance = null;
             Usr = null;
             ArgumentCount = 0;
-            CurrentSource = null;
-            CurrentLine = 0;
             _enumeratorStack = null;
             _pc = 0;
             _proc = null;
@@ -400,17 +521,36 @@ namespace OpenDreamRuntime.Procs {
             Pool.Push(this);
         }
 
+        public ReadOnlySpan<DreamValue> GetArguments() {
+            return _localVariables.AsSpan(0, ArgumentCount);
+        }
+
+        public void SetArgument(int id, DreamValue value) {
+            if (id < 0 || id >= ArgumentCount)
+                throw new IndexOutOfRangeException($"Given argument id ({id}) was out of range");
+
+            _localVariables[id] = value;
+        }
+
         #region Stack
         private DreamValue[] _stack;
         private int _stackIndex = 0;
         public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
 
         public void Push(DreamValue value) {
-            _stack[_stackIndex++] = value;
+            _stack[_stackIndex] = value;
+            // ++ sucks for the compiler
+            _stackIndex += 1;
         }
 
         public DreamValue Pop() {
-            return _stack[--_stackIndex];
+            // -- sucks for the compiler
+            _stackIndex -= 1;
+            return _stack[_stackIndex];
+        }
+
+        public void PopDrop() {
+            _stackIndex -= 1;
         }
 
         /// <summary>
@@ -436,86 +576,21 @@ namespace OpenDreamRuntime.Procs {
         /// <param name="argumentStackSize">The amount of items the arguments have on the stack</param>
         /// <returns>The arguments in a DreamProcArguments struct</returns>
         public DreamProcArguments PopProcArguments(DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
-            switch (argumentsType) {
-                case DMCallArgumentsType.None:
-                    return new DreamProcArguments();
-                case DMCallArgumentsType.FromProcArguments:
-                    return new DreamProcArguments(_localVariables.AsSpan(0, ArgumentCount));
-                case DMCallArgumentsType.FromStack: {
-                    var stack = PopCount(argumentStackSize);
+            var values = PopCount(argumentStackSize);
 
-                    return new DreamProcArguments(stack);
-                }
-                case DMCallArgumentsType.FromStackKeyed: {
-                    if (argumentStackSize % 2 != 0)
-                        throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));
-                    if (proc == null)
-                        throw new Exception("Cannot use named arguments here");
-
-                    var stack = PopCount(argumentStackSize);
-                    var argumentCount = argumentStackSize / 2;
-                    var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
-
-                    Array.Fill(arguments, DreamValue.Null);
-                    for (int i = 0; i < argumentCount; i++) {
-                        var key = stack[i*2];
-                        var value = stack[i*2+1];
-
-                        if (key == DreamValue.Null) {
-                            arguments[i] = value;
-                        } else {
-                            string argumentName = key.MustGetValueAsString();
-                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
-                            if (argumentIndex == -1)
-                                throw new Exception($"{proc} has no argument named {argumentName}");
-
-                            arguments[argumentIndex] = value;
-                        }
-                    }
-
-                    return new DreamProcArguments(arguments);
-                }
-                case DMCallArgumentsType.FromArgumentList: {
-                    if (proc == null)
-                        throw new Exception("Cannot use an arglist here");
-                    if (!Pop().TryGetValueAsDreamList(out var argList))
-                        return new DreamProcArguments(); // Using a non-list gives you no arguments
-
-                    var listValues = argList.GetValues();
-                    var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
-
-                    Array.Fill(arguments, DreamValue.Null);
-                    for (int i = 0; i < listValues.Count; i++) {
-                        var value = listValues[i];
-
-                        if (argList.ContainsKey(value)) { //Named argument
-                            if (!value.TryGetValueAsString(out var argumentName))
-                                throw new Exception("List contains a non-string key, and cannot be used as an arglist");
-
-                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
-                            if (argumentIndex == -1)
-                                throw new Exception($"{proc} has no argument named {argumentName}");
-
-                            arguments[argumentIndex] = argList.GetValue(value);
-                        } else { //Ordered argument
-                            // TODO: Verify ordered args precede all named args
-                            arguments[i] = value;
-                        }
-                    }
-
-                    return new DreamProcArguments(arguments);
-                }
-                default:
-                    throw new Exception($"Invalid arguments type {argumentsType}");
-            }
+            return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
         }
         #endregion
 
         #region Operands
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadByte() {
-            return _proc.Bytecode[_pc++];
+            var r = _proc.Bytecode[_pc];
+            _pc += 1;
+            return r;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadInt() {
             int value = BitConverter.ToInt32(_proc.Bytecode, _pc);
             _pc += 4;
@@ -523,6 +598,7 @@ namespace OpenDreamRuntime.Procs {
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public float ReadFloat() {
             float value = BitConverter.ToSingle(_proc.Bytecode, _pc);
             _pc += 4;
@@ -530,32 +606,48 @@ namespace OpenDreamRuntime.Procs {
             return value;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public string ReadString() {
-            int stringID = ReadInt();
+            int stringId = ReadInt();
 
-            return Proc.ObjectTree.Strings[stringID];
+            return ResolveString(stringId);
         }
 
-        public DMReference ReadReference() {
+        public string ResolveString(int stringId) {
+            return Proc.ObjectTree.Strings[stringId];
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public DreamReference ReadReference() {
             DMReference.Type refType = (DMReference.Type)ReadByte();
 
             switch (refType) {
-                case DMReference.Type.Argument: return DMReference.CreateArgument(ReadByte());
-                case DMReference.Type.Local: return DMReference.CreateLocal(ReadByte());
-                case DMReference.Type.Global: return DMReference.CreateGlobal(ReadInt());
-                case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(ReadInt());
-                case DMReference.Type.Field: return DMReference.CreateField(ReadString());
-                case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
-                case DMReference.Type.Proc: return DMReference.CreateProc(ReadString());
-                case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(ReadString());
-                case DMReference.Type.Src: return DMReference.Src;
-                case DMReference.Type.Self: return DMReference.Self;
-                case DMReference.Type.Usr: return DMReference.Usr;
-                case DMReference.Type.Args: return DMReference.Args;
-                case DMReference.Type.SuperProc: return DMReference.SuperProc;
-                case DMReference.Type.ListIndex: return DMReference.ListIndex;
-                default: throw new Exception($"Invalid reference type {refType}");
+                case DMReference.Type.Src:
+                case DMReference.Type.Self:
+                case DMReference.Type.Usr:
+                case DMReference.Type.Args:
+                case DMReference.Type.SuperProc:
+                case DMReference.Type.ListIndex:
+                    return new DreamReference(refType, 0);
+                case DMReference.Type.Argument:
+                case DMReference.Type.Local:
+                    return new DreamReference(refType, ReadByte());
+                case DMReference.Type.Global:
+                case DMReference.Type.GlobalProc:
+                case DMReference.Type.Field:
+                case DMReference.Type.SrcField:
+                case DMReference.Type.SrcProc:
+                    return new DreamReference(refType, ReadInt());
+                default: {
+                    ThrowInvalidReferenceType(refType);
+                    return default;
+                }
             }
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidReferenceType(DMReference.Type type) {
+            throw new Exception($"Invalid reference type {type}");
         }
 
         public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
@@ -564,12 +656,11 @@ namespace OpenDreamRuntime.Procs {
         #endregion
 
         #region References
-        public bool IsNullDereference(DMReference reference) {
-            switch (reference.RefType) {
-                case DMReference.Type.Proc:
+        public bool IsNullDereference(DreamReference reference) {
+            switch (reference.Type) {
                 case DMReference.Type.Field: {
-                    if (Peek() == DreamValue.Null) {
-                        Pop();
+                    if (Peek().IsNull) {
+                        PopDrop();
                         return true;
                     }
 
@@ -577,15 +668,15 @@ namespace OpenDreamRuntime.Procs {
                 }
                 case DMReference.Type.ListIndex: {
                     DreamValue list = _stack[_stackIndex - 2];
-                    if (list == DreamValue.Null) {
-                        Pop();
-                        Pop();
+                    if (list.IsNull) {
+                        PopDrop();
+                        PopDrop();
                         return true;
                     }
 
                     return false;
                 }
-                default: throw new Exception($"Invalid dereference type {reference.RefType}");
+                default: throw new Exception($"Invalid dereference type {reference.Type}");
             }
         }
 
@@ -594,142 +685,142 @@ namespace OpenDreamRuntime.Procs {
         /// as well as what it's being indexed with.
         /// </summary>
         /// <param name="reference">A ListIndex DMReference</param>
-        public (DreamValue indexing, DreamValue index) GetIndexReferenceValues(DMReference reference, bool peek = false) {
-            if (reference.RefType != DMReference.Type.ListIndex)
-                throw new ArgumentException("Reference was not a ListIndex type");
+        public void GetIndexReferenceValues(DreamReference reference, out DreamValue index, out DreamValue indexing, bool peek = false) {
+            if (reference.Type != DMReference.Type.ListIndex)
+                ThrowReferenceNotListIndex();
 
-            DreamValue index = peek ? _stack[_stackIndex - 1] : Pop();
-            DreamValue indexing = peek ? _stack[_stackIndex - 2] : Pop();
-            return (indexing, index);
+            index = _stack[_stackIndex - 1];
+            indexing = _stack[_stackIndex - 2];
+            if (!peek)
+                _stackIndex -= 2;
         }
 
-        public void AssignReference(DMReference reference, DreamValue value) {
-            switch (reference.RefType) {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowReferenceNotListIndex() {
+            throw new ArgumentException("Reference was not a ListIndex type");
+        }
+
+        public void AssignReference(DreamReference reference, DreamValue value) {
+            switch (reference.Type) {
                 case DMReference.Type.Self: Result = value; break;
-                case DMReference.Type.Argument: _localVariables[reference.Index] = value; break;
-                case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Index] = value; break;
-                case DMReference.Type.SrcField: Instance.SetVariable(reference.Name, value); break;
-                case DMReference.Type.Global: DreamManager.Globals[reference.Index] = value; break;
+                case DMReference.Type.Argument: SetArgument(reference.Value, value); break;
+                case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Value] = value; break;
+                case DMReference.Type.SrcField: Instance.SetVariable(ResolveString(reference.Value), value); break;
+                case DMReference.Type.Global: DreamManager.Globals[reference.Value] = value; break;
                 case DMReference.Type.Src:
                     //TODO: src can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Instance)) {
-                        throw new Exception($"Cannot assign src to {value}");
+                        ThrowCannotAssignSrcTo(value);
                     }
 
                     break;
                 case DMReference.Type.Usr:
                     //TODO: usr can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Usr)) {
-                        throw new Exception($"Cannot assign usr to {value}");
+                        ThrowCannotAssignUsrTo(value);
                     }
                     break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
                     if (!owner.TryGetValueAsDreamObject(out var ownerObj) || ownerObj == null)
-                        throw new Exception($"Cannot assign field \"{reference.Name}\" on {owner}");
+                        ThrowCannotAssignFieldOn(reference, owner);
 
-                    ownerObj.SetVariable(reference.Name, value);
+                    ownerObj!.SetVariable(ResolveString(reference.Value), value);
                     break;
                 }
                 case DMReference.Type.ListIndex: {
-                    (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference);
+                    GetIndexReferenceValues(reference, out var index, out var indexing);
 
-                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                        listObj.SetValue(index, value);
-                    } else if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                        IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                            metaObject.OperatorIndexAssign(dreamObject!, index, value);
+                    if (indexing.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+                        dreamObject.OperatorIndexAssign(index, value);
                     } else {
-                        throw new Exception($"Cannot assign to index {index} of {indexing}");
+                        ThrowCannotAssignListIndex(index, indexing);
                     }
 
                     break;
                 }
-                default: throw new Exception($"Cannot assign to reference type {reference.RefType}");
+                default:
+                    ThrowCannotAssignReferenceType(reference);
+                    break;
             }
         }
 
-        public DreamValue GetReferenceValue(DMReference reference, bool peek = false) {
-            switch (reference.RefType) {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignReferenceType(DreamReference reference) {
+            throw new Exception($"Cannot assign to reference type {reference.Type}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignListIndex(DreamValue index, DreamValue indexing) {
+            throw new Exception($"Cannot assign to index {index} of {indexing}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowCannotAssignFieldOn(DreamReference reference, DreamValue owner) {
+            throw new Exception($"Cannot assign field \"{ResolveString(reference.Value)}\" on {owner}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignSrcTo(DreamValue value) {
+            throw new Exception($"Cannot assign src to {value}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotAssignUsrTo(DreamValue value) {
+            throw new Exception($"Cannot assign usr to {value}");
+        }
+
+        public DreamValue GetReferenceValue(DreamReference reference, bool peek = false) {
+            switch (reference.Type) {
                 case DMReference.Type.Src: return new(Instance);
                 case DMReference.Type.Usr: return new(Usr);
                 case DMReference.Type.Self: return Result;
-                case DMReference.Type.Global: return DreamManager.Globals[reference.Index];
-                case DMReference.Type.Argument: return _localVariables[reference.Index];
-                case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Index];
-                case DMReference.Type.Args: {
-                    DreamList argsList = Proc.ObjectTree.CreateList(ArgumentCount);
-
-                    for (int i = 0; i < ArgumentCount; i++) {
-                        argsList.AddValue(_localVariables[i]);
-                    }
-
-                    argsList.ValueAssigned += (DreamList argsList, DreamValue key, DreamValue value) => {
-                        if (!key.TryGetValueAsInteger(out int argIndex)) {
-                            throw new Exception($"Cannot index args with {key}");
-                        }
-
-                        if (argIndex > ArgumentCount) {
-                            throw new Exception($"Args index {argIndex} is too large");
-                        }
-
-                        _localVariables[argIndex - 1] = value;
-                    };
-
-                    return new(argsList);
-                }
+                case DMReference.Type.Global: return DreamManager.Globals[reference.Value];
+                case DMReference.Type.Argument: return _localVariables[reference.Value];
+                case DMReference.Type.Local: return _localVariables[ArgumentCount + reference.Value];
+                case DMReference.Type.Args: return new(new ProcArgsList(Proc.ObjectTree.List.ObjectDefinition, this));
                 case DMReference.Type.Field: {
                     DreamValue owner = peek ? Peek() : Pop();
 
-                    if (owner.TryGetValueAsDreamObject(out var ownerObj) && ownerObj != null) {
-                        if (!ownerObj.TryGetVariable(reference.Name, out var fieldValue))
-                            throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{reference.Name}\"");
-
-                        return fieldValue;
-                    } else if (owner.TryGetValueAsProc(out var ownerProc)) {
-                        return ownerProc.GetField(reference.Name);
-                    } else {
-                        throw new Exception($"Cannot get field \"{reference.Name}\" from {owner}");
-                    }
+                    return DereferenceField(owner, ResolveString(reference.Value));
                 }
                 case DMReference.Type.SrcField: {
+                    var fieldName = ResolveString(reference.Value);
                     if (Instance == null)
-                        throw new Exception($"Cannot get field src.{reference.Name} in global proc");
-                    if (!Instance.TryGetVariable(reference.Name, out var fieldValue))
-                        throw new Exception($"Type {Instance.ObjectDefinition!.Type} has no field called \"{reference.Name}\"");
+                        ThrowCannotGetFieldSrcGlobalProc(fieldName);
+                    if (!Instance!.TryGetVariable(fieldName, out var fieldValue))
+                        ThrowTypeHasNoField(fieldName);
 
                     return fieldValue;
                 }
                 case DMReference.Type.ListIndex: {
-                    (DreamValue indexing, DreamValue index) = GetIndexReferenceValues(reference, peek);
+                    GetIndexReferenceValues(reference, out var index, out var indexing, peek);
 
-                    if (indexing.TryGetValueAsDreamList(out var listObj)) {
-                        return listObj.GetValue(index);
-                    }
-
-                    if (indexing.TryGetValueAsString(out string? strValue)) {
-                        if (!index.TryGetValueAsInteger(out int strIndex))
-                            throw new Exception($"Attempted to index string with {index}");
-
-                        char c = strValue[strIndex - 1];
-                        return new DreamValue(Convert.ToString(c));
-                    }
-
-                    if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
-                        IDreamMetaObject? metaObject = dreamObject?.ObjectDefinition?.MetaObject;
-                        if (metaObject != null)
-                            return metaObject.OperatorIndex(dreamObject, index);
-                    }
-
-                    throw new Exception($"Cannot get index {index} of {indexing}");
+                    return GetIndex(indexing, index);
                 }
-                default: throw new Exception($"Cannot get value of reference type {reference.RefType}");
+                default:
+                    ThrowCannotGetValueOfReferenceType(reference);
+                    return DreamValue.Null;
             }
         }
 
-        public void PopReference(DMReference reference) {
-            switch (reference.RefType) {
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetValueOfReferenceType(DreamReference reference) {
+            throw new Exception($"Cannot get value of reference type {reference.Type}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetFieldSrcGlobalProc(string fieldName) {
+            throw new Exception($"Cannot get field src.{fieldName} in global proc");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void ThrowTypeHasNoField(string fieldName) {
+            throw new Exception($"Type {Instance!.ObjectDefinition!.Type} has no field called \"{fieldName}\"");
+        }
+
+        public void PopReference(DreamReference reference) {
+            switch (reference.Type) {
                 case DMReference.Type.Src:
                 case DMReference.Type.Usr:
                 case DMReference.Type.Self:
@@ -740,16 +831,90 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Args:
                 case DMReference.Type.SrcField:
                     return;
-                case DMReference.Type.Field:
-                    Pop();
-                    return;
                 case DMReference.Type.ListIndex:
-                    Pop();
-                    Pop();
+                    PopDrop();
+
+                    // Fallthrough to the below case ends up with more performant generated code
+                    goto case DMReference.Type.Field;
+                case DMReference.Type.Field:
+                    PopDrop();
                     return;
-                default: throw new Exception($"Cannot pop stack values of reference type {reference.RefType}");
+                default: ThrowPopInvalidType(reference.Type);
+                    return;
             }
         }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowPopInvalidType(DMReference.Type type) {
+            throw new Exception($"Cannot pop stack values of reference type {type}");
+        }
+
+        public DreamValue DereferenceField(DreamValue owner, string field) {
+            if (owner.TryGetValueAsDreamObject(out var ownerObj) && ownerObj != null) {
+                if (!ownerObj.TryGetVariable(field, out var fieldValue))
+                    ThrowTypeHasNoField(field, ownerObj);
+
+                return fieldValue;
+            } else if (owner.TryGetValueAsProc(out var ownerProc)) {
+                return ownerProc.GetField(field);
+            } else if (owner.TryGetValueAsAppearance(out var appearance)) {
+                if (!Proc.AtomManager.IsValidAppearanceVar(field))
+                    ThrowInvalidAppearanceVar(field);
+
+                return Proc.AtomManager.GetAppearanceVar(appearance, field);
+            }
+
+            ThrowCannotGetFieldFromOwner(owner, field);
+            return DreamValue.Null;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetFieldFromOwner(DreamValue owner, string field) {
+            throw new Exception($"Cannot get field \"{field}\" from {owner}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowInvalidAppearanceVar(string field) {
+            throw new Exception($"Invalid appearance var \"{field}\"");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowTypeHasNoField(string field, DreamObject? ownerObj) {
+            throw new Exception($"Type {ownerObj.ObjectDefinition.Type} has no field called \"{field}\"");
+        }
+
+        public DreamValue GetIndex(DreamValue indexing, DreamValue index) {
+            if (indexing.TryGetValueAsDreamList(out var listObj)) {
+                return listObj.GetValue(index);
+            }
+
+            if (indexing.TryGetValueAsString(out string? strValue)) {
+                if (!index.TryGetValueAsInteger(out int strIndex))
+                    ThrowAttemptedToIndexString(index);
+
+                char c = strValue[strIndex - 1];
+                return new DreamValue(Convert.ToString(c));
+            }
+
+            if (indexing.TryGetValueAsDreamObject(out var dreamObject)) {
+                if (dreamObject != null)
+                    return dreamObject.OperatorIndex(index);
+            }
+
+            ThrowCannotGetIndex(indexing, index);
+            return DreamValue.Null;
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowCannotGetIndex(DreamValue indexing, DreamValue index) {
+            throw new Exception($"Cannot get index {index} of {indexing}");
+        }
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private static void ThrowAttemptedToIndexString(DreamValue index) {
+            throw new Exception($"Attempted to index string with {index}");
+        }
+
         #endregion References
 
         public IEnumerable<(string, DreamValue)> DebugArguments() {
@@ -796,6 +961,77 @@ namespace OpenDreamRuntime.Procs {
             // _localVariables.Length is pool-allocated so its length may go up
             // to some round power of two or similar without anything actually
             // being there, so just stop after the named locals.
+        }
+
+        public DreamProcArguments CreateProcArguments(ReadOnlySpan<DreamValue> values, DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
+            switch (argumentsType) {
+                case DMCallArgumentsType.None:
+                    return new DreamProcArguments();
+                case DMCallArgumentsType.FromStack:
+                    return new DreamProcArguments(values);
+                case DMCallArgumentsType.FromProcArguments:
+                    return new DreamProcArguments(GetArguments());
+                case DMCallArgumentsType.FromStackKeyed: {
+                    if (argumentStackSize % 2 != 0)
+                        throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));
+                    if (proc == null)
+                        throw new Exception("Cannot use named arguments here");
+
+                    var argumentCount = argumentStackSize / 2;
+                    var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
+
+                    Array.Fill(arguments, DreamValue.Null);
+                    for (int i = 0; i < argumentCount; i++) {
+                        var key = values[i*2];
+                        var value = values[i*2+1];
+
+                        if (key.IsNull) {
+                            arguments[i] = value;
+                        } else {
+                            string argumentName = key.MustGetValueAsString();
+                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                            if (argumentIndex == -1)
+                                throw new Exception($"{proc} has no argument named {argumentName}");
+
+                            arguments[argumentIndex] = value;
+                        }
+                    }
+
+                    return new DreamProcArguments(arguments);
+                }
+                case DMCallArgumentsType.FromArgumentList: {
+                    if (proc == null)
+                        throw new Exception("Cannot use an arglist here");
+                    if (!values[0].TryGetValueAsDreamList(out var argList))
+                        return new DreamProcArguments(); // Using a non-list gives you no arguments
+
+                    var listValues = argList.GetValues();
+                    var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
+
+                    Array.Fill(arguments, DreamValue.Null);
+                    for (int i = 0; i < listValues.Count; i++) {
+                        var value = listValues[i];
+
+                        if (argList.ContainsKey(value)) { //Named argument
+                            if (!value.TryGetValueAsString(out var argumentName))
+                                throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+
+                            int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
+                            if (argumentIndex == -1)
+                                throw new Exception($"{proc} has no argument named {argumentName}");
+
+                            arguments[argumentIndex] = argList.GetValue(value);
+                        } else { //Ordered argument
+                            // TODO: Verify ordered args precede all named args
+                            arguments[i] = value;
+                        }
+                    }
+
+                    return new DreamProcArguments(arguments);
+                }
+                default:
+                    throw new Exception($"Invalid arguments type {argumentsType}");
+            }
         }
     }
 }

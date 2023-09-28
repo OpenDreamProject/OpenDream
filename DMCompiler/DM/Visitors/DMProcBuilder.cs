@@ -6,9 +6,10 @@ using System;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Dream.Procs;
 using System.Diagnostics;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Visitors {
-    class DMProcBuilder {
+    sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
@@ -29,8 +30,6 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessProcDefinition(DMASTProcDefinition procDefinition) {
             if (procDefinition.Body == null) return;
-
-            _proc.DebugSource(procDefinition.Location.SourceFile);
 
             foreach (DMASTDefinitionParameter parameter in procDefinition.Parameters) {
                 string parameterName = parameter.Name;
@@ -57,6 +56,10 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
+            if (procDefinition.Body.Statements.Length == 0) {
+                DMCompiler.Emit(WarningCode.EmptyProc, _proc.Location,"Empty proc detected - add an explicit \"return\" statement");
+            }
+
             ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             _proc.ResolveLabels();
         }
@@ -66,7 +69,7 @@ namespace DMCompiler.DM.Visitors {
         /// A.) are not marked opendream_unimplemented and <br/>
         /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
         /// </param>
-        public void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
+        private void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
             foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
                 Location loc = stmt.Location;
                 try {
@@ -91,10 +94,10 @@ namespace DMCompiler.DM.Visitors {
                 }
                 return;
             }
+
             foreach (DMASTProcStatement statement in block.Statements) {
-                if (statement.Location.Line != null) {
-                    _proc.DebugLine(statement.Location.Line.Value);
-                }
+                _proc.DebugSource(statement.Location);
+
                 try {
                     ProcessStatement(statement);
                 } catch (CompileAbortException e) {
@@ -128,6 +131,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBrowse statementBrowse: ProcessStatementBrowse(statementBrowse); break;
                 case DMASTProcStatementBrowseResource statementBrowseResource: ProcessStatementBrowseResource(statementBrowseResource); break;
                 case DMASTProcStatementOutputControl statementOutputControl: ProcessStatementOutputControl(statementOutputControl); break;
+                case DMASTProcStatementFtp statementFtp: ProcessStatementFtp(statementFtp); break;
                 case DMASTProcStatementOutput statementOutput: ProcessStatementOutput(statementOutput); break;
                 case DMASTProcStatementInput statementInput: ProcessStatementInput(statementInput); break;
                 case DMASTProcStatementVarDeclaration varDeclaration: ProcessStatementVarDeclaration(varDeclaration); break;
@@ -158,11 +162,14 @@ namespace DMCompiler.DM.Visitors {
         }
 
         public void ProcessStatementGoto(DMASTProcStatementGoto statementGoto) {
-            _proc.Goto(statementGoto.Label.Identifier);
+            _proc.Goto(statementGoto.Label);
         }
 
         public void ProcessStatementLabel(DMASTProcStatementLabel statementLabel) {
-            _proc.AddLabel(statementLabel.Name + "_codelabel");
+            var codeLabel = _proc.TryAddCodeLabel(statementLabel.Name);
+            var labelName = codeLabel?.LabelName ?? statementLabel.Name;
+
+            _proc.AddLabel(labelName);
 
             if (statementLabel.Body is not null) {
                 _proc.StartScope();
@@ -170,7 +177,7 @@ namespace DMCompiler.DM.Visitors {
                     ProcessBlockInner(statementLabel.Body);
                 }
                 _proc.EndScope();
-                _proc.AddLabel(statementLabel.Name + "_end");
+                _proc.AddLabel(labelName + "_end");
             }
         }
 
@@ -264,12 +271,12 @@ namespace DMCompiler.DM.Visitors {
 
                     break;
                 case "desc":
+                    // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
                     if (constant is not Expressions.String descStr) {
                         throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
                     }
 
                     _proc.VerbDesc = descStr.Value;
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set desc is not implemented");
                     break;
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs
@@ -279,7 +286,6 @@ namespace DMCompiler.DM.Visitors {
                     }
 
                     _proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set invisibility is not implemented");
                     break;
                 case "src":
                     DMCompiler.UnimplementedWarning(statementSet.Location, "set src is not implemented");
@@ -438,7 +444,7 @@ namespace DMCompiler.DM.Visitors {
                                 ? DMExpression.Create(_dmObject, _proc, exprRange.Step)
                                 : new Number(exprRange.Location, 1);
 
-                            ProcessStatementForRange(initializer, outputVar, start, end, step, statementFor.Body);
+                            ProcessStatementForRange(null, outputVar, start, end, step, statementFor.Body);
                             break;
                         }
                         case DMASTVarDeclExpression vd: {
@@ -513,6 +519,24 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
         }
 
+        public void ProcessLoopAssignment(LValue lValue) {
+            if (lValue.CanReferenceShortCircuit()) {
+                string endLabel = _proc.NewLabelName();
+                string endLabel2 = _proc.NewLabelName();
+
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
+                _proc.Enumerate(outputRef);
+                _proc.Jump(endLabel2);
+
+                _proc.AddLabel(endLabel);
+                _proc.EnumerateNoAssign();
+                _proc.AddLabel(endLabel2);
+            } else {
+                DMReference outputRef = lValue.EmitReference(_dmObject, _proc, null);
+                _proc.Enumerate(outputRef);
+            }
+        }
+
         public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
@@ -546,8 +570,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (lValue != null) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     }
 
                     ProcessBlockInner(body);
@@ -587,8 +610,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -625,8 +647,7 @@ namespace DMCompiler.DM.Visitors {
                     _proc.MarkLoopContinue(loopLabel);
 
                     if (outputVar is Expressions.LValue lValue) {
-                        (DMReference outputRef, _) = lValue.EmitReference(_dmObject, _proc);
-                        _proc.Enumerate(outputRef);
+                        ProcessLoopAssignment(lValue);
                     } else {
                         DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                     }
@@ -805,6 +826,13 @@ namespace DMCompiler.DM.Visitors {
             _proc.OutputControl();
         }
 
+        public void ProcessStatementFtp(DMASTProcStatementFtp statementFtp) {
+            DMExpression.Emit(_dmObject, _proc, statementFtp.Receiver);
+            DMExpression.Emit(_dmObject, _proc, statementFtp.File);
+            DMExpression.Emit(_dmObject, _proc, statementFtp.Name);
+            _proc.Ftp();
+        }
+
         public void ProcessStatementOutput(DMASTProcStatementOutput statementOutput) {
             DMExpression left = DMExpression.Create(_dmObject, _proc, statementOutput.A);
             DMExpression right = DMExpression.Create(_dmObject, _proc, statementOutput.B);
@@ -813,10 +841,11 @@ namespace DMCompiler.DM.Visitors {
                 // An LValue on the left needs a special opcode so that its reference can be used
                 // This allows for special operations like "savefile[...] << ..."
 
-                (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+                string endLabel = _proc.NewLabelName();
+                DMReference leftRef = left.EmitReference(_dmObject, _proc, endLabel, DMExpression.ShortCircuitMode.PopNull);
                 right.EmitPushValue(_dmObject, _proc);
-
                 _proc.OutputReference(leftRef);
+                _proc.AddLabel(endLabel);
             } else {
                 left.EmitPushValue(_dmObject, _proc);
                 right.EmitPushValue(_dmObject, _proc);
@@ -841,10 +870,16 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            (DMReference rightRef, _) = right.EmitReference(_dmObject, _proc);
-            (DMReference leftRef, _) = left.EmitReference(_dmObject, _proc);
+            string rightEndLabel = _proc.NewLabelName();
+            string leftEndLabel = _proc.NewLabelName();
+            DMReference rightRef = right.EmitReference(_dmObject, _proc, rightEndLabel, DMExpression.ShortCircuitMode.PopNull);
+            DMReference leftRef = left.EmitReference(_dmObject, _proc, leftEndLabel, DMExpression.ShortCircuitMode.PopNull);
 
             _proc.Input(leftRef, rightRef);
+
+            _proc.AddLabel(leftEndLabel);
+            _proc.PopReference(rightRef);
+            _proc.AddLabel(rightEndLabel);
         }
 
         public void ProcessStatementTryCatch(DMASTProcStatementTryCatch tryCatch) {

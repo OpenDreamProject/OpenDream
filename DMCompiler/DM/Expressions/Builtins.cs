@@ -3,11 +3,11 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
-using OpenDreamShared.Dream.Procs;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
-    class StringFormat : DMExpression {
+    sealed class StringFormat : DMExpression {
         string Value { get; }
         DMExpression[] Expressions { get; }
 
@@ -26,7 +26,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // arglist(...)
-    class Arglist : DMExpression {
+    sealed class Arglist : DMExpression {
         private readonly DMExpression _expr;
 
         public Arglist(Location location, DMExpression expr) : base(location) {
@@ -43,7 +43,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new x (...)
-    class New : DMExpression {
+    sealed class New : DMExpression {
         private readonly DMExpression _expr;
         private readonly ArgumentList _arguments;
 
@@ -61,7 +61,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    class NewPath : DMExpression {
+    sealed class NewPath : DMExpression {
         private readonly DreamPath _targetPath;
         private readonly ArgumentList _arguments;
 
@@ -82,10 +82,12 @@ namespace DMCompiler.DM.Expressions {
             proc.PushType(typeId);
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
+
+        public override DreamPath? Path => _targetPath;
     }
 
     // locate()
-    class LocateInferred : DMExpression {
+    sealed class LocateInferred : DMExpression {
         private readonly DreamPath _path;
         private readonly DMExpression? _container;
 
@@ -119,7 +121,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // locate(x)
-    class Locate : DMExpression {
+    sealed class Locate : DMExpression {
         private readonly DMExpression _path;
         private readonly DMExpression? _container;
 
@@ -147,7 +149,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // locate(x, y, z)
-    class LocateCoordinates : DMExpression {
+    sealed class LocateCoordinates : DMExpression {
         private readonly DMExpression _x, _y, _z;
 
         public LocateCoordinates(Location location, DMExpression x, DMExpression y, DMExpression z) : base(location) {
@@ -166,7 +168,7 @@ namespace DMCompiler.DM.Expressions {
 
     // gradient(Gradient, index)
     // gradient(Item1, Item2, ..., index)
-    class Gradient : DMExpression {
+    sealed class Gradient : DMExpression {
         private readonly ArgumentList _arguments;
 
         public Gradient(Location location, ArgumentList arguments) : base(location) {
@@ -183,7 +185,7 @@ namespace DMCompiler.DM.Expressions {
     // pick(prob(50);x, prob(200);y)
     // pick(50;x, 200;y)
     // pick(x, y)
-    class Pick : DMExpression {
+    sealed class Pick : DMExpression {
         public struct PickValue {
             public readonly DMExpression? Weight;
             public readonly DMExpression Value;
@@ -240,7 +242,7 @@ namespace DMCompiler.DM.Expressions {
 
     // addtext(...)
     // https://www.byond.com/docs/ref/#/proc/addtext
-    class AddText : DMExpression {
+    sealed class AddText : DMExpression {
         private readonly DMExpression[] _parameters;
 
         public AddText(Location location, DMExpression[] paras) : base(location) {
@@ -260,7 +262,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // prob(P)
-    class Prob : DMExpression {
+    sealed class Prob : DMExpression {
         public readonly DMExpression P;
 
         public Prob(Location location, DMExpression p) : base(location) {
@@ -274,7 +276,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // issaved(x)
-    class IsSaved : DMExpression {
+    sealed class IsSaved : DMExpression {
         private readonly DMExpression _expr;
 
         public IsSaved(Location location, DMExpression expr) : base(location) {
@@ -283,17 +285,14 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             switch (_expr) {
+                case Dereference deref:
+                    deref.EmitPushIsSaved(dmObject, proc);
+                    return;
                 case Field field:
                     field.EmitPushIsSaved(proc);
                     return;
-                case Dereference dereference:
-                    dereference.EmitPushIsSaved(dmObject, proc);
-                    return;
                 case Local:
                     proc.PushFloat(0);
-                    return;
-                case ListIndex idx:
-                    idx.EmitPushIsSaved(dmObject, proc);
                     return;
                 default:
                     throw new CompileErrorException(Location, $"can't get saved value of {_expr}");
@@ -302,7 +301,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // istype(x, y)
-    class IsType : DMExpression {
+    sealed class IsType : DMExpression {
         private readonly DMExpression _expr;
         private readonly DMExpression _path;
 
@@ -319,7 +318,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // istype(x)
-    class IsTypeInferred : DMExpression {
+    sealed class IsTypeInferred : DMExpression {
         private readonly DMExpression _expr;
         private readonly DreamPath _path;
 
@@ -341,8 +340,70 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // isnull(x)
+    internal sealed class IsNull : DMExpression {
+        private readonly DMExpression _value;
+
+        public IsNull(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.IsNull();
+        }
+    }
+
+    // length(x)
+    internal sealed class Length : DMExpression {
+        private readonly DMExpression _value;
+
+        public Length(Location location, DMExpression value) : base(location) {
+            _value = value;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _value.EmitPushValue(dmObject, proc);
+            proc.Length();
+        }
+    }
+
+    // get_step(ref, dir)
+    internal sealed class GetStep : DMExpression {
+        private readonly DMExpression _ref;
+        private readonly DMExpression _dir;
+
+        public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
+            _ref = refValue;
+            _dir = dir;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _ref.EmitPushValue(dmObject, proc);
+            _dir.EmitPushValue(dmObject, proc);
+            proc.GetStep();
+        }
+    }
+
+    // get_dir(loc1, loc2)
+    internal sealed class GetDir : DMExpression {
+        private readonly DMExpression _loc1;
+        private readonly DMExpression _loc2;
+
+        public GetDir(Location location, DMExpression loc1, DMExpression loc2) : base(location) {
+            _loc1 = loc1;
+            _loc2 = loc2;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            _loc1.EmitPushValue(dmObject, proc);
+            _loc2.EmitPushValue(dmObject, proc);
+            proc.GetDir();
+        }
+    }
+
     // list(...)
-    class List : DMExpression {
+    sealed class List : DMExpression {
         private readonly (DMExpression? Key, DMExpression Value)[] _values;
         private readonly bool _isAssociative;
 
@@ -379,8 +440,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool TryAsJsonRepresentation(out object? json) {
-            List<object?> list = new();
-            Dictionary<string, object?> associatedValues = new();
+            List<object?> values = new();
 
             foreach (var value in _values) {
                 if (!value.Value.TryAsJsonRepresentation(out var jsonValue)) {
@@ -389,28 +449,57 @@ namespace DMCompiler.DM.Expressions {
                 }
 
                 if (value.Key != null) {
-                    if (value.Key is not Expressions.String keyString) { //Only string keys are supported
+                    // Null key is not supported here
+                    if (!value.Key.TryAsJsonRepresentation(out var jsonKey) || jsonKey == null) {
                         json = null;
                         return false;
                     }
 
-                    associatedValues.Add(keyString.Value, jsonValue);
+                    values.Add(new Dictionary<object, object?> {
+                        { "key", jsonKey },
+                        { "value", jsonValue }
+                    });
                 } else {
-                    list.Add(jsonValue);
+                    values.Add(jsonValue);
                 }
             }
 
-            Dictionary<string, object> jsonRepresentation = new();
-            jsonRepresentation.Add("type", JsonVariableType.List);
-            if (list.Count > 0) jsonRepresentation.Add("values", list);
-            if (associatedValues.Count > 0) jsonRepresentation.Add("associatedValues", associatedValues);
-            json = jsonRepresentation;
+            json = new Dictionary<string, object> {
+                { "type", JsonVariableType.List },
+                { "values", values }
+            };
+
             return true;
         }
     }
 
+    // Value of var/list/L[1][2][3]
+    internal sealed class DimensionalList : DMExpression {
+        private readonly DMExpression[] _sizes;
+
+        public DimensionalList(Location location, DMExpression[] sizes) : base(location) {
+            _sizes = sizes;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            // This basically emits new /list(1, 2, 3)
+
+            if (!DMObjectTree.TryGetTypeId(DreamPath.List, out var listTypeId)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, "Could not get type ID of /list");
+                return;
+            }
+
+            foreach (var size in _sizes) {
+                size.EmitPushValue(dmObject, proc);
+            }
+
+            proc.PushType(listTypeId);
+            proc.CreateObject(DMCallArgumentsType.FromStack, _sizes.Length);
+        }
+    }
+
     // newlist(...)
-    class NewList : DMExpression {
+    sealed class NewList : DMExpression {
         private readonly DMExpression[] _parameters;
 
         public NewList(Location location, DMExpression[] parameters) : base(location) {
@@ -434,7 +523,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // input(...)
-    class Input : DMExpression {
+    sealed class Input : DMExpression {
         private readonly DMExpression[] _arguments;
         private readonly DMValueType _types;
         private readonly DMExpression? _list;
@@ -472,7 +561,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // initial(x)
-    class Initial : DMExpression {
+    sealed class Initial : DMExpression {
         private readonly DMExpression _expr;
 
         public Initial(Location location, DMExpression expr) : base(location) {
@@ -490,7 +579,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // nameof(x)
-    class Nameof : DMExpression {
+    sealed class Nameof : DMExpression {
         private readonly DMExpression _expr;
 
         public Nameof(Location location, DMExpression expr) : base(location) {
@@ -503,7 +592,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // call(...)(...)
-    class CallStatement : DMExpression {
+    sealed class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
         private readonly DMExpression? _b; // ProcName, FuncName
         private readonly ArgumentList _procArgs;
@@ -529,7 +618,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // __TYPE__
-    class ProcOwnerType : DMExpression {
+    sealed class ProcOwnerType : DMExpression {
         public ProcOwnerType(Location location)
             : base(location)
         {}
@@ -545,7 +634,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // __PROC__
-    class ProcType : DMExpression {
+    sealed class ProcType : DMExpression {
         public ProcType(Location location)
             : base(location)
         {}

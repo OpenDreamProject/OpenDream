@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using OpenDreamShared.Dream.Procs;
+using DMCompiler.Bytecode;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -56,7 +57,6 @@ public struct ProcDecoder {
             case DMReference.Type.GlobalProc: return DMReference.CreateGlobalProc(ReadInt());
             case DMReference.Type.Field: return DMReference.CreateField(ReadString());
             case DMReference.Type.SrcField: return DMReference.CreateSrcField(ReadString());
-            case DMReference.Type.Proc: return DMReference.CreateProc(ReadString());
             case DMReference.Type.SrcProc: return DMReference.CreateSrcProc(ReadString());
             case DMReference.Type.Src: return DMReference.Src;
             case DMReference.Type.Self: return DMReference.Self;
@@ -76,8 +76,11 @@ public struct ProcDecoder {
 
             case DreamProcOpcode.PushString:
             case DreamProcOpcode.PushResource:
-            case DreamProcOpcode.DebugSource:
+            case DreamProcOpcode.DereferenceField:
                 return (opcode, ReadString());
+
+            case DreamProcOpcode.DereferenceCall:
+                return (opcode, ReadString(), (DMCallArgumentsType)ReadByte(), ReadInt());
 
             case DreamProcOpcode.Prompt:
                 return (opcode, ReadValueType());
@@ -100,6 +103,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.BitShiftRightReference:
             case DreamProcOpcode.OutputReference:
             case DreamProcOpcode.PushReferenceValue:
+            case DreamProcOpcode.PopReference:
                 return (opcode, ReadReference());
 
             case DreamProcOpcode.Input:
@@ -113,6 +117,7 @@ public struct ProcDecoder {
             case DreamProcOpcode.Call:
                 return (opcode, ReadReference(), (DMCallArgumentsType)ReadByte(), ReadInt());
 
+            case DreamProcOpcode.EnumerateNoAssign:
             case DreamProcOpcode.CreateList:
             case DreamProcOpcode.CreateAssociativeList:
             case DreamProcOpcode.CreateFilteredListEnumerator:
@@ -130,13 +135,16 @@ public struct ProcDecoder {
             case DreamProcOpcode.PushProc:
             case DreamProcOpcode.PushProcStub:
             case DreamProcOpcode.PushVerbStub:
-            case DreamProcOpcode.DebugLine:
             case DreamProcOpcode.MassConcatenation:
+            case DreamProcOpcode.JumpIfNull:
+            case DreamProcOpcode.JumpIfNullNoPop:
             case DreamProcOpcode.TryNoValue:
                 return (opcode, ReadInt());
 
-            case DreamProcOpcode.Enumerate:
             case DreamProcOpcode.JumpIfNullDereference:
+            case DreamProcOpcode.JumpIfTrueReference:
+            case DreamProcOpcode.JumpIfFalseReference:
+            case DreamProcOpcode.Enumerate:
                 return (opcode, ReadReference(), ReadInt());
 
             case DreamProcOpcode.Try:

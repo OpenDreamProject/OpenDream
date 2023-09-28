@@ -1,8 +1,8 @@
 light_mode unshaded;
-blend_mode normal;
 
 uniform lowp mat4 colorMatrix;
 uniform lowp vec4 offsetVector; // The final row of the 4x5 matrix it kinda is
+uniform bool isPlaneMaster;
 
 void fragment() {
     highp vec4 oldColor = zToSrgb(zTexture(UV)); // TODO: It'd be easier and more precise if we avoided this color-space conversion.
@@ -26,6 +26,5 @@ void fragment() {
                 oldColor[2] * colorMatrix[3][2] + 
                 oldColor[3] * colorMatrix[3][3];
     COLOR = zFromSrgb(COLOR + offsetVector);
+    COLOR.rgb *= isPlaneMaster ? 1 : COLOR.a;
 }
-
-    

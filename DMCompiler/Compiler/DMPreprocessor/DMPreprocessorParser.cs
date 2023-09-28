@@ -201,7 +201,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             return a;
         }
         public static float? ExpressionUnary() {
-            var loc = Current()?.Location;
             if (Check(TokenType.DM_Exclamation)) {
                 float? expression = ExpressionUnary();
                 if (expression == null) {
@@ -280,7 +279,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     Error("Strings are not valid in preprocessor expressions. Did you mean to use a define() here?");
                     return DegenerateValue;
                 }
-                    
+
                 default: {
                     Error($"Token not accepted in preprocessor expression: {constantToken?.PrintableText}");
                     return DegenerateValue;

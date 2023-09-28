@@ -7,7 +7,7 @@ using OpenDreamShared.Compiler;
 namespace DMCompiler.Compiler.DM {
     public sealed class DMLexer : TokenLexer {
         // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
-        public static readonly List<string> ValidEscapeSequences = new(41) {
+        public static readonly List<string> ValidEscapeSequences = new(38) {
             "icon",
             "Roman", "roman",
             "The", "the",
@@ -26,7 +26,6 @@ namespace DMCompiler.Compiler.DM {
             "red", "blue", "green", "black", "yellow", "navy", "teal", "cyan",
             "bold", "b",
             "italic",
-            "u", "U", "x",  //TODO: ASCII/Unicode values *properly*
             "..."
         };
 
@@ -223,6 +222,9 @@ namespace DMCompiler.Compiler.DM {
                                 case ">>": token = CreateToken(TokenType.DM_RightShift, c); break;
                                 case ">=": token = CreateToken(TokenType.DM_GreaterThanEquals, c); break;
                                 case ">>=": token = CreateToken(TokenType.DM_RightShiftEquals, c); break;
+                                case ":=": token = CreateToken(TokenType.DM_AssignInto, c); break;
+                                case "[]": token = CreateToken(TokenType.DM_DoubleSquareBracket, c); break;
+                                case "[]=": token = CreateToken(TokenType.DM_DoubleSquareBracketEquals, c); break;
                                 default: token = CreateToken(TokenType.Error, c, $"Invalid punctuator token '{c}'"); break;
                             }
 
@@ -282,8 +284,8 @@ namespace DMCompiler.Compiler.DM {
                         case TokenType.DM_Preproc_Identifier: {
                             StringBuilder identifierTextBuilder = new StringBuilder();
 
-                            //An identifier can end up making being made out of multiple tokens
-                            //This is caused by preprocessor macros and escaped identifiers
+                            //An identifier can end up being made out of multiple tokens
+                            //This is caused by escaped identifiers
                             do {
                                 identifierTextBuilder.Append(GetCurrent().Text);
                             } while (ValidIdentifierComponents.Contains(Advance().Type) && !AtEndOfSource);

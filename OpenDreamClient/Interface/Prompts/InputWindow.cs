@@ -1,30 +1,30 @@
-﻿using OpenDreamShared.Dream.Procs;
+﻿using OpenDreamShared.Dream;
 using Robust.Client.UserInterface;
 
-namespace OpenDreamClient.Interface.Prompts {
-    [Virtual]
-    class InputWindow : PromptWindow {
-        protected InputWindow(int promptId, String title, String message, String defaultValue, bool canCancel) : base(
-            promptId, title, message) {
-            CreateButton("Ok", true);
-            if (canCancel) CreateButton("Cancel", false);
-        }
+namespace OpenDreamClient.Interface.Prompts;
 
-        protected void SetPromptControl(Control promptControl, bool grabKeyboard = true) {
-            InputControl.RemoveAllChildren();
-            InputControl.AddChild(promptControl);
-            if (grabKeyboard) promptControl.GrabKeyboardFocus();
-        }
+[Virtual]
+internal class InputWindow : PromptWindow {
+    protected InputWindow(string title, string message, bool canCancel,
+        Action<DMValueType, object?>? onClose) : base(title, message, onClose) {
+        CreateButton("Ok", true);
+        if (canCancel) CreateButton("Cancel", false);
+    }
 
-        protected override void ButtonClicked(string button) {
-            if (button == "Ok") OkButtonClicked();
-            else FinishPrompt(DMValueType.Null, null);
+    protected void SetPromptControl(Control promptControl, bool grabKeyboard = true) {
+        InputControl.RemoveAllChildren();
+        InputControl.AddChild(promptControl);
+        if (grabKeyboard) promptControl.GrabKeyboardFocus();
+    }
 
-            base.ButtonClicked(button);
-        }
+    protected override void ButtonClicked(string button) {
+        if (button == "Ok") OkButtonClicked();
+        else FinishPrompt(DMValueType.Null, null);
 
-        protected virtual void OkButtonClicked() {
-            throw new NotImplementedException();
-        }
+        base.ButtonClicked(button);
+    }
+
+    protected virtual void OkButtonClicked() {
+        throw new NotImplementedException();
     }
 }

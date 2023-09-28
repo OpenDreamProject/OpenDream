@@ -6,6 +6,9 @@
 	ASSERT(replacetext(str, "A", "G") == "GBCDEF")
 	ASSERT(replacetext(str, "A", "G", 1) == "GBCDEF")
 	ASSERT(replacetext(str, "A", "G", 2) == "ABCDEF")
+	ASSERT(replacetext(str, "A", "G", -5) == "ABCDEF")
+	ASSERT(replacetext(str, "A", "G", -6) == "GBCDEF")
+	ASSERT(replacetext(str, "A", "G", -100) == "GBCDEF")
 
 	// Replacing the last char. End=6 ignores the last char.
 	ASSERT(replacetext(str, "F", "G") == "ABCDEG")
@@ -27,6 +30,12 @@
 	// An End reaching past the end of the string still won't place the Replacement at the end
 	ASSERT(replacetext(str, null, "G", 1, 6) == "AGBGCGDGEGF")
 	ASSERT(replacetext(str, null, "G", 1, 7) == "AGBGCGDGEGF")
+
+	// End wraps around at <= 0
+	ASSERT(replacetext(str, "E", "G", 1, 0) == "ABCDGF")
+	ASSERT(replacetext(str, "E", "G", 1, -1) == "ABCDGF")
+	ASSERT(replacetext(str, "E", "G", 1, -2) == "ABCDEF")
+	ASSERT(replacetext(str, "E", "G", 1, -200) == "ABCDEF")
 
 	// /regex can be used as a Needle
 	ASSERT(replacetext(str, new /regex("."), "G") == "GBCDEF");

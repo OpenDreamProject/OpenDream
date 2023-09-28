@@ -11,10 +11,18 @@ namespace OpenDreamClient.Resources {
     public interface IDreamResourceManager {
         void Initialize();
         void Shutdown();
-        ResourcePath CreateCacheFile(string filename, string data);
-        ResourcePath CreateCacheFile(string filename, byte[] data);
+        ResPath CreateCacheFile(string filename, string data);
+        ResPath CreateCacheFile(string filename, byte[] data);
+
+        /// <param name="resourceId">Integer ID of the resource, as assigned by the server.</param>
+        /// <param name="onLoadCallback">
+        /// Callback to run when this resource is done loading.
+        /// Note that if the resource is immediately available,
+        /// this callback is immediately invoked before this function returns.
+        /// </param>
+        /// <typeparam name="T">The type of resource to load as.</typeparam>
         void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T : DreamResource;
-        ResourcePath GetCacheFilePath(string filename);
+        ResPath GetCacheFilePath(string filename);
     }
 
     internal sealed class DreamResourceManager : IDreamResourceManager {
@@ -26,7 +34,7 @@ namespace OpenDreamClient.Resources {
         [Dependency] private readonly IDynamicTypeFactory _typeFactory = default!;
         [Dependency] private readonly IConfigurationManager _cfg = default!;
 
-        private ResourcePath _cacheDirectory = default!;
+        private ResPath _cacheDirectory = default!;
 
         private ISawmill _sawmill = default!;
 
@@ -46,12 +54,12 @@ namespace OpenDreamClient.Resources {
         private void InitCacheDirectory() {
             var random = new Random();
             while (true) {
-                _cacheDirectory = new ResourcePath($"/OpenDream/Cache/{random.Next()}");
+                _cacheDirectory = new ResPath($"/OpenDream/Cache/{random.Next()}");
                 if (!_resourceManager.UserData.Exists(_cacheDirectory))
                     break;
             }
 
-            Logger.DebugS("opendream.res", $"Cache directory is {_cacheDirectory}");
+            _sawmill.Debug($"Cache directory is {_cacheDirectory}");
             _resourceManager.UserData.CreateDir(_cacheDirectory);
         }
 
@@ -62,15 +70,17 @@ namespace OpenDreamClient.Resources {
         private void RxResource(MsgResource message) {
             if (_loadingResources.ContainsKey(message.ResourceId)) {
                 LoadingResourceEntry entry = _loadingResources[message.ResourceId];
-                DreamResource resource = (DreamResource) _typeFactory.CreateInstance(entry.ResourceType,
-                    new object[] {message.ResourceId, message.ResourceData});
+                DreamResource resource = LoadResourceFromData(
+                    entry.ResourceType,
+                    message.ResourceId,
+                    message.ResourceData);
 
                 _resourceCache[message.ResourceId] = resource;
                 foreach (Action<DreamResource> callback in entry.LoadCallbacks) {
                     try {
                         callback.Invoke(resource);
                     } catch (Exception e) {
-                        Logger.Fatal($"Exception while calling resource load callback: {e.Message}");
+                        _sawmill.Fatal($"Exception while calling resource load callback: {e.Message}");
                     }
                 }
 
@@ -83,49 +93,74 @@ namespace OpenDreamClient.Resources {
         public void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T:DreamResource {
             DreamResource? resource = GetCachedResource(resourceId);
 
-            if (resource == null) {
-                if (!_loadingResources.ContainsKey(resourceId)) {
-                    _loadingResources[resourceId] = new LoadingResourceEntry(typeof(T));
+            if (resource != null) {
+                onLoadCallback.Invoke((T)resource);
+                return;
+            }
 
-                    var msg = new MsgRequestResource() { ResourceId = resourceId };
-                    _netManager.ClientSendMessage(msg);
-
-                    var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
-                    Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
-                        if (_loadingResources.ContainsKey(resourceId)) {
-                            _sawmill.Warning(
-                                $"Resource id {resourceId} was requested, but is still not received {timeout} seconds later.");
-                        }
-                    });
+            // Check if file exists in local Robust resources.
+            if (_resourceManager.TryContentFileRead($"/Rsc/{resourceId}", out var stream)) {
+                byte[] data;
+                using (stream) {
+                    data = stream.CopyToArray();
                 }
 
-                _loadingResources[resourceId].LoadCallbacks.Add(loadedResource => {
-                    onLoadCallback.Invoke((T)loadedResource);
-                });
-            } else {
-                onLoadCallback.Invoke((T)resource);
+                _sawmill.Verbose($"File existed locally, skipping server request: {resourceId}");
+
+                resource = LoadResourceFromData(typeof(T), resourceId, data);
+
+                onLoadCallback((T)resource);
+                return;
             }
+
+            // File does not exist locally. Send a request to the server.
+            if (!_loadingResources.ContainsKey(resourceId)) {
+                _loadingResources[resourceId] = new LoadingResourceEntry(typeof(T));
+
+                var msg = new MsgRequestResource() { ResourceId = resourceId };
+                _netManager.ClientSendMessage(msg);
+
+                var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
+                Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
+                    if (_loadingResources.ContainsKey(resourceId)) {
+                        _sawmill.Warning(
+                            $"Resource id {resourceId} was requested, but is still not received {timeout} seconds later.");
+                    }
+                });
+            }
+
+            _loadingResources[resourceId].LoadCallbacks.Add(loadedResource => {
+                onLoadCallback.Invoke((T)loadedResource);
+            });
         }
 
-        public ResourcePath GetCacheFilePath(string filename)
+        private DreamResource LoadResourceFromData(Type resourceType, int resourceId, byte[] data) {
+            var resource = (DreamResource) _typeFactory.CreateInstance(resourceType,
+                new object[] {resourceId, data});
+
+            _resourceCache[resourceId] = resource;
+            return resource;
+        }
+
+        public ResPath GetCacheFilePath(string filename)
         {
-            return _cacheDirectory / new ResourcePath(filename).ToRelativePath();
+            return _cacheDirectory / new ResPath(filename).ToRelativePath();
         }
 
-        public ResourcePath CreateCacheFile(string filename, string data)
+        public ResPath CreateCacheFile(string filename, string data)
         {
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
-            var path = _cacheDirectory / new ResourcePath(filename).Filename;
+            var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllText(path, data);
-            return new ResourcePath(filename);
+            return new ResPath(filename);
         }
 
-        public ResourcePath CreateCacheFile(string filename, byte[] data)
+        public ResPath CreateCacheFile(string filename, byte[] data)
         {
             // in BYOND when filename is a path everything except the filename at the end gets ignored - meaning all resource files end up directly in the cache folder
-            var path = _cacheDirectory / new ResourcePath(filename).Filename;
+            var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllBytes(path, data);
-            return new ResourcePath(filename);
+            return new ResPath(filename);
         }
 
         private DreamResource? GetCachedResource(int resourceId) {

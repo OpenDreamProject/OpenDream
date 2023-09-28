@@ -2,7 +2,7 @@ using DMCompiler.Compiler.DM;
 using System;
 
 namespace DMCompiler.DM.Visitors {
-    public class DMASTSimplifier : DMASTVisitor {
+    public sealed class DMASTSimplifier : DMASTVisitor {
         public void SimplifyAST(DMASTNode ast) {
             ast.Visit(this);
         }
@@ -155,6 +155,12 @@ namespace DMCompiler.DM.Visitors {
             SimplifyExpression(ref statementOutput.B);
         }
 
+        public void VisitProcStatementFtp(DMASTProcStatementFtp statementFtp) {
+            SimplifyExpression(ref statementFtp.Receiver);
+            SimplifyExpression(ref statementFtp.File);
+            SimplifyExpression(ref statementFtp.Name);
+        }
+
         public void VisitProcStatementInput(DMASTProcStatementInput statementInput) {
             SimplifyExpression(ref statementInput.A);
             SimplifyExpression(ref statementInput.B);
@@ -176,6 +182,11 @@ namespace DMCompiler.DM.Visitors {
 
         private void SimplifyExpression(ref DMASTExpression expression) {
             if (expression == null || expression is DMASTExpressionConstant || expression is DMASTCallable) return;
+
+            if (expression is DMASTExpressionWrapped wrapped) {
+                SimplifyExpression(ref wrapped.Expression);
+                return;
+            }
 
             #region Comparators
             DMASTEqual equal = expression as DMASTEqual;
@@ -534,15 +545,32 @@ namespace DMCompiler.DM.Visitors {
                 return;
             }
 
-            DMASTNewIdentifier newCallable = expression as DMASTNewIdentifier;
-            if (newCallable != null) {
-                if (newCallable.Parameters != null) {
-                    foreach (DMASTCallParameter parameter in newCallable.Parameters) {
+            DMASTNewExpr newExpr = expression as DMASTNewExpr;
+            if (newExpr != null) {
+                SimplifyExpression(ref newExpr.Expression);
+
+                if (newExpr.Parameters != null) {
+                    foreach (DMASTCallParameter parameter in newExpr.Parameters) {
                         SimplifyExpression(ref parameter.Value);
                     }
                 }
+            }
 
-                return;
+            DMASTDereference deref = expression as DMASTDereference;
+            if (deref != null) {
+                SimplifyExpression(ref deref.Expression);
+
+                foreach (ref var operation in deref.Operations.AsSpan()) {
+                    if (operation.Index != null) {
+                        SimplifyExpression(ref deref.Expression);
+                    }
+
+                    if (operation.Parameters != null) {
+                        foreach (DMASTCallParameter parameter in operation.Parameters) {
+                            SimplifyExpression(ref parameter.Value);
+                        }
+                    }
+                }
             }
 
             DMASTProcCall procCall = expression as DMASTProcCall;
@@ -558,14 +586,6 @@ namespace DMCompiler.DM.Visitors {
             if (assign != null) {
                 SimplifyExpression(ref assign.Expression);
                 SimplifyExpression(ref assign.Value);
-
-                return;
-            }
-
-            DMASTListIndex listIndex = expression as DMASTListIndex;
-            if (listIndex != null) {
-                SimplifyExpression(ref listIndex.Expression);
-                SimplifyExpression(ref listIndex.Index);
 
                 return;
             }

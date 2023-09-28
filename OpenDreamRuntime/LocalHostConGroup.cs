@@ -1,6 +1,10 @@
 using Robust.Server.Console;
 using Robust.Server.Player;
 using System.Net;
+using Robust.Shared.Network;
+using Robust.Shared.Players;
+using Robust.Shared.Toolshed;
+using Robust.Shared.Toolshed.Errors;
 
 namespace OpenDreamRuntime {
     #if DEBUG
@@ -31,15 +35,25 @@ namespace OpenDreamRuntime {
         public bool CanAdminReloadPrototypes(IPlayerSession session) {
             return IsLocal(session);
         }
-
+        
         private static bool IsLocal(IPlayerSession player) {
-            var ep = player.ConnectedClient.RemoteEndPoint;
+            return IsLocal(player.ConnectedClient);
+        }
+
+        private static bool IsLocal(INetChannel client) {
+            var ep = client.RemoteEndPoint;
             var addr = ep.Address;
             if (addr.IsIPv4MappedToIPv6) {
                 addr = addr.MapToIPv4();
             }
 
             return Equals(addr, IPAddress.Loopback) || Equals(addr, IPAddress.IPv6Loopback);
+        }
+
+        public bool CheckInvokable(CommandSpec command, ICommonSession? user, out IConError? error) {
+            error = null;
+            if (user is null) return true; // Server console
+            return IsLocal(user.ConnectedClient);
         }
 
         void IPostInjectInit.PostInject() {

@@ -342,10 +342,13 @@ namespace OpenDreamRuntime.Objects {
                     type.ParentEntry.ChildCount += type.ChildCount + 1;
             }
 
-            //Fifth pass: Set atom's text
+            //Fifth pass: Set atom's name and text
             foreach (TreeEntry type in GetAllDescendants(Atom)) {
-                if (type.ObjectDefinition.Variables["text"].Equals(DreamValue.Null) && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name)) {
-                    type.ObjectDefinition.SetVariableDefinition("text", new DreamValue(String.IsNullOrEmpty(name) ? String.Empty : name[..1]));
+                if (type.ObjectDefinition.Variables["name"].IsNull)
+                    type.ObjectDefinition.Variables["name"] = new(type.Path.LastElement!.Replace("_", " "));
+
+                if (type.ObjectDefinition.Variables["text"].IsNull && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name)) {
+                    type.ObjectDefinition.Variables["text"] = new DreamValue(string.IsNullOrEmpty(name) ? string.Empty : name[..1]);
                 }
             }
         }
@@ -362,6 +365,20 @@ namespace OpenDreamRuntime.Objects {
             if (jsonObject.GlobalVariables != null) {
                 foreach (KeyValuePair<string, int> jsonGlobalVariable in jsonObject.GlobalVariables) {
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
+                }
+            }
+
+            if (jsonObject.ConstVariables != null) {
+                objectDefinition.ConstVariables ??= new();
+                foreach (string jsonConstVariable in jsonObject.ConstVariables) {
+                    objectDefinition.ConstVariables.Add(jsonConstVariable);
+                }
+            }
+
+            if(jsonObject.TmpVariables != null) {
+                objectDefinition.TmpVariables ??= new();
+                foreach (string jsonTmpVariable in jsonObject.TmpVariables) {
+                    objectDefinition.TmpVariables.Add(jsonTmpVariable);
                 }
             }
         }

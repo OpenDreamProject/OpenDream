@@ -253,6 +253,15 @@ internal sealed class DreamViewOverlay : Overlay {
             renderTargetPlaceholder.Layer = current.Layer;
             renderTargetPlaceholder.RenderSource = current.RenderTarget;
             renderTargetPlaceholder.MouseOpacity = current.MouseOpacity;
+            if((current.AppearanceFlags & AppearanceFlags.PlaneMaster) != 0){ //Plane masters with render targets get special handling
+                renderTargetPlaceholder.TransformToApply = current.TransformToApply;
+                renderTargetPlaceholder.ColorToApply = current.ColorToApply;
+                renderTargetPlaceholder.ColorMatrixToApply = current.ColorMatrixToApply;
+                renderTargetPlaceholder.AlphaToApply = current.AlphaToApply;
+                renderTargetPlaceholder.BlendMode = current.BlendMode;
+            }
+            renderTargetPlaceholder.AppearanceFlags = current.AppearanceFlags;
+            current.AppearanceFlags = current.AppearanceFlags & ~AppearanceFlags.PlaneMaster; //only the placeholder should be marked as master
             result.Add(renderTargetPlaceholder);
         }
 

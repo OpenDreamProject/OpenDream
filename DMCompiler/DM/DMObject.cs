@@ -21,6 +21,8 @@ namespace DMCompiler.DM {
         public Dictionary<string, DMVariable> VariableOverrides = new();
         public Dictionary<string, int> GlobalVariables = new();
         /// <summary>A list of var and verb initializations implicitly done before the user's New() is called.</summary>
+        public HashSet<string> ConstVariables = new();
+        public HashSet<string> TmpVariables = new();
         public List<DMExpression> InitializationProcExpressions = new();
         public int? InitializationProc;
 
@@ -167,6 +169,14 @@ namespace DMCompiler.DM {
 
             if (GlobalVariables.Count > 0) {
                 typeJson.GlobalVariables = GlobalVariables;
+            }
+
+            if (ConstVariables.Count > 0) {
+                typeJson.ConstVariables = ConstVariables;
+            }
+
+            if (TmpVariables.Count > 0) {
+                typeJson.TmpVariables = TmpVariables;
             }
 
             if (InitializationProc != null) {

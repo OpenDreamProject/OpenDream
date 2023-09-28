@@ -138,10 +138,14 @@ public sealed partial class ControlDescriptorInfo : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorMap : ControlDescriptor {
+
     [DataField("on-show")]
     public string? OnShowCommand;
     [DataField("on-hide")]
     public string? OnHideCommand;
+    [DataField("zoom-mode")]
+    public string ZoomMode = "normal";
+
 }
 
 public sealed partial class ControlDescriptorBrowser : ControlDescriptor {

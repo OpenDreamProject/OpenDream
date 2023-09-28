@@ -2376,9 +2376,10 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(list);
         }
 
-        private static void OutputToStatPanel(DreamConnection connection, DreamValue name, DreamValue value) {
-            if (name != DreamValue.Null) {
-                connection.AddStatPanelLine(name.Stringify(), value.Stringify(), null);
+        private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
+            if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
+                foreach (var item in list.GetValues())
+                    OutputToStatPanel(dreamManager, connection, name, item);
             } else {
                 string nameStr = name.Stringify();
                 string? atomRef = null;

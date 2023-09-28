@@ -1617,8 +1617,8 @@ namespace OpenDreamRuntime.Procs {
             state.EndTryBlock();
             return ProcStatus.Continue;
         }
-        
-        public static ProcStatus? Sin(DMProcState state) {
+
+        public static ProcStatus Sin(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1627,10 +1627,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for sin");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Cos(DMProcState state) {
+        public static ProcStatus Cos(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1639,10 +1639,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for cos");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Tan(DMProcState state) {
+        public static ProcStatus Tan(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1651,7 +1651,7 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for tan");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
 
@@ -1664,7 +1664,7 @@ namespace OpenDreamRuntime.Procs {
          * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
          * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
          */
-        public static ProcStatus? Arcsin(DMProcState state) {
+        public static ProcStatus Arcsin(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1673,10 +1673,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for arcsin");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Arccos(DMProcState state) {
+        public static ProcStatus Arccos(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1685,10 +1685,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for arccos");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Arctan(DMProcState state) {
+        public static ProcStatus Arctan(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1697,10 +1697,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for arctan");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Arctan2(DMProcState state) {
+        public static ProcStatus Arctan2(DMProcState state) {
             DreamValue y = state.Pop();
             DreamValue x = state.Pop();
 
@@ -1718,10 +1718,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for arctan2");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Sqrt(DMProcState state) {
+        public static ProcStatus Sqrt(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1730,10 +1730,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for sqrt");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Log(DMProcState state) {
+        public static ProcStatus Log(DMProcState state) {
             DreamValue baseValue = state.Pop();
             DreamValue value = state.Pop();
 
@@ -1751,10 +1751,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for log");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? LogE(DMProcState state) {
+        public static ProcStatus LogE(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1763,10 +1763,10 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for loge");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
-        public static ProcStatus? Abs(DMProcState state) {
+        public static ProcStatus Abs(DMProcState state) {
             DreamValue value = state.Pop();
 
             switch (value.Type) {
@@ -1775,7 +1775,7 @@ namespace OpenDreamRuntime.Procs {
                 default: throw new Exception("Invalid argument type for abs");
             }
 
-            return null;
+            return ProcStatus.Continue;
         }
 
         public static ProcStatus SwitchCase(DMProcState state) {

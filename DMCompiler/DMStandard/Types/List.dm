@@ -1,6 +1,6 @@
 ﻿/list
 	var/len
-	var/type = /list
+	var/const/type = /list
 
 	proc/New(Size)
 

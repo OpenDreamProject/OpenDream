@@ -1,8 +1,8 @@
 ﻿/datum
-	var/type
-	var/parent_type
+	var/const/type
+	var/tmp/parent_type
 
-	var/list/vars
+	var/const/list/vars
 
 	var/tag
 

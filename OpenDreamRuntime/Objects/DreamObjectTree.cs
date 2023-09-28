@@ -367,6 +367,20 @@ namespace OpenDreamRuntime.Objects {
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
                 }
             }
+
+            if (jsonObject.ConstVariables != null) {
+                objectDefinition.ConstVariables ??= new();
+                foreach (string jsonConstVariable in jsonObject.ConstVariables) {
+                    objectDefinition.ConstVariables.Add(jsonConstVariable);
+                }
+            }
+
+            if(jsonObject.TmpVariables != null) {
+                objectDefinition.TmpVariables ??= new();
+                foreach (string jsonTmpVariable in jsonObject.TmpVariables) {
+                    objectDefinition.TmpVariables.Add(jsonTmpVariable);
+                }
+            }
         }
 
         public DreamProc LoadProcJson(int id, DreamTypeJson[] types, ProcDefinitionJson procDefinition) {

@@ -299,7 +299,30 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 GetLineOfTokens(); // consume what's on this line and leave
                 return;
             }
-            if(defineIdentifier.Text == "defined") {
+
+            // #define FILE_DIR is a little special
+            // Every define will add to a list of directories to check for resource files
+            if (defineIdentifier.Text == "FILE_DIR") {
+                Token dirToken = GetNextToken(true);
+                string? dirTokenValue = dirToken.Type switch {
+                    TokenType.DM_Preproc_ConstantString => (string?)dirToken.Value,
+                    TokenType.DM_Preproc_Punctuator_Period => ".",
+                    _ => null
+                };
+
+                if (dirTokenValue is null) {
+                    DMCompiler.Emit(WarningCode.BadDirective, dirToken.Location, $"\"{dirToken.Text}\" is not a valid directory");
+                    return;
+                }
+
+                DMPreprocessorLexer currentLexer = _lexerStack.Peek();
+                string dir = Path.Combine(currentLexer.IncludeDirectory, dirTokenValue);
+                DMCompiler.AddResourceDirectory(dir);
+
+                // In BYOND it goes on to set the FILE_DIR macro's value to the added directory
+                // I don't see any reason to do that
+                return;
+            } else if (defineIdentifier.Text == "defined") {
                 DMCompiler.Emit(WarningCode.SoftReservedKeyword, defineIdentifier.Location, "Reserved keyword 'defined' cannot be used as macro name");
             }
 
@@ -310,11 +333,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             if (macroToken.Type == TokenType.DM_Preproc_Punctuator_LeftParenthesis) { // We're a macro function!
                 parameters = new List<string>(1);
                 //Read in the parameters
-                Token parameterToken;
                 bool canConsumeComma = false;
                 bool foundVariadic = false;
                 while(true) {
-                    parameterToken = GetNextToken(true);
+                    var parameterToken = GetNextToken(true);
                     switch(parameterToken.Type) {
                         case TokenType.DM_Preproc_Identifier:
                             canConsumeComma = true;

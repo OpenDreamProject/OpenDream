@@ -307,7 +307,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 string? dirTokenValue = dirToken.Type switch {
                     TokenType.DM_Preproc_ConstantString => (string?)dirToken.Value,
                     TokenType.DM_Preproc_Punctuator_Period => ".",
-                    _ =>null
+                    _ => null
                 };
 
                 if (dirTokenValue is null) {

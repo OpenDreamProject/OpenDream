@@ -29,7 +29,7 @@ namespace OpenDreamRuntime.Procs.Native {
     /// Note that this proc container also includes global procs which are used to create some DM objects,
     /// like filter(), matrix(), etc.
     /// </remarks>
-    static class DreamProcNativeRoot {
+    internal static class DreamProcNativeRoot {
         [DreamProc("alert")]
         [DreamProcParameter("Usr", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("Message", Type = DreamValueTypeFlag.String)]

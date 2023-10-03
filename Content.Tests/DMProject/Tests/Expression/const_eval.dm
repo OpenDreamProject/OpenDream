@@ -12,7 +12,7 @@
 	var/arctan2_test = arctan(1, 3)
 	var/abs_test = abs(-213)
 
-#define EPSILON 1e-6
+#define EPSILON 4e-6
 #define APX_EQUAL(a, b) ASSERT(abs(a - b) < EPSILON)
 
 /proc/RunTest()

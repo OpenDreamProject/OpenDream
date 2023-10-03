@@ -1621,115 +1621,58 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Sin(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Sin(value.MustGetValueAsFloat() / 180 * MathF.PI))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Sin(0.0f))); break;
-                default: throw new Exception("Invalid argument type for sin");
-            }
-
+            state.Push(new DreamValue(MathF.Sin(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Cos(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Cos(value.MustGetValueAsFloat() / 180 * MathF.PI))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Cos(0.0f))); break;
-                default: throw new Exception("Invalid argument type for cos");
-            }
-
+            state.Push(new DreamValue(MathF.Cos(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Tan(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Tan(value.MustGetValueAsFloat() / 180 * MathF.PI))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Tan(0.0f))); break;
-                default: throw new Exception("Invalid argument type for tan");
-            }
-
+            state.Push(new DreamValue(MathF.Tan(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
             return ProcStatus.Continue;
         }
 
-
-        /* NOTE ABOUT THE TRIG FUNCTIONS:
-         * If you have a sharp eye, you may notice that our trigonometry functions make use of the *double*-precision versions of those functions,
-         * even though this is a single-precision language.
-         *
-         * DO NOT replace them with the single-precision ones in MathF!!!
-         *
-         * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
-         * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
-         */
         public static ProcStatus Arcsin(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Asin(value.MustGetValueAsFloat()) / Math.PI * 180))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Asin(0.0f))); break;
-                default: throw new Exception("Invalid argument type for arcsin");
-            }
-
+            state.Push(new DreamValue(MathF.Asin(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Arccos(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Acos(value.MustGetValueAsFloat()) / Math.PI * 180))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Acos(0.0f))); break;
-                default: throw new Exception("Invalid argument type for arccos");
-            }
-
+            state.Push(new DreamValue(MathF.Acos(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Arctan(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Atan(value.MustGetValueAsFloat()) / Math.PI * 180))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Atan(0.0f))); break;
-                default: throw new Exception("Invalid argument type for arctan");
-            }
-
+            state.Push(new DreamValue(MathF.Atan(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Arctan2(DMProcState state) {
             DreamValue y = state.Pop();
             DreamValue x = state.Pop();
+            var yValue = y.UnsafeGetValueAsFloat();
 
-            var yValue = 0.0f;
-
-            switch (y.Type) {
-                case DreamValue.DreamValueType.Float: yValue = y.MustGetValueAsFloat(); break;
-                case DreamValue.DreamValueType.DreamObject when y == DreamValue.Null: yValue = 0.0f; break;
-                default: throw new Exception("Invalid argument type for arctan2");
-            }
-
-            switch (x.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue((float)(Math.Atan2(yValue, x.MustGetValueAsFloat()) / Math.PI * 180))); break;
-                case DreamValue.DreamValueType.DreamObject when x == DreamValue.Null: state.Push(new DreamValue(MathF.Atan2(yValue, 0.0f))); break;
-                default: throw new Exception("Invalid argument type for arctan2");
-            }
-
+            state.Push(new DreamValue(MathF.Atan2(yValue, x.UnsafeGetValueAsFloat()) / MathF.PI * 180));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Sqrt(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Sqrt(value.MustGetValueAsFloat()))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Sqrt(0.0f))); break;
-                default: throw new Exception("Invalid argument type for sqrt");
-            }
-
+            state.Push(new DreamValue(MathF.Sqrt(value.UnsafeGetValueAsFloat())));
             return ProcStatus.Continue;
         }
 
@@ -1737,44 +1680,21 @@ namespace OpenDreamRuntime.Procs {
             DreamValue baseValue = state.Pop();
             DreamValue value = state.Pop();
 
-            float baseValueFloat = 0.0f;
-
-            switch (baseValue.Type) {
-                case DreamValue.DreamValueType.Float: baseValueFloat = baseValue.MustGetValueAsFloat(); break;
-                case DreamValue.DreamValueType.DreamObject when baseValue == DreamValue.Null: baseValueFloat = 0.0f; break;
-                default: throw new Exception("Invalid argument type for log");
-            }
-
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Log(value.MustGetValueAsFloat(), baseValueFloat))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Log(0.0f, baseValueFloat))); break;
-                default: throw new Exception("Invalid argument type for log");
-            }
-
+            state.Push(new DreamValue(MathF.Log(value.UnsafeGetValueAsFloat(), baseValue.UnsafeGetValueAsFloat())));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus LogE(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Log(value.MustGetValueAsFloat()))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(MathF.Log(0.0f))); break;
-                default: throw new Exception("Invalid argument type for loge");
-            }
-
+            state.Push(new DreamValue(MathF.Log(value.UnsafeGetValueAsFloat())));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Abs(DMProcState state) {
             DreamValue value = state.Pop();
 
-            switch (value.Type) {
-                case DreamValue.DreamValueType.Float: state.Push(new DreamValue(MathF.Abs(value.MustGetValueAsFloat()))); break;
-                case DreamValue.DreamValueType.DreamObject when value == DreamValue.Null: state.Push(new DreamValue(0.0f)); break;
-                default: throw new Exception("Invalid argument type for abs");
-            }
-
+            state.Push(new DreamValue(MathF.Abs(value.UnsafeGetValueAsFloat())));
             return ProcStatus.Continue;
         }
 

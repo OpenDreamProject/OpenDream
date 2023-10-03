@@ -1684,9 +1684,9 @@ namespace DMCompiler.Compiler.DM {
 
     public class DMASTLog : DMASTExpression {
         public DMASTExpression Expression;
-        [CanBeNull] public DMASTExpression BaseExpression;
+        public DMASTExpression? BaseExpression;
 
-        public DMASTLog(Location location, DMASTExpression expression, [CanBeNull] DMASTExpression baseExpression) : base(location) {
+        public DMASTLog(Location location, DMASTExpression expression, DMASTExpression? baseExpression) : base(location) {
             Expression = expression;
             BaseExpression = baseExpression;
         }

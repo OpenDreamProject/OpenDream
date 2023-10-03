@@ -130,7 +130,7 @@ namespace DMCompiler.DM.Expressions {
             throw new CompileErrorException(Location, $"const operation \"sqrt({this})\" is invalid");
         }
 
-        public virtual Constant Log([CanBeNull] Constant baseVal) {
+        public virtual Constant Log(Constant? baseVal) {
             if (baseVal == null) {
                 throw new CompileErrorException(Location, $"const operation \"log({this})\" is invalid");
             }
@@ -372,39 +372,29 @@ namespace DMCompiler.DM.Expressions {
             return new Number(Location, MathF.Tan(Value / 180 * MathF.PI));
         }
 
-        /* NOTE ABOUT THE TRIG FUNCTIONS:
-         * If you have a sharp eye, you may notice that our trigonometry functions make use of the *double*-precision versions of those functions,
-         * even though this is a single-precision language.
-         *
-         * DO NOT replace them with the single-precision ones in MathF!!!
-         *
-         * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
-         * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
-         */
-
         public override Constant Arcsin() {
             if (Value < -1 || Value > 1) {
                 throw new CompileErrorException(Location, $"const operation \"arcsin({this})\" is invalid (out of range)");
             }
-            return new Number(Location, (float)(Math.Asin(Value) / Math.PI * 180));
+            return new Number(Location, MathF.Asin(Value) / MathF.PI * 180);
         }
 
         public override Constant Arccos() {
             if (Value < -1 || Value > 1) {
                 throw new CompileErrorException(Location, $"const operation \"arccos({this})\" is invalid (out of range)");
             }
-            return new Number(Location, (float)(MathF.Acos(Value) / MathF.PI * 180));
+            return new Number(Location, MathF.Acos(Value) / MathF.PI * 180);
         }
 
         public override Constant Arctan() {
-            return new Number(Location, (float)(MathF.Atan(Value) / MathF.PI * 180));
+            return new Number(Location, MathF.Atan(Value) / MathF.PI * 180);
         }
 
         public override Constant Arctan2(Constant yConst) {
             if (yConst is not Number yNum) {
                 throw new CompileErrorException(Location, $"const operation \"arctan2({this}, {yConst})\" is invalid");
             }
-            return new Number(Location, (float)(Math.Atan2(yNum.Value, Value) / Math.PI * 180));
+            return new Number(Location, MathF.Atan2(yNum.Value, Value) / MathF.PI * 180);
         }
 
         public override Constant Sqrt() {
@@ -414,7 +404,7 @@ namespace DMCompiler.DM.Expressions {
             return new Number(Location, MathF.Sqrt(Value));
         }
 
-        public override Constant Log([CanBeNull] Constant baseVal) {
+        public override Constant Log(Constant? baseVal) {
             if (Value <= 0) {
                 throw new CompileErrorException(Location, $"const operation \"log({this})\" is invalid (non-positive)");
             }

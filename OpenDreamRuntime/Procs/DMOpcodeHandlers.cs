@@ -1618,6 +1618,86 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus Sin(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Sin(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Cos(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Cos(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Tan(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Tan(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Arcsin(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Asin(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Arccos(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Acos(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Arctan(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Atan(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Arctan2(DMProcState state) {
+            DreamValue y = state.Pop();
+            DreamValue x = state.Pop();
+            var yValue = y.UnsafeGetValueAsFloat();
+
+            state.Push(new DreamValue(MathF.Atan2(yValue, x.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Sqrt(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Sqrt(value.UnsafeGetValueAsFloat())));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Log(DMProcState state) {
+            DreamValue baseValue = state.Pop();
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Log(value.UnsafeGetValueAsFloat(), baseValue.UnsafeGetValueAsFloat())));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus LogE(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Log(value.UnsafeGetValueAsFloat())));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Abs(DMProcState state) {
+            DreamValue value = state.Pop();
+
+            state.Push(new DreamValue(MathF.Abs(value.UnsafeGetValueAsFloat())));
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus SwitchCase(DMProcState state) {
             int casePosition = state.ReadInt();
             DreamValue testValue = state.Pop();

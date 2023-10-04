@@ -127,7 +127,18 @@ public enum DreamProcOpcode : byte {
     GetStep = 0x75,
     Length = 0x76,
     GetDir = 0x77,
-    DebuggerBreakpoint = 0x78
+    DebuggerBreakpoint = 0x78,
+    Sin = 0x79,
+    Cos = 0x7A,
+    Tan = 0x7B,
+    Arcsin = 0x7C,
+    Arccos = 0x7D,
+    Arctan = 0x7E,
+    Arctan2 = 0x7F,
+    Sqrt = 0x80,
+    Log = 0x81,
+    LogE = 0x82,
+    Abs = 0x83,
 }
 
 /// <summary>

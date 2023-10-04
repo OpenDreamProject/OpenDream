@@ -19,6 +19,7 @@
 #pragma PointlessParentCall warning
 #pragma PointlessBuiltinCall warning
 #pragma SuspiciousMatrixCall warning
+#pragma FallbackBuiltinArgument warning
 #pragma MalformedRange warning
 #pragma InvalidRange error
 #pragma InvalidSetStatement error

@@ -996,23 +996,23 @@ namespace DMCompiler.DM.Visitors {
 
         public void VisitArcsin(DMASTArcsin arcsin) {
             var expr = DMExpression.Create(_dmObject, _proc, arcsin.Expression, _inferredPath);
-            Result = new Expressions.Arcsin(arcsin.Location, expr);
+            Result = new Expressions.ArcSin(arcsin.Location, expr);
         }
 
         public void VisitArccos(DMASTArccos arccos) {
             var expr = DMExpression.Create(_dmObject, _proc, arccos.Expression, _inferredPath);
-            Result = new Expressions.Arccos(arccos.Location, expr);
+            Result = new Expressions.ArcCos(arccos.Location, expr);
         }
 
         public void VisitArctan(DMASTArctan arctan) {
             var expr = DMExpression.Create(_dmObject, _proc, arctan.Expression, _inferredPath);
-            Result = new Expressions.Arctan(arctan.Location, expr);
+            Result = new Expressions.ArcTan(arctan.Location, expr);
         }
 
         public void VisitArctan2(DMASTArctan2 arctan2) {
             var xexpr = DMExpression.Create(_dmObject, _proc, arctan2.XExpression, _inferredPath);
             var yexpr = DMExpression.Create(_dmObject, _proc, arctan2.YExpression, _inferredPath);
-            Result = new Expressions.Arctan2(arctan2.Location, xexpr, yexpr);
+            Result = new Expressions.ArcTan2(arctan2.Location, xexpr, yexpr);
         }
 
         public void VisitSqrt(DMASTSqrt sqrt) {

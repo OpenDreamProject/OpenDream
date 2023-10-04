@@ -1113,6 +1113,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 writer.WriteStringValue(type.Path.PathString);
             else if (value.TryGetValueAsProc(out var proc))
                 writer.WriteStringValue(proc.ToString());
+            else if (value.TryGetValueAsProcStub(out var procStubType))
+                writer.WriteStringValue(procStubType.Path.PathString + "/proc");
+            else if (value.TryGetValueAsVerbStub(out var verbStubType))
+                writer.WriteStringValue(verbStubType.Path.PathString + "/verb");
             else if (value.TryGetValueAsDreamList(out var list)) {
                 if (list.IsAssociative) {
                     writer.WriteStartObject();

@@ -581,15 +581,21 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private void HandleErrorOrWarningDirective(Token token) {
             if (!VerifyDirectiveUsage(token))
                 return;
+            Token whitespace = GetNextToken();
+            if(whitespace.Type != TokenType.DM_Preproc_Whitespace) {
+                DMCompiler.Emit(WarningCode.BadDirective, token.Location, "Expected whitespace after #error or #warning");
+                return;
+            }
 
             StringBuilder messageBuilder = new StringBuilder();
 
-            Token messageToken = GetNextToken(true);
+            //get raw tokens because #warn/#error messages should not be preprocessed at all - no macro replacements, no string processing
+            Token messageToken = _lexerStack.Peek().GetNextRawToken();
             while (messageToken.Type != TokenType.EndOfFile) {
                 if (messageToken.Type == TokenType.Newline) break;
 
                 messageBuilder.Append(messageToken.Text);
-                messageToken = GetNextToken();
+                messageToken = _lexerStack.Peek().GetNextRawToken();
             }
 
             string message = messageBuilder.ToString();

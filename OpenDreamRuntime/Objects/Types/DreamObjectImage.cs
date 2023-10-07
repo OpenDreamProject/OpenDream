@@ -44,17 +44,21 @@ public sealed class DreamObjectImage : DreamObject {
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
 
-        int argIndex = 1;
+        int startIndex = 0;
         DreamValue loc = args.GetArgument(1);
-        if (loc.TryGetValueAsDreamObject(out _loc)) { // If it's not a DreamObject, it's actually icon_state and not loc
-            argIndex = 2;
+        if (!loc.TryGetValueAsDreamObject(out _loc)) { // If it's not a DreamObject, it's actually icon_state and not loc
+            startIndex = 1;
+            if (!loc.IsNull) {
+                AtomManager.SetAppearanceVar(Appearance, "icon_state", loc);
+            }
         }
 
-        foreach (string argName in IconCreationArgs) {
-            var arg = args.GetArgument(argIndex++);
+        for (int i = startIndex; i < IconCreationArgs.Length; i++) {
+            var arg = args.GetArgument(i + 2);
             if (arg.IsNull)
                 continue;
 
+            string argName = IconCreationArgs[i];
             AtomManager.SetAppearanceVar(Appearance, argName, arg);
             if (argName == "dir") {
                 // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir

@@ -224,7 +224,8 @@ namespace OpenDreamRuntime.Objects {
 
                             if (jsonElement.TryGetProperty("values", out JsonElement values)) {
                                 foreach (JsonElement listValue in values.EnumerateArray()) {
-                                    if (listValue.ValueKind == JsonValueKind.Object) { // key/value pair
+                                    if (listValue.ValueKind == JsonValueKind.Object &&
+                                        !listValue.TryGetProperty("type", out _)) {
                                         if (!listValue.TryGetProperty("key", out var jsonKey) ||
                                             !listValue.TryGetProperty("value", out var jsonValue))
                                             throw new Exception("List value was missing a key or value property");

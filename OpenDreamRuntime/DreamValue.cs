@@ -27,11 +27,7 @@ namespace OpenDreamRuntime {
             DreamObject   = 4,
             DreamType     = 5,
             DreamProc     = 6,
-            Appearance    = 7,
-
-            // Special types for representing /datum/proc paths
-            ProcStub      = 8,
-            VerbStub      = 9
+            Appearance    = 7
             // @formatter:on
         }
 
@@ -44,9 +40,7 @@ namespace OpenDreamRuntime {
             DreamObject   = 1 << (DreamValueType.DreamObject   - 1),
             DreamType     = 1 << (DreamValueType.DreamType     - 1),
             DreamProc     = 1 << (DreamValueType.DreamProc     - 1),
-            Appearance    = 1 << (DreamValueType.Appearance    - 1),
-            ProcStub      = 1 << (DreamValueType.ProcStub      - 1),
-            VerbStub      = 1 << (DreamValueType.VerbStub      - 1)
+            Appearance    = 1 << (DreamValueType.Appearance    - 1)
             // @formatter:on
         }
 
@@ -120,20 +114,6 @@ namespace OpenDreamRuntime {
         private DreamValue(DreamValueType type, object refValue) {
             Type = type;
             _refValue = refValue;
-        }
-
-        public static DreamValue CreateProcStub(TreeEntry type) {
-            return new DreamValue(
-                DreamValueType.ProcStub,
-                type
-            );
-        }
-
-        public static DreamValue CreateVerbStub(TreeEntry type) {
-            return new DreamValue(
-                DreamValueType.VerbStub,
-                type
-            );
         }
 
         public override string ToString() {
@@ -339,30 +319,6 @@ namespace OpenDreamRuntime {
             throw new InvalidCastException("Value " + this + " was not the expected type of DreamProc");
         }
 
-        public bool TryGetValueAsProcStub([NotNullWhen(true)] out TreeEntry? type) {
-            if (Type == DreamValueType.ProcStub) {
-                type = Unsafe.As<TreeEntry>(_refValue)!;
-
-                return true;
-            } else {
-                type = null;
-
-                return false;
-            }
-        }
-
-        public bool TryGetValueAsVerbStub([NotNullWhen(true)] out TreeEntry? type) {
-            if (Type == DreamValueType.VerbStub) {
-                type = Unsafe.As<TreeEntry>(_refValue)!;
-
-                return true;
-            } else {
-                type = null;
-
-                return false;
-            }
-        }
-
         public bool TryGetValueAsAppearance([NotNullWhen(true)] out IconAppearance? args) {
             if (Type == DreamValueType.Appearance) {
                 args = Unsafe.As<IconAppearance>(_refValue)!;
@@ -395,8 +351,6 @@ namespace OpenDreamRuntime {
                 case DreamValueType.DreamResource:
                 case DreamValueType.DreamType:
                 case DreamValueType.DreamProc:
-                case DreamValueType.ProcStub:
-                case DreamValueType.VerbStub:
                 case DreamValueType.Appearance:
                     return true;
                 default:
@@ -431,12 +385,6 @@ namespace OpenDreamRuntime {
                     var proc = MustGetValueAsProc();
 
                     return proc.ToString();
-                case DreamValueType.ProcStub:
-                case DreamValueType.VerbStub:
-                    var owner = Unsafe.As<TreeEntry>(_refValue)!;
-                    var lastElement = (Type == DreamValueType.ProcStub) ? "/proc" : "/verb";
-
-                    return $"{owner.Path}{lastElement}";
                 case DreamValueType.DreamObject: {
                     TryGetValueAsDreamObject(out var dreamObject);
 

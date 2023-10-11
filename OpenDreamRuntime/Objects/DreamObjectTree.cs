@@ -209,16 +209,6 @@ namespace OpenDreamRuntime.Objects {
                             return new DreamValue(Types[typeValue.GetInt32()]);
                         case JsonVariableType.Proc:
                             return new DreamValue(Procs[jsonElement.GetProperty("value").GetInt32()]);
-                        case JsonVariableType.ProcStub: {
-                            TreeEntry type = Types[jsonElement.GetProperty("value").GetInt32()];
-
-                            return DreamValue.CreateProcStub(type);
-                        }
-                        case JsonVariableType.VerbStub: {
-                            TreeEntry type = Types[jsonElement.GetProperty("value").GetInt32()];
-
-                            return DreamValue.CreateVerbStub(type);
-                        }
                         case JsonVariableType.List:
                             DreamList list = CreateList();
 

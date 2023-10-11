@@ -1021,25 +1021,12 @@ namespace DMCompiler.DM {
             WriteInt(procId);
         }
 
-        public void PushProcStub(int typeId) {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushProcStub);
-            WriteInt(typeId);
-        }
-
-        public void PushVerbStub(int typeId) {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushVerbStub);
-            WriteInt(typeId);
-        }
-
         public void PushNull() {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushNull);
         }
 
-        public void PushGlobalVars()
-        {
+        public void PushGlobalVars() {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushGlobalVars);
         }

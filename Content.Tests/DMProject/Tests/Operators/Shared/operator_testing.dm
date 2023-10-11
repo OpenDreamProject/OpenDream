@@ -2,17 +2,19 @@
 
 // A helper method for testing operators against many kinds of values
 
+/var/datum/operator_test_object = new /datum()
+
 /datum/proc/foo()
 /datum/verb/bar()
 
-/proc/test_operator(var/operator_proc)
+/proc/test_operator(var/operator_proc, var/list/expected)
 	var/list/values = list(
 		10,
 		"ABC",
 		null,
 		'file.txt',
 		list("A"),
-		new /datum(),
+		operator_test_object,
 		/datum,
 		/datum/proc/foo,
 		/datum/verb/bar,
@@ -20,17 +22,16 @@
 		/datum/verb
 	)
     
-	var/list/results = list()
+	var/i = 1
 	for (var/a in values)
 		for (var/b in values)
+			var/expected_result = expected[i++]
+			var/result
+			
 			try
-				var/result = call(operator_proc)(a, b)
-				
-				if (islist(result))
-					results += list(result)
-				else
-					results += result
+				result = call(operator_proc)(a, b)
 			catch
-				results += "Error"
-	
-	return results
+				result = "Error"
+			
+			if (!(result ~= expected_result))
+				CRASH("Expected [json_encode(expected_result)] for [json_encode(a)] + [json_encode(b)], instead got [json_encode(result)]")

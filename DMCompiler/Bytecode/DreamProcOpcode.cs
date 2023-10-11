@@ -105,8 +105,8 @@ public enum DreamProcOpcode : byte {
     PushGlobalVars = 0x5F,
     ModulusModulus = 0x60,
     ModulusModulusReference = 0x61,
-    PushProcStub = 0x62,
-    PushVerbStub = 0x63,
+    //0x62
+    //0x63
     JumpIfNull = 0x64,
     JumpIfNullNoPop = 0x65,
     JumpIfTrueReference = 0x66,

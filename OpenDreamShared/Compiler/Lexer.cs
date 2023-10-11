@@ -40,18 +40,6 @@ namespace OpenDreamShared.Compiler {
             }
         }
 
-        public Token GetNextRawToken() {
-            if(AtEndOfSource)
-                return CreateToken(TokenType.EndOfFile, String.Empty);
-            SourceType current = GetCurrent();
-            if(current?.ToString() == "\n") {
-                Advance();
-                return CreateToken(TokenType.Newline, current?.ToString() ?? String.Empty);
-            }
-            Advance();
-            return CreateToken(TokenType.Unknown, current?.ToString() ?? String.Empty);
-        }
-
         protected virtual Token ParseNextToken() {
             return CreateToken(TokenType.Unknown, GetCurrent()?.ToString() ?? String.Empty);
         }

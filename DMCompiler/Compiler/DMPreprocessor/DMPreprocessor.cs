@@ -582,21 +582,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             if (!VerifyDirectiveUsage(token))
                 return;
 
-            StringBuilder messageBuilder = new StringBuilder();
-
-            Token messageToken = GetNextToken(true);
-            while (messageToken.Type != TokenType.EndOfFile) {
-                if (messageToken.Type == TokenType.Newline) break;
-
-                messageBuilder.Append(messageToken.Text);
-                messageToken = GetNextToken();
-            }
-
-            string message = messageBuilder.ToString();
             if (token.Type == TokenType.DM_Preproc_Error) {
-                DMCompiler.Emit(WarningCode.ErrorDirective, token.Location, message);
+                DMCompiler.Emit(WarningCode.ErrorDirective, token.Location, token.Text);
             } else {
-                DMCompiler.Emit(WarningCode.WarningDirective, token.Location, message);
+                DMCompiler.Emit(WarningCode.WarningDirective, token.Location, token.Text);
             }
         }
 

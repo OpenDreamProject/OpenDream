@@ -165,6 +165,16 @@ public sealed class ControlWindow : InterfaceControl {
         if (root != null) {
             root.BackgroundColor = WindowDescriptor.BackgroundColor;
         }
+
+        if (osWindow != null) {
+            if (WindowDescriptor.IsVisible && !osWindow.IsOpen)
+                osWindow?.Show();
+            else if (!WindowDescriptor.IsVisible && osWindow.IsOpen)
+                osWindow?.Close();
+        } else if (clydeWindow != null) {
+            clydeWindow.IsVisible = WindowDescriptor.IsVisible;
+        }
+
     }
 
     public void CreateChildControls() {

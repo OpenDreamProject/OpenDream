@@ -655,8 +655,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 OSWindow _window = window.CreateWindow();
                 _window.StartupLocation = WindowStartupLocation.CenterOwner;
                 _window.Owner = _clyde.MainWindow;
-                if(((WindowDescriptor)window.ElementDescriptor).IsVisible)
-                    _window.Show();
+                //if(((WindowDescriptor)window.ElementDescriptor).IsVisible)
+                //    _window.Show();
             }
         }
     }

@@ -123,3 +123,13 @@ window "mainwindow"
 		left = "mapwindow"
 		right = "infowindow"
 		is-vert = true
+
+window "testwindow"
+	elem "testwindow"
+		type = MAIN
+		size = 200x100
+		title = "popup"
+	elem "testwindowlabel"
+		type = LABEL
+		text = "I am a test"
+

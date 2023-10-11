@@ -649,6 +649,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
         _userInterfaceManager.StateRoot.AddChild(DefaultWindow.UIElement);
+
+        foreach (ControlWindow window in Windows.Where(pair => !((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Value)) {
+            if(window != DefaultWindow) {
+                OSWindow _window = window.CreateWindow();
+                _window.StartupLocation = WindowStartupLocation.CenterOwner;
+                _window.Owner = _clyde.MainWindow;
+                if(((WindowDescriptor)window.ElementDescriptor).IsVisible)
+                    _window.Show();
+            }
+        }
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {

@@ -428,7 +428,28 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         private bool TryMacroKeyword(string text, out Token token) {
             switch (text) {
                 case "warn":
-                case "warning": token = CreateToken(TokenType.DM_Preproc_Warning, "#warn"); break;
+                case "warning": {
+                    StringBuilder message = new StringBuilder();
+
+                    while (GetCurrent() is not '\0' and not '\n') {
+                        message.Append(GetCurrent());
+                        Advance();
+                    }
+
+                    token = CreateToken(TokenType.DM_Preproc_Warning, "#warn" + message.ToString());
+                    break;
+                }
+                case "error": {
+                    StringBuilder message = new StringBuilder();
+
+                    while (GetCurrent() is not '\0' and not '\n') {
+                        message.Append(GetCurrent());
+                        Advance();
+                    }
+
+                    token = CreateToken(TokenType.DM_Preproc_Error, "#error" + message.ToString());
+                    break;
+                }
                 case "include": token = CreateToken(TokenType.DM_Preproc_Include, "#include"); break;
                 case "define": token = CreateToken(TokenType.DM_Preproc_Define, "#define"); break;
                 case "undef": token = CreateToken(TokenType.DM_Preproc_Undefine, "#undef"); break;
@@ -438,7 +459,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 case "elif": token = CreateToken(TokenType.DM_Preproc_Elif, "#elif"); break;
                 case "else": token = CreateToken(TokenType.DM_Preproc_Else, "#else"); break;
                 case "endif": token = CreateToken(TokenType.DM_Preproc_EndIf, "#endif"); break;
-                case "error": token = CreateToken(TokenType.DM_Preproc_Error, "#error"); break;
                 //OD-specific directives
                 case "pragma": token = CreateToken(TokenType.DM_Preproc_Pragma, "#pragma"); break;
                 default:

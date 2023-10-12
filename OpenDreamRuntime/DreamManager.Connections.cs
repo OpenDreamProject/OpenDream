@@ -4,18 +4,20 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
+using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
-        public static readonly byte[] ByondTopicHeaderRaw = { 0x00, 0x83 };
-
-        public static readonly byte[] ByondTopicHeaderEncrypted = { 0x00, 0x15 };
+        private static readonly byte[] ByondTopicHeaderRaw = { 0x00, 0x83 };
+        private static readonly byte[] ByondTopicHeaderEncrypted = { 0x00, 0x15 };
 
         [Dependency] private readonly IServerNetManager _netManager = default!;
+        [Dependency] private readonly IConfigurationManager _config = default!;
 
         private readonly Dictionary<NetUserId, DreamConnection> _connections = new Dictionary<NetUserId, DreamConnection>();
 
@@ -50,7 +52,7 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgSound>();
             _netManager.RegisterNetMessage<MsgUpdateClientInfo>();
 
-            var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, _netManager.Port);
+            var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, _config.GetCVar(OpenDreamCVars.TopicPort));
             _sawmill.Debug($"Binding World Topic at {worldTopicAddress}");
             _worldTopicSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) {
                 ReceiveTimeout = 5000,
@@ -111,8 +113,6 @@ namespace OpenDreamRuntime {
                     case DreamValue.DreamValueType.Float:
                         responseType = 0x2a;
                         responseData = BitConverter.GetBytes(topicResponse.MustGetValueAsFloat());
-                        if (BitConverter.IsLittleEndian)
-                            responseData = responseData.Reverse().ToArray();
                         break;
 
                     case DreamValue.DreamValueType.String:

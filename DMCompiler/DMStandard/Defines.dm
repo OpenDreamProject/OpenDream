@@ -2,6 +2,7 @@
 #define FALSE 0
 
 #define OPENDREAM 1
+#define OPENDREAM_TOPIC_PORT_EXISTS 1 // Remove this if world.opendream_topic_port is ever removed
 
 #define NORTH 1
 #define SOUTH 2

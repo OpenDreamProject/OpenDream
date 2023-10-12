@@ -93,13 +93,14 @@ namespace OpenDreamRuntime {
                         return null;
                     }
 
-                    return Encoding.ASCII.GetString(buffer[5..^1]);
+                    return Encoding.ASCII.GetString(buffer[6..^1]);
                 }
 
                 var topic = await ParseByondTopic(remote);
                 if (topic is null) {
                     return;
                 }
+
                 var remoteAddress = (remote.RemoteEndPoint as IPEndPoint)!.Address.ToString();
                 _sawmill.Debug($"World Topic: '{remoteAddress}' -> '{topic}'");
                 var topicResponse = WorldInstance.SpawnProc("Topic", null, new DreamValue(topic), new DreamValue(remoteAddress));

@@ -1,6 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM {
     sealed class DMVariable {
@@ -11,14 +10,16 @@ namespace DMCompiler.DM {
         /// NOTE: This DMVariable may be forced constant through opendream_compiletimereadonly. This only marks that the variable has the DM quality of /const/ness.
         /// </remarks>
         public bool IsConst;
+        public bool IsTmp;
         public DMExpression Value;
         public DMValueType ValType;
 
-        public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, DMValueType valType = DMValueType.Anything) {
+        public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMValueType valType = DMValueType.Anything) {
             Type = type;
             Name = name;
             IsGlobal = isGlobal;
             IsConst = isConst;
+            IsTmp = isTmp;
             Value = null;
             ValType = valType;
         }
@@ -34,7 +35,7 @@ namespace DMCompiler.DM {
                 return this;
             }
 
-            DMVariable clone = new DMVariable(Type, Name, IsGlobal, IsConst, ValType);
+            DMVariable clone = new DMVariable(Type, Name, IsGlobal, IsConst, IsTmp, ValType);
             clone.Value = value;
             return clone;
         }

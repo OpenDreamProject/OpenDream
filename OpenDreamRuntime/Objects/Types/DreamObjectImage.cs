@@ -177,6 +177,10 @@ public sealed class DreamObjectImage : DreamObject {
 
                 break;
             }
+            case "override": {
+                Appearance!.Override = value.IsTruthy();
+                break;
+            }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     AtomManager.SetAppearanceVar(Appearance!, varName, value);
@@ -186,5 +190,9 @@ public sealed class DreamObjectImage : DreamObject {
                 base.SetVar(varName, value);
                 break;
         }
+    }
+
+    public DreamObject? GetAttachedLoc(){
+        return this._loc;
     }
 }

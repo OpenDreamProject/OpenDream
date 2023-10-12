@@ -5,6 +5,7 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
@@ -23,6 +24,7 @@ namespace OpenDreamRuntime.Objects {
         public readonly ISerializationManager SerializationManager;
         public readonly ServerAppearanceSystem? AppearanceSystem;
         public readonly TransformSystem? TransformSystem;
+        public readonly PvsOverrideSystem? PvsOverrideSystem;
 
         public readonly TreeEntry TreeEntry;
         public DreamPath Type => TreeEntry.Path;
@@ -46,6 +48,10 @@ namespace OpenDreamRuntime.Objects {
         public readonly Dictionary<string, DreamValue> Variables = new();
         // Maps /static variables from name to their index in the global variable table.
         public readonly Dictionary<string, int> GlobalVariables = new();
+        // Contains hashes of variables that are tagged /const.
+        public HashSet<string>? ConstVariables = null;
+        // Contains hashes of variables that are tagged /tmp.
+        public HashSet<string>? TmpVariables = null;
 
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
             DreamManager = copyFrom.DreamManager;
@@ -59,19 +65,22 @@ namespace OpenDreamRuntime.Objects {
             SerializationManager = copyFrom.SerializationManager;
             AppearanceSystem = copyFrom.AppearanceSystem;
             TransformSystem = copyFrom.TransformSystem;
+            PvsOverrideSystem = copyFrom.PvsOverrideSystem;
 
             TreeEntry = copyFrom.TreeEntry;
             InitializationProc = copyFrom.InitializationProc;
 
             Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
             GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
+            ConstVariables = copyFrom.ConstVariables is not null ? new HashSet<string>(copyFrom.ConstVariables) : null;
+            TmpVariables = copyFrom.TmpVariables is not null ? new HashSet<string>(copyFrom.TmpVariables) : null;
             Procs = new Dictionary<string, int>(copyFrom.Procs);
             OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
             if (copyFrom.Verbs != null)
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, TreeEntry? treeEntry) {
+        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, TreeEntry? treeEntry) {
             DreamManager = dreamManager;
             ObjectTree = objectTree;
             AtomManager = atomManager;
@@ -83,6 +92,7 @@ namespace OpenDreamRuntime.Objects {
             SerializationManager = serializationManager;
             AppearanceSystem = appearanceSystem;
             TransformSystem = transformSystem;
+            PvsOverrideSystem = pvsOverrideSystem;
 
             TreeEntry = treeEntry;
 
@@ -93,6 +103,10 @@ namespace OpenDreamRuntime.Objects {
                     Verbs = new List<int>(Parent.Verbs);
                 if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                     GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
+                if (Parent.ConstVariables != null)
+                    ConstVariables = new HashSet<string>(Parent.ConstVariables);
+                if (Parent.TmpVariables != null)
+                    TmpVariables = new HashSet<string>(Parent.TmpVariables);
             }
         }
 

@@ -10,6 +10,7 @@ namespace OpenDreamRuntime.Input {
         [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private IEntityManager _entityManager = default!;
 
         public override void Initialize() {
             base.Initialize();
@@ -20,7 +21,8 @@ namespace OpenDreamRuntime.Input {
         }
 
         private void OnEntityClicked(EntityClickedEvent e, EntitySessionEventArgs sessionEvent) {
-            if (!_atomManager.TryGetMovableFromEntity(e.EntityUid, out var atom))
+            EntityUid ent = _entityManager.GetEntity(e.NetEntity);
+            if (!_atomManager.TryGetMovableFromEntity(ent, out var atom))
                 return;
 
             HandleAtomClick(e, atom, sessionEvent);

@@ -1,10 +1,10 @@
 using System.IO;
 using System.Linq;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream.Procs;
 using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;

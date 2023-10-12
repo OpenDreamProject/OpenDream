@@ -2,6 +2,7 @@
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.CustomControls;
+using Robust.Shared.Graphics;
 using Robust.Shared.Map;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp.PixelFormats;
@@ -16,6 +17,7 @@ namespace OpenDreamClient.Interface.Controls;
 public sealed class ScalingViewport : Control, IViewportControl {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IInputManager _inputManager = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
 
     // Internal viewport creation is deferred.
     private IClydeViewport? _viewport;
@@ -220,6 +222,21 @@ public sealed class ScalingViewport : Control, IViewportControl {
         var matrix = Matrix3.Invert(LocalToScreenMatrix());
 
         return _viewport!.LocalToWorld(matrix.Transform(coords));
+    }
+
+    public MapCoordinates PixelToMap(Vector2 coords) {
+        if (_eye == null)
+            return default;
+
+        EnsureViewportCreated();
+
+        var matrix = Matrix3.Invert(GetLocalToScreenMatrix());
+        coords = matrix.Transform(coords);
+
+        var ev = new PixelToMapEvent(coords, this, _viewport!);
+        _entityManager.EventBus.RaiseEvent(EventSource.Local, ref ev);
+
+        return _viewport!.LocalToWorld(ev.VisiblePosition);
     }
 
     public Vector2 WorldToScreen(Vector2 map) {

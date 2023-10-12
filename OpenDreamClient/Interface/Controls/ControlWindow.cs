@@ -97,19 +97,19 @@ public sealed class ControlWindow : InterfaceControl {
             if (control.Size?.Y == 0) {
                 elementSize.Y = (windowSize.Y - elementPos.Y);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null) {
+                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
                         var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
                         elementSize.Y = nextElementPos.Y - elementPos.Y;
                     }
                 }
 
-                element.SetHeight = (elementSize.Y / windowSize.Y) * _canvas.Height;
+                element.SetHeight = ((float)elementSize.Y / windowSize.Y) * _canvas.Height;
             }
 
             if (control.Size?.X == 0) {
                 elementSize.X = (windowSize.X - elementPos.X);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null) {
+                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
                         var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
                         if (nextElementPos.X < (elementSize.X + elementPos.X) &&
                             nextElementPos.Y < (elementSize.Y + elementPos.Y))
@@ -117,7 +117,7 @@ public sealed class ControlWindow : InterfaceControl {
                     }
                 }
 
-                element.SetWidth = (elementSize.X / windowSize.X) * _canvas.Width;
+                element.SetWidth = ((float)elementSize.X / windowSize.X) * _canvas.Width;
             }
 
             if (control.Anchor1.HasValue) {

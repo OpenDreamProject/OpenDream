@@ -9,11 +9,11 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Manager.Exceptions;
-using TreeEntry = OpenDreamRuntime.Objects.TreeEntry;
 
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectTree {
@@ -59,10 +59,12 @@ namespace OpenDreamRuntime.Objects {
         [Dependency] private readonly ProcScheduler _procScheduler = default!;
         private ServerAppearanceSystem? _appearanceSystem;
         private TransformSystem? _transformSystem;
+        private PvsOverrideSystem? _pvsOverrideSystem;
 
         public void LoadJson(DreamCompiledJson json) {
             _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
             _entitySystemManager.TryGetEntitySystem(out _transformSystem);
+            _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
 
             Strings = json.Strings ?? new();
 
@@ -222,15 +224,17 @@ namespace OpenDreamRuntime.Objects {
 
                             if (jsonElement.TryGetProperty("values", out JsonElement values)) {
                                 foreach (JsonElement listValue in values.EnumerateArray()) {
-                                    list.AddValue(GetDreamValueFromJsonElement(listValue));
-                                }
-                            }
+                                    if (listValue.ValueKind == JsonValueKind.Object &&
+                                        !listValue.TryGetProperty("type", out _)) {
+                                        if (!listValue.TryGetProperty("key", out var jsonKey) ||
+                                            !listValue.TryGetProperty("value", out var jsonValue))
+                                            throw new Exception("List value was missing a key or value property");
 
-                            if (jsonElement.TryGetProperty("associatedValues", out JsonElement associatedValues)) {
-                                foreach (JsonProperty associatedValue in associatedValues.EnumerateObject()) {
-                                    DreamValue key = new DreamValue(associatedValue.Name);
-
-                                    list.SetValue(key, GetDreamValueFromJsonElement(associatedValue.Value));
+                                        list.SetValue(GetDreamValueFromJsonElement(jsonKey),
+                                            GetDreamValueFromJsonElement(jsonValue), allowGrowth: true);
+                                    } else {
+                                        list.AddValue(GetDreamValueFromJsonElement(listValue));
+                                    }
                                 }
                             }
 
@@ -303,7 +307,7 @@ namespace OpenDreamRuntime.Objects {
             foreach (TreeEntry type in GetAllDescendants(Root)) {
                 int typeId = pathToTypeId[type.Path];
                 DreamTypeJson jsonType = types[typeId];
-                var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, type);
+                var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, type);
 
                 type.ObjectDefinition = definition;
                 type.TreeIndex = treeIndex++;
@@ -339,10 +343,13 @@ namespace OpenDreamRuntime.Objects {
                     type.ParentEntry.ChildCount += type.ChildCount + 1;
             }
 
-            //Fifth pass: Set atom's text
+            //Fifth pass: Set atom's name and text
             foreach (TreeEntry type in GetAllDescendants(Atom)) {
-                if (type.ObjectDefinition.Variables["text"].Equals(DreamValue.Null) && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name)) {
-                    type.ObjectDefinition.SetVariableDefinition("text", new DreamValue(String.IsNullOrEmpty(name) ? String.Empty : name[..1]));
+                if (type.ObjectDefinition.Variables["name"].IsNull)
+                    type.ObjectDefinition.Variables["name"] = new(type.Path.LastElement!.Replace("_", " "));
+
+                if (type.ObjectDefinition.Variables["text"].IsNull && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name)) {
+                    type.ObjectDefinition.Variables["text"] = new DreamValue(string.IsNullOrEmpty(name) ? string.Empty : name[..1]);
                 }
             }
         }
@@ -359,6 +366,20 @@ namespace OpenDreamRuntime.Objects {
             if (jsonObject.GlobalVariables != null) {
                 foreach (KeyValuePair<string, int> jsonGlobalVariable in jsonObject.GlobalVariables) {
                     objectDefinition.GlobalVariables.Add(jsonGlobalVariable.Key, jsonGlobalVariable.Value);
+                }
+            }
+
+            if (jsonObject.ConstVariables != null) {
+                objectDefinition.ConstVariables ??= new();
+                foreach (string jsonConstVariable in jsonObject.ConstVariables) {
+                    objectDefinition.ConstVariables.Add(jsonConstVariable);
+                }
+            }
+
+            if(jsonObject.TmpVariables != null) {
+                objectDefinition.TmpVariables ??= new();
+                foreach (string jsonTmpVariable in jsonObject.TmpVariables) {
+                    objectDefinition.TmpVariables.Add(jsonTmpVariable);
                 }
             }
         }

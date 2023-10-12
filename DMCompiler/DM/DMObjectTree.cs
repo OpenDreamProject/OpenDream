@@ -2,10 +2,10 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
@@ -27,7 +27,7 @@ namespace DMCompiler.DM {
         public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         private static readonly Dictionary<string, int> StringToStringId = new();
-        private static readonly Dictionary<DreamPath, List<(int GlobalId, DMExpression Value)>> _globalInitAssigns = new();
+        private static readonly List<(int GlobalId, DMExpression Value)> _globalInitAssigns = new();
 
         private static Dictionary<DreamPath, int> _pathToTypeId = new();
         private static int _dmObjectIdCounter = 0;
@@ -173,7 +173,7 @@ namespace DMCompiler.DM {
         public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
             int id = Globals.Count;
 
-            global = new DMVariable(type, name, true, isConst, valType);
+            global = new DMVariable(type, name, true, isConst, false, valType);
             Globals.Add(global);
             return id;
         }
@@ -182,29 +182,21 @@ namespace DMCompiler.DM {
             GlobalProcs[name] = id; // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
         }
 
-        public static void AddGlobalInitAssign(DMObject owningType, int globalId, DMExpression value) {
-            if (!_globalInitAssigns.TryGetValue(owningType.Path, out var list)) {
-                list = new List<(int GlobalId, DMExpression Value)>();
-
-                _globalInitAssigns.Add(owningType.Path, list);
-            }
-
-            list.Add( (globalId, value) );
+        public static void AddGlobalInitAssign(int globalId, DMExpression value) {
+            _globalInitAssigns.Add( (globalId, value) );
         }
 
         public static void CreateGlobalInitProc() {
             if (_globalInitAssigns.Count == 0) return;
 
-            foreach (var globals in _globalInitAssigns.Values) {
-                foreach (var assign in globals) {
-                    try {
-                        GlobalInitProc.DebugSource(assign.Value.Location);
+            foreach (var assign in _globalInitAssigns) {
+                try {
+                    GlobalInitProc.DebugSource(assign.Value.Location);
 
-                        assign.Value.EmitPushValue(Root, GlobalInitProc);
-                        GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
-                    } catch (CompileErrorException e) {
-                        DMCompiler.Emit(e.Error);
-                    }
+                    assign.Value.EmitPushValue(Root, GlobalInitProc);
+                    GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
+                } catch (CompileErrorException e) {
+                    DMCompiler.Emit(e.Error);
                 }
             }
 

@@ -26,6 +26,14 @@ public class InterfaceElement {
         UpdateElementDescriptor();
     }
 
+    /// <summary>
+    /// Attempt to get a DMF property
+    /// </summary>
+    public virtual bool TryGetProperty(string property, out string value) {
+        value = string.Empty;
+        return false;
+    }
+
     protected virtual void UpdateElementDescriptor() {
 
     }

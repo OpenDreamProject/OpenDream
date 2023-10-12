@@ -9,6 +9,8 @@ using Robust.Shared.ContentPack;
 using Robust.Shared.Timing;
 using Robust.Shared.Prototypes;
 using Robust.Shared.Utility;
+using System.IO;
+using System.Linq;
 
 [module: System.Runtime.CompilerServices.SkipLocalsInit]
 
@@ -45,6 +47,12 @@ namespace OpenDreamRuntime {
             _configManager.OverrideDefault(CVars.NetLogLateMsg, false); // Disable since disabling prediction causes timing errors otherwise.
             _configManager.OverrideDefault(CVars.GameAutoPauseEmpty, false); // TODO: world.sleep_offline can control this
             _configManager.SetCVar(CVars.GridSplitting, false); // Grid splitting should never be used
+            if(String.IsNullOrEmpty(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath))) //if you haven't set the jsonpath cvar, set it to the first valid file path passed as an arg
+                foreach (string arg in Environment.GetCommandLineArgs().Skip(1)) //skip the first element, because it's just the server's exe path
+                    if(File.Exists(arg)){
+                        _configManager.SetCVar(OpenDreamCVars.JsonPath, arg);
+                        break;
+                    }
 
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
         }

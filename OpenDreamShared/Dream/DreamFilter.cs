@@ -1,7 +1,6 @@
 using Robust.Shared.Serialization;
 using Robust.Shared.ViewVariables;
 using System;
-using JetBrains.Annotations;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization.Manager.Attributes;
 
@@ -11,7 +10,7 @@ namespace OpenDreamShared.Dream;
 /// An object describing type and vars so the client doesn't have to make a ShaderInstance for shaders with the same params
 /// </summary>
 [Serializable, NetSerializable, ImplicitDataDefinitionForInheritors]
-public record DreamFilter {
+public partial record DreamFilter {
     /// <summary>
     /// Indicates this filter was used in the last render cycle, for shader caching purposes
     /// </summary>
@@ -43,7 +42,7 @@ public record DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterAlpha : DreamFilter {
+public sealed partial record DreamFilterAlpha : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("icon")] public int Icon; // Icon resource ID
@@ -52,14 +51,14 @@ public sealed record DreamFilterAlpha : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterAngularBlur : DreamFilter {
+public sealed partial record DreamFilterAngularBlur : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("size")] public float Size = 1f;
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterBloom : DreamFilter {
+public sealed partial record DreamFilterBloom : DreamFilter {
     [ViewVariables, DataField("threshold")] public Color Threshold = Color.Black;
     [ViewVariables, DataField("size")] public float Size = 1f;
     [ViewVariables, DataField("offset")] public float Offset = 1f;
@@ -67,18 +66,18 @@ public sealed record DreamFilterBloom : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterBlur : DreamFilter {
+public sealed partial record DreamFilterBlur : DreamFilter {
     [ViewVariables, DataField("size")] public float Size = 1f;
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterColor : DreamFilter {
+public sealed partial record DreamFilterColor : DreamFilter {
     [ViewVariables, DataField("color", required: true)] public ColorMatrix Color;
     [ViewVariables, DataField("space")] public float Space; // Default is FILTER_COLOR_RGB = 0
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterDisplace : DreamFilter {
+public sealed partial record DreamFilterDisplace : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("size")] public float Size = 1f;
@@ -87,7 +86,7 @@ public sealed record DreamFilterDisplace : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterDropShadow : DreamFilter {
+public sealed partial record DreamFilterDropShadow : DreamFilter {
     [ViewVariables, DataField("x")] public float X = 1f;
     [ViewVariables, DataField("y")] public float Y = -1f;
     [ViewVariables, DataField("size")] public float Size = 1f;
@@ -96,7 +95,7 @@ public sealed record DreamFilterDropShadow : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterLayer : DreamFilter {
+public sealed partial record DreamFilterLayer : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("icon")] public int Icon; // Icon resource ID
@@ -108,27 +107,27 @@ public sealed record DreamFilterLayer : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterMotionBlur : DreamFilter {
+public sealed partial record DreamFilterMotionBlur : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterOutline : DreamFilter {
+public sealed partial record DreamFilterOutline : DreamFilter {
     [ViewVariables, DataField("size")] public float Size = 1f;
     [ViewVariables, DataField("color")] public Color Color = Color.Black;
     [ViewVariables, DataField("flags")] public float Flags;
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterRadialBlur : DreamFilter {
+public sealed partial record DreamFilterRadialBlur : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("size")] public float Size = 0.01f;
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterRays : DreamFilter {
+public sealed partial record DreamFilterRays : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("size")] public float Size = 16f; // Defaults to half tile width
@@ -141,7 +140,7 @@ public sealed record DreamFilterRays : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterRipple : DreamFilter {
+public sealed partial record DreamFilterRipple : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("size")] public float Size = 1f;
@@ -152,7 +151,7 @@ public sealed record DreamFilterRipple : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterWave : DreamFilter {
+public sealed partial record DreamFilterWave : DreamFilter {
     [ViewVariables, DataField("x")] public float X;
     [ViewVariables, DataField("y")] public float Y;
     [ViewVariables, DataField("size")] public float Size = 1f;
@@ -161,4 +160,4 @@ public sealed record DreamFilterWave : DreamFilter {
 }
 
 [Serializable, NetSerializable]
-public sealed record DreamFilterGreyscale : DreamFilter;
+public sealed partial record DreamFilterGreyscale : DreamFilter;

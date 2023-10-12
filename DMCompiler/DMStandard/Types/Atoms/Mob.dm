@@ -12,6 +12,7 @@
 	var/sight = 0
 	var/see_in_dark = 2 as opendream_unimplemented
 
+	density = TRUE
 	layer = MOB_LAYER
 
 	proc/Login()

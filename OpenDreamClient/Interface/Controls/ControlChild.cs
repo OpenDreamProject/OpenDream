@@ -10,11 +10,12 @@ internal sealed class ControlChild : InterfaceControl {
 
     [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
 
-    private SplitContainer _grid;
-    private ControlWindow? _leftElement, _rightElement;
+    private ControlDescriptorChild ChildDescriptor => (ControlDescriptorChild)ElementDescriptor;
 
-    public ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) {
-    }
+    private SplitContainer _grid;
+    private Control? _leftElement, _rightElement;
+
+    public ControlChild(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
     protected override Control CreateUIElement() {
         _grid = new SplitContainer();
@@ -25,40 +26,67 @@ internal sealed class ControlChild : InterfaceControl {
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        ControlDescriptorChild controlDescriptor = (ControlDescriptorChild)ElementDescriptor;
+        var newLeftElement = ChildDescriptor.Left != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Left, out var leftWindow)
+            ? leftWindow.UIElement
+            : null;
+        var newRightElement = ChildDescriptor.Right != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Right, out var rightWindow)
+            ? rightWindow.UIElement
+            : null;
 
-        if (_leftElement != null) _grid.Children.Remove(_leftElement.UIElement);
-        if (_rightElement != null) _grid.Children.Remove(_rightElement.UIElement);
+        if (newLeftElement != _leftElement || _grid.ChildCount == 0) {
+            if (_leftElement != null)
+                _grid.Children.Remove(_leftElement);
 
-        if (!string.IsNullOrEmpty(controlDescriptor.Left)) {
-            _leftElement = _dreamInterface.Windows[controlDescriptor.Left];
-            _leftElement.UIElement.HorizontalExpand = true;
-            _leftElement.UIElement.VerticalExpand = true;
-            _grid.Children.Add(_leftElement.UIElement);
-        } else {
-            _leftElement = null;
+            if (newLeftElement != null) {
+                _leftElement = newLeftElement;
+                _leftElement.HorizontalExpand = true;
+                _leftElement.VerticalExpand = true;
+            } else {
+                // SplitContainer will have a size of 0x0 if there aren't 2 controls
+                _leftElement = new Control();
+            }
+
+            _grid.Children.Add(_leftElement);
         }
 
-        if (!string.IsNullOrEmpty(controlDescriptor.Right)) {
-            _rightElement = _dreamInterface.Windows[controlDescriptor.Right];
-            _rightElement.UIElement.HorizontalExpand = true;
-            _rightElement.UIElement.VerticalExpand = true;
-            _grid.Children.Add(_rightElement.UIElement);
-        } else {
-            _rightElement = null;
-        }
+        if (newRightElement != _rightElement || _grid.ChildCount == 1) {
+            if (_rightElement != null)
+                _grid.Children.Remove(_rightElement);
 
-        UpdateGrid(controlDescriptor.IsVert);
+            if (newRightElement != null) {
+                _rightElement = newRightElement;
+                _rightElement.HorizontalExpand = true;
+                _rightElement.VerticalExpand = true;
+            } else {
+                // SplitContainer will have a size of 0x0 if there aren't 2 controls
+                _rightElement = new Control();
+            }
+
+            _grid.Children.Add(_rightElement);
+        }
+        if(_leftElement is not null)
+            _leftElement.SetPositionFirst();
+        if(_rightElement is not null)
+            _rightElement.SetPositionLast();
+
+        UpdateGrid();
     }
 
     public override void Shutdown() {
-        _leftElement?.Shutdown();
-        _rightElement?.Shutdown();
+        if (ChildDescriptor.Left != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Left, out var left))
+            left.Shutdown();
+        if (ChildDescriptor.Right != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Right, out var right))
+            right.Shutdown();
     }
 
-    private void UpdateGrid(bool isVert) {
-        _grid.Orientation = isVert
+    private void UpdateGrid() {
+        _grid.Orientation = ChildDescriptor.IsVert
             ? SplitContainer.SplitOrientation.Horizontal
             : SplitContainer.SplitOrientation.Vertical;
+
+        if (_grid.Size == Vector2.Zero)
+            return;
+
+        _grid.SplitFraction = ChildDescriptor.Splitter / 100f;
     }
 }

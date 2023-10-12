@@ -27,16 +27,18 @@ namespace OpenDreamRuntime {
 
         public readonly ProcAttributes Attributes;
 
-        public readonly List<String>? ArgumentNames;
+        public readonly List<string>? ArgumentNames;
 
         public readonly List<DMValueType>? ArgumentTypes;
 
-        public string? VerbName { get; }
-        public string? VerbCategory { get; } = string.Empty;
-        public string? VerbDesc { get; }
-        public sbyte? Invisibility { get; }
+        public string VerbName => _verbName ?? Name;
+        public readonly string? VerbCategory = string.Empty;
+        public readonly sbyte Invisibility;
 
-        protected DreamProc(int id, DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte? invisibility, bool isVerb = false) {
+        private readonly string? _verbName;
+        private readonly string? _verbDesc;
+
+        protected DreamProc(int id, DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
             Id = id;
             OwningType = owningType;
             Name = name;
@@ -46,14 +48,14 @@ namespace OpenDreamRuntime {
             ArgumentNames = argumentNames;
             ArgumentTypes = argumentTypes;
 
-            VerbName = verbName;
+            _verbName = verbName;
             if (verbCategory is not null) {
                 // (de)serialization meme to reduce JSON size
                 // It's string.Empty by default but we invert it to null to prevent serialization
                 // Explicit null becomes treated as string.Empty
                 VerbCategory = verbCategory == string.Empty ? null : verbCategory;
             }
-            VerbDesc = verbDesc;
+            _verbDesc = verbDesc;
             Invisibility = invisibility;
         }
 
@@ -73,11 +75,11 @@ namespace OpenDreamRuntime {
                 case "name":
                     return new DreamValue(VerbName);
                 case "category":
-                    return new DreamValue(VerbCategory);
+                    return (VerbCategory != null) ? new DreamValue(VerbCategory) : DreamValue.Null;
                 case "desc":
-                    return new DreamValue(VerbDesc);
+                    return (_verbDesc != null) ? new DreamValue(_verbDesc) : DreamValue.Null;
                 case "invisibility":
-                    return new DreamValue((int)Invisibility);
+                    return new DreamValue(Invisibility);
                 default:
                     throw new Exception($"Cannot get field \"{field}\" from {OwningType.ToString()}.{Name}()");
             }

@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using JetBrains.Annotations;
+using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
@@ -190,6 +192,10 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitDimensionalList(DMASTDimensionalList list) {
+            throw new NotImplementedException();
+        }
+
         public void VisitNewList(DMASTNewList newList) {
             throw new NotImplementedException();
         }
@@ -257,7 +263,36 @@ namespace DMCompiler.Compiler.DM {
         public void VisitPick(DMASTPick pick) {
             throw new NotImplementedException();
         }
-
+        public void VisitSin(DMASTSin sin) {
+            throw new NotImplementedException();
+        }
+        public void VisitCos(DMASTCos cos) {
+            throw new NotImplementedException();
+        }
+        public void VisitTan(DMASTTan tan) {
+            throw new NotImplementedException();
+        }
+        public void VisitArcsin(DMASTArcsin asin) {
+            throw new NotImplementedException();
+        }
+        public void VisitArccos(DMASTArccos acos) {
+            throw new NotImplementedException();
+        }
+        public void VisitArctan(DMASTArctan atan) {
+            throw new NotImplementedException();
+        }
+        public void VisitArctan2(DMASTArctan2 atan) {
+            throw new NotImplementedException();
+        }
+        public void VisitSqrt(DMASTSqrt sqrt) {
+            throw new NotImplementedException();
+        }
+        public void VisitLog(DMASTLog log) {
+            throw new NotImplementedException();
+        }
+        public void VisitAbs(DMASTAbs abs) {
+            throw new NotImplementedException();
+        }
         public void VisitCall(DMASTCall call) {
             throw new NotImplementedException();
         }
@@ -1294,6 +1329,28 @@ namespace DMCompiler.Compiler.DM {
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitList(this);
         }
+
+        public bool AllValuesConstant() {
+            return Values.All(value => value is {
+                Key: DMASTExpressionConstant,
+                Value: DMASTExpressionConstant
+            });
+        }
+    }
+
+    /// <summary>
+    /// Represents the value of a var defined as <code>var/list/L[1][2][3]</code>
+    /// </summary>
+    public sealed class DMASTDimensionalList : DMASTExpression {
+        public readonly List<DMASTExpression> Sizes;
+
+        public DMASTDimensionalList(Location location, List<DMASTExpression> sizes) : base(location) {
+            Sizes = sizes;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitDimensionalList(this);
+        }
     }
 
     public sealed class DMASTAddText : DMASTExpression {
@@ -1527,6 +1584,129 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
+    public class DMASTSin : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTSin(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitSin(this);
+        }
+    }
+
+    public class DMASTCos : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTCos(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitCos(this);
+        }
+    }
+
+    public class DMASTTan : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTTan(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitTan(this);
+        }
+    }
+
+    public class DMASTArcsin : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTArcsin(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitArcsin(this);
+        }
+    }
+
+    public class DMASTArccos : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTArccos(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitArccos(this);
+        }
+    }
+
+    public class DMASTArctan : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTArctan(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitArctan(this);
+        }
+    }
+
+    public class DMASTArctan2 : DMASTExpression {
+        public DMASTExpression XExpression;
+        public DMASTExpression YExpression;
+
+        public DMASTArctan2(Location location, DMASTExpression xExpression, DMASTExpression yExpression) : base(location) {
+            XExpression = xExpression;
+            YExpression = yExpression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitArctan2(this);
+        }
+    }
+
+    public class DMASTSqrt : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTSqrt(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitSqrt(this);
+        }
+    }
+
+    public class DMASTLog : DMASTExpression {
+        public DMASTExpression Expression;
+        public DMASTExpression? BaseExpression;
+
+        public DMASTLog(Location location, DMASTExpression expression, DMASTExpression? baseExpression) : base(location) {
+            Expression = expression;
+            BaseExpression = baseExpression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitLog(this);
+        }
+    }
+
+    public class DMASTAbs : DMASTExpression {
+        public DMASTExpression Expression;
+
+        public DMASTAbs(Location location, DMASTExpression expression) : base(location) {
+            Expression = expression;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitAbs(this);
+        }
+    }
     public sealed class DMASTCall : DMASTExpression {
         public readonly DMASTCallParameter[] CallParameters, ProcParameters;
 

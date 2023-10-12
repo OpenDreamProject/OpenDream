@@ -2,6 +2,7 @@
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
+using System.Text;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -9,6 +10,13 @@ namespace OpenDreamRuntime.Procs.Native;
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
 internal static partial class DreamProcNativeHelpers {
+    private static readonly char[] radixArray = new char[36] {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+        'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+        'w', 'x', 'y', 'z'
+    };
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -295,6 +303,97 @@ internal static partial class DreamProcNativeHelpers {
         } catch(IndexOutOfRangeException) { // Trying to access stuff that should be there but isn't is also pretty catchable for us, here.
             return false;
         }
+    }
+
+    /// <remarks>
+    /// It's a very BYONDish converter. Probably, you don't want to reuse it somewhere aside from the text2num implementation
+    /// </remarks>
+    public static double? StringToDouble(ReadOnlySpan<char> value, int radix) {
+        if (value == null || value.IsEmpty)
+            return null;
+
+        if (radix < 2 || radix > 36)
+            throw new Exception($"Invalid radix: {radix}");
+
+        bool negative = value[0] == '-';
+        if (negative || value[0] == '+')
+            value = value.Slice(1);
+
+        if (value.StartsWith("nan", StringComparison.CurrentCultureIgnoreCase)) {
+            return negative ? -double.NaN : double.NaN;
+        }
+
+        if (value.StartsWith("0x")) {
+            if (radix == 10 || radix == 16) {
+                radix = 16;
+                value = value.Slice(2);
+            }
+        }
+
+        int letterDigitsVariety = Math.Max(radix - 10, 0);
+
+        double? result = null;
+        int fractionalGrade = 0;
+
+        foreach (char c in value) {
+            if (c == '.') {
+                if (fractionalGrade != 0)
+                    break;
+                fractionalGrade = 1;
+                continue;
+            }
+
+            int digit = c;
+            if (!char.IsAsciiDigit(c)) {
+                if (c >= 'A' && c < 'A' + letterDigitsVariety) {
+                    digit -= 'A' - 10;
+                } else if (c >= 'a' && c <= 'a' + letterDigitsVariety) {
+                    digit -= 'a' - 10;
+                } else {
+                    break;
+                }
+            } else {
+                digit -= '0';
+            }
+
+            result ??= 0;
+            if (fractionalGrade == 0)
+                result = result * radix + digit;
+            else {
+                result += digit / Math.Pow(radix, fractionalGrade);
+                fractionalGrade++;
+            }
+        }
+
+        if (negative && result != null)
+            result *= -1;
+
+        return result;
+    }
+
+    public static string ToBase(int value, int radix) {
+        if(radix > 36) {
+            throw new ArgumentOutOfRangeException(nameof(radix), "radix is above 36");
+        }
+
+        StringBuilder resString = new();
+        bool wasNegative = false; // Theres likely a better way
+
+        if(value < 0) {
+            wasNegative = true;
+            value = Math.Abs(value);
+        }
+
+        while (value > 0) {
+            resString.Insert(0, radixArray[value % radix]);
+            value /= radix;
+        }
+
+        if(wasNegative) {
+            resString.Insert(0, '-');
+        }
+
+        return new string(resString.ToString());
     }
 
     /// <summary>

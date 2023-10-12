@@ -6,6 +6,7 @@ using System;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Dream.Procs;
 using System.Diagnostics;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Visitors {
     sealed class DMProcBuilder {

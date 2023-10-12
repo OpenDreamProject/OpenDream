@@ -25,7 +25,7 @@ public sealed class DreamObjectFilter : DreamObject {
     protected override void SetVar(string varName, DreamValue value) {
         if (FilterAttachedTo.TryGetValue(Filter, out var attachedTo)) {
             int index = attachedTo.GetIndexOfFilter(Filter);
-            Type filterType = GetType();
+            Type filterType = Filter.GetType();
 
             // Create a new mapping with the modified value and replace the DreamFilter with it
             MappingDataNode mapping = (MappingDataNode)SerializationManager.WriteValue(filterType, Filter);

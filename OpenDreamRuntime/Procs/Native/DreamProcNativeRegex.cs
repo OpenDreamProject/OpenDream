@@ -67,7 +67,7 @@ namespace OpenDreamRuntime.Procs.Native {
             string haystackSubstring = haystackString;
             if (end != 0) haystackSubstring = haystackString.Substring(0, end - start);
 
-            if (replace.TryGetValueAsProc(out DreamProc replaceProc)) {
+            if (replace.TryGetValueAsProc(out DreamProc? replaceProc)) {
                 return await DoProcReplace(state, replaceProc);
             }
 
@@ -78,12 +78,10 @@ namespace OpenDreamRuntime.Procs.Native {
             throw new ArgumentException("Replacement argument must be a string or a proc");
 
             async Task<DreamValue> DoProcReplace(AsyncNativeProc.State state, DreamProc proc) {
-                Match match;
-                var currentStart = start;
+                var currentStart = Math.Max(start - 1, 0);
                 var currentHaystack = haystackSubstring;
-                do {
-                    match = regex.Regex.Match(currentHaystack,
-                        Math.Clamp(currentStart - 1, 0, currentHaystack.Length));
+                while (currentStart < currentHaystack.Length) {
+                    var match = regex.Regex.Match(currentHaystack, currentStart);
                     if (!match.Success) break;
 
                     var groups = match.Groups;
@@ -95,10 +93,12 @@ namespace OpenDreamRuntime.Procs.Native {
                     var result = await state.CallNoWait(proc, null, null, args);
 
                     var replacement = result.Stringify();
-                    currentHaystack = regex.Regex.Replace(currentHaystack, replacement, 1,
-                        Math.Clamp(currentStart - 1, 0, currentHaystack.Length));
-                    currentStart = match.Index + replacement.Length + 1;
-                } while (regex.IsGlobal && match.Success);
+                    currentHaystack = regex.Regex.Replace(currentHaystack, replacement, 1, currentStart);
+                    currentStart = match.Index + Math.Max(replacement.Length, 1);
+
+                    if (!regex.IsGlobal)
+                        break;
+                }
 
                 var replaced = currentHaystack;
                 if (end != 0) replaced += haystackString.Substring(end - start + 1);

@@ -1,10 +1,10 @@
 ﻿using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DMPreprocessor;
-using OpenDreamShared.Dream.Procs;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {

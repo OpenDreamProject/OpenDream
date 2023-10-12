@@ -43,10 +43,12 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgWinSet>();
             _netManager.RegisterNetMessage<MsgWinClone>();
             _netManager.RegisterNetMessage<MsgWinExists>();
+            _netManager.RegisterNetMessage<MsgWinGet>();
             _netManager.RegisterNetMessage<MsgFtp>();
             _netManager.RegisterNetMessage<MsgLoadInterface>();
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
             _netManager.RegisterNetMessage<MsgSound>();
+            _netManager.RegisterNetMessage<MsgUpdateClientInfo>();
 
             var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, _netManager.Port);
             _sawmill.Debug($"Binding World Topic at {worldTopicAddress}");

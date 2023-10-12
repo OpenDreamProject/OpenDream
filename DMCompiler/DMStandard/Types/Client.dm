@@ -1,7 +1,7 @@
 ﻿/client
 	var/list/verbs = null
 	var/list/screen = null
-	var/list/images = list() as opendream_unimplemented
+	var/list/images = null
 	var/list/vars
 
 	var/atom/statobj
@@ -9,7 +9,7 @@
 	var/default_verb_category = "Commands"
 
 	var/tag
-	var/type = /client
+	var/const/type = /client
 
 	var/mob/mob
 	var/atom/eye
@@ -48,8 +48,6 @@
 	var/virtual_eye as opendream_unimplemented
 
 	proc/New(TopicData)
-		view = world.view
-
 		// Search every mob for one with our ckey
 		for (var/mob/M in world)
 			if (M.key == key)

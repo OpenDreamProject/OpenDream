@@ -4,6 +4,7 @@ using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using JetBrains.Annotations;
 using System.IO;
 
 namespace DMCompiler.DM.Expressions {
@@ -95,6 +96,49 @@ namespace DMCompiler.DM.Expressions {
 
         public virtual Constant LessThanOrEqual(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
+        }
+
+        public virtual Constant Sin() {
+            throw new CompileErrorException(Location, $"const operation \"sin({this})\" is invalid");
+        }
+
+        public virtual Constant Cos() {
+            throw new CompileErrorException(Location, $"const operation \"cos({this})\" is invalid");
+        }
+
+        public virtual Constant Tan() {
+            throw new CompileErrorException(Location, $"const operation \"tan({this})\" is invalid");
+        }
+
+        public virtual Constant Arcsin() {
+            throw new CompileErrorException(Location, $"const operation \"arcsin({this})\" is invalid");
+        }
+
+        public virtual Constant Arccos() {
+            throw new CompileErrorException(Location, $"const operation \"arccos({this})\" is invalid");
+        }
+
+        public virtual Constant Arctan() {
+            throw new CompileErrorException(Location, $"const operation \"arctan({this})\" is invalid");
+        }
+
+        public virtual Constant Arctan2(Constant yConst) {
+            throw new CompileErrorException(Location, $"const operation \"arctan({this}, {yConst})\" is invalid");
+        }
+
+        public virtual Constant Sqrt() {
+            throw new CompileErrorException(Location, $"const operation \"sqrt({this})\" is invalid");
+        }
+
+        public virtual Constant Log(Constant? baseVal) {
+            if (baseVal == null) {
+                throw new CompileErrorException(Location, $"const operation \"log({this})\" is invalid");
+            }
+            throw new CompileErrorException(Location, $"const operation \"log({baseVal}, {this})\" is invalid");
+        }
+
+        public virtual Constant Abs() {
+            throw new CompileErrorException(Location, $"const operation \"abs({this})\" is invalid");
         }
         #endregion
     }
@@ -315,6 +359,70 @@ namespace DMCompiler.DM.Expressions {
             }
             return new Number(Location, (Value <= rhsNum.Value) ? 1 : 0);
         }
+
+        public override Constant Sin() {
+            return new Number(Location, MathF.Sin(Value / 180 * MathF.PI));
+        }
+
+        public override Constant Cos() {
+            return new Number(Location, MathF.Cos(Value / 180 * MathF.PI));
+        }
+
+        public override Constant Tan() {
+            return new Number(Location, MathF.Tan(Value / 180 * MathF.PI));
+        }
+
+        public override Constant Arcsin() {
+            if (Value < -1 || Value > 1) {
+                throw new CompileErrorException(Location, $"const operation \"arcsin({this})\" is invalid (out of range)");
+            }
+            return new Number(Location, MathF.Asin(Value) / MathF.PI * 180);
+        }
+
+        public override Constant Arccos() {
+            if (Value < -1 || Value > 1) {
+                throw new CompileErrorException(Location, $"const operation \"arccos({this})\" is invalid (out of range)");
+            }
+            return new Number(Location, MathF.Acos(Value) / MathF.PI * 180);
+        }
+
+        public override Constant Arctan() {
+            return new Number(Location, MathF.Atan(Value) / MathF.PI * 180);
+        }
+
+        public override Constant Arctan2(Constant yConst) {
+            if (yConst is not Number yNum) {
+                throw new CompileErrorException(Location, $"const operation \"arctan2({this}, {yConst})\" is invalid");
+            }
+            return new Number(Location, MathF.Atan2(yNum.Value, Value) / MathF.PI * 180);
+        }
+
+        public override Constant Sqrt() {
+            if (Value < 0) {
+                throw new CompileErrorException(Location, $"const operation \"sqrt({this})\" is invalid (negative)");
+            }
+            return new Number(Location, MathF.Sqrt(Value));
+        }
+
+        public override Constant Log(Constant? baseVal) {
+            if (Value <= 0) {
+                throw new CompileErrorException(Location, $"const operation \"log({this})\" is invalid (non-positive)");
+            }
+            if (baseVal == null) {
+                return new Number(Location, MathF.Log(Value));
+            }
+            if (baseVal is not Number baseNum) {
+                throw new CompileErrorException(Location, $"const operation \"log({this}, {baseVal})\" is invalid");
+            }
+            if (baseNum.Value <= 0) {
+                throw new CompileErrorException(Location, $"const operation \"log({this}, {baseVal})\" is invalid (non-positive base)");
+            }
+            return new Number(Location, MathF.Log(Value, baseNum.Value));
+        }
+
+        public override Constant Abs() {
+            return new Number(Location, MathF.Abs(Value));
+        }
     }
 
     // "abc"
@@ -361,24 +469,35 @@ namespace DMCompiler.DM.Expressions {
         private bool _isAmbiguous;
 
         public Resource(Location location, string filePath) : base(location) {
-            string? finalFilePath = null;
+            // Treat backslashes as forward slashes on Linux
+            filePath = filePath.Replace('\\', '/');
 
-            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? "/";
+            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
             if (string.IsNullOrEmpty(outputDir))
                 outputDir = "./";
 
+            string? finalFilePath = null;
+
             var fileName = System.IO.Path.GetFileName(filePath);
             var fileDir = System.IO.Path.GetDirectoryName(filePath) ?? string.Empty;
-            var directory = FindDirectory(outputDir, fileDir);
-            if (directory != null) {
-                // Perform a case-insensitive search for the file
-                finalFilePath = FindFile(directory, fileName);
+
+            // Search every defined FILE_DIR
+            foreach (string resourceDir in DMCompiler.ResourceDirectories) {
+                var directory = FindDirectory(resourceDir, fileDir);
+
+                if (directory != null) {
+                    // Perform a case-insensitive search for the file
+                    finalFilePath = FindFile(directory, fileName);
+
+                    if (finalFilePath != null)
+                        break;
+                }
             }
 
-            // Search relative to the source file if it wasn't in the project's directory
+            // Search relative to the source file if it wasn't in one of the FILE_DIRs
             if (finalFilePath == null) {
                 var sourceDir = System.IO.Path.Combine(outputDir, System.IO.Path.GetDirectoryName(Location.SourceFile) ?? string.Empty);
-                directory = FindDirectory(sourceDir, fileDir);
+                var directory = FindDirectory(sourceDir, fileDir);
 
                 if (directory != null)
                     finalFilePath = FindFile(directory, fileName);
@@ -395,6 +514,10 @@ namespace DMCompiler.DM.Expressions {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Cannot find file '{filePath}'");
                 _filePath = filePath;
             }
+
+            // Path operations give backslashes on Windows, so do this again
+            // Compile-time resources always use forward slashes
+            _filePath = _filePath.Replace('\\', '/');
 
             DMObjectTree.Resources.Add(_filePath);
         }

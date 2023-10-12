@@ -6,7 +6,7 @@ using Robust.Shared.Map;
 namespace OpenDreamClient.Rendering {
     [RegisterComponent]
     [ComponentReference(typeof(SharedDMISpriteComponent))]
-    internal sealed class DMISpriteComponent : SharedDMISpriteComponent {
+    internal sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
         [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
         [ViewVariables] public ScreenLocation? ScreenLocation { get; set; }
 
@@ -16,13 +16,6 @@ namespace OpenDreamClient.Rendering {
 
         public DMISpriteComponent() {
             Icon.SizeChanged += OnIconSizeChanged;
-        }
-
-        public void GetAABB(TransformSystem sys, ref WorldAABBEvent e) {
-            if (!_entityManager.TryGetComponent<TransformComponent>(Owner, out var transform)) {
-                return;
-            }
-            e.AABB = Icon.GetWorldAABB(sys.GetWorldPosition(transform));
         }
 
         public bool IsVisible(bool checkWorld = true, int seeInvis = 0) {

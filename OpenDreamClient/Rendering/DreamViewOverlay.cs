@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using OpenDreamClient.Interface;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Enums;
@@ -10,6 +11,7 @@ using OpenDreamShared.Rendering;
 using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
+using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
 
@@ -27,6 +29,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly IMapManager _mapManager = default!;
@@ -40,6 +43,7 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly EntityLookupSystem _lookupSystem;
     private readonly ClientAppearanceSystem _appearanceSystem;
     private readonly ClientScreenOverlaySystem _screenOverlaySystem;
+    private readonly ClientImagesSystem _clientImagesSystem;
 
     private readonly EntityQuery<DMISpriteComponent> _spriteQuery;
     private readonly EntityQuery<TransformComponent> _xformQuery;
@@ -62,17 +66,17 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly Stack<RendererMetaData> _rendererMetaDataToReturn = new();
     private readonly Matrix3 _flipMatrix;
 
-    // Hardcoded for a 15x15 view (with 1 tile buffer on each side)
     // Defined here so it isn't recreated every frame
-    private readonly ViewAlgorithm.Tile?[,] _tileInfo = new ViewAlgorithm.Tile?[17,17];
+    private ViewAlgorithm.Tile?[,]? _tileInfo;
 
     public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
-        ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem) {
+        ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem, ClientImagesSystem clientImagesSystem) {
         IoCManager.InjectDependencies(this);
         _transformSystem = transformSystem;
         _lookupSystem = lookupSystem;
         _appearanceSystem = appearanceSystem;
         _screenOverlaySystem = screenOverlaySystem;
+        _clientImagesSystem = clientImagesSystem;
 
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
         _xformQuery = _entityManager.GetEntityQuery<TransformComponent>();
@@ -100,10 +104,6 @@ internal sealed class DreamViewOverlay : Overlay {
         EntityUid? eye = _playerManager.LocalPlayer?.Session.AttachedEntity;
         if (eye == null)
             return;
-
-        //because we render everything in render targets, and then render those to the world, we've got to apply some transformations to all world draws
-        //in order to correct for different coordinate systems and general weirdness
-        args.WorldHandle.SetTransform(new Vector2(0,args.WorldAABB.Size.Y), Angle.FromDegrees(180), new Vector2(-1,1));
 
         //Main drawing of sprites happens here
         try {
@@ -157,15 +157,16 @@ internal sealed class DreamViewOverlay : Overlay {
         ProcessSprites(worldHandle, viewportSize, args.WorldAABB);
 
         //Final draw
-        //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
         DrawPlanes(worldHandle);
+
+        //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
         worldHandle.DrawTexture(
             MouseMapRenderEnabled ? _mouseMapRenderTarget!.Texture : _baseRenderTarget!.Texture,
-            new Vector2(args.WorldAABB.Left, args.WorldAABB.Bottom * -1));
+            args.WorldAABB.BottomLeft);
     }
 
     //handles underlays, overlays, appearance flags, images. Adds them to the result list, so they can be sorted and drawn with DrawIcon()
-    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, RendererMetaData? parentIcon = null, bool keepTogether = false) {
+    private void ProcessIconComponents(DreamIcon icon, Vector2 position, EntityUid uid, bool isScreen, ref int tieBreaker, List<RendererMetaData> result, RendererMetaData? parentIcon = null, bool keepTogether = false, Vector3? turfCoords = null) {
         if (icon.Appearance is null) //in the event that appearance hasn't loaded yet
             return;
 
@@ -195,14 +196,14 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.ColorToApply = icon.Appearance.Color;
                 current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
             } else {
-                current.ColorToApply = parentIcon.ColorToApply;
-                current.ColorMatrixToApply = parentIcon.ColorMatrixToApply;
+                current.ColorToApply = parentIcon.ColorToApply * icon.Appearance.Color;
+                ColorMatrix.Multiply(ref parentIcon.ColorMatrixToApply, ref icon.Appearance.ColorMatrix, out current.ColorMatrixToApply);
             }
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetAlpha) != 0 || keepTogether) //RESET_ALPHA
                 current.AlphaToApply = icon.Appearance.Alpha/255.0f;
             else
-                current.AlphaToApply = parentIcon.AlphaToApply;
+                current.AlphaToApply = parentIcon.AlphaToApply * (icon.Appearance.Alpha / 255.0f);
 
             if ((icon.Appearance.AppearanceFlags & AppearanceFlags.ResetTransform) != 0 || keepTogether) //RESET_TRANSFORM
                 current.TransformToApply = iconAppearanceTransformMatrix;
@@ -252,20 +253,17 @@ internal sealed class DreamViewOverlay : Overlay {
             renderTargetPlaceholder.Layer = current.Layer;
             renderTargetPlaceholder.RenderSource = current.RenderTarget;
             renderTargetPlaceholder.MouseOpacity = current.MouseOpacity;
+            if((current.AppearanceFlags & AppearanceFlags.PlaneMaster) != 0){ //Plane masters with render targets get special handling
+                renderTargetPlaceholder.TransformToApply = current.TransformToApply;
+                renderTargetPlaceholder.ColorToApply = current.ColorToApply;
+                renderTargetPlaceholder.ColorMatrixToApply = current.ColorMatrixToApply;
+                renderTargetPlaceholder.AlphaToApply = current.AlphaToApply;
+                renderTargetPlaceholder.BlendMode = current.BlendMode;
+            }
+            renderTargetPlaceholder.AppearanceFlags = current.AppearanceFlags;
+            current.AppearanceFlags = current.AppearanceFlags & ~AppearanceFlags.PlaneMaster; //only the placeholder should be marked as master
             result.Add(renderTargetPlaceholder);
         }
-
-        //TODO check for images with override here
-        /*foreach (image in client.images) {
-            if (image.override && image.location == icon.owner)
-                current.MainIcon = image
-            else
-                add like overlays?
-        }*/
-
-        //TODO vis_contents
-        //click uid should be set to current.uid again
-        //dont forget the vis_flags
 
         //underlays - colour, alpha, and transform are inherited, but filters aren't
         foreach (DreamIcon underlay in icon.Underlays) {
@@ -298,6 +296,31 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.KeepTogetherGroup ??= new();
                 ProcessIconComponents(overlay, current.Position, uid, isScreen, ref tieBreaker, current.KeepTogetherGroup, current, keepTogether);
             }
+        }
+
+        //client images act as either an overlay or replace the main icon
+        //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
+        //note also that we use turfCoords and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
+        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<DreamIcon>? attachedClientImages)){
+            foreach(DreamIcon CI in attachedClientImages){
+                if(CI.Appearance == null)
+                    continue;
+                if(CI.Appearance.Override)
+                    current.MainIcon = CI;
+                else
+                    ProcessIconComponents(CI, current.Position, uid, isScreen, ref tieBreaker, result, current, false);
+            }
+        }
+
+        foreach (var visContent in icon.Appearance.VisContents) {
+            EntityUid visContentEntity = _entityManager.GetEntity(visContent);
+            if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
+                continue;
+
+            ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, current, keepTogether);
+
+            // TODO: click uid should be set to current.uid again
+            // TODO: vis_flags
         }
 
         //TODO maptext - note colour + transform apply
@@ -353,7 +376,7 @@ internal sealed class DreamViewOverlay : Overlay {
         handle.RenderInRenderTarget(target, () => {}, clearColor);
     }
 
-    private ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null) {
+    public ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, BlendMode? blendModeOverride = null) {
         Color rgba = colorOverride ?? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply);
 
         ColorMatrix colorMatrix;
@@ -362,7 +385,7 @@ internal sealed class DreamViewOverlay : Overlay {
         else
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
-        if (!_blendModeInstances.TryGetValue(iconMetaData.BlendMode, out var blendAndColor))
+        if (!_blendModeInstances.TryGetValue(blendModeOverride ?? iconMetaData.BlendMode, out var blendAndColor))
             blendAndColor = _blendModeInstances[BlendMode.Default];
 
         blendAndColor = blendAndColor.Duplicate();
@@ -372,10 +395,10 @@ internal sealed class DreamViewOverlay : Overlay {
         return blendAndColor;
     }
 
-    private (Action, Action) DrawIconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null) {
+    private (Action<Vector2i>?, Action<Vector2i>?) DrawIconAction(DrawingHandleWorld handle, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null) {
         DreamIcon? icon = iconMetaData.MainIcon;
         if (icon == null)
-            return (() => {}, () => {});
+            return (null, null);
 
         Vector2 position = iconMetaData.Position + positionOffset;
         Vector2 pixelPosition = position*EyeManager.PixelsPerMeter;
@@ -383,9 +406,6 @@ internal sealed class DreamViewOverlay : Overlay {
         Texture? frame;
         if (textureOverride != null) {
             frame = textureOverride;
-
-            //we flip this because GL's coordinate system is bottom-left first, and so render target textures are upside down
-            iconMetaData.TransformToApply *= _flipMatrix;
         } else {
             frame = icon.CurrentFrame;
         }
@@ -415,14 +435,15 @@ internal sealed class DreamViewOverlay : Overlay {
             ClearRenderTarget(tempTexture, handle, Color.Transparent);
 
             foreach (RendererMetaData ktItem in ktItems) {
-                DrawIconNow(handle, tempTexture, ktItem, -ktItem.Position);
+                DrawIconNow(handle, tempTexture.Size, tempTexture, ktItem, -ktItem.Position);
             }
 
             //but keep the handle to the final KT group's render target so we don't override it later in the render cycle
             IRenderTexture ktTexture = RentRenderTarget(tempTexture.Size);
             handle.RenderInRenderTarget(ktTexture, () => {
-                handle.DrawRect(new Box2(Vector2.Zero, tempTexture.Size), new Color());
+                handle.SetTransform(CreateRenderTargetFlipMatrix(tempTexture.Size, Vector2.Zero));
                 handle.DrawTextureRect(tempTexture.Texture, new Box2(Vector2.Zero, tempTexture.Size));
+                handle.SetTransform(Matrix3.Identity);
             }, Color.Transparent);
 
             frame = ktTexture.Texture;
@@ -439,20 +460,15 @@ internal sealed class DreamViewOverlay : Overlay {
 
         //if frame is still null, this doesn't require a draw, so return NOP
         if (frame == null)
-            return (()=>{},()=>{});
+            return (null, null);
 
-        Action iconDrawAction;
-        Action mouseMapDrawAction;
+        Action<Vector2i> iconDrawAction;
+        Action<Vector2i>? mouseMapDrawAction;
 
         //setup the MouseMapLookup shader for use in DrawIcon()
         byte[] rgba = BitConverter.GetBytes(iconMetaData.GetHashCode());
         Color targetColor = new Color(rgba[0], rgba[1], rgba[2]); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
         MouseMapLookup[targetColor] = iconMetaData;
-
-        Matrix3 tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, un-translate
-                                 iconMetaData.TransformToApply *
-                                 Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
-        Box2 drawBounds = new Box2(pixelPosition, pixelPosition+frame.Size);
 
         //go fast when the only filter is color, and we don't have more color things to consider
         bool goFastOverride = false;
@@ -464,24 +480,24 @@ internal sealed class DreamViewOverlay : Overlay {
 
         if (goFastOverride || icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
-            iconDrawAction = () => {
+            iconDrawAction = renderTargetSize => {
                 handle.UseShader(GetBlendAndColorShader(iconMetaData));
-                handle.SetTransform(tmpTranslation);
-                handle.DrawTextureRect(frame, drawBounds);
+                handle.SetTransform(CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition));
+                handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size));
                 handle.UseShader(null);
+                handle.SetTransform(Matrix3.Identity);
             };
 
-            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
-                mouseMapDrawAction = () => {
+            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent && !iconMetaData.ShouldPassMouse) {
+                mouseMapDrawAction = renderTargetSize => {
                     handle.UseShader(_blockColorInstance);
-                    handle.SetTransform(tmpTranslation);
-                    handle.DrawTextureRect(frame,
-                        drawBounds,
-                        targetColor);
+                    handle.SetTransform(CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition));
+                    handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size), targetColor);
+                    handle.SetTransform(Matrix3.Identity);
                     handle.UseShader(null);
                 };
             } else {
-                mouseMapDrawAction = () => {};
+                mouseMapDrawAction = null;
             }
 
             return (iconDrawAction, mouseMapDrawAction);
@@ -506,8 +522,9 @@ internal sealed class DreamViewOverlay : Overlay {
                 colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
                 handle.UseShader(colorShader);
 
-                handle.DrawTextureRect(frame,
-                    new Box2(Vector2.Zero + (frame.Size / 2), frame.Size + (frame.Size / 2)));
+                handle.SetTransform(CreateRenderTargetFlipMatrix(pong.Size, frame.Size / 2));
+                handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
+                handle.SetTransform(Matrix3.Identity);
                 handle.UseShader(null);
             }, Color.Black.WithAlpha(0));
 
@@ -516,40 +533,36 @@ internal sealed class DreamViewOverlay : Overlay {
 
                 handle.RenderInRenderTarget(ping, () => {
                     handle.UseShader(s);
-                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, frame.Size * 2));
+                    handle.SetTransform(CreateRenderTargetFlipMatrix(ping.Size, Vector2.Zero));
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
+                    handle.SetTransform(Matrix3.Identity);
                     handle.UseShader(null);
                 }, Color.Black.WithAlpha(0));
 
                 (ping, pong) = (pong, ping);
             }
 
-            if (icon.Appearance?.Filters.Count % 2 == 0) //if we have an even number of filters, we need to flip
-                tmpTranslation = Matrix3.CreateTranslation(-(pixelPosition.X+frame.Size.X/2), -(pixelPosition.Y+frame.Size.Y/2)) * //translate, apply transformation, un-translate
-                                    iconMetaData.TransformToApply * _flipMatrix *
-                                    Matrix3.CreateTranslation((pixelPosition.X+frame.Size.X/2), (pixelPosition.Y+frame.Size.Y/2));
-
             //then we return the Action that draws the actual icon with filters applied
-            iconDrawAction = () => {
+            iconDrawAction = renderTargetSize => {
                 //note we apply the color *before* the filters, so we use override here
                 handle.UseShader(GetBlendAndColorShader(iconMetaData, colorOverride: Color.White));
 
-                handle.SetTransform(tmpTranslation);
-                handle.DrawTextureRect(pong.Texture,
-                    new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)));
+                handle.SetTransform(CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition - frame.Size / 2));
+                handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
                 handle.UseShader(null);
+                handle.SetTransform(Matrix3.Identity);
             };
 
-            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent) {
-                mouseMapDrawAction = () => {
+            if (iconMetaData.MouseOpacity != MouseOpacity.Transparent && !iconMetaData.ShouldPassMouse) {
+                mouseMapDrawAction = renderTargetSize => {
                     handle.UseShader(_blockColorInstance);
-                    handle.SetTransform(tmpTranslation);
-                    handle.DrawTextureRect(pong.Texture,
-                        new Box2(pixelPosition-(frame.Size/2), pixelPosition+frame.Size+(frame.Size/2)),
-                        targetColor);
+                    handle.SetTransform(CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition - (frame.Size / 2)));
+                    handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size), targetColor);
                     handle.UseShader(null);
+                    handle.SetTransform(Matrix3.Identity);
                 };
             } else {
-                mouseMapDrawAction = () => {};
+                mouseMapDrawAction = null;
             }
 
             ReturnRenderTarget(ping);
@@ -570,8 +583,7 @@ internal sealed class DreamViewOverlay : Overlay {
             _mouseMapRenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
 
             foreach (var plane in _planes.Values) {
-                plane.RenderTarget.Dispose();
-                plane.RenderTarget = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
+                plane.SetMainRenderTarget(_clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb)));
             }
         } else {
             // Clear the mouse map lookup dictionary
@@ -624,54 +636,55 @@ internal sealed class DreamViewOverlay : Overlay {
                 }
 
                 if (sprite.IsPlaneMaster) { //if this is also a plane master
+                    sprite.Position = Vector2.Zero; //plane masters should not have a position offset
                     plane.Master = sprite;
+                    plane.SetTemporaryRenderTarget(tmpRenderTarget);
                 } else { //if not a plane master, draw the sprite to the render target
                     //note we don't draw this to the mouse-map because that's handled when the RenderTarget is used as a source later
-                    DrawIconNow(handle, tmpRenderTarget, sprite, ((worldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f), null, true); //draw the sprite centered on the RenderTarget
+                    DrawIconNow(handle, tmpRenderTarget.Size, tmpRenderTarget, sprite, ((worldAABB.Size/2)-sprite.Position)-new Vector2(0.5f,0.5f), null, true); //draw the sprite centered on the RenderTarget
                 }
             } else { //We are no longer dealing with RenderTargets, just regular old planes, so we collect the draw actions for batching
                 //if this is a plane master then we don't render it, we just set it as the plane's master
                 if (sprite.IsPlaneMaster) {
                     sprite.Position = Vector2.Zero; //plane masters should not have a position offset
-
                     plane.Master = sprite;
+
                     continue;
                 }
 
                 //add this sprite for rendering
-                (Action,Action) drawActions;
-                if (!string.IsNullOrEmpty(sprite.RenderSource) && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)) {
+                (Action<Vector2i>?, Action<Vector2i>?) drawActions;
+                if (sprite.HasRenderSource && _renderSourceLookup.TryGetValue(sprite.RenderSource, out var renderSourceTexture)) {
                     drawActions = DrawIconAction(handle, sprite, (-worldAABB.BottomLeft)-(worldAABB.Size/2)+new Vector2(0.5f,0.5f), renderSourceTexture.Texture);
                 } else {
                     drawActions = DrawIconAction(handle, sprite, -worldAABB.BottomLeft);
                 }
 
-                plane.IconDrawActions.Add(drawActions.Item1);
-                plane.MouseMapDrawActions.Add(drawActions.Item2);
+                if (drawActions.Item1 != null)
+                    plane.IconDrawActions.Add(drawActions.Item1);
+                if (drawActions.Item2 != null)
+                    plane.MouseMapDrawActions.Add(drawActions.Item2);
             }
         }
     }
 
     private void DrawPlanes(DrawingHandleWorld handle) {
-        if (!MouseMapRenderEnabled) { // No need to render the map if we're drawing the mouse map over it
-            using var _ = _prof.Group("draw planes map");
-
+        using (var _ = _prof.Group("draw planes map")) {
             handle.RenderInRenderTarget(_baseRenderTarget!, () => {
                 foreach (int planeIndex in _planes.Keys.Order()) {
                     var plane = _planes[planeIndex];
 
-                    plane.Draw(handle);
+                    plane.Draw(this, handle);
 
                     if (plane.Master != null) {
-                        DrawIconNow(handle, null, plane.Master, Vector2.Zero, plane.RenderTarget.Texture, noMouseMap: true);
-                    } else {
-                        var renderBox = new Box2(
-                            new Vector2(0, -_baseRenderTarget!.Size.Y),
-                            new Vector2(_baseRenderTarget.Size.X, 0)
-                        );
+                        // Don't draw this to the base render target if this itself is a render target
+                        if (!string.IsNullOrEmpty(plane.Master.RenderTarget))
+                            continue;
 
-                        handle.SetTransform(_flipMatrix);
-                        handle.DrawTextureRect(plane.RenderTarget.Texture, renderBox);
+                        DrawIconNow(handle, _baseRenderTarget!.Size, null, plane.Master, Vector2.Zero, plane.RenderTarget.Texture, noMouseMap: true);
+                    } else {
+                        handle.SetTransform(CreateRenderTargetFlipMatrix(_baseRenderTarget!.Size, Vector2.Zero));
+                        handle.DrawTextureRect(plane.RenderTarget.Texture, Box2.FromTwoPoints(Vector2.Zero, _baseRenderTarget.Size));
                     }
                 }
             }, null);
@@ -680,7 +693,7 @@ internal sealed class DreamViewOverlay : Overlay {
         using (_prof.Group("draw planes mouse map")) {
             handle.RenderInRenderTarget(_mouseMapRenderTarget!, () => {
                 foreach (int planeIndex in _planes.Keys.Order())
-                    _planes[planeIndex].DrawMouseMap();
+                    _planes[planeIndex].DrawMouseMap(_mouseMapRenderTarget!.Size);
             }, null);
         }
     }
@@ -688,14 +701,26 @@ internal sealed class DreamViewOverlay : Overlay {
     private ViewAlgorithm.Tile?[,] CalculateTileVisibility(MapGridComponent grid, HashSet<EntityUid> entities, TileRef eyeTile, int seeVis) {
         using var _ = _prof.Group("visible turfs");
 
+        var viewRange = _interfaceManager.View;
+        if (_tileInfo == null || _tileInfo.GetLength(0) != viewRange.Width + 2 || _tileInfo.GetLength(1) != viewRange.Height + 2) {
+            // _tileInfo hasn't been created yet or view range has changed, so create a new array.
+            // Leave a 1 tile buffer on each side
+            _tileInfo = new ViewAlgorithm.Tile[viewRange.Width + 2, viewRange.Height + 2];
+        }
+
         var eyeWorldPos = grid.GridTileToWorld(eyeTile.GridIndices);
-        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(17, 17)));
+        var tileRefs = grid.GetTilesIntersecting(Box2.CenteredAround(eyeWorldPos.Position, new Vector2(_tileInfo.GetLength(0), _tileInfo.GetLength(1))));
 
         // Gather up all the data the view algorithm needs
         foreach (TileRef tileRef in tileRefs) {
             var delta = tileRef.GridIndices - eyeTile.GridIndices;
             var appearance = _appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId).Appearance;
             if (appearance == null)
+                continue;
+
+            int xIndex = delta.X + viewRange.CenterX;
+            int yIndex = delta.Y + viewRange.CenterY;
+            if (xIndex < 0 || yIndex < 0 || xIndex >= _tileInfo.GetLength(0) || yIndex >= _tileInfo.GetLength(1))
                 continue;
 
             var tile = new ViewAlgorithm.Tile {
@@ -705,7 +730,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 DeltaY = delta.Y
             };
 
-            _tileInfo[delta.X + 8, delta.Y + 8] = tile;
+            _tileInfo[xIndex, yIndex] = tile;
         }
 
         // Apply entities' opacity
@@ -719,8 +744,8 @@ internal sealed class DreamViewOverlay : Overlay {
                 continue;
 
             var worldPos = _transformSystem.GetWorldPosition(entity, _xformQuery);
-            var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-            if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+            var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + viewRange.Center;
+            if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                 continue;
 
             var tile = _tileInfo[tilePos.X, tilePos.Y];
@@ -751,7 +776,9 @@ internal sealed class DreamViewOverlay : Overlay {
             MapCoordinates worldPos = grid.GridTileToWorld(tilePos);
 
             tValue = 0;
-            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer);
+            //pass the turf coords for client.images lookup
+            Vector3 turfCoords = new Vector3(tileRef.X, tileRef.Y, (int) worldPos.MapId);
+            ProcessIconComponents(_appearanceSystem.GetTurfIcon(tileRef.Tile.TypeId), worldPos.Position - Vector2.One, EntityUid.Invalid, false, ref tValue, _spriteContainer, turfCoords: turfCoords);
         }
 
         // Visible entities
@@ -767,9 +794,9 @@ internal sealed class DreamViewOverlay : Overlay {
 
                 // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
                 // TODO: Differentiate between objs and mobs
-                if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0) {
-                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + 8;
-                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= 17 || tilePos.Y >= 17)
+                if ((sight & (SightFlags.SeeObjs|SightFlags.SeeMobs)) == 0 && _tileInfo != null) {
+                    var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + _interfaceManager.View.Center;
+                    if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                         continue;
 
                     var tile = tiles[tilePos.X, tilePos.Y];
@@ -794,7 +821,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                     continue;
 
-                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft , EyeManager.PixelsPerMeter);
+                Vector2 position = sprite.ScreenLocation.GetViewPosition(worldAABB.BottomLeft, _interfaceManager.View, EyeManager.PixelsPerMeter);
                 Vector2 iconSize = sprite.Icon.DMI == null ? Vector2.Zero : sprite.Icon.DMI.IconSize / (float)EyeManager.PixelsPerMeter;
                 for (int x = 0; x < sprite.ScreenLocation.RepeatX; x++) {
                     for (int y = 0; y < sprite.ScreenLocation.RepeatY; y++) {
@@ -810,18 +837,20 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
-    private void DrawIconNow(DrawingHandleWorld handle, IRenderTarget? renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null, bool noMouseMap = false) {
-        (Action iconDrawAction, Action mouseMapDrawAction) = DrawIconAction(handle, iconMetaData, positionOffset, textureOverride);
+    private void DrawIconNow(DrawingHandleWorld handle, Vector2i renderTargetSize, IRenderTarget? renderTarget, RendererMetaData iconMetaData, Vector2 positionOffset, Texture? textureOverride = null, bool noMouseMap = false) {
+        (Action<Vector2i>? iconDrawAction, Action<Vector2i>? mouseMapDrawAction) = DrawIconAction(handle, iconMetaData, positionOffset, textureOverride);
+
+        if (iconDrawAction == null)
+            return;
 
         if (renderTarget != null) {
-            handle.RenderInRenderTarget(renderTarget, iconDrawAction, null);
+            handle.RenderInRenderTarget(renderTarget, () => iconDrawAction(renderTargetSize), null);
         } else {
-            iconDrawAction();
+            iconDrawAction(renderTargetSize);
         }
 
-        //action should be NOP if this is transparent, but save a RiRT call anyway since we can
-        if (!(noMouseMap || iconMetaData.MouseOpacity != MouseOpacity.Transparent)) {
-            handle.RenderInRenderTarget(_mouseMapRenderTarget!, mouseMapDrawAction, null);
+        if (mouseMapDrawAction != null && !noMouseMap) {
+            handle.RenderInRenderTarget(_mouseMapRenderTarget!, () => mouseMapDrawAction(renderTargetSize), null);
         }
     }
 
@@ -836,6 +865,21 @@ internal sealed class DreamViewOverlay : Overlay {
 
         _rendererMetaDataToReturn.Push(result);
         return result;
+    }
+
+    /// <summary>
+    /// Creates a transformation matrix that counteracts RT's
+    /// <see cref="DrawingHandleBase.RenderInRenderTarget(IRenderTarget,Action,System.Nullable{Robust.Shared.Maths.Color})"/> quirks
+    /// <br/>
+    /// If you are using render targets, you will almost certainly want to use this
+    /// </summary>
+    /// <param name="renderTargetSize">Size of the render target</param>
+    /// <param name="renderPosition">The translation to draw the icon at</param>
+    /// <remarks>Due to RT applying transformations out of order, render the icon at Vector2.Zero</remarks>
+    public Matrix3 CreateRenderTargetFlipMatrix(Vector2i renderTargetSize, Vector2 renderPosition) {
+        // RT flips the texture when doing a RenderInRenderTarget(), so we use _flipMatrix to reverse it
+        // We must also handle translations here, since RT applies its own transform in an unexpected order
+        return _flipMatrix * Matrix3.CreateTranslation(renderPosition.X, renderTargetSize.Y - renderPosition.Y);
     }
 }
 
@@ -860,6 +904,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public MouseOpacity MouseOpacity;
 
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
+    public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
+    public bool ShouldPassMouse => HasRenderSource && (AppearanceFlags & AppearanceFlags.PassMouse) != 0;
 
     public RendererMetaData() {
         Reset();
@@ -898,7 +944,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         }
 
         //Anything with a render source which points to a render target must come *after* that render_target
-        if (!string.IsNullOrEmpty(RenderSource) && RenderSource == other.RenderTarget) {
+        if (HasRenderSource && RenderSource == other.RenderTarget) {
             return 1;
         }
 

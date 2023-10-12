@@ -223,8 +223,9 @@ internal struct ParsedKeybind {
 }
 
 public sealed class InterfaceMacro : InterfaceElement {
+    public string Command => MacroDescriptor.Command;
+    
     private MacroDescriptor MacroDescriptor => (MacroDescriptor)ElementDescriptor;
-    private string Command => MacroDescriptor.Command;
 
     private readonly IEntitySystemManager _entitySystemManager;
     private readonly IUserInterfaceManager _uiManager;

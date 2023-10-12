@@ -1,5 +1,4 @@
-﻿using OpenDreamShared.Dream.Procs;
-using DMRefType = OpenDreamShared.Dream.Procs.DMReference.Type;
+﻿using DMRefType = DMCompiler.Bytecode.DMReference.Type;
 
 namespace OpenDreamRuntime;
 

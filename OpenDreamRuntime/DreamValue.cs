@@ -14,6 +14,7 @@ using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Validation;
 using Robust.Shared.Serialization.TypeSerializers.Interfaces;
 using OpenDreamRuntime.Procs.Native;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime {
     [JsonConverter(typeof(DreamValueJsonConverter))]
@@ -71,6 +72,7 @@ namespace OpenDreamRuntime {
         private readonly float _floatValue;
 
         public DreamValue(string value) {
+            DebugTools.Assert(value != null);
             Type = DreamValueType.String;
             _refValue = value;
         }

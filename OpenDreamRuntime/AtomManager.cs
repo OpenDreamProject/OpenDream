@@ -31,24 +31,28 @@ namespace OpenDreamRuntime {
         private ServerAppearanceSystem? _appearanceSystem;
 
         public DreamObject GetAtom(int index) {
+            // Order of world.contents:
+            //  Mobs + Movables + Areas + Turfs
+
+            if (index < Mobs.Count)
+                return Mobs[index];
+
+            // TODO: Movables and objects should be mixed together here
+            index -= Mobs.Count;
+            if (index < Objects.Count)
+                return Objects[index];
+
+            index -= Objects.Count;
+            if (index < Movables.Count)
+                return Movables[index];
+
+            index -= Movables.Count;
             if (index < Areas.Count)
                 return Areas[index];
 
             index -= Areas.Count;
             if (index < Turfs.Count)
                 return Turfs[index];
-
-            index -= Turfs.Count;
-            if (index < Movables.Count)
-                return Movables[index];
-
-            index -= Movables.Count;
-            if (index < Objects.Count)
-                return Objects[index];
-
-            index -= Objects.Count;
-            if (index < Mobs.Count)
-                return Mobs[index];
 
             throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
         }
@@ -96,13 +100,13 @@ namespace OpenDreamRuntime {
                 case "glide_size":
                 case "render_source":
                 case "render_target":
+                case "transform":
                     return true;
 
                 // Get/SetAppearanceVar doesn't handle these
                 case "overlays":
                 case "underlays":
                 case "filters":
-                case "transform":
                 default:
                     return false;
             }
@@ -122,8 +126,13 @@ namespace OpenDreamRuntime {
                     value.TryGetValueAsString(out appearance.IconState);
                     break;
                 case "dir":
-                    //TODO figure out the weird inconsistencies with this being internally clamped
                     value.TryGetValueAsInteger(out var dir);
+
+                    if (dir <= 0) // Ignore any sets <= 0 or non-number
+                        break;
+
+                    if (dir > 0xFF) // Clamp to 1 byte
+                        dir = 0xFF;
 
                     appearance.Direction = (AtomDirection)dir;
                     break;
@@ -189,7 +198,14 @@ namespace OpenDreamRuntime {
                 case "render_target":
                     value.TryGetValueAsString(out appearance.RenderTarget);
                     break;
-                // TODO: overlays, underlays, filters, transform
+                case "transform":
+                    float[] transformArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transform)
+                        ? DreamObjectMatrix.MatrixToTransformFloatArray(transform)
+                        : DreamObjectMatrix.IdentityMatrixArray;
+
+                    appearance.Transform = transformArray;
+                    break;
+                // TODO: overlays, underlays, filters
                 //       Those are handled separately by whatever is calling SetAppearanceVar currently
                 default:
                     throw new ArgumentException($"Invalid appearance var {varName}");
@@ -248,10 +264,21 @@ namespace OpenDreamRuntime {
                 case "glide_size":
                     return new(appearance.GlideSize);
                 case "render_source":
-                    return new(appearance.RenderSource);
+                    return (appearance.RenderSource != null)
+                        ? new DreamValue(appearance.RenderSource)
+                        : DreamValue.Null;
                 case "render_target":
-                    return new(appearance.RenderTarget);
-                // TODO: overlays, underlays, filters, transform
+                    return (appearance.RenderTarget != null)
+                        ? new DreamValue(appearance.RenderTarget)
+                        : DreamValue.Null;
+                case "transform":
+                    var transform = appearance.Transform;
+                    var matrix = DreamObjectMatrix.MakeMatrix(_objectTree,
+                        transform[0], transform[2], transform[4],
+                        transform[1], transform[3], transform[5]);
+
+                    return new(matrix);
+                // TODO: overlays, underlays, filters
                 //       Those are handled separately by whatever is calling GetAppearanceVar currently
                 default:
                     throw new ArgumentException($"Invalid appearance var {varName}");
@@ -317,7 +344,9 @@ namespace OpenDreamRuntime {
             // Don't send the updated appearance to clients, they will animate it
             movable.SpriteComponent.SetAppearance(appearance, dirty: false);
 
-            AppearanceSystem.Animate(movable.Entity, appearance, duration);
+            NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
+
+            AppearanceSystem.Animate(ent, appearance, duration);
         }
 
         public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {

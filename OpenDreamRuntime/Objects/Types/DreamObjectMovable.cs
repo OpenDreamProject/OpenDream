@@ -169,14 +169,34 @@ public class DreamObjectMovable : DreamObjectAtom {
         if (DreamMapManager.TryGetCellAt(Position, Z, out var oldMapCell))
             oldMapCell.Movables.Remove(this);
 
+        if (loc is DreamObjectArea area) { // Puts the atom on the area's first turf
+            loc = null; // Nullspace if we can't find a turf
+
+            // We don't actually keep track of area turfs currently
+            // So do the classic BYOND trick of looping through every turf and checking its area :)
+            // TODO: Remove this monstrosity
+            for (int z = 1; z <= DreamMapManager.Levels; z++) {
+                for (int x = 1; x <= DreamMapManager.Size.X; x++) {
+                    for (int y = 1; y <= DreamMapManager.Size.Y; y++) {
+                        if (!DreamMapManager.TryGetCellAt((x, y), z, out var cell))
+                            continue;
+
+                        if (cell.Area == area) {
+                            loc = cell.Turf;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         switch (loc) {
-            case DreamObjectTurf turf: {
+            case DreamObjectTurf turf:
                 TransformSystem.SetParent(Entity, DreamMapManager.GetZLevelEntity(turf.Z));
                 TransformSystem.SetWorldPosition(Entity, new Vector2(turf.X, turf.Y));
 
                 turf.Cell.Movables.Add(this);
                 break;
-            }
             case DreamObjectMovable movable:
                 TransformSystem.SetParent(Entity, movable.Entity);
                 TransformSystem.SetLocalPosition(Entity, Vector2.Zero);

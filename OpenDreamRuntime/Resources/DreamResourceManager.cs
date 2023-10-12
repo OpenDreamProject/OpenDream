@@ -64,9 +64,9 @@ namespace OpenDreamRuntime.Resources {
                 // Create a new type of resource based on its extension
                 switch (Path.GetExtension(resourcePath)) {
                     case ".dmi":
+                    case ".png":
                         resource = new IconResource(resourceId, filePath, resourcePath);
                         break;
-                    case ".png":
                     case ".jpg":
                     case ".rsi": // RT-specific, not in BYOND
                     case ".gif":
@@ -190,11 +190,17 @@ namespace OpenDreamRuntime.Resources {
             return true;
         }
 
-        public bool CopyFile(string sourceFilePath, string destinationFilePath) {
+        public bool CopyFile(DreamResource sourceFile, string destinationFilePath) {
             try {
                 var dest = Path.Combine(RootPath, destinationFilePath);
-                Directory.CreateDirectory(Path.GetDirectoryName(dest));
-                File.Copy(Path.Combine(RootPath, sourceFilePath), dest);
+                var dir = Path.GetDirectoryName(dest);
+                if (dir != null)
+                    Directory.CreateDirectory(dir);
+
+                if (sourceFile.ResourceData == null)
+                    File.WriteAllText(string.Empty, dest);
+                else
+                    File.WriteAllBytes(dest, sourceFile.ResourceData);
             } catch (Exception) {
                 return false;
             }

@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
@@ -284,6 +285,17 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
             {DreamProcOpcode.Gradient, DMOpcodeHandlers.Gradient},
+            {DreamProcOpcode.Sin, DMOpcodeHandlers.Sin},
+            {DreamProcOpcode.Cos, DMOpcodeHandlers.Cos},
+            {DreamProcOpcode.Tan, DMOpcodeHandlers.Tan},
+            {DreamProcOpcode.Arcsin, DMOpcodeHandlers.Arcsin},
+            {DreamProcOpcode.Arccos, DMOpcodeHandlers.Arccos},
+            {DreamProcOpcode.Arctan, DMOpcodeHandlers.Arctan},
+            {DreamProcOpcode.Arctan2, DMOpcodeHandlers.Arctan2},
+            {DreamProcOpcode.Sqrt, DMOpcodeHandlers.Sqrt},
+            {DreamProcOpcode.Log, DMOpcodeHandlers.Log},
+            {DreamProcOpcode.LogE, DMOpcodeHandlers.LogE},
+            {DreamProcOpcode.Abs, DMOpcodeHandlers.Abs},
             {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign},
             {DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep},
             {DreamProcOpcode.Length, DMOpcodeHandlers.Length},

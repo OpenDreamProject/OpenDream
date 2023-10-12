@@ -42,6 +42,14 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
+		src.add_client_image()
+
+	verb/winget_test()
+		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
+		usr << "panes: [json_encode(winget(usr, null, "panes"))]"
+		usr << "menus: [json_encode(winget(usr, null, "menus"))]"
+		usr << "macros: [json_encode(winget(usr, null, "macros"))]"
+
 
 	verb/rotate()
 		for(var/i in 1 to 8)
@@ -167,10 +175,15 @@
 	verb/add_client_image()
 		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
 		i.loc = src
+		i.override = 1
+		
 		src.client.images += i
-		spawn(20)
-			src.client.images.Remove(i)
-			del(i)
+		world.log << "override added"
+		for(var/turf/T in range(src, 2))
+			var/image/turf_image = image(icon = 'icons/hanoi.dmi', loc=T, icon_state="1")
+			src.client.images += turf_image
+		spawn(50)
+			src.client.images.Cut()
 
 /mob/Stat()
 	if (statpanel("Status"))

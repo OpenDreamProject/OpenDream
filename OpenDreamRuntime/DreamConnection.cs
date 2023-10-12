@@ -5,6 +5,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.GameObjects;
@@ -19,6 +20,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
+        private readonly ServerClientImagesSystem? _clientImagesSystem;
         private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
@@ -101,16 +103,19 @@ namespace OpenDreamRuntime {
             IoCManager.InjectDependencies(this);
 
             _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
+            _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);
             _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
         public void HandleConnection(IPlayerSession session) {
-            var client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem);
+            var client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem, _clientImagesSystem);
 
             Session = session;
 
             Client = client;
             Client.InitSpawn(new());
+
+            SendClientInfoUpdate();
         }
 
         public void HandleDisconnection() {
@@ -215,6 +220,14 @@ namespace OpenDreamRuntime {
             });
         }
 
+        public void SendClientInfoUpdate() {
+            MsgUpdateClientInfo msg = new() {
+                View = Client!.View
+            };
+
+            Session?.ConnectedClient.SendMessage(msg);
+        }
+
         public void SetOutputStatPanel(string name) {
             if (!_statPanels.ContainsKey(name))
                 _statPanels.Add(name, new());
@@ -315,15 +328,15 @@ namespace OpenDreamRuntime {
 
             switch (command) {
                 //TODO: Maybe move these verbs to DM code?
-                case ".north": Client?.SpawnProc("North"); break;
-                case ".east": Client?.SpawnProc("East"); break;
-                case ".south": Client?.SpawnProc("South"); break;
-                case ".west": Client?.SpawnProc("West"); break;
-                case ".northeast": Client?.SpawnProc("Northeast"); break;
-                case ".southeast": Client?.SpawnProc("Southeast"); break;
-                case ".southwest": Client?.SpawnProc("Southwest"); break;
-                case ".northwest": Client?.SpawnProc("Northwest"); break;
-                case ".center": Client?.SpawnProc("Center"); break;
+                case ".north": Client?.SpawnProc("North", Mob); break;
+                case ".east": Client?.SpawnProc("East", Mob); break;
+                case ".south": Client?.SpawnProc("South", Mob); break;
+                case ".west": Client?.SpawnProc("West", Mob); break;
+                case ".northeast": Client?.SpawnProc("Northeast", Mob); break;
+                case ".southeast": Client?.SpawnProc("Southeast", Mob); break;
+                case ".southwest": Client?.SpawnProc("Southwest", Mob); break;
+                case ".northwest": Client?.SpawnProc("Northwest", Mob); break;
+                case ".center": Client?.SpawnProc("Center", Mob); break;
 
                 default: {
                     if (_availableVerbs.TryGetValue(command, out var value)) {
@@ -434,6 +447,19 @@ namespace OpenDreamRuntime {
             var msg = new MsgWinExists() {
                 PromptId = promptId,
                 ControlId = controlId
+            };
+
+            Session.ConnectedClient.SendMessage(msg);
+
+            return task;
+        }
+
+        public Task<DreamValue> WinGet(string controlId, string queryValue) {
+            var task = MakePromptTask(out var promptId);
+            var msg = new MsgWinGet() {
+                PromptId = promptId,
+                ControlId = controlId,
+                QueryValue = queryValue
             };
 
             Session.ConnectedClient.SendMessage(msg);

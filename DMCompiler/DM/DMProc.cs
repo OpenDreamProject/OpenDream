@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
@@ -88,7 +89,7 @@ namespace DMCompiler.DM {
         public string? VerbName;
         public string? VerbCategory = string.Empty;
         public string? VerbDesc;
-        public sbyte? Invisibility;
+        public sbyte Invisibility;
 
         private DMObject _dmObject;
         private DMASTProcDefinition? _astDefinition;
@@ -942,6 +943,52 @@ namespace DMCompiler.DM {
         public void LessThanOrEqual() {
             ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareLessThanOrEqual);
+        }
+
+        public void Sin() {
+            WriteOpcode(DreamProcOpcode.Sin);
+        }
+
+        public void Cos() {
+            WriteOpcode(DreamProcOpcode.Cos);
+        }
+
+        public void Tan() {
+            WriteOpcode(DreamProcOpcode.Tan);
+        }
+
+        public void Arcsin() {
+            WriteOpcode(DreamProcOpcode.Arcsin);
+        }
+
+        public void Arccos() {
+            WriteOpcode(DreamProcOpcode.Arccos);
+        }
+
+        public void Arctan() {
+            WriteOpcode(DreamProcOpcode.Arctan);
+        }
+
+        public void Arctan2() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.Arctan2);
+        }
+
+        public void Sqrt() {
+            WriteOpcode(DreamProcOpcode.Sqrt);
+        }
+
+        public void Log() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.Log);
+        }
+
+        public void LogE() {
+            WriteOpcode(DreamProcOpcode.LogE);
+        }
+
+        public void Abs() {
+            WriteOpcode(DreamProcOpcode.Abs);
         }
 
         public void PushFloat(float value) {

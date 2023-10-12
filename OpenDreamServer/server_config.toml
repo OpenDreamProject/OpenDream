@@ -44,6 +44,8 @@ welcomemsg = "Welcome to the server!"
 json_path = ""
 # If true, exceptions will always print to the console in addition to the world.log file (if set)
 always_show_exceptions = false
+# The port used to listen for /world/Topic() calls
+topic_port = 25567
 
 # These are actually client cvars that, currently, have to be passed as program args.
 # Documented here in hopes that we'll have a client_config.toml without using the launcher one day

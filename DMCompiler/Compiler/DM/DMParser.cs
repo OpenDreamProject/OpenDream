@@ -1647,6 +1647,11 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression? value = PathArray(ref path.Path);
                 DMASTExpression? possibleValues = null;
 
+                if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                    Whitespace();
+                    value = Expression();
+                }
+
                 if (Check(TokenType.DM_Equals)) {
                     Whitespace();
                     value = Expression();

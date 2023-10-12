@@ -37,6 +37,10 @@ namespace OpenDreamClient.States.MainMenu
             UserNameBox.Text = currentUserName;
 
             AddressBoxProtected.Text = "127.0.0.1:25566";
+
+#if DEBUG
+            DebugWarningLabel.Visible = true;
+#endif
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using DMCompiler;
 using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -1619,82 +1620,92 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Sin(DMProcState state) {
-            DreamValue value = state.Pop();
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Sin(x);
 
-            state.Push(new DreamValue(MathF.Sin(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Cos(DMProcState state) {
-            DreamValue value = state.Pop();
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Cos(x);
 
-            state.Push(new DreamValue(MathF.Cos(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Tan(DMProcState state) {
-            DreamValue value = state.Pop();
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Tan(x);
 
-            state.Push(new DreamValue(MathF.Tan(value.UnsafeGetValueAsFloat() / 180 * MathF.PI)));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus Arcsin(DMProcState state) {
-            DreamValue value = state.Pop();
+        public static ProcStatus ArcSin(DMProcState state) {
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcSin(x);
 
-            state.Push(new DreamValue(MathF.Asin(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus Arccos(DMProcState state) {
-            DreamValue value = state.Pop();
+        public static ProcStatus ArcCos(DMProcState state) {
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcCos(x);
 
-            state.Push(new DreamValue(MathF.Acos(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus Arctan(DMProcState state) {
-            DreamValue value = state.Pop();
+        public static ProcStatus ArcTan(DMProcState state) {
+            float a = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcTan(a);
 
-            state.Push(new DreamValue(MathF.Atan(value.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus Arctan2(DMProcState state) {
-            DreamValue y = state.Pop();
-            DreamValue x = state.Pop();
-            var yValue = y.UnsafeGetValueAsFloat();
+        public static ProcStatus ArcTan2(DMProcState state) {
+            float y = state.Pop().UnsafeGetValueAsFloat();
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcTan(x, y);
 
-            state.Push(new DreamValue(MathF.Atan2(yValue, x.UnsafeGetValueAsFloat()) / MathF.PI * 180));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Sqrt(DMProcState state) {
-            DreamValue value = state.Pop();
+            float a = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Sqrt(a);
 
-            state.Push(new DreamValue(MathF.Sqrt(value.UnsafeGetValueAsFloat())));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Log(DMProcState state) {
-            DreamValue baseValue = state.Pop();
-            DreamValue value = state.Pop();
+            float baseValue = state.Pop().UnsafeGetValueAsFloat();
+            float value = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Log(value, baseValue);
 
-            state.Push(new DreamValue(MathF.Log(value.UnsafeGetValueAsFloat(), baseValue.UnsafeGetValueAsFloat())));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus LogE(DMProcState state) {
-            DreamValue value = state.Pop();
+            float y = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Log(y);
 
-            state.Push(new DreamValue(MathF.Log(value.UnsafeGetValueAsFloat())));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Abs(DMProcState state) {
-            DreamValue value = state.Pop();
+            float a = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Abs(a);
 
-            state.Push(new DreamValue(MathF.Abs(value.UnsafeGetValueAsFloat())));
+            state.Push(new DreamValue(result));
             return ProcStatus.Continue;
         }
 

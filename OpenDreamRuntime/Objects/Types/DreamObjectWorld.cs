@@ -125,7 +125,7 @@ public sealed class DreamObjectWorld : DreamObject {
             case "timeofday":
                 value = new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 return true;
-            
+
             case "timezone":
                 value = new DreamValue((int)DateTimeOffset.Now.Offset.TotalHours);
                 return true;
@@ -210,6 +210,11 @@ public sealed class DreamObjectWorld : DreamObject {
                     value = new DreamValue(DefaultView.ToString());
                 }
 
+                return true;
+
+            // Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed
+            case "opendream_topic_port":
+                value = new(_cfg.GetCVar(OpenDreamCVars.TopicPort));
                 return true;
 
             default:

@@ -97,6 +97,8 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
         copy._id = id;
+        foreach(var child in this.ControlDescriptors)
+            copy.ControlDescriptors.Add(serializationManager.CreateCopy(child, notNullableOverride: false));
         return copy;
     }
 

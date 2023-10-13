@@ -639,6 +639,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
 
         LoadDescriptor(elementDescriptor);
+        if(elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)){
+            window.CreateChildControls();
+        }
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {

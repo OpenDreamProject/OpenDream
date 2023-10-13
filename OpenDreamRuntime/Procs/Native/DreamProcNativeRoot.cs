@@ -30,14 +30,6 @@ namespace OpenDreamRuntime.Procs.Native {
     /// like filter(), matrix(), etc.
     /// </remarks>
     internal static class DreamProcNativeRoot {
-        [DreamProc("abs")]
-        [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_abs(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "A").TryGetValueAsFloat(out var number);
-
-            return new DreamValue(Math.Abs(number));
-        }
-
         [DreamProc("alert")]
         [DreamProcParameter("Usr", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("Message", Type = DreamValueTypeFlag.String)]
@@ -134,49 +126,6 @@ namespace OpenDreamRuntime.Procs.Native {
             });
 
             return DreamValue.Null;
-        }
-
-        /* NOTE ABOUT THE TRIG FUNCTIONS:
-         * If you have a sharp eye, you may notice that our trigonometry functions make use of the *double*-precision versions of those functions,
-         * even though this is a single-precision language.
-         *
-         * DO NOT replace them with the single-precision ones in MathF!!!
-         *
-         * BYOND erroneously calls the double-precision versions in its code, in a way that does honestly affect behaviour in some circumstances.
-         * Replicating that REQUIRES us to do the same error! You will break a unit test or two if you try to change this.
-         */
-
-        [DreamProc("arccos")]
-        [DreamProcParameter("X", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_arccos(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            double acos = Math.Acos(x);
-
-            return new DreamValue((float)(acos * 180 / Math.PI));
-        }
-
-        [DreamProc("arcsin")]
-        [DreamProcParameter("X", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_arcsin(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            double asin = Math.Asin(x);
-
-            return new DreamValue((float)(asin * 180 / Math.PI));
-        }
-
-        [DreamProc("arctan")]
-        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_arctan(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "x").TryGetValueAsFloat(out float x);
-            double atan;
-            if (bundle.Arguments.Length == 1) {
-                atan = Math.Atan(x);
-            } else {
-                bundle.GetArgument(1, "y").TryGetValueAsFloat(out float y);
-                atan = Math.Atan2(y, x);
-            }
-            return new DreamValue((float)(atan * 180 / Math.PI));
         }
 
         [DreamProc("ascii2text")]
@@ -398,15 +347,6 @@ namespace OpenDreamRuntime.Procs.Native {
                 return new(string.Empty);
 
             return new DreamValue(textElements.SubstringByTextElements(start - 1, end - start));
-        }
-
-        [DreamProc("cos")]
-        [DreamProcParameter("X", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_cos(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            double rad = x * (Math.PI / 180);
-
-            return new DreamValue((float)Math.Cos(rad));
         }
 
         [DreamProc("CRASH")]
@@ -1271,22 +1211,6 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(0, "List").TryGetValueAsDreamList(out DreamList list))
                 return new DreamValue(string.Empty);
             return new DreamValue(list2params(list));
-        }
-
-        [DreamProc("log")]
-        [DreamProcParameter("X", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("Y")]
-        public static DreamValue NativeProc_log(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "X").TryGetValueAsFloat(out float x);
-            DreamValue yValue = bundle.GetArgument(1, "Y");
-
-            if (!yValue.IsNull) {
-                yValue.TryGetValueAsFloat(out float y);
-
-                return new DreamValue((float)Math.Log(y, x));
-            } else {
-                return new DreamValue(Math.Log(x));
-            }
         }
 
         [DreamProc("lowertext")]
@@ -2218,15 +2142,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
-        [DreamProc("sin")]
-        [DreamProcParameter("X", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_sin(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "X").TryGetValueAsFloat(out var x);
-            double rad = x * (Math.PI / 180);
-
-            return new DreamValue((float)Math.Sin(rad));
-        }
-
         [DreamProc("sleep")]
         [DreamProcParameter("Delay", Type = DreamValueTypeFlag.Float)]
         public static async Task<DreamValue> NativeProc_sleep(AsyncNativeProc.State state) {
@@ -2461,14 +2376,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return new DreamValue(list);
         }
 
-        [DreamProc("sqrt")]
-        [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_sqrt(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "A").TryGetValueAsFloat(out var a);
-
-            return new DreamValue((float)Math.Sqrt(a));
-        }
-
         private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
             if (name.IsNull && value.TryGetValueAsDreamList(out var list)) {
                 foreach (var item in list.GetValues())
@@ -2515,15 +2422,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return DreamValue.False;
-        }
-
-        [DreamProc("tan")]
-        [DreamProcParameter("X", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_tan(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            bundle.GetArgument(0, "X").TryGetValueAsFloat(out var x);
-            double rad = x * (Math.PI / 180);
-
-            return new DreamValue((float)Math.Tan(rad));
         }
 
         [DreamProc("text2ascii")]
@@ -2809,7 +2707,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("typesof")]
-        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.ProcStub | DreamValueTypeFlag.VerbStub)]
+        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_typesof(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = bundle.ObjectTree.CreateList(bundle.Arguments.Length); // Assume every arg will add at least one type
 
@@ -2825,18 +2723,15 @@ namespace OpenDreamRuntime.Procs.Native {
                     } else if (typeValue.TryGetValueAsString(out var typeString)) {
                         DreamPath path = new DreamPath(typeString);
 
-                        if (path.LastElement is "proc" or "verb") {
+                        if (path.LastElement == "proc") {
                             type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
                             addingProcs = type.ObjectDefinition.Procs.Values;
+                        } else if (path.LastElement == "verb") {
+                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                            addingProcs = type.ObjectDefinition.Verbs;
                         } else {
                             type = bundle.ObjectTree.GetTreeEntry(path);
                         }
-                    } else if (typeValue.TryGetValueAsProcStub(out var owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Procs.Values;
-                    } else if (typeValue.TryGetValueAsVerbStub(out owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Verbs;
                     } else {
                         continue;
                     }

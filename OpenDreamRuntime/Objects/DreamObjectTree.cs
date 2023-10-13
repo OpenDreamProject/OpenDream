@@ -209,22 +209,13 @@ namespace OpenDreamRuntime.Objects {
                             return new DreamValue(Types[typeValue.GetInt32()]);
                         case JsonVariableType.Proc:
                             return new DreamValue(Procs[jsonElement.GetProperty("value").GetInt32()]);
-                        case JsonVariableType.ProcStub: {
-                            TreeEntry type = Types[jsonElement.GetProperty("value").GetInt32()];
-
-                            return DreamValue.CreateProcStub(type);
-                        }
-                        case JsonVariableType.VerbStub: {
-                            TreeEntry type = Types[jsonElement.GetProperty("value").GetInt32()];
-
-                            return DreamValue.CreateVerbStub(type);
-                        }
                         case JsonVariableType.List:
                             DreamList list = CreateList();
 
                             if (jsonElement.TryGetProperty("values", out JsonElement values)) {
                                 foreach (JsonElement listValue in values.EnumerateArray()) {
-                                    if (listValue.ValueKind == JsonValueKind.Object) { // key/value pair
+                                    if (listValue.ValueKind == JsonValueKind.Object &&
+                                        !listValue.TryGetProperty("type", out _)) {
                                         if (!listValue.TryGetProperty("key", out var jsonKey) ||
                                             !listValue.TryGetProperty("value", out var jsonValue))
                                             throw new Exception("List value was missing a key or value property");

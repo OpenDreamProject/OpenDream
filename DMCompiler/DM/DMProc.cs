@@ -945,6 +945,52 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CompareLessThanOrEqual);
         }
 
+        public void Sin() {
+            WriteOpcode(DreamProcOpcode.Sin);
+        }
+
+        public void Cos() {
+            WriteOpcode(DreamProcOpcode.Cos);
+        }
+
+        public void Tan() {
+            WriteOpcode(DreamProcOpcode.Tan);
+        }
+
+        public void ArcSin() {
+            WriteOpcode(DreamProcOpcode.ArcSin);
+        }
+
+        public void ArcCos() {
+            WriteOpcode(DreamProcOpcode.ArcCos);
+        }
+
+        public void ArcTan() {
+            WriteOpcode(DreamProcOpcode.ArcTan);
+        }
+
+        public void ArcTan2() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.ArcTan2);
+        }
+
+        public void Sqrt() {
+            WriteOpcode(DreamProcOpcode.Sqrt);
+        }
+
+        public void Log() {
+            ShrinkStack(1);
+            WriteOpcode(DreamProcOpcode.Log);
+        }
+
+        public void LogE() {
+            WriteOpcode(DreamProcOpcode.LogE);
+        }
+
+        public void Abs() {
+            WriteOpcode(DreamProcOpcode.Abs);
+        }
+
         public void PushFloat(float value) {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushFloat);
@@ -975,25 +1021,12 @@ namespace DMCompiler.DM {
             WriteInt(procId);
         }
 
-        public void PushProcStub(int typeId) {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushProcStub);
-            WriteInt(typeId);
-        }
-
-        public void PushVerbStub(int typeId) {
-            GrowStack(1);
-            WriteOpcode(DreamProcOpcode.PushVerbStub);
-            WriteInt(typeId);
-        }
-
         public void PushNull() {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushNull);
         }
 
-        public void PushGlobalVars()
-        {
+        public void PushGlobalVars() {
             GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushGlobalVars);
         }

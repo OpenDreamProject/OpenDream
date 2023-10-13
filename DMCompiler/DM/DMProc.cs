@@ -957,21 +957,21 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.Tan);
         }
 
-        public void Arcsin() {
-            WriteOpcode(DreamProcOpcode.Arcsin);
+        public void ArcSin() {
+            WriteOpcode(DreamProcOpcode.ArcSin);
         }
 
-        public void Arccos() {
-            WriteOpcode(DreamProcOpcode.Arccos);
+        public void ArcCos() {
+            WriteOpcode(DreamProcOpcode.ArcCos);
         }
 
-        public void Arctan() {
-            WriteOpcode(DreamProcOpcode.Arctan);
+        public void ArcTan() {
+            WriteOpcode(DreamProcOpcode.ArcTan);
         }
 
-        public void Arctan2() {
+        public void ArcTan2() {
             ShrinkStack(1);
-            WriteOpcode(DreamProcOpcode.Arctan2);
+            WriteOpcode(DreamProcOpcode.ArcTan2);
         }
 
         public void Sqrt() {

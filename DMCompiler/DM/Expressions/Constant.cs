@@ -3,8 +3,8 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
 using System.IO;
 
 namespace DMCompiler.DM.Expressions {
@@ -512,10 +512,11 @@ namespace DMCompiler.DM.Expressions {
                     proc.PushProc(pathInfo.Value.Id);
                     break;
                 case PathType.ProcStub:
-                    proc.PushProcStub(pathInfo.Value.Id);
-                    break;
                 case PathType.VerbStub:
-                    proc.PushVerbStub(pathInfo.Value.Id);
+                    var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+
+                    // /datum/proc and /datum/verb just compile down to strings lmao
+                    proc.PushString($"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}");
                     break;
                 default:
                     DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
@@ -535,11 +536,17 @@ namespace DMCompiler.DM.Expressions {
                 return false;
             }
 
+            if (pathInfo.Value.Type is PathType.ProcStub or PathType.VerbStub) {
+                var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+
+                json = $"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}";
+                return true;
+            }
+
             JsonVariableType jsonType = pathInfo.Value.Type switch {
                 PathType.TypeReference => JsonVariableType.Type,
                 PathType.ProcReference => JsonVariableType.Proc,
-                PathType.ProcStub => JsonVariableType.ProcStub,
-                PathType.VerbStub => JsonVariableType.VerbStub
+                _ => throw new UnreachableException()
             };
 
             json = new Dictionary<string, object>() {

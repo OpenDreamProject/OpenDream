@@ -268,8 +268,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.PushGlobalVars, DMOpcodeHandlers.PushGlobalVars},
             {DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus},
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
-            {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
-            {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
             {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
             {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},

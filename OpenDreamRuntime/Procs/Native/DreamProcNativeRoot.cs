@@ -2707,7 +2707,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("typesof")]
-        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.ProcStub | DreamValueTypeFlag.VerbStub)]
+        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_typesof(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = bundle.ObjectTree.CreateList(bundle.Arguments.Length); // Assume every arg will add at least one type
 
@@ -2723,18 +2723,15 @@ namespace OpenDreamRuntime.Procs.Native {
                     } else if (typeValue.TryGetValueAsString(out var typeString)) {
                         DreamPath path = new DreamPath(typeString);
 
-                        if (path.LastElement is "proc" or "verb") {
+                        if (path.LastElement == "proc") {
                             type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
                             addingProcs = type.ObjectDefinition.Procs.Values;
+                        } else if (path.LastElement == "verb") {
+                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                            addingProcs = type.ObjectDefinition.Verbs;
                         } else {
                             type = bundle.ObjectTree.GetTreeEntry(path);
                         }
-                    } else if (typeValue.TryGetValueAsProcStub(out var owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Procs.Values;
-                    } else if (typeValue.TryGetValueAsVerbStub(out owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Verbs;
                     } else {
                         continue;
                     }

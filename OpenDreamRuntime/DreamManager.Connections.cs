@@ -126,8 +126,6 @@ namespace OpenDreamRuntime {
                     case DreamValue.DreamValueType.DreamType:
                     case DreamValue.DreamValueType.DreamProc:
                     case DreamValue.DreamValueType.Appearance:
-                    case DreamValue.DreamValueType.ProcStub:
-                    case DreamValue.DreamValueType.VerbStub:
                     default:
                         _sawmill.Warning($"Unimplemented /world/Topic response type: {topicResponse.Type}");
                         return;

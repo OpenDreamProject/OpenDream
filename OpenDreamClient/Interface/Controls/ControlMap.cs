@@ -77,7 +77,6 @@ public sealed class ControlMap : InterfaceControl {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
         if (controlDescriptor.OnHideCommand != null) {
             _dreamInterfaceManager.RunCommand(controlDescriptor.OnHideCommand);
-            //EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.OnHideCommand);
         }
     }
 }

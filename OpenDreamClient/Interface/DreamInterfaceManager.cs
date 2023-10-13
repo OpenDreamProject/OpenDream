@@ -462,7 +462,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 default: {
                     // Send the entire command to the server.
                     // It has more info about argument types so it can parse it better than we can.
-                    //RaiseNetworkEvent(new CommandEvent(command));
                     EntitySystem.Get<DreamCommandSystem>().SendServerCommand(command);
                     break;
                 }

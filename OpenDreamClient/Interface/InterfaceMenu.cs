@@ -86,6 +86,7 @@ public sealed class InterfaceMenu : InterfaceElement {
     }
 
     public sealed class MenuElement : InterfaceElement {
+        [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
         public readonly List<MenuElement> Children = new();
 
         private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
@@ -133,7 +134,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                             MenuElementDescriptor.IsChecked = !MenuElementDescriptor.IsChecked;
                         _menu.CreateMenu();
                     if(!string.IsNullOrEmpty(MenuElementDescriptor.Command))
-                        EntitySystem.Get<DreamCommandSystem>().RunCommand(Command);
+                        _interfaceManager.RunCommand(Command);
                 };
             return menuButton;
         }

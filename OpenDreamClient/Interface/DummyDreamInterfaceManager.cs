@@ -47,4 +47,12 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
     public void RunCommand(string command) {
 
     }
+
+    public void StartRepeatingCommand(string command) {
+
+    }
+
+    public void StopRepeatingCommand(string command) {
+
+    }
 }

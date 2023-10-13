@@ -7,7 +7,7 @@ namespace OpenDreamClient.Interface.Controls;
 
 internal sealed class ControlInput : InterfaceControl {
     private LineEdit _textBox;
-
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     public ControlInput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
     protected override Control CreateUIElement() {
@@ -18,7 +18,7 @@ internal sealed class ControlInput : InterfaceControl {
     }
 
     private void TextBox_OnSubmit(LineEdit.LineEditEventArgs lineEditEventArgs) {
-        EntitySystem.Get<DreamCommandSystem>().RunCommand(_textBox.Text);
+        _interfaceManager.RunCommand(_textBox.Text);
         _textBox.Clear();
     }
 }

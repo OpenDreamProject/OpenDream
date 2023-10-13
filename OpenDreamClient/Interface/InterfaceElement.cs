@@ -10,9 +10,10 @@ public class InterfaceElement {
     public string Id => ElementDescriptor.Id;
 
     public ElementDescriptor ElementDescriptor;
-
+    [Dependency] protected readonly IDreamInterfaceManager _interfaceManager = default!;
     protected InterfaceElement(ElementDescriptor elementDescriptor) {
         ElementDescriptor = elementDescriptor;
+        IoCManager.InjectDependencies(this);
     }
 
     public void PopulateElementDescriptor(MappingDataNode node, ISerializationManager serializationManager) {

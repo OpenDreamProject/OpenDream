@@ -25,7 +25,6 @@ using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
-using static OpenDreamShared.Input.SharedDreamCommandSystem;
 using System.Linq;
 
 namespace OpenDreamClient.Interface;
@@ -462,10 +461,18 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 default: {
                     // Send the entire command to the server.
                     // It has more info about argument types so it can parse it better than we can.
-                    EntitySystem.Get<DreamCommandSystem>().SendServerCommand(command);
+                    _netManager.ClientSendMessage(new MsgCommand(){Command = command});
                     break;
                 }
             }
+    }
+
+    public void StartRepeatingCommand(string command) {
+        _netManager.ClientSendMessage(new MsgCommandRepeatStart(){Command = command});
+    }
+
+    public void StopRepeatingCommand(string command) {
+        _netManager.ClientSendMessage(new MsgCommandRepeatStop(){Command = command});
     }
 
     public void WinSet(string? controlId, string winsetParams) {
@@ -504,9 +511,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                 if (elementId == null) {
                     if (winSet.Attribute == "command") {
-                        DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
-
-                        commandSystem.RunCommand(winSet.Value);
+                        RunCommand(winSet.Value);
                     } else {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
@@ -737,5 +742,7 @@ public interface IDreamInterfaceManager {
     void LoadInterfaceFromSource(string source);
 
     void RunCommand(string command);
+    void StartRepeatingCommand(string command);
+    void StopRepeatingCommand(string command);
     void WinSet(string? controlId, string winsetParams);
 }

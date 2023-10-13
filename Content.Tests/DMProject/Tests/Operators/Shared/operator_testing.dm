@@ -33,5 +33,5 @@
 			catch
 				result = "Error"
 			
-			if (!(result ~= expected_result))
-				CRASH("Expected [json_encode(expected_result)] for [json_encode(a)] + [json_encode(b)], instead got [json_encode(result)]")
+			if (result ~! expected_result)
+				CRASH("Expected [json_encode(expected_result)] for [json_encode(a)] and [json_encode(b)], instead got [json_encode(result)]")

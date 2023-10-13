@@ -86,7 +86,6 @@ public sealed class InterfaceMenu : InterfaceElement {
     }
 
     public sealed class MenuElement : InterfaceElement {
-        [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
         public readonly List<MenuElement> Children = new();
 
         private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;

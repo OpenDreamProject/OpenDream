@@ -11,7 +11,6 @@ public sealed class ControlMap : InterfaceControl {
     public ScalingViewport Viewport { get; private set; }
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterfaceManager = default!;
     private MouseInputSystem _mouseInput;
 
     public ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
@@ -50,7 +49,7 @@ public sealed class ControlMap : InterfaceControl {
         else
             OnHideEvent();
 
-        UpdateViewRange(_dreamInterfaceManager.View);
+        UpdateViewRange(_interfaceManager.View);
 
         return new PanelContainer { StyleClasses = {"MapBackground"}, Children = { Viewport } };
     }
@@ -69,14 +68,14 @@ public sealed class ControlMap : InterfaceControl {
     public void OnShowEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
         if (controlDescriptor.OnShowCommand != null) {
-            _dreamInterfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
         if (controlDescriptor.OnHideCommand != null) {
-            _dreamInterfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
         }
     }
 }

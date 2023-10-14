@@ -293,10 +293,10 @@ public sealed class InterfaceMacro : InterfaceElement {
         }
 
 
-            string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
-            if (keyName == null)
-                return;
-            string command = Command.Replace("[[*]]", keyName);
+        string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
+        if (keyName == null)
+            return;
+        string command = Command.Replace("[[*]]", keyName);
             _interfaceManager.RunCommand(command);
             // args.Handle() omitted on purpose, in BYOND both the "specific" keybind and the ANY keybind are triggered
 

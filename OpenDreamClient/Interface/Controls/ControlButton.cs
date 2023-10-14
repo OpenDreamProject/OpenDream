@@ -7,7 +7,6 @@ namespace OpenDreamClient.Interface.Controls;
 
 internal sealed class ControlButton : InterfaceControl {
     public const string StyleClassDMFButton = "DMFbutton";
-
     private Button _button;
 
     public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
@@ -36,7 +35,7 @@ internal sealed class ControlButton : InterfaceControl {
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
         if (controlDescriptor.Command != null) {
-            EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.Command);
+            _interfaceManager.RunCommand(controlDescriptor.Command);
         }
     }
 }

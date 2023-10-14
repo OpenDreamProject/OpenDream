@@ -42,6 +42,10 @@ namespace DMCompiler {
 
             _compileStartTime = DateTime.Now;
 
+#if DEBUG
+            ForcedWarning("This compiler was compiled in the Debug .NET configuration. This will impact compile speed.");
+#endif
+
             if (settings.SuppressUnimplementedWarnings) {
                 ForcedWarning("Unimplemented proc & var warnings are currently suppressed");
             }
@@ -83,7 +87,7 @@ namespace DMCompiler {
 
         public static void AddResourceDirectory(string dir) {
             dir = dir.Replace('\\', Path.DirectorySeparatorChar);
-            
+
             _resourceDirectories.Add(dir);
         }
 

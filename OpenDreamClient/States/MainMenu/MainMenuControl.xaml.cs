@@ -7,36 +7,37 @@ using Robust.Client.UserInterface.XAML;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 
-namespace OpenDreamClient.States.MainMenu
-{
-    [GenerateTypedNameReferences]
-    public sealed partial class MainMenuControl : Control
-    {
-        public LineEdit UserNameBox => UsernameBoxProtected;
-        public LineEdit AddressBox => AddressBoxProtected;
-        public Button ConnectButton => ConnectButtonProtected;
-        public Button QuitButton => QuitButtonProtected;
+namespace OpenDreamClient.States.MainMenu;
 
-        public MainMenuControl(IResourceCache resCache, IConfigurationManager configMan)
-        {
-            RobustXamlLoader.Load(this);
+[GenerateTypedNameReferences]
+public sealed partial class MainMenuControl : Control {
+    public LineEdit UserNameBox => UsernameBoxProtected;
+    public LineEdit AddressBox => AddressBoxProtected;
+    public Button ConnectButton => ConnectButtonProtected;
+    public Button QuitButton => QuitButtonProtected;
 
-            Panel.PanelOverride = new StyleBoxFlat(Color.Black);
-            WIPLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf"), 32);
+    public MainMenuControl(IResourceCache resCache, IConfigurationManager configMan) {
+        RobustXamlLoader.Load(this);
 
-            LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
+        Panel.PanelOverride = new StyleBoxFlat(Color.Black);
+        WIPLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf"), 32);
 
-            LayoutContainer.SetAnchorPreset(VBox, LayoutContainer.LayoutPreset.Center);
-            LayoutContainer.SetGrowHorizontal(VBox, LayoutContainer.GrowDirection.Both);
-            LayoutContainer.SetGrowVertical(VBox, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
 
-            var logoTexture = resCache.GetResource<TextureResource>("/OpenDream/Logo/logo.png");
-            Logo.Texture = logoTexture;
+        LayoutContainer.SetAnchorPreset(VBox, LayoutContainer.LayoutPreset.Center);
+        LayoutContainer.SetGrowHorizontal(VBox, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetGrowVertical(VBox, LayoutContainer.GrowDirection.Both);
 
-            var currentUserName = configMan.GetCVar(CVars.PlayerName);
-            UserNameBox.Text = currentUserName;
+        var logoTexture = resCache.GetResource<TextureResource>("/OpenDream/Logo/logo.png");
+        Logo.Texture = logoTexture;
 
-            AddressBoxProtected.Text = "127.0.0.1:25566";
-        }
+        var currentUserName = configMan.GetCVar(CVars.PlayerName);
+        UserNameBox.Text = currentUserName;
+
+        AddressBoxProtected.Text = "127.0.0.1:25566";
+
+#if DEBUG
+        DebugWarningLabel.Visible = true;
+#endif
     }
 }

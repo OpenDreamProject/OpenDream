@@ -43,3 +43,10 @@ jobs:
       run: |
         $env:COMPlus_gcServer=1
         dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
+    - name: Publish DMCompiler
+      run: dotnet publish DMCompiler -c Release -o output/DMCompiler
+    - name: Upload DMCompiler
+      uses: actions/upload-artifact@v3
+      with:
+        name: dmcompileer
+        path: output/DMCompiler

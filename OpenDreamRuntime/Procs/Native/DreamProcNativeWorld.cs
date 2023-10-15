@@ -51,9 +51,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            // TODO: Maybe cache HttpClient.
-            var client = new HttpClient();
-            var response = await client.GetAsync(uri);
+            // TODO: Definitely cache HttpClient.
+            using var client = new HttpClient();
+            using var response = await client.GetAsync(uri);
+            var contentBytes = await response.Content.ReadAsByteArrayAsync();
 
             var list = state.ObjectTree.CreateList();
             foreach (var header in response.Headers) {
@@ -61,7 +62,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 list.SetValue(new DreamValue(header.Key), new DreamValue(header.Value.First()));
             }
 
-            var content = state.ResourceManager.CreateResource(await response.Content.ReadAsByteArrayAsync());
+            var content = state.ResourceManager.CreateResource(contentBytes);
             list.SetValue(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
             list.SetValue(new DreamValue("CONTENT"), new DreamValue(content));
 

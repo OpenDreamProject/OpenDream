@@ -85,7 +85,7 @@ namespace DMCompiler.DM.Visitors {
                     DMCompiler.Emit(e.Error);
                 }
             }
-            if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
+            if(!silenceEmptyBlockWarning && block.Statements.Length == 0 && !block.NotCompletelyEmpty) { // If this block has no real statements
                 // Not an error in BYOND, but we do have an emission for this!
                 if(block.SetStatements.Length != 0) { // Give a more articulate message about this, since it's kinda weird
                     DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected - set statements are executed outside of, before, and unconditional to, this block");

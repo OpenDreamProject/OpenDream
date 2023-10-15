@@ -618,6 +618,12 @@ namespace DMCompiler.Compiler.DM {
         /// </remarks>
         public readonly DMASTProcStatement[] SetStatements;
 
+        /// <summary>
+        /// This is used to determine if we should flag for <c>WarningCode.EmptyBlock</c>,
+        /// which we don't do if there was a manually entered semicolon within.
+        /// </summary>
+        public bool NotCompletelyEmpty;
+
         /// <summary> Initializes an empty block. </summary>
         public DMASTProcBlockInner(Location location) : base(location) {
             Statements = Array.Empty<DMASTProcStatement>();

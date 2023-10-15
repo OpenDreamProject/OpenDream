@@ -523,6 +523,7 @@ namespace DMCompiler.Compiler.DM {
             var loc = Current().Location;
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 DMASTProcBlockInner? block;
+                bool hadSemicolon = false;
 
                 Whitespace();
                 Newline();
@@ -535,9 +536,13 @@ namespace DMCompiler.Compiler.DM {
                     List<DMASTProcStatement> setStatements = new(); // set statements are weird and must be held separately.
 
                     do {
-                        (List<DMASTProcStatement>? stmts, List<DMASTProcStatement>? setStmts) = ProcBlockInner(); // Hope you understand tuples
-                        if (stmts is not null) statements.AddRange(stmts);
-                        if (setStmts is not null) setStatements.AddRange(setStmts);
+                        (List<DMASTProcStatement>? stmts, List<DMASTProcStatement>? setStmts, bool innerHadSemicolon) = ProcBlockInner(); // Hope you understand tuples
+                        if (stmts is not null)
+                            statements.AddRange(stmts);
+                        if (setStmts is not null)
+                            setStatements.AddRange(setStmts);
+                        if (innerHadSemicolon)
+                            hadSemicolon = innerHadSemicolon;
 
                         if (!Check(TokenType.DM_RightCurlyBracket)) {
                             Error(WarningCode.BadToken, "Expected end of braced block");
@@ -550,7 +555,10 @@ namespace DMCompiler.Compiler.DM {
                         }
                     } while (true);
 
-                    block = new DMASTProcBlockInner(loc, statements.ToArray(), setStatements.ToArray());
+                    block = new DMASTProcBlockInner(loc, statements.ToArray(), setStatements.ToArray())
+                    {
+                        NotCompletelyEmpty = hadSemicolon
+                    };
                 }
 
                 return block;
@@ -564,13 +572,16 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Indent)) {
                 List<DMASTProcStatement> statements = new();
                 List<DMASTProcStatement> setStatements = new(); // set statements are weird and must be held separately.
+                bool hadSemicolon = false;
 
                 do {
-                    (List<DMASTProcStatement>? statements, List<DMASTProcStatement>? setStatements) blockInner = ProcBlockInner();
+                    (List<DMASTProcStatement>? statements, List<DMASTProcStatement>? setStatements, bool hadSemicolon) blockInner = ProcBlockInner();
                     if (blockInner.statements is not null)
                         statements.AddRange(blockInner.statements);
                     if (blockInner.setStatements is not null)
                         setStatements.AddRange(blockInner.setStatements);
+                    if (blockInner.hadSemicolon)
+                        hadSemicolon = blockInner.hadSemicolon;
 
                     if (!Check(TokenType.DM_Dedent)) {
                         Error("Expected end of proc statement", throwException: false);
@@ -581,17 +592,26 @@ namespace DMCompiler.Compiler.DM {
                     }
                 } while (true);
 
-                return new DMASTProcBlockInner(loc, statements.ToArray(), setStatements.ToArray());
+                return new DMASTProcBlockInner(loc, statements.ToArray(), setStatements.ToArray())
+                {
+                    NotCompletelyEmpty = hadSemicolon
+                };
             }
 
             return null;
         }
 
-        public (List<DMASTProcStatement>?, List<DMASTProcStatement>?) ProcBlockInner() {
+        /// <summary>
+        /// Parses the inner of a proc block
+        /// </summary>
+        /// <remarks> We return if there was a semicolon within for <c>WarningCode.EmptyBlock</c></remarks>
+        /// <returns>(list of proc statements, list of set statements, had a semicolon within)</returns>
+        public (List<DMASTProcStatement>?, List<DMASTProcStatement>?, bool) ProcBlockInner() {
             List<DMASTProcStatement> procStatements = new();
             List<DMASTProcStatement> setStatements = new(); // We have to store them separately because they're evaluated first
 
             DMASTProcStatement? statement = null;
+            bool hadSemicolon = false;
             do {
                 Whitespace();
 
@@ -611,11 +631,14 @@ namespace DMCompiler.Compiler.DM {
                     DMASTProcBlockInner? blockInner = ProcBlock();
                     if (blockInner != null) procStatements.AddRange(blockInner.Statements);
                 }
-            } while (Delimiter() || statement is DMASTProcStatementLabel);
+            } while (DelimiterHasSemicolon(ref hadSemicolon) || statement is DMASTProcStatementLabel);
+
             Whitespace();
 
-            if (procStatements.Count == 0) return (null,null);
-            return (procStatements, setStatements);
+            if (procStatements.Count == 0)
+                return (null, null, hadSemicolon);
+
+            return (procStatements, setStatements, hadSemicolon);
         }
 
         public DMASTProcStatement? ProcStatement() {
@@ -2612,6 +2635,20 @@ namespace DMCompiler.Compiler.DM {
         private bool Delimiter() {
             bool hasDelimiter = false;
             while (Check(TokenType.DM_Semicolon) || Newline()) {
+                hasDelimiter = true;
+            }
+
+            return hasDelimiter;
+        }
+
+        private bool DelimiterHasSemicolon(ref bool hasSemicolon) {
+            bool hasDelimiter = false;
+            while (
+                // Once it is set to true, keep it that way
+                (!hasSemicolon && (hasSemicolon = Current().Type == TokenType.DM_Semicolon))
+                || Check(TokenType.DM_Semicolon)
+                || Newline()
+                ) {
                 hasDelimiter = true;
             }
 

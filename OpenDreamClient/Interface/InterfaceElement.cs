@@ -17,14 +17,19 @@ public class InterfaceElement {
     }
 
     public void PopulateElementDescriptor(MappingDataNode node, ISerializationManager serializationManager) {
-        MappingDataNode original = (MappingDataNode)serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
-        foreach (var key in node.Keys) {
-            original.Remove(key);
-        }
+        try {
+            MappingDataNode original =
+                (MappingDataNode)serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
+            foreach (var key in node.Keys) {
+                original.Remove(key);
+            }
 
-        MappingDataNode newNode = original.Merge(node);
-        ElementDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
-        UpdateElementDescriptor();
+            MappingDataNode newNode = original.Merge(node);
+            ElementDescriptor = (ElementDescriptor)serializationManager.Read(ElementDescriptor.GetType(), newNode);
+            UpdateElementDescriptor();
+        } catch (Exception e) {
+            Logger.GetSawmill("opendream.interface").Error($"Error while populating values of \"{Id}\": {e}");
+        }
     }
 
     /// <summary>

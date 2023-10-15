@@ -1,4 +1,4 @@
-name: Build & Test
+name: Build, Test & Release
 
 on:
   push:
@@ -51,40 +51,19 @@ jobs:
       run: dotnet publish OpenDreamClient -c Release -o output/OpenDreamClient
     - name: Publish DMDisassembler
       run: dotnet publish DMDisassembler -c Release -o output/DMDisassembler
-    - name: Gzip Releases
+    - name: Gzip releases
       if: github.event_name == 'push'
       run: |
         tar -czvf output/DMCompiler-${{ matrix.os }}.tar.gz -C output/DMCompiler .
         tar -czvf output/OpenDreamServer-${{ matrix.os }}.tar.gz -C output/OpenDreamServer .
         tar -czvf output/OpenDreamClient-${{ matrix.os }}.tar.gz -C output/OpenDreamClient .
         tar -czvf output/DMDisassembler-${{ matrix.os }}.tar.gz -C output/DMDisassembler .
-    - name: Upload DMCompiler
+    - name: Upload artifact
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
       with:
-        name: DMCompiler-${{ matrix.os }}
-        path: output/DMCompiler-${{ matrix.os }}.tar.gz
-        retention-days: 1 # avoids GitHub storage limit for artifacts hopefully, if issues arise we can delete manually in the release job
-    - name: Upload OpenDreamServer
-      if: github.event_name == 'push'
-      uses: actions/upload-artifact@v3
-      with:
-        name: OpenDreamServer-${{ matrix.os }}
-        path: output/OpenDreamServer-${{ matrix.os }}.tar.gz
-        retention-days: 1
-    - name: Upload OpenDreamClient
-      if: github.event_name == 'push'
-      uses: actions/upload-artifact@v3
-      with:
-        name: OpenDreamClient-${{ matrix.os }}
-        path: output/OpenDreamClient-${{ matrix.os }}.tar.gz
-        retention-days: 1
-    - name: Upload DMDisassembler
-      if: github.event_name == 'push'
-      uses: actions/upload-artifact@v3
-      with:
-        name: DMDisassembler-${{ matrix.os }}
-        path: output/DMDisassembler-${{ matrix.os }}.tar.gz
+        name: build-${{ matrix.os }}
+        path: output/*.tar.gz
         retention-days: 1
 
   release:
@@ -97,7 +76,7 @@ jobs:
       with:
         path: artifacts
     - name: Publish latest release
-      uses: "marvinpinto/action-automatic-releases@latest"
+      uses: marvinpinto/action-automatic-releases@latest
       with:
         repo_token: "${{ secrets.GITHUB_TOKEN }}"
         automatic_release_tag: "latest"

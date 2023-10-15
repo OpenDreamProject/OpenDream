@@ -19,9 +19,9 @@
 	var/tick_usage
 	var/loop_checks = 0 as opendream_unimplemented
 
-	var/maxx = 0
-	var/maxy = 0
-	var/maxz = 0
+	var/maxx = null
+	var/maxy = null
+	var/maxz = null
 	var/icon_size = 32
 	var/view = 5
 	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
@@ -38,7 +38,7 @@
 	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
 	var/process
-	var/list/params = null as opendream_unimplemented
+	var/list/params = null
 
 	var/sleep_offline = 0 as opendream_unimplemented
 

@@ -23,6 +23,19 @@ namespace OpenDreamRuntime {
 
         public IEnumerable<DreamConnection> Connections => _connections.Values;
 
+        public ushort? ActiveTopicPort {
+            get {
+                if (_worldTopicSocket is null)
+                    return null;
+
+                if (_worldTopicSocket.LocalEndPoint is not IPEndPoint boundEndpoint) {
+                    throw new NotSupportedException($"Cannot retrieve bound topic port! Endpoint: {_worldTopicSocket.LocalEndPoint}");
+                }
+
+                return (ushort)boundEndpoint.Port;
+            }
+        }
+
         private Socket? _worldTopicSocket;
 
         private Task? _worldTopicListener;
@@ -52,7 +65,8 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgSound>();
             _netManager.RegisterNetMessage<MsgUpdateClientInfo>();
 
-            var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, _config.GetCVar(OpenDreamCVars.TopicPort));
+            var topicPort = _config.GetCVar(OpenDreamCVars.TopicPort);
+            var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, topicPort);
             _sawmill.Debug($"Binding World Topic at {worldTopicAddress}");
             _worldTopicSocket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp) {
                 ReceiveTimeout = 5000,

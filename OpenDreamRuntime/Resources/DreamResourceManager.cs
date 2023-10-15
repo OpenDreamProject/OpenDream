@@ -134,6 +134,18 @@ namespace OpenDreamRuntime.Resources {
         }
 
         /// <summary>
+        /// Dynamically create a new generic resource that clients can use
+        /// </summary>
+        /// <param name="data">The resource's data</param>
+        public DreamResource CreateResource(byte[] data) {
+            int resourceId = _resourceCache.Count;
+            DreamResource resource = new DreamResource(resourceId, data);
+
+            _resourceCache.Add(resource);
+            return resource;
+        }
+
+        /// <summary>
         /// Dynamically create a new icon resource that clients can use
         /// </summary>
         /// <param name="data">The resource's data</param>

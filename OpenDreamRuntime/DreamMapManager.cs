@@ -96,13 +96,6 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            if (maxX == 0 || maxY == 0 || maxZ == 0) {
-                _sawmill.Error("Zero-size maps are not supported; map dimensions were set to a minimum of 1");
-                maxX = Math.Max(maxX, 1);
-                maxY = Math.Max(maxY, 1);
-                maxZ = Math.Max(maxZ, 1);
-            }
-
             Size = new Vector2i(maxX, maxY);
             SetZLevels(maxZ);
 

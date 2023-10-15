@@ -51,13 +51,56 @@ jobs:
       run: dotnet publish OpenDreamClient -c Release -o output/OpenDreamClient
     - name: Publish DMDisassembler
       run: dotnet publish DMDisassembler -c Release -o output/DMDisassembler
-    - name: Gzip Releases
-      if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
-      run: |
-        tar -czvf output/DMCompiler.tar.gz output/DMCompiler/*
-        tar -czvf output/OpenDreamServer.tar.gz output/OpenDreamServer/*
-        tar -czvf output/OpenDreamClient.tar.gz output/OpenDreamClient/*
-        tar -czvf output/DMDisassembler.tar.gz output/DMDisassembler/*
+#    - name: Gzip Releases
+#      if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
+#      run: |
+#        tar -czvf output/DMCompiler.tar.gz output/DMCompiler/*
+#        tar -czvf output/OpenDreamServer.tar.gz output/OpenDreamServer/*
+#        tar -czvf output/OpenDreamClient.tar.gz output/OpenDreamClient/*
+#        tar -czvf output/DMDisassembler.tar.gz output/DMDisassembler/*
+#    - name: Publish latest release
+#      uses: "marvinpinto/action-automatic-releases@latest"
+#      if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
+#      with:
+#        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+#        automatic_release_tag: "latest"
+#        prerelease: true
+#        title: "Development Build"
+#        files: |
+#          output/*.tar.gz
+    - name: Upload DMCompiler
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: DMCompiler_${{ matrix.os }}
+        path: output/DMCompiler
+    - name: Upload OpenDreamServer
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: OpenDreamServer_${{ matrix.os }}
+        path: output/OpenDreamServer
+    - name: Upload OpenDreamClient
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: OpenDreamClient_${{ matrix.os }}
+        path: output/OpenDreamClient
+    - name: Upload DMDisassembler
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: DMDisassembler_${{ matrix.os }}
+        path: output/DMDisassembler
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
     - name: Publish latest release
       uses: "marvinpinto/action-automatic-releases@latest"
       if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
@@ -67,4 +110,4 @@ jobs:
         prerelease: true
         title: "Development Build"
         files: |
-          output/*.tar.gz
+          artifacts/*

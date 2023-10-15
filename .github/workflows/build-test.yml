@@ -2,7 +2,7 @@ name: Build, Test & Release
 
 on:
   push:
-    branches: [ master, artifact-test ]
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 

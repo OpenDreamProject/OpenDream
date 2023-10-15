@@ -253,6 +253,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             string filePath = Path.Combine(includeDir, file).Replace('\\', Path.DirectorySeparatorChar);
             string source = File.ReadAllText(filePath);
             source = source.Replace("\r\n", "\n");
+            source = source.Replace('\r', '\n'); // Lone carriage returns are treated as newlines
             source += '\n';
 
             _lexerStack.Push(new DMPreprocessorLexer(includeDir, file.Replace('\\', Path.DirectorySeparatorChar), source));

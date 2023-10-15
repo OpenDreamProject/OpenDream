@@ -54,10 +54,10 @@ jobs:
     - name: Gzip releases
       if: github.event_name == 'push'
       run: |
-        tar -czvf output/DMCompiler-${{ matrix.os }}.tar.gz -C output/DMCompiler .
-        tar -czvf output/OpenDreamServer-${{ matrix.os }}.tar.gz -C output/OpenDreamServer .
-        tar -czvf output/OpenDreamClient-${{ matrix.os }}.tar.gz -C output/OpenDreamClient .
-        tar -czvf output/DMDisassembler-${{ matrix.os }}.tar.gz -C output/DMDisassembler .
+        tar -czvf output/DMCompiler-${{ matrix.os }}.tar.gz -C output DMCompiler
+        tar -czvf output/OpenDreamServer-${{ matrix.os }}.tar.gz -C output OpenDreamServer
+        tar -czvf output/OpenDreamClient-${{ matrix.os }}.tar.gz -C output OpenDreamClient
+        tar -czvf output/DMDisassembler-${{ matrix.os }}.tar.gz -C output DMDisassembler
     - name: Upload artifact
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3

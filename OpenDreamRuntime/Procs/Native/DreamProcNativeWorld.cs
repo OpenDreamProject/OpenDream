@@ -61,8 +61,9 @@ namespace OpenDreamRuntime.Procs.Native {
                 list.SetValue(new DreamValue(header.Key), new DreamValue(header.Value.First()));
             }
 
+            var content = state.ResourceManager.CreateResource(await response.Content.ReadAsByteArrayAsync());
             list.SetValue(new DreamValue("STATUS"), new DreamValue(((int) response.StatusCode).ToString()));
-            list.SetValue(new DreamValue("CONTENT"), new DreamValue(await response.Content.ReadAsStringAsync()));
+            list.SetValue(new DreamValue("CONTENT"), new DreamValue(content));
 
             return new DreamValue(list);
         }

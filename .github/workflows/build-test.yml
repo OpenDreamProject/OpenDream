@@ -104,4 +104,4 @@ jobs:
         prerelease: true
         title: "Development Build"
         files: |
-          artifacts/*
+          artifacts/*/*.tar.gz

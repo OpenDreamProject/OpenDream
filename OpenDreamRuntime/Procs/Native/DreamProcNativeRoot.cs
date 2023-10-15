@@ -721,7 +721,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Path", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_flist(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if (!bundle.GetArgument(0, "Path").TryGetValueAsString(out var path)) {
-                path = IoCManager.Resolve<DreamResourceManager>().RootPath + Path.DirectorySeparatorChar;
+                path = "./";
             }
 
             try {

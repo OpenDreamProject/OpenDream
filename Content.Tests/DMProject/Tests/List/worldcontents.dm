@@ -44,3 +44,16 @@
 		ASSERT(worldcontlen == length(world.contents) && "length changed during buffered remove") //removing an object should be buffered
 	ASSERT(worldcontlen == length(world.contents)+1 && "length didn't change after buffered remove") //it should no longer be buffered
 
+	// nested loop over world
+	count = 0
+	worldcontlen = length(world.contents)
+	for(var/obj/O in world)
+		for(var/obj/O2 in world)
+			if(count == 0)
+				new /obj/two(locate(1,1,1))
+				ASSERT(length(world.contents) == worldcontlen && "nested: length changed during buffered add") //while iterating over world.contents, adding a new object should be buffered still
+			if(count >= worldcontlen) //on the second loop, the new object should be in the inner list
+				ASSERT(length(world.contents) == (worldcontlen+1) && "nested:length didn't change after buffered add") //while iterating over world.contents, adding a new object should be buffered still	
+			count++
+		ASSERT(length(world.contents) == worldcontlen && "nested: length changed during buffered add") //it should be buffered in the outer loop still
+			

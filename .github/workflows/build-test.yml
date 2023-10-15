@@ -54,37 +54,37 @@ jobs:
     - name: Gzip Releases
       if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
       run: |
-        tar -czvf output/DMCompiler.tar.gz output/DMCompiler/*
-        tar -czvf output/OpenDreamServer.tar.gz output/OpenDreamServer/*
-        tar -czvf output/OpenDreamClient.tar.gz output/OpenDreamClient/*
-        tar -czvf output/DMDisassembler.tar.gz output/DMDisassembler/*
+        tar -czvf output/DMCompiler-${{ matrix.os }}.tar.gz output/DMCompiler/*
+        tar -czvf output/OpenDreamServer-${{ matrix.os }}.tar.gz output/OpenDreamServer/*
+        tar -czvf output/OpenDreamClient-${{ matrix.os }}.tar.gz output/OpenDreamClient/*
+        tar -czvf output/DMDisassembler-${{ matrix.os }}.tar.gz output/DMDisassembler/*
     - name: Upload DMCompiler
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
       with:
-        name: DMCompiler_${{ matrix.os }}
-        path: output/DMCompiler.tar.gz
+        name: DMCompiler-${{ matrix.os }}
+        path: output/DMCompiler-${{ matrix.os }}.tar.gz
         retention-days: 1 # avoids GitHub storage limit for artifacts hopefully, if issues arise we can delete manually in the release job
     - name: Upload OpenDreamServer
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
       with:
-        name: OpenDreamServer_${{ matrix.os }}
-        path: output/OpenDreamServer.tar.gz
+        name: OpenDreamServer-${{ matrix.os }}
+        path: output/OpenDreamServer-${{ matrix.os }}.tar.gz
         retention-days: 1
     - name: Upload OpenDreamClient
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
       with:
-        name: OpenDreamClient_${{ matrix.os }}
-        path: output/OpenDreamClient.tar.gz
+        name: OpenDreamClient-${{ matrix.os }}
+        path: output/OpenDreamClient-${{ matrix.os }}.tar.gz
         retention-days: 1
     - name: Upload DMDisassembler
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
       with:
-        name: DMDisassembler_${{ matrix.os }}
-        path: output/DMDisassembler.tar.gz
+        name: DMDisassembler-${{ matrix.os }}
+        path: output/DMDisassembler-${{ matrix.os }}.tar.gz
         retention-days: 1
 
   release:

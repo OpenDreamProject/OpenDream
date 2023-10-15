@@ -47,31 +47,17 @@ jobs:
       run: dotnet publish DMCompiler -c Release -o output/DMCompiler
     - name: Publish OpenDreamServer
       run: dotnet publish OpenDreamServer -c Release -o output/OpenDreamServer
-    - name: Delete Old Artifacts
-      uses: actions/github-script@v6
-      id: artifact
+    - name: Gzip Releases
+      if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
+      run: |
+        tar -czvf output/DMCompiler.tar.gz output/DMCompiler/*
+        tar -czvf output/OpenDreamServer.tar.gz output/OpenDreamServer/*
+    - uses: "marvinpinto/action-automatic-releases@latest"
+      if: github.event_name == 'push' && matrix.os == 'ubuntu-latest'
       with:
-        script: |
-          const res = await github.rest.actions.listArtifactsForRepo({
-            owner: context.repo.owner,
-            repo: context.repo.repo,
-          })
-
-          res.data.artifacts
-            .forEach(({ id }) => {
-              github.rest.actions.deleteArtifact({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                artifact_id: id,
-              })
-            })
-    - name: Upload DMCompiler
-      uses: actions/upload-artifact@v3
-      with:
-        name: dmcompiler
-        path: output/DMCompiler
-    - name: Upload OpenDreamServer
-      uses: actions/upload-artifact@v3
-      with:
-        name: opendreamserver
-        path: output/OpenDreamServer
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Development Build"
+        files: |
+          output/*.tar.gz

@@ -14,14 +14,6 @@
   </PropertyGroup>
   <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>
-    <None Remove="server_config.toml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="server_config.toml">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\OpenDreamRuntime\OpenDreamRuntime.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Lidgren.Network\Lidgren.Network.csproj" />

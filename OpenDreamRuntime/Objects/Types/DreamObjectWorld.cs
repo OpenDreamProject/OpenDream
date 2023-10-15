@@ -214,7 +214,8 @@ public sealed class DreamObjectWorld : DreamObject {
 
             // Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed
             case "opendream_topic_port":
-                value = new(_cfg.GetCVar(OpenDreamCVars.TopicPort));
+                var topicPort = DreamManager.ActiveTopicPort;
+                value = topicPort.HasValue ? new DreamValue((int)topicPort) : DreamValue.Null;
                 return true;
 
             default:

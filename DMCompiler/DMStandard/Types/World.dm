@@ -38,7 +38,7 @@
 	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
 	var/process
-	var/list/params = null as opendream_unimplemented
+	var/list/params = null
 
 	var/sleep_offline = 0 as opendream_unimplemented
 

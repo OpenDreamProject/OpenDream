@@ -12,10 +12,16 @@ public static class Program {
     public class ServerOptions : Options {
         public PlatformReg? Platform;
         public bool HybridAcz;
+        public bool InPlatformSubDir = true;
+        public bool TgsEngineBuild;
     }
 
     public class ClientOptions : Options {
+        public PlatformReg? Platform;
+    }
 
+    public class TgsOptions : Options {
+        public PlatformReg? Platform;
     }
 
     public static readonly string[] SharedIgnoredResources = {
@@ -34,6 +40,9 @@ public static class Program {
                 break;
             case ClientOptions clientOptions:
                 ClientPackaging.Package(clientOptions);
+                break;
+            case TgsOptions tgsOptions:
+                TgsPackaging.Package(tgsOptions);
                 break;
         }
 
@@ -103,6 +112,11 @@ public static class Program {
                         break;
                     case "--platform":
                     case "-p":
+                        if (i + 1 >= args.Length) {
+                            Console.Error.WriteLine("No platform given");
+                            return false;
+                        }
+
                         var platformRId = args[++i];
 
                         serverOptions.Platform =
@@ -144,6 +158,52 @@ public static class Program {
                         Console.Error.WriteLine($"Unknown argument '{arg}'");
                         return false;
                 }
+            }
+
+            return true;
+        } else if (args.Contains("--tgs")) {
+            var tgsOptions = new TgsOptions();
+
+            options = tgsOptions;
+            for (int i = 0; i < args.Length; i++) {
+                var arg = args[i];
+
+                switch (arg) {
+                    case "--tgs":
+                        break;
+                    case "--output":
+                    case "-o":
+                        tgsOptions.OutputDir = args[++i];
+                        break;
+                    case "--skip-build":
+                        tgsOptions.SkipBuild = true;
+                        break;
+                    case "--platform":
+                    case "-p":
+                        if (i + 1 >= args.Length) {
+                            Console.Error.WriteLine("No platform given");
+                            return false;
+                        }
+
+                        var platformRId = args[++i];
+
+                        tgsOptions.Platform =
+                            ServerPackaging.Platforms.First(p => p.RId == platformRId);
+                        if (tgsOptions.Platform == null) {
+                            Console.Error.WriteLine($"Invalid platform '{platformRId}'");
+                            return false;
+                        }
+
+                        break;
+                    default:
+                        Console.Error.WriteLine($"Unknown argument '{arg}'");
+                        return false;
+                }
+            }
+
+            if (tgsOptions.Platform == null) {
+                Console.Error.WriteLine("A '--platform' argument is required for a tgs package");
+                return false;
             }
 
             return true;

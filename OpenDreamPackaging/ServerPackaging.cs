@@ -70,6 +70,11 @@ public static class ServerPackaging {
     public static void Package(Program.ServerOptions options) {
         IEnumerable<PlatformReg> platforms = (options.Platform != null) ? new[] {options.Platform} : PlatformsDefault;
 
+        if (!options.InPlatformSubDir && options.Platform == null) {
+            Console.Error.WriteLine(
+                "Packaging the server without a platform subdirectory requires selecting a single platform");
+        }
+
         if (Directory.Exists(options.OutputDir)) {
             Console.WriteLine($"Cleaning old release packages ({options.OutputDir})...");
             Directory.Delete(options.OutputDir, true);
@@ -108,23 +113,26 @@ public static class ServerPackaging {
                     $"/p:TargetOS={platform.TargetOs}",
                     "/t:Rebuild",
                     "/p:FullRelease=True",
-                    "/m"
+                    "/m",
+                    $"/p:TgsEngineBuild={(options.TgsEngineBuild ? "True" : "False")}"
                 }
             });
 
             PublishClientServer(platform.RId, platform.TargetOs);
         }
 
-        DirectoryInfo releaseDir = new DirectoryInfo(Path.Combine(options.OutputDir, $"OpenDream.Server_{platform.RId}"));
+        string releaseDir = options.OutputDir;
+        if (options.InPlatformSubDir)
+            releaseDir = Path.Combine(releaseDir, $"OpenDream.Server_{platform.RId}");
 
         Console.WriteLine($"Packaging {platform.RId} server...");
-        releaseDir.Create();
-        Program.CopyDirectory($"RobustToolbox/bin/Server/{platform.RId}/publish", releaseDir.FullName, BinSkipFolders);
-        CopyResources(Path.Combine(releaseDir.FullName, "Resources"));
-        CopyContentAssemblies(Path.Combine(releaseDir.FullName, "Resources", "Assemblies"));
+        Directory.CreateDirectory(releaseDir);
+        Program.CopyDirectory($"RobustToolbox/bin/Server/{platform.RId}/publish", releaseDir, BinSkipFolders);
+        CopyResources(Path.Combine(releaseDir, "Resources"));
+        CopyContentAssemblies(Path.Combine(releaseDir, "Resources", "Assemblies"));
         if (options.HybridAcz) {
             // Hybrid ACZ expects "Content.Client.zip" (as it's not OpenDream-specific)
-            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDream.Client"), Path.Combine(releaseDir.FullName, "Content.Client.Zip"));
+            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDream.Client"), Path.Combine(releaseDir, "Content.Client.Zip"));
         }
     }
 

@@ -2572,7 +2572,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
             if (timestamp >= 0 && timestamp < 864000*7) {
-                ticks += DateTime.Today.Ticks;
+                ticks += new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day).Ticks;
             } else {
                 // Offset from January 1st, 2020
                 ticks += new DateTime(2000, 1, 1).Ticks;

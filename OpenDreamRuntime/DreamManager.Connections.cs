@@ -122,7 +122,16 @@ namespace OpenDreamRuntime {
 
                         var remoteAddress = (remote.RemoteEndPoint as IPEndPoint)!.Address.ToString();
                         _sawmill.Debug($"World Topic #{topicId}: '{remoteAddress}' -> '{topic}'");
-                        var topicResponse = WorldInstance.SpawnProc("Topic", null, new DreamValue(topic), new DreamValue(remoteAddress));
+                        var tcs = new TaskCompletionSource<DreamValue>();
+                        DreamThread.Run("Topic Handler", async state => {
+                            var topicProc = WorldInstance.GetProc("Topic");
+
+                            var result = await state.Call(topicProc, WorldInstance, null, new DreamValue(topic), new DreamValue(remoteAddress));
+                            tcs.SetResult(result);
+                            return result;
+                        });
+
+                        var topicResponse = await tcs.Task;
                         if (topicResponse.IsNull) {
                             return;
                         }

@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Asynchronous;

@@ -1,5 +1,4 @@
 ﻿using OpenDreamRuntime.Objects;
-using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs {
     public interface IDreamValueEnumerator {

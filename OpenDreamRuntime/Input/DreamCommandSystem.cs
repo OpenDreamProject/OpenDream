@@ -1,5 +1,4 @@
-﻿using OpenDreamShared.Input;
-using OpenDreamShared.Network.Messages;
+﻿using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Network;
 

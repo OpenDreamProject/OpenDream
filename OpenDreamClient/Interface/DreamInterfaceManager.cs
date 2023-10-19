@@ -681,13 +681,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         if (DefaultWindow == null)
             throw new Exception("Given DMF did not have a default window");
 
-        //DefaultWindow.RegisterOnClydeWindow(_clyde.MainWindow);
+        DefaultWindow.RegisterOnClydeWindow(_clyde.MainWindow);
         DefaultWindow.UIElement.Name = "MainWindow";
-        _clyde.MainWindow.IsVisible = false;
-        //LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
-        //LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
+        LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
+        LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
-        //_userInterfaceManager.StateRoot.AddChild(DefaultWindow.UIElement);
+        _userInterfaceManager.StateRoot.AddChild(DefaultWindow.UIElement);
     }
 
     private void LoadDescriptor(ElementDescriptor descriptor) {

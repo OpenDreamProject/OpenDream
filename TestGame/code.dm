@@ -186,9 +186,11 @@
 			src.client.images.Cut()
 
 	verb/test_hide_main_window()
-		winset(src, null, "mapwindow.is-visible=false")
-		spawn(50)
-			winset(src, null, "mapwindow.is-visible=true")
+		src << "hiding main window"
+		winset(src,"mainwindow","is-visible=false")
+		spawn(20)
+			src << "showing main window"
+			winset(src,"mainwindow","is-visible=true")
 
 /mob/Stat()
 	if (statpanel("Status"))

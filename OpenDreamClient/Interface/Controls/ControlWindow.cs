@@ -80,8 +80,11 @@ public sealed class ControlWindow : InterfaceControl {
 
     public void RegisterOnClydeWindow(IClydeWindow window) {
         // todo: listen for closed.
-
-        _myWindow = (_myWindow.osWindow, window);
+        if(_myWindow.osWindow is not null){
+            _myWindow.osWindow.Close();
+            UIElement.Orphan();
+        }
+        _myWindow = (null, window);
         UpdateWindowAttributes(_myWindow);
     }
 

@@ -187,9 +187,6 @@ public sealed class ControlWindow : InterfaceControl {
 
         if (osWindow != null && osWindow.ClydeWindow != null) {
             osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible;
-            //
-            //else if (!WindowDescriptor.IsVisible && osWindow.IsOpen)
-            //   osWindow?.Close();
         } else if (clydeWindow != null) {
             clydeWindow.IsVisible = WindowDescriptor.IsVisible;
         }

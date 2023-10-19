@@ -33,14 +33,14 @@ jobs:
     - name: Build
       run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
     - name: Compile TestGame
-      run: main\DMCompiler\bin\Release\net7.0\DMCompiler.exe main\TestGame\environment.dme
+      run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
     - name: Checkout Modified /tg/station
       uses: actions/checkout@v2
       with:
         repository: wixoaGit/tgstation
         path: tg
     - name: Compile Modified /tg/station
-      run: main\DMCompiler\bin\Release\net7.0\DMCompiler.exe tg\tgstation.dme 
+      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme 
     - name: Checkout 64-bit Paradise
       uses: actions/checkout@v2
       with:
@@ -48,4 +48,4 @@ jobs:
         ref: rustg_64
         path: para
     - name: Compile 64-bit Paradise
-      run: main\DMCompiler\bin\Release\net7.0\DMCompiler.exe para\paradise.dme
+      run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme

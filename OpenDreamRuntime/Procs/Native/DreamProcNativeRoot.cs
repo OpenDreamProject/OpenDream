@@ -721,7 +721,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Path", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_flist(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if (!bundle.GetArgument(0, "Path").TryGetValueAsString(out var path)) {
-                path = IoCManager.Resolve<DreamResourceManager>().RootPath + Path.DirectorySeparatorChar;
+                path = "./";
             }
 
             try {
@@ -1580,7 +1580,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
@@ -1599,7 +1599,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_oview(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList view = bundle.ObjectTree.CreateList();
 
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return new(view);
 
@@ -1771,7 +1771,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_range(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
@@ -2572,7 +2572,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
             if (timestamp >= 0 && timestamp < 864000*7) {
-                ticks += DateTime.Today.Ticks;
+                ticks += new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day).Ticks;
             } else {
                 // Offset from January 1st, 2020
                 ticks += new DateTime(2000, 1, 1).Ticks;
@@ -2707,7 +2707,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("typesof")]
-        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.ProcStub | DreamValueTypeFlag.VerbStub)]
+        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_typesof(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = bundle.ObjectTree.CreateList(bundle.Arguments.Length); // Assume every arg will add at least one type
 
@@ -2723,18 +2723,15 @@ namespace OpenDreamRuntime.Procs.Native {
                     } else if (typeValue.TryGetValueAsString(out var typeString)) {
                         DreamPath path = new DreamPath(typeString);
 
-                        if (path.LastElement is "proc" or "verb") {
+                        if (path.LastElement == "proc") {
                             type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
                             addingProcs = type.ObjectDefinition.Procs.Values;
+                        } else if (path.LastElement == "verb") {
+                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                            addingProcs = type.ObjectDefinition.Verbs;
                         } else {
                             type = bundle.ObjectTree.GetTreeEntry(path);
                         }
-                    } else if (typeValue.TryGetValueAsProcStub(out var owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Procs.Values;
-                    } else if (typeValue.TryGetValueAsVerbStub(out owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Verbs;
                     } else {
                         continue;
                     }
@@ -2795,7 +2792,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_view(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList view = bundle.ObjectTree.CreateList();
 
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return new(view);
 

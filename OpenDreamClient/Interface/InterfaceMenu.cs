@@ -133,7 +133,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                             MenuElementDescriptor.IsChecked = !MenuElementDescriptor.IsChecked;
                         _menu.CreateMenu();
                     if(!string.IsNullOrEmpty(MenuElementDescriptor.Command))
-                        EntitySystem.Get<DreamCommandSystem>().RunCommand(Command);
+                        _interfaceManager.RunCommand(Command);
                 };
             return menuButton;
         }

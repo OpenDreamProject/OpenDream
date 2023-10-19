@@ -9,7 +9,6 @@ namespace OpenDreamClient.Interface.Controls;
 public sealed class ControlWindow : InterfaceControl {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
@@ -20,7 +19,7 @@ public sealed class ControlWindow : InterfaceControl {
 
     public readonly List<InterfaceControl> ChildControls = new();
 
-    public InterfaceMacroSet Macro => _dreamInterface.MacroSets[WindowDescriptor.Macro];
+    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
@@ -38,7 +37,7 @@ public sealed class ControlWindow : InterfaceControl {
         // Don't call base.UpdateElementDescriptor();
 
         _menuContainer.RemoveAllChildren();
-        if (WindowDescriptor.Menu != null && _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
+        if (WindowDescriptor.Menu != null && _interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
             _menuContainer.AddChild(menu.MenuBar);
             _menuContainer.Visible = true;
         } else {
@@ -66,8 +65,8 @@ public sealed class ControlWindow : InterfaceControl {
             window.SetHeight = window.MaxHeight;
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
-            if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
-                commandSystem.RunCommand(WindowDescriptor.OnClose);
+            if (WindowDescriptor.OnClose != null) {
+                _interfaceManager.RunCommand(WindowDescriptor.OnClose);
             }
             _myWindow = (null, _myWindow.clydeWindow);
         };

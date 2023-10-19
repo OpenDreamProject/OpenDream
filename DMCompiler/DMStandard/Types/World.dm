@@ -10,7 +10,7 @@
 
 	var/name = "OpenDream World"
 	var/time
-	var/timezone = 0 as opendream_unimplemented
+	var/timezone = 0
 	var/timeofday
 	var/realtime
 	var/tick_lag = 1
@@ -19,9 +19,9 @@
 	var/tick_usage
 	var/loop_checks = 0 as opendream_unimplemented
 
-	var/maxx = 0
-	var/maxy = 0
-	var/maxz = 0
+	var/maxx = null
+	var/maxy = null
+	var/maxz = null
 	var/icon_size = 32
 	var/view = 5
 	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
@@ -38,14 +38,11 @@
 	var/visibility = 0 as opendream_unimplemented
 	var/status as opendream_unimplemented
 	var/process
-	var/list/params = null as opendream_unimplemented
+	var/list/params = null
 
 	var/sleep_offline = 0 as opendream_unimplemented
 
 	var/system_type
-
-	proc/New()
-	proc/Del()
 
 	var/map_cpu = 0 as opendream_unimplemented
 	var/hub as opendream_unimplemented
@@ -56,6 +53,13 @@
 	var/map_format = TOPDOWN_MAP as opendream_unimplemented
 	var/cache_lifespan = 30 as opendream_unimplemented
 	var/executor as opendream_unimplemented
+	
+	// An OpenDream read-only var that tells you what port Topic() is listening on
+	// Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed
+	var/const/opendream_topic_port
+	
+	proc/New()
+	proc/Del()
 
 	proc/Profile(command, type, format)
 		set opendream_unimplemented = TRUE
@@ -82,7 +86,6 @@
 	proc/Import()
 		set opendream_unimplemented = TRUE
 	proc/Topic(T,Addr,Master,Keys)
-		set opendream_unimplemented = TRUE
 
 	proc/SetScores()
 		set opendream_unimplemented = TRUE

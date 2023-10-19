@@ -49,7 +49,7 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public bool DoesFileExist(string resourcePath) {
-            return File.Exists(Path.Combine(RootPath, resourcePath));
+            return File.Exists(resourcePath);
         }
 
         public DreamResource LoadResource(string resourcePath) {
@@ -58,14 +58,13 @@ namespace OpenDreamRuntime.Resources {
             if (_resourcePathToId.TryGetValue(resourcePath, out int resourceId)) {
                 resource = _resourceCache[resourceId];
             } else {
-                var filePath = Path.Combine(RootPath, resourcePath);
                 resourceId = _resourceCache.Count;
 
                 // Create a new type of resource based on its extension
                 switch (Path.GetExtension(resourcePath)) {
                     case ".dmi":
                     case ".png":
-                        resource = new IconResource(resourceId, filePath, resourcePath);
+                        resource = new IconResource(resourceId, resourcePath, resourcePath);
                         break;
                     case ".jpg":
                     case ".rsi": // RT-specific, not in BYOND
@@ -75,7 +74,7 @@ namespace OpenDreamRuntime.Resources {
                         goto default;
 
                     default:
-                        resource = new DreamResource(resourceId, filePath, resourcePath);
+                        resource = new DreamResource(resourceId, resourcePath, resourcePath);
                         break;
                 }
 
@@ -134,6 +133,18 @@ namespace OpenDreamRuntime.Resources {
         }
 
         /// <summary>
+        /// Dynamically create a new generic resource that clients can use
+        /// </summary>
+        /// <param name="data">The resource's data</param>
+        public DreamResource CreateResource(byte[] data) {
+            int resourceId = _resourceCache.Count;
+            DreamResource resource = new DreamResource(resourceId, data);
+
+            _resourceCache.Add(resource);
+            return resource;
+        }
+
+        /// <summary>
         /// Dynamically create a new icon resource that clients can use
         /// </summary>
         /// <param name="data">The resource's data</param>
@@ -160,7 +171,7 @@ namespace OpenDreamRuntime.Resources {
 
         public bool DeleteFile(string filePath) {
             try {
-                File.Delete(Path.Combine(RootPath, filePath));
+                File.Delete(filePath);
             } catch (Exception) {
                 return false;
             }
@@ -170,7 +181,7 @@ namespace OpenDreamRuntime.Resources {
 
         public bool DeleteDirectory(string directoryPath) {
             try {
-                Directory.Delete(Path.Combine(RootPath, directoryPath), true);
+                Directory.Delete(directoryPath, true);
             } catch (Exception) {
                 return false;
             }
@@ -180,9 +191,8 @@ namespace OpenDreamRuntime.Resources {
 
         public bool SaveTextToFile(string filePath, string text) {
             try {
-                string absoluteFilePath = Path.Combine(RootPath, filePath);
-                Directory.GetParent(absoluteFilePath)?.Create();
-                File.WriteAllText(absoluteFilePath, text);
+                Directory.GetParent(filePath)?.Create();
+                File.WriteAllText(filePath, text);
             } catch (Exception) {
                 return false;
             }
@@ -192,15 +202,14 @@ namespace OpenDreamRuntime.Resources {
 
         public bool CopyFile(DreamResource sourceFile, string destinationFilePath) {
             try {
-                var dest = Path.Combine(RootPath, destinationFilePath);
-                var dir = Path.GetDirectoryName(dest);
+                var dir = Path.GetDirectoryName(destinationFilePath);
                 if (dir != null)
                     Directory.CreateDirectory(dir);
 
                 if (sourceFile.ResourceData == null)
-                    File.WriteAllText(string.Empty, dest);
+                    File.WriteAllText(string.Empty, destinationFilePath);
                 else
-                    File.WriteAllBytes(dest, sourceFile.ResourceData);
+                    File.WriteAllBytes(destinationFilePath, sourceFile.ResourceData);
             } catch (Exception) {
                 return false;
             }
@@ -209,7 +218,7 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public string[] EnumerateListing(string path) {
-            string directory = Path.Combine(RootPath, Path.GetDirectoryName(path));
+            string directory = Path.GetDirectoryName(path);
             string searchPattern = Path.GetFileName(path);
 
             var entries = Directory.GetFileSystemEntries(directory, searchPattern);

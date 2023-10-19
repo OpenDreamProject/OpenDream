@@ -48,6 +48,10 @@ namespace OpenDreamRuntime.Objects {
         public readonly Dictionary<string, DreamValue> Variables = new();
         // Maps /static variables from name to their index in the global variable table.
         public readonly Dictionary<string, int> GlobalVariables = new();
+        // Contains hashes of variables that are tagged /const.
+        public HashSet<string>? ConstVariables = null;
+        // Contains hashes of variables that are tagged /tmp.
+        public HashSet<string>? TmpVariables = null;
 
         public DreamObjectDefinition(DreamObjectDefinition copyFrom) {
             DreamManager = copyFrom.DreamManager;
@@ -68,6 +72,8 @@ namespace OpenDreamRuntime.Objects {
 
             Variables = new Dictionary<string, DreamValue>(copyFrom.Variables);
             GlobalVariables = new Dictionary<string, int>(copyFrom.GlobalVariables);
+            ConstVariables = copyFrom.ConstVariables is not null ? new HashSet<string>(copyFrom.ConstVariables) : null;
+            TmpVariables = copyFrom.TmpVariables is not null ? new HashSet<string>(copyFrom.TmpVariables) : null;
             Procs = new Dictionary<string, int>(copyFrom.Procs);
             OverridingProcs = new Dictionary<string, int>(copyFrom.OverridingProcs);
             if (copyFrom.Verbs != null)
@@ -97,6 +103,10 @@ namespace OpenDreamRuntime.Objects {
                     Verbs = new List<int>(Parent.Verbs);
                 if (Parent != ObjectTree.Root.ObjectDefinition) // Don't include root-level globals
                     GlobalVariables = new Dictionary<string, int>(Parent.GlobalVariables);
+                if (Parent.ConstVariables != null)
+                    ConstVariables = new HashSet<string>(Parent.ConstVariables);
+                if (Parent.TmpVariables != null)
+                    TmpVariables = new HashSet<string>(Parent.TmpVariables);
             }
         }
 

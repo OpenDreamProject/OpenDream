@@ -45,6 +45,9 @@ namespace OpenDreamRuntime.Resources {
         }
 
         public virtual void Output(DreamValue value) {
+            if (ResourcePath == null)
+                throw new Exception("Cannot write to resource without a path");
+
             string? text;
             if (value.IsNull) {
                 text = string.Empty;
@@ -52,10 +55,8 @@ namespace OpenDreamRuntime.Resources {
                 throw new Exception($"Invalid output operation '{ResourcePath}' << {value}");
             }
 
-            string filePath = Path.Combine(IoCManager.Resolve<DreamResourceManager>().RootPath, ResourcePath);
-
             CreateDirectory();
-            File.AppendAllText(filePath, text + "\r\n");
+            File.AppendAllText(ResourcePath, text + "\r\n");
             _resourceData = null;
         }
 

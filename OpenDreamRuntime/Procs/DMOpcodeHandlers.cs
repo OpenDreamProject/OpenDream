@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
+using DMCompiler;
 using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -647,22 +648,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus PushProcStub(DMProcState state) {
-            int ownerTypeId = state.ReadInt();
-            var owner = state.Proc.ObjectTree.GetTreeEntry(ownerTypeId);
-
-            state.Push(DreamValue.CreateProcStub(owner));
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus PushVerbStub(DMProcState state) {
-            int ownerTypeId = state.ReadInt();
-            var owner = state.Proc.ObjectTree.GetTreeEntry(ownerTypeId);
-
-            state.Push(DreamValue.CreateVerbStub(owner));
-            return ProcStatus.Continue;
-        }
-
         public static ProcStatus PushResource(DMProcState state) {
             string resourcePath = state.ReadString();
 
@@ -687,10 +672,16 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
             DreamValue output = default;
 
-            if (second.IsNull) {
-                output = first;
-            } else if (first.IsNull) {
+            if (first.IsNull) {
                 output = second;
+            } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
+                output = IconOperationAdd(state, first, second);
+            } else if (first.TryGetValueAsDreamObject(out var firstDreamObject)) {
+                output = firstDreamObject!.OperatorAdd(second);
+            } else if (first.TryGetValueAsType(out _) || first.TryGetValueAsProc(out _)) {
+                output = default; // Always errors
+            } else if (second.IsNull) {
+                output = first;
             } else switch (first.Type) {
                 case DreamValue.DreamValueType.Float: {
                     float firstFloat = first.MustGetValueAsFloat();
@@ -703,10 +694,6 @@ namespace OpenDreamRuntime.Procs {
                 case DreamValue.DreamValueType.String when second.Type == DreamValue.DreamValueType.String:
                     output = new DreamValue(first.MustGetValueAsString() + second.MustGetValueAsString());
                     break;
-                case DreamValue.DreamValueType.DreamObject: {
-                    output = first.MustGetValueAsDreamObject()!.OperatorAdd(second);
-                    break;
-                }
             }
 
             if (output.Type != 0) {
@@ -730,15 +717,7 @@ namespace OpenDreamRuntime.Procs {
 
             DreamValue result;
             if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
-                // Implicitly create a new /icon and ICON_ADD blend it
-                // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
-                var iconObj = state.Proc.ObjectTree.CreateObject<DreamObjectIcon>(state.Proc.ObjectTree.Icon);
-                if (!state.Proc.DreamResourceManager.TryLoadIcon(first, out var from))
-                    throw new Exception($"Failed to create an icon from {from}");
-
-                iconObj.Icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
-                DreamProcNativeIcon.Blend(iconObj.Icon, second, DreamIconOperationBlend.BlendType.Add, 0, 0);
-                result = new DreamValue(iconObj);
+                result = IconOperationAdd(state, first, second);
             } else if (first.TryGetValueAsDreamObject(out var firstObj)) {
                 if (firstObj != null) {
                     state.PopReference(reference);
@@ -1611,6 +1590,96 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus Sin(DMProcState state) {
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Sin(x);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Cos(DMProcState state) {
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Cos(x);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Tan(DMProcState state) {
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Tan(x);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus ArcSin(DMProcState state) {
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcSin(x);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus ArcCos(DMProcState state) {
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcCos(x);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus ArcTan(DMProcState state) {
+            float a = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcTan(a);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus ArcTan2(DMProcState state) {
+            float y = state.Pop().UnsafeGetValueAsFloat();
+            float x = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.ArcTan(x, y);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Sqrt(DMProcState state) {
+            float a = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Sqrt(a);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Log(DMProcState state) {
+            float baseValue = state.Pop().UnsafeGetValueAsFloat();
+            float value = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Log(value, baseValue);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus LogE(DMProcState state) {
+            float y = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Log(y);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Abs(DMProcState state) {
+            float a = state.Pop().UnsafeGetValueAsFloat();
+            float result = SharedOperations.Abs(a);
+
+            state.Push(new DreamValue(result));
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus SwitchCase(DMProcState state) {
             int casePosition = state.ReadInt();
             DreamValue testValue = state.Pop();
@@ -1687,11 +1756,6 @@ namespace OpenDreamRuntime.Procs {
             }
 
             var dir = d.MustGetValueAsInteger();
-            if (dir >= 16) { // Anything greater than (NORTH | SOUTH | EAST | WEST) is not valid. < 0 is fine though!
-                state.Push(DreamValue.Null);
-                return ProcStatus.Continue;
-            }
-
             var locPos = state.Proc.AtomManager.GetAtomPosition(loc);
 
             if ((dir & (int) AtomDirection.North) != 0)
@@ -1703,6 +1767,11 @@ namespace OpenDreamRuntime.Procs {
                 locPos.X += 1;
             if ((dir & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
                 locPos.X -= 1;
+
+            if ((dir & (int) AtomDirection.Up) != 0)
+                locPos.Z += 1;
+            if ((dir & (int) AtomDirection.Down) != 0) // A dir of UP | DOWN will cancel out
+                locPos.Z -= 1;
 
             state.Proc.DreamMapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
             state.Push(new DreamValue(turf));
@@ -2010,8 +2079,9 @@ namespace OpenDreamRuntime.Procs {
                 throw new Exception($"Invalid owner for issaved() call {owner}");
             }
 
-            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
-            if (objectDefinition.GlobalVariables.ContainsKey(property)) {
+            if (objectDefinition.GlobalVariables.ContainsKey(property)
+            || (objectDefinition.ConstVariables is not null && objectDefinition.ConstVariables.Contains(property))
+            || (objectDefinition.TmpVariables is not null && objectDefinition.TmpVariables.Contains(property))) {
                 state.Push(new DreamValue(0));
             } else {
                 state.Push(new DreamValue(1));
@@ -2328,8 +2398,6 @@ namespace OpenDreamRuntime.Procs {
                         case DreamValue.DreamValueType.DreamObject: return firstValue == second.MustGetValueAsDreamObject();
                         case DreamValue.DreamValueType.Appearance:
                         case DreamValue.DreamValueType.DreamProc:
-                        case DreamValue.DreamValueType.ProcStub:
-                        case DreamValue.DreamValueType.VerbStub:
                         case DreamValue.DreamValueType.DreamType:
                         case DreamValue.DreamValueType.String:
                         case DreamValue.DreamValueType.Float: return false;
@@ -2653,6 +2721,18 @@ namespace OpenDreamRuntime.Procs {
             if (returnVal.AByte == 255)
                 return new DreamValue(returnVal.ToHexNoAlpha().ToLower());
             return new DreamValue(returnVal.ToHex().ToLower());
+        }
+
+        private static DreamValue IconOperationAdd(DMProcState state, DreamValue icon, DreamValue blend) {
+            // Create a new /icon and ICON_ADD blend it
+            // Note that BYOND creates something other than an /icon, but it behaves the same as one in most reasonable interactions
+            var iconObj = state.Proc.ObjectTree.CreateObject<DreamObjectIcon>(state.Proc.ObjectTree.Icon);
+            if (!state.Proc.DreamResourceManager.TryLoadIcon(icon, out var from))
+                throw new Exception($"Failed to create an icon from {from}");
+
+            iconObj.Icon.InsertStates(from, DreamValue.Null, DreamValue.Null, DreamValue.Null);
+            DreamProcNativeIcon.Blend(iconObj.Icon, blend, DreamIconOperationBlend.BlendType.Add, 0, 0);
+            return new DreamValue(iconObj);
         }
         #endregion Helpers
     }

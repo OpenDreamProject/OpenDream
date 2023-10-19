@@ -978,6 +978,61 @@ namespace DMCompiler.DM.Visitors {
 
             Result = new Expressions.Pick(pick.Location, pickValues);
         }
+        
+        public void VisitSin(DMASTSin sin) {
+            var expr = DMExpression.Create(_dmObject, _proc, sin.Expression, _inferredPath);
+            Result = new Expressions.Sin(sin.Location, expr);
+        }
+
+        public void VisitCos(DMASTCos cos) {
+            var expr = DMExpression.Create(_dmObject, _proc, cos.Expression, _inferredPath);
+            Result = new Expressions.Cos(cos.Location, expr);
+        }
+
+        public void VisitTan(DMASTTan tan) {
+            var expr = DMExpression.Create(_dmObject, _proc, tan.Expression, _inferredPath);
+            Result = new Expressions.Tan(tan.Location, expr);
+        }
+
+        public void VisitArcsin(DMASTArcsin arcsin) {
+            var expr = DMExpression.Create(_dmObject, _proc, arcsin.Expression, _inferredPath);
+            Result = new Expressions.ArcSin(arcsin.Location, expr);
+        }
+
+        public void VisitArccos(DMASTArccos arccos) {
+            var expr = DMExpression.Create(_dmObject, _proc, arccos.Expression, _inferredPath);
+            Result = new Expressions.ArcCos(arccos.Location, expr);
+        }
+
+        public void VisitArctan(DMASTArctan arctan) {
+            var expr = DMExpression.Create(_dmObject, _proc, arctan.Expression, _inferredPath);
+            Result = new Expressions.ArcTan(arctan.Location, expr);
+        }
+
+        public void VisitArctan2(DMASTArctan2 arctan2) {
+            var xexpr = DMExpression.Create(_dmObject, _proc, arctan2.XExpression, _inferredPath);
+            var yexpr = DMExpression.Create(_dmObject, _proc, arctan2.YExpression, _inferredPath);
+            Result = new Expressions.ArcTan2(arctan2.Location, xexpr, yexpr);
+        }
+
+        public void VisitSqrt(DMASTSqrt sqrt) {
+            var expr = DMExpression.Create(_dmObject, _proc, sqrt.Expression, _inferredPath);
+            Result = new Expressions.Sqrt(sqrt.Location, expr);
+        }
+
+        public void VisitLog(DMASTLog log) {
+            var expr = DMExpression.Create(_dmObject, _proc, log.Expression, _inferredPath);
+            DMExpression? baseExpr = null;
+            if (log.BaseExpression != null) {
+                baseExpr = DMExpression.Create(_dmObject, _proc, log.BaseExpression, _inferredPath);
+            }
+            Result = new Expressions.Log(log.Location, expr, baseExpr);
+        }
+
+        public void VisitAbs(DMASTAbs abs) {
+            var expr = DMExpression.Create(_dmObject, _proc, abs.Expression, _inferredPath);
+            Result = new Expressions.Abs(abs.Location, expr);
+        }
 
         public void VisitCall(DMASTCall call) {
             var procArgs = new ArgumentList(call.Location, _dmObject, _proc, call.ProcParameters, _inferredPath);

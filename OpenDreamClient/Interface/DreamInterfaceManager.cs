@@ -434,6 +434,47 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
+    public void RunCommand(string command){
+        switch (command) {
+                case string x when x.StartsWith(".quit"):
+                    IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                    break;
+
+                case string x when x.StartsWith(".screenshot"):
+                    string[] split = command.Split(" ");
+                    SaveScreenshot(split.Length == 1 || split[1] != "auto");
+                    break;
+
+                case string x when x.StartsWith(".configure"):
+                    _sawmill.Warning(".configure command is not implemented");
+                    break;
+
+                case string x when x.StartsWith(".winset"):
+                    // Everything after .winset, excluding the space and quotes
+                    string winsetParams = command.Substring(7); //clip .winset
+                    winsetParams = winsetParams.Trim(); //clip space
+                    winsetParams = winsetParams.Trim('\"'); //clip quotes
+
+                    WinSet(null, winsetParams);
+                    break;
+
+                default: {
+                    // Send the entire command to the server.
+                    // It has more info about argument types so it can parse it better than we can.
+                    _netManager.ClientSendMessage(new MsgCommand(){Command = command});
+                    break;
+                }
+            }
+    }
+
+    public void StartRepeatingCommand(string command) {
+        _netManager.ClientSendMessage(new MsgCommandRepeatStart(){Command = command});
+    }
+
+    public void StopRepeatingCommand(string command) {
+        _netManager.ClientSendMessage(new MsgCommandRepeatStop(){Command = command});
+    }
+
     public void WinSet(string? controlId, string winsetParams) {
         DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
         DMFParser parser = new DMFParser(lexer, _serializationManager);
@@ -470,9 +511,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                 if (elementId == null) {
                     if (winSet.Attribute == "command") {
-                        DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
-
-                        commandSystem.RunCommand(winSet.Value);
+                        RunCommand(winSet.Value);
                     } else {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
@@ -485,7 +524,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     if (element != null) {
                         element.PopulateElementDescriptor(node, _serializationManager);
                     } else {
-                        _sawmill.Error($"Invalid element \"{controlId}\"");
+                        _sawmill.Error($"Invalid element \"{elementId}\"");
                     }
                 }
             }
@@ -605,6 +644,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
 
         LoadDescriptor(elementDescriptor);
+        if(elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)){
+            window.CreateChildControls();
+        }
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {
@@ -698,5 +740,9 @@ public interface IDreamInterfaceManager {
     InterfaceElement? FindElementWithId(string id);
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
+
+    void RunCommand(string command);
+    void StartRepeatingCommand(string command);
+    void StopRepeatingCommand(string command);
     void WinSet(string? controlId, string winsetParams);
 }

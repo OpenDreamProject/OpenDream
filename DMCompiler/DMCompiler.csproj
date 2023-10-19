@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <OutputPath>..\bin\DMCompiler\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>

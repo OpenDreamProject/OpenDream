@@ -14,6 +14,7 @@ using Cell = OpenDreamRuntime.IDreamMapManager.Cell;
 
 namespace OpenDreamRuntime {
     public sealed class DreamMapManager : IDreamMapManager {
+        [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
@@ -81,16 +82,34 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public void LoadAreasAndTurfs(DreamMapJson map) {
-            Size = new Vector2i(map.MaxX, map.MaxY);
-            SetZLevels(map.MaxZ);
+        public void LoadMaps(List<DreamMapJson>? maps) {
+            var world = _dreamManager.WorldInstance;
+            var maxX = (int)world.ObjectDefinition.Variables["maxx"].UnsafeGetValueAsFloat();
+            var maxY = (int)world.ObjectDefinition.Variables["maxy"].UnsafeGetValueAsFloat();
+            var maxZ = (int)world.ObjectDefinition.Variables["maxz"].UnsafeGetValueAsFloat();
 
-            foreach (MapBlockJson block in map.Blocks) {
-                LoadMapAreasAndTurfs(block, map.CellDefinitions);
+            if (maps != null) {
+                foreach (var map in maps) {
+                    maxX = Math.Max(maxX, map.MaxX);
+                    maxY = Math.Max(maxY, map.MaxY);
+                    maxZ = Math.Max(maxZ, map.MaxZ);
+                }
+            }
+
+            Size = new Vector2i(maxX, maxY);
+            SetZLevels(maxZ);
+
+            if (maps != null) {
+                // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
+                foreach (var map in maps) {
+                    foreach (MapBlockJson block in map.Blocks) {
+                        LoadMapAreasAndTurfs(block, map.CellDefinitions);
+                    }
+                }
             }
         }
 
-        public void InitializeAtoms(DreamMapJson map) {
+        public void InitializeAtoms(List<DreamMapJson>? maps) {
             // Call New() on all /area in this particular order, each with waitfor=FALSE
             var seenAreas = new HashSet<DreamObject>();
             for (var z = 1; z <= Levels; ++z) {
@@ -121,9 +140,13 @@ namespace OpenDreamRuntime {
                 }
             }
 
-            // new() up /objs and /mobs from compiled-in maps
-            foreach (MapBlockJson block in map.Blocks) {
-                LoadMapObjectsAndMobs(block, map.CellDefinitions);
+            if (maps != null) {
+                // new() up /objs and /mobs from compiled-in maps
+                foreach (var map in maps) {
+                    foreach (MapBlockJson block in map.Blocks) {
+                        LoadMapObjectsAndMobs(block, map.CellDefinitions);
+                    }
+                }
             }
         }
 
@@ -344,8 +367,8 @@ namespace OpenDreamRuntime {
         public int Levels { get; }
 
         public void Initialize();
-        public void LoadAreasAndTurfs(DreamMapJson map);
-        public void InitializeAtoms(DreamMapJson map);
+        public void LoadMaps(List<DreamMapJson>? maps);
+        public void InitializeAtoms(List<DreamMapJson>? maps);
         public void UpdateTiles();
 
         public void SetTurf(DreamObjectTurf turf, DreamObjectDefinition type, DreamProcArguments creationArguments);

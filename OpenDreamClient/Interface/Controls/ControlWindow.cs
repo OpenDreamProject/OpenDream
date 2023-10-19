@@ -53,6 +53,9 @@ public sealed class ControlWindow : InterfaceControl {
     }
 
     public OSWindow CreateWindow() {
+        if(_myWindow.osWindow is not null)
+            return _myWindow.osWindow;
+
         OSWindow window = new();
         if(UIElement.Parent is not null)
             UIElement.Orphan();

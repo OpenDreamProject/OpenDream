@@ -136,32 +136,73 @@ namespace OpenDreamRuntime.Procs {
         private readonly AtomManager _atomManager;
         private readonly TreeEntry? _filterType;
         private int _current = -1;
+        private int _startCount = 0;
 
         public WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) {
             _atomManager = atomManager;
             _filterType = filterType;
             if(filterType is not null)
-                if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Area))
-                    atomManager.Areas.StartBuffering();
-                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Mob))
-                    atomManager.Mobs.StartBuffering();
-                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Obj))
-                    atomManager.Objects.StartBuffering();
-                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Turf))
-                    atomManager.Turfs.StartBuffering();
-                else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Movable))
-                    atomManager.Movables.StartBuffering();
+                if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Area)) {
+                    atomManager.Areas.StartEnumeration();
+                    _startCount = atomManager.Areas.Count;
+                } else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Mob)) {
+                    atomManager.Mobs.StartEnumeration();
+                    _startCount = atomManager.Mobs.Count;
+                } else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Obj)) {
+                    atomManager.Objects.StartEnumeration();
+                    _startCount = atomManager.Objects.Count;
+                } else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Turf)) {
+                    atomManager.Turfs.StartEnumeration();
+                    _startCount = atomManager.Turfs.Count;
+                } else if(filterType.ObjectDefinition.IsSubtypeOf(filterType.ObjectDefinition.ObjectTree.Movable)) {
+                    atomManager.Movables.StartEnumeration();
+                    _startCount = atomManager.Movables.Count;
+                }
             else {
-                atomManager.Areas.StartBuffering();
-                atomManager.Mobs.StartBuffering();
-                atomManager.Objects.StartBuffering();
-                atomManager.Turfs.StartBuffering();
-                atomManager.Movables.StartBuffering();
+                atomManager.Areas.StartEnumeration();
+                atomManager.Mobs.StartEnumeration();
+                atomManager.Objects.StartEnumeration();
+                atomManager.Turfs.StartEnumeration();
+                atomManager.Movables.StartEnumeration();
+                _startCount = atomManager.AtomCount;
             }
         }
 
         public bool Enumerate(DMProcState state, DreamReference? reference) {
             do {
+                if(_filterType is null){
+                    if(_startCount != _atomManager.AtomCount){
+                        _current = _current - Math.Max(0, _startCount - _atomManager.AtomCount); //if we got smaller, we need to adjust our current index
+                        _startCount = _atomManager.AtomCount;
+                    }
+                } else {
+                    if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Area)) {
+                        if(_startCount != _atomManager.Areas.Count){
+                            _current = _current - Math.Max(0, _startCount - _atomManager.Areas.Count); //if we got smaller, we need to adjust our current index
+                            _startCount = _atomManager.Areas.Count;
+                        }
+                    } else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Mob)) {
+                        if(_startCount != _atomManager.Mobs.Count){
+                            _current = _current - Math.Max(0, _startCount - _atomManager.Mobs.Count); //if we got smaller, we need to adjust our current index
+                            _startCount = _atomManager.Mobs.Count;
+                        }
+                    } else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Obj)) {
+                        if(_startCount != _atomManager.Objects.Count){
+                            _current = _current - Math.Max(0, _startCount - _atomManager.Objects.Count); //if we got smaller, we need to adjust our current index
+                            _startCount = _atomManager.Objects.Count;
+                        }
+                    } else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Turf)) {
+                        if(_startCount != _atomManager.Turfs.Count){
+                            _current = _current - Math.Max(0, _startCount - _atomManager.Turfs.Count); //if we got smaller, we need to adjust our current index
+                            _startCount = _atomManager.Turfs.Count;
+                        }
+                    } else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Movable)) {
+                        if(_startCount != _atomManager.Movables.Count){
+                            _current = _current - Math.Max(0, _startCount - _atomManager.Movables.Count); //if we got smaller, we need to adjust our current index
+                            _startCount = _atomManager.Movables.Count;
+                        }
+                    }
+                }
                 _current++;
                 if (_current >= _atomManager.AtomCount) {
                     if (reference != null)
@@ -181,21 +222,21 @@ namespace OpenDreamRuntime.Procs {
         void IDreamValueEnumerator.EndEnumeration() {
             if(_filterType is not null)
                 if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Area))
-                    _atomManager.Areas.FinishBuffering();
+                    _atomManager.Areas.FinishEnumeration();
                 else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Mob))
-                    _atomManager.Mobs.FinishBuffering();
+                    _atomManager.Mobs.FinishEnumeration();
                 else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Obj))
-                    _atomManager.Objects.FinishBuffering();
+                    _atomManager.Objects.FinishEnumeration();
                 else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Turf))
-                    _atomManager.Turfs.FinishBuffering();
+                    _atomManager.Turfs.FinishEnumeration();
                 else if(_filterType.ObjectDefinition.IsSubtypeOf(_filterType.ObjectDefinition.ObjectTree.Movable))
-                    _atomManager.Movables.FinishBuffering();
+                    _atomManager.Movables.FinishEnumeration();
             else {
-                _atomManager.Areas.FinishBuffering();
-                _atomManager.Mobs.FinishBuffering();
-                _atomManager.Objects.FinishBuffering();
-                _atomManager.Turfs.FinishBuffering();
-                _atomManager.Movables.FinishBuffering();
+                _atomManager.Areas.FinishEnumeration();
+                _atomManager.Mobs.FinishEnumeration();
+                _atomManager.Objects.FinishEnumeration();
+                _atomManager.Turfs.FinishEnumeration();
+                _atomManager.Movables.FinishEnumeration();
             }
         }
     }

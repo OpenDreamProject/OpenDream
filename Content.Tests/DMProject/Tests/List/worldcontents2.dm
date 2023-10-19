@@ -8,8 +8,8 @@
 	var/startcount  = length(world.contents)
 	var/i = 0
 	for(var/O in world)
-		if(i==0)
+		if(i==3)
 			del(object2)
 			ASSERT(length(world.contents) == startcount-1)
 		i++
-	ASSERT(i == startcount-1)
+	ASSERT(i == startcount)

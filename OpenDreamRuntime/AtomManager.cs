@@ -12,34 +12,11 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 namespace OpenDreamRuntime {
 
     /// <summary>
-    /// A list that can be buffered to prevent changes from being applied until FinishBuffering is called.
+    /// A list that has special behaviour so we can enumerate world.contents without copying the entire list.
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    public sealed class BufferedList<T> : List<T> {
-        private bool _isBuffering = false;
-        private List<T> _bufferedAdds = new();
-        private List<T> _bufferedRemoves = new();
-        public new void Add(T Value) {
-            if (!_isBuffering) {
-                base.Add(Value);
-                return;
-            }
-            if(!_bufferedRemoves.Remove(Value)) //if we don't already have a remove queued, add it, otherwise we're just undoing a remove
-                _bufferedAdds.Add(Value);
-        }
-
-        public new void AddRange(IEnumerable<T> collection) {
-            if (!_isBuffering) {
-                base.AddRange(collection);
-                return;
-            }
-            foreach (var item in collection)
-            {
-                if(!_bufferedRemoves.Remove(item)) //if we don't already have a remove queued, add it, otherwise we're just undoing a remove
-                    _bufferedAdds.Add(item);
-            }
-        }
-
+    public sealed class WorldContentList<T> : List<T> {
+        private int _isEnumerating = 0; //keep count of how many enumerations are active (for nested iterations of world.contents)
         /// <summary>
         /// Removes the first instance of the given value, replacing it with the last value in the list. This is done to avoid shifting the entire list.
         /// </summary>
@@ -57,37 +34,30 @@ namespace OpenDreamRuntime {
         }
 
         public new void Remove(T Value) {
-            if (!_isBuffering) {
+            if (_isEnumerating == 0) {
                 RemoveSwapLast(Value);
                 return;
+            } else {
+                base.Remove(Value);
             }
-            _bufferedAdds.Remove(Value);
-            _bufferedRemoves.Add(Value);
         }
-        public void StartBuffering() {
-            _isBuffering = true;
+        public void StartEnumeration() {
+            _isEnumerating++;
         }
 
-        public void FinishBuffering() {
-            _isBuffering = false;
-            foreach (var item in _bufferedAdds)
-            {
-                base.Add(item);
-            }
-            foreach (var item in _bufferedRemoves)
-            {
-                RemoveSwapLast(item);
-            }
-            _bufferedAdds.Clear();
-            _bufferedRemoves.Clear();
+        public void FinishEnumeration() {
+            if(_isEnumerating > 0)
+                _isEnumerating--;
+            else
+                throw new Exception("FinishEnumeration called without StartEnumeration");
         }
     }
     public sealed class AtomManager {
-        public BufferedList<DreamObjectArea> Areas { get; } = new();
-        public BufferedList<DreamObjectTurf> Turfs { get; } = new();
-        public BufferedList<DreamObjectMovable> Movables { get; } = new();
-        public BufferedList<DreamObjectMovable> Objects { get; } = new();
-        public BufferedList<DreamObjectMob> Mobs { get; } = new();
+        public WorldContentList<DreamObjectArea> Areas { get; } = new();
+        public WorldContentList<DreamObjectTurf> Turfs { get; } = new();
+        public WorldContentList<DreamObjectMovable> Movables { get; } = new();
+        public WorldContentList<DreamObjectMovable> Objects { get; } = new();
+        public WorldContentList<DreamObjectMob> Mobs { get; } = new();
         public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
 
         [Dependency] private readonly IEntityManager _entityManager = default!;

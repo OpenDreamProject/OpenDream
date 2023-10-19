@@ -185,6 +185,11 @@
 		spawn(50)
 			src.client.images.Cut()
 
+	verb/test_hide_main_window()
+		winset(src, null, "mapwindow.is-visible=false")
+		spawn(50)
+			winset(src, null, "mapwindow.is-visible=true")
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

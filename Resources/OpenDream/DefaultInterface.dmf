@@ -40,9 +40,13 @@ menu "menu"
 		command = ".quit"
 		category = "Menu"
 	elem
-		name = "Popup test"
+		name = "Show Popup"
 		command = ".winset \"testwindow.is-visible=true\""
 		category = "Menu"
+	elem
+		name = "Hide Popup"
+		command = ".winset \"testwindow.is-visible=false\""
+		category = "Menu"		
 
 window "mapwindow"
 	elem "mapwindow"

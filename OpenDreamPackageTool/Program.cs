@@ -33,6 +33,12 @@ public static class Program {
         if (!TryParseArgs(args, out var options))
             return 1;
 
+        if (!File.Exists("OpenDream.sln")) {
+            Console.Error.WriteLine(
+                "You must run this tool from the root of the OpenDream repo. OpenDream.sln was not found.");
+            return 1;
+        }
+
         switch (options) {
             case ServerOptions serverOptions:
                 ServerPackaging.Package(serverOptions);

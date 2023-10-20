@@ -6,7 +6,7 @@ using Robust.Server.Player;
 namespace OpenDreamRuntime.Rendering {
     public sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
         private readonly Dictionary<IPlayerSession, HashSet<EntityUid>> _sessionToScreenObjects = new();
-        [Dependency] private IEntityManager _entityManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public override void Initialize() {
             SubscribeLocalEvent<ExpandPvsEvent>(HandleExpandPvsEvent);
@@ -31,6 +31,7 @@ namespace OpenDreamRuntime.Rendering {
 
         private void HandleExpandPvsEvent(ref ExpandPvsEvent e) {
             if (_sessionToScreenObjects.TryGetValue(e.Session, out var objects)) {
+                e.Entities ??= new(objects.Count);
                 e.Entities.AddRange(objects);
             }
         }

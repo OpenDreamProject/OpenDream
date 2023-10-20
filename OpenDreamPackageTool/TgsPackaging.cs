@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Robust.Packaging.Utility;
 
 namespace OpenDreamPackageTool;
@@ -10,17 +11,18 @@ public static class TgsPackaging {
             Directory.Delete(options.OutputDir, true);
         }
 
+        var platform = DeterminePlatform();
+
         // Package the server to <output dir>/bin/server
         ServerPackaging.Package(new Program.ServerOptions {
             OutputDir = Path.Combine(options.OutputDir, "bin", "server"),
-            Platform = options.Platform,
+            Platform = platform.RId,
             HybridAcz = true, // Force Hybrid ACZ with TGS
             SkipBuild = options.SkipBuild,
             InPlatformSubDir = false,
             TgsEngineBuild = true
         });
 
-        var platform = options.Platform!;
         if (!options.SkipBuild) {
             ProcessHelpers.RunCheck(new ProcessStartInfo {
                 FileName = "dotnet",
@@ -56,5 +58,33 @@ public static class TgsPackaging {
                 "/m"
             }
         }).Wait();
+    }
+
+    /// <summary>
+    /// Determine what platform to package for, based on what OS we're currently running on
+    /// </summary>
+    /// <returns>The platform</returns>
+    private static PlatformReg DeterminePlatform() {
+        string rId;
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows)) {
+            rId = "win";
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux)) {
+            rId = "linux";
+        } else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX)) {
+            rId = "osx";
+        } else {
+            throw new NotSupportedException("Your OS is not supported");
+        }
+
+        rId += RuntimeInformation.OSArchitecture switch {
+            Architecture.X64 => "-x64",
+            Architecture.X86 => "-x86",
+            Architecture.Arm64 => "-arm64",
+            Architecture.Arm => "-arm",
+            _ => throw new NotSupportedException(
+                $"Your architecture ({RuntimeInformation.OSArchitecture}) is not supported")
+        };
+
+        return ServerPackaging.GetPlatform(rId);
     }
 }

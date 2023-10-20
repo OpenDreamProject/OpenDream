@@ -5,7 +5,7 @@ using Robust.Packaging.Utility;
 namespace OpenDreamPackageTool;
 
 public static class ServerPackaging {
-    public static readonly PlatformReg[] Platforms = {
+    private static readonly PlatformReg[] Platforms = {
         new("win-x64", "Windows", true),
         new("linux-x64", "Linux", true),
         new("linux-arm64", "Linux", true),
@@ -64,16 +64,17 @@ public static class ServerPackaging {
         "zh-Hant"
     };
 
-    public static IEnumerable<string> PlatformRIds => Platforms.Select(platform => platform.RId);
-
-    public static IEnumerable<PlatformReg> PlatformsDefault => Platforms.Where(platform => platform.BuildByDefault);
+    private static IEnumerable<PlatformReg> PlatformsDefault => Platforms.Where(platform => platform.BuildByDefault);
 
     public static void Package(Program.ServerOptions options) {
-        IEnumerable<PlatformReg> platforms = (options.Platform != null) ? new[] {options.Platform} : PlatformsDefault;
+        IEnumerable<PlatformReg> platforms = PlatformsDefault;
+        if (options.Platform != null) {
+            platforms = new[] { GetPlatform(options.Platform) };
+        }
 
         if (!options.InPlatformSubDir && options.Platform == null) {
             Console.Error.WriteLine(
-                "Packaging the server without a platform subdirectory requires selecting a single platform");
+                "Packaging the server without a platform subdirectory requires a '--platform' argument");
         }
 
         if (Directory.Exists(options.OutputDir)) {
@@ -97,6 +98,14 @@ public static class ServerPackaging {
         foreach (var platform in platforms) {
             BuildPlatform(platform, options);
         }
+    }
+
+    public static PlatformReg GetPlatform(string rId) {
+        var platform = Platforms.FirstOrDefault(p => p.RId == rId);
+        if (platform == null)
+            throw new NotSupportedException($"Platform \"{rId}\" is not supported");
+
+        return platform;
     }
 
     private static void BuildPlatform(PlatformReg platform, Program.ServerOptions options) {

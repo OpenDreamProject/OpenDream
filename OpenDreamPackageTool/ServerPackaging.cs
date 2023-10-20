@@ -133,7 +133,7 @@ public static class ServerPackaging {
 
         string releaseDir = options.OutputDir;
         if (options.InPlatformSubDir)
-            releaseDir = Path.Combine(releaseDir, $"OpenDream.Server_{platform.RId}");
+            releaseDir = Path.Combine(releaseDir, $"OpenDreamServer_{platform.RId}");
 
         Console.WriteLine($"Packaging {platform.RId} server...");
         Directory.CreateDirectory(releaseDir);
@@ -142,7 +142,7 @@ public static class ServerPackaging {
         CopyContentAssemblies(Path.Combine(releaseDir, "Resources", "Assemblies"));
         if (options.HybridAcz) {
             // Hybrid ACZ expects "Content.Client.zip" (as it's not OpenDream-specific)
-            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDream.Client"), Path.Combine(releaseDir, "Content.Client.Zip"));
+            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDreamClient"), Path.Combine(releaseDir, "Content.Client.Zip"));
         }
     }
 

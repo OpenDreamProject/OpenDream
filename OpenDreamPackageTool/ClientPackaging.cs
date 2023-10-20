@@ -51,7 +51,7 @@ public static class ClientPackaging {
             }).Wait();
         }
 
-        DirectoryInfo releaseDir = new DirectoryInfo(Path.Combine(options.OutputDir, "OpenDream.Client"));
+        DirectoryInfo releaseDir = new DirectoryInfo(Path.Combine(options.OutputDir, "OpenDreamClient"));
 
         Console.WriteLine("Packaging client...");
         releaseDir.Create();

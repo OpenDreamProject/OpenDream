@@ -111,6 +111,8 @@ namespace DMCompiler.DM {
         private readonly List<SourceInfoJson> _sourceInfo = new();
         private string? _lastSourceFile;
 
+        public bool Pure = true;
+
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
             return _localVariableIdCounter++;
@@ -378,13 +380,11 @@ namespace DMCompiler.DM {
         }
 
         public void PushReferenceValue(DMReference reference) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushReferenceValue);
             WriteReference(reference);
         }
 
         public void CreateListEnumerator() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
 
@@ -393,18 +393,15 @@ namespace DMCompiler.DM {
                 DMCompiler.ForcedError($"Cannot filter enumeration by type {filterType}");
             }
 
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CreateFilteredListEnumerator);
             WriteInt(filterTypeId);
         }
 
         public void CreateTypeEnumerator() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CreateTypeEnumerator);
         }
 
         public void CreateRangeEnumerator() {
-            ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.CreateRangeEnumerator);
         }
 
@@ -432,13 +429,13 @@ namespace DMCompiler.DM {
         }
 
         public void CreateList(int size) {
-            ShrinkStack(size - 1); //Shrinks by the size of the list, grows by 1
+            ResizeStack(-(size - 1)); //Shrinks by the size of the list, grows by 1
             WriteOpcode(DreamProcOpcode.CreateList);
             WriteInt(size);
         }
 
         public void CreateAssociativeList(int size) {
-            ShrinkStack(size * 2 - 1); //Shrinks by twice the size of the list, grows by 1
+            ResizeStack(-(size * 2 - 1)); //Shrinks by twice the size of the list, grows by 1
             WriteOpcode(DreamProcOpcode.CreateAssociativeList);
             WriteInt(size);
         }
@@ -488,45 +485,37 @@ namespace DMCompiler.DM {
         }
 
         public void SwitchCase(string caseLabel) {
-            ShrinkStack(1); //This could either shrink the stack by 1 or 2. Assume 1.
             WriteOpcode(DreamProcOpcode.SwitchCase);
             WriteLabel(caseLabel);
         }
 
         public void SwitchCaseRange(string caseLabel) {
-            ShrinkStack(2); //This could either shrink the stack by 2 or 3. Assume 2.
             WriteOpcode(DreamProcOpcode.SwitchCaseRange);
             WriteLabel(caseLabel);
         }
 
         public void Browse() {
-            ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.Browse);
         }
 
         public void BrowseResource() {
-            ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.BrowseResource);
         }
 
         public void OutputControl() {
-            ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.OutputControl);
         }
 
         public void Ftp() {
-            ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.Ftp);
         }
 
         public void OutputReference(DMReference leftRef) {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.OutputReference);
             WriteReference(leftRef);
         }
 
         public void Output() {
-            ShrinkStack(2);
             WriteOpcode(DreamProcOpcode.Output);
         }
 
@@ -537,7 +526,6 @@ namespace DMCompiler.DM {
         }
 
         public void Spawn(string jumpTo) {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Spawn);
             WriteLabel(jumpTo);
         }
@@ -613,7 +601,6 @@ namespace DMCompiler.DM {
         }
 
         public void Pop() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Pop);
         }
 
@@ -623,13 +610,11 @@ namespace DMCompiler.DM {
         }
 
         public void BooleanOr(string endLabel) {
-            ShrinkStack(1); //Either shrinks the stack 1 or 0. Assume 1.
             WriteOpcode(DreamProcOpcode.BooleanOr);
             WriteLabel(endLabel);
         }
 
         public void BooleanAnd(string endLabel) {
-            ShrinkStack(1); //Either shrinks the stack 1 or 0. Assume 1.
             WriteOpcode(DreamProcOpcode.BooleanAnd);
             WriteLabel(endLabel);
         }
@@ -649,13 +634,11 @@ namespace DMCompiler.DM {
         }
 
         public void JumpIfFalse(string label) {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.JumpIfFalse);
             WriteLabel(label);
         }
 
         public void JumpIfTrue(string label) {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.JumpIfTrue);
             WriteLabel(label);
         }
@@ -697,12 +680,11 @@ namespace DMCompiler.DM {
         }
 
         public void DereferenceIndex() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.DereferenceIndex);
         }
 
         public void DereferenceCall(string field, DMCallArgumentsType argumentsType, int argumentStackSize) {
-            ShrinkStack(argumentStackSize); // Pops proc owner and arguments, pushes result
+            ResizeStack(-argumentStackSize); // Pops proc owner and arguments, pushes result
             WriteOpcode(DreamProcOpcode.DereferenceCall);
             WriteString(field);
             WriteByte((byte)argumentsType);
@@ -710,7 +692,7 @@ namespace DMCompiler.DM {
         }
 
         public void Call(DMReference reference, DMCallArgumentsType argumentsType, int argumentStackSize) {
-            ShrinkStack(argumentStackSize - 1); // Pops all arguments, pushes return value
+            ResizeStack(-(argumentStackSize - 1)); // Pops all arguments, pushes return value
             WriteOpcode(DreamProcOpcode.Call);
             WriteReference(reference);
             WriteByte((byte)argumentsType);
@@ -719,25 +701,22 @@ namespace DMCompiler.DM {
 
         public void CallStatement(DMCallArgumentsType argumentsType, int argumentStackSize) {
             //Shrinks the stack by argumentStackSize. Could also shrink it by argumentStackSize+1, but assume not.
-            ShrinkStack(argumentStackSize);
+            ResizeStack(-argumentStackSize);
             WriteOpcode(DreamProcOpcode.CallStatement);
             WriteByte((byte)argumentsType);
             WriteInt(argumentStackSize);
         }
 
         public void Prompt(DMValueType types) {
-            ShrinkStack(3);
             WriteOpcode(DreamProcOpcode.Prompt);
             WriteInt((int)types);
         }
 
         public void Initial() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Initial);
         }
 
         public void Return() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Return);
         }
 
@@ -755,14 +734,13 @@ namespace DMCompiler.DM {
         }
 
         public void CreateObject(DMCallArgumentsType argumentsType, int argumentStackSize) {
-            ShrinkStack(argumentStackSize); // Pops type and arguments, pushes new object
+            ResizeStack(-argumentStackSize); // Pops type and arguments, pushes new object
             WriteOpcode(DreamProcOpcode.CreateObject);
             WriteByte((byte)argumentsType);
             WriteInt(argumentStackSize);
         }
 
         public void DeleteObject() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.DeleteObject);
         }
 
@@ -775,17 +753,14 @@ namespace DMCompiler.DM {
         }
 
         public void Add() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Add);
         }
 
         public void Subtract() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Subtract);
         }
 
         public void Multiply() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Multiply);
         }
 
@@ -795,7 +770,6 @@ namespace DMCompiler.DM {
         }
 
         public void Divide() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Divide);
         }
 
@@ -805,12 +779,10 @@ namespace DMCompiler.DM {
         }
 
         public void Modulus() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Modulus);
         }
 
         public void ModulusModulus() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.ModulusModulus);
         }
 
@@ -825,7 +797,6 @@ namespace DMCompiler.DM {
         }
 
         public void Power() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Power);
         }
 
@@ -835,13 +806,11 @@ namespace DMCompiler.DM {
         }
 
         public void Increment(DMReference reference) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Increment);
             WriteReference(reference);
         }
 
         public void Decrement(DMReference reference) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.Decrement);
             WriteReference(reference);
         }
@@ -862,7 +831,6 @@ namespace DMCompiler.DM {
         }
 
         public void BitShiftLeft() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitShiftLeft);
         }
 
@@ -872,7 +840,6 @@ namespace DMCompiler.DM {
         }
 
         public void BitShiftRight() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitShiftRight);
         }
 
@@ -886,12 +853,10 @@ namespace DMCompiler.DM {
         }
 
         public void BinaryAnd() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitAnd);
         }
 
         public void BinaryXor() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitXor);
         }
 
@@ -901,47 +866,38 @@ namespace DMCompiler.DM {
         }
 
         public void BinaryOr() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.BitOr);
         }
 
         public void Equal() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareEquals);
         }
 
         public void NotEqual() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareNotEquals);
         }
 
         public void Equivalent() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareEquivalent);
         }
 
         public void NotEquivalent() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareNotEquivalent);
         }
 
         public void GreaterThan() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareGreaterThan);
         }
 
         public void GreaterThanOrEqual() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareGreaterThanOrEqual);
         }
 
         public void LessThan() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareLessThan);
         }
 
         public void LessThanOrEqual() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.CompareLessThanOrEqual);
         }
 
@@ -970,7 +926,6 @@ namespace DMCompiler.DM {
         }
 
         public void ArcTan2() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.ArcTan2);
         }
 
@@ -979,7 +934,6 @@ namespace DMCompiler.DM {
         }
 
         public void Log() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Log);
         }
 
@@ -992,42 +946,35 @@ namespace DMCompiler.DM {
         }
 
         public void PushFloat(float value) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushFloat);
             WriteFloat(value);
         }
 
         public void PushString(string value) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushString);
             WriteString(value);
         }
 
         public void PushResource(string value) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushResource);
             WriteString(value);
         }
 
         public void PushType(int typeId) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushType);
             WriteInt(typeId);
         }
 
         public void PushProc(int procId) {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushProc);
             WriteInt(procId);
         }
 
         public void PushNull() {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushNull);
         }
 
         public void PushGlobalVars() {
-            GrowStack(1);
             WriteOpcode(DreamProcOpcode.PushGlobalVars);
         }
 
@@ -1041,29 +988,25 @@ namespace DMCompiler.DM {
                 }
             }
 
-            ShrinkStack(formatCount - 1); //Shrinks by the amount of formats in the string, grows 1
+            ResizeStack(-(formatCount - 1)); //Shrinks by the amount of formats in the string, grows 1
             WriteOpcode(DreamProcOpcode.FormatString);
             WriteString(value);
             WriteInt(formatCount);
         }
 
         public void IsInList() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsInList);
         }
 
         public void IsInRange() {
-            ShrinkStack(2);
             WriteOpcode(DreamProcOpcode.IsInRange);
         }
 
         public void IsSaved() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsSaved);
         }
 
         public void IsType() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.IsType);
         }
 
@@ -1076,35 +1019,32 @@ namespace DMCompiler.DM {
         }
 
         public void GetStep() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.GetStep);
         }
 
         public void GetDir() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.GetDir);
         }
 
         public void LocateCoordinates() {
-            ShrinkStack(2);
             WriteOpcode(DreamProcOpcode.LocateCoord);
         }
 
         public void Gradient(DMCallArgumentsType argumentsType, int argumentStackSize) {
-            ShrinkStack(argumentStackSize - 1); // Pops arguments, pushes gradient result
+            ResizeStack(-(argumentStackSize - 1)); // Pops arguments, pushes gradient result
             WriteOpcode(DreamProcOpcode.Gradient);
             WriteByte((byte)argumentsType);
             WriteInt(argumentStackSize);
         }
 
         public void PickWeighted(int count) {
-            ShrinkStack(count * 2 - 1);
+            ResizeStack(-(count * 2 - 1));
             WriteOpcode(DreamProcOpcode.PickWeighted);
             WriteInt(count);
         }
 
         public void PickUnweighted(int count) {
-            ShrinkStack(count - 1);
+            ResizeStack(-(count - 1));
             WriteOpcode(DreamProcOpcode.PickUnweighted);
             WriteInt(count);
         }
@@ -1115,13 +1055,12 @@ namespace DMCompiler.DM {
         }
 
         public void MassConcatenation(int count) {
-            ShrinkStack(count - 1);
+            ResizeStack(-(count - 1));
             WriteOpcode(DreamProcOpcode.MassConcatenation);
             WriteInt(count);
         }
 
         public void Locate() {
-            ShrinkStack(1);
             WriteOpcode(DreamProcOpcode.Locate);
         }
 
@@ -1142,6 +1081,11 @@ namespace DMCompiler.DM {
 
         private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
+
+            var metadata = OpcodeMetadataCache.GetMetadata(opcode);
+
+            Pure = Pure && metadata.Pure; // short-circuiting prevents Pure from becoming true again
+            ResizeStack(metadata.StackDelta);
         }
 
         private void WriteByte(byte value) {
@@ -1183,7 +1127,7 @@ namespace DMCompiler.DM {
 
                 case DMReference.Type.Field:
                     WriteString(reference.Name);
-                    ShrinkStack(affectStack ? 1 : 0);
+                    ResizeStack(affectStack ? -1 : 0);
                     break;
 
                 case DMReference.Type.SrcField:
@@ -1192,7 +1136,7 @@ namespace DMCompiler.DM {
                     break;
 
                 case DMReference.Type.ListIndex:
-                    ShrinkStack(affectStack ? 2 : 0);
+                    ResizeStack(affectStack ? -2 : 0);
                     break;
 
                 case DMReference.Type.SuperProc:
@@ -1207,13 +1151,12 @@ namespace DMCompiler.DM {
             }
         }
 
-        private void GrowStack(int size) {
-            _currentStackSize += size;
-            _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
-        }
-
-        private void ShrinkStack(int size) {
-            _currentStackSize -= size;
+        /// <summary>
+        /// Tracks the maximum possible stack size of the proc
+        /// </summary>
+        /// <param name="sizeDelta">The net change in stack size caused by an operation</param>
+        private void ResizeStack(int sizeDelta) {
+            _currentStackSize += sizeDelta;
             _maxStackSize = Math.Max(_currentStackSize, _maxStackSize);
             if (_currentStackSize < 0 && !_negativeStackSizeError) {
                 _negativeStackSizeError = true;

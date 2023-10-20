@@ -114,7 +114,7 @@ public enum DreamProcOpcode : byte {
     DereferenceField = 0x68,
     [OpcodeMetadata(stackDelta: -1, pure: true)] DereferenceIndex = 0x69,
     DereferenceCall = 0x6A,
-    PopReference = 0x6B,
+    [OpcodeMetadata(pure: true)] PopReference = 0x6B, // Since non-static locals are pure, we handle reference purity on the "Push" side
     //0x6C
     BitShiftLeftReference = 0x6D,
     BitShiftRightReference = 0x6E,

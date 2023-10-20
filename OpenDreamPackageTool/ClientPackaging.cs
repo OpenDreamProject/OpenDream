@@ -32,7 +32,8 @@ public static class ClientPackaging {
     private static void WipeBin() {
         Console.WriteLine("Clearing old build artifacts (if any)...");
 
-        Directory.Delete("bin", true);
+        if (Directory.Exists("bin"))
+            Directory.Delete("bin", true);
     }
 
     private static void Build(Program.ClientOptions options) {

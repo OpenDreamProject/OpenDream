@@ -4,6 +4,9 @@ using Robust.Packaging.Utility;
 
 namespace OpenDreamPackageTool;
 
+/// <summary>
+/// Packages the server, and optionally the client alongside for hybrid ACZ
+/// </summary>
 public static class ServerPackaging {
     private static readonly PlatformReg[] Platforms = {
         new("win-x64", "Windows", true),

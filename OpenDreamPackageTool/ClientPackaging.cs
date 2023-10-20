@@ -3,6 +3,9 @@ using Robust.Packaging.Utility;
 
 namespace OpenDreamPackageTool;
 
+/// <summary>
+/// Packages the client's resources & assemblies in a format ready to be downloaded by connecting clients
+/// </summary>
 public static class ClientPackaging {
     private static readonly string[] ClientIgnoredResources = {
         "Maps",

@@ -4,6 +4,10 @@ using Robust.Packaging.Utility;
 
 namespace OpenDreamPackageTool;
 
+/// <summary>
+/// Packages the OpenDream server, client (hybrid ACZ), and compiler in a format friendly for TGS
+/// See https://github.com/OpenDreamProject/OpenDream/issues/1495
+/// </summary>
 public static class TgsPackaging {
     public static void Package(Program.TgsOptions options) {
         if (Directory.Exists(options.OutputDir)) {

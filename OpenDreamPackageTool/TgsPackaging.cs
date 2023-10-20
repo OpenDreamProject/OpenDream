@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Robust.Packaging.Utility;
 
 namespace OpenDreamPackageTool;
 
@@ -21,7 +22,7 @@ public static class TgsPackaging {
 
         var platform = options.Platform!;
         if (!options.SkipBuild) {
-            Program.RunSubProcess(new ProcessStartInfo {
+            ProcessHelpers.RunCheck(new ProcessStartInfo {
                 FileName = "dotnet",
                 ArgumentList = {
                     "build",
@@ -33,7 +34,7 @@ public static class TgsPackaging {
                     "/t:Rebuild",
                     "/m"
                 }
-            });
+            }).Wait();
 
             PublishCompiler(platform.RId, platform.TargetOs);
         }
@@ -43,7 +44,7 @@ public static class TgsPackaging {
     }
 
     private static void PublishCompiler(string platformRId, string targetOs) {
-        Program.RunSubProcess(new ProcessStartInfo {
+        ProcessHelpers.RunCheck(new ProcessStartInfo {
             FileName = "dotnet",
             ArgumentList = {
                 "publish",
@@ -54,6 +55,6 @@ public static class TgsPackaging {
                 $"/p:TargetOS={targetOs}",
                 "/m"
             }
-        });
+        }).Wait();
     }
 }

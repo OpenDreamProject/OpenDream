@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Robust.Packaging.Utility;
 
 namespace OpenDreamPackageTool;
 
@@ -35,7 +36,7 @@ public static class ClientPackaging {
         Console.WriteLine("Building project...");
 
         if (!options.SkipBuild) {
-            Program.RunSubProcess(new ProcessStartInfo {
+            ProcessHelpers.RunCheck(new ProcessStartInfo {
                 FileName = "dotnet",
                 ArgumentList = {
                     "build",
@@ -47,7 +48,7 @@ public static class ClientPackaging {
                     "/p:FullRelease=True",
                     "/m"
                 }
-            });
+            }).Wait();
         }
 
         DirectoryInfo releaseDir = new DirectoryInfo(Path.Combine(options.OutputDir, "OpenDream.Client"));

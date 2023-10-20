@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.IO.Compression;
+using Robust.Packaging.Utility;
 
 namespace OpenDreamPackageTool;
 
@@ -102,7 +103,7 @@ public static class ServerPackaging {
         Console.WriteLine($"Building project for {platform.RId}");
 
         if (!options.SkipBuild) {
-            Program.RunSubProcess(new ProcessStartInfo {
+            ProcessHelpers.RunCheck(new ProcessStartInfo {
                 FileName = "dotnet",
                 ArgumentList = {
                     "build",
@@ -116,7 +117,7 @@ public static class ServerPackaging {
                     "/m",
                     $"/p:TgsEngineBuild={(options.TgsEngineBuild ? "True" : "False")}"
                 }
-            });
+            }).Wait();
 
             PublishClientServer(platform.RId, platform.TargetOs);
         }
@@ -137,7 +138,7 @@ public static class ServerPackaging {
     }
 
     private static void PublishClientServer(string platformRId, string targetOs) {
-        Program.RunSubProcess(new ProcessStartInfo {
+        ProcessHelpers.RunCheck(new ProcessStartInfo {
             FileName = "dotnet",
             ArgumentList = {
                 "publish",
@@ -149,7 +150,7 @@ public static class ServerPackaging {
                 "/p:FullRelease=True",
                 "/m"
             }
-        });
+        }).Wait();
     }
 
     private static void CopyResources(string dest) {

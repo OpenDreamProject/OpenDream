@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.IO.Compression;
 
-namespace OpenDreamPackaging;
+namespace OpenDreamPackageTool;
 
 public static class ServerPackaging {
     public static readonly PlatformReg[] Platforms = {

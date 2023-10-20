@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace OpenDreamPackaging;
+namespace OpenDreamPackageTool;
 
 public static class TgsPackaging {
     public static void Package(Program.TgsOptions options) {

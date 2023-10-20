@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace OpenDreamPackaging;
+namespace OpenDreamPackageTool;
 
 public static class ClientPackaging {
     private static readonly string[] ClientIgnoredResources = {

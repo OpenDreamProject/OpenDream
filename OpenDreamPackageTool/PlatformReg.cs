@@ -1,4 +1,4 @@
-namespace OpenDreamPackaging;
+namespace OpenDreamPackageTool;
 
 public record PlatformReg(string RId, string TargetOs, bool BuildByDefault) {
     public string RId = RId;

@@ -34,7 +34,7 @@ public sealed partial class MainMenuControl : Control {
         var currentUserName = configMan.GetCVar(CVars.PlayerName);
         UserNameBox.Text = currentUserName;
 
-        AddressBoxProtected.Text = "127.0.0.1:25566";
+        AddressBoxProtected.Text = "127.0.0.1:1212";
 
 #if DEBUG
         DebugWarningLabel.Visible = true;

@@ -379,8 +379,8 @@ namespace DMCompiler.DM {
             _sourceInfo.Add(sourceInfo);
         }
 
-        public void PushReferenceValue(DMReference reference, bool shouldBePure = false) {
-            WriteOpcode(DreamProcOpcode.PushReferenceValue, pure: shouldBePure); // non-static locals are pure
+        public void PushReferenceValue(DMReference reference) {
+            WriteOpcode(DreamProcOpcode.PushReferenceValue);
             WriteReference(reference);
         }
 
@@ -1079,12 +1079,12 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.EndTry);
         }
 
-        private void WriteOpcode(DreamProcOpcode opcode, bool pure = false) {
+        private void WriteOpcode(DreamProcOpcode opcode) {
             _bytecodeWriter.Write((byte)opcode);
 
             var metadata = OpcodeMetadataCache.GetMetadata(opcode);
 
-            Pure = Pure && (pure || metadata.Pure); // short-circuiting prevents Pure from becoming true again
+            Pure = Pure && metadata.Pure; // short-circuiting prevents Pure from becoming true again
             ResizeStack(metadata.StackDelta);
         }
 

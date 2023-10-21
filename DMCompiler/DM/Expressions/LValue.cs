@@ -81,15 +81,6 @@ namespace DMCompiler.DM.Expressions {
             LocalVar = localVar;
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            string endLabel = proc.NewLabelName();
-
-            DMReference reference = EmitReference(dmObject, proc, endLabel, ShortCircuitMode.KeepNull);
-            proc.PushReferenceValue(reference, shouldBePure: LocalVar is not DMProc.LocalConstVariable);
-
-            proc.AddLabel(endLabel);
-        }
-
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             if (LocalVar.IsParameter) {
                 return DMReference.CreateArgument(LocalVar.Id);

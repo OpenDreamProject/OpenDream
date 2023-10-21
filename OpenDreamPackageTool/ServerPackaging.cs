@@ -34,6 +34,7 @@ public static class ServerPackaging {
         "OpenDreamShared",
         "OpenDreamRuntime",
         "Byond.TopicSender",
+        "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "DMCompiler"
     };
 
@@ -43,6 +44,7 @@ public static class ServerPackaging {
         "OpenDreamShared",
         "OpenDreamRuntime",
         "Byond.TopicSender",
+        "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "DMCompiler"
     };
 

@@ -111,7 +111,6 @@ namespace DMCompiler.DM {
         private readonly List<SourceInfoJson> _sourceInfo = new();
         private string? _lastSourceFile;
 
-        public bool Pure = true;
 
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
@@ -1084,7 +1083,6 @@ namespace DMCompiler.DM {
 
             var metadata = OpcodeMetadataCache.GetMetadata(opcode);
 
-            Pure = Pure && metadata.Pure; // short-circuiting prevents Pure from becoming true again
             ResizeStack(metadata.StackDelta);
         }
 

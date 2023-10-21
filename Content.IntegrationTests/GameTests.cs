@@ -1,10 +1,6 @@
-using System.Diagnostics;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
-using Robust.Server.Player;
-using Robust.Shared.IoC;
-using Robust.Shared.Network;
 
 namespace Content.IntegrationTests {
     [TestFixture]

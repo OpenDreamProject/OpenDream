@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Serialization.Manager;
 

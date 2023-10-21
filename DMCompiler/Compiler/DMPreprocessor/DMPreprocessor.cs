@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using Robust.Shared.Utility;

@@ -1,3 +1,4 @@
+#if DEBUG
 using Robust.Server.Console;
 using Robust.Server.Player;
 using System.Net;
@@ -5,6 +6,7 @@ using Robust.Shared.Network;
 using Robust.Shared.Players;
 using Robust.Shared.Toolshed;
 using Robust.Shared.Toolshed.Errors;
+#endif
 
 namespace OpenDreamRuntime {
     #if DEBUG

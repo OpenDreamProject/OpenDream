@@ -1,5 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-using OpenDreamRuntime.Objects;
+﻿using OpenDreamRuntime.Objects;
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;

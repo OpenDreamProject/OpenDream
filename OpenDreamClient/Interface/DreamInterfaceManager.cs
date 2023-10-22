@@ -77,6 +77,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     private ViewRange _view = new(5);
 
     public void LoadInterfaceFromSource(string source) {
+        Reset();
+
         DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
         DMFParser dmfParser = new DMFParser(dmfLexer, _serializationManager);
 
@@ -110,14 +112,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void Initialize() {
-        _userInterfaceManager.MainViewport.Visible = false;
-
-        AvailableVerbs = Array.Empty<(string, string, string)>();
-        Windows.Clear();
-        Menus.Clear();
-        MacroSets.Clear();
-        _popupWindows.Clear();
-
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
@@ -645,6 +639,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         if(elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)){
             window.CreateChildControls();
         }
+    }
+
+    private void Reset() {
+        _userInterfaceManager.MainViewport.Visible = false;
+
+        AvailableVerbs = Array.Empty<(string, string, string)>();
+        Windows.Clear();
+        Menus.Clear();
+        MacroSets.Clear();
+        _popupWindows.Clear();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {

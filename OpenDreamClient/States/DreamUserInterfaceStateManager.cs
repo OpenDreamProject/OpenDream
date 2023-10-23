@@ -31,8 +31,12 @@ public sealed class DreamUserInterfaceStateManager {
                 // When we disconnect from the server:
                 case ClientRunLevel.Error:
                 case ClientRunLevel.Initialize when args.OldLevel >= ClientRunLevel.Connected:
-                    if (_gameController.LaunchState.FromLauncher) {
-                        _stateManager.RequestStateChange<ConnectingState>();
+                    if (_gameController.LaunchState is {
+                            FromLauncher: true,
+                            Ss14Address: not null
+                        }) {
+                        _gameController.Redial(_gameController.LaunchState.Ss14Address, "Connection lost; attempting reconnect");
+
                         break;
                     }
 

@@ -1136,12 +1136,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.TryGetValueAsFloat(out var floatFirst) && second.TryGetValueAsFloat(out var floatSecond)) {
-                state.Push(new DreamValue(MathF.Pow(floatFirst, floatSecond)));
-            } else {
-                throw new Exception("Invalid power operation on " + first + " and " + second);
-            }
+            if (!first.TryGetValueAsFloat(out var floatFirst) && !first.IsNull)
+                throw new Exception($"Invalid power operation on {first} and {second}");
 
+            var floatSecond = second.UnsafeGetValueAsFloat(); // Non-numbers treated as 0 here
+
+            state.Push(new DreamValue(MathF.Pow(floatFirst, floatSecond)));
             return ProcStatus.Continue;
         }
 
@@ -1179,27 +1179,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
             DreamValue output = default;
 
-            if (second.IsNull) {
-                output = first;
-            } else if (first.IsNull && second.Type == DreamValue.DreamValueType.Float) {
-                output = new DreamValue(-second.MustGetValueAsFloat());
-            } else switch (first.Type) {
-                case DreamValue.DreamValueType.Float: {
-                    float firstFloat = first.MustGetValueAsFloat();
-
-                    if (second.Type == DreamValue.DreamValueType.Float)
-                        output = new DreamValue(firstFloat - second.MustGetValueAsFloat());
-
-                    break;
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                if (second.TryGetValueAsFloat(out var secondFloat) || second.IsNull) {
+                    output = new(firstFloat - secondFloat);
                 }
-                case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject? firstObject = first.MustGetValueAsDreamObject();
-                    if (firstObject == null)
-                        break;
-
-                    output = firstObject.OperatorSubtract(second);
-                    break;
-                }
+            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
+                output = firstObject!.OperatorSubtract(second); // Not null because of the above first.IsNull check
             }
 
             if (output.Type != 0) {
@@ -2521,15 +2506,15 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue MultiplyValues(DreamValue first, DreamValue second) {
-            if (first.IsNull || second.IsNull) {
-                return new(0);
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
+
+                return new(firstFloat * secondFloat);
             } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
-                return firstObject!.OperatorMultiply(second);
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new(first.MustGetValueAsFloat() * second.MustGetValueAsFloat());
-            } else {
-                throw new Exception($"Invalid multiply operation on {first} and {second}");
+                return firstObject!.OperatorMultiply(second); // Not null because of the above first.IsNull check
             }
+
+            throw new Exception($"Invalid multiply operation on {first} and {second}");
         }
 
         private static DreamValue DivideValues(DreamValue first, DreamValue second) {
@@ -2575,13 +2560,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
-            if (first.IsNull)
-                return new(0);
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new DreamValue(first.MustGetValueAsInteger() % second.MustGetValueAsInteger());
-            } else {
-                throw new Exception("Invalid modulus operation on " + first + " and " + second);
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                if (second.TryGetValueAsFloat(out var secondFloat)) {
+                    return new DreamValue(firstFloat % secondFloat);
+                }
             }
+
+            throw new Exception($"Invalid modulus operation on {first} and {second}");
         }
 
         private static DreamValue ModulusModulusValues(DreamValue first, DreamValue second) {

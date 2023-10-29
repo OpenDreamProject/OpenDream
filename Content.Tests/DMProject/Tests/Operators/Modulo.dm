@@ -1,13 +1,12 @@
 #include "Shared/operator_testing.dm"
 
-/proc/add(a, b)
-	return a + b
+/proc/modulo(a, b)
+	return a % b
 
 /proc/RunTest()
 	var/list/expected = list(
-		20,
+		0,
 		"Error",
-		10,
 		"Error",
 		"Error",
 		"Error",
@@ -17,49 +16,24 @@
 		"Error",
 		"Error",
 		"Error",
-		"ABCABC",
-		"ABC",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
-		"ABC/datum/proc",
-		"ABC/datum/verb",
-		10,
-		"ABC",
-		null,
-		'Shared/file.txt',
-		list("ABC"),
-		operator_test_object,
-		/datum,
-		/datum/proc/foo,
-		/datum/verb/bar,
-		/datum/proc,
-		/datum/verb,
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
+		0,
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
-		list("ABC", 10),
-		list("ABC", "ABC"),
-		list("ABC", null),
-		list("ABC", 'Shared/file.txt'),
-		list("ABC", "ABC"),
-		list("ABC", operator_test_object),
-		list("ABC", /datum),
-		list("ABC", /datum/proc/foo),
-		list("ABC", /datum/verb/bar),
-		list("ABC", /datum/proc),
-		list("ABC", /datum/verb),
 		"Error",
 		"Error",
 		"Error",
@@ -105,27 +79,78 @@
 		"Error",
 		"Error",
 		"Error",
-		"/datum/procABC",
-		"/datum/proc",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
-		"/datum/proc/datum/proc",
-		"/datum/proc/datum/verb",
 		"Error",
-		"/datum/verbABC",
-		"/datum/verb",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
 		"Error",
-		"/datum/verb/datum/proc",
-		"/datum/verb/datum/verb"
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error",
+		"Error"
 	)
 	
-	test_binary_operator(/proc/add, expected)
+	test_binary_operator(/proc/modulo, expected)
+	
+	// Some more for good measure:
+	
+	// simple % cases
+	ASSERT(10 % 2 == 0)
+	ASSERT(32 % 6 == 2)
+	ASSERT(5 % 256 == 5)
+	ASSERT(null % 10 == 0) // coerce null into 0 for left side
+
+	// above cases but for %=
+	var/A = 10
+	A %= 2
+	ASSERT(A == 0)
+
+	var/B = 32
+	B %= 6
+	ASSERT(B == 2)
+
+	var/C = 5
+	C %= 256
+	ASSERT(C == 5)
+
+	var/D = null
+	D %= 10
+	ASSERT(D == 0)

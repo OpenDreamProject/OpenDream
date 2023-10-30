@@ -6,11 +6,14 @@ using System.Collections.Generic;
 using DMCompiler.Compiler.DM;
 
 namespace DMCompiler.Compiler.DMM {
-    sealed class DMMParser : DMParser {
+    internal sealed class DMMParser : DMParser {
         private int _cellNameLength = -1;
-        private HashSet<DreamPath> _skippedTypes = new();
+        private readonly int _zOffset;
+        private readonly HashSet<DreamPath> _skippedTypes = new();
 
-        public DMMParser(DMLexer lexer) : base(lexer) { }
+        public DMMParser(DMLexer lexer, int zOffset) : base(lexer) {
+            _zOffset = zOffset;
+        }
 
         public DreamMapJson ParseMap() {
             DreamMapJson map = new DreamMapJson();
@@ -157,7 +160,7 @@ namespace DMCompiler.Compiler.DMM {
                 if (z == null) Error("Expected an integer");
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
 
-                return (x.Value, y.Value, z.Value);
+                return (x.Value, y.Value, z.Value + _zOffset);
             } else {
                 return null;
             }

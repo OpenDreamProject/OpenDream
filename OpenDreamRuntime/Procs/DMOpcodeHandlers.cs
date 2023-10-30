@@ -77,7 +77,7 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        private static IDreamValueEnumerator GetContentsEnumerator(DreamObjectTree objectTree, AtomManager atomManager, DreamValue value, TreeEntry? filterType) {
+        private static IDreamValueEnumerator GetContentsEnumerator(AtomManager atomManager, DreamValue value, TreeEntry? filterType) {
             if (!value.TryGetValueAsDreamList(out var list)) {
                 if (value.TryGetValueAsDreamObject(out var dreamObject)) {
                     if (dreamObject == null)
@@ -86,17 +86,6 @@ namespace OpenDreamRuntime.Procs {
                     if (dreamObject is DreamObjectAtom) {
                         list = dreamObject.GetVariable("contents").MustGetValueAsDreamList();
                     } else if (dreamObject is DreamObjectWorld) {
-                        // Use a different enumerator for /area and /turf that only enumerates those rather than all atoms
-                        if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Area) == true) {
-                            return new DreamObjectEnumerator(atomManager.Areas, filterType);
-                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Turf) == true) {
-                            return new DreamObjectEnumerator(atomManager.Turfs, filterType);
-                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Obj) == true) {
-                            return new DreamObjectEnumerator(atomManager.Objects, filterType);
-                        } else if (filterType?.ObjectDefinition.IsSubtypeOf(objectTree.Mob) == true) {
-                            return new DreamObjectEnumerator(atomManager.Mobs, filterType);
-                        }
-
                         return new WorldContentsEnumerator(atomManager, filterType);
                     }
                 }
@@ -118,7 +107,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus CreateListEnumerator(DMProcState state) {
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), null);
+            var enumerator = GetContentsEnumerator(state.Proc.AtomManager, state.Pop(), null);
 
             state.EnumeratorStack.Push(enumerator);
             return ProcStatus.Continue;
@@ -127,7 +116,7 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus CreateFilteredListEnumerator(DMProcState state) {
             var filterTypeId = state.ReadInt();
             var filterType = state.Proc.ObjectTree.GetTreeEntry(filterTypeId);
-            var enumerator = GetContentsEnumerator(state.Proc.ObjectTree, state.Proc.AtomManager, state.Pop(), filterType);
+            var enumerator = GetContentsEnumerator(state.Proc.AtomManager, state.Pop(), filterType);
 
             state.EnumeratorStack.Push(enumerator);
             return ProcStatus.Continue;

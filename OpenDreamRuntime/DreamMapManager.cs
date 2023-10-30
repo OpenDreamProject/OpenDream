@@ -161,7 +161,7 @@ namespace OpenDreamRuntime {
                 cell.Turf = new DreamObjectTurf(type, pos.X, pos.Y, z, cell);
                 // Only add the /turf to .contents when it's created.
                 cell.Area.Contents.AddValue(new(cell.Turf));
-                _atomManager.Turfs.Add(cell.Turf);
+                _atomManager.Turfs.AddLast(cell.Turf);
             }
 
             IconAppearance turfAppearance = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);

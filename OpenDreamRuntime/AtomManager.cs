@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.CompilerServices;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -11,11 +12,11 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime {
     public sealed class AtomManager {
-        public List<DreamObjectArea> Areas { get; } = new();
-        public List<DreamObjectTurf> Turfs { get; } = new();
-        public List<DreamObjectMovable> Movables { get; } = new();
-        public List<DreamObjectMovable> Objects { get; } = new();
-        public List<DreamObjectMob> Mobs { get; } = new();
+        public LinkedList<DreamObjectArea> Areas { get; } = new();
+        public LinkedList<DreamObjectTurf> Turfs { get; } = new();
+        public LinkedList<DreamObjectMovable> Movables { get; } = new();
+        public LinkedList<DreamObjectMovable> Objects { get; } = new();
+        public LinkedList<DreamObjectMob> Mobs { get; } = new();
         public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -30,31 +31,100 @@ namespace OpenDreamRuntime {
         private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
         private ServerAppearanceSystem? _appearanceSystem;
 
+        /// <summary>
+        /// Gets an atom at a specific index of the world's contents.
+        /// Goes in the order Mobs, Objs/Movables, Areas, Turfs.
+        /// </summary>
+        /// <param name="index">The index of world's contents</param>
+        /// <returns>The atom at the given index</returns>
+        /// <remarks>This is slow due to the indexing of linked lists. Avoid when possible.</remarks>
+        /// <exception cref="IndexOutOfRangeException">The index was negative or larger than the number of atoms.</exception>
         public DreamObject GetAtom(int index) {
             // Order of world.contents:
             //  Mobs + Movables + Areas + Turfs
 
+            if (index < 0)
+                throw new IndexOutOfRangeException($"Index was {index}, must not be negative.");
+
             if (index < Mobs.Count)
-                return Mobs[index];
+                return Mobs.ElementAt(index);
 
             // TODO: Movables and objects should be mixed together here
             index -= Mobs.Count;
             if (index < Objects.Count)
-                return Objects[index];
+                return Objects.ElementAt(index);
 
             index -= Objects.Count;
             if (index < Movables.Count)
-                return Movables[index];
+                return Movables.ElementAt(index);
 
             index -= Movables.Count;
             if (index < Areas.Count)
-                return Areas[index];
+                return Areas.ElementAt(index);
 
             index -= Areas.Count;
             if (index < Turfs.Count)
-                return Turfs[index];
+                return Turfs.ElementAt(index);
 
             throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
+        }
+
+        /// <summary>
+        /// Enumerate every atom in the world's contents.
+        /// </summary>
+        /// <param name="filterType">The type to filter by, or null for none.</param>
+        public IEnumerator<DreamObject> EnumerateAllAtoms(DreamObjectDefinition? filterType) {
+            // In the same order as GetAtom()
+
+            if (filterType?.IsSubtypeOf(_objectTree.Mob) != false) {
+                LinkedListNode<DreamObjectMob>? mobCurrent = Mobs.First;
+                while (mobCurrent != null) {
+                    if (filterType == null || mobCurrent.Value.IsSubtypeOf(filterType.TreeEntry))
+                        yield return mobCurrent.Value;
+
+                    mobCurrent = mobCurrent.Next;
+                }
+            }
+
+            if (filterType?.IsSubtypeOf(_objectTree.Obj) != false) {
+                LinkedListNode<DreamObjectMovable>? objCurrent = Objects.First;
+                while (objCurrent != null) {
+                    if (filterType == null || objCurrent.Value.IsSubtypeOf(filterType.TreeEntry))
+                        yield return objCurrent.Value;
+
+                    objCurrent = objCurrent.Next;
+                }
+            }
+
+            if (filterType?.IsSubtypeOf(_objectTree.Movable) != false) {
+                LinkedListNode<DreamObjectMovable>? movableCurrent = Movables.First;
+                while (movableCurrent != null) {
+                    if (filterType == null || movableCurrent.Value.IsSubtypeOf(filterType.TreeEntry))
+                        yield return movableCurrent.Value;
+
+                    movableCurrent = movableCurrent.Next;
+                }
+            }
+
+            if (filterType?.IsSubtypeOf(_objectTree.Area) != false) {
+                LinkedListNode<DreamObjectArea>? areaCurrent = Areas.First;
+                while (areaCurrent != null) {
+                    if (filterType == null || areaCurrent.Value.IsSubtypeOf(filterType.TreeEntry))
+                        yield return areaCurrent.Value;
+
+                    areaCurrent = areaCurrent.Next;
+                }
+            }
+
+            if (filterType?.IsSubtypeOf(_objectTree.Turf) != false) {
+                LinkedListNode<DreamObjectTurf>? turfCurrent = Turfs.First;
+                while (turfCurrent != null) {
+                    if (filterType == null || turfCurrent.Value.IsSubtypeOf(filterType.TreeEntry))
+                        yield return turfCurrent.Value;
+
+                    turfCurrent = turfCurrent.Next;
+                }
+            }
         }
 
         public EntityUid CreateMovableEntity(DreamObjectMovable movable) {

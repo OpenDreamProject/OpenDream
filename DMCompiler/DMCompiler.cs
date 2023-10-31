@@ -242,6 +242,7 @@ namespace DMCompiler {
 
         private static List<DreamMapJson> ConvertMaps(List<string> mapPaths) {
             List<DreamMapJson> maps = new();
+            int zOffset = 0;
 
             foreach (string mapPath in mapPaths) {
                 VerbosePrint($"Converting map {mapPath}");
@@ -250,7 +251,7 @@ namespace DMCompiler {
                 preprocessor.PreprocessFile(Path.GetDirectoryName(mapPath), Path.GetFileName(mapPath));
 
                 DMLexer lexer = new DMLexer(mapPath, preprocessor);
-                DMMParser parser = new DMMParser(lexer);
+                DMMParser parser = new DMMParser(lexer, zOffset);
                 DreamMapJson map = parser.ParseMap();
 
                 bool hadErrors = false;
@@ -263,6 +264,7 @@ namespace DMCompiler {
                     }
                 }
 
+                zOffset = Math.Max(zOffset + 1, map.MaxZ);
                 if (!hadErrors)
                     maps.Add(map);
             }

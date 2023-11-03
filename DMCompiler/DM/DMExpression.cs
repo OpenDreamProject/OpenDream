@@ -2,7 +2,6 @@ using System;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 

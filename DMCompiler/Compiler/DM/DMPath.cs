@@ -1,12 +1,7 @@
-﻿
-using System.Collections.Generic;
-using OpenDreamShared.Dream;
+﻿using System.Collections.Generic;
 
-namespace DMCompiler.Compiler.DM
-{
-
-    public abstract class VarDeclInfo
-    {
+namespace DMCompiler.Compiler.DM {
+    public abstract class VarDeclInfo {
         public DreamPath? TypePath;
         public string VarName;
 

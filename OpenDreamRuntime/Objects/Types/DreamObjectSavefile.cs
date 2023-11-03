@@ -116,10 +116,12 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     private void ChangeDirectory(string path) {
-        _currentDirPath = new DreamPath(_currentDirPath).AddToPath(path).PathString;
-
-        if (!Directories.ContainsKey(_currentDirPath)) {
-            Directories.Add(_currentDirPath, new SavefileDirectory());
+        if (path.StartsWith('/')) {
+            _currentDirPath = path;
+        } else {
+            _currentDirPath += path;
         }
+
+        Directories.TryAdd(_currentDirPath, new SavefileDirectory());
     }
 }

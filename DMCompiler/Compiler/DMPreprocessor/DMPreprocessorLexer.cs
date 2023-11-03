@@ -23,7 +23,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             IncludeDirectory = includeDirectory;
             File = file;
 
-            _source = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes(source)), Encoding.ASCII);
+            _source = new StreamReader(new MemoryStream(Encoding.UTF8.GetBytes(source)), Encoding.UTF8);
             Advance();
         }
 
@@ -31,7 +31,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             IncludeDirectory = includeDirectory;
             File = file;
 
-            _source = new StreamReader(Path.Combine(includeDirectory, file), Encoding.ASCII);
+            _source = new StreamReader(Path.Combine(includeDirectory, file), Encoding.UTF8);
             Advance();
         }
 
@@ -241,7 +241,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                         } while (GetCurrent() is ' ' or '\t' || HandleLineEnd());
                                     }
                                 }
-                            } while (!AtLineEnd());
+                            } while (!AtLineEnd() && !AtEndOfSource());
 
                             return NextToken(ignoreWhitespace);
                         }

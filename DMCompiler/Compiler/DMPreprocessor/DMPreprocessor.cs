@@ -15,7 +15,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
     /// </summary>
     public sealed class DMPreprocessor : IEnumerable<Token> {
         public readonly List<string> IncludedMaps = new(8);
-        public string IncludedInterface;
+        public string? IncludedInterface;
 
         //Every include pushes a new lexer that gets popped once the included file is finished
         private readonly Stack<DMPreprocessorLexer> _lexerStack =  new(8); // Capacity Note: TG peaks at 4 at time of writing
@@ -235,6 +235,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                             DMCompiler.Emit(WarningCode.FileAlreadyIncluded, includedFrom ?? Location.Internal, $"Interface \"{filePath}\" was already included");
                             break;
                         }
+
                         DMCompiler.Emit(WarningCode.InvalidInclusion, includedFrom ?? Location.Internal, $"Attempted to include a second interface file ({filePath}) while one was already included ({IncludedInterface})");
                         break;
                     }
@@ -252,9 +253,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         public void PreprocessFile(string includeDir, string file) {
-            string filePath = Path.Combine(includeDir, file).Replace('\\', Path.DirectorySeparatorChar);
+            file = file.Replace('\\', '/');
 
-            _lexerStack.Push(new DMPreprocessorLexer(includeDir, filePath));
+            _lexerStack.Push(new DMPreprocessorLexer(includeDir, file));
         }
 
         private bool VerifyDirectiveUsage(Token token) {

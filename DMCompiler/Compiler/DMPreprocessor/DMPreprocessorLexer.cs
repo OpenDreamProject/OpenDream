@@ -24,8 +24,22 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         }
 
         public Token NextToken(bool ignoreWhitespace = false) {
-            if (_pendingTokenQueue.Count > 0)
-                return _pendingTokenQueue.Dequeue();
+            if (_pendingTokenQueue.Count > 0) {
+                Token token = _pendingTokenQueue.Dequeue();
+                if (ignoreWhitespace) {
+                    do {
+                        if (token.Type != TokenType.DM_Preproc_Whitespace)
+                            return token;
+
+                        if (_pendingTokenQueue.Count == 0)
+                            break;
+
+                        token = _pendingTokenQueue.Dequeue();
+                    } while (true);
+                } else {
+                    return token;
+                }
+            }
 
             char c = GetCurrent();
 
@@ -209,10 +223,10 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                 if (c == '\\') {
                                     Advance();
 
-                                    if (AtLineEnd()) { //Line splice within a comment
+                                    if (HandleLineEnd()) { //Line splice within a comment
                                         do {
                                             Advance();
-                                        } while (GetCurrent() is ' ' or '\t' || AtLineEnd());
+                                        } while (GetCurrent() is ' ' or '\t' || HandleLineEnd());
                                     }
                                 }
                             } while (!AtLineEnd());
@@ -242,8 +256,9 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                                         Advance();
                                     }
                                 } else if (AtEndOfSource()) {
-                                    return CreateToken(TokenType.Error, string.Empty, "Expected \"*/\" to end multiline comment");
-                                } else {
+                                    return CreateToken(TokenType.Error, string.Empty,
+                                        "Expected \"*/\" to end multiline comment");
+                                } else if (!HandleLineEnd()) {
                                     Advance();
                                 }
                             }
@@ -297,7 +312,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                     }
 
                     textBuilder.Append(c);
-                    Advance();
+                    if (!HandleLineEnd())
+                        Advance();
 
                     string text = textBuilder.ToString();
                     string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
@@ -503,7 +519,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 }
             }
 
-            if (!AtEndOfSource())
+            if (!AtEndOfSource() && !HandleLineEnd())
                 Advance();
 
             string text = textBuilder.ToString();
@@ -537,6 +553,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// <summary>
         /// Handles the end of a line by consuming all carriage returns before a newline or the absence of a newline
         /// </summary>
+        /// <remarks>If you skip a line ending without using this, the line counter will be incorrect</remarks>
         /// <returns>True if this handled a line ending, otherwise false</returns>
         private bool HandleLineEnd() {
             char c = GetCurrent();

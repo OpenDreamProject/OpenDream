@@ -64,7 +64,11 @@ namespace OpenDreamRuntime.Resources {
             if (_filePath == null)
                 return;
 
-            Directory.CreateDirectory(_filePath);
+            string? directory = Path.GetDirectoryName(_filePath);
+            if (directory == null)
+                return;
+
+            Directory.CreateDirectory(directory);
         }
 
         public override string ToString() {

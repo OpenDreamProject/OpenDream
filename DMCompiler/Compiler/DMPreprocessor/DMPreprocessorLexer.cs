@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
 using OpenDreamShared.Compiler;
@@ -13,14 +14,25 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         public readonly string IncludeDirectory;
         public readonly string File;
 
-        private readonly string _source;
-        private int _currentIndex, _currentLine = 1, _currentColumn = 1;
+        private readonly StreamReader _source;
+        private char _current;
+        private int _currentLine = 1, _currentColumn;
         private readonly Queue<Token> _pendingTokenQueue = new(); // TODO: Possible to remove this?
 
         public DMPreprocessorLexer(string includeDirectory, string file, string source) {
             IncludeDirectory = includeDirectory;
             File = file;
-            _source = source;
+
+            _source = new StreamReader(new MemoryStream(Encoding.ASCII.GetBytes(source)), Encoding.ASCII);
+            Advance();
+        }
+
+        public DMPreprocessorLexer(string includeDirectory, string file) {
+            IncludeDirectory = includeDirectory;
+            File = file;
+
+            _source = new StreamReader(Path.Combine(includeDirectory, file), Encoding.ASCII);
+            Advance();
         }
 
         public Token NextToken(bool ignoreWhitespace = false) {
@@ -579,19 +591,26 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private char GetCurrent() {
-            return AtEndOfSource() ? '\0' : _source[_currentIndex];
+            return _current;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private char Advance() {
-            _currentColumn++;
-            _currentIndex++;
+            int value = _source.Read();
+
+            if (value == -1) {
+                _current = '\0';
+            }  else {
+                _currentColumn++;
+                _current = (char)value;
+            }
+
             return GetCurrent();
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private bool AtEndOfSource() {
-            return _currentIndex >= _source.Length;
+            return _current == '\0';
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

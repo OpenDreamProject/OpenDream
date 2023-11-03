@@ -253,10 +253,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
 
         public void PreprocessFile(string includeDir, string file) {
             string filePath = Path.Combine(includeDir, file).Replace('\\', Path.DirectorySeparatorChar);
-            string source = File.ReadAllText(filePath);
-            source += '\n';
 
-            _lexerStack.Push(new DMPreprocessorLexer(includeDir, file.Replace('\\', Path.DirectorySeparatorChar), source));
+            _lexerStack.Push(new DMPreprocessorLexer(includeDir, filePath));
         }
 
         private bool VerifyDirectiveUsage(Token token) {

@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Compiler;
+﻿using System;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using DMCompiler.DM;
@@ -124,8 +125,7 @@ namespace DMCompiler.Compiler.DMM {
                 Consume(TokenType.DM_String, "Expected a string");
 
                 string blockString = (string)blockStringToken.Value;
-                List<string> lines = new(blockString.Split("\n"));
-                lines.RemoveAll(string.IsNullOrEmpty);
+                List<string> lines = new(blockString.Split("\n", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));
 
                 mapBlock.Height = lines.Count;
                 for (int y = 1; y <= lines.Count; y++) {

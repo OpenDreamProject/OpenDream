@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using Robust.Shared.Utility;
@@ -181,7 +180,8 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                         break;
 
                     default:
-                        DMCompiler.Emit(WarningCode.BadToken, token.Location, $"Invalid token encountered while preprocessing: {token.PrintableText}");
+                        DMCompiler.Emit(WarningCode.BadToken, token.Location,
+                            $"Invalid token encountered while preprocessing: {token.PrintableText} ({token.Type})");
                         break;
                 }
             }
@@ -197,9 +197,11 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         public void DefineMacro(string key, string value) {
             var lexer = new DMPreprocessorLexer(null, "<command line>", value);
             var list = new List<Token>();
-            while (lexer.GetNextToken() is Token token && token.Type != TokenType.EndOfFile) {
+
+            while (lexer.NextToken() is { Type: not TokenType.EndOfFile } token) {
                 list.Add(token);
             }
+
             _defines.Add(key, new DMMacro(null, list));
         }
 
@@ -252,8 +254,6 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         public void PreprocessFile(string includeDir, string file) {
             string filePath = Path.Combine(includeDir, file).Replace('\\', Path.DirectorySeparatorChar);
             string source = File.ReadAllText(filePath);
-            source = source.Replace("\r\n", "\n");
-            source = source.Replace('\r', '\n'); // Lone carriage returns are treated as newlines
             source += '\n';
 
             _lexerStack.Push(new DMPreprocessorLexer(includeDir, file.Replace('\\', Path.DirectorySeparatorChar), source));
@@ -284,7 +284,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
             }
 
             DMPreprocessorLexer currentLexer = _lexerStack.Peek();
-            string file = Path.Combine(Path.GetDirectoryName(currentLexer.SourceName.Replace('\\', Path.DirectorySeparatorChar)), (string)includedFileToken.Value);
+            string file = Path.Combine(Path.GetDirectoryName(currentLexer.File.Replace('\\', Path.DirectorySeparatorChar)), (string)includedFileToken.Value);
             string directory = currentLexer.IncludeDirectory;
 
             IncludeFile(directory, file, includedFrom: includeToken.Location);
@@ -462,7 +462,7 @@ namespace DMCompiler.Compiler.DMPreprocessor {
                 }
             }
             tokens.Add(new Token(TokenType.Newline, "\n", Location.Unknown, null));
-            DMLexer lexer = new(_lexerStack.Peek().SourceName,tokens);
+            DMLexer lexer = new(_lexerStack.Peek().File, tokens);
             List<Token> newTokens = new List<Token>();
             for(Token token = lexer.GetNextToken(); !lexer.AtEndOfSource; token = lexer.GetNextToken()) {
                 newTokens.Add(token);
@@ -601,13 +601,14 @@ namespace DMCompiler.Compiler.DMPreprocessor {
         /// If whitespace may be important later, use <see cref="CheckForTokenIgnoringWhitespace(TokenType, out Token)"/>.
         /// </remarks>
         private Token GetNextToken(bool ignoreWhitespace = false) {
-            if (_unprocessedTokens.TryPop(out Token nextToken)) {
+            if (_unprocessedTokens.TryPop(out Token? nextToken)) {
                 if (ignoreWhitespace && nextToken.Type == TokenType.DM_Preproc_Whitespace) { // This doesn't need to be a loop since whitespace tokens should never occur next to each other
                     nextToken = GetNextToken(true);
                 }
+
                 return nextToken;
             } else {
-                return ignoreWhitespace ? _lexerStack.Peek().GetNextTokenIgnoringWhitespace() : _lexerStack.Peek().GetNextToken();
+                return _lexerStack.Peek().NextToken(ignoreWhitespace);
             }
         }
 

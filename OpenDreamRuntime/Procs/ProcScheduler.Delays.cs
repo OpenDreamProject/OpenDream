@@ -40,7 +40,7 @@ public sealed partial class ProcScheduler {
         var countTicks = (int)(deciseconds / periodDs);
 
         var tcs = new TaskCompletionSource();
-        _tickers.Add(new DelayTicker(tcs) { TicksLeft = countTicks });
+        _tickers.Add(new DelayTicker(tcs) { TicksLeft = countTicks + 1 }); // Add 1 because it'll get decreased at the end of this tick
         return tcs.Task;
     }
 

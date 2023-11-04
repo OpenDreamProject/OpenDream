@@ -407,6 +407,59 @@ internal static partial class DreamProcNativeHelpers {
         return CkeyRegex().Replace(input.ToLower(), "");
     }
 
+    /// <summary>
+    /// Gets the direction from loc1 to loc2
+    /// </summary>
+    public static AtomDirection GetDir(AtomManager atomManager, DreamObjectAtom loc1, DreamObjectAtom loc2) {
+        var loc1Pos = atomManager.GetAtomPosition(loc1);
+        var loc2Pos = atomManager.GetAtomPosition(loc2);
+
+        if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
+            return 0;
+
+        AtomDirection direction = AtomDirection.None;
+
+        // East or West
+        if (loc2Pos.X < loc1Pos.X)
+            direction |= AtomDirection.West;
+        else if (loc2Pos.X > loc1Pos.X)
+            direction |= AtomDirection.East;
+
+        // North or South
+        if (loc2Pos.Y < loc1Pos.Y)
+            direction |= AtomDirection.South;
+        else if (loc2Pos.Y > loc1Pos.Y)
+            direction |= AtomDirection.North;
+
+        return direction;
+    }
+
+    /// <summary>
+    /// Gets the turf 1 step away from an atom in the given direction
+    /// </summary>
+    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, AtomDirection dir) {
+        var dirInt = (int)dir;
+        var locPos = atomManager.GetAtomPosition(loc);
+
+        if ((dirInt & (int) AtomDirection.North) != 0)
+            locPos.Y += 1;
+        if ((dirInt & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
+            locPos.Y -= 1;
+
+        if ((dirInt & (int) AtomDirection.East) != 0)
+            locPos.X += 1;
+        if ((dirInt & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
+            locPos.X -= 1;
+
+        if ((dirInt & (int) AtomDirection.Up) != 0)
+            locPos.Z += 1;
+        if ((dirInt & (int) AtomDirection.Down) != 0) // A dir of UP | DOWN will cancel out
+            locPos.Z -= 1;
+
+        mapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
+        return turf;
+    }
+
     [GeneratedRegex("[\\^]|[^a-z0-9@]")]
     private static partial Regex CkeyRegex();
 }

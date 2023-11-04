@@ -17,6 +17,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+        [Dependency] private readonly WalkManager _walkManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
@@ -327,16 +328,30 @@ namespace OpenDreamRuntime {
             string command = args[0].ToLowerInvariant(); // Case-insensitive
 
             switch (command) {
-                //TODO: Maybe move these verbs to DM code?
-                case ".north": Client?.SpawnProc("North", Mob); break;
-                case ".east": Client?.SpawnProc("East", Mob); break;
-                case ".south": Client?.SpawnProc("South", Mob); break;
-                case ".west": Client?.SpawnProc("West", Mob); break;
-                case ".northeast": Client?.SpawnProc("Northeast", Mob); break;
-                case ".southeast": Client?.SpawnProc("Southeast", Mob); break;
-                case ".southwest": Client?.SpawnProc("Southwest", Mob); break;
-                case ".northwest": Client?.SpawnProc("Northwest", Mob); break;
-                case ".center": Client?.SpawnProc("Center", Mob); break;
+                case ".north":
+                case ".east":
+                case ".south":
+                case ".west":
+                case ".northeast":
+                case ".southeast":
+                case ".southwest":
+                case ".northwest":
+                case ".center":
+                    string movementProc = command switch {
+                        ".north" => "North",
+                        ".east" => "East",
+                        ".south" => "South",
+                        ".west" => "West",
+                        ".northeast" => "Northeast",
+                        ".southeast" => "Southeast",
+                        ".southwest" => "Southwest",
+                        ".northwest" => "Northwest",
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+
+                    if (Mob != null)
+                        _walkManager.StopWalks(Mob);
+                    Client?.SpawnProc(movementProc, Mob); break;
 
                 default: {
                     if (_availableVerbs.TryGetValue(command, out var value)) {

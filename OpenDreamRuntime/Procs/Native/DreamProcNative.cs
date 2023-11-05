@@ -107,6 +107,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_viewers);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_towards);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winclone);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winexists);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winget);

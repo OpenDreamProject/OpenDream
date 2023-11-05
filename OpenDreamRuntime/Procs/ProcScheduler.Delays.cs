@@ -21,7 +21,26 @@ public sealed partial class ProcScheduler {
     /// The amount of time, in deciseconds, to sleep. Gets rounded down to a number of ticks.
     /// </param>
     public Task CreateDelay(float deciseconds) {
-        if (deciseconds <= 0) {
+        // BYOND stores sleep/spawn delays with an exact amount of ticks.
+        // Yes, this means that if you change world.fps/tick_lag while sleeping,
+        // those sleep delays can speed up/slow down. We're replicating that here.
+        var periodDs = _gameTiming.TickPeriod.TotalSeconds * 10;
+        var countTicks = (int)(deciseconds / periodDs);
+
+        // Anything above 0 deciseconds should be at least 1 tick
+        countTicks = (deciseconds > 0f) ? Math.Max(countTicks, 1) : countTicks;
+
+        return CreateDelayTicks(countTicks);
+    }
+
+    /// <summary>
+    /// Create a task that will delay by an amount of game ticks
+    /// </summary>
+    /// <param name="ticks">
+    /// The amount of ticks to sleep.
+    /// </param>
+    public Task CreateDelayTicks(int ticks) {
+        if (ticks <= 0) {
             // When the delay is <= zero, we should run again in the current tick.
             // Now, BYOND apparently does have a difference between 0 and -1, but we're not quite sure what it is yet.
             // This is "good enough" for now.
@@ -33,14 +52,8 @@ public sealed partial class ProcScheduler {
             return defTcs.Task;
         }
 
-        // BYOND stores sleep/spawn delays with an exact amount of ticks.
-        // Yes, this means that if you change world.fps/tick_lag while sleeping,
-        // those sleep delays can speed up/slow down. We're replicating that here.
-        var periodDs = _gameTiming.TickPeriod.TotalSeconds * 10;
-        var countTicks = (int)(deciseconds / periodDs);
-
         var tcs = new TaskCompletionSource();
-        _tickers.Add(new DelayTicker(tcs) { TicksLeft = countTicks });
+        _tickers.Add(new DelayTicker(tcs) { TicksLeft = ticks + 1 }); // Add 1 because it'll get decreased at the end of this tick
         return tcs.Task;
     }
 

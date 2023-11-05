@@ -19,6 +19,7 @@ namespace OpenDreamRuntime.Objects {
         public readonly IDreamMapManager DreamMapManager;
         public readonly IMapManager MapManager;
         public readonly DreamResourceManager DreamResourceManager;
+        public readonly WalkManager WalkManager;
         public readonly IEntityManager EntityManager;
         public readonly IPlayerManager PlayerManager;
         public readonly ISerializationManager SerializationManager;
@@ -60,6 +61,7 @@ namespace OpenDreamRuntime.Objects {
             DreamMapManager = copyFrom.DreamMapManager;
             MapManager = copyFrom.MapManager;
             DreamResourceManager = copyFrom.DreamResourceManager;
+            WalkManager = copyFrom.WalkManager;
             EntityManager = copyFrom.EntityManager;
             PlayerManager = copyFrom.PlayerManager;
             SerializationManager = copyFrom.SerializationManager;
@@ -80,13 +82,14 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, TreeEntry? treeEntry) {
+        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, WalkManager walkManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, TreeEntry? treeEntry) {
             DreamManager = dreamManager;
             ObjectTree = objectTree;
             AtomManager = atomManager;
             DreamMapManager = dreamMapManager;
             MapManager = mapManager;
             DreamResourceManager = dreamResourceManager;
+            WalkManager = walkManager;
             EntityManager = entityManager;
             PlayerManager = playerManager;
             SerializationManager = serializationManager;

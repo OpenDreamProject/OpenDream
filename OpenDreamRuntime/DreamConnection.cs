@@ -346,6 +346,7 @@ namespace OpenDreamRuntime {
                         ".southeast" => "Southeast",
                         ".southwest" => "Southwest",
                         ".northwest" => "Northwest",
+                        ".center" => "Center",
                         _ => throw new ArgumentOutOfRangeException()
                     };
 

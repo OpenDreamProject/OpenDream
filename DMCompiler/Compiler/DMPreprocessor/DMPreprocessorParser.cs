@@ -2,7 +2,6 @@
 using OpenDreamShared.Compiler;
 using System;
 using System.Collections.Generic;
-using System.Linq;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
@@ -31,7 +30,7 @@ Constant ::= Integer | Float | Null
 internal static class DMPreprocessorParser {
     private static List<Token>? _tokens;
     private static Dictionary<string, DMMacro>? _defines;
-    private static int _tokenIndex = 0;
+    private static int _tokenIndex;
     private static readonly float DegenerateValue = 0.0f;
 
     /// <returns>A float, because that is the only possible thing a well-formed preproc expression can evaluate to.</returns>
@@ -49,14 +48,15 @@ internal static class DMPreprocessorParser {
         ++_tokenIndex;
     }
 
-    private static Token? Current() {
-        if (_tokenIndex >= _tokens!.Count())
-            return null;
-        return _tokens![_tokenIndex];
+    private static Token Current() {
+        if (_tokenIndex >= _tokens!.Count)
+            return new Token(TokenType.EndOfFile, "\0", Location.Unknown, null);
+
+        return _tokens[_tokenIndex];
     }
 
     private static bool Check(TokenType type) {
-        if (Current()?.Type == type) {
+        if (Current().Type == type) {
             Advance();
             return true;
         }
@@ -66,7 +66,7 @@ internal static class DMPreprocessorParser {
 
     private static bool Check(TokenType[] types) {
         foreach (TokenType type in types) {
-            if (Current()?.Type == type) {
+            if (Current().Type == type) {
                 Advance();
                 return true;
             }
@@ -76,7 +76,7 @@ internal static class DMPreprocessorParser {
     }
 
     private static void Error(string msg) {
-        DMCompiler.Emit(WarningCode.BadDirective, Current()?.Location ?? Location.Unknown, msg);
+        DMCompiler.Emit(WarningCode.BadDirective, Current().Location, msg);
     }
 
     private static float? Expression() {
@@ -84,7 +84,7 @@ internal static class DMPreprocessorParser {
     }
 
     private static float? ExpressionOr() {
-        float? a = ExpressionAnd()!.Value;
+        float? a = ExpressionAnd();
         if (a is null) return a;
 
         while (Check(TokenType.DM_BarBar)) {
@@ -103,8 +103,8 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    public static float? ExpressionAnd() {
-        float? a = ExpressionComparison()!.Value;
+    private static float? ExpressionAnd() {
+        float? a = ExpressionComparison();
         if (a is null) return a;
 
         while (Check(TokenType.DM_AndAnd)) {
@@ -123,10 +123,10 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    public static float? ExpressionComparison() {
+    private static float? ExpressionComparison() {
         float? a = ExpressionComparisonLtGt();
         if (a is null) return a;
-        for (Token? token = Current(); token != null && Check(DMParser.ComparisonTypes); token = Current()) {
+        for (Token token = Current(); Check(DMParser.ComparisonTypes); token = Current()) {
             float? b = ExpressionComparisonLtGt();
             if (b is null) {
                 Error("Expected a second value");
@@ -152,10 +152,10 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    public static float? ExpressionComparisonLtGt() {
+    private static float? ExpressionComparisonLtGt() {
         float? a = ExpressionAdditionSubtraction();
         if (a is null) return a;
-        for (Token? token = Current(); token != null && Check(DMParser.LtGtComparisonTypes); token = Current()) {
+        for (Token token = Current(); Check(DMParser.LtGtComparisonTypes); token = Current()) {
             float? b = ExpressionAdditionSubtraction();
             if (b is null) {
                 Error("Expected a second value");
@@ -181,10 +181,10 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    public static float? ExpressionAdditionSubtraction() {
+    private static float? ExpressionAdditionSubtraction() {
         float? a = ExpressionMultiplicationDivisionModulus();
         if (a is null) return a;
-        for (Token? token = Current(); token != null && Check(DMParser.PlusMinusTypes); token = Current()) {
+        for (Token token = Current(); Check(DMParser.PlusMinusTypes); token = Current()) {
             float? b = ExpressionMultiplicationDivisionModulus();
             if (b is null) {
                 Error("Expected a second value");
@@ -204,10 +204,10 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    public static float? ExpressionMultiplicationDivisionModulus() {
+    private static float? ExpressionMultiplicationDivisionModulus() {
         float? a = ExpressionPower();
         if (a is null) return a;
-        for (Token? token = Current(); token != null && Check(DMParser.MulDivModTypes); token = Current()) {
+        for (Token token = Current(); Check(DMParser.MulDivModTypes); token = Current()) {
             float? b = ExpressionPower();
             if (b is null) {
                 Error("Expected a second value");
@@ -230,10 +230,11 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    public static float? ExpressionPower() {
+    private static float? ExpressionPower() {
         float? a = ExpressionUnary();
         if (a is null) return a;
-        for (Token? token = Current(); token != null && Check(TokenType.DM_StarStar); token = Current()) {
+
+        while (Check(TokenType.DM_StarStar)) {
             float? b = ExpressionPower();
             if (b is null) {
                 Error("Expected a second value");
@@ -246,7 +247,7 @@ internal static class DMPreprocessorParser {
         return a;
     }
 
-    public static float? ExpressionUnary() {
+    private static float? ExpressionUnary() {
         if (Check(TokenType.DM_Exclamation)) {
             float? expression = ExpressionUnary();
             if (expression == null) {
@@ -260,8 +261,8 @@ internal static class DMPreprocessorParser {
         return ExpressionSign();
     }
 
-    public static float? ExpressionSign() {
-        Token? token = Current();
+    private static float? ExpressionSign() {
+        Token token = Current();
 
         if (Check(DMParser.PlusMinusTypes)) {
             float? expression = ExpressionSign();
@@ -271,7 +272,7 @@ internal static class DMPreprocessorParser {
                 return null;
             }
 
-            if (token!.Type == TokenType.DM_Minus)
+            if (token.Type == TokenType.DM_Minus)
                 expression = -expression;
             return expression;
         }
@@ -279,9 +280,9 @@ internal static class DMPreprocessorParser {
         return ExpressionPrimary();
     }
 
-    public static float? ExpressionPrimary() {
-        Token? token = Current();
-        switch (token?.Type) {
+    private static float? ExpressionPrimary() {
+        Token token = Current();
+        switch (token.Type) {
             case TokenType.DM_LeftParenthesis:
                 Advance();
                 float? inner = Expression();
@@ -298,11 +299,7 @@ internal static class DMPreprocessorParser {
                         return DegenerateValue;
                     }
 
-                    Token? definedInner = Current();
-                    if (definedInner is null) {
-                        Error("Identifier expected for defined() expression");
-                        return DegenerateValue;
-                    }
+                    Token definedInner = Current();
 
                     if (definedInner.Type != TokenType.DM_Identifier) {
                         Error($"Unexpected token {definedInner.PrintableText} - identifier expected");
@@ -326,10 +323,10 @@ internal static class DMPreprocessorParser {
         }
     }
 
-    public static float? Constant() {
-        Token? constantToken = Current();
+    private static float? Constant() {
+        Token constantToken = Current();
 
-        switch (constantToken?.Type) {
+        switch (constantToken.Type) {
             case TokenType.DM_Integer:
                 Advance();
                 return (float)((int)constantToken.Value);
@@ -343,7 +340,7 @@ internal static class DMPreprocessorParser {
             }
 
             default: {
-                Error($"Token not accepted in preprocessor expression: {constantToken?.PrintableText}");
+                Error($"Token not accepted in preprocessor expression: {constantToken.PrintableText}");
                 return DegenerateValue;
             }
         }

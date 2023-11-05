@@ -362,11 +362,11 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 if (TryMacroKeyword(text, out var macroKeyword))
-                    return macroKeyword;
+                    return macroKeyword.Value;
 
                 string macroAttempt = text.ToLower();
                 if (TryMacroKeyword(macroAttempt, out var attemptKeyword)) { // if they mis-capitalized the keyword
-                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Location,
+                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
                         $"#{text} is not a valid macro keyword. Did you mean '#{macroAttempt}'?");
                 }
 

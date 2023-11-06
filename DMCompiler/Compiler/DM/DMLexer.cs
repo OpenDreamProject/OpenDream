@@ -29,6 +29,8 @@ namespace DMCompiler.Compiler.DM {
             "..."
         };
 
+        private static readonly StringBuilder TokenTextBuilder = new();
+
         private static readonly List<TokenType> ValidIdentifierComponents = new(2) {
             TokenType.DM_Preproc_Identifier,
             TokenType.DM_Preproc_Number
@@ -101,7 +103,7 @@ namespace DMCompiler.Compiler.DM {
                                 token = preprocToken;
                             } else {
                                 _pendingTokenQueue.Enqueue(preprocToken);
-                                token = CreateToken(TokenType.Error, String.Empty, "Invalid indentation");
+                                token = CreateToken(TokenType.Error, string.Empty, "Invalid indentation");
                             }
 
                             do {
@@ -253,13 +255,14 @@ namespace DMCompiler.Compiler.DM {
                             }
 
                             if (stringStart != null && stringEnd != null) {
-                                StringBuilder stringTextBuilder = new StringBuilder(tokenText);
+                                TokenTextBuilder.Clear();
+                                TokenTextBuilder.Append(tokenText);
 
                                 int stringNesting = 1;
                                 while (!AtEndOfSource) {
                                     Token stringToken = Advance();
 
-                                    stringTextBuilder.Append(stringToken.Text);
+                                    TokenTextBuilder.Append(stringToken.Text);
                                     if (stringToken.Type == TokenType.DM_Preproc_String) {
                                         if (stringToken.Text.StartsWith(stringStart)) {
                                             stringNesting++;
@@ -271,7 +274,7 @@ namespace DMCompiler.Compiler.DM {
                                     }
                                 }
 
-                                string stringText = stringTextBuilder.ToString();
+                                string stringText = TokenTextBuilder.ToString();
                                 string stringValue = stringText.Substring(stringStart.Length, stringText.Length - stringStart.Length - stringEnd.Length);
                                 token = CreateToken(TokenType.DM_String, stringText, stringValue);
                             } else {
@@ -282,15 +285,15 @@ namespace DMCompiler.Compiler.DM {
                             break;
                         }
                         case TokenType.DM_Preproc_Identifier: {
-                            StringBuilder identifierTextBuilder = new StringBuilder();
+                            TokenTextBuilder.Clear();
 
                             //An identifier can end up being made out of multiple tokens
                             //This is caused by escaped identifiers
                             do {
-                                identifierTextBuilder.Append(GetCurrent().Text);
+                                TokenTextBuilder.Append(GetCurrent().Text);
                             } while (ValidIdentifierComponents.Contains(Advance().Type) && !AtEndOfSource);
 
-                            string identifierText = identifierTextBuilder.ToString();
+                            string identifierText = TokenTextBuilder.ToString();
                             var tokenType = Keywords.TryGetValue(identifierText, out TokenType keywordType)
                                 ? keywordType
                                 : TokenType.DM_Identifier;
@@ -303,14 +306,14 @@ namespace DMCompiler.Compiler.DM {
 
                             string text = preprocToken.Text;
                             if (text == "1.#INF" || text == "1#INF") {
-                                token = CreateToken(TokenType.DM_Float, text, Single.PositiveInfinity);
+                                token = CreateToken(TokenType.DM_Float, text, float.PositiveInfinity);
                             } else if (text == "1.#IND" || text == "1#IND") {
-                                token = CreateToken(TokenType.DM_Float, text, Single.NaN);
-                            } else if (text.StartsWith("0x") && Int32.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
+                                token = CreateToken(TokenType.DM_Float, text, float.NaN);
+                            } else if (text.StartsWith("0x") && int.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
                                 token = CreateToken(TokenType.DM_Integer, text, intValue);
-                            } else if (Int32.TryParse(text, out intValue)) {
+                            } else if (int.TryParse(text, out intValue)) {
                                 token = CreateToken(TokenType.DM_Integer, text, intValue);
-                            } else if (Single.TryParse(text, out float floatValue)) {
+                            } else if (float.TryParse(text, out float floatValue)) {
                                 token = CreateToken(TokenType.DM_Float, text, floatValue);
                             } else {
                                 token = CreateToken(TokenType.Error, text, "Invalid number");

@@ -12,7 +12,7 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 /// taking in raw text and outputting vague tokens descriptive enough for the preprocessor to run on them.
 /// </summary>
 internal sealed class DMPreprocessorLexer {
-    private static StringBuilder TokenTextBuilder = new();
+    private static readonly StringBuilder TokenTextBuilder = new();
 
     public readonly string IncludeDirectory;
     public readonly string File;

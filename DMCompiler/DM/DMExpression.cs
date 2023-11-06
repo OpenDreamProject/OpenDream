@@ -15,9 +15,7 @@ namespace DMCompiler.DM {
         }
 
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-            var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
-            expression.Visit(instance);
-            return instance.Result;
+            return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
         }
 
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {

@@ -100,13 +100,15 @@ internal static class DMExpressionBuilder {
                     BuildExpression(mask.A, dmObject, proc, inferredPath),
                     BuildExpression(mask.B, dmObject, proc, inferredPath));
             case DMASTLogicalAndAssign lAnd:
+                var lAndLHS = BuildExpression(lAnd.A, dmObject, proc, inferredPath);
+                var lAndRHS = BuildExpression(lAnd.B, dmObject, proc, lAndLHS.NestedPath);
                 return new LogicalAndAssign(lAnd.Location,
-                    BuildExpression(lAnd.A, dmObject, proc, inferredPath),
-                    BuildExpression(lAnd.B, dmObject, proc, inferredPath));
+                    lAndLHS,
+                    lAndRHS);
             case DMASTLogicalOrAssign lOr:
-                return new LogicalOrAssign(lOr.Location,
-                    BuildExpression(lOr.A, dmObject, proc, inferredPath),
-                    BuildExpression(lOr.B, dmObject, proc, inferredPath));
+                var lOrLHS = BuildExpression(lOr.A, dmObject, proc, inferredPath);
+                var lOrRHS = BuildExpression(lOr.B, dmObject, proc, lOrLHS.NestedPath);
+                return new LogicalOrAssign(lOr.Location, lOrLHS, lOrRHS);
             case DMASTMultiplyAssign multiplyAssign:
                 return new MultiplyAssign(multiplyAssign.Location,
                     BuildExpression(multiplyAssign.A, dmObject, proc, inferredPath),
@@ -132,9 +134,9 @@ internal static class DMExpressionBuilder {
                     BuildExpression(modulusAssign.A, dmObject, proc, inferredPath),
                     BuildExpression(modulusAssign.B, dmObject, proc, inferredPath));
             case DMASTModulusModulusAssign modulusModulusAssign:
-                return new ModulusModulusAssign(modulusModulusAssign.Location,
-                    BuildExpression(modulusModulusAssign.A, dmObject, proc, inferredPath),
-                    BuildExpression(modulusModulusAssign.B, dmObject, proc, inferredPath));
+                var mmAssignLHS = BuildExpression(modulusModulusAssign.A, dmObject, proc, inferredPath);
+                var mmAssignRHS = BuildExpression(modulusModulusAssign.B, dmObject, proc, mmAssignLHS.NestedPath);
+                return new ModulusModulusAssign(modulusModulusAssign.Location, mmAssignLHS, mmAssignRHS);
             case DMASTLeftShift leftShift:
                 return new LeftShift(leftShift.Location,
                     BuildExpression(leftShift.A, dmObject, proc, inferredPath),

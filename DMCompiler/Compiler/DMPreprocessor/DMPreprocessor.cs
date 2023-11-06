@@ -474,11 +474,11 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     /// <returns>true if the Token ended up meaning a macro sequence.</returns>
     private bool TryMacro(Token token) {
         DebugTools.Assert(token.Type == TokenType.DM_Preproc_Identifier); // Check this before passing anything to this function.
-        if (!_defines.TryGetValue(token.Text, out DMMacro macro)) {
+        if (!_defines.TryGetValue(token.Text, out DMMacro? macro)) {
             return false;
         }
 
-        List<List<Token>> parameters = null;
+        List<List<Token>>? parameters = null;
         if (macro.HasParameters() && !TryGetMacroParameters(out parameters)) {
             return false;
         }

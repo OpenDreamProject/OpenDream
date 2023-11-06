@@ -1,11 +1,11 @@
 ﻿using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Rendering;
 using Robust.Server.GameStates;
-using Robust.Server.Player;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Rendering {
     public sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
-        private readonly Dictionary<IPlayerSession, HashSet<EntityUid>> _sessionToScreenObjects = new();
+        private readonly Dictionary<ICommonSession, HashSet<EntityUid>> _sessionToScreenObjects = new();
         [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public override void Initialize() {

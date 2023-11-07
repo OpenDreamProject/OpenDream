@@ -1748,25 +1748,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             var dir = d.MustGetValueAsInteger();
-            var locPos = state.Proc.AtomManager.GetAtomPosition(loc);
 
-            if ((dir & (int) AtomDirection.North) != 0)
-                locPos.Y += 1;
-            if ((dir & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
-                locPos.Y -= 1;
-
-            if ((dir & (int) AtomDirection.East) != 0)
-                locPos.X += 1;
-            if ((dir & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
-                locPos.X -= 1;
-
-            if ((dir & (int) AtomDirection.Up) != 0)
-                locPos.Z += 1;
-            if ((dir & (int) AtomDirection.Down) != 0) // A dir of UP | DOWN will cancel out
-                locPos.Z -= 1;
-
-            state.Proc.DreamMapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
-            state.Push(new DreamValue(turf));
+            state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;
         }
 
@@ -1791,29 +1774,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var loc1Pos = state.Proc.AtomManager.GetAtomPosition(loc1);
-            var loc2Pos = state.Proc.AtomManager.GetAtomPosition(loc2);
-
-            if (loc1Pos.Z != loc2Pos.Z) { // They must be on the same z-level
-                state.Push(new DreamValue(0));
-                return ProcStatus.Continue;
-            }
-
-            int direction = 0;
-
-            // East or West
-            if (loc2Pos.X < loc1Pos.X)
-                direction |= (int)AtomDirection.West;
-            else if (loc2Pos.X > loc1Pos.X)
-                direction |= (int)AtomDirection.East;
-
-            // North or South
-            if (loc2Pos.Y < loc1Pos.Y)
-                direction |= (int) AtomDirection.South;
-            else if (loc2Pos.Y > loc1Pos.Y)
-                direction |= (int) AtomDirection.North;
-
-            state.Push(new DreamValue(direction));
+            state.Push(new((int)DreamProcNativeHelpers.GetDir(state.Proc.AtomManager, loc1, loc2)));
             return ProcStatus.Continue;
         }
 

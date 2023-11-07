@@ -30,6 +30,7 @@ namespace OpenDreamRuntime.Objects {
         protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
         protected IMapManager MapManager => ObjectDefinition.MapManager;
         protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
+        protected WalkManager WalkManager => ObjectDefinition.WalkManager;
         protected IEntityManager EntityManager => ObjectDefinition.EntityManager;
         protected IPlayerManager PlayerManager => ObjectDefinition.PlayerManager;
         protected ISerializationManager SerializationManager => ObjectDefinition.SerializationManager;

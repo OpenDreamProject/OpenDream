@@ -423,6 +423,7 @@ namespace OpenDreamRuntime.Objects {
         }
 
         internal void SetGlobalNativeProc(NativeProc.HandlerFn func) {
+            var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
             var proc = new NativeProc(_globalProcIds[name], Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, _walkManager, this);
 
             Procs[proc.Id] = proc;

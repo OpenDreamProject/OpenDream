@@ -54,7 +54,7 @@ internal class DMMacro {
     /// <returns>A list of tokens replacing the identifier</returns>
     /// <exception cref="ArgumentException">Thrown if no parameters were given but are required</exception>
     // TODO: Convert this to an IEnumerator<Token>? Could cut down on allocations.
-    public virtual List<Token> Expand(Token replacing, List<List<Token>> parameters) {
+    public virtual List<Token> Expand(Token replacing, List<List<Token>>? parameters) {
         // If this macro has no parameters then we can just return our list of tokens
         if (!HasParameters())
             return _tokens;

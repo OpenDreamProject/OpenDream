@@ -12,6 +12,8 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 /// taking in raw text and outputting vague tokens descriptive enough for the preprocessor to run on them.
 /// </summary>
 internal sealed class DMPreprocessorLexer {
+    private static readonly StringBuilder TokenTextBuilder = new();
+
     public readonly string IncludeDirectory;
     public readonly string File;
 
@@ -288,15 +290,15 @@ internal sealed class DMPreprocessorLexer {
             }
             case '@': { //Raw string
                 char delimiter = Advance();
-                StringBuilder textBuilder = new StringBuilder();
 
-                textBuilder.Append('@');
-                textBuilder.Append(delimiter);
+                TokenTextBuilder.Clear();
+                TokenTextBuilder.Append('@');
+                TokenTextBuilder.Append(delimiter);
 
                 bool isLong = false;
                 c = Advance();
                 if (delimiter == '{') {
-                    textBuilder.Append(c);
+                    TokenTextBuilder.Append(c);
 
                     if (c == '"') isLong = true;
                 }
@@ -309,7 +311,7 @@ internal sealed class DMPreprocessorLexer {
                         if(nextCharCanTerm && c == '}')
                             break;
                         else {
-                            textBuilder.Append(c);
+                            TokenTextBuilder.Append(c);
                             nextCharCanTerm = false;
                         }
 
@@ -319,16 +321,16 @@ internal sealed class DMPreprocessorLexer {
                     } while (!AtEndOfSource());
                 } else {
                     while (c != delimiter && !AtLineEnd() && !AtEndOfSource()) {
-                        textBuilder.Append(c);
+                        TokenTextBuilder.Append(c);
                         c = Advance();
                     }
                 }
 
-                textBuilder.Append(c);
+                TokenTextBuilder.Append(c);
                 if (!HandleLineEnd())
                     Advance();
 
-                string text = textBuilder.ToString();
+                string text = TokenTextBuilder.ToString();
                 string value = isLong ? text.Substring(3, text.Length - 5) : text.Substring(2, text.Length - 3);
                 return CreateToken(TokenType.DM_Preproc_ConstantString, text, value);
             }
@@ -348,13 +350,13 @@ internal sealed class DMPreprocessorLexer {
                     Advance();
                 }
 
-                StringBuilder textBuilder = new StringBuilder();
+                TokenTextBuilder.Clear();
                 while (char.IsAsciiLetter(GetCurrent()) || GetCurrent() == '_') {
-                    textBuilder.Append(GetCurrent());
+                    TokenTextBuilder.Append(GetCurrent());
                     Advance();
                 }
 
-                string text = textBuilder.ToString();
+                string text = TokenTextBuilder.ToString();
                 if (text == string.Empty) {
                     return NextToken(ignoreWhitespace); // Skip this token
                 } else if (isConcat) {
@@ -362,11 +364,11 @@ internal sealed class DMPreprocessorLexer {
                 }
 
                 if (TryMacroKeyword(text, out var macroKeyword))
-                    return macroKeyword;
+                    return macroKeyword.Value;
 
                 string macroAttempt = text.ToLower();
                 if (TryMacroKeyword(macroAttempt, out var attemptKeyword)) { // if they mis-capitalized the keyword
-                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Location,
+                    DMCompiler.Emit(WarningCode.MiscapitalizedDirective, attemptKeyword.Value.Location,
                         $"#{text} is not a valid macro keyword. Did you mean '#{macroAttempt}'?");
                 }
 
@@ -374,19 +376,22 @@ internal sealed class DMPreprocessorLexer {
             }
             default: {
                 if (char.IsAsciiLetter(c) || c == '_') {
-                    StringBuilder textBuilder = new StringBuilder(char.ToString(c));
+                    TokenTextBuilder.Clear();
+                    TokenTextBuilder.Append(c);
                     while ((char.IsAsciiLetterOrDigit(Advance()) || GetCurrent() == '_') && !AtEndOfSource())
-                        textBuilder.Append(GetCurrent());
+                        TokenTextBuilder.Append(GetCurrent());
 
-                    return CreateToken(TokenType.DM_Preproc_Identifier, textBuilder.ToString());
+                    return CreateToken(TokenType.DM_Preproc_Identifier, TokenTextBuilder.ToString());
                 } else if (char.IsAsciiDigit(c)) {
-                    StringBuilder textBuilder = new StringBuilder(char.ToString(c));
                     bool error = false;
+
+                    TokenTextBuilder.Clear();
+                    TokenTextBuilder.Append(c);
 
                     while (!AtEndOfSource()) {
                         char next = Advance();
                         if ((c == 'e' || c == 'E') && (next == '-' || next == '+')) { //1e-10 or 1e+10
-                            textBuilder.Append(next);
+                            TokenTextBuilder.Append(next);
                             next = Advance();
                         } else if (c == '#' && next == 'I') { //1.#INF and 1.#IND
                             if (Advance() != 'N' || Advance() != 'F' && GetCurrent() != 'D') {
@@ -395,14 +400,14 @@ internal sealed class DMPreprocessorLexer {
                                 break;
                             }
 
-                            textBuilder.Append("IN");
-                            textBuilder.Append(GetCurrent());
+                            TokenTextBuilder.Append("IN");
+                            TokenTextBuilder.Append(GetCurrent());
                             next = Advance();
                         }
 
                         c = next;
                         if (char.IsAsciiHexDigit(c) || c == '.' || c == 'x' || c == '#' || c == 'e' || c == 'E' || c == 'p' || c == 'P') {
-                            textBuilder.Append(c);
+                            TokenTextBuilder.Append(c);
                         } else {
                             break;
                         }
@@ -410,7 +415,7 @@ internal sealed class DMPreprocessorLexer {
 
                     return error
                         ? CreateToken(TokenType.Error, string.Empty, "Invalid number")
-                        : CreateToken(TokenType.DM_Preproc_Number, textBuilder.ToString());
+                        : CreateToken(TokenType.DM_Preproc_Number, TokenTextBuilder.ToString());
                 }
 
                 Advance();
@@ -424,25 +429,23 @@ internal sealed class DMPreprocessorLexer {
         switch (text) {
             case "warn":
             case "warning": {
-                StringBuilder message = new StringBuilder();
-
+                TokenTextBuilder.Clear();
                 while (!AtEndOfSource() && !AtLineEnd()) {
-                    message.Append(GetCurrent());
+                    TokenTextBuilder.Append(GetCurrent());
                     Advance();
                 }
 
-                token = CreateToken(TokenType.DM_Preproc_Warning, "#warn" + message);
+                token = CreateToken(TokenType.DM_Preproc_Warning, "#warn" + TokenTextBuilder);
                 break;
             }
             case "error": {
-                StringBuilder message = new StringBuilder();
-
+                TokenTextBuilder.Clear();
                 while (!AtEndOfSource() && !AtLineEnd()) {
-                    message.Append(GetCurrent());
+                    TokenTextBuilder.Append(GetCurrent());
                     Advance();
                 }
 
-                token = CreateToken(TokenType.DM_Preproc_Error, "#error" + message);
+                token = CreateToken(TokenType.DM_Preproc_Error, "#error" + TokenTextBuilder);
                 break;
             }
             case "include": token = CreateToken(TokenType.DM_Preproc_Include, "#include"); break;

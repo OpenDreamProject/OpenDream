@@ -1,78 +1,81 @@
 ﻿using System.IO;
 using System.Text;
 
-namespace OpenDreamRuntime.Resources {
-    [Virtual]
-    public class DreamResource {
-        public readonly string? ResourcePath;
-        public readonly int Id;
-        public byte[]? ResourceData {
-            get {
-                if (_resourceData == null && File.Exists(_filePath)) {
-                    _resourceData = File.ReadAllBytes(_filePath);
-                }
+namespace OpenDreamRuntime.Resources;
 
-                return _resourceData;
-            }
-        }
-
-        private readonly string? _filePath;
-        private byte[]? _resourceData = null;
-
-        public DreamResource(int id, string? filePath, string? resourcePath) {
-            Id = id;
-            ResourcePath = resourcePath;
-            _filePath = filePath;
-        }
-
-        public DreamResource(int id, byte[] data) {
-            Id = id;
-            _resourceData = data;
-        }
-
-        public virtual string? ReadAsString() {
-            if (ResourceData == null) return null;
-
-            string resourceString = Encoding.ASCII.GetString(ResourceData);
-
-            resourceString = resourceString.Replace("\r\n", "\n");
-            return resourceString;
-        }
-
-        public void Clear() {
-            CreateDirectory();
-            File.WriteAllText(_filePath, string.Empty);
-        }
-
-        public virtual void Output(DreamValue value) {
-            if (ResourcePath == null)
-                throw new Exception("Cannot write to resource without a path");
-
-            string? text;
-            if (value.IsNull) {
-                text = string.Empty;
-            } else if (!value.TryGetValueAsString(out text)) {
-                throw new Exception($"Invalid output operation '{ResourcePath}' << {value}");
+[Virtual]
+public class DreamResource {
+    public readonly string? ResourcePath;
+    public readonly int Id;
+    public byte[]? ResourceData {
+        get {
+            if (_resourceData == null && File.Exists(_filePath)) {
+                _resourceData = File.ReadAllBytes(_filePath);
             }
 
-            CreateDirectory();
-            File.AppendAllText(ResourcePath, text + "\r\n");
-            _resourceData = null;
+            return _resourceData;
+        }
+    }
+
+    private readonly string? _filePath;
+    private byte[]? _resourceData;
+
+    public DreamResource(int id, string? filePath, string? resourcePath) {
+        Id = id;
+        ResourcePath = resourcePath;
+        _filePath = filePath;
+    }
+
+    public DreamResource(int id, byte[] data) {
+        Id = id;
+        _resourceData = data;
+    }
+
+    public virtual string? ReadAsString() {
+        if (ResourceData == null) return null;
+
+        string resourceString = Encoding.ASCII.GetString(ResourceData);
+
+        resourceString = resourceString.Replace("\r\n", "\n");
+        return resourceString;
+    }
+
+    public void Clear() {
+        if (string.IsNullOrEmpty(_filePath))
+            return;
+
+        CreateDirectory();
+        File.WriteAllText(_filePath, string.Empty);
+    }
+
+    public virtual void Output(DreamValue value) {
+        if (ResourcePath == null)
+            throw new Exception("Cannot write to resource without a path");
+
+        string? text;
+        if (value.IsNull) {
+            text = string.Empty;
+        } else if (!value.TryGetValueAsString(out text)) {
+            throw new Exception($"Invalid output operation '{ResourcePath}' << {value}");
         }
 
-        private void CreateDirectory() {
-            if (_filePath == null)
-                return;
+        CreateDirectory();
+        File.AppendAllText(ResourcePath, text + "\r\n");
+        _resourceData = null;
+    }
 
-            string? directory = Path.GetDirectoryName(_filePath);
-            if (directory == null)
-                return;
+    private void CreateDirectory() {
+        if (_filePath == null)
+            return;
 
-            Directory.CreateDirectory(directory);
-        }
+        string? directory = Path.GetDirectoryName(_filePath);
+        if (string.IsNullOrEmpty(directory))
+            return;
 
-        public override string ToString() {
-            return $"'{ResourcePath}'";
-        }
+        Directory.CreateDirectory(directory);
+    }
+
+    public override string ToString() {
+        return $"'{ResourcePath}'";
     }
 }

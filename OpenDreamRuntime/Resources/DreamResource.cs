@@ -41,6 +41,9 @@ public class DreamResource {
     }
 
     public void Clear() {
+        if (string.IsNullOrEmpty(_filePath))
+            return;
+
         CreateDirectory();
         File.WriteAllText(_filePath, string.Empty);
     }

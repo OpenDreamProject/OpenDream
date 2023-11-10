@@ -54,12 +54,14 @@ namespace OpenDreamRuntime.Objects {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly DreamResourceManager _dreamResourceManager = default!;
+        [Dependency] private readonly WalkManager _walkManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly ISerializationManager _serializationManager = default!;
         [Dependency] private readonly ProcScheduler _procScheduler = default!;
         private ServerAppearanceSystem? _appearanceSystem;
         private TransformSystem? _transformSystem;
         private PvsOverrideSystem? _pvsOverrideSystem;
+        private MetaDataSystem? _metaDataSystem;
 
         public void LoadJson(DreamCompiledJson json) {
             _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
@@ -297,7 +299,7 @@ namespace OpenDreamRuntime.Objects {
             foreach (TreeEntry type in GetAllDescendants(Root)) {
                 int typeId = pathToTypeId[type.Path];
                 DreamTypeJson jsonType = types[typeId];
-                var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, type);
+                var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, type);
 
                 type.ObjectDefinition = definition;
                 type.TreeIndex = treeIndex++;
@@ -403,7 +405,7 @@ namespace OpenDreamRuntime.Objects {
 
         internal NativeProc CreateNativeProc(DreamPath owningType, NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
+            var proc = new NativeProc(Procs.Count, owningType, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, _walkManager, this);
 
             Procs.Add(proc);
             return proc;
@@ -419,7 +421,7 @@ namespace OpenDreamRuntime.Objects {
 
         internal void SetGlobalNativeProc(NativeProc.HandlerFn func) {
             var (name, defaultArgumentValues, argumentNames) = NativeProc.GetNativeInfo(func);
-            var proc = new NativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, this);
+            var proc = new NativeProc(_globalProcIds[name], DreamPath.Root, name, argumentNames, defaultArgumentValues, func, _dreamManager, _atomManager, _dreamMapManager, _dreamResourceManager, _walkManager, this);
 
             Procs[proc.Id] = proc;
         }

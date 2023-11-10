@@ -42,7 +42,6 @@
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
-		src.add_client_image()
 
 	verb/winget_test()
 		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
@@ -178,7 +177,7 @@
 		i.override = 1
 		
 		src.client.images += i
-		world.log << "override added"
+		usr << "override added"
 		for(var/turf/T in range(src, 2))
 			var/image/turf_image = image(icon = 'icons/hanoi.dmi', loc=T, icon_state="1")
 			src.client.images += turf_image

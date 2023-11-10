@@ -1,10 +1,8 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.Compiler.DM {
     public interface DMASTVisitor : ASTVisitor {

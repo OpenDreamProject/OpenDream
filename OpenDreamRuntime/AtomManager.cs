@@ -29,6 +29,7 @@ namespace OpenDreamRuntime {
 
         private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
         private ServerAppearanceSystem? _appearanceSystem;
+        private MetaDataSystem? _metaDataSystem;
 
         public DreamObject GetAtom(int index) {
             // Order of world.contents:
@@ -64,8 +65,10 @@ namespace OpenDreamRuntime {
             sprite.SetAppearance(GetAppearanceFromDefinition(movable.ObjectDefinition));
 
             if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
-                metaData.EntityName = movable.GetDisplayName();
-                metaData.EntityDescription = movable.Desc ?? string.Empty;
+                _metaDataSystem ??= _entitySystemManager.GetEntitySystem<MetaDataSystem>();
+
+                _metaDataSystem.SetEntityName(entity, movable.GetDisplayName(), metaData);
+                _metaDataSystem.SetEntityDescription(entity, movable.Desc ?? string.Empty, metaData);
             }
 
             _entityToAtom.Add(entity, movable);

@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Prompts;
+﻿using OpenDreamClient.Interface.Prompts;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Console;
 

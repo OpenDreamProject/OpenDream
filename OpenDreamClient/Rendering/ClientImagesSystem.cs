@@ -1,6 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using System.Linq;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
 using Vector3 = Robust.Shared.Maths.Vector3;
 

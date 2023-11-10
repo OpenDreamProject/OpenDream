@@ -31,7 +31,7 @@
 		"ABC",
 		null,
 		'Shared/file.txt',
-		list("A"),
+		list("ABC"),
 		operator_test_object,
 		/datum,
 		/datum/proc/foo,
@@ -49,17 +49,17 @@
 		"Error",
 		"Error",
 		"Error",
-		list("A", 10),
-		list("A", "ABC"),
-		list("A", null),
-		list("A", 'Shared/file.txt'),
-		list("A", "A"),
-		list("A", operator_test_object),
-		list("A", /datum),
-		list("A", /datum/proc/foo),
-		list("A", /datum/verb/bar),
-		list("A", /datum/proc),
-		list("A", /datum/verb),
+		list("ABC", 10),
+		list("ABC", "ABC"),
+		list("ABC", null),
+		list("ABC", 'Shared/file.txt'),
+		list("ABC", "ABC"),
+		list("ABC", operator_test_object),
+		list("ABC", /datum),
+		list("ABC", /datum/proc/foo),
+		list("ABC", /datum/verb/bar),
+		list("ABC", /datum/proc),
+		list("ABC", /datum/verb),
 		"Error",
 		"Error",
 		"Error",
@@ -128,4 +128,4 @@
 		"/datum/verb/datum/verb"
 	)
 	
-	test_operator(/proc/add, expected)
+	test_binary_operator(/proc/add, expected)

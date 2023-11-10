@@ -9,14 +9,15 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.GameObjects;
-using Robust.Server.Player;
 using Robust.Shared.Enums;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime {
     public sealed class DreamConnection {
         [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
+        [Dependency] private readonly WalkManager _walkManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
@@ -27,7 +28,7 @@ namespace OpenDreamRuntime {
         [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
         [ViewVariables] private bool _currentlyUpdatingStat;
 
-        [ViewVariables] public IPlayerSession? Session { get; private set; }
+        [ViewVariables] public ICommonSession? Session { get; private set; }
         [ViewVariables] public DreamObjectClient? Client { get; private set; }
         [ViewVariables] public DreamObjectMob? Mob {
             get => _mob;
@@ -107,7 +108,7 @@ namespace OpenDreamRuntime {
             _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
-        public void HandleConnection(IPlayerSession session) {
+        public void HandleConnection(ICommonSession session) {
             var client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem, _clientImagesSystem);
 
             Session = session;
@@ -327,16 +328,31 @@ namespace OpenDreamRuntime {
             string command = args[0].ToLowerInvariant(); // Case-insensitive
 
             switch (command) {
-                //TODO: Maybe move these verbs to DM code?
-                case ".north": Client?.SpawnProc("North", Mob); break;
-                case ".east": Client?.SpawnProc("East", Mob); break;
-                case ".south": Client?.SpawnProc("South", Mob); break;
-                case ".west": Client?.SpawnProc("West", Mob); break;
-                case ".northeast": Client?.SpawnProc("Northeast", Mob); break;
-                case ".southeast": Client?.SpawnProc("Southeast", Mob); break;
-                case ".southwest": Client?.SpawnProc("Southwest", Mob); break;
-                case ".northwest": Client?.SpawnProc("Northwest", Mob); break;
-                case ".center": Client?.SpawnProc("Center", Mob); break;
+                case ".north":
+                case ".east":
+                case ".south":
+                case ".west":
+                case ".northeast":
+                case ".southeast":
+                case ".southwest":
+                case ".northwest":
+                case ".center":
+                    string movementProc = command switch {
+                        ".north" => "North",
+                        ".east" => "East",
+                        ".south" => "South",
+                        ".west" => "West",
+                        ".northeast" => "Northeast",
+                        ".southeast" => "Southeast",
+                        ".southwest" => "Southwest",
+                        ".northwest" => "Northwest",
+                        ".center" => "Center",
+                        _ => throw new ArgumentOutOfRangeException()
+                    };
+
+                    if (Mob != null)
+                        _walkManager.StopWalks(Mob);
+                    Client?.SpawnProc(movementProc, Mob); break;
 
                 default: {
                     if (_availableVerbs.TryGetValue(command, out var value)) {

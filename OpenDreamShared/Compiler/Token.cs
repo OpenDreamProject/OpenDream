@@ -152,7 +152,7 @@ namespace OpenDreamShared.Compiler {
         DMF_Window
     }
 
-    public sealed class Token {
+    public struct Token {
         public readonly TokenType Type;
         public Location Location;
         /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>

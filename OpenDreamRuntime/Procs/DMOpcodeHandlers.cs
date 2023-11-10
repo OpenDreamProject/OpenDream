@@ -1125,12 +1125,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.TryGetValueAsFloat(out var floatFirst) && second.TryGetValueAsFloat(out var floatSecond)) {
-                state.Push(new DreamValue(MathF.Pow(floatFirst, floatSecond)));
-            } else {
-                throw new Exception("Invalid power operation on " + first + " and " + second);
-            }
+            if (!first.TryGetValueAsFloat(out var floatFirst) && !first.IsNull)
+                throw new Exception($"Invalid power operation on {first} and {second}");
 
+            var floatSecond = second.UnsafeGetValueAsFloat(); // Non-numbers treated as 0 here
+
+            state.Push(new DreamValue(MathF.Pow(floatFirst, floatSecond)));
             return ProcStatus.Continue;
         }
 
@@ -1168,27 +1168,12 @@ namespace OpenDreamRuntime.Procs {
             DreamValue first = state.Pop();
             DreamValue output = default;
 
-            if (second.IsNull) {
-                output = first;
-            } else if (first.IsNull && second.Type == DreamValue.DreamValueType.Float) {
-                output = new DreamValue(-second.MustGetValueAsFloat());
-            } else switch (first.Type) {
-                case DreamValue.DreamValueType.Float: {
-                    float firstFloat = first.MustGetValueAsFloat();
-
-                    if (second.Type == DreamValue.DreamValueType.Float)
-                        output = new DreamValue(firstFloat - second.MustGetValueAsFloat());
-
-                    break;
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                if (second.TryGetValueAsFloat(out var secondFloat) || second.IsNull) {
+                    output = new(firstFloat - secondFloat);
                 }
-                case DreamValue.DreamValueType.DreamObject: {
-                    DreamObject? firstObject = first.MustGetValueAsDreamObject();
-                    if (firstObject == null)
-                        break;
-
-                    output = firstObject.OperatorSubtract(second);
-                    break;
-                }
+            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
+                output = firstObject!.OperatorSubtract(second); // Not null because of the above first.IsNull check
             }
 
             if (output.Type != 0) {
@@ -1752,25 +1737,8 @@ namespace OpenDreamRuntime.Procs {
             }
 
             var dir = d.MustGetValueAsInteger();
-            var locPos = state.Proc.AtomManager.GetAtomPosition(loc);
 
-            if ((dir & (int) AtomDirection.North) != 0)
-                locPos.Y += 1;
-            if ((dir & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
-                locPos.Y -= 1;
-
-            if ((dir & (int) AtomDirection.East) != 0)
-                locPos.X += 1;
-            if ((dir & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
-                locPos.X -= 1;
-
-            if ((dir & (int) AtomDirection.Up) != 0)
-                locPos.Z += 1;
-            if ((dir & (int) AtomDirection.Down) != 0) // A dir of UP | DOWN will cancel out
-                locPos.Z -= 1;
-
-            state.Proc.DreamMapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
-            state.Push(new DreamValue(turf));
+            state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;
         }
 
@@ -1795,29 +1763,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var loc1Pos = state.Proc.AtomManager.GetAtomPosition(loc1);
-            var loc2Pos = state.Proc.AtomManager.GetAtomPosition(loc2);
-
-            if (loc1Pos.Z != loc2Pos.Z) { // They must be on the same z-level
-                state.Push(new DreamValue(0));
-                return ProcStatus.Continue;
-            }
-
-            int direction = 0;
-
-            // East or West
-            if (loc2Pos.X < loc1Pos.X)
-                direction |= (int)AtomDirection.West;
-            else if (loc2Pos.X > loc1Pos.X)
-                direction |= (int)AtomDirection.East;
-
-            // North or South
-            if (loc2Pos.Y < loc1Pos.Y)
-                direction |= (int) AtomDirection.South;
-            else if (loc2Pos.Y > loc1Pos.Y)
-                direction |= (int) AtomDirection.North;
-
-            state.Push(new DreamValue(direction));
+            state.Push(new((int)DreamProcNativeHelpers.GetDir(state.Proc.AtomManager, loc1, loc2)));
             return ProcStatus.Continue;
         }
 
@@ -2510,15 +2456,15 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue MultiplyValues(DreamValue first, DreamValue second) {
-            if (first.IsNull || second.IsNull) {
-                return new(0);
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
+
+                return new(firstFloat * secondFloat);
             } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
-                return firstObject!.OperatorMultiply(second);
-            } else if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new(first.MustGetValueAsFloat() * second.MustGetValueAsFloat());
-            } else {
-                throw new Exception($"Invalid multiply operation on {first} and {second}");
+                return firstObject!.OperatorMultiply(second); // Not null because of the above first.IsNull check
             }
+
+            throw new Exception($"Invalid multiply operation on {first} and {second}");
         }
 
         private static DreamValue DivideValues(DreamValue first, DreamValue second) {
@@ -2564,13 +2510,13 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
-            if (first.IsNull)
-                return new(0);
-            if (first.Type == DreamValue.DreamValueType.Float && second.Type == DreamValue.DreamValueType.Float) {
-                return new DreamValue(first.MustGetValueAsInteger() % second.MustGetValueAsInteger());
-            } else {
-                throw new Exception("Invalid modulus operation on " + first + " and " + second);
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                if (second.TryGetValueAsFloat(out var secondFloat)) {
+                    return new DreamValue(firstFloat % secondFloat);
+                }
             }
+
+            throw new Exception($"Invalid modulus operation on {first} and {second}");
         }
 
         private static DreamValue ModulusModulusValues(DreamValue first, DreamValue second) {

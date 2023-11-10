@@ -68,6 +68,7 @@ public class DreamObjectMovable : DreamObjectAtom {
         else
             AtomManager.Movables.Remove(this);
 
+        WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);
         base.HandleDeletion();
     }

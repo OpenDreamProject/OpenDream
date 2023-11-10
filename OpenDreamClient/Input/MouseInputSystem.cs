@@ -18,7 +18,7 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
-        [Dependency] private IEntityManager _entityManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         private DreamViewOverlay? _dreamViewOverlay;
         private ContextMenuPopup _contextMenu = default!;

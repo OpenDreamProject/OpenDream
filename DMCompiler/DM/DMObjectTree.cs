@@ -10,28 +10,29 @@ using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
     internal static class DMObjectTree {
-        public static List<DMObject> AllObjects = new();
-        public static List<DMProc> AllProcs = new();
+        public static readonly List<DMObject> AllObjects = new();
+        public static readonly List<DMProc> AllProcs = new();
 
         //TODO: These don't belong in the object tree
-        public static List<DMVariable> Globals = new();
-        public static Dictionary<string, int> GlobalProcs = new();
+        public static readonly List<DMVariable> Globals = new();
+        public static readonly Dictionary<string, int> GlobalProcs = new();
         /// <summary>
         /// Used to keep track of when we see a /proc/foo() or whatever, so that duplicates or missing definitions can be discovered,
         /// even as GlobalProcs keeps clobbering old global proc overrides/definitions.
         /// </summary>
-        public static HashSet<string> SeenGlobalProcDefinition = new();
-        public static List<string> StringTable = new();
+        public static readonly HashSet<string> SeenGlobalProcDefinition = new();
+        public static readonly List<string> StringTable = new();
         public static DMProc GlobalInitProc;
-        public static HashSet<string> Resources = new();
+        public static readonly HashSet<string> Resources = new();
+
         public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         private static readonly Dictionary<string, int> StringToStringId = new();
         private static readonly List<(int GlobalId, DMExpression Value)> _globalInitAssigns = new();
 
-        private static Dictionary<DreamPath, int> _pathToTypeId = new();
-        private static int _dmObjectIdCounter = 0;
-        private static int _dmProcIdCounter = 0;
+        private static readonly Dictionary<DreamPath, int> _pathToTypeId = new();
+        private static int _dmObjectIdCounter;
+        private static int _dmProcIdCounter;
 
         static DMObjectTree() {
             Reset();
@@ -49,6 +50,7 @@ namespace DMCompiler.DM {
             SeenGlobalProcDefinition.Clear();
             StringTable.Clear();
             StringToStringId.Clear();
+            Resources.Clear();
 
             _globalInitAssigns.Clear();
             _pathToTypeId.Clear();

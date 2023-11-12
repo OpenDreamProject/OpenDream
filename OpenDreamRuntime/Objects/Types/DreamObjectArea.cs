@@ -8,14 +8,6 @@ public sealed class DreamObjectArea : DreamObjectAtom {
 
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Contents = new(ObjectTree.List.ObjectDefinition, this);
-
-        AtomManager.Areas.Add(this);
-    }
-
-    protected override void HandleDeletion() {
-        base.HandleDeletion();
-
-        AtomManager.Areas.RemoveSwap(AtomManager.Areas.IndexOf(this));
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

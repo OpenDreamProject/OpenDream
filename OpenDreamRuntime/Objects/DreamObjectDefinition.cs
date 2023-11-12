@@ -187,8 +187,7 @@ namespace OpenDreamRuntime.Objects {
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool IsSubtypeOf(TreeEntry ancestor) {
-            // Unsigned underflow is desirable here
-            return (TreeEntry.TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;
+            return TreeEntry.IsSubtypeOf(ancestor);
         }
     }
 }

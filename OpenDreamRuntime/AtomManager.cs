@@ -11,12 +11,7 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime {
     public sealed class AtomManager {
-        public List<DreamObjectArea> Areas { get; } = new();
-        public List<DreamObjectTurf> Turfs { get; } = new();
-        public List<DreamObjectMovable> Movables { get; } = new();
-        public List<DreamObjectMovable> Objects { get; } = new();
-        public List<DreamObjectMob> Mobs { get; } = new();
-        public int AtomCount => Areas.Count + Turfs.Count + Movables.Count + Objects.Count + Mobs.Count;
+        public int AtomCount { get; private set; }
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
@@ -24,37 +19,169 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
 
+        private readonly List<DreamObjectMob?> _mobs = new();
+        private readonly List<DreamObjectMovable?> _movables = new();
+        private readonly List<DreamObjectArea?> _areas = new();
+        private readonly List<DreamObjectTurf?> _turfs = new();
+        private int _nextEmptyMobSlot;
+        private int _nextEmptyMovableSlot;
+        private int _nextEmptyAreaSlot;
+        private int _nextEmptyTurfSlot;
+
         private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
         private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
         private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
         private ServerAppearanceSystem? _appearanceSystem;
 
-        public DreamObject GetAtom(int index) {
+        // ReSharper disable ForCanBeConvertedToForeach (the collections could be added to)
+        public IEnumerable<DreamObjectAtom> EnumerateAtoms(TreeEntry? filterType = null) {
             // Order of world.contents:
-            //  Mobs + Movables + Areas + Turfs
+            //  Mobs + Other Movables + Areas + Turfs
 
-            if (index < Mobs.Count)
-                return Mobs[index];
+            if (filterType == _objectTree.Atom) // Filtering by /atom is the same as no filter
+                filterType = null;
 
-            // TODO: Movables and objects should be mixed together here
-            index -= Mobs.Count;
-            if (index < Objects.Count)
-                return Objects[index];
+            if (filterType?.IsSubtypeOf(_objectTree.Mob) != false) {
+                for (int i = 0; i < _mobs.Count; i++) {
+                    var mob = _mobs[i];
 
-            index -= Objects.Count;
-            if (index < Movables.Count)
-                return Movables[index];
+                    if (mob != null && (filterType == null || mob.IsSubtypeOf(filterType)))
+                        yield return mob;
+                }
+            }
 
-            index -= Movables.Count;
-            if (index < Areas.Count)
-                return Areas[index];
+            if (filterType?.IsSubtypeOf(_objectTree.Movable) != false) {
+                for (int i = 0; i < _movables.Count; i++) {
+                    var movable = _movables[i];
+                    if (movable != null && (filterType == null || movable.IsSubtypeOf(filterType)))
+                        yield return movable;
+                }
+            }
 
-            index -= Areas.Count;
-            if (index < Turfs.Count)
-                return Turfs[index];
+            if (filterType?.IsSubtypeOf(_objectTree.Area) != false) {
+                for (int i = 0; i < _areas.Count; i++) {
+                    var area = _areas[i];
+                    if (area != null && (filterType == null || area.IsSubtypeOf(filterType)))
+                        yield return area;
+                }
+            }
 
-            throw new IndexOutOfRangeException($"Cannot get atom at index {index}. There are only {AtomCount} atoms.");
+            if (filterType?.IsSubtypeOf(_objectTree.Turf) != false) {
+                for (int i = 0; i < _turfs.Count; i++) {
+                    var turf = _turfs[i];
+                    if (turf != null && (filterType == null || turf.IsSubtypeOf(filterType)))
+                        yield return turf;
+                }
+            }
+        }
+        // ReSharper restore ForCanBeConvertedToForeach
+
+        public void AddAtom(DreamObjectAtom atom) {
+            AtomCount++;
+
+            switch (atom) {
+                case DreamObjectArea area: {
+                    var nextSlot = _nextEmptyAreaSlot++;
+                    if (nextSlot >= _areas.Count) {
+                        _areas.Add(area);
+                        return;
+                    }
+
+                    _areas[nextSlot] = area;
+                    for (; _nextEmptyAreaSlot < _areas.Count; _nextEmptyAreaSlot++) {
+                        if (_areas[_nextEmptyAreaSlot] == null)
+                            break;
+                    }
+
+                    break;
+                }
+                case DreamObjectTurf turf: {
+                    var nextSlot = _nextEmptyTurfSlot++;
+                    if (nextSlot >= _turfs.Count) {
+                        _turfs.Add(turf);
+                        return;
+                    }
+
+                    _turfs[nextSlot] = turf;
+                    for (; _nextEmptyTurfSlot < _turfs.Count; _nextEmptyTurfSlot++) {
+                        if (_turfs[_nextEmptyTurfSlot] == null)
+                            break;
+                    }
+
+                    break;
+                }
+                case DreamObjectMob mob: {
+                    var nextSlot = _nextEmptyMobSlot++;
+                    if (nextSlot >= _mobs.Count) {
+                        _mobs.Add(mob);
+                        return;
+                    }
+
+                    _mobs[nextSlot] = mob;
+                    for (; _nextEmptyMobSlot < _mobs.Count; _nextEmptyMobSlot++) {
+                        if (_mobs[_nextEmptyMobSlot] == null)
+                            break;
+                    }
+
+                    break;
+                }
+                case DreamObjectMovable movable: {
+                    var nextSlot = _nextEmptyMovableSlot++;
+                    if (nextSlot >= _movables.Count) {
+                        _movables.Add(movable);
+                        return;
+                    }
+
+                    _movables[nextSlot] = movable;
+                    for (; _nextEmptyMovableSlot < _movables.Count; _nextEmptyMovableSlot++) {
+                        if (_movables[_nextEmptyMovableSlot] == null)
+                            break;
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        public void RemoveAtom(DreamObjectAtom atom) {
+            AtomCount--;
+
+            int index;
+            switch (atom) {
+                case DreamObjectArea area:
+                    index = _areas.IndexOf(area);
+                    if (index == -1)
+                        return;
+
+                    _nextEmptyAreaSlot = Math.Min(_nextEmptyAreaSlot, index);
+                    _areas[index] = null;
+                    break;
+                case DreamObjectTurf turf:
+                    index = _turfs.IndexOf(turf);
+                    if (index == -1)
+                        return;
+
+                    _nextEmptyTurfSlot = Math.Min(_nextEmptyTurfSlot, index);
+                    _turfs[index] = null;
+                    break;
+                case DreamObjectMob mob:
+                    index = _mobs.IndexOf(mob);
+                    if (index == -1)
+                        return;
+
+                    _nextEmptyMobSlot = Math.Min(_nextEmptyMobSlot, index);
+                    _mobs[index] = null;
+                    break;
+                case DreamObjectMovable movable:
+                    index = _movables.IndexOf(movable);
+                    if (index == -1)
+                        return;
+
+                    _nextEmptyMovableSlot = Math.Min(_nextEmptyMovableSlot, index);
+                    _movables[index] = null;
+                    break;
+            }
         }
 
         public EntityUid CreateMovableEntity(DreamObjectMovable movable) {

@@ -1003,18 +1003,12 @@ namespace OpenDreamRuntime.Objects.Types {
             if (index < 1 || index > _atomManager.AtomCount)
                 throw new Exception($"Out of bounds index on world contents list: {index}");
 
-            return new DreamValue(_atomManager.GetAtom(index - 1));
+            var element = _atomManager.EnumerateAtoms().ElementAt(index - 1); // Ouch
+            return new DreamValue(element);
         }
 
         public override List<DreamValue> GetValues() {
-            List<DreamValue> values = new(AtomManager.AtomCount);
-
-            values.AddRange(AtomManager.Mobs.Select(mob => new DreamValue(mob)));
-            values.AddRange(AtomManager.Movables.Select(movable => new DreamValue(movable)));
-            values.AddRange(AtomManager.Objects.Select(obj => new DreamValue(obj)));
-            values.AddRange(AtomManager.Areas.Select(area => new DreamValue(area)));
-            values.AddRange(AtomManager.Turfs.Select(turf => new DreamValue(turf)));
-            return values;
+            return AtomManager.EnumerateAtoms().Select(atom => new DreamValue(atom)).ToList();
         }
 
         public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {

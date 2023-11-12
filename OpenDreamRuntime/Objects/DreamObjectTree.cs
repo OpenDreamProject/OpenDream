@@ -14,6 +14,8 @@ using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Manager.Exceptions;
+using MethodImplAttribute = System.Runtime.CompilerServices.MethodImplAttribute;
+using MethodImplOptions = System.Runtime.CompilerServices.MethodImplOptions;
 
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectTree {
@@ -480,6 +482,12 @@ namespace OpenDreamRuntime.Objects {
         public TreeEntry(DreamPath path, int id) {
             Path = path;
             Id = id;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool IsSubtypeOf(TreeEntry ancestor) {
+            // Unsigned underflow is desirable here
+            return (TreeIndex - ancestor.TreeIndex) <= ancestor.ChildCount;
         }
 
         public override string ToString() {

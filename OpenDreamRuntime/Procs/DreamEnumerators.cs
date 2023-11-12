@@ -1,4 +1,5 @@
 ﻿using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Objects.Types;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -10,7 +11,7 @@ public interface IDreamValueEnumerator {
 /// Enumerates a range of numbers with a given step
 /// <code>for (var/i in 1 to 10 step 2)</code>
 /// </summary>
-sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
+internal sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
     private float _current;
     private readonly float _end;
     private readonly float _step;
@@ -35,7 +36,7 @@ sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
 /// <summary>
 /// Enumerates over an IEnumerable of DreamObjects, possibly filtering for a certain type
 /// </summary>
-sealed class DreamObjectEnumerator : IDreamValueEnumerator {
+internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
     private readonly IEnumerator<DreamObject> _dreamObjectEnumerator;
     private readonly TreeEntry? _filterType;
 
@@ -63,7 +64,7 @@ sealed class DreamObjectEnumerator : IDreamValueEnumerator {
 /// Enumerates over an array of DreamValues
 /// <code>for (var/i in list(1, 2, 3))</code>
 /// </summary>
-sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
+internal sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
     private readonly DreamValue[] _dreamValueArray;
     private int _current = -1;
 
@@ -85,7 +86,7 @@ sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
 /// Enumerates over an array of DreamValues, filtering for a certain type
 /// <code>for (var/obj/item/I in contents)</code>
 /// </summary>
-sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
+internal sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
     private readonly DreamValue[] _dreamValueArray;
     private readonly TreeEntry _filterType;
     private int _current = -1;
@@ -118,31 +119,19 @@ sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
 /// Enumerates over all atoms in the world, possibly filtering for a certain type
 /// <code>for (var/obj/item/I in world)</code>
 /// </summary>
-sealed class WorldContentsEnumerator : IDreamValueEnumerator {
-    private readonly AtomManager _atomManager;
-    private readonly TreeEntry? _filterType;
-    private int _current = -1;
+internal sealed class WorldContentsEnumerator : IDreamValueEnumerator {
+    private readonly IEnumerator<DreamObjectAtom> _enumerator;
 
     public WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) {
-        _atomManager = atomManager;
-        _filterType = filterType;
+        _enumerator = atomManager.EnumerateAtoms(filterType).GetEnumerator();
     }
 
     public bool Enumerate(DMProcState state, DreamReference? reference) {
-        do {
-            _current++;
-            if (_current >= _atomManager.AtomCount) {
-                if (reference != null)
-                    state.AssignReference(reference.Value, DreamValue.Null);
-                return false;
-            }
+        bool success = _enumerator.MoveNext();
 
-            DreamObject atom = _atomManager.GetAtom(_current);
-            if (_filterType == null || atom.IsSubtypeOf(_filterType)) {
-                if (reference != null)
-                    state.AssignReference(reference.Value, new DreamValue(atom));
-                return true;
-            }
-        } while (true);
+        // Assign regardless of success
+        if (reference != null)
+            state.AssignReference(reference.Value, new DreamValue(_enumerator.Current));
+        return success;
     }
 }

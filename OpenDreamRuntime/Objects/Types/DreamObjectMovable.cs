@@ -43,13 +43,6 @@ public class DreamObjectMovable : DreamObjectAtom {
 
         objectDefinition.Variables["screen_loc"].TryGetValueAsString(out var screenLoc);
         ScreenLoc = screenLoc;
-
-        if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.Add(this);
-        else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.Add((DreamObjectMob)this);
-        else
-            AtomManager.Movables.Add(this);
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -60,15 +53,9 @@ public class DreamObjectMovable : DreamObjectAtom {
     }
 
     protected override void HandleDeletion() {
-        if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.RemoveSwap(AtomManager.Objects.IndexOf(this));
-        else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.RemoveSwap(AtomManager.Mobs.IndexOf((DreamObjectMob)this));
-        else
-            AtomManager.Movables.RemoveSwap(AtomManager.Movables.IndexOf(this));
-
         WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);
+
         base.HandleDeletion();
     }
 

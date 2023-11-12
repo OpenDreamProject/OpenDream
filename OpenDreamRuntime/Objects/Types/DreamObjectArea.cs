@@ -1,6 +1,4 @@
-﻿using Robust.Shared.Utility;
-
-namespace OpenDreamRuntime.Objects.Types;
+﻿namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectArea : DreamObjectAtom {
     public int X, Y, Z;

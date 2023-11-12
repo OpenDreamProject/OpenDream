@@ -23,17 +23,18 @@ namespace OpenDreamRuntime.Resources {
             _sawmill = Logger.GetSawmill("opendream.res");
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
+        }
 
+        public void Initialize(string rootPath, string[] resources) {
             _resourceCache.Clear();
             _resourcePathToId.Clear();
 
             // An empty resource path is the console
             _resourceCache.Add(new ConsoleOutputResource());
             _resourcePathToId.Add(string.Empty, 0);
-        }
 
-        public void Initialize(string rootPath, string[] resources) {
             RootPath = rootPath;
+
             // Used to ensure external DLL calls see a consistent current directory.
             Directory.SetCurrentDirectory(RootPath);
 

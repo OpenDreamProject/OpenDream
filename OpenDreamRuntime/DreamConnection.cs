@@ -9,8 +9,8 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Server.GameObjects;
-using Robust.Server.Player;
 using Robust.Shared.Enums;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime {
     public sealed class DreamConnection {
@@ -28,7 +28,7 @@ namespace OpenDreamRuntime {
         [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
         [ViewVariables] private bool _currentlyUpdatingStat;
 
-        [ViewVariables] public IPlayerSession? Session { get; private set; }
+        [ViewVariables] public ICommonSession? Session { get; private set; }
         [ViewVariables] public DreamObjectClient? Client { get; private set; }
         [ViewVariables] public DreamObjectMob? Mob {
             get => _mob;
@@ -108,7 +108,7 @@ namespace OpenDreamRuntime {
             _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
-        public void HandleConnection(IPlayerSession session) {
+        public void HandleConnection(ICommonSession session) {
             var client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem, _clientImagesSystem);
 
             Session = session;

@@ -13,6 +13,7 @@ using Robust.Shared.Serialization.Manager;
 namespace OpenDreamRuntime.Objects {
     public sealed class DreamObjectDefinition {
         // IoC dependencies & entity systems for DreamObjects to use
+        // TODO: Wow, remove this
         public readonly DreamManager DreamManager;
         public readonly DreamObjectTree ObjectTree;
         public readonly AtomManager AtomManager;
@@ -26,6 +27,7 @@ namespace OpenDreamRuntime.Objects {
         public readonly ServerAppearanceSystem? AppearanceSystem;
         public readonly TransformSystem? TransformSystem;
         public readonly PvsOverrideSystem? PvsOverrideSystem;
+        public readonly MetaDataSystem? MetaDataSystem;
 
         public readonly TreeEntry TreeEntry;
         public DreamPath Type => TreeEntry.Path;
@@ -68,6 +70,7 @@ namespace OpenDreamRuntime.Objects {
             AppearanceSystem = copyFrom.AppearanceSystem;
             TransformSystem = copyFrom.TransformSystem;
             PvsOverrideSystem = copyFrom.PvsOverrideSystem;
+            MetaDataSystem = copyFrom.MetaDataSystem;
 
             TreeEntry = copyFrom.TreeEntry;
             InitializationProc = copyFrom.InitializationProc;
@@ -82,7 +85,7 @@ namespace OpenDreamRuntime.Objects {
                 Verbs = new List<int>(copyFrom.Verbs);
         }
 
-        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, WalkManager walkManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, TreeEntry? treeEntry) {
+        public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, WalkManager walkManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, MetaDataSystem metaDataSystem, TreeEntry? treeEntry) {
             DreamManager = dreamManager;
             ObjectTree = objectTree;
             AtomManager = atomManager;
@@ -96,6 +99,7 @@ namespace OpenDreamRuntime.Objects {
             AppearanceSystem = appearanceSystem;
             TransformSystem = transformSystem;
             PvsOverrideSystem = pvsOverrideSystem;
+            MetaDataSystem = metaDataSystem;
 
             TreeEntry = treeEntry;
 

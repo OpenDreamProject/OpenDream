@@ -1,6 +1,7 @@
 ﻿using OpenDreamShared.Network.Messages;
 using Robust.Server.Player;
 using Robust.Shared.Network;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Input;
 
@@ -9,7 +10,7 @@ internal sealed class DreamCommandSystem : EntitySystem{
     [Dependency] private readonly IServerNetManager _netManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
-    private readonly HashSet<(string Command, IPlayerSession session)> _repeatingCommands = new();
+    private readonly HashSet<(string Command, ICommonSession session)> _repeatingCommands = new();
 
     public override void Initialize() {
         _netManager.RegisterNetMessage<MsgCommand>(OnCommandEvent);
@@ -39,7 +40,7 @@ internal sealed class DreamCommandSystem : EntitySystem{
         _repeatingCommands.Remove(tuple);
     }
 
-    private void RunCommand(string command, IPlayerSession session) {
+    private void RunCommand(string command, ICommonSession session) {
         var connection = _dreamManager.GetConnectionBySession(session);
         connection.HandleCommand(command);
     }

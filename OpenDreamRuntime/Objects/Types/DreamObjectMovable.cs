@@ -2,6 +2,7 @@
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -46,11 +47,11 @@ public class DreamObjectMovable : DreamObjectAtom {
         ScreenLoc = screenLoc;
 
         if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.AddLast(this);
+            AtomManager.Objects.Add(this);
         else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.AddLast((DreamObjectMob)this);
+            AtomManager.Mobs.Add((DreamObjectMob)this);
         else
-            AtomManager.Movables.AddLast(this);
+            AtomManager.Movables.Add(this);
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -62,11 +63,11 @@ public class DreamObjectMovable : DreamObjectAtom {
 
     protected override void HandleDeletion() {
         if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.Remove(this);
+            AtomManager.Objects.RemoveSwap(AtomManager.Objects.IndexOf(this));
         else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.Remove((DreamObjectMob)this);
+            AtomManager.Mobs.RemoveSwap(AtomManager.Mobs.IndexOf((DreamObjectMob)this));
         else
-            AtomManager.Movables.Remove(this);
+            AtomManager.Movables.RemoveSwap(AtomManager.Movables.IndexOf(this));
 
         WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);

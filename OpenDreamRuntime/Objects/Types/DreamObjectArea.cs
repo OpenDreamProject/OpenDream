@@ -1,4 +1,6 @@
-﻿namespace OpenDreamRuntime.Objects.Types;
+﻿using Robust.Shared.Utility;
+
+namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectArea : DreamObjectAtom {
     public int X, Y, Z;
@@ -7,13 +9,13 @@ public sealed class DreamObjectArea : DreamObjectAtom {
     public DreamObjectArea(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
         Contents = new(ObjectTree.List.ObjectDefinition, this);
 
-        AtomManager.Areas.AddLast(this);
+        AtomManager.Areas.Add(this);
     }
 
     protected override void HandleDeletion() {
         base.HandleDeletion();
 
-        AtomManager.Areas.Remove(this);
+        AtomManager.Areas.RemoveSwap(AtomManager.Areas.IndexOf(this));
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

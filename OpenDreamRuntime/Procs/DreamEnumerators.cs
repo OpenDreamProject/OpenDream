@@ -9,7 +9,7 @@ namespace OpenDreamRuntime.Procs {
     /// Enumerates a range of numbers with a given step
     /// <code>for (var/i in 1 to 10 step 2)</code>
     /// </summary>
-    internal sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
+    sealed class DreamValueRangeEnumerator : IDreamValueEnumerator {
         private float _current;
         private readonly float _end;
         private readonly float _step;
@@ -34,7 +34,7 @@ namespace OpenDreamRuntime.Procs {
     /// <summary>
     /// Enumerates over an IEnumerable of DreamObjects, possibly filtering for a certain type
     /// </summary>
-    internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
+    sealed class DreamObjectEnumerator : IDreamValueEnumerator {
         private readonly IEnumerator<DreamObject> _dreamObjectEnumerator;
         private readonly TreeEntry? _filterType;
 
@@ -62,7 +62,7 @@ namespace OpenDreamRuntime.Procs {
     /// Enumerates over an array of DreamValues
     /// <code>for (var/i in list(1, 2, 3))</code>
     /// </summary>
-    internal sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
+    sealed class DreamValueArrayEnumerator : IDreamValueEnumerator {
         private readonly DreamValue[] _dreamValueArray;
         private int _current = -1;
 
@@ -84,7 +84,7 @@ namespace OpenDreamRuntime.Procs {
     /// Enumerates over an array of DreamValues, filtering for a certain type
     /// <code>for (var/obj/item/I in contents)</code>
     /// </summary>
-    internal sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
+    sealed class FilteredDreamValueArrayEnumerator : IDreamValueEnumerator {
         private readonly DreamValue[] _dreamValueArray;
         private readonly TreeEntry _filterType;
         private int _current = -1;
@@ -117,22 +117,32 @@ namespace OpenDreamRuntime.Procs {
     /// Enumerates over all atoms in the world, possibly filtering for a certain type
     /// <code>for (var/obj/item/I in world)</code>
     /// </summary>
-    internal sealed class WorldContentsEnumerator : IDreamValueEnumerator {
+    sealed class WorldContentsEnumerator : IDreamValueEnumerator {
+        private readonly AtomManager _atomManager;
         private readonly TreeEntry? _filterType;
-        private readonly IEnumerator<DreamObject> _worldEnumerator;
+        private int _current = -1;
 
         public WorldContentsEnumerator(AtomManager atomManager, TreeEntry? filterType) {
+            _atomManager = atomManager;
             _filterType = filterType;
-            _worldEnumerator = atomManager.EnumerateAllAtoms(filterType?.ObjectDefinition);
         }
 
         public bool Enumerate(DMProcState state, DreamReference? reference) {
-            bool success = _worldEnumerator.MoveNext();
+            do {
+                _current++;
+                if (_current >= _atomManager.AtomCount) {
+                    if (reference != null)
+                        state.AssignReference(reference.Value, DreamValue.Null);
+                    return false;
+                }
 
-            // Assign regardless of success
-            if (reference != null)
-                state.AssignReference(reference.Value, new DreamValue(_worldEnumerator.Current));
-            return success;
+                DreamObject atom = _atomManager.GetAtom(_current);
+                if (_filterType == null || atom.IsSubtypeOf(_filterType)) {
+                    if (reference != null)
+                        state.AssignReference(reference.Value, new DreamValue(atom));
+                    return true;
+                }
+            } while (true);
         }
     }
 }

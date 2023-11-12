@@ -162,7 +162,6 @@ public sealed class DreamMapManager : IDreamMapManager {
             cell.Turf = new DreamObjectTurf(type, pos.X, pos.Y, z, cell);
             // Only add the /turf to .contents when it's created.
             cell.Area.Contents.AddValue(new(cell.Turf));
-            _atomManager.AddAtom(cell.Turf);
         }
 
         IconAppearance turfAppearance = _atomManager.GetAppearanceFromDefinition(cell.Turf.ObjectDefinition);

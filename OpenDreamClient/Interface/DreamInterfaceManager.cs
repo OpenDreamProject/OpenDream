@@ -685,7 +685,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         DefaultWindow.RegisterOnClydeWindow(_clyde.MainWindow);
         DefaultWindow.UIElement.Name = "MainWindow";
-
         LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 

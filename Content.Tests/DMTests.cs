@@ -144,8 +144,11 @@ namespace Content.Tests
             var watch = new Stopwatch();
             watch.Start();
 
+            // hack to hopefully force spawned calls to finish
+            var iterationsRemaining = 100;
+
             // Tick until our inner call has finished
-            while (!callTask.IsCompleted) {
+            while (!callTask.IsCompleted || iterationsRemaining-- > 0) {
                 _dreamMan.Update();
                 _taskManager.ProcessPendingTasks();
 

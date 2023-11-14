@@ -62,7 +62,7 @@ namespace OpenDreamRuntime {
 
             var codeCoverageOutputFile = _configManager.GetCVar(OpenDreamCVars.CodeCoverage);
             if (!String.IsNullOrWhiteSpace(codeCoverageOutputFile)) {
-                _debugManager.InitializeCoverage(codeCoverageOutputFile, Path.GetFullPath(Environment.CurrentDirectory));
+                _debugManager.InitializeCoverage(codeCoverageOutputFile);
             }
 
             int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);

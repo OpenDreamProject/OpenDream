@@ -48,7 +48,6 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     /// </summary>
     private ulong[][]? _coverageTracking;
     private string? _coverageOutputFile;
-    private string? _coverageInputDirectory;
 
     // Breakpoint storage
     private const string ExceptionFilterRuntimes = "runtimes";
@@ -180,7 +179,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         }
     }
 
-    public void InitializeCoverage(string outputFile, string inputDirectory) {
+    public void InitializeCoverage(string outputFile) {
         var allProcs = _objectTree.Procs;
         var coverageTracking = new ulong[allProcs.Count][];
         for(var i = 0; i < allProcs.Count; ++i) {
@@ -191,7 +190,6 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
         _coverageTracking = coverageTracking;
         _coverageOutputFile = outputFile;
-        _coverageInputDirectory = inputDirectory;
     }
 
     public void HandleInstruction(DMProcState state) {
@@ -935,7 +933,9 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
                         .ToArray(),
                 },
             },
-            sources = new string[] { _coverageInputDirectory! },
+            sources = new string[] { String.Empty },
+            timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds().ToString(),
+            version = "1.9"
         };
 
         var serializer = new XmlSerializer(schema.GetType());
@@ -945,12 +945,11 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
         _coverageTracking = null;
         _coverageOutputFile = null;
-        _coverageInputDirectory = null;
     }
 }
 
 public interface IDreamDebugManager {
-    public void InitializeCoverage(string outputFile, string inputDirectory);
+    public void InitializeCoverage(string outputFile);
     public void InitializeDebugging(int port);
     public void Update();
     public void Shutdown();

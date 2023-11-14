@@ -73,7 +73,7 @@ namespace Content.Tests
         }
 
         [Test, TestCaseSource(nameof(GetTests))]
-        public void TestFiles(string sourceFile, string coverageFile, string coverageDirectory, DMTestFlags testFlags) {
+        public void TestFiles(string sourceFile, string coverageFile, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
             TestContext.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
             try {
@@ -88,7 +88,7 @@ namespace Content.Tests
                 Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
                 Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
 
-                _debugManager.InitializeCoverage(coverageFile, coverageDirectory);
+                _debugManager.InitializeCoverage(coverageFile);
 
                 _dreamMan.StartWorld();
 
@@ -174,7 +174,6 @@ namespace Content.Tests
                 yield return new object[] {
                     sourceFile2,
                     Path.GetFullPath($"{sourceFile[..^2]}coverage.xml"),
-                    Path.GetFullPath(TestProject),
                     testFlags
                 };
             }

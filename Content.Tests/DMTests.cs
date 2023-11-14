@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Asynchronous;
@@ -29,6 +30,7 @@ namespace Content.Tests
         [Dependency] private readonly DreamManager _dreamMan = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
+        [Dependency] private readonly IDreamDebugManager _debugManager = default!;
 
         [Flags]
         public enum DMTestFlags {
@@ -71,7 +73,7 @@ namespace Content.Tests
         }
 
         [Test, TestCaseSource(nameof(GetTests))]
-        public void TestFiles(string sourceFile, DMTestFlags testFlags) {
+        public void TestFiles(string sourceFile, string coverageFile, string coverageDirectory, DMTestFlags testFlags) {
             string initialDirectory = Directory.GetCurrentDirectory();
             TestContext.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
             try {
@@ -85,9 +87,14 @@ namespace Content.Tests
 
                 Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
                 Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
+
+                _debugManager.InitializeCoverage(coverageFile, coverageDirectory);
+
                 _dreamMan.StartWorld();
 
                 (bool successfulRun, DreamValue? returned, Exception? exception) = RunTest();
+
+                _debugManager.Shutdown();
 
                 if (testFlags.HasFlag(DMTestFlags.NoReturn)) {
                     Assert.IsFalse(returned.HasValue, "proc returned unexpectedly");
@@ -163,6 +170,8 @@ namespace Content.Tests
 
                 yield return new object[] {
                     sourceFile2,
+                    Path.GetFullPath($"{sourceFile[..^2]}coverage.xml"),
+                    Path.GetFullPath(TestProject),
                     testFlags
                 };
             }

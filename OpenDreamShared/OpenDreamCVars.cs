@@ -24,5 +24,8 @@ namespace OpenDreamShared {
 
         public static readonly CVarDef<ushort> TopicPort =
             CVarDef.Create<ushort>("opendream.topic_port", 25567, CVar.SERVERONLY);
+
+        public static readonly CVarDef<string> CodeCoverage =
+            CVarDef.Create("opendream.code_coverage_file", string.Empty, CVar.SERVERONLY);
     }
 }

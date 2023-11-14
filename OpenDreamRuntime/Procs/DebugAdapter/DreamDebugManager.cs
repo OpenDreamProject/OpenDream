@@ -1,5 +1,8 @@
-using System.IO;
+﻿using System.IO;
 using System.Linq;
+using System.Xml;
+using System.Xml.Serialization;
+
 using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -38,6 +41,14 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         public int FrameId;
         public string? Granularity;
     }
+
+    // Coverage
+    /// <summary>
+    /// Map of Proc IDs to offsets + hit counts
+    /// </summary>
+    private ulong[][]? _coverageTracking;
+    private string? _coverageOutputFile;
+    private string? _coverageInputDirectory;
 
     // Breakpoint storage
     private const string ExceptionFilterRuntimes = "runtimes";
@@ -105,7 +116,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     // Lifecycle
-    public void Initialize(int port) {
+    public void InitializeDebugging(int port) {
         _sawmill = Logger.GetSawmill("opendream.debugger");
         _adapter = new DebugAdapter();
 
@@ -124,6 +135,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     public void Shutdown() {
         _breakpointIdCounter = 0;
         _adapter?.Shutdown();
+        WriteOutCoverage();
     }
 
     // Callbacks from the runtime
@@ -168,7 +180,25 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         }
     }
 
+    public void InitializeCoverage(string outputFile, string inputDirectory) {
+        var allProcs = _objectTree.Procs;
+        var coverageTracking = new ulong[allProcs.Count][];
+        for(var i = 0; i < allProcs.Count; ++i) {
+            if (allProcs[i] is DMProc dmProc) {
+                coverageTracking[i] = new ulong[dmProc.Bytecode.Length];
+            }
+        }
+
+        _coverageTracking = coverageTracking;
+        _coverageOutputFile = outputFile;
+        _coverageInputDirectory = inputDirectory;
+    }
+
     public void HandleInstruction(DMProcState state) {
+        if (_coverageTracking != null) {
+            ++_coverageTracking[state.Proc.Id][state.ProgramCounter];
+        }
+
         if (state.Thread.StepMode == null)
             return;
 
@@ -851,10 +881,77 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         _disassemblyProcs.TryGetValue((int)((ip2 & 0xffffffff00000000) >> 32), out var proc);
         return (proc, (uint)(ip2 & 0xffffffff));
     }
+
+    private void WriteOutCoverage() {
+        if (_coverageTracking == null)
+            return;
+
+        // break down raw data into human parsable
+        var sourceHits = new Dictionary<string, Dictionary<int, ulong>>();
+        for(var i = 0; i < _coverageTracking.Length; ++i) {
+            var opcodeCoverage = _coverageTracking[i];
+            if (opcodeCoverage == null
+                || _objectTree.Procs[i] is not DMProc proc) {
+                continue;
+            }
+
+            // TODO: eventually support branch conditions 💀
+            for (var code = 0; code < opcodeCoverage.Length; ++code) {
+                if (!proc.IsOnLineChange(code)) {
+                    // we only care about hits on the line's first opcode (until we support branching, if ever)
+                    continue;
+                }
+
+                var (source, line) = proc.GetSourceAtOffset(code);
+                if (!sourceHits.TryGetValue(source, out var lineMap)) {
+                    lineMap = new Dictionary<int, ulong>();
+                    sourceHits.Add(source, lineMap);
+                }
+
+                var lineHits = opcodeCoverage[code];
+                if(lineMap.TryGetValue(line, out var totalLineHits)) {
+                    lineMap[line] = totalLineHits + lineHits;
+                } else {
+                    lineMap.Add(line, lineHits);
+                }
+            }
+        }
+
+        var schema = new Coverage.coverage() {
+            packages = new Coverage.package[] {
+                new Coverage.package {
+                    name = String.Empty,
+                    classes = sourceHits
+                        .Select(sourceKvp => new Coverage.@class {
+                            filename = sourceKvp.Key,
+                            lines = sourceKvp
+                                .Value
+                                .Select(linesKvp => new Coverage.line {
+                                    number = linesKvp.Key.ToString(),
+                                    hits = linesKvp.Value.ToString(),
+                                })
+                                .ToArray(),
+                        })
+                        .ToArray(),
+                },
+            },
+            sources = new string[] { _coverageInputDirectory! },
+        };
+
+        var serializer = new XmlSerializer(schema.GetType());
+        using (var fileStream = new FileStream(_coverageOutputFile!, FileMode.Create, FileAccess.Write, FileShare.ReadWrite | FileShare.Delete)) {
+            serializer.Serialize(fileStream, schema);
+        }
+
+        _coverageTracking = null;
+        _coverageOutputFile = null;
+        _coverageInputDirectory = null;
+    }
 }
 
 public interface IDreamDebugManager {
-    public void Initialize(int port);
+    public void InitializeCoverage(string outputFile, string inputDirectory);
+    public void InitializeDebugging(int port);
     public void Update();
     public void Shutdown();
 

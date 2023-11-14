@@ -60,13 +60,18 @@ namespace OpenDreamRuntime {
         public override void PostInit() {
             _commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
 
+            var codeCoverageOutputFile = _configManager.GetCVar(OpenDreamCVars.CodeCoverage);
+            if (!String.IsNullOrWhiteSpace(codeCoverageOutputFile)) {
+                _debugManager.InitializeCoverage(codeCoverageOutputFile, Path.GetFullPath(Environment.CurrentDirectory));
+            }
+
             int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);
             if (debugAdapterPort == 0) {
                 _dreamManager.PreInitialize(_configManager.GetCVar<string>(OpenDreamCVars.JsonPath));
                 _dreamManager.StartWorld();
             } else {
                 // The debug manager is responsible for running _dreamManager.PreInitialize() and .StartWorld()
-                _debugManager.Initialize(debugAdapterPort);
+                _debugManager.InitializeDebugging(debugAdapterPort);
             }
         }
 

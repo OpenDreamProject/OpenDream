@@ -30,8 +30,13 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// Flushes all savefiles that have been marked as needing flushing. Basically just used to call Flush() between ticks instead of on every write.
     /// </summary>
     public static void FlushAllUpdates() {
+        var _sawmill = Logger.GetSawmill("opendream.res");
         foreach (DreamObjectSavefile savefile in _savefilesToFlush) {
-            savefile.Flush();
+            try {
+                savefile.Flush();
+            } catch (Exception e) {
+                _sawmill.Error($"Error flushing savefile {savefile.Resource.ResourcePath}: {e}");
+            }
         }
         _savefilesToFlush.Clear();
     }

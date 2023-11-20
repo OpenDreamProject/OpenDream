@@ -12,7 +12,7 @@
 /proc/REG_BETWEEN_BBTAG(x)
 	return "[REG_BBTAG(x)]([REG_NOTBB])[REG_BBTAG("/[x]")]"
 
-/world/proc/test_regex_bb(bbtag)
+/proc/test_regex_bb(bbtag)
 	var/regexp = regex(REG_BETWEEN_BBTAG(bbtag))
 
 	var/anti_tag = bbtag == "style" ? "span" : "style"

@@ -1,11 +1,12 @@
 ﻿using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Rendering;
 using Robust.Server.GameStates;
-using Robust.Server.Player;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Rendering {
     public sealed class ServerScreenOverlaySystem : SharedScreenOverlaySystem {
-        private readonly Dictionary<IPlayerSession, HashSet<EntityUid>> _sessionToScreenObjects = new();
+        private readonly Dictionary<ICommonSession, HashSet<EntityUid>> _sessionToScreenObjects = new();
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public override void Initialize() {
             SubscribeLocalEvent<ExpandPvsEvent>(HandleExpandPvsEvent);
@@ -18,16 +19,19 @@ namespace OpenDreamRuntime.Rendering {
             }
 
             objects.Add(screenObject.Entity);
-            RaiseNetworkEvent(new AddScreenObjectEvent(screenObject.Entity), connection.Session.ConnectedClient);
+            NetEntity ent = _entityManager.GetNetEntity(screenObject.Entity);
+            RaiseNetworkEvent(new AddScreenObjectEvent(ent), connection.Session.ConnectedClient);
         }
 
         public void RemoveScreenObject(DreamConnection connection, DreamObjectMovable screenObject) {
             _sessionToScreenObjects[connection.Session].Remove(screenObject.Entity);
-            RaiseNetworkEvent(new RemoveScreenObjectEvent(screenObject.Entity), connection.Session.ConnectedClient);
+            NetEntity ent = _entityManager.GetNetEntity(screenObject.Entity);
+            RaiseNetworkEvent(new RemoveScreenObjectEvent(ent), connection.Session.ConnectedClient);
         }
 
         private void HandleExpandPvsEvent(ref ExpandPvsEvent e) {
             if (_sessionToScreenObjects.TryGetValue(e.Session, out var objects)) {
+                e.Entities ??= new(objects.Count);
                 e.Entities.AddRange(objects);
             }
         }

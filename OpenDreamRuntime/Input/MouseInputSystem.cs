@@ -3,13 +3,14 @@ using System.Web;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Input;
-using Robust.Server.Player;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Input {
     internal sealed class MouseInputSystem : SharedMouseInputSystem {
         [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly DreamManager _dreamManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public override void Initialize() {
             base.Initialize();
@@ -20,7 +21,8 @@ namespace OpenDreamRuntime.Input {
         }
 
         private void OnEntityClicked(EntityClickedEvent e, EntitySessionEventArgs sessionEvent) {
-            if (!_atomManager.TryGetMovableFromEntity(e.EntityUid, out var atom))
+            EntityUid ent = _entityManager.GetEntity(e.NetEntity);
+            if (!_atomManager.TryGetMovableFromEntity(ent, out var atom))
                 return;
 
             HandleAtomClick(e, atom, sessionEvent);
@@ -41,7 +43,7 @@ namespace OpenDreamRuntime.Input {
         }
 
         private void HandleAtomClick(IAtomClickedEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {
-            IPlayerSession session = (IPlayerSession)sessionEvent.SenderSession;
+            ICommonSession session = sessionEvent.SenderSession;
             var connection = _dreamManager.GetConnectionBySession(session);
             var usr = connection.Mob;
 

@@ -176,7 +176,7 @@ internal sealed class VerbPanel : InfoPanel {
 
             verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
             verbButton.OnPressed += _ => {
-                EntitySystem.Get<DreamCommandSystem>().RunCommand(verbId);
+                _dreamInterface.RunCommand(verbId);
             };
 
             _grid.Children.Add(verbButton);

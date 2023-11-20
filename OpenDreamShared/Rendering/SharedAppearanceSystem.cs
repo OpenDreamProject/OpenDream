@@ -28,11 +28,11 @@ namespace OpenDreamShared.Rendering {
 
         [Serializable, NetSerializable]
         public sealed class AnimationEvent : EntityEventArgs {
-            public EntityUid Entity;
+            public NetEntity Entity;
             public int TargetAppearanceId;
             public TimeSpan Duration;
 
-            public AnimationEvent(EntityUid entity, int targetAppearanceId, TimeSpan duration) {
+            public AnimationEvent(NetEntity entity, int targetAppearanceId, TimeSpan duration) {
                 Entity = entity;
                 TargetAppearanceId = targetAppearanceId;
                 Duration = duration;

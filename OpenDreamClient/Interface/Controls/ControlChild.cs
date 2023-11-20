@@ -8,7 +8,6 @@ internal sealed class ControlChild : InterfaceControl {
     // todo: robust needs GridSplitter.
     // and a non-shit grid control.
 
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
 
     private ControlDescriptorChild ChildDescriptor => (ControlDescriptorChild)ElementDescriptor;
 
@@ -26,10 +25,10 @@ internal sealed class ControlChild : InterfaceControl {
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        var newLeftElement = ChildDescriptor.Left != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Left, out var leftWindow)
+        var newLeftElement = ChildDescriptor.Left != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left, out var leftWindow)
             ? leftWindow.UIElement
             : null;
-        var newRightElement = ChildDescriptor.Right != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Right, out var rightWindow)
+        var newRightElement = ChildDescriptor.Right != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right, out var rightWindow)
             ? rightWindow.UIElement
             : null;
 
@@ -65,13 +64,18 @@ internal sealed class ControlChild : InterfaceControl {
             _grid.Children.Add(_rightElement);
         }
 
+        if(_leftElement is not null)
+            _leftElement.SetPositionInParent(0);
+        if (_rightElement is not null)
+            _rightElement.SetPositionInParent(1);
+
         UpdateGrid();
     }
 
     public override void Shutdown() {
-        if (ChildDescriptor.Left != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Left, out var left))
+        if (ChildDescriptor.Left != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left, out var left))
             left.Shutdown();
-        if (ChildDescriptor.Right != null && _dreamInterface.Windows.TryGetValue(ChildDescriptor.Right, out var right))
+        if (ChildDescriptor.Right != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right, out var right))
             right.Shutdown();
     }
 

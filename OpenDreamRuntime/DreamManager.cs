@@ -78,13 +78,16 @@ namespace OpenDreamRuntime {
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
-            _dreamMapManager.InitializeAtoms(_compiledJson.Maps![0]);
+            _dreamMapManager.InitializeAtoms(_compiledJson.Maps);
 
             // Call world.New()
             WorldInstance.SpawnProc("New");
         }
 
         public void Shutdown() {
+            // TODO: Respect not calling parent and aborting shutdown
+            WorldInstance.Delete();
+            ShutdownConnectionManager();
             Initialized = false;
         }
 
@@ -110,11 +113,6 @@ namespace OpenDreamRuntime {
 
             if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash())) {
                 _sawmill.Error("Compiler opcode version does not match the runtime version!");
-            }
-
-            if (json.Maps == null || json.Maps.Count == 0) throw new ArgumentException("No maps were given");
-            if (json.Maps.Count > 1) {
-                _sawmill.Warning("Loading more than one map is not implemented, skipping additional maps");
             }
 
             _compiledJson = json;
@@ -146,8 +144,7 @@ namespace OpenDreamRuntime {
 
             Globals[GlobalNames.IndexOf("world")] = new DreamValue(WorldInstance);
 
-            // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
-            _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps[0]);
+            _dreamMapManager.LoadMaps(_compiledJson.Maps);
 
             _statusHost.SetMagicAczProvider(new DreamMagicAczProvider(
                 _dependencyCollection, rootPath, resources

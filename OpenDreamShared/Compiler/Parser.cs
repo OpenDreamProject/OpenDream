@@ -98,7 +98,7 @@ namespace OpenDreamShared.Compiler {
         /// </remarks>
         [AssertionMethod]
         protected void Error(string message, [AssertionCondition(AssertionConditionType.IS_TRUE)] bool throwException = true) {
-            CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken?.Location, message);
+            CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken.Location, message);
 
             if(Emissions.Count < MAX_EMISSIONS_RECORDED)
                 Emissions.Add(error);
@@ -112,7 +112,7 @@ namespace OpenDreamShared.Compiler {
         /// <remarks> This implementation on <see cref="Parser{SourceType}"/> does not make use of <see cref="WarningCode"/> <br/>
         /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
         /// </remarks>
-        protected void Warning(string message, Token token = null) {
+        protected void Warning(string message, Token? token = null) {
             token ??= _currentToken;
             Emissions.Add(new CompilerEmission(ErrorLevel.Warning, token?.Location, message));
         }

@@ -253,6 +253,15 @@ internal sealed class DreamViewOverlay : Overlay {
             renderTargetPlaceholder.Layer = current.Layer;
             renderTargetPlaceholder.RenderSource = current.RenderTarget;
             renderTargetPlaceholder.MouseOpacity = current.MouseOpacity;
+            if((current.AppearanceFlags & AppearanceFlags.PlaneMaster) != 0){ //Plane masters with render targets get special handling
+                renderTargetPlaceholder.TransformToApply = current.TransformToApply;
+                renderTargetPlaceholder.ColorToApply = current.ColorToApply;
+                renderTargetPlaceholder.ColorMatrixToApply = current.ColorMatrixToApply;
+                renderTargetPlaceholder.AlphaToApply = current.AlphaToApply;
+                renderTargetPlaceholder.BlendMode = current.BlendMode;
+            }
+            renderTargetPlaceholder.AppearanceFlags = current.AppearanceFlags;
+            current.AppearanceFlags = current.AppearanceFlags & ~AppearanceFlags.PlaneMaster; //only the placeholder should be marked as master
             result.Add(renderTargetPlaceholder);
         }
 
@@ -304,10 +313,11 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         foreach (var visContent in icon.Appearance.VisContents) {
-            if (!_spriteQuery.TryGetComponent(visContent, out var sprite))
+            EntityUid visContentEntity = _entityManager.GetEntity(visContent);
+            if (!_spriteQuery.TryGetComponent(visContentEntity, out var sprite))
                 continue;
 
-            ProcessIconComponents(sprite.Icon, position, visContent, false, ref tieBreaker, result, current, keepTogether);
+            ProcessIconComponents(sprite.Icon, position, visContentEntity, false, ref tieBreaker, result, current, keepTogether);
 
             // TODO: click uid should be set to current.uid again
             // TODO: vis_flags

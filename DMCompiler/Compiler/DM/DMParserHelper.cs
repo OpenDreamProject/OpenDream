@@ -138,7 +138,7 @@ namespace DMCompiler.Compiler.DM {
                                 List<Token> preprocTokens = new();
                                 Token preprocToken;
                                 do {
-                                    preprocToken = preprocLexer.GetNextToken();
+                                    preprocToken = preprocLexer.NextToken();
                                     preprocToken.Location = constantToken.Location;
                                     preprocTokens.Add(preprocToken);
                                 } while (preprocToken.Type != TokenType.EndOfFile);

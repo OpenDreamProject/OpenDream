@@ -18,6 +18,7 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         private DreamViewOverlay? _dreamViewOverlay;
         private ContextMenuPopup _contextMenu = default!;
@@ -87,7 +88,8 @@ namespace OpenDreamClient.Input {
 
             // TODO: Take icon transformations into account
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
-            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUid, screenLoc, middle, shift, ctrl, alt, iconPosition));
+            NetEntity ent = _entityManager.GetNetEntity(entity.ClickUid);
+            RaiseNetworkEvent(new EntityClickedEvent(ent, screenLoc, middle, shift, ctrl, alt, iconPosition));
             return true;
         }
 

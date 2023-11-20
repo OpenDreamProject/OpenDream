@@ -42,7 +42,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
         [ViewVariables] public List<int> Overlays = new();
         [ViewVariables] public List<int> Underlays = new();
-        [ViewVariables] public List<EntityUid> VisContents = new();
+        [ViewVariables] public List<NetEntity> VisContents = new();
         [ViewVariables] public List<DreamFilter> Filters = new();
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
         [ViewVariables] public float[] Transform = new float[6] {   1, 0,   // a d
@@ -72,7 +72,7 @@ namespace OpenDreamShared.Dream {
             MouseOpacity = appearance.MouseOpacity;
             Overlays = new List<int>(appearance.Overlays);
             Underlays = new List<int>(appearance.Underlays);
-            VisContents = new List<EntityUid>(appearance.VisContents);
+            VisContents = new List<NetEntity>(appearance.VisContents);
             Filters = new List<DreamFilter>(appearance.Filters);
             Override = appearance.Override;
 

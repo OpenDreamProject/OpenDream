@@ -3,6 +3,7 @@ using Robust.Server.Player;
 using Robust.Shared.Enums;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Rendering {
     public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
@@ -51,7 +52,7 @@ namespace OpenDreamRuntime.Rendering {
             return _appearanceToId.TryGetValue(appearance, out appearanceId);
         }
 
-        public void Animate(EntityUid entity, IconAppearance targetAppearance, TimeSpan duration) {
+        public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration) {
             int appearanceId = AddAppearance(targetAppearance);
 
             RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration));

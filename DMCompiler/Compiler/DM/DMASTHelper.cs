@@ -5,7 +5,6 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Reflection;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DM {

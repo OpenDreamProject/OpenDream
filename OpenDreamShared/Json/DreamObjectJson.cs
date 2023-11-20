@@ -6,10 +6,8 @@ namespace OpenDreamShared.Json {
         Type = 1,
         Proc = 2,
         List = 3,
-        ProcStub = 4,
-        VerbStub = 5,
-        PositiveInfinity = 6,
-        NegativeInfinity = 7
+        PositiveInfinity = 4,
+        NegativeInfinity = 5
     }
 
     public sealed class DreamTypeJson {
@@ -20,6 +18,8 @@ namespace OpenDreamShared.Json {
         public List<int> Verbs { get; set; }
         public Dictionary<string, object> Variables { get; set; }
         public Dictionary<string, int> GlobalVariables { get; set; }
+        public HashSet<string>? ConstVariables { get; set; }
+        public HashSet<string>? TmpVariables { get; set; }
     }
 
     public sealed class GlobalListJson {

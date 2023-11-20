@@ -1,10 +1,9 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
-using Robust.Shared.Players;
+using Robust.Shared.Player;
 using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace OpenDreamClient.Interface;
@@ -223,9 +222,9 @@ internal struct ParsedKeybind {
 }
 
 public sealed class InterfaceMacro : InterfaceElement {
-    private MacroDescriptor MacroDescriptor => (MacroDescriptor)ElementDescriptor;
-    private string Command => MacroDescriptor.Command;
+    public string Command => MacroDescriptor.Command;
 
+    private MacroDescriptor MacroDescriptor => (MacroDescriptor)ElementDescriptor;
     private readonly IEntitySystemManager _entitySystemManager;
     private readonly IUserInterfaceManager _uiManager;
     private readonly IInputCmdContext _inputContext;
@@ -292,14 +291,14 @@ public sealed class InterfaceMacro : InterfaceElement {
             return;
         }
 
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
-            string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
-            if (keyName == null)
-                return;
-            string command = Command.Replace("[[*]]", keyName);
-            commandSystem.RunCommand(command);
-            // args.Handle() omitted on purpose, in BYOND both the "specific" keybind and the ANY keybind are triggered
-        }
+
+        string? keyName = ParsedKeybind.KeyToKeyName(args.Key);
+        if (keyName == null)
+            return;
+        string command = Command.Replace("[[*]]", keyName);
+        _interfaceManager.RunCommand(command);
+        // args.Handle() omitted on purpose, in BYOND both the "specific" keybind and the ANY keybind are triggered
+
     }
 
     private void OnMacroPress(ICommonSession? session) {
@@ -308,26 +307,26 @@ public sealed class InterfaceMacro : InterfaceElement {
         if (_isRelease)
             return;
 
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
-            if (_isRepeating) {
-                commandSystem.StartRepeatingCommand(Command);
-            } else {
-                commandSystem.RunCommand(Command);
-            }
+
+        if (_isRepeating) {
+            _interfaceManager.StartRepeatingCommand(Command);
+        } else {
+            _interfaceManager.RunCommand(Command);
         }
+
     }
 
     private void OnMacroRelease(ICommonSession? session) {
         if (string.IsNullOrEmpty(Command))
             return;
 
-        if (_entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
-            if (_isRepeating) {
-                commandSystem.StopRepeatingCommand(Command);
-            } else if (_isRelease) {
-                commandSystem.RunCommand(Command);
-            }
+
+        if (_isRepeating) {
+            _interfaceManager.StopRepeatingCommand(Command);
+        } else if (_isRelease) {
+            _interfaceManager.RunCommand(Command);
         }
+
     }
 
     private static KeyBindingRegistration? CreateMacroBinding(BoundKeyFunction function, ParsedKeybind keybind) {

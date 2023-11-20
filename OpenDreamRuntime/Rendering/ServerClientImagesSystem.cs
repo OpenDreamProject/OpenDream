@@ -1,8 +1,5 @@
 ﻿using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Rendering;
-using OpenDreamShared.Dream;
-using Robust.Server.GameStates;
-using Robust.Server.Player;
 using OpenDreamRuntime.Objects;
 using Vector3 = Robust.Shared.Maths.Vector3;
 
@@ -27,7 +24,8 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         else if(loc is DreamObjectTurf turf)
             turfCoords = new Vector3(turf.X, turf.Y, turf.Z);
 
-        RaiseNetworkEvent(new AddClientImageEvent(locEntity, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
+        NetEntity ent = GetNetEntity(locEntity);
+        RaiseNetworkEvent(new AddClientImageEvent(ent, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
     }
 
     public void RemoveImageObject(DreamConnection connection, DreamObjectImage imageObject) {
@@ -46,6 +44,7 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
             turfCoords = new Vector3(turf.X, turf.Y, turf.Z);
 
 
-        RaiseNetworkEvent(new RemoveClientImageEvent(locEntity, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
+        NetEntity ent = GetNetEntity(locEntity);
+        RaiseNetworkEvent(new RemoveClientImageEvent(ent, turfCoords, imageAppearanceID), connection.Session.ConnectedClient);
     }
 }

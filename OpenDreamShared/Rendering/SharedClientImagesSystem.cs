@@ -1,5 +1,4 @@
-﻿using OpenDreamShared.Dream;
-using Robust.Shared.Analyzers;
+﻿using Robust.Shared.Analyzers;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
@@ -12,10 +11,10 @@ public class SharedClientImagesSystem : EntitySystem {
     [Serializable, NetSerializable]
     public sealed class AddClientImageEvent : EntityEventArgs {
         public Vector3 TurfCoords;
-        public EntityUid AttachedEntity; //if this is EntityUid.Invalid (ie, a turf) use the TurfCoords instead
+        public NetEntity AttachedEntity; //if this is NetEntity.Invalid (ie, a turf) use the TurfCoords instead
         public int ImageAppearance;
 
-        public AddClientImageEvent(EntityUid attachedEntity, Vector3 turfCoords, int imageAppearance) {
+        public AddClientImageEvent(NetEntity attachedEntity, Vector3 turfCoords, int imageAppearance) {
             TurfCoords = turfCoords;
             ImageAppearance = imageAppearance;
             AttachedEntity = attachedEntity;
@@ -25,10 +24,10 @@ public class SharedClientImagesSystem : EntitySystem {
     [Serializable, NetSerializable]
     public sealed class RemoveClientImageEvent : EntityEventArgs {
         public Vector3 TurfCoords;
-        public EntityUid AttachedEntity; //if this is EntityUid.Invalid (ie, a turf) use the TurfCoords instead
+        public NetEntity AttachedEntity; //if this is NetEntity.Invalid (ie, a turf) use the TurfCoords instead
         public int ImageAppearance;
 
-        public RemoveClientImageEvent(EntityUid attachedEntity, Vector3 turfCoords, int imageAppearance) {
+        public RemoveClientImageEvent(NetEntity attachedEntity, Vector3 turfCoords, int imageAppearance) {
             TurfCoords = turfCoords;
             ImageAppearance = imageAppearance;
             AttachedEntity = attachedEntity;

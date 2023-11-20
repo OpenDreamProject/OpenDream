@@ -106,6 +106,7 @@ namespace DMCompiler.Compiler.DM {
             Advance();
 
             int bracketNesting = 0;
+            bool bracketNestingString = false;
             StringBuilder? insideBrackets = null;
             StringFormatEncoder.FormatSuffix currentInterpolationType = StringFormatEncoder.InterpolationDefault;
             string usedPrefixMacro = null; // A string holding the name of the last prefix macro (\the, \a etc.) used, for error presentation poipoises
@@ -115,11 +116,13 @@ namespace DMCompiler.Compiler.DM {
 
                 if (bracketNesting > 0) {
                     insideBrackets!.Append(c); // should never be null
+                    if (c is '\"') bracketNestingString = !bracketNestingString;
                 }
 
                 switch (c) {
                     case '[':
                         bracketNesting++;
+                        bracketNestingString = false;
                         insideBrackets ??= new StringBuilder(tokenValue.Length - stringBuilder.Length);
                         interpolationValues ??= new List<DMASTExpression?>(1);
                         break;
@@ -167,7 +170,7 @@ namespace DMCompiler.Compiler.DM {
 
                         break;
                     }
-                    case '\\' when bracketNesting == 0: {
+                    case '\\' when bracketNesting == 0 || bracketNestingString: {
                         string escapeSequence = String.Empty;
 
                         if (i == tokenValue.Length) {
@@ -356,7 +359,10 @@ namespace DMCompiler.Compiler.DM {
                                 case "\\":
                                 case " ":
                                 case ".":
-                                    stringBuilder.Append(escapeSequence);
+                                    if (bracketNestingString)
+                                        insideBrackets!.Append(escapeSequence);
+                                    else
+                                        stringBuilder.Append(escapeSequence);
                                     break;
                                 default: //Unimplemented escape sequence
                                     Error("Invalid escape sequence \"\\" + escapeSequence + "\"");

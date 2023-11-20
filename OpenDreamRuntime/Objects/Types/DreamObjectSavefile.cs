@@ -25,12 +25,12 @@ public sealed class DreamObjectSavefile : DreamObject {
     //Temporary savefiles should be deleted when the DreamObjectSavefile is deleted. Temporary savefiles can be created by creating a new savefile datum with a null filename or an entry in the world's resource cache
     private bool _isTemporary = false;
 
-
+    private static ISawmill? _sawmill = null;
     /// <summary>
     /// Flushes all savefiles that have been marked as needing flushing. Basically just used to call Flush() between ticks instead of on every write.
     /// </summary>
     public static void FlushAllUpdates() {
-        var _sawmill = Logger.GetSawmill("opendream.res");
+        _sawmill ??= Logger.GetSawmill("opendream.res");
         foreach (DreamObjectSavefile savefile in _savefilesToFlush) {
             try {
                 savefile.Flush();
@@ -153,7 +153,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             throw new Exception($"Invalid savefile index {index}");
 
         if (CurrentDir.TryGetValue(entryName, out DreamValue entry)) {
-            return entry;
+            return entry; //TODO: This should be something like value.DMProc("Read", new DreamProcArguments(this)) for DreamObjects and a copy for everything else
         } else {
             return DreamValue.Null;
         }
@@ -163,7 +163,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         if (!index.TryGetValueAsString(out string? entryName))
             throw new Exception($"Invalid savefile index {index}");
 
-        CurrentDir[entryName] = value;
+        CurrentDir[entryName] = value; //TODO: This should be something like value.DMProc("Write", new DreamProcArguments(this)) for DreamObjects and a copy for everything else
         _savefilesToFlush.Add(this); //mark this as needing flushing
     }
 

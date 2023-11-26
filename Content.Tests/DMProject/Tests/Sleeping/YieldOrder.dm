@@ -49,9 +49,6 @@
 	world.log << "Inline:"
 	TestSequence(MODE_INLINE)
 
-	// test fails after this point
-	return
-
 	world.log << "Background:"
 	TestSequence(MODE_BACKGROUND)
 

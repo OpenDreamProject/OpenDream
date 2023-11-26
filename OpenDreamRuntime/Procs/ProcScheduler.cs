@@ -26,6 +26,8 @@ public sealed partial class ProcScheduler {
     private readonly Queue<AsyncNativeProc.State> _scheduled = new();
     private AsyncNativeProc.State? _current;
 
+    bool HasProcsQueued => _scheduled.Count > 0 || _deferredTasks.Count > 0;
+
     public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc) {
         async Task Foo() {
             state.Result = await taskFunc(state);
@@ -51,7 +53,7 @@ public sealed partial class ProcScheduler {
         // If a proc calls sleep(1) or such, it gets put into _deferredTasks.
         // When we drain the _deferredTasks lists, it'll indirectly schedule things into _scheduled again.
         // This should all happen synchronously (see above).
-        while (_scheduled.Count > 0 || _deferredTasks.Count > 0) {
+        while (HasProcsQueued) {
             while (_scheduled.TryDequeue(out _current)) {
                 _current.SafeResume();
             }

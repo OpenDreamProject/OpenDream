@@ -1703,20 +1703,12 @@ namespace OpenDreamRuntime.Procs {
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
 
-            //Negative delays mean the spawned code runs immediately
-            if (delayMilliseconds < 0) {
+            async void Wait() {
+                await state.ProcScheduler.CreateDelay(delay);
                 newContext.Resume();
-                // TODO: Does the rest of the proc get scheduled?
-                // Does the value of the delay mean anything?
-            } else {
-                async void Wait() {
-                    await state.ProcScheduler.CreateDelay(delay);
-                    newContext.Resume();
-                }
-
-                Wait();
             }
 
+            Wait();
             state.Jump(jumpTo);
             return ProcStatus.Continue;
         }

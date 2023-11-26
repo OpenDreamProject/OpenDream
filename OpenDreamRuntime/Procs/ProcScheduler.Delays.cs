@@ -40,12 +40,16 @@ public sealed partial class ProcScheduler {
     /// The amount of ticks to sleep.
     /// </param>
     public Task CreateDelayTicks(int ticks) {
+        // When the delay is <= zero, we should run again in the current tick.
+        // Now, BYOND apparently does have a difference between 0 and -1. See https://github.com/OpenDreamProject/OpenDream/issues/1262#issuecomment-1563663041
+        // They both delay execution and allow other sleeping procs in the current tick to run immediately.
+        // We achieve this by putting the proc on the _deferredTasks lists, so it can be immediately executed again.
+        if (ticks < 0 && !HasProcsQueued) {
+            // special case, only yields when there is more work to do
+            return Task.CompletedTask;
+        }
+
         if (ticks <= 0) {
-            // When the delay is <= zero, we should run again in the current tick.
-            // Now, BYOND apparently does have a difference between 0 and -1, but we're not quite sure what it is yet.
-            // This is "good enough" for now.
-            // They both delay execution and allow other sleeping procs in the current tick to run immediately.
-            // We achieve this by putting the proc on the _deferredTasks lists, so it can be immediately executed again.
 
             var defTcs = new TaskCompletionSource();
             _deferredTasks.Enqueue(defTcs);

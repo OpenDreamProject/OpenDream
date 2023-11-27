@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Asynchronous;
@@ -28,6 +29,7 @@ namespace Content.Tests
 
         [Dependency] private readonly DreamManager _dreamMan = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
+        [Dependency] private readonly ProcScheduler _procScheduler = default!;
         [Dependency] private readonly ITaskManager _taskManager = default!;
 
         [Flags]
@@ -138,7 +140,7 @@ namespace Content.Tests
             watch.Start();
 
             // Tick until our inner call has finished
-            while (!callTask.IsCompleted) {
+            while (!callTask.IsCompleted || _procScheduler.HasProcsQueued || _procScheduler.HasProcsSleeping) {
                 _dreamMan.Update();
                 _taskManager.ProcessPendingTasks();
 

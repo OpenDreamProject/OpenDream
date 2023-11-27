@@ -26,7 +26,7 @@ public sealed partial class ProcScheduler {
     private readonly Queue<AsyncNativeProc.State> _scheduled = new();
     private AsyncNativeProc.State? _current;
 
-    bool HasProcsQueued => _scheduled.Count > 0 || _deferredTasks.Count > 0;
+    public bool HasProcsQueued => _scheduled.Count > 0 || _deferredTasks.Count > 0;
 
     public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc) {
         async Task Foo() {

@@ -14,6 +14,8 @@ public sealed partial class ProcScheduler {
     // This is for deferred tasks that need to fire in the current tick.
     private readonly Queue<TaskCompletionSource> _deferredTasks = new();
 
+    public bool HasProcsSleeping => _tickers.Count > 0;
+
     /// <summary>
     /// Create a task that will delay by an amount of time, following the rules for <c>sleep</c> and <c>spawn</c>.
     /// </summary>

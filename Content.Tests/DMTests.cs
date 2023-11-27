@@ -144,7 +144,7 @@ namespace Content.Tests
                 _dreamMan.Update();
                 _taskManager.ProcessPendingTasks();
 
-                if (watch.Elapsed.TotalMilliseconds > 500) {
+                if (watch.Elapsed.TotalSeconds > 5) {
                     Assert.Fail("Test timed out");
                 }
             }

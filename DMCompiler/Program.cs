@@ -1,24 +1,19 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
-using OpenDreamShared.Compiler;
 using Robust.Shared.Utility;
 
 namespace DMCompiler {
-
-    struct Argument {
+    internal struct Argument {
         /// <summary> The text we found that's in the '--whatever' format. May be null if no such text was present.</summary>
         public string? Name;
         /// <summary> The value, either set in a '--whatever=whoever' format or just left by itself anonymously. May be null.</summary>
         public string? Value;
     }
 
-
-
-    class Program {
-        static void Main(string[] args) {
+    internal static class Program {
+        private static void Main(string[] args) {
             if (!TryParseArguments(args, out DMCompilerSettings settings)) {
                 Environment.Exit(1);
                 return;

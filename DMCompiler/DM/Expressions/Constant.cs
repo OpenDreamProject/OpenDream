@@ -3,6 +3,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 
@@ -364,24 +365,32 @@ namespace DMCompiler.DM.Expressions {
             // Treat backslashes as forward slashes on Linux
             filePath = filePath.Replace('\\', '/');
 
-            string? finalFilePath = null;
-
-            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files[0]) ?? "/";
+            var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
             if (string.IsNullOrEmpty(outputDir))
                 outputDir = "./";
 
+            string? finalFilePath = null;
+
             var fileName = System.IO.Path.GetFileName(filePath);
             var fileDir = System.IO.Path.GetDirectoryName(filePath) ?? string.Empty;
-            var directory = FindDirectory(outputDir, fileDir);
-            if (directory != null) {
-                // Perform a case-insensitive search for the file
-                finalFilePath = FindFile(directory, fileName);
+
+            // Search every defined FILE_DIR
+            foreach (string resourceDir in DMCompiler.ResourceDirectories) {
+                var directory = FindDirectory(resourceDir, fileDir);
+
+                if (directory != null) {
+                    // Perform a case-insensitive search for the file
+                    finalFilePath = FindFile(directory, fileName);
+
+                    if (finalFilePath != null)
+                        break;
+                }
             }
 
-            // Search relative to the source file if it wasn't in the project's directory
+            // Search relative to the source file if it wasn't in one of the FILE_DIRs
             if (finalFilePath == null) {
                 var sourceDir = System.IO.Path.Combine(outputDir, System.IO.Path.GetDirectoryName(Location.SourceFile) ?? string.Empty);
-                directory = FindDirectory(sourceDir, fileDir);
+                var directory = FindDirectory(sourceDir, fileDir);
 
                 if (directory != null)
                     finalFilePath = FindFile(directory, fileName);
@@ -503,10 +512,11 @@ namespace DMCompiler.DM.Expressions {
                     proc.PushProc(pathInfo.Value.Id);
                     break;
                 case PathType.ProcStub:
-                    proc.PushProcStub(pathInfo.Value.Id);
-                    break;
                 case PathType.VerbStub:
-                    proc.PushVerbStub(pathInfo.Value.Id);
+                    var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+
+                    // /datum/proc and /datum/verb just compile down to strings lmao
+                    proc.PushString($"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}");
                     break;
                 default:
                     DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
@@ -526,11 +536,17 @@ namespace DMCompiler.DM.Expressions {
                 return false;
             }
 
+            if (pathInfo.Value.Type is PathType.ProcStub or PathType.VerbStub) {
+                var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+
+                json = $"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}";
+                return true;
+            }
+
             JsonVariableType jsonType = pathInfo.Value.Type switch {
                 PathType.TypeReference => JsonVariableType.Type,
                 PathType.ProcReference => JsonVariableType.Proc,
-                PathType.ProcStub => JsonVariableType.ProcStub,
-                PathType.VerbStub => JsonVariableType.VerbStub
+                _ => throw new UnreachableException()
             };
 
             json = new Dictionary<string, object>() {

@@ -18,7 +18,6 @@ public class DreamObjectMovable : DreamObjectAtom {
     public int Z => (int)_transformComponent.MapID;
 
     private readonly TransformComponent _transformComponent;
-    private readonly MetaDataComponent _metaDataComponent;
 
     private DreamObjectAtom? _loc;
 
@@ -41,17 +40,9 @@ public class DreamObjectMovable : DreamObjectAtom {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
-        _metaDataComponent = EntityManager.GetComponent<MetaDataComponent>(Entity);
 
         objectDefinition.Variables["screen_loc"].TryGetValueAsString(out var screenLoc);
         ScreenLoc = screenLoc;
-
-        if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.Add(this);
-        else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.Add((DreamObjectMob)this);
-        else
-            AtomManager.Movables.Add(this);
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -62,14 +53,9 @@ public class DreamObjectMovable : DreamObjectAtom {
     }
 
     protected override void HandleDeletion() {
-        if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.RemoveSwap(AtomManager.Objects.IndexOf(this));
-        else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.RemoveSwap(AtomManager.Mobs.IndexOf((DreamObjectMob)this));
-        else
-            AtomManager.Movables.RemoveSwap(AtomManager.Movables.IndexOf(this));
-
+        WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);
+
         base.HandleDeletion();
     }
 
@@ -141,11 +127,11 @@ public class DreamObjectMovable : DreamObjectAtom {
                 base.SetVar(varName, value); // Let DreamObjectAtom do its own name/desc handling
 
                 if (varName == "name") {
-                    _metaDataComponent.EntityName = GetDisplayName();
+                    MetaDataSystem?.SetEntityName(Entity, GetDisplayName());
                 } else {
                     value.TryGetValueAsString(out string? valueStr);
 
-                    _metaDataComponent.EntityDescription = valueStr ?? string.Empty;
+                    MetaDataSystem?.SetEntityDescription(Entity, valueStr ?? string.Empty);
                 }
 
                 break;

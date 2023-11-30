@@ -325,7 +325,7 @@ namespace DMCompiler.Compiler.DM {
                     statement = new DMASTObjectDefinition(loc, _currentPath, null);
                 }
 
-                if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent && Current().Type != TokenType.DM_RightCurlyBracket) {
+                if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent && Current().Type != TokenType.DM_RightCurlyBracket && Current().Type != TokenType.EndOfFile) {
                     Error("Expected end of object statement");
                 }
 
@@ -2411,6 +2411,55 @@ namespace DMCompiler.Compiler.DM {
                         if (callParameters.Length != 1) Error("issaved() requires 1 argument");
 
                         return new DMASTIsSaved(identifier.Location, callParameters[0].Value);
+                    }
+                    case "sin": {
+                        if (callParameters.Length != 1) Error("sin() requires 1 argument");
+
+                        return new DMASTSin(identifier.Location, callParameters[0].Value);
+                    }
+                    case "cos": {
+                        if (callParameters.Length != 1) Error("cos() requires 1 argument");
+
+                        return new DMASTCos(identifier.Location, callParameters[0].Value);
+                    }
+                    case "tan": {
+                        if (callParameters.Length != 1) Error("tan() requires 1 argument");
+
+                        return new DMASTTan(identifier.Location, callParameters[0].Value);
+                    }
+                    case "arcsin": {
+                        if (callParameters.Length != 1) Error("arcsin() requires 1 argument");
+
+                        return new DMASTArcsin(identifier.Location, callParameters[0].Value);
+                    }
+                    case "arccos": {
+                        if (callParameters.Length != 1) Error("arccos() requires 1 argument");
+
+                        return new DMASTArccos(identifier.Location, callParameters[0].Value);
+                    }
+                    case "arctan": {
+                        if (callParameters.Length != 1 && callParameters.Length != 2)
+                            Error("arctan() requires 1 or 2 arguments");
+                        if (callParameters.Length == 1)
+                            return new DMASTArctan(identifier.Location, callParameters[0].Value);
+                        return new DMASTArctan2(identifier.Location, callParameters[0].Value, callParameters[1].Value);
+                    }
+                    case "sqrt": {
+                        if (callParameters.Length != 1) Error("sqrt() requires 1 argument");
+
+                        return new DMASTSqrt(identifier.Location, callParameters[0].Value);
+                    }
+                    case "log": {
+                        if (callParameters.Length != 1 && callParameters.Length != 2)
+                            Error("log() requires 1 or 2 arguments");
+                        if (callParameters.Length == 1)
+                            return new DMASTLog(identifier.Location, callParameters[0].Value, null);
+                        return new DMASTLog(identifier.Location, callParameters[1].Value, callParameters[0].Value);
+                    }
+                    case "abs": {
+                        if (callParameters.Length != 1) Error("abs() requires 1 argument");
+
+                        return new DMASTAbs(identifier.Location, callParameters[0].Value);
                     }
                     case "istype": {
                         if (callParameters.Length == 1) {

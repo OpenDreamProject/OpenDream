@@ -21,5 +21,8 @@ namespace OpenDreamShared {
 
         public static readonly CVarDef<string> WorldParams =
             CVarDef.Create("opendream.world_params", string.Empty, CVar.SERVERONLY);
+
+        public static readonly CVarDef<ushort> TopicPort =
+            CVarDef.Create<ushort>("opendream.topic_port", 25567, CVar.SERVERONLY);
     }
 }

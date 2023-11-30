@@ -98,6 +98,8 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
         copy._id = id;
+        foreach(var child in this.ControlDescriptors)
+            copy.ControlDescriptors.Add(serializationManager.CreateCopy(child, notNullableOverride: false));
         return copy;
     }
 
@@ -139,6 +141,12 @@ public sealed partial class ControlDescriptorInfo : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorMap : ControlDescriptor {
+    [DataField("on-show")]
+    public string? OnShowCommand;
+    [DataField("on-hide")]
+    public string? OnHideCommand;
+    [DataField("zoom-mode")]
+    public string ZoomMode = "normal";
 }
 
 public sealed partial class ControlDescriptorBrowser : ControlDescriptor {

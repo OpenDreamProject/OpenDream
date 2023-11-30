@@ -48,6 +48,14 @@ public sealed partial class MenuElementDescriptor : ElementDescriptor {
     [DataField("can-check")]
     public bool CanCheck { get; private set; }
 
+    [DataField("is-checked")]
+    public bool IsChecked { get; set; }
+
+    [DataField("group")]
+    public string? Group { get; private set; }
+    [DataField("index")]
+    public int Index { get; private set; }
+
     public MenuElementDescriptor WithCategory(ISerializationManager serialization, string category) {
         var copy = serialization.CreateCopy(this, notNullableOverride: true);
 

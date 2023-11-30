@@ -188,8 +188,10 @@ public sealed class DMFParser : Parser<char> {
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {
-            if (Check(TokenType.DMF_Period)) { // element.attribute=value
-                element = attributeToken.Text;
+            while(Check(TokenType.DMF_Period)) { // element.attribute=value
+                element ??= "";
+                if(element.Length > 0) element += ".";
+                element += attributeToken.Text;
                 attributeToken = Current();
 
                 if (!Check(_attributeTokenTypes)) {

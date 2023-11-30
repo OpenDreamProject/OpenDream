@@ -22,6 +22,14 @@ public class DreamObjectAtom : DreamObject {
         VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
         Verbs = new(ObjectTree, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
+
+        AtomManager.AddAtom(this);
+    }
+
+    protected override void HandleDeletion() {
+        AtomManager.RemoveAtom(this);
+
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

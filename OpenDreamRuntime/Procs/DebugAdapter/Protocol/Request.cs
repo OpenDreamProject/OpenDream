@@ -5,9 +5,9 @@ namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
 [Virtual]
 public class Request : ProtocolMessage {
-    [JsonPropertyName("command")] public string Command { get; set; }
+    [JsonPropertyName("command")] public required string Command { get; set; }
 
-    public Request() : base("request") { }
+    protected Request() : base("request") { }
 
     public static Request? DeserializeRequest(JsonDocument json) {
         Request? request = json.Deserialize<Request>();

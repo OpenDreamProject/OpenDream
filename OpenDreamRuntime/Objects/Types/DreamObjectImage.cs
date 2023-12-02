@@ -68,11 +68,6 @@ public sealed class DreamObjectImage : DreamObject {
     protected override bool TryGetVar(string varName, out DreamValue value) {
         // TODO: filters, transform
         switch(varName) {
-            case "appearance": {
-                IconAppearance appearanceCopy = new IconAppearance(Appearance!); // Return a copy
-                value = new(appearanceCopy);
-                return true;
-            }
             case "loc": {
                 value = new(_loc);
                 return true;
@@ -97,13 +92,12 @@ public sealed class DreamObjectImage : DreamObject {
 
     protected override void SetVar(string varName, DreamValue value) {
         switch (varName) {
-            case "appearance":
+            case "appearance": // Appearance var is mutable, don't use AtomManager.SetAppearanceVar()
                 if (!AtomManager.TryCreateAppearanceFrom(value, out var newAppearance))
                     return; // Ignore attempts to set an invalid appearance
 
                 // The dir does not get changed
-                var oldDir = Appearance!.Direction;
-                newAppearance.Direction = oldDir;
+                newAppearance.Direction = Appearance!.Direction;
 
                 Appearance = newAppearance;
                 break;

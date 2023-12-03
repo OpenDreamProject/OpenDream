@@ -436,7 +436,7 @@ public static class OpcodeMetadataCache {
         foreach (DreamProcOpcode opcode in Enum.GetValues(typeof(DreamProcOpcode))) {
             var field = typeof(DreamProcOpcode).GetField(opcode.ToString());
             var attribute = Attribute.GetCustomAttribute(field!, typeof(OpcodeMetadataAttribute));
-            var metadataAttribute = Unsafe.As<OpcodeMetadataAttribute>(attribute);
+            var metadataAttribute = (OpcodeMetadataAttribute)attribute;
             MetadataCache[(byte)opcode] = metadataAttribute?.Metadata ?? new OpcodeMetadata();
         }
     }

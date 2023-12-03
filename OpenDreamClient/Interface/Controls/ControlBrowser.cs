@@ -62,7 +62,7 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     public void SetFileSource(ResPath filepath, bool userData) {
-        _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
+        _webView.Url = (userData ? "usr://127.0.0.1/" : "res://127.0.0.1/") + filepath; // hostname must be the localhost IP for TGUI to work properly
     }
 
     private void BeforeBrowseHandler(IBeforeBrowseContext context) {

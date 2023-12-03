@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
-using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
@@ -215,7 +215,7 @@ namespace OpenDreamRuntime {
         private void RxAckLoadInterface(MsgAckLoadInterface message) {
             // Once the client loaded the interface, move them to in-game.
             var player = _playerManager.GetSessionByChannel(message.MsgChannel);
-            player.JoinGame();
+            _playerManager.JoinGame(player);
         }
 
         private DreamConnection ConnectionForChannel(INetChannel channel) {
@@ -262,7 +262,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public DreamConnection GetConnectionBySession(IPlayerSession session) {
+        public DreamConnection GetConnectionBySession(ICommonSession session) {
             return _connections[session.UserId];
         }
     }

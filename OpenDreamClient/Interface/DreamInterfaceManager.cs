@@ -1,9 +1,7 @@
 ﻿using System.IO;
 using System.Text;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
-using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
@@ -79,6 +77,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     private ViewRange _view = new(5);
 
     public void LoadInterfaceFromSource(string source) {
+        Reset();
+
         DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
         DMFParser dmfParser = new DMFParser(dmfLexer, _serializationManager);
 
@@ -112,14 +112,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void Initialize() {
-        _userInterfaceManager.MainViewport.Visible = false;
-
-        AvailableVerbs = Array.Empty<(string, string, string)>();
-        Windows.Clear();
-        Menus.Clear();
-        MacroSets.Clear();
-        _popupWindows.Clear();
-
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
@@ -649,6 +641,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
+    private void Reset() {
+        _userInterfaceManager.MainViewport.Visible = false;
+
+        AvailableVerbs = Array.Empty<(string, string, string)>();
+        Windows.Clear();
+        Menus.Clear();
+        MacroSets.Clear();
+        _popupWindows.Clear();
+    }
+
     private void LoadInterface(InterfaceDescriptor descriptor) {
         InterfaceDescriptor = descriptor;
 
@@ -683,7 +685,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         DefaultWindow.RegisterOnClydeWindow(_clyde.MainWindow);
         DefaultWindow.UIElement.Name = "MainWindow";
-
         LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 

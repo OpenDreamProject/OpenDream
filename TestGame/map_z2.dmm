@@ -1,7 +1,7 @@
 "a" = (/turf,/area)
 "b" = (/turf/blue,/area)
 
-(1,1,2) = {"
+(1,1,1) = {"
 baaaaaaaab
 abaaaaaaba
 aabaaaabaa

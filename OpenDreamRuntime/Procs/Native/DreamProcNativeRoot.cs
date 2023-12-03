@@ -1658,8 +1658,11 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!depthValue.TryGetValueAsInteger(out var depth))
                 depth = 5; //TODO: Default to world.view
 
-            foreach (DreamObjectMob mob in bundle.AtomManager.Mobs) {
-                if (mob.X == centerPos.X && mob.Y == centerPos.Y) continue;
+            foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+                var mob = (DreamObjectMob)atom;
+
+                if (mob.X == centerPos.X && mob.Y == centerPos.Y)
+                    continue;
 
                 if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
                     view.AddValue(new DreamValue(mob));
@@ -2853,7 +2856,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!depthValue.TryGetValueAsInteger(out var depth))
                 depth = 5; //TODO: Default to world.view
 
-            foreach (DreamObjectMob mob in bundle.AtomManager.Mobs) {
+            foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+                var mob = (DreamObjectMob)atom;
+
                 if (Math.Abs(centerX - mob.X) <= depth && Math.Abs(centerY - mob.Y) <= depth) {
                     view.AddValue(new DreamValue(mob));
                 }
@@ -2882,6 +2887,27 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_walk_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             //TODO: Implement walk_to()
 
+            return DreamValue.Null;
+        }
+
+        [DreamProc("walk_towards")]
+        [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("Lag", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("Speed", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_walk_towards(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            if (!bundle.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectMovable>(out var refAtom))
+                return DreamValue.Null;
+
+            if (!bundle.GetArgument(1, "Trg").TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom)) {
+                bundle.WalkManager.StopWalks(refAtom);
+                return DreamValue.Null;
+            }
+
+            bundle.GetArgument(2, "Lag").TryGetValueAsInteger(out var lag);
+            bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed); // TODO: Use this. Speed=0 uses Ref.step_size
+
+            bundle.WalkManager.StartWalkTowards(refAtom, trgAtom, lag);
             return DreamValue.Null;
         }
 

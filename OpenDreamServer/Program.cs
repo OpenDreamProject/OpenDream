@@ -2,10 +2,10 @@
 
 namespace OpenDreamServer;
 
-internal sealed class Program {
+internal static class Program {
     private static void Main(string[] args) {
         ContentStart.StartLibrary(args, new ServerOptions {
-            ContentModulePrefix = "OpenDream",
+            ContentModulePrefix = "OpenDream"
         });
     }
 }

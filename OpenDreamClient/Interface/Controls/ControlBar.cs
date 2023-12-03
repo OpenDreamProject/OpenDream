@@ -25,7 +25,7 @@ internal sealed class ControlBar : InterfaceControl {
             return;
         ControlDescriptorBar controlDescriptor = (ControlDescriptorBar)ElementDescriptor;
         if (controlDescriptor.OnChange != null) {
-            EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.OnChange);
+            _interfaceManager.RunCommand(controlDescriptor.OnChange);
         }
     }
 
@@ -84,7 +84,7 @@ internal sealed class ControlBar : InterfaceControl {
             }
             //on-change
             if (controlDescriptor.OnChange != null && _bar.Value != controlDescriptor.Value) {
-                EntitySystem.Get<DreamCommandSystem>().RunCommand(controlDescriptor.OnChange);
+                _interfaceManager.RunCommand(controlDescriptor.OnChange);
             }
             //bar-color
             _bar.TryGetStyleProperty<StyleBoxFlat>(ProgressBar.StylePropertyForeground , out var box);

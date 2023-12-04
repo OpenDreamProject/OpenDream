@@ -466,7 +466,7 @@ namespace DMCompiler.DM.Visitors {
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
                             var list = DMExpression.Create(_dmObject, _proc, exprIn.List);
 
-                            if (list is LValue {Path: { } path} && path.IsDescendantOf(DreamPath.Area)) {
+                            if (list is {Path: { } path} && path.IsDescendantOf(DreamPath.Area)) {
                                 DMCompiler.Emit(WarningCode.SuspiciousAreaContentsEnumeration, list.Location,
                                     "Enumerating over the contents of an area implicitly performs a world enumeration in BYOND");
                             }

@@ -103,9 +103,8 @@ public sealed class DreamObjectSavefile : DreamObject {
 
         if (CurrentDir.TryGetValue(entryName, out DreamValue entry)) {
             return entry;
-        } else {
-            return DreamValue.Null;
         }
+        return DreamValue.Null;
     }
 
     public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
@@ -121,5 +120,10 @@ public sealed class DreamObjectSavefile : DreamObject {
         if (!Directories.ContainsKey(_currentDirPath)) {
             Directories.Add(_currentDirPath, new SavefileDirectory());
         }
+    }
+
+    // << statement
+    public override void OperatorOutput(DreamValue value) {
+        CurrentDir[_currentDirPath] = value;
     }
 }

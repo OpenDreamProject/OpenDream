@@ -13,7 +13,7 @@
 	ASSERT(F["default_cube"] == null)
 
 /proc/RunTest()
-	var/savefile/S = new()
+	var/savefile/S = new("delme.sav")
 
 	var/datum/foo/F = new()
 	F.best_map = "pl_pier"
@@ -38,5 +38,6 @@
 	ASSERT(W.worst_map == null)
 	ASSERT(W.null_me == null)
 	
+	fdel("delme.sav")
 	return TRUE
    

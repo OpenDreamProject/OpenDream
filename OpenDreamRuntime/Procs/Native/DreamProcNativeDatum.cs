@@ -11,9 +11,7 @@ internal static class DreamProcNativeDatum {
         if (!probablySavefile.TryGetValueAsDreamObject(out DreamObjectSavefile? savefile) && savefile == null)
             return DreamValue.Null; // error out bad path or something
 
-        savefile.OperatorIndexAssign(new DreamValue("type"), src!.GetVariable("type"));
-
-        foreach (var key in src.GetVariableNames()) {
+        foreach (var key in src!.GetVariableNames()) {
             if (!src.IsSaved(key)) continue;
             var result = src.GetVariable(key);
 

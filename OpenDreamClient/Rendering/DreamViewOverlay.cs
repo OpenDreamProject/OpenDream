@@ -219,6 +219,9 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.Layer = parentIcon.Layer;
             else
                 current.Layer = icon.Appearance.Layer;
+
+            if (current.BlendMode == BlendMode.Default)
+                current.BlendMode = parentIcon.BlendMode;
         } else {
             current.ColorToApply = icon.Appearance.Color;
             current.ColorMatrixToApply = icon.Appearance.ColorMatrix;

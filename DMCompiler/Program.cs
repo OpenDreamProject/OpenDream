@@ -62,7 +62,7 @@ internal static class Program {
 
     private static void PrintHelp() {
         Console.WriteLine("DM Compiler for OpenDream");
-        Console.WriteLine("For more information please visit the (link here to be modified in the PR)");
+        Console.WriteLine("For more information please visit https://github.com/OpenDreamProject/OpenDream/wiki");
         Console.WriteLine("Usage: ./DMCompiler [options] [file].dme\n");
         Console.WriteLine("Options and arguments:");
         Console.WriteLine("--help                    : Show this help");

@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
@@ -7,7 +8,8 @@ namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 public class Request : ProtocolMessage {
     [JsonPropertyName("command")] public required string Command { get; set; }
 
-    protected Request() : base("request") { }
+    [UsedImplicitly]
+    public Request() : base("request") { }
 
     public static Request? DeserializeRequest(JsonDocument json) {
         Request? request = json.Deserialize<Request>();

@@ -6,7 +6,9 @@ using OpenDreamShared.Dream;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectSavefile : DreamObject {
-    public sealed class SavefileDirectory : Dictionary<string, DreamValue> { }
+
+    public sealed class SavefileDirectory : Dictionary<string, DreamValue> {
+    }
 
     public static readonly List<DreamObjectSavefile> Savefiles = new();
 
@@ -98,28 +100,41 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     public override DreamValue OperatorIndex(DreamValue index) {
-        if (!index.TryGetValueAsString(out string? entryName))
+        if (!index.TryGetValueAsString(out var entryName))
             throw new Exception($"Invalid savefile index {index}");
 
-        if (CurrentDir.TryGetValue(entryName, out DreamValue entry)) {
-            return entry;
-        } else {
-            return DreamValue.Null;
+        return CurrentDir.TryGetValue(entryName, out DreamValue entry) ? entry : DreamValue.Null;
+    }
+
+    /// <summary>
+    /// Add or assign value on the targeted dir (or on the current dir)
+    /// </summary>
+    /// <param name="index">Index or empty for current dir</param>
+    /// <param name="value"></param>
+    public void AddOrAssignValue(string? index, DreamValue value) {
+        if (value.TryGetValueAsDreamObject(out var ceralizableObject)) {
+            // pcall here
+            return;
         }
+        // no idx means its a << op TODO replace the original (idk how byond knows what is the original)
+        CurrentDir[index ?? $".{CurrentDir.Count-1}"] = value;
     }
 
     public override void OperatorIndexAssign(DreamValue index, DreamValue value) {
-        if (!index.TryGetValueAsString(out string? entryName))
+        if (!index.TryGetValueAsString(out var entryName))
             throw new Exception($"Invalid savefile index {index}");
 
-        CurrentDir[entryName] = value;
+        AddOrAssignValue(entryName, value);
+    }
+
+    // << statement
+    public override void OperatorOutput(DreamValue value) {
+        AddOrAssignValue(null, value);
     }
 
     private void ChangeDirectory(string path) {
         _currentDirPath = new DreamPath(_currentDirPath).AddToPath(path).PathString;
 
-        if (!Directories.ContainsKey(_currentDirPath)) {
-            Directories.Add(_currentDirPath, new SavefileDirectory());
-        }
+        Directories.TryAdd(_currentDirPath, new SavefileDirectory());
     }
 }

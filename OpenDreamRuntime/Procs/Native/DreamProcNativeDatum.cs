@@ -17,7 +17,7 @@ internal static class DreamProcNativeDatum {
 
             // skip if initial var is same
             if (src.ObjectDefinition.TryGetVariable(key, out var val) && val == result) continue;
-            savefile.OperatorIndexAssign(new DreamValue(key), result);
+            savefile.AddOrAssignValue(key, result);
         }
         return DreamValue.Null;
     }

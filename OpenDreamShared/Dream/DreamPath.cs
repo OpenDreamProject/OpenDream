@@ -137,6 +137,7 @@ namespace OpenDreamShared.Dream {
 
         public DreamPath AddToPath(string path) {
             string rawPath = PathString;
+            // TODO implement ../ operator for paths
 
             if (!rawPath.EndsWith('/') && !path.StartsWith('/')) {
                 path = '/' + path;

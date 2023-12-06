@@ -102,6 +102,15 @@ public class DreamObjectAtom : DreamObject {
             case "desc":
                 value.TryGetValueAsString(out Desc);
                 break;
+            case "appearance":
+                if (!AtomManager.TryCreateAppearanceFrom(value, out var newAppearance))
+                    return; // Ignore attempts to set an invalid appearance
+
+                // The dir does not get changed
+                newAppearance.Direction = AtomManager.MustGetAppearance(this)!.Direction;
+
+                AtomManager.SetAtomAppearance(this, newAppearance);
+                break;
             case "overlays": {
                 Overlays.Cut();
 

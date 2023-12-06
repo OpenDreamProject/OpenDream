@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Linq;
+using System.Text.Json;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
@@ -19,6 +20,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     public SavefileDirectory CurrentDir => Directories[_currentDirPath];
 
     private string _currentDirPath = "/";
+    private bool _dirJustChanged = true;
 
     public DreamObjectSavefile(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
 
@@ -116,7 +118,13 @@ public sealed class DreamObjectSavefile : DreamObject {
             // pcall here
             return;
         }
-        // no idx means its a << op TODO replace the original (idk how byond knows what is the original)
+        // no idx means its a << op
+        if (_dirJustChanged) {
+            _dirJustChanged = false;
+            foreach (var key in CurrentDir.Keys.Where(key => key.StartsWith("."))) {
+                CurrentDir.Remove(key);
+            }
+        }
         CurrentDir[index ?? $".{CurrentDir.Count-1}"] = value;
     }
 
@@ -136,5 +144,6 @@ public sealed class DreamObjectSavefile : DreamObject {
         _currentDirPath = new DreamPath(_currentDirPath).AddToPath(path).PathString;
 
         Directories.TryAdd(_currentDirPath, new SavefileDirectory());
+        _dirJustChanged = true;
     }
 }

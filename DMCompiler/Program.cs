@@ -29,7 +29,7 @@ namespace DMCompiler {
         private static IEnumerable<Argument> StringArrayToArguments(string[] args) {
             List<Argument> retArgs = new(args.Length);
             for(var i = 0; i < args.Length;i+=1) {
-                string firstString = args[i];
+                var firstString = args[i];
                 if(string.IsNullOrWhiteSpace(firstString)) // Is this possible? I don't even know. (IsNullOrWhiteSpace also checks if the string is empty, btw)
                     continue;
                 if(!firstString.StartsWith("--")) { // If it's a value-only argument
@@ -55,31 +55,53 @@ namespace DMCompiler {
         }
 
         private static bool HasValidDMExtension(string filename) {
-            string extension = Path.GetExtension(filename);
-            return !String.IsNullOrEmpty(extension) && (extension == ".dme" || extension == ".dm");
+            var extension = Path.GetExtension(filename);
+            return !string.IsNullOrEmpty(extension) && (extension == ".dme" || extension == ".dm");
+        }
+
+        private static void PrintHelp() {
+            Console.WriteLine("DM Compiler for OpenDream");
+            Console.WriteLine("For more information please visit the (link here to be modified in the PR)");
+            Console.WriteLine("Usage: ./DMCompiler [options] [file].dme");
+            Console.WriteLine();
+            Console.WriteLine("Options and arguments:");
+            Console.WriteLine("--help                    : Show this help");
+            Console.WriteLine("--version                 : Print the compiler version");
+            Console.WriteLine("--skip-bad-args           : Skip bad arguments");
+            Console.WriteLine("--suppress-unimplemented  : Do not log unimplemented functions");
+            Console.WriteLine("--dump-preprocessor       : ");
+            Console.WriteLine("--no-standard             : ");
+            Console.WriteLine("--define [KEY=VAL]        : Add extra defines to the compilation");
+            Console.WriteLine("--verbose                 : Show verbose output during compile");
+            Console.WriteLine("--notices-enabled         : Show notice output during compile");
+            Console.WriteLine("--pragma-config [file].dm : Configure the error/warning/notice/ignore level of compiler messages");
         }
 
         private static bool TryParseArguments(string[] args, out DMCompilerSettings settings) {
-            settings = new();
-            settings.Files = new List<string>();
+            settings = new DMCompilerSettings {
+                Files = new List<string>()
+            };
 
-            bool skipBad = args.Contains("--skip-bad-args");
+            var skipBad = args.Contains("--skip-bad-args");
 
             foreach (Argument arg in StringArrayToArguments(args)) {
                 switch (arg.Name) {
+                    case "help":
+                        PrintHelp();
+                        return false;
                     case "suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
                     case "dump-preprocessor": settings.DumpPreprocessor = true; break;
                     case "no-standard": settings.NoStandard = true; break;
                     case "verbose": settings.Verbose = true; break;
                     case "skip-bad-args": break;
                     case "define":
-                        string[] parts = arg.Value.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
-                        if (parts.Length == 0) {
+                        var parts = arg.Value?.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
+                        if (parts is { Length: 0 }) {
                             Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                             return false;
                         }
-                        DebugTools.Assert(parts.Length <= 2);
-                        settings.MacroDefines ??= new();
+                        DebugTools.Assert(parts is { Length: <= 2 });
+                        settings.MacroDefines ??= new Dictionary<string, string>();
                         settings.MacroDefines[parts[0]] = parts.Length > 1 ? parts[1] : "";
                         break;
                     case "wall":
@@ -87,16 +109,16 @@ namespace DMCompiler {
                         settings.NoticesEnabled = true;
                         break;
                     case "pragma-config": {
-                            if(arg.Value is null || !HasValidDMExtension(arg.Value)) {
-                                if(skipBad) {
-                                    DMCompiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
-                                    continue;
-                                }
-                                Console.WriteLine("Compiler arg 'pragma-config' requires filename of valid DM file");
-                                return false;
+                        if(arg.Value is null || !HasValidDMExtension(arg.Value)) {
+                            if(skipBad) {
+                                DMCompiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
+                                continue;
                             }
-                            settings.PragmaFileOverride = arg.Value;
-                            break;
+                            Console.WriteLine("Compiler arg 'pragma-config' requires filename of valid DM file");
+                            return false;
+                        }
+                        settings.PragmaFileOverride = arg.Value;
+                        break;
                     }
                     case "version": {
                         if(arg.Value is null) {
@@ -129,7 +151,7 @@ namespace DMCompiler {
                             settings.Files.Add(arg.Value);
                             break;
                         }
-                        if(skipBad) {
+                        if (skipBad) {
                             DMCompiler.ForcedWarning($"Invalid compiler arg '{arg.Value}', skipping");
                         } else {
                             Console.WriteLine($"Invalid arg '{arg}'");
@@ -142,22 +164,21 @@ namespace DMCompiler {
                         if (skipBad) {
                             DMCompiler.ForcedWarning($"Unknown compiler arg '{arg.Name}', skipping");
                             break;
-                        } else {
-                            Console.WriteLine($"Unknown arg '{arg}'");
-                            return false;
                         }
+
+                        Console.WriteLine($"Unknown arg '{arg}'");
+                        return false;
                     }
                 }
             }
 
-            if (settings.Files.Count == 0)
-            {
-                Console.WriteLine("At least one DME or DM file must be provided as an argument");
+            if (settings.Files.Count == 0) {
+                PrintHelp();
                 return false;
-            } else {
-                foreach(var file in settings.Files) {
-                    Console.WriteLine($"Compiling {Path.GetFileName(file)} on {settings.DMVersion}.{settings.DMBuild}");
-                }
+            }
+
+            foreach(var file in settings.Files) {
+                Console.WriteLine($"Compiling {Path.GetFileName(file)} on {settings.DMVersion}.{settings.DMBuild}");
             }
 
             return true;

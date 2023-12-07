@@ -66,11 +66,11 @@ internal static class Program {
         Console.WriteLine("Usage: ./DMCompiler [options] [file].dme\n");
         Console.WriteLine("Options and arguments:");
         Console.WriteLine("--help                    : Show this help");
-        Console.WriteLine("--version                 : Print the compiler version");
-        Console.WriteLine("--skip-bad-args           : ");
-        Console.WriteLine("--suppress-unimplemented  : Do not log about unimplemented functions in OpenDream");
-        Console.WriteLine("--dump-preprocessor       : ");
-        Console.WriteLine("--no-standard             : ");
+        Console.WriteLine("--version [VER].[BUILD]   : Used to set the DM_VERSION and DM_BUILD macros");
+        Console.WriteLine("--skip-bad-args           : Skip arguments the compiler doesn't recognize");
+        Console.WriteLine("--suppress-unimplemented  : Do not warn about unimplemented proc and var uses");
+        Console.WriteLine("--dump-preprocessor       : This saves the result of preprocessing (#include, #if, defines, etc) in a file called preprocessor_dump.dm beside the given DME file.");
+        Console.WriteLine("--no-standard             : This disables objects and procs that are usually built-into every DM program by not including DMStandard.dm.");
         Console.WriteLine("--define [KEY=VAL]        : Add extra defines to the compilation");
         Console.WriteLine("--verbose                 : Show verbose output during compile");
         Console.WriteLine("--notices-enabled         : Show notice output during compile");

@@ -45,7 +45,6 @@ namespace OpenDreamShared.Compiler {
         PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
         SuspiciousMatrixCall = 2207, // Calling matrix() with seemingly the wrong arguments
         FallbackBuiltinArgument = 2208, // A builtin (sin(), cos(), etc) with an invalid/fallback argument
-        SuspiciousAreaContentsEnumeration = 2209, // See https://github.com/OpenDreamProject/OpenDream/issues/1003
         MalformedRange = 2300,
         InvalidRange = 2301,
         InvalidSetStatement = 2302,
@@ -57,7 +56,8 @@ namespace OpenDreamShared.Compiler {
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,
         EmptyProc = 3101,
-        UnsafeClientAccess = 3200
+        UnsafeClientAccess = 3200,
+        SuspiciousAreaEnumeration = 3201 // See https://github.com/OpenDreamProject/OpenDream/issues/1003
 
         // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     }

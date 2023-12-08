@@ -20,7 +20,7 @@
 #pragma PointlessBuiltinCall warning
 #pragma SuspiciousMatrixCall warning
 #pragma FallbackBuiltinArgument warning
-#pragma SuspiciousAreaContentsEnumeration warning
+#pragma SuspiciousAreaEnumeration warning
 #pragma MalformedRange warning
 #pragma InvalidRange error
 #pragma InvalidSetStatement error

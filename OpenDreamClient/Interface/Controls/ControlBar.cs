@@ -1,3 +1,4 @@
+using System.Globalization;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
@@ -87,11 +88,16 @@ internal sealed class ControlBar : InterfaceControl {
     }
 
     private void OnValueChanged(Robust.Client.UserInterface.Controls.Range range) {
-        if (_slider is not null && _slider.Grabbed) //don't run while you're still sliding, only after
-            return;
+        //don't run while you're still sliding, only after
+        // TODO: RT doesn't update Grabbed until after OnValueChanged, fix that
+        //if (_slider is not null && _slider.Grabbed)
+        //    return;
 
         if (BarDescriptor.OnChange != null) {
-            _interfaceManager.RunCommand(BarDescriptor.OnChange);
+            var valueReplaced =
+                BarDescriptor.OnChange.Replace("[[*]]", range.Value.ToString(CultureInfo.InvariantCulture));
+
+            _interfaceManager.RunCommand(valueReplaced);
         }
     }
 

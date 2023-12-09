@@ -10,51 +10,34 @@ internal sealed class ControlBar : InterfaceControl {
     private Slider? _slider;
     private BoxContainer _container = default!; // Created by base constructor
 
+    private ControlDescriptorBar BarDescriptor => (ControlDescriptorBar)ElementDescriptor;
+
     public ControlBar(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) {
     }
 
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
-        OnContainerResized(); //most of the actual logic needs to go here anyway, so lets just shove it all in there
-    }
 
-    private void OnValueChanged(Robust.Client.UserInterface.Controls.Range range) {
-        if (_slider is not null && _slider.Grabbed) //don't run while you're still sliding, only after
-            return;
+        //width
+        float barWidth = BarDescriptor.Width ?? 10f;
 
-        ControlDescriptorBar controlDescriptor = (ControlDescriptorBar)ElementDescriptor;
-        if (controlDescriptor.OnChange != null) {
-            _interfaceManager.RunCommand(controlDescriptor.OnChange);
-        }
-    }
-
-
-    protected override Control CreateUIElement() {
-        _container = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Vertical };
-        _container.OnResized += OnContainerResized;
-        return _container;
-    }
-
-    private void OnContainerResized() {
-        ControlDescriptorBar controlDescriptor = (ControlDescriptorBar)ElementDescriptor;
         //TODO dir - these both need RT level changes
         //TODO angles
 
-        //width
-        float barWidth = controlDescriptor.Width ?? 10f;
-        if (barWidth == 0)
-            barWidth = _container.Size.Y;
-
         //is-slider
-        if (controlDescriptor.IsSlider) {
+        if (BarDescriptor.IsSlider) {
             if (_slider is null) {
                 _slider = new Slider {
                     MaxValue = 100,
                     MinValue = 0,
                     Margin = new Thickness(4),
                     HorizontalExpand = true,
-                    MinHeight = barWidth
+                    VerticalExpand = (barWidth == 0f),
+                    MinHeight = barWidth,
+                    Value = BarDescriptor.Value ?? 0.0f
                 };
+
+                _slider.OnValueChanged += OnValueChanged;
 
                 if (_bar is not null) {
                     _container.RemoveChild(_bar);
@@ -63,19 +46,13 @@ internal sealed class ControlBar : InterfaceControl {
 
                 _container.AddChild(_slider);
             } else {
-                _slider.SetHeight = barWidth;
+                _slider.Value = BarDescriptor.Value ?? 0.0f;
             }
 
-            //value
-            _slider.Value = controlDescriptor.Value ?? 0.0f;
-            //on-change
-            _slider.OnValueChanged += OnValueChanged;
             //bar-color
-            _slider.TryGetStyleProperty<StyleBox>(Slider.StylePropertyGrabber, out var box);
-            if (box is not null) {
-                StyleBoxFlat boxFlat = (StyleBoxFlat)box;
-                boxFlat.BackgroundColor = controlDescriptor.BarColor ?? Color.Transparent;
-                _slider.GrabberStyleBoxOverride = boxFlat;
+            if (_slider.TryGetStyleProperty<StyleBoxFlat>(Slider.StylePropertyGrabber, out var box)) {
+                box.BackgroundColor = BarDescriptor.BarColor ?? Color.Transparent;
+                _slider.GrabberStyleBoxOverride = box;
             }
         } else {
             if (_bar is null) {
@@ -84,8 +61,12 @@ internal sealed class ControlBar : InterfaceControl {
                     MinValue = 0,
                     Margin = new Thickness(4),
                     HorizontalExpand = true,
-                    MinHeight = barWidth
+                    VerticalExpand = (barWidth == 0f),
+                    MinHeight = barWidth,
+                    Value = BarDescriptor.Value ?? 0.0f
                 };
+
+                _bar.OnValueChanged += OnValueChanged;
 
                 if (_slider is not null) {
                     _container.RemoveChild(_slider);
@@ -94,22 +75,28 @@ internal sealed class ControlBar : InterfaceControl {
 
                 _container.AddChild(_bar);
             } else {
-                _bar.SetHeight = barWidth;
-            }
-
-            //on-change
-            if (controlDescriptor.OnChange != null && _bar.Value != controlDescriptor.Value) {
-                _interfaceManager.RunCommand(controlDescriptor.OnChange);
+                _bar.Value = BarDescriptor.Value ?? 0.0f;
             }
 
             //bar-color
             if (_bar.TryGetStyleProperty<StyleBoxFlat>(ProgressBar.StylePropertyForeground, out var box)) {
-                box.BackgroundColor = controlDescriptor.BarColor ?? Color.Transparent;
+                box.BackgroundColor = BarDescriptor.BarColor ?? Color.Transparent;
                 _bar.ForegroundStyleBoxOverride = box;
             }
-
-            //value
-            _bar.Value = controlDescriptor.Value ?? 0.0f;
         }
+    }
+
+    private void OnValueChanged(Robust.Client.UserInterface.Controls.Range range) {
+        if (_slider is not null && _slider.Grabbed) //don't run while you're still sliding, only after
+            return;
+
+        if (BarDescriptor.OnChange != null) {
+            _interfaceManager.RunCommand(BarDescriptor.OnChange);
+        }
+    }
+
+    protected override Control CreateUIElement() {
+        _container = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Vertical };
+        return _container;
     }
 }

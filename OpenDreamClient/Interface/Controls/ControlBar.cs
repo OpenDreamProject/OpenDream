@@ -8,7 +8,7 @@ namespace OpenDreamClient.Interface.Controls;
 internal sealed class ControlBar : InterfaceControl {
     private ProgressBar? _bar;
     private Slider? _slider;
-    private BoxContainer _container = default!; // Created by base constructor
+    private Control _container = default!; // Created by base constructor
 
     private ControlDescriptorBar BarDescriptor => (ControlDescriptorBar)ElementDescriptor;
 
@@ -96,7 +96,7 @@ internal sealed class ControlBar : InterfaceControl {
     }
 
     protected override Control CreateUIElement() {
-        _container = new BoxContainer { Orientation = BoxContainer.LayoutOrientation.Vertical };
+        _container = new Control();
         return _container;
     }
 }

@@ -114,28 +114,33 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <param name="index">Index or empty for current dir</param>
     /// <param name="value"></param>
     public void AddOrAssignValue(string? index, DreamValue value) {
-        // byond objects/datums
-        if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
-            var workingDir = index ?? $".{CurrentDir.Count-1}";
-            if (index != null) {
-                workingDir += "/.0";
-            }
-
-            ChangeDirectory(workingDir);
-            if (index != null) {
-                AddOrAssignValue("type", dreamObject.GetVariable("type"));
-                dreamObject.GetProc("Write").Spawn(dreamObject, new DreamProcArguments(new DreamValue(this)));
-            }
-            ChangeDirectory("../");
-            return;
-        }
-
         if (_dirJustChanged) {
+            // when the dir changes, keys gets nuked when we write something
             _dirJustChanged = false;
             foreach (var key in CurrentDir.Keys.Where(key => key.StartsWith("."))) {
                 CurrentDir.Remove(key);
             }
         }
+
+        // byond objects/datums
+        if (value.TryGetValueAsDreamObject(out var dreamObject) && dreamObject != null) {
+            var workingDir = index ?? $".{CurrentDir.Count-1}";
+            if (index != null && index != ".") {
+                workingDir += "/.0";
+            }
+
+            // ExportText should output IF no idx
+            // . = object(.0)
+            // .0
+            //     type=/datum/mytype
+            //     (other values written by Write)
+            ChangeDirectory(workingDir);
+            AddOrAssignValue("type", dreamObject.GetVariable("type"));
+            dreamObject.GetProc("Write").Spawn(dreamObject, new DreamProcArguments(new DreamValue(this)));
+            ChangeDirectory("../");
+            return;
+        }
+
         CurrentDir[index ?? $".{CurrentDir.Count-1}"] = value;
     }
 

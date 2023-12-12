@@ -2266,7 +2266,8 @@ namespace DMCompiler.Compiler.DM {
                         case TokenType.DM_Period:
                         case TokenType.DM_QuestionPeriod:
                         case TokenType.DM_Colon:
-                        case TokenType.DM_QuestionColon: {
+                        case TokenType.DM_QuestionColon:
+                        case TokenType.DM_DoubleColon: {
                                 DMASTIdentifier identifier = Identifier();
 
                                 operation.Kind = token.Type switch {
@@ -2274,6 +2275,7 @@ namespace DMCompiler.Compiler.DM {
                                     TokenType.DM_QuestionPeriod => DMASTDereference.OperationKind.FieldSafe,
                                     TokenType.DM_Colon => DMASTDereference.OperationKind.FieldSearch,
                                     TokenType.DM_QuestionColon => DMASTDereference.OperationKind.FieldSafeSearch,
+                                    TokenType.DM_DoubleColon => DMASTDereference.OperationKind.FieldStatic,
                                     _ => throw new InvalidOperationException(),
                                 };
 
@@ -2335,6 +2337,7 @@ namespace DMCompiler.Compiler.DM {
 
                                 case DMASTDereference.OperationKind.Index:
                                 case DMASTDereference.OperationKind.IndexSafe:
+                                case DMASTDereference.OperationKind.FieldStatic:
                                     Error("attempt to call an invalid l-value");
                                     return null;
 

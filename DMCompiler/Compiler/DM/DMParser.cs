@@ -457,6 +457,16 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTIdentifier? Identifier() {
             Token token = Current();
+
+            if (Check(TokenType.DM_DoubleColon)) {
+                token = Current();
+                if (!Check(IdentifierTypes)) {
+                    Error(WarningCode.BadExpression, "Global identifier expected");
+                    return null;
+                }
+                return new DMASTGlobalIdentifier(token.Location, token.Text);
+            }
+
             return Check(IdentifierTypes) ? new DMASTIdentifier(token.Location, token.Text) : null;
         }
 

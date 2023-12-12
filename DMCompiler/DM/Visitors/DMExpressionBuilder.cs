@@ -1,7 +1,7 @@
 using System;
+using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
 
@@ -25,7 +25,7 @@ internal static class DMExpressionBuilder {
         switch (expression) {
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
-            case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
+            case not DMASTGlobalIdentifier and DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
             case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
@@ -380,14 +380,14 @@ internal static class DMExpressionBuilder {
         if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
             int? globalId = dmObject?.GetGlobalVariableId(name);
             if (globalId != null) {
-                return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type,
-                    globalId.Value);
+                return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
             } else if (name == "vars") {
                 return new GlobalVars(globalIdentifier.Location);
             }
         }
 
-        throw new CompileErrorException(globalIdentifier.Location, $"Unknown global \"{name}\"");
+        DMCompiler.Emit(WarningCode.ItemDoesntExist, globalIdentifier.Location, $"Unknown global \"{name}\"");
+        return new Null(globalIdentifier.Location);
     }
 
     private static DMExpression BuildCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier, DMObject dmObject) {

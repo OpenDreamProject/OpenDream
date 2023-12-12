@@ -228,6 +228,7 @@ public sealed class DMLexer : TokenLexer {
                             case ":=": token = CreateToken(TokenType.DM_AssignInto, c); break;
                             case "[]": token = CreateToken(TokenType.DM_DoubleSquareBracket, c); break;
                             case "[]=": token = CreateToken(TokenType.DM_DoubleSquareBracketEquals, c); break;
+                            case "::": token = CreateToken(TokenType.DM_DoubleColon, c); break;
                             default: token = CreateToken(TokenType.Error, c, $"Invalid punctuator token '{c}'"); break;
                         }
 

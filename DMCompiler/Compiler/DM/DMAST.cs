@@ -2700,6 +2700,7 @@ namespace DMCompiler.Compiler.DM {
             FieldSafe, // x?.y
             FieldSearch, // x:y
             FieldSafeSearch, // x?:y
+            FieldScope, // x::y
 
             Index, // x[y]
             IndexSafe, // x?[y]

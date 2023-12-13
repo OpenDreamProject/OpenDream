@@ -115,7 +115,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         CurrentDir[entryName] = value;
     }
 
-    private void ChangeDirectory(string path) {
+    public void ChangeDirectory(string path) {
         _currentDirPath = new DreamPath(_currentDirPath).AddToPath(path).PathString;
 
         if (!Directories.ContainsKey(_currentDirPath)) {

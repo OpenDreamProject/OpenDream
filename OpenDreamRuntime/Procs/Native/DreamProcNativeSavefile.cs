@@ -16,17 +16,36 @@ internal static class DreamProcNativeSavefile {
         DreamValue path = bundle.GetArgument(0, "path");
         DreamValue file = bundle.GetArgument(1, "file");
 
-        if (!path.TryGetValueAsString(out var pathStr) || !file.IsNull) {
-            throw new NotImplementedException("General support for ExportText() is not implemented");
+        if(!path.IsNull && path.TryGetValueAsString(out var pathStr)) { //invalid path values are just ignored in BYOND
+            savefile.ChangeDirectory(pathStr);
         }
 
-        // Treat pathStr as the name of a value in the current dir, as that's how icon2base64() uses it
-        if (!savefile.CurrentDir.TryGetValue(pathStr, out var exportValue)) {
-            throw new NotImplementedException("General support for ExportText() is not implemented");
-        }
+        string result = "";
+        foreach (var (key, value) in savefile.CurrentDir) {
+            if(value.IsNull)
+                result += $"{key} = null\n";
+            else {
+                switch(value.Type) {
+                    case DreamValue.DreamValueType.String:
+                        result += $"{key} = \"{value.MustGetValueAsString()}\"\n";
+                        break;
+                    case DreamValue.DreamValueType.Float:
+                        result += $"{key} = {value.MustGetValueAsFloat()}\n";
+                        break;
+                    case DreamValue.DreamValueType.DreamResource:
+                        result += $"{key} = {Convert.ToBase64String(value.MustGetValueAsDreamResource().ResourceData!)}\n";
+                        break;
+                    case DreamValue.DreamValueType.DreamObject:
+                        if (value.TryGetValueAsDreamObject<DreamObjectIcon>(out _) && bundle.ResourceManager.TryLoadIcon(value, out var icon))
+                            result += $"{key} = {Convert.ToBase64String(icon.ResourceData!)}\n";
+                        else
+                            result += $"{key} = {value.MustGetValueAsDreamObject()}\n";
+                        break;
+                    default:
+                        throw new NotImplementedException($"Unhandled type {key} = {value.Stringify()} in ExportText()");
+                }
+            }
 
-        if (!bundle.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
-            throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
         var base64 = Convert.ToBase64String(icon.ResourceData);

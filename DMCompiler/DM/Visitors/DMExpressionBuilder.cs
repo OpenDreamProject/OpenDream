@@ -591,7 +591,8 @@ internal static class DMExpressionBuilder {
             }
             switch (operation.Kind) {
                 case DMASTDereference.OperationKind.Field:
-                case DMASTDereference.OperationKind.FieldSafe: {
+                case DMASTDereference.OperationKind.FieldSafe:
+                case DMASTDereference.OperationKind.FieldStatic: {
                     string field = astOperation.Identifier.Identifier;
 
                     if (prevPath == null) {
@@ -604,15 +605,7 @@ internal static class DMExpressionBuilder {
                     }
 
                     DMVariable? property = fromObject.GetVariable(field);
-                    if (property != null) {
-                        operation.Identifier = field;
-                        operation.GlobalId = null;
-                        operation.Path = property.Type;
-                        if (operation.Kind == DMASTDereference.OperationKind.Field &&
-                            fromObject.IsSubtypeOf(DreamPath.Client)) {
-                            DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,"Unsafe \"client\" access. Use the \"?.\" operator instead");
-                        }
-                    } else {
+                    if (operation.Kind == DMASTDereference.OperationKind.FieldStatic || property == null) {
                         var globalId = fromObject.GetGlobalVariableId(field);
                         if (globalId != null) {
                             property = DMObjectTree.Globals[globalId.Value];
@@ -627,6 +620,15 @@ internal static class DMExpressionBuilder {
                             operations = new Dereference.Operation[newOperationCount];
                             astOperationOffset = i + 1;
                             i = -1;
+                        }
+                    } else {
+                        operation.Identifier = field;
+                        operation.GlobalId = null;
+                        operation.Path = property.Type;
+                        if (operation.Kind == DMASTDereference.OperationKind.Field &&
+                            fromObject.IsSubtypeOf(DreamPath.Client)) {
+                            DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,
+                                "Unsafe \"client\" access. Use the \"?.\" operator instead");
                         }
                     }
 

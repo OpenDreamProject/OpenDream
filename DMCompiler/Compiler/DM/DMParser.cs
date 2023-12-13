@@ -455,18 +455,22 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTIdentifier? Identifier() {
-            Token token = Current();
-
-            if (Check(TokenType.DM_DoubleColon)) {
-                token = Current();
-                if (!Check(IdentifierTypes)) {
-                    Error(WarningCode.BadExpression, "Global identifier expected");
-                    return null;
-                }
-                return new DMASTGlobalIdentifier(token.Location, token.Text);
+        public DMASTGlobalIdentifier? GlobalIdentifier() {
+            var token = Current();
+            if (!Check(IdentifierTypes)) {
+                Error(WarningCode.BadExpression, "Global identifier expected");
+                return null;
             }
 
+            return new DMASTGlobalIdentifier(token.Location, token.Text);
+        }
+
+        public DMASTIdentifier? Identifier() {
+            if (Check(TokenType.DM_DoubleColon)) {
+                return GlobalIdentifier();
+            }
+
+            Token token = Current();
             return Check(IdentifierTypes) ? new DMASTIdentifier(token.Location, token.Text) : null;
         }
 
@@ -2115,30 +2119,30 @@ namespace DMCompiler.Compiler.DM {
             }
 
             DMASTExpression? primary = Constant();
-            if (primary == null) {
-                DMASTPath? path = Path(true);
+            if (primary == null && Path(true) is { } path) {
 
-                if (path != null) {
-                    primary = new DMASTConstantPath(loc, path);
+                if (Check(TokenType.DM_DoubleColon)) {
+                    return ParseDereference();
+                }
+                primary = new DMASTConstantPath(loc, path);
 
-                    while (Check(TokenType.DM_Period)) {
-                        DMASTPath? search = Path();
-                        if (search == null) Error("Expected a path for an upward search");
+                while (Check(TokenType.DM_Period)) {
+                    DMASTPath? search = Path();
+                    if (search == null) Error("Expected a path for an upward search");
 
-                        primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
-                    }
+                    primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
+                }
 
-                    Whitespace(); // whitespace between path and modified type
+                Whitespace(); // whitespace between path and modified type
 
-                    //TODO actual modified type support
-                    if (Check(TokenType.DM_LeftCurlyBracket)) {
-                        DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
+                //TODO actual modified type support
+                if (Check(TokenType.DM_LeftCurlyBracket)) {
+                    DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
 
-                        while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
-                        Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                        //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
-                        Check(TokenType.Newline);
-                    }
+                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                    //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
+                    Check(TokenType.Newline);
                 }
             }
 

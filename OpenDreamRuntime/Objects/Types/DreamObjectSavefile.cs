@@ -58,8 +58,7 @@ public sealed class DreamObjectSavefile : DreamObject {
 
         Resource = DreamResourceManager.LoadResource(filename);
 
-        if(!SavefileDirectories.ContainsKey(filename))
-        {
+        if(!SavefileDirectories.ContainsKey(filename)) {
             //if the savefile hasn't already been loaded, load it or create it
             string? data = Resource.ReadAsString();
 
@@ -96,8 +95,10 @@ public sealed class DreamObjectSavefile : DreamObject {
         if(Resource.ResourcePath != null) {
             bool fineToDelete = true;
             foreach (var savefile in Savefiles)
-                if (savefile != this && savefile.Resource.ResourcePath == Resource.ResourcePath)
+                if (savefile != this && savefile.Resource.ResourcePath == Resource.ResourcePath) {
                     fineToDelete = false;
+                    break;
+                }
             if (fineToDelete)
                 SavefileDirectories.Remove(Resource.ResourcePath);
         }

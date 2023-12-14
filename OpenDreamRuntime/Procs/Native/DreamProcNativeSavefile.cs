@@ -1,6 +1,8 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
+using OpenDreamRuntime.Resources;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
+using System.IO;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -9,8 +11,6 @@ internal static class DreamProcNativeSavefile {
     [DreamProcParameter("path", Type = DreamValueTypeFlag.String)]
     [DreamProcParameter("file", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
     public static DreamValue NativeProc_ExportText(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-        // Implementing this correctly is a fair amount of effort, and the only use of it I'm aware of is icon2base64()
-        // So this implements it just enough to get that working
 
         var savefile = (DreamObjectSavefile)src!;
         DreamValue path = bundle.GetArgument(0, "path");
@@ -21,25 +21,27 @@ internal static class DreamProcNativeSavefile {
         }
 
         string result = "";
+        int indent = 0;
         foreach (var (key, value) in savefile.CurrentDir) {
             if(value.IsNull)
-                result += $"{key} = null\n";
+                result += $"{new string('\t', indent)}{key} = null\n";
             else {
                 switch(value.Type) {
                     case DreamValue.DreamValueType.String:
-                        result += $"{key} = \"{value.MustGetValueAsString()}\"\n";
+                        result += $"{new string('\t', indent)}{key} = \"{value.MustGetValueAsString()}\"\n";
                         break;
                     case DreamValue.DreamValueType.Float:
-                        result += $"{key} = {value.MustGetValueAsFloat()}\n";
+                        result += $"{new string('\t', indent)}{key} = {value.MustGetValueAsFloat()}\n";
                         break;
-                    case DreamValue.DreamValueType.DreamResource:
-                        result += $"{key} = {Convert.ToBase64String(value.MustGetValueAsDreamResource().ResourceData!)}\n";
-                        break;
-                    case DreamValue.DreamValueType.DreamObject:
-                        if (value.TryGetValueAsDreamObject<DreamObjectIcon>(out _) && bundle.ResourceManager.TryLoadIcon(value, out var icon))
-                            result += $"{key} = {Convert.ToBase64String(icon.ResourceData!)}\n";
-                        else
-                            result += $"{key} = {value.MustGetValueAsDreamObject()}\n";
+                    case DreamValue.DreamValueType.DreamResource: //TODO this should probably be implemented in SaveFile.Read instead
+                        DreamResource dreamResource = value.MustGetValueAsDreamResource();
+                        result += $"{new string('\t', indent)}{key} = \nfiledata(\"";
+                        result += $"name={dreamResource.ResourcePath};";
+                        result += $"ext={Path.GetExtension(dreamResource.ResourcePath)};";
+                        result += $"length={dreamResource.ResourceData!.Length};";
+                        result += $"crc32=0x00000000;"; //TODO crc32
+                        result += $"encoding=base64\",{{\"{Convert.ToBase64String(dreamResource.ResourceData!)}\"}}";
+                        result += ")\n";
                         break;
                     default:
                         throw new NotImplementedException($"Unhandled type {key} = {value.Stringify()} in ExportText()");
@@ -48,9 +50,7 @@ internal static class DreamProcNativeSavefile {
 
         }
 
-        var base64 = Convert.ToBase64String(icon.ResourceData);
-        var exportedText = $"{{\"\n{base64}\n\"}})";
-        return new DreamValue(exportedText);
+        return new DreamValue(result);
     }
 
     [DreamProc("Flush")]

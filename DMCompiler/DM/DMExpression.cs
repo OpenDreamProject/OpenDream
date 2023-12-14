@@ -105,7 +105,7 @@ namespace DMCompiler.DM {
                         argIndex = (int)keyNum.Value;
                         break;
                     case Expressions.Resource _:
-                    case Expressions.Path _:
+                    case Expressions.ConstantPath _:
                         //The key becomes the value
                         value = key;
                         break;

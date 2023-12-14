@@ -1,14 +1,18 @@
-﻿var/global/thing = "thing"
+﻿var/static/one = "one"
 
-/datum/var/static/other_thing = "other thing"
+/datum
+	//var/static/three = "static three"
+	var/three = "three"
 
-/proc/return_thing()
-	return "thing"
+/proc/return_two()
+	return "two"
 
 /proc/RunTest()
-	ASSERT(::thing == "thing")
-	ASSERT(::return_thing() == "thing")
-	
+	ASSERT(::one == "one")
+	ASSERT(::return_two() == "two")
+    
 	var/datum/test
-	ASSERT(test::other_thing == "other thing")
-	//ASSERT(/datum::other_thing == "other thing")
+	ASSERT(test::three == "static three")
+	ASSERT(/datum::three == "static three")
+	ASSERT(test::three != "three")
+	ASSERT(/datum::three != "three")

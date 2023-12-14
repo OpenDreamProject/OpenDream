@@ -478,8 +478,10 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // /a/b/c
-    sealed class Path : Constant {
+    // no, this can't be called "Path" because of CS0542
+    internal sealed class ConstantPath : Constant {
         public DreamPath Value { get; }
+        public override DreamPath? Path => Value;
 
         /// <summary>
         /// The DMObject this expression resides in. Used for path searches.
@@ -493,7 +495,7 @@ namespace DMCompiler.DM.Expressions {
             VerbStub
         }
 
-        public Path(Location location, DMObject dmObject, DreamPath value) : base(location) {
+        public ConstantPath(Location location, DMObject dmObject, DreamPath value) : base(location) {
             Value = value;
             _dmObject = dmObject;
         }

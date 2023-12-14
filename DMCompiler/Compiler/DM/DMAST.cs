@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
@@ -1194,7 +1195,12 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public sealed class DMASTGlobalIdentifier : DMASTIdentifier {
-        public DMASTGlobalIdentifier(Location location, string identifier) : base(location, identifier) { }
+        public readonly DMASTPath? Path;
+
+        public DMASTGlobalIdentifier(Location location, string identifier, DMASTPath? path = null)
+            : base(location, identifier) {
+            Path = path;
+        }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitGlobalIdentifier(this);
@@ -2698,7 +2704,6 @@ namespace DMCompiler.Compiler.DM {
             FieldSafe, // x?.y
             FieldSearch, // x:y
             FieldSafeSearch, // x?:y
-            FieldStatic, // x::y
 
             Index, // x[y]
             IndexSafe, // x?[y]

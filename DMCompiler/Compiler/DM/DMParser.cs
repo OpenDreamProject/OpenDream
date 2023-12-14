@@ -455,14 +455,14 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTGlobalIdentifier? GlobalIdentifier() {
+        public DMASTGlobalIdentifier? GlobalIdentifier(DMASTPath? path = null) {
             var token = Current();
             if (!Check(IdentifierTypes)) {
                 Error(WarningCode.BadExpression, "Global identifier expected");
                 return null;
             }
 
-            return new DMASTGlobalIdentifier(token.Location, token.Text);
+            return new DMASTGlobalIdentifier(token.Location, token.Text, path);
         }
 
         public DMASTIdentifier? Identifier() {
@@ -2120,9 +2120,8 @@ namespace DMCompiler.Compiler.DM {
 
             DMASTExpression? primary = Constant();
             if (primary == null && Path(true) is { } path) {
-
                 if (Check(TokenType.DM_DoubleColon)) {
-                    return ParseDereference();
+                    return GlobalIdentifier(path);
                 }
                 primary = new DMASTConstantPath(loc, path);
 
@@ -2270,8 +2269,7 @@ namespace DMCompiler.Compiler.DM {
                         case TokenType.DM_Period:
                         case TokenType.DM_QuestionPeriod:
                         case TokenType.DM_Colon:
-                        case TokenType.DM_QuestionColon:
-                        case TokenType.DM_DoubleColon: {
+                        case TokenType.DM_QuestionColon: {
                                 DMASTIdentifier identifier = Identifier();
 
                                 operation.Kind = token.Type switch {
@@ -2279,7 +2277,6 @@ namespace DMCompiler.Compiler.DM {
                                     TokenType.DM_QuestionPeriod => DMASTDereference.OperationKind.FieldSafe,
                                     TokenType.DM_Colon => DMASTDereference.OperationKind.FieldSearch,
                                     TokenType.DM_QuestionColon => DMASTDereference.OperationKind.FieldSafeSearch,
-                                    TokenType.DM_DoubleColon => DMASTDereference.OperationKind.FieldStatic,
                                     _ => throw new InvalidOperationException(),
                                 };
 
@@ -2341,7 +2338,6 @@ namespace DMCompiler.Compiler.DM {
 
                                 case DMASTDereference.OperationKind.Index:
                                 case DMASTDereference.OperationKind.IndexSafe:
-                                case DMASTDereference.OperationKind.FieldStatic:
                                     Error("attempt to call an invalid l-value");
                                     return null;
 

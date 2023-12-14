@@ -26,7 +26,7 @@ internal static class DMExpressionBuilder {
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
             case not DMASTGlobalIdentifier and DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
-            case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject);
+            case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject, inferredPath);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
             case DMASTCallableGlobalProc globalProc: return new GlobalProc(expression.Location, globalProc.Identifier);
@@ -297,10 +297,10 @@ internal static class DMExpressionBuilder {
             case DMASTConstantFloat constFloat: return new Number(constant.Location, constFloat.Value);
             case DMASTConstantString constString: return new Expressions.String(constant.Location, constString.Value);
             case DMASTConstantResource constResource: return new Resource(constant.Location, constResource.Path);
-            case DMASTConstantPath constPath: return new Path(constant.Location, dmObject, constPath.Value.Path);
+            case DMASTConstantPath constPath: return new ConstantPath(constant.Location, dmObject, constPath.Value.Path);
             case DMASTUpwardPathSearch upwardSearch:
                 DMExpression.TryConstant(dmObject, proc, upwardSearch.Path, out var pathExpr);
-                if (pathExpr is not Path expr)
+                if (pathExpr is not ConstantPath expr)
                     throw new CompileErrorException(constant.Location, $"Cannot do an upward path search on {pathExpr}");
 
                 DreamPath path = expr.Value;
@@ -310,7 +310,7 @@ internal static class DMExpressionBuilder {
                     throw new CompileErrorException(constant.Location,$"Invalid path {path}.{upwardSearch.Search.Path}");
                 }
 
-                return new Path(constant.Location, dmObject, foundPath.Value);
+                return new ConstantPath(constant.Location, dmObject, foundPath.Value);
         }
 
         throw new ArgumentException($"Invalid constant {constant}", nameof(constant));
@@ -374,7 +374,10 @@ internal static class DMExpressionBuilder {
         }
     }
 
-    private static DMExpression BuildGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier, DMObject dmObject) {
+    private static DMExpression BuildGlobalIdentifier(
+        DMASTGlobalIdentifier globalIdentifier,
+        DMObject dmObject,
+        DreamPath? inferredPath) {
         string name = globalIdentifier.Identifier;
 
         if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
@@ -591,8 +594,7 @@ internal static class DMExpressionBuilder {
             }
             switch (operation.Kind) {
                 case DMASTDereference.OperationKind.Field:
-                case DMASTDereference.OperationKind.FieldSafe:
-                case DMASTDereference.OperationKind.FieldStatic: {
+                case DMASTDereference.OperationKind.FieldSafe: {
                     string field = astOperation.Identifier.Identifier;
 
                     if (prevPath == null) {
@@ -605,7 +607,15 @@ internal static class DMExpressionBuilder {
                     }
 
                     DMVariable? property = fromObject.GetVariable(field);
-                    if (operation.Kind == DMASTDereference.OperationKind.FieldStatic || property == null) {
+                    if (property != null) {
+                        operation.Identifier = field;
+                        operation.GlobalId = null;
+                        operation.Path = property.Type;
+                        if (operation.Kind == DMASTDereference.OperationKind.Field &&
+                            fromObject.IsSubtypeOf(DreamPath.Client)) {
+                            DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,"Unsafe \"client\" access. Use the \"?.\" operator instead");
+                        }
+                    } else {
                         var globalId = fromObject.GetGlobalVariableId(field);
                         if (globalId != null) {
                             property = DMObjectTree.Globals[globalId.Value];
@@ -620,15 +630,6 @@ internal static class DMExpressionBuilder {
                             operations = new Dereference.Operation[newOperationCount];
                             astOperationOffset = i + 1;
                             i = -1;
-                        }
-                    } else {
-                        operation.Identifier = field;
-                        operation.GlobalId = null;
-                        operation.Path = property.Type;
-                        if (operation.Kind == DMASTDereference.OperationKind.Field &&
-                            fromObject.IsSubtypeOf(DreamPath.Client)) {
-                            DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,
-                                "Unsafe \"client\" access. Use the \"?.\" operator instead");
                         }
                     }
 

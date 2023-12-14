@@ -1,10 +1,10 @@
 using System;
-using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler.DM;
+using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM {
     internal abstract class DMExpression {
@@ -68,6 +68,8 @@ namespace DMCompiler.DM {
         public virtual DreamPath? Path => null;
 
         public virtual DreamPath? NestedPath => Path;
+
+        public virtual bool IsFuzzy => false;
     }
 
     // (a, b, c, ...)

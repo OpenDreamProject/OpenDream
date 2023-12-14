@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
@@ -149,6 +148,10 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) {
+            throw new NotImplementedException();
+        }
+
+        public void VisitStaticIdentifier(DMASTStaticIdentifier globalIdentifier) {
             throw new NotImplementedException();
         }
 
@@ -1194,7 +1197,8 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public sealed class DMASTGlobalIdentifier : DMASTIdentifier {
+    [Virtual]
+    public class DMASTGlobalIdentifier : DMASTIdentifier {
         public readonly DMASTPath? Path;
 
         public DMASTGlobalIdentifier(Location location, string identifier, DMASTPath? path = null)
@@ -1204,6 +1208,18 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitGlobalIdentifier(this);
+        }
+    }
+
+    public sealed class DMASTStaticIdentifier : DMASTGlobalIdentifier {
+        public readonly DMASTIdentifier[] IdentifierChain;
+
+        public DMASTStaticIdentifier(Location location, string identifier, DMASTIdentifier[] identifierChain) : base(location, identifier) {
+            IdentifierChain = identifierChain;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitStaticIdentifier(this);
         }
     }
 

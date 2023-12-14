@@ -1,8 +1,8 @@
-using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
 using System;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler.DM;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
@@ -33,6 +33,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override DreamPath? Path { get; }
         public override DreamPath? NestedPath { get; }
+        public override bool IsFuzzy => Path == null;
 
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {

@@ -71,6 +71,7 @@ namespace DMCompiler.Compiler.DM {
         private static readonly TokenType[] DereferenceTypes = {
             TokenType.DM_Period,
             TokenType.DM_Colon,
+            TokenType.DM_DoubleColon, // not a dereference, we are borrowing code
             TokenType.DM_QuestionPeriod,
             TokenType.DM_QuestionColon,
             TokenType.DM_QuestionLeftBracket,
@@ -455,6 +456,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
+        // path is either a constant path for a static var, or null for global
         public DMASTGlobalIdentifier? GlobalIdentifier(DMASTPath? path = null) {
             var token = Current();
             if (!Check(IdentifierTypes)) {
@@ -2283,6 +2285,20 @@ namespace DMCompiler.Compiler.DM {
                                 operation.Identifier = identifier;
                             }
                             break;
+
+                        case TokenType.DM_DoubleColon: {
+                            DMASTIdentifier identifier = Identifier();
+
+                            var identifierChain = new DMASTIdentifier[operations.Count];
+                            for (var i = 0; i < identifierChain.Length; i++) {
+                                identifierChain[i] = operations[i].Identifier;
+                            }
+                            // reset the dereference list, since we are starting with a new expression
+                            operations.Clear();
+
+                            expression = new DMASTStaticIdentifier(identifier.Location, identifier.Identifier, identifierChain);
+                        }
+                            continue;
 
                         case TokenType.DM_LeftBracket:
                         case TokenType.DM_QuestionLeftBracket: {

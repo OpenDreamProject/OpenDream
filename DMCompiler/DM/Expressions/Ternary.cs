@@ -6,6 +6,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class Ternary : DMExpression {
         private readonly DMExpression _a, _b, _c;
 
+        public override bool IsFuzzy => true;
+
         public Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : base(location) {
             _a = a;
             _b = b;

@@ -26,7 +26,7 @@ internal static class DMExpressionBuilder {
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
             case not DMASTGlobalIdentifier and DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
-            case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject, inferredPath);
+            case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
             case DMASTCallableGlobalProc globalProc: return new GlobalProc(expression.Location, globalProc.Identifier);
@@ -376,21 +376,38 @@ internal static class DMExpressionBuilder {
 
     private static DMExpression BuildGlobalIdentifier(
         DMASTGlobalIdentifier globalIdentifier,
-        DMObject dmObject,
-        DreamPath? inferredPath) {
-        string name = globalIdentifier.Identifier;
+        DMObject dmObject) {
+        var name = globalIdentifier.Identifier;
 
         if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
-            int? globalId = dmObject?.GetGlobalVariableId(name);
-            if (globalId != null) {
-                return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
-            } else if (name == "vars") {
-                return new GlobalVars(globalIdentifier.Location);
+            int? globalId;
+            if (globalIdentifier.Path != null) {
+                var definition = DMObjectTree.GetDMObject(globalIdentifier.Path.Path, false);
+                globalId = definition?.GetGlobalVariableId(name);
+                if (globalId != null) {
+                    return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                }
+            } else {
+                globalId = dmObject?.GetGlobalVariableId(name);
+                if (globalId != null) {
+                    return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                }
+
+                if (name == "vars") {
+                    return new GlobalVars(globalIdentifier.Location);
+                }
             }
+
         }
 
-        DMCompiler.Emit(WarningCode.ItemDoesntExist, globalIdentifier.Location, $"Unknown global \"{name}\"");
+        DMCompiler.Emit(WarningCode.ItemDoesntExist, globalIdentifier.Location,
+            $"Unknown global \"{((globalIdentifier.Path != null ? globalIdentifier.Path.Path : "") + name)}\"");
         return new Null(globalIdentifier.Location);
+    }
+
+    private static DMExpression BuildStaticIdentifier(DMASTStaticIdentifier staticIdentifier, DMObject dmObject) {
+        var identifier = BuildGlobalIdentifier(staticIdentifier, dmObject);
+
     }
 
     private static DMExpression BuildCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier, DMObject dmObject) {
@@ -483,26 +500,10 @@ internal static class DMExpressionBuilder {
         var operations = new Dereference.Operation[deref.Operations.Length];
         int astOperationOffset = 0;
 
-        static bool IsFuzzy(DMExpression expr) {
-            switch (expr) {
-                case Dereference when expr.Path == null:
-                case ProcCall when expr.Path == null:
-                case New when expr.Path == null:
-                case List:
-                case Ternary:
-                case BinaryAnd:
-                case IsNull:
-                case Length:
-                case GetStep:
-                case GetDir:
-                    return true;
-                default: return false;
-            }
-        }
 
         // Path of the previous operation that was iterated over (starting as the base expression)
         DreamPath? prevPath = expr.Path;
-        bool pathIsFuzzy = IsFuzzy(expr);
+        bool pathIsFuzzy = expr.IsFuzzy;
 
         // Special behaviour for `global.x`, `global.vars`, and `global.f()`
         if (expr is Global) {

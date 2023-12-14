@@ -3,6 +3,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using System.IO;
+using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -20,9 +21,19 @@ internal static class DreamProcNativeSavefile {
             savefile.ChangeDirectory(pathStr);
         }
 
+        string result = ExportTextInternal(savefile);
+        //TODO if file is not null, write to file
+        return new DreamValue(result);
+    }
+
+
+    private static string ExportTextInternal(DreamObjectSavefile savefile, int indent = 0) {
         string result = "";
-        int indent = 0;
-        foreach (var (key, value) in savefile.CurrentDir) {
+
+        foreach (string key in savefile.GetCurrentDirKeys()) {
+            var value = savefile.CurrentDir[key]; //TODO handle savefile directories
+            //if value is a savefile directory, recurse
+            //result += ExportTextInternal(savefile, indent + 1);
             if(value.IsNull)
                 result += $"{new string('\t', indent)}{key} = null\n";
             else {
@@ -47,10 +58,8 @@ internal static class DreamProcNativeSavefile {
                         throw new NotImplementedException($"Unhandled type {key} = {value.Stringify()} in ExportText()");
                 }
             }
-
         }
-
-        return new DreamValue(result);
+        return result;
     }
 
     [DreamProc("Flush")]

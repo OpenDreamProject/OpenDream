@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Linq;
 using System.Text.Json;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
@@ -174,5 +175,9 @@ public sealed class DreamObjectSavefile : DreamObject {
         if (!Directories.ContainsKey(_currentDirPath)) {
             Directories.Add(_currentDirPath, new SavefileDirectory());
         }
+    }
+
+    public string[] GetCurrentDirKeys() {
+        return CurrentDir.Keys.ToArray(); //TODO + Directories[currentdir].Keys.ToArray();
     }
 }

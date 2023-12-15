@@ -155,7 +155,9 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
                 }
                 case TokenType.DM_Preproc_Punctuator:
                 case TokenType.DM_Preproc_Number:
-                case TokenType.DM_Preproc_String:
+                case TokenType.DM_Preproc_StringBegin:
+                case TokenType.DM_Preproc_StringMiddle:
+                case TokenType.DM_Preproc_StringEnd:
                 case TokenType.DM_Preproc_ConstantString:
                 case TokenType.DM_Preproc_Punctuator_Comma:
                 case TokenType.DM_Preproc_Punctuator_Period:
@@ -169,6 +171,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
                     while (_bufferedWhitespace.TryPop(out var whitespace)) {
                         yield return whitespace;
                     }
+
                     _currentLineContainsNonWhitespace = true;
                     _canUseDirective = (token.Type == TokenType.DM_Preproc_Punctuator_Semicolon);
 

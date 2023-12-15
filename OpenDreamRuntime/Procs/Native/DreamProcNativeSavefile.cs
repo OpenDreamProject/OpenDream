@@ -3,6 +3,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Resources;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using System.IO;
+using System.Linq;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -40,6 +41,37 @@ internal static class DreamProcNativeSavefile {
         //if source is a file, read text from file and parse
         //else if source is a string, parse string
         //savefile.OperatorOutput(new DreamValue(source));
+        string sourceStr = "";
+        if (source.TryGetValueAsDreamResource(out var sourceResource)) {
+            sourceStr = sourceResource.ReadAsString() ?? "";
+        } else if (source.TryGetValueAsString(out var sourceString)) {
+            sourceStr = sourceString;
+        } else {
+            throw new ArgumentException($"Invalid source value {source}");
+        }
+
+        var lines = sourceStr.Split('\n');
+        var directoryStack = new Stack<string>();
+        foreach (var line in lines) {
+            var indentCount = line.TakeWhile(Char.IsWhiteSpace).Count();
+            while (directoryStack.Count > indentCount) {
+                directoryStack.Pop();
+            }
+            var keyValue = line.Trim().Split(new[] { " = " }, StringSplitOptions.None);
+            if (keyValue.Length == 2) {
+                var key = keyValue[0].Trim();
+                var value = keyValue[1].Trim();
+                if (value.StartsWith("object(")) {
+                    directoryStack.Push(key);
+                    savefile.ChangeDirectory(string.Join("/", directoryStack.Reverse()));
+                } else {
+                    savefile.OperatorIndexAssign(new DreamValue(key), new DreamValue(value));
+                }
+            } else {
+                throw new ArgumentException($"Invalid line {line}");
+            }
+        }
+
         return DreamValue.Null;
     }
 

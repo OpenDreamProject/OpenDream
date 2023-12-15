@@ -177,7 +177,14 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
     }
 
-    public string[] GetCurrentDirKeys() {
-        return CurrentDir.Keys.ToArray(); //TODO + Directories[currentdir].Keys.ToArray();
+    public List<string> GetCurrentDirKeys() {
+        List<string> dirList = new();
+        foreach (string dirPath in Directories.Keys) {
+                    if (dirPath.StartsWith(_currentDirPath)) {
+                        dirList.Add(dirPath);
+                    }
+                }
+        dirList.AddRange(CurrentDir.Keys);
+        return dirList;
     }
 }

@@ -71,7 +71,6 @@ namespace DMCompiler.Compiler.DM {
         private static readonly TokenType[] DereferenceTypes = {
             TokenType.DM_Period,
             TokenType.DM_Colon,
-            TokenType.DM_DoubleColon, // not a dereference, we are borrowing code
             TokenType.DM_QuestionPeriod,
             TokenType.DM_QuestionColon,
             TokenType.DM_QuestionLeftBracket,
@@ -456,22 +455,21 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        // path is either a constant path for a static var, or null for global
-        public DMASTGlobalIdentifier? GlobalIdentifier(DMASTPath? path = null) {
-            var token = Current();
-            if (!Check(IdentifierTypes)) {
-                Error(WarningCode.BadExpression, "Global identifier expected");
-                return null;
+        public DMASTExpression? ParseGlobalIdentifier(DMASTExpression? expression) {
+            if (!Check(TokenType.DM_DoubleColon)) {
+                return expression;
             }
 
-            return new DMASTGlobalIdentifier(token.Location, token.Text, path);
+            var identifier = Identifier();
+            if (identifier != null) {
+                return new DMASTGlobalIdentifier(identifier.Location, expression, identifier);
+            }
+
+            DMCompiler.Emit(WarningCode.BadExpression, Current().Location, "Global identifier expected");
+            return expression;
         }
 
         public DMASTIdentifier? Identifier() {
-            if (Check(TokenType.DM_DoubleColon)) {
-                return GlobalIdentifier();
-            }
-
             Token token = Current();
             return Check(IdentifierTypes) ? new DMASTIdentifier(token.Location, token.Text) : null;
         }
@@ -2122,9 +2120,6 @@ namespace DMCompiler.Compiler.DM {
 
             DMASTExpression? primary = Constant();
             if (primary == null && Path(true) is { } path) {
-                if (Check(TokenType.DM_DoubleColon)) {
-                    return GlobalIdentifier(path);
-                }
                 primary = new DMASTConstantPath(loc, path);
 
                 while (Check(TokenType.DM_Period)) {
@@ -2148,15 +2143,14 @@ namespace DMCompiler.Compiler.DM {
             }
 
             primary ??= Identifier();
+            primary ??= (DMASTExpression?)Callable();
 
-            if (primary == null) {
-                primary = (DMASTExpression?)Callable();
-
-                if (primary != null) {
-                    primary = ParseProcCall(primary);
-                }
+            if (primary != null) {
+                primary = ParseProcCall(primary);
+                return primary;
             }
-            if (primary == null && Check(TokenType.DM_Call)) {
+
+            if (Check(TokenType.DM_Call)) {
                 Whitespace();
                 DMASTCallParameter[]? callParameters = ProcCall();
                 if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) Error("Call must have 2 parameters");
@@ -2211,6 +2205,8 @@ namespace DMCompiler.Compiler.DM {
         }
 
         private DMASTExpression? ParseDereference(DMASTExpression? expression, bool allowCalls = true, bool isTernaryB = false) {
+            expression = ParseGlobalIdentifier(expression);
+
             // We don't compile expression-calls as dereferences, but they have very similar precedence
             if (allowCalls) {
                 expression = ParseProcCall(expression);
@@ -2224,15 +2220,13 @@ namespace DMCompiler.Compiler.DM {
                     Token token = Current();
 
                     // Check for a valid deref operation token
-                    {
-                        if (!Check(DereferenceTypes)) {
-                            Whitespace();
+                    if (!Check(DereferenceTypes)) {
+                        Whitespace();
 
-                            token = Current();
+                        token = Current();
 
-                            if (!Check(WhitespacedDereferenceTypes)) {
-                                break;
-                            }
+                        if (!Check(WhitespacedDereferenceTypes)) {
+                            break;
                         }
                     }
 
@@ -2285,20 +2279,6 @@ namespace DMCompiler.Compiler.DM {
                                 operation.Identifier = identifier;
                             }
                             break;
-
-                        case TokenType.DM_DoubleColon: {
-                            DMASTIdentifier identifier = Identifier();
-
-                            var identifierChain = new DMASTIdentifier[operations.Count];
-                            for (var i = 0; i < identifierChain.Length; i++) {
-                                identifierChain[i] = operations[i].Identifier;
-                            }
-                            // reset the dereference list, since we are starting with a new expression
-                            operations.Clear();
-
-                            expression = new DMASTStaticIdentifier(identifier.Location, identifier.Identifier, identifierChain);
-                        }
-                            continue;
 
                         case TokenType.DM_LeftBracket:
                         case TokenType.DM_QuestionLeftBracket: {
@@ -2378,7 +2358,7 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMASTExpression ParseProcCall(DMASTExpression expression) {
+        private DMASTExpression? ParseProcCall(DMASTExpression? expression) {
             if (expression is not (DMASTCallable or DMASTIdentifier or DMASTGlobalIdentifier)) return expression;
 
             Whitespace();
@@ -2396,7 +2376,7 @@ namespace DMCompiler.Compiler.DM {
             DMASTCallParameter[]? callParameters = ProcCall();
             if (callParameters != null) {
                 if (expression is DMASTGlobalIdentifier gid) {
-                    var globalProc = new DMASTCallableGlobalProc(expression.Location, gid.Identifier);
+                    var globalProc = new DMASTCallableGlobalProc(expression.Location, gid.Identifier.Identifier);
                     return new DMASTProcCall(gid.Location, globalProc, callParameters);
                 } else if (expression is DMASTCallable callable) {
                     return new DMASTProcCall(expression.Location, callable, callParameters);

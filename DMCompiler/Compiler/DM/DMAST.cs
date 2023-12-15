@@ -151,10 +151,6 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
-        public void VisitStaticIdentifier(DMASTStaticIdentifier globalIdentifier) {
-            throw new NotImplementedException();
-        }
-
         public void VisitConstantInteger(DMASTConstantInteger constant) {
             throw new NotImplementedException();
         }
@@ -1197,29 +1193,18 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    [Virtual]
-    public class DMASTGlobalIdentifier : DMASTIdentifier {
-        public readonly DMASTPath? Path;
+    public sealed class DMASTGlobalIdentifier : DMASTExpression {
+        public readonly DMASTExpression? Expression;
+        public readonly DMASTIdentifier Identifier;
 
-        public DMASTGlobalIdentifier(Location location, string identifier, DMASTPath? path = null)
-            : base(location, identifier) {
-            Path = path;
+        public DMASTGlobalIdentifier(Location location, DMASTExpression? expression, DMASTIdentifier identifier)
+            : base(location) {
+            Expression = expression;
+            Identifier = identifier;
         }
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitGlobalIdentifier(this);
-        }
-    }
-
-    public sealed class DMASTStaticIdentifier : DMASTGlobalIdentifier {
-        public readonly DMASTIdentifier[] IdentifierChain;
-
-        public DMASTStaticIdentifier(Location location, string identifier, DMASTIdentifier[] identifierChain) : base(location, identifier) {
-            IdentifierChain = identifierChain;
-        }
-
-        public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitStaticIdentifier(this);
         }
     }
 

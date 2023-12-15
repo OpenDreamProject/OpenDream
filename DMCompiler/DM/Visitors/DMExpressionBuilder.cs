@@ -25,8 +25,8 @@ internal static class DMExpressionBuilder {
         switch (expression) {
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
-            case not DMASTGlobalIdentifier and DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
-            case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject);
+            case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
+            case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject, proc, inferredPath);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
             case DMASTCallableGlobalProc globalProc: return new GlobalProc(expression.Location, globalProc.Identifier);
@@ -376,19 +376,26 @@ internal static class DMExpressionBuilder {
 
     private static DMExpression BuildGlobalIdentifier(
         DMASTGlobalIdentifier globalIdentifier,
-        DMObject dmObject) {
-        var name = globalIdentifier.Identifier;
+        DMObject dmObject,
+        DMProc proc,
+        DreamPath? inferredPath) {
+        var name = globalIdentifier.Identifier.Identifier;
+
+        var expression = globalIdentifier.Expression != null
+            ? DMExpression.Create(dmObject, proc, globalIdentifier.Expression, inferredPath)
+            : null;
 
         if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
             int? globalId;
-            if (globalIdentifier.Path != null) {
-                var definition = DMObjectTree.GetDMObject(globalIdentifier.Path.Path, false);
+            if (expression is { Path: { } path }) {
+                var definition = DMObjectTree.GetDMObject(path, false);
                 globalId = definition?.GetGlobalVariableId(name);
                 if (globalId != null) {
-                    return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                    return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type,
+                        globalId.Value);
                 }
             } else {
-                globalId = dmObject?.GetGlobalVariableId(name);
+                globalId = dmObject.GetGlobalVariableId(name);
                 if (globalId != null) {
                     return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
                 }
@@ -397,17 +404,11 @@ internal static class DMExpressionBuilder {
                     return new GlobalVars(globalIdentifier.Location);
                 }
             }
-
         }
 
         DMCompiler.Emit(WarningCode.ItemDoesntExist, globalIdentifier.Location,
-            $"Unknown global \"{((globalIdentifier.Path != null ? globalIdentifier.Path.Path : "") + name)}\"");
+            $"Unknown global \"{((expression?.Path != null ? $"{expression.Path.Value}::" : "") + name)}\"");
         return new Null(globalIdentifier.Location);
-    }
-
-    private static DMExpression BuildStaticIdentifier(DMASTStaticIdentifier staticIdentifier, DMObject dmObject) {
-        var identifier = BuildGlobalIdentifier(staticIdentifier, dmObject);
-
     }
 
     private static DMExpression BuildCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier, DMObject dmObject) {
@@ -612,8 +613,8 @@ internal static class DMExpressionBuilder {
                         operation.Identifier = field;
                         operation.GlobalId = null;
                         operation.Path = property.Type;
-                        if (operation.Kind == DMASTDereference.OperationKind.Field &&
-                            fromObject.IsSubtypeOf(DreamPath.Client)) {
+                        if (fromObject.IsSubtypeOf(DreamPath.Client) &&
+                            operation.Kind == DMASTDereference.OperationKind.Field) {
                             DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,"Unsafe \"client\" access. Use the \"?.\" operator instead");
                         }
                     } else {

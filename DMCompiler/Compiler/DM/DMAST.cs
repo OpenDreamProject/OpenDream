@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
-using Robust.Shared.Analyzers;
 
 namespace DMCompiler.Compiler.DM {
     public interface DMASTVisitor : ASTVisitor {
@@ -1180,8 +1179,7 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    [Virtual]
-    public class DMASTIdentifier : DMASTExpression {
+    public sealed class DMASTIdentifier : DMASTExpression {
         public readonly string Identifier;
 
         public DMASTIdentifier(Location location, string identifier) : base(location) {

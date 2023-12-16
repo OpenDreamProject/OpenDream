@@ -1,8 +1,7 @@
-using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
 using System.Collections.Generic;
-using System.Diagnostics;
+using DMCompiler.Compiler.DM;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Visitors {
     internal static class DMObjectBuilder {
@@ -273,9 +272,6 @@ namespace DMCompiler.DM.Visitors {
 
             if (variable is null) {
                 if (varDefinition.IsStatic) {
-                    if (varDefinition.Name == "three") {
-                        Debugger.Break();
-                    }
                     variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
                 } else {
                     variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst, varDefinition.IsTmp, varDefinition.ValType);

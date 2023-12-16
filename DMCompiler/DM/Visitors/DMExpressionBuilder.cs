@@ -614,8 +614,8 @@ internal static class DMExpressionBuilder {
                         operation.Identifier = field;
                         operation.GlobalId = null;
                         operation.Path = property.Type;
-                        if (fromObject.IsSubtypeOf(DreamPath.Client) &&
-                            operation.Kind == DMASTDereference.OperationKind.Field) {
+                        if (operation.Kind == DMASTDereference.OperationKind.Field &&
+                            fromObject.IsSubtypeOf(DreamPath.Client)) {
                             DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,"Unsafe \"client\" access. Use the \"?.\" operator instead");
                         }
                     } else {

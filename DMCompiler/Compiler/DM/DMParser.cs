@@ -71,6 +71,7 @@ namespace DMCompiler.Compiler.DM {
         private static readonly TokenType[] DereferenceTypes = {
             TokenType.DM_Period,
             TokenType.DM_Colon,
+            TokenType.DM_DoubleColon, // not a dereference, but shares the same precedence
             TokenType.DM_QuestionPeriod,
             TokenType.DM_QuestionColon,
             TokenType.DM_QuestionLeftBracket,
@@ -455,17 +456,16 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTExpression? ParseGlobalIdentifier(DMASTExpression? expression) {
-            if (!Check(TokenType.DM_DoubleColon)) {
-                return expression;
-            }
+        private DMASTExpression? ParseGlobalIdentifier(DMASTExpression? expression) {
+            do {
+                var identifier = Identifier();
+                if (identifier == null) {
+                    DMCompiler.Emit(WarningCode.BadExpression, Current().Location, "Global identifier expected");
+                    return null;
+                }
+                expression = new DMASTGlobalIdentifier(identifier.Location, expression, identifier);
+            } while (Check(TokenType.DM_DoubleColon));
 
-            var identifier = Identifier();
-            if (identifier != null) {
-                return new DMASTGlobalIdentifier(identifier.Location, expression, identifier);
-            }
-
-            DMCompiler.Emit(WarningCode.BadExpression, Current().Location, "Global identifier expected");
             return expression;
         }
 
@@ -2145,7 +2145,11 @@ namespace DMCompiler.Compiler.DM {
             primary ??= Identifier();
             primary ??= (DMASTExpression?)Callable();
 
-            if (primary != null) {
+            if (Check(TokenType.DM_DoubleColon)) {
+                primary = ParseGlobalIdentifier(primary);
+            }
+
+            if (primary != null && allowParentheses) {
                 primary = ParseProcCall(primary);
                 return primary;
             }
@@ -2205,8 +2209,6 @@ namespace DMCompiler.Compiler.DM {
         }
 
         private DMASTExpression? ParseDereference(DMASTExpression? expression, bool allowCalls = true, bool isTernaryB = false) {
-            expression = ParseGlobalIdentifier(expression);
-
             // We don't compile expression-calls as dereferences, but they have very similar precedence
             if (allowCalls) {
                 expression = ParseProcCall(expression);
@@ -2279,6 +2281,15 @@ namespace DMCompiler.Compiler.DM {
                                 operation.Identifier = identifier;
                             }
                             break;
+
+                        case TokenType.DM_DoubleColon: {
+                            if (operations.Count != 0) {
+                                expression = new DMASTDereference(expression.Location, expression, operations.ToArray());
+                                operations.Clear();
+                            }
+                            expression = ParseGlobalIdentifier(expression);
+                            continue;
+                        }
 
                         case TokenType.DM_LeftBracket:
                         case TokenType.DM_QuestionLeftBracket: {

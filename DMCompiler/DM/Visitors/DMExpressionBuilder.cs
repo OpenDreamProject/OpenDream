@@ -391,7 +391,9 @@ internal static class DMExpressionBuilder {
                 var definition = DMObjectTree.GetDMObject(path, false);
                 globalId = definition?.GetGlobalVariableId(name);
                 if (globalId != null) {
-                    return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type,
+                    return new GlobalField(
+                        globalIdentifier.Location,
+                        DMObjectTree.Globals[globalId.Value].Type,
                         globalId.Value);
                 }
             } else {
@@ -406,8 +408,7 @@ internal static class DMExpressionBuilder {
             }
         }
 
-        DMCompiler.Emit(WarningCode.ItemDoesntExist, globalIdentifier.Location,
-            $"Unknown global \"{((expression?.Path != null ? $"{expression.Path.Value}::" : "") + name)}\"");
+        DMCompiler.Emit(WarningCode.ItemDoesntExist, globalIdentifier.Location, $"Unknown {(expression == null ? "global" : "static")} \"{((expression?.Path != null ? $"{expression.Path.Value}::" : "") + name)}\"");
         return new Null(globalIdentifier.Location);
     }
 

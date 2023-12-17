@@ -333,7 +333,7 @@ internal static class DMPreprocessorParser {
             case TokenType.DM_Float:
                 Advance();
                 return (float)constantToken.Value;
-            case TokenType.DM_String: {
+            case TokenType.DM_ConstantString: {
                 Advance();
                 Error("Strings are not valid in preprocessor expressions. Did you mean to use a define() here?");
                 return DegenerateValue;

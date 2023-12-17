@@ -389,12 +389,17 @@ internal static class DMExpressionBuilder {
             int? globalId;
             if (expression is { Path: { } path }) {
                 var definition = DMObjectTree.GetDMObject(path, false);
-                globalId = definition?.GetGlobalVariableId(name);
-                if (globalId != null) {
-                    return new GlobalField(
-                        globalIdentifier.Location,
-                        DMObjectTree.Globals[globalId.Value].Type,
-                        globalId.Value);
+                if (definition != null) {
+                    globalId = definition.GetGlobalVariableId(name);
+                    if (globalId != null) {
+                        return new GlobalField(
+                            globalIdentifier.Location,
+                            DMObjectTree.Globals[globalId.Value].Type,
+                            globalId.Value);
+                    }
+                    if(BuildIdentifier(globalIdentifier.Identifier, definition, proc) is { } lvalue) {
+                        return new Initial(globalIdentifier.Location, lvalue);
+                    }
                 }
             } else {
                 globalId = dmObject.GetGlobalVariableId(name);

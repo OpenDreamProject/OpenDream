@@ -122,7 +122,7 @@ namespace DMCompiler.Compiler.DM {
                 // If an interpolation came before this, ignore the first character (always ']')
                 int iterateBegin = currentToken.Type is TokenType.DM_StringMiddle or TokenType.DM_StringEnd ? 1 : 0;
 
-                stringBuilder.EnsureCapacity(stringBuilder.Capacity + iterateLength - iterateBegin);
+                stringBuilder.EnsureCapacity(stringBuilder.Length + iterateLength - iterateBegin);
 
                 for (int i = iterateBegin; i < iterateLength; i++) {
                     char c = tokenValue[i];

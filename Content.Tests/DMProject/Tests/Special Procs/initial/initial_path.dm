@@ -6,4 +6,4 @@
 
 /proc/RunTest()
 	ASSERT(/datum/one::text == "one")
-	ASSERT(/datum/one.two::text == "two")
+	ASSERT(/datum/one::two::text == "two")

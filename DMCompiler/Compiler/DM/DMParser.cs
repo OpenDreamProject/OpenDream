@@ -1049,7 +1049,8 @@ namespace DMCompiler.Compiler.DM {
 
                     if (!Check(TokenType.DM_RightParenthesis)) {
                         delay = Expression();
-                        if (delay == null) Error("Expected an expression");
+
+                        Error("Expected an expression");
 
                         ConsumeRightParenthesis();
                     }

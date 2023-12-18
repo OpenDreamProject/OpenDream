@@ -350,7 +350,7 @@ internal static class DMExpressionBuilder {
                 return new Global(identifier.Location);
             default: {
                 if (CurrentScopeMode == ScopeMode.Normal) {
-                    DMProc.LocalVariable localVar = proc?.GetLocalVariable(name);
+                    DMProc.LocalVariable localVar = proc.GetLocalVariable(name);
                     if (localVar != null)
                         return new Local(identifier.Location, localVar);
 
@@ -397,7 +397,13 @@ internal static class DMExpressionBuilder {
                             DMObjectTree.Globals[globalId.Value].Type,
                             globalId.Value);
                     }
-                    if(BuildIdentifier(globalIdentifier.Identifier, definition, proc) is { } lvalue) {
+
+                    if (expression is ConstantPath &&
+                        definition.GetVariable(name) is { } variable) {
+                        return variable.Value.TryAsConstant(out var constant) ? constant : new Initial();
+                    }
+
+                    if(BuildExpression(expression, definition, proc) is { } lvalue) {
                         return new Initial(globalIdentifier.Location, lvalue);
                     }
                 }

@@ -532,12 +532,16 @@ internal sealed class DMPreprocessorLexer {
                         foundTerminator = true;
                         break;
                     }
+
+                    textBuilder.Append(stringC);
                 } else {
                     foundTerminator = true;
                     break;
                 }
             } else {
-                textBuilder.Append(stringC);
+                if (stringC != '\r') // \r\n becomes \n
+                    textBuilder.Append(stringC);
+
                 Advance();
             }
         }

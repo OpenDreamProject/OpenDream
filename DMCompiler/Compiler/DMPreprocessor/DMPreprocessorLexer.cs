@@ -539,7 +539,9 @@ internal sealed class DMPreprocessorLexer {
                     break;
                 }
             } else {
-                textBuilder.Append(stringC);
+                if (stringC != '\r') // \r\n becomes \n
+                    textBuilder.Append(stringC);
+
                 Advance();
             }
         }

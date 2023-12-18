@@ -720,8 +720,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private Variable DescribeValue(string name, DreamValue value) {
-        var varDesc = new Variable { Name = name };
-        varDesc.Value = value.ToString();
+        var varDesc = new Variable { Name = name, Value = value.ToString() };
         if (value.TryGetValueAsDreamList(out var list)) {
             if (list.GetLength() > 0) {
                 varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));

@@ -13,7 +13,7 @@ public sealed class StackFrame {
     /**
      * The name of the stack frame, typically a method name.
      */
-    [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("name")] public required string Name { get; set; }
 
     /**
      * The source of the frame.

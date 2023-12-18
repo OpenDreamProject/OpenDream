@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using DMCompiler.Compiler.DM;
@@ -154,7 +155,9 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
                 }
                 case TokenType.DM_Preproc_Punctuator:
                 case TokenType.DM_Preproc_Number:
-                case TokenType.DM_Preproc_String:
+                case TokenType.DM_Preproc_StringBegin:
+                case TokenType.DM_Preproc_StringMiddle:
+                case TokenType.DM_Preproc_StringEnd:
                 case TokenType.DM_Preproc_ConstantString:
                 case TokenType.DM_Preproc_Punctuator_Comma:
                 case TokenType.DM_Preproc_Punctuator_Period:
@@ -168,6 +171,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
                     while (_bufferedWhitespace.TryPop(out var whitespace)) {
                         yield return whitespace;
                     }
+
                     _currentLineContainsNonWhitespace = true;
                     _canUseDirective = (token.Type == TokenType.DM_Preproc_Punctuator_Semicolon);
 
@@ -473,11 +477,11 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     /// <returns>true if the Token ended up meaning a macro sequence.</returns>
     private bool TryMacro(Token token) {
         DebugTools.Assert(token.Type == TokenType.DM_Preproc_Identifier); // Check this before passing anything to this function.
-        if (!_defines.TryGetValue(token.Text, out DMMacro macro)) {
+        if (!_defines.TryGetValue(token.Text, out DMMacro? macro)) {
             return false;
         }
 
-        List<List<Token>> parameters = null;
+        List<List<Token>>? parameters = null;
         if (macro.HasParameters() && !TryGetMacroParameters(out parameters)) {
             return false;
         }
@@ -598,7 +602,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     /// If whitespace may be important later, use <see cref="CheckForTokenIgnoringWhitespace(TokenType, out Token)"/>.
     /// </remarks>
     private Token GetNextToken(bool ignoreWhitespace = false) {
-        if (_unprocessedTokens.TryPop(out Token? nextToken)) {
+        if (_unprocessedTokens.TryPop(out Token nextToken)) {
             if (ignoreWhitespace && nextToken.Type == TokenType.DM_Preproc_Whitespace) { // This doesn't need to be a loop since whitespace tokens should never occur next to each other
                 nextToken = GetNextToken(true);
             }
@@ -683,7 +687,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     /// <summary>
     /// The alternative to <see cref="GetNextToken(bool)"/> if you don't know whether you'll consume the whitespace or not.
     /// </summary>
-    private bool CheckForTokenIgnoringWhitespace(TokenType type, out Token result) {
+    private bool CheckForTokenIgnoringWhitespace(TokenType type, [NotNullWhen(true)] out Token? result) {
         Token firstToken = GetNextToken();
         if (firstToken.Type == TokenType.DM_Preproc_Whitespace) { // This doesn't need to be a loop since whitespace tokens should never occur next to each other
             Token secondToken = GetNextToken();
@@ -695,12 +699,10 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
             }
             result = secondToken;
             return true;
-        }
-        else if (firstToken.Type == type) {
+        } else if (firstToken.Type == type) {
             result = firstToken;
             return true;
-        }
-        else {
+        } else {
             PushToken(firstToken);
             result = null;
             return false;
@@ -746,11 +748,12 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
         return false;
     }
 
-    private bool TryGetMacroParameters(out List<List<Token>> parameters) {
+    private bool TryGetMacroParameters(out List<List<Token>>? parameters) {
         if (!CheckForTokenIgnoringWhitespace(TokenType.DM_Preproc_Punctuator_LeftParenthesis, out var leftParenToken)) {
             parameters = null;
             return false;
         }
+
         parameters = new();
         List<Token> currentParameter = new();
 
@@ -797,7 +800,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
 
         parameters.Add(currentParameter);
         if (parameterToken.Type != TokenType.DM_Preproc_Punctuator_RightParenthesis) {
-            DMCompiler.Emit(WarningCode.BadDirective, leftParenToken.Location, "Missing ')' in macro call");
+            DMCompiler.Emit(WarningCode.BadDirective, leftParenToken.Value.Location, "Missing ')' in macro call");
 
             return false;
         }

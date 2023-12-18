@@ -3,7 +3,7 @@ using Robust.Client.Input;
 using Robust.Client.UserInterface;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
-using Robust.Shared.Players;
+using Robust.Shared.Player;
 using Key = Robust.Client.Input.Keyboard.Key;
 
 namespace OpenDreamClient.Interface;

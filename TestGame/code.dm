@@ -184,6 +184,13 @@
 		spawn(50)
 			src.client.images.Cut()
 
+	verb/test_hide_main_window()
+		src << "hiding main window"
+		winset(src,"mainwindow","is-visible=false")
+		spawn(20)
+			src << "showing main window"
+			winset(src,"mainwindow","is-visible=true")
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

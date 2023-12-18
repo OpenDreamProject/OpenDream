@@ -37,6 +37,7 @@ namespace OpenDreamRuntime.Objects {
         protected ServerAppearanceSystem? AppearanceSystem => ObjectDefinition.AppearanceSystem;
         protected TransformSystem? TransformSystem => ObjectDefinition.TransformSystem;
         protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
+        protected MetaDataSystem? MetaDataSystem => ObjectDefinition.MetaDataSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
 

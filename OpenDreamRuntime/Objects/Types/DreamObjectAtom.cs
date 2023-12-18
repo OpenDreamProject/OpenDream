@@ -22,6 +22,14 @@ public class DreamObjectAtom : DreamObject {
         VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
         Verbs = new(ObjectTree, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
+
+        AtomManager.AddAtom(this);
+    }
+
+    protected override void HandleDeletion() {
+        AtomManager.RemoveAtom(this);
+
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -93,6 +101,15 @@ public class DreamObjectAtom : DreamObject {
                 break;
             case "desc":
                 value.TryGetValueAsString(out Desc);
+                break;
+            case "appearance":
+                if (!AtomManager.TryCreateAppearanceFrom(value, out var newAppearance))
+                    return; // Ignore attempts to set an invalid appearance
+
+                // The dir does not get changed
+                newAppearance.Direction = AtomManager.MustGetAppearance(this)!.Direction;
+
+                AtomManager.SetAtomAppearance(this, newAppearance);
                 break;
             case "overlays": {
                 Overlays.Cut();

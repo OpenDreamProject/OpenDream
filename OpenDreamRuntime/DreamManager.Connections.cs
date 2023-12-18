@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
-using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
@@ -106,11 +106,18 @@ namespace OpenDreamRuntime {
                             var length = BitConverter.ToUInt16(buffer);
 
                             buffer = new byte[length];
-                            var read = await from.ReceiveAsync(buffer, cancellationToken);
-                            if (read != buffer.Length) {
-                                _sawmill.Warning("failed to parse byond topic due to insufficient data read");
-                                return null;
-                            }
+                            var totalRead = 0;
+                            do {
+                                var read = await from.ReceiveAsync(
+                                    new Memory<byte>(buffer, totalRead, length - totalRead),
+                                    cancellationToken);
+                                if(read == 0 && totalRead != length) {
+                                    _sawmill.Warning("failed to parse byond topic due to insufficient data read");
+                                    return null;
+                                }
+
+                                totalRead += read;
+                            } while (totalRead < length);
 
                             return Encoding.ASCII.GetString(buffer[6..^1]);
                         }
@@ -178,7 +185,7 @@ namespace OpenDreamRuntime {
                         await remote.DisconnectAsync(false, cancellationToken);
                     }
             } catch (Exception ex) {
-                _sawmill.Warning("Error processing topic: {0}", ex);
+                _sawmill.Warning("Error processing topic #{0}: {1}", topicId, ex);
             } finally {
                 _sawmill.Debug("Finished world topic #{0}", topicId);
             }
@@ -215,7 +222,7 @@ namespace OpenDreamRuntime {
         private void RxAckLoadInterface(MsgAckLoadInterface message) {
             // Once the client loaded the interface, move them to in-game.
             var player = _playerManager.GetSessionByChannel(message.MsgChannel);
-            player.JoinGame();
+            _playerManager.JoinGame(player);
         }
 
         private DreamConnection ConnectionForChannel(INetChannel channel) {
@@ -262,7 +269,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public DreamConnection GetConnectionBySession(IPlayerSession session) {
+        public DreamConnection GetConnectionBySession(ICommonSession session) {
             return _connections[session.UserId];
         }
     }

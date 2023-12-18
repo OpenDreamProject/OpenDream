@@ -532,6 +532,8 @@ internal sealed class DMPreprocessorLexer {
                         foundTerminator = true;
                         break;
                     }
+
+                    textBuilder.Append(stringC);
                 } else {
                     foundTerminator = true;
                     break;

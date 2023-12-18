@@ -12,6 +12,7 @@ namespace OpenDreamShared.Compiler {
         BadToken = 1,
         BadDirective = 10,
         BadExpression = 11,
+        MissingExpression = 12,
         BadLabel = 19,
         InvalidReference = 50,
         BadArgument = 100,

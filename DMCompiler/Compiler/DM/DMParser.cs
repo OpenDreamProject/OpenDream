@@ -2141,6 +2141,7 @@ namespace DMCompiler.Compiler.DM {
                     primary = ParseProcCall(primary);
                 }
             }
+
             if (primary == null && Check(TokenType.DM_Call)) {
                 Whitespace();
                 DMASTCallParameter[]? callParameters = ProcCall();
@@ -2164,7 +2165,10 @@ namespace DMCompiler.Compiler.DM {
                 case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, (string)constantToken.Value);
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull(constantToken.Location);
                 case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, (string)constantToken.Value);
-                case TokenType.DM_String: return ExpressionFromString(constantToken);
+                case TokenType.DM_ConstantString:
+                case TokenType.DM_StringBegin:
+                    // Don't advance, ExpressionFromString() will handle it
+                    return ExpressionFromString();
                 default: return null;
             }
         }

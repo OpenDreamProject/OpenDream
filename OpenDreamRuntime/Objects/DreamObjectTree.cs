@@ -68,14 +68,14 @@ public sealed class DreamObjectTree {
 
     public void LoadJson(DreamCompiledJson json) {
         var types = json.Types ?? Array.Empty<DreamTypeJson>();
-            if (types.Length == 0 || types[0].Path != "/")
-                throw new ArgumentException("The first type must be root!", nameof(json));
+        if (types.Length == 0 || types[0].Path != "/")
+            throw new ArgumentException("The first type must be root!", nameof(json));
 
-            Root = new("/", 0);
+        Root = new("/", 0);
 
-            _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
-            _entitySystemManager.TryGetEntitySystem(out _transformSystem);
-            _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
+        _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
+        _entitySystemManager.TryGetEntitySystem(out _transformSystem);
+        _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
 
         Strings = json.Strings ?? new();
 
@@ -85,11 +85,11 @@ public sealed class DreamObjectTree {
             GlobalInitProc = null;
         }
 
-            var procs = json.Procs;
-            var globalProcs = json.GlobalProcs;
+        var procs = json.Procs;
+        var globalProcs = json.GlobalProcs;
 
         LoadTypesFromJson(types, procs, globalProcs);
-        }
+    }
 
     public TreeEntry GetTreeEntry(string path) {
         if (!_pathToType.TryGetValue(path, out TreeEntry? type)) {
@@ -255,15 +255,15 @@ public sealed class DreamObjectTree {
 
         //First pass: Create types and set them up for initialization
         Types[0] = Root;
-            for (int i = 1; i < Types.Length; i++) {
+        for (int i = 1; i < Types.Length; i++) {
             var path = types[i].Path;
             var type = new TreeEntry(path, i);
 
-                Types[i] = type;
-                _pathToType[path] = type;
-            }
+            Types[i] = type;
+            _pathToType[path] = type;
+        }
 
-            World = GetTreeEntry("/world");
+        World = GetTreeEntry("/world");
         List = GetTreeEntry("/list");
         Client = GetTreeEntry("/client");
         Datum = GetTreeEntry("/datum");
@@ -283,8 +283,8 @@ public sealed class DreamObjectTree {
         Obj = GetTreeEntry("/obj");
         Mob = GetTreeEntry("/mob");
 
-            // Load procs first so types can set their init proc's super proc
-            LoadProcsFromJson(procs, globalProcs);
+        // Load procs first so types can set their init proc's super proc
+        LoadProcsFromJson(procs, globalProcs);
 
         //Second pass: Set each type's parent and children
         for (int i = 0; i < Types.Length; i++) {
@@ -384,7 +384,7 @@ public sealed class DreamObjectTree {
     }
 
     public DreamProc LoadProcJson(int id, ProcDefinitionJson procDefinition) {
-            TreeEntry owningType = Types[procDefinition.OwningTypeId];
+        TreeEntry owningType = Types[procDefinition.OwningTypeId];
         return new DMProc(id, owningType, procDefinition, null, _dreamManager,
             _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
     }
@@ -469,7 +469,7 @@ public sealed class DreamObjectTree {
 
 public sealed class TreeEntry {
     public readonly string Name;
-        public readonly string Path;
+    public readonly string Path;
     public readonly int Id;
     public DreamObjectDefinition ObjectDefinition;
     public TreeEntry ParentEntry;
@@ -487,9 +487,9 @@ public sealed class TreeEntry {
     public uint ChildCount;
 
     public TreeEntry(string path, int id) {
-            int lastSlash = path.LastIndexOf('/');
-            Name = (lastSlash != -1) ? path.Substring(lastSlash + 1) : path;
+        int lastSlash = path.LastIndexOf('/');
 
+        Name = (lastSlash != -1) ? path.Substring(lastSlash + 1) : path;
         Path = path;
         Id = id;
     }

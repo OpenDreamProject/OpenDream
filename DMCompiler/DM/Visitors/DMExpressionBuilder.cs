@@ -398,13 +398,14 @@ internal static class DMExpressionBuilder {
                             globalId.Value);
                     }
 
-                    if (expression is ConstantPath &&
-                        definition.GetVariable(name) is { } variable) {
-                        return variable.Value.TryAsConstant(out var constant) ? constant : new Initial();
-                    }
-
-                    if(BuildExpression(expression, definition, proc) is { } lvalue) {
-                        return new Initial(globalIdentifier.Location, lvalue);
+                    switch (expression)
+                    {
+                        case Dereference dereference:
+                            return new Initial(dereference.Location, dereference);
+                        case ConstantPath when definition.GetVariable(name) is { } variable:
+                            return variable.Value.TryAsConstant(out var constant)
+                                ? constant
+                                : new Initial(globalIdentifier.Location, new Field(expression.Location, variable, definition));
                     }
                 }
             } else {

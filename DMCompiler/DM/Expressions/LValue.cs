@@ -113,14 +113,20 @@ namespace DMCompiler.DM.Expressions {
     // Identifier of field
     sealed class Field : LValue {
         public readonly DMVariable Variable;
+        public readonly DMObject? Owner;
 
-        public Field(Location location, DMVariable variable)
+        public Field(Location location, DMVariable variable, DMObject? owner = null)
             : base(location, variable.Type) {
             Variable = variable;
+            Owner = owner;
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            proc.PushReferenceValue(DMReference.Src);
+            if (Owner != null) {
+                proc.PushType(Owner.Id);
+            } else {
+                proc.PushReferenceValue(DMReference.Src);
+            }
             proc.PushString(Variable.Name);
             proc.Initial();
         }

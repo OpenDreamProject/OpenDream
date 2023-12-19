@@ -1,9 +1,9 @@
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using DMCompiler;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -69,7 +69,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             if (!string.IsNullOrEmpty(data)) {
                 SavefileDirectories.Add(filename, JsonSerializer.Deserialize<Dictionary<string, SavefileDirectory>>(data));
             } else {
-                 SavefileDirectories.Add(filename, new() {
+                SavefileDirectories.Add(filename, new() {
                     { "/", new SavefileDirectory() }
                 });
                 //create the file immediately

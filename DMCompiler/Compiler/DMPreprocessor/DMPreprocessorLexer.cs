@@ -477,21 +477,29 @@ internal sealed class DMPreprocessorLexer {
     ///<remarks>
     /// If it contains string interpolations, it splits the string tokens into parts and lex the expressions as normal <br/>
     /// For example, "There are [amount] of them" becomes: <br/>
-    ///    DM_Preproc_String("There are "), DM_Preproc_Identifier(amount), DM_Preproc_String(" of them") <br/>
+    ///    DM_Preproc_StringBegin("There are "), DM_Preproc_Identifier(amount), DM_Preproc_StringEnd(" of them") <br/>
     /// If there is no string interpolation, it outputs a DM_Preproc_ConstantString token instead
     /// </remarks>
     private Token LexString(bool isLong) {
         char terminator = GetCurrent();
-        StringBuilder textBuilder = new StringBuilder(isLong ? "{" + terminator : char.ToString(terminator));
+        StringBuilder textBuilder = new StringBuilder();
         Queue<Token> stringTokens = new();
+        string tokenTextStart = isLong ? "{" + terminator : char.ToString(terminator);
+        string tokenTextEnd = isLong ? terminator + "}" : char.ToString(terminator);
+        bool isConstant = true;
+        bool foundTerminator = false;
 
         Advance();
         while (!(!isLong && AtLineEnd()) && !AtEndOfSource()) {
             char stringC = GetCurrent();
 
-            textBuilder.Append(stringC);
             if (stringC == '[') {
-                stringTokens.Enqueue(CreateToken(TokenType.DM_Preproc_String, textBuilder.ToString()));
+                textBuilder.Append(stringC);
+                stringTokens.Enqueue(isConstant // First case of '['
+                    ? CreateToken(TokenType.DM_Preproc_StringBegin, tokenTextStart + textBuilder, textBuilder.ToString())
+                    : CreateToken(TokenType.DM_Preproc_StringMiddle, textBuilder.ToString(), textBuilder.ToString()));
+
+                isConstant = false;
                 textBuilder.Clear();
 
                 Advance();
@@ -513,28 +521,31 @@ internal sealed class DMPreprocessorLexer {
                 Advance();
 
                 if (AtLineEnd()) { //Line splice
-                    //Remove the '\' from textBuilder and ignore newlines & all incoming whitespace
-                    textBuilder.Remove(textBuilder.Length - 1, 1);
+                    // Ignore newlines & all incoming whitespace
                     do {
                         Advance();
                     } while (AtLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t');
                 } else {
+                    textBuilder.Append(stringC);
                     textBuilder.Append(GetCurrent());
                     Advance();
                 }
             } else if (stringC == terminator) {
                 if (isLong) {
-                    stringC = Advance();
-
-                    if (stringC == '}') {
-                        textBuilder.Append('}');
-
+                    if (Advance() == '}') {
+                        foundTerminator = true;
                         break;
                     }
+
+                    textBuilder.Append(stringC);
                 } else {
+                    foundTerminator = true;
                     break;
                 }
             } else {
+                if (stringC != '\r') // \r\n becomes \n
+                    textBuilder.Append(stringC);
+
                 Advance();
             }
         }
@@ -542,22 +553,20 @@ internal sealed class DMPreprocessorLexer {
         if (!AtEndOfSource() && !HandleLineEnd())
             Advance();
 
-        string text = textBuilder.ToString();
-        if (!isLong && !(text.EndsWith(terminator) && text.Length != 1))
-            return CreateToken(TokenType.Error, string.Empty, "Expected '" + terminator + "' to end string");
-        if (isLong && !text.EndsWith("}"))
+        if (!isLong && !foundTerminator)
+            return CreateToken(TokenType.Error, string.Empty, $"Expected '{terminator}' to end string");
+        if (isLong && !foundTerminator)
             return CreateToken(TokenType.Error, string.Empty, "Expected '}' to end long string");
 
-        if (stringTokens.Count == 0) {
-            string stringValue = isLong ? text.Substring(2, text.Length - 4) : text.Substring(1, text.Length - 2);
+        var text = textBuilder.ToString();
 
-            return CreateToken(TokenType.DM_Preproc_ConstantString, text, stringValue);
+        if (isConstant) {
+            return CreateToken(TokenType.DM_Preproc_ConstantString, tokenTextStart + text + tokenTextEnd, text);
         } else {
-            stringTokens.Enqueue(CreateToken(TokenType.DM_Preproc_String, textBuilder.ToString()));
+            foreach (var token in stringTokens)
+                _pendingTokenQueue.Enqueue(token);
 
-            foreach (Token stringToken in stringTokens) {
-                _pendingTokenQueue.Enqueue(stringToken);
-            }
+            _pendingTokenQueue.Enqueue(CreateToken(TokenType.DM_Preproc_StringEnd, text + tokenTextEnd, text));
 
             return _pendingTokenQueue.Dequeue();
         }

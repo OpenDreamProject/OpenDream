@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
     abstract class BinaryOp : DMExpression {

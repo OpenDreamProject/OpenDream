@@ -1,6 +1,5 @@
 ﻿using System;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using DMCompiler.DM;
 using System.Collections.Generic;
@@ -52,7 +51,7 @@ namespace DMCompiler.Compiler.DMM {
         public CellDefinitionJson? ParseCellDefinition() {
             Token currentToken = Current();
 
-            if (Check(TokenType.DM_String)) {
+            if (Check(TokenType.DM_ConstantString)) {
                 Consume(TokenType.DM_Equals, "Expected '='");
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
 
@@ -109,9 +108,9 @@ namespace DMCompiler.Compiler.DMM {
 
                 Consume(TokenType.DM_RightParenthesis, "Expected ')'");
                 return cellDefinition;
-            } else {
-                return null;
             }
+
+            return null;
         }
 
         public MapBlockJson? ParseMapBlock() {
@@ -122,7 +121,7 @@ namespace DMCompiler.Compiler.DMM {
 
                 Consume(TokenType.DM_Equals, "Expected '='");
                 Token blockStringToken = Current();
-                Consume(TokenType.DM_String, "Expected a string");
+                Consume(TokenType.DM_ConstantString, "Expected a constant string");
 
                 string blockString = (string)blockStringToken.Value;
                 List<string> lines = new(blockString.Split("\n", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries));

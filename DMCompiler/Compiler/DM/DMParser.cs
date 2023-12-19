@@ -2155,7 +2155,7 @@ namespace DMCompiler.Compiler.DM {
                 return primary;
             }
 
-            if (Check(TokenType.DM_Call)) {
+            if (primary == null && Check(TokenType.DM_Call)) {
                 Whitespace();
                 DMASTCallParameter[]? callParameters = ProcCall();
                 if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) Error("Call must have 2 parameters");
@@ -2178,7 +2178,10 @@ namespace DMCompiler.Compiler.DM {
                 case TokenType.DM_Resource: Advance(); return new DMASTConstantResource(constantToken.Location, (string)constantToken.Value);
                 case TokenType.DM_Null: Advance(); return new DMASTConstantNull(constantToken.Location);
                 case TokenType.DM_RawString: Advance(); return new DMASTConstantString(constantToken.Location, (string)constantToken.Value);
-                case TokenType.DM_String: return ExpressionFromString(constantToken);
+                case TokenType.DM_ConstantString:
+                case TokenType.DM_StringBegin:
+                    // Don't advance, ExpressionFromString() will handle it
+                    return ExpressionFromString();
                 default: return null;
             }
         }

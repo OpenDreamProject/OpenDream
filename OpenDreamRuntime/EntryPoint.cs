@@ -72,8 +72,8 @@ namespace OpenDreamRuntime {
 
         protected override void Dispose(bool disposing) {
             // Write every savefile to disk
-            foreach (var savefile in DreamObjectSavefile.Savefiles) {
-                savefile.Flush();
+            foreach (var savefile in DreamObjectSavefile.Savefiles.ToArray()) { //ToArray() to avoid modifying the collection while iterating over it
+                savefile.Close();
             }
 
             _dreamManager.Shutdown();

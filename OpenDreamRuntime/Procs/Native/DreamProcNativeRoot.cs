@@ -1110,7 +1110,7 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (value.TryGetValueAsString(out var text))
                 writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
-                writer.WriteStringValue(type.Path.PathString);
+                writer.WriteStringValue(type.Path);
             else if (value.TryGetValueAsProc(out var proc))
                 writer.WriteStringValue(proc.ToString());
             else if (value.TryGetValueAsDreamList(out var list)) {
@@ -2508,17 +2508,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_text2path(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "T").TryGetValueAsString(out var text) || string.IsNullOrWhiteSpace(text)) {
+            if (!bundle.GetArgument(0, "T").TryGetValueAsString(out var path) || string.IsNullOrWhiteSpace(path)) {
                 return DreamValue.Null;
             }
 
-            DreamPath path = new DreamPath(text);
-
             bool isVerb = false;
 
-            int procElementIndex = path.FindElement("proc");
+            int procElementIndex = path.IndexOf("/proc/", StringComparison.Ordinal);
             if (procElementIndex == -1) {
-                procElementIndex = path.FindElement("verb");
+                procElementIndex = path.IndexOf("/verb/", StringComparison.Ordinal);
                 if (procElementIndex != -1)
                     isVerb = true;
             }
@@ -2527,17 +2525,17 @@ namespace OpenDreamRuntime.Procs.Native {
 
             string? procName = null;
             if (isProcPath) {
-                procName = path.LastElement;
+                procName = path.Substring(path.LastIndexOf('/') + 1);
 
                 if (procElementIndex == 0) { // global procs
-                    if (procName != null && bundle.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
+                    if (bundle.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
                         return new DreamValue(globalProc);
                     else
                         return DreamValue.Null;
                 }
             }
 
-            DreamPath typePath = isProcPath ? path.FromElements(0, procElementIndex) : path;
+            string typePath = isProcPath ? path.Substring(0, procElementIndex) : path;
 
             if (!bundle.ObjectTree.TryGetTreeEntry(typePath, out var type) || type == bundle.ObjectTree.Root)
                 return DreamValue.Null;
@@ -2724,16 +2722,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         type = typeObj.ObjectDefinition.TreeEntry;
                     } else if (typeValue.TryGetValueAsString(out var typeString)) {
-                        DreamPath path = new DreamPath(typeString);
-
-                        if (path.LastElement == "proc") {
-                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                        if (typeString.EndsWith("/proc")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
                             addingProcs = type.ObjectDefinition.Procs.Values;
-                        } else if (path.LastElement == "verb") {
-                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                        } else if (typeString.EndsWith("/verb")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
                             addingProcs = type.ObjectDefinition.Verbs;
                         } else {
-                            type = bundle.ObjectTree.GetTreeEntry(path);
+                            type = bundle.ObjectTree.GetTreeEntry(typeString);
                         }
                     } else {
                         continue;

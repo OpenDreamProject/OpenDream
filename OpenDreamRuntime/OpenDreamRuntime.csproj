@@ -13,7 +13,7 @@
     <ProjectReference Include="..\RobustToolbox\Robust.Server\Robust.Server.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Byond.TopicSender" Version="7.0.1" />
+    <PackageReference Include="Byond.TopicSender" Version="8.0.1" />
   </ItemGroup>
 
   <Import Project="..\RobustToolbox\MSBuild\Robust.Properties.targets" />

@@ -218,6 +218,7 @@ public sealed class ControlWindow : InterfaceControl {
             ControlDescriptorLabel => new ControlLabel(controlDescriptor, this),
             ControlDescriptorGrid => new ControlGrid(controlDescriptor, this),
             ControlDescriptorTab => new ControlTab(controlDescriptor, this),
+            ControlDescriptorBar => new ControlBar(controlDescriptor, this),
             _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
         };
 

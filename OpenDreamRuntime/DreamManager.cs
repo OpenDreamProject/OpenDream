@@ -98,7 +98,7 @@ namespace OpenDreamRuntime {
             _procScheduler.Process();
             UpdateStat();
             _dreamMapManager.UpdateTiles();
-
+            DreamObjectSavefile.FlushAllUpdates();
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
         }
 

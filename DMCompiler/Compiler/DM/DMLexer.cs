@@ -237,7 +237,7 @@ public sealed class DMLexer : TokenLexer {
                         string tokenText = preprocToken.Text;
                         switch (preprocToken.Text[0]) {
                             case '"':
-                            case '{': token = CreateToken(TokenType.DM_String, tokenText, preprocToken.Value); break;
+                            case '{': token = CreateToken(TokenType.DM_ConstantString, tokenText, preprocToken.Value); break;
                             case '\'': token = CreateToken(TokenType.DM_Resource, tokenText, preprocToken.Value); break;
                             case '@': token = CreateToken(TokenType.DM_RawString, tokenText, preprocToken.Value); break;
                             default: token = CreateToken(TokenType.Error, tokenText, "Invalid string"); break;
@@ -246,45 +246,18 @@ public sealed class DMLexer : TokenLexer {
                         Advance();
                         break;
                     }
-                    case TokenType.DM_Preproc_String: {
-                        string tokenText = preprocToken.Text;
-
-                        string? stringStart = null, stringEnd = null;
-                        switch (preprocToken.Text[0]) {
-                            case '"': stringStart = "\""; stringEnd = "\""; break;
-                            case '{': stringStart = "{\""; stringEnd = "\"}"; break;
-                        }
-
-                        if (stringStart != null && stringEnd != null) {
-                            TokenTextBuilder.Clear();
-                            TokenTextBuilder.Append(tokenText);
-
-                            int stringNesting = 1;
-                            while (!AtEndOfSource) {
-                                Token stringToken = Advance();
-
-                                TokenTextBuilder.Append(stringToken.Text);
-                                if (stringToken.Type == TokenType.DM_Preproc_String) {
-                                    if (stringToken.Text.StartsWith(stringStart)) {
-                                        stringNesting++;
-                                    } else if (stringToken.Text.EndsWith(stringEnd)) {
-                                        stringNesting--;
-
-                                        if (stringNesting == 0) break;
-                                    }
-                                }
-                            }
-
-                            string stringText = TokenTextBuilder.ToString();
-                            string stringValue = stringText.Substring(stringStart.Length, stringText.Length - stringStart.Length - stringEnd.Length);
-                            token = CreateToken(TokenType.DM_String, stringText, stringValue);
-                        } else {
-                            token = CreateToken(TokenType.Error, tokenText, "Invalid string");
-                        }
-
+                    case TokenType.DM_Preproc_StringBegin:
+                        token = CreateToken(TokenType.DM_StringBegin, preprocToken.Text, preprocToken.Value);
                         Advance();
                         break;
-                    }
+                    case TokenType.DM_Preproc_StringMiddle:
+                        token = CreateToken(TokenType.DM_StringMiddle, preprocToken.Text, preprocToken.Value);
+                        Advance();
+                        break;
+                    case TokenType.DM_Preproc_StringEnd:
+                        token = CreateToken(TokenType.DM_StringEnd, preprocToken.Text, preprocToken.Value);
+                        Advance();
+                        break;
                     case TokenType.DM_Preproc_Identifier: {
                         TokenTextBuilder.Clear();
 

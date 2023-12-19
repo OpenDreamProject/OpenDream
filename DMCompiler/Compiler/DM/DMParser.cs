@@ -463,7 +463,7 @@ namespace DMCompiler.Compiler.DM {
                     DMCompiler.Emit(WarningCode.BadExpression, Current().Location, "Global identifier expected");
                     return null;
                 }
-                expression = new DMASTGlobalIdentifier(identifier.Location, expression, identifier);
+                expression = new DMASTScopeIdentifier(identifier.Location, expression, identifier);
             } while (Check(TokenType.DM_DoubleColon));
 
             return expression;
@@ -1049,8 +1049,7 @@ namespace DMCompiler.Compiler.DM {
 
                     if (!Check(TokenType.DM_RightParenthesis)) {
                         delay = Expression();
-
-                        Error("Expected an expression");
+                        if (delay == null) Error("Expected an expression");
 
                         ConsumeRightParenthesis();
                     }
@@ -2374,7 +2373,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         private DMASTExpression? ParseProcCall(DMASTExpression? expression) {
-            if (expression is not (DMASTCallable or DMASTIdentifier or DMASTGlobalIdentifier)) return expression;
+            if (expression is not (DMASTCallable or DMASTIdentifier or DMASTScopeIdentifier)) return expression;
 
             Whitespace();
 
@@ -2390,7 +2389,7 @@ namespace DMCompiler.Compiler.DM {
 
             DMASTCallParameter[]? callParameters = ProcCall();
             if (callParameters != null) {
-                if (expression is DMASTGlobalIdentifier gid) {
+                if (expression is DMASTScopeIdentifier gid) {
                     var globalProc = new DMASTCallableGlobalProc(expression.Location, gid.Identifier.Identifier);
                     return new DMASTProcCall(gid.Location, globalProc, callParameters);
                 } else if (expression is DMASTCallable callable) {

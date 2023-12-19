@@ -146,7 +146,7 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
-        public void VisitGlobalIdentifier(DMASTGlobalIdentifier globalIdentifier) {
+        public void VisitGlobalIdentifier(DMASTScopeIdentifier globalIdentifier) {
             throw new NotImplementedException();
         }
 
@@ -1191,11 +1191,11 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public sealed class DMASTGlobalIdentifier : DMASTExpression {
+    public sealed class DMASTScopeIdentifier : DMASTExpression {
         public readonly DMASTExpression? Expression;
         public readonly DMASTIdentifier Identifier;
 
-        public DMASTGlobalIdentifier(Location location, DMASTExpression? expression, DMASTIdentifier identifier)
+        public DMASTScopeIdentifier(Location location, DMASTExpression? expression, DMASTIdentifier identifier)
             : base(location) {
             Expression = expression;
             Identifier = identifier;

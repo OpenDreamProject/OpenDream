@@ -26,7 +26,7 @@ internal static class DMExpressionBuilder {
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
             case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
-            case DMASTGlobalIdentifier globalIdentifier: return BuildGlobalIdentifier(globalIdentifier, dmObject, proc, inferredPath);
+            case DMASTScopeIdentifier globalIdentifier: return BuildScopeIdentifier(globalIdentifier, dmObject, proc, inferredPath);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
             case DMASTCallableGlobalProc globalProc: return new GlobalProc(expression.Location, globalProc.Identifier);
@@ -374,8 +374,8 @@ internal static class DMExpressionBuilder {
         }
     }
 
-    private static DMExpression BuildGlobalIdentifier(
-        DMASTGlobalIdentifier globalIdentifier,
+    private static DMExpression BuildScopeIdentifier(
+        DMASTScopeIdentifier globalIdentifier,
         DMObject dmObject,
         DMProc proc,
         DreamPath? inferredPath) {
@@ -387,7 +387,16 @@ internal static class DMExpressionBuilder {
 
         if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
             int? globalId;
-            if (expression is { Path: { } path }) {
+            if (expression is null) {
+                globalId = dmObject.GetGlobalVariableId(name);
+                if (globalId != null) {
+                    return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                }
+
+                if (name == "vars") {
+                    return new GlobalVars(globalIdentifier.Location);
+                }
+            } else if (expression is { Path: { } path }) {
                 var definition = DMObjectTree.GetDMObject(path, false);
                 if (definition != null) {
                     globalId = definition.GetGlobalVariableId(name);
@@ -402,25 +411,23 @@ internal static class DMExpressionBuilder {
                     {
                         case Dereference dereference:
                             return new Initial(dereference.Location, dereference);
-                        case ConstantPath when definition.GetVariable(name) is { } variable:
+                        case ConstantPath when definition.GetVariable(name) is { } variable: {
                             return variable.Value.TryAsConstant(out var constant)
                                 ? constant
                                 : new Initial(globalIdentifier.Location, new Field(expression.Location, variable, definition));
+                        }
                     }
                 }
             } else {
-                globalId = dmObject.GetGlobalVariableId(name);
-                if (globalId != null) {
-                    return new GlobalField(globalIdentifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
-                }
-
-                if (name == "vars") {
-                    return new GlobalVars(globalIdentifier.Location);
-                }
+                // yes, you can do <literal>::variable and it compiles and returns null. BYOND is a magical thing
+                return new Null(globalIdentifier.Location);
             }
         }
 
-        DMCompiler.Emit(WarningCode.ItemDoesntExist, globalIdentifier.Location, $"Unknown {(expression == null ? "global" : "static")} \"{((expression?.Path != null ? $"{expression.Path.Value}::" : "") + name)}\"");
+        DMCompiler.Emit(WarningCode.ItemDoesntExist,
+            globalIdentifier.Location,
+            $"Unknown {(expression == null ? "global" : "static")}" +
+            $" \"{((expression?.Path != null ? $"{expression.Path.Value}::" : "") + name)}\"");
         return new Null(globalIdentifier.Location);
     }
 

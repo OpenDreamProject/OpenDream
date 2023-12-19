@@ -24,5 +24,11 @@ namespace OpenDreamShared {
 
         public static readonly CVarDef<ushort> TopicPort =
             CVarDef.Create<ushort>("opendream.topic_port", 25567, CVar.SERVERONLY);
+
+        /// <summary>
+        /// Pipe for sending control commands from the parent process.
+        /// </summary>
+        public static readonly CVarDef<string> CommandPipe =
+            CVarDef.Create("opendream.command_pipe", String.Empty, CVar.SERVERONLY);
     }
 }

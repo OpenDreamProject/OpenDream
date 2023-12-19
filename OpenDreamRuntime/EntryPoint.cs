@@ -18,6 +18,7 @@ namespace OpenDreamRuntime {
     public sealed class EntryPoint : GameServer {
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly DreamManager _dreamManager = default!;
+        [Dependency] private readonly CommandPipeManager _commandPipeManager = default!;
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;
@@ -58,6 +59,7 @@ namespace OpenDreamRuntime {
         }
 
         public override void PostInit() {
+            _commandPipeManager.Start();
             _commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
 
             int debugAdapterPort = _configManager.GetCVar(OpenDreamCVars.DebugAdapterLaunched);
@@ -71,6 +73,8 @@ namespace OpenDreamRuntime {
         }
 
         protected override void Dispose(bool disposing) {
+            _commandPipeManager.Shutdown().GetAwaiter().GetResult();
+
             // Write every savefile to disk
             foreach (var savefile in DreamObjectSavefile.Savefiles.ToArray()) { //ToArray() to avoid modifying the collection while iterating over it
                 savefile.Close();

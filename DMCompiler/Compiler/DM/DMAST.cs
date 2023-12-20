@@ -146,7 +146,7 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
-        public void VisitGlobalIdentifier(DMASTScopeIdentifier globalIdentifier) {
+        public void VisitScopeIdentifier(DMASTScopeIdentifier globalIdentifier) {
             throw new NotImplementedException();
         }
 
@@ -1202,7 +1202,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public override void Visit(DMASTVisitor visitor) {
-            visitor.VisitGlobalIdentifier(this);
+            visitor.VisitScopeIdentifier(this);
         }
     }
 

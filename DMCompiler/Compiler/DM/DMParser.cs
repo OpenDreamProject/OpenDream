@@ -456,7 +456,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        private DMASTExpression? ParseGlobalIdentifier(DMASTExpression? expression) {
+        private DMASTExpression? ParseScopeIdentifier(DMASTExpression? expression) {
             do {
                 var identifier = Identifier();
                 if (identifier == null) {
@@ -2146,7 +2146,7 @@ namespace DMCompiler.Compiler.DM {
             primary ??= (DMASTExpression?)Callable();
 
             if (Check(TokenType.DM_DoubleColon)) {
-                primary = ParseGlobalIdentifier(primary);
+                primary = ParseScopeIdentifier(primary);
             }
 
             if (primary != null && allowParentheses) {
@@ -2290,7 +2290,7 @@ namespace DMCompiler.Compiler.DM {
                                 expression = new DMASTDereference(expression.Location, expression, operations.ToArray());
                                 operations.Clear();
                             }
-                            expression = ParseGlobalIdentifier(expression);
+                            expression = ParseScopeIdentifier(expression);
                             continue;
                         }
 

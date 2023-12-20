@@ -6,37 +6,33 @@ using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Shared.Configuration;
 
-namespace OpenDreamClient.States.Connecting
-{
-    [GenerateTypedNameReferences]
-    public sealed partial class ConnectingControl : Control
-    {
-        public ConnectingControl(IResourceCache resCache, IConfigurationManager configMan)
-        {
+namespace OpenDreamClient.States.Connecting;
 
-            RobustXamlLoader.Load(this);
+[GenerateTypedNameReferences]
+public sealed partial class ConnectingControl : Control {
+    public ConnectingControl(IResourceCache resCache, IConfigurationManager configMan) {
+        RobustXamlLoader.Load(this);
 
-            Panel.PanelOverride = new StyleBoxFlat(Color.Black);
+        Panel.PanelOverride = new StyleBoxFlat(Color.Black);
 
-            ConnectingLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf"), 24);
-            WIPLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf"), 32);
+        ConnectingLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf"), 24);
+        WIPLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf"), 32);
 
-            LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
+        LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
 
-            LayoutContainer.SetAnchorPreset(VBox, LayoutContainer.LayoutPreset.Center);
-            LayoutContainer.SetGrowHorizontal(VBox, LayoutContainer.GrowDirection.Both);
-            LayoutContainer.SetGrowVertical(VBox, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetAnchorPreset(VBox, LayoutContainer.LayoutPreset.Center);
+        LayoutContainer.SetGrowHorizontal(VBox, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetGrowVertical(VBox, LayoutContainer.GrowDirection.Both);
 
-            LayoutContainer.SetAnchorPreset(ConnectingLabel, LayoutContainer.LayoutPreset.Center);
-            LayoutContainer.SetGrowHorizontal(ConnectingLabel, LayoutContainer.GrowDirection.Both);
-            LayoutContainer.SetGrowVertical(ConnectingLabel, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetAnchorPreset(ConnectingLabel, LayoutContainer.LayoutPreset.Center);
+        LayoutContainer.SetGrowHorizontal(ConnectingLabel, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetGrowVertical(ConnectingLabel, LayoutContainer.GrowDirection.Both);
 
-            LayoutContainer.SetAnchorPreset(WIP, LayoutContainer.LayoutPreset.VerticalCenterWide);
-            LayoutContainer.SetGrowHorizontal(WIP, LayoutContainer.GrowDirection.Both);
-            LayoutContainer.SetGrowVertical(WIP, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetAnchorPreset(WIP, LayoutContainer.LayoutPreset.VerticalCenterWide);
+        LayoutContainer.SetGrowHorizontal(WIP, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetGrowVertical(WIP, LayoutContainer.GrowDirection.Both);
 
-            var logoTexture = resCache.GetResource<TextureResource>("/OpenDream/Logo/logo.png");
-            Logo.Texture = logoTexture;
-        }
+        var logoTexture = resCache.GetResource<TextureResource>("/OpenDream/Logo/logo.png");
+        Logo.Texture = logoTexture;
     }
 }

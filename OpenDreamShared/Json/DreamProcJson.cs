@@ -1,5 +1,6 @@
 ﻿using OpenDreamShared.Dream.Procs;
 using System.Collections.Generic;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamShared.Json {
     public sealed class ProcDefinitionJson {

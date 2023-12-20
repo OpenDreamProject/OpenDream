@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
@@ -28,7 +29,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
+        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
@@ -267,8 +268,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.PushGlobalVars, DMOpcodeHandlers.PushGlobalVars},
             {DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus},
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
-            {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
-            {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
             {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
             {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},
@@ -284,6 +283,17 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
             {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
             {DreamProcOpcode.Gradient, DMOpcodeHandlers.Gradient},
+            {DreamProcOpcode.Sin, DMOpcodeHandlers.Sin},
+            {DreamProcOpcode.Cos, DMOpcodeHandlers.Cos},
+            {DreamProcOpcode.Tan, DMOpcodeHandlers.Tan},
+            {DreamProcOpcode.ArcSin, DMOpcodeHandlers.ArcSin},
+            {DreamProcOpcode.ArcCos, DMOpcodeHandlers.ArcCos},
+            {DreamProcOpcode.ArcTan, DMOpcodeHandlers.ArcTan},
+            {DreamProcOpcode.ArcTan2, DMOpcodeHandlers.ArcTan2},
+            {DreamProcOpcode.Sqrt, DMOpcodeHandlers.Sqrt},
+            {DreamProcOpcode.Log, DMOpcodeHandlers.Log},
+            {DreamProcOpcode.LogE, DMOpcodeHandlers.LogE},
+            {DreamProcOpcode.Abs, DMOpcodeHandlers.Abs},
             {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign},
             {DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep},
             {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
@@ -415,8 +425,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public override void AppendStackFrame(StringBuilder builder) {
-            if (Proc.OwningType != DreamPath.Root) {
-                builder.Append(Proc.OwningType.ToString());
+            if (Proc.OwningType != Proc.ObjectTree.Root) {
+                builder.Append(Proc.OwningType);
                 builder.Append('/');
             }
 

@@ -6,11 +6,14 @@
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
   </PropertyGroup>
-  <Import Project="..\RobustToolbox\MSBuild\Robust.DefineConstants.targets" />
   <ItemGroup>
+    <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />
     <ProjectReference Include="..\OpenDreamPackaging\OpenDreamPackaging.csproj" />
     <ProjectReference Include="..\OpenDreamShared\OpenDreamShared.csproj" />
     <ProjectReference Include="..\RobustToolbox\Robust.Server\Robust.Server.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Byond.TopicSender" Version="8.0.1" />
   </ItemGroup>
 
   <Import Project="..\RobustToolbox\MSBuild\Robust.Properties.targets" />

@@ -6,7 +6,7 @@ using Robust.Shared.GameStates;
 namespace OpenDreamShared.Rendering {
     [RegisterComponent]
     [NetworkedComponent]
-    public sealed class DreamMobSightComponent : Component {
+    public sealed partial class DreamMobSightComponent : Component {
         //this would be a good place for:
         //see_in_dark
         //see_infrared

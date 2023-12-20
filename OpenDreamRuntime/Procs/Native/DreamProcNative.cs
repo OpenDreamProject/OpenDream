@@ -3,12 +3,8 @@
 namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNative {
         public static void SetupNativeProcs(DreamObjectTree objectTree) {
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_abs);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_alert);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_animate);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_arccos);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_arcsin);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_arctan);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ascii2text);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_block);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_ceil);
@@ -18,7 +14,6 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_cmptext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_copytext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_copytext_char);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_cos);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_CRASH);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_fcopy);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_fcopy_rsc);
@@ -60,7 +55,6 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_json_encode);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_length_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_list2params);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_log);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_lowertext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_matrix);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_max);
@@ -85,7 +79,6 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_round);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sha1);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_shutdown);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sin);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sleep);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sorttextEx);
@@ -95,10 +88,8 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splicetext_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_splittext);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_sqrt);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_stat);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_statpanel);
-            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_tan);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_text2ascii);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_text2ascii_char);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_text2file);
@@ -116,8 +107,10 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_viewers);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_to);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_walk_towards);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winclone);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winexists);
+            objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winget);
             objectTree.SetGlobalNativeProc(DreamProcNativeRoot.NativeProc_winset);
 
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Add);
@@ -162,7 +155,7 @@ namespace OpenDreamRuntime.Procs.Native {
         /// Sets a native proc that can be overriden by DM code
         /// </summary>
         private static void SetOverridableNativeProc(DreamObjectTree objectTree, TreeEntry type, NativeProc.HandlerFn func) {
-            var nativeProc = objectTree.CreateNativeProc(type.Path, func);
+            var nativeProc = objectTree.CreateNativeProc(type, func);
 
             var proc = objectTree.World.ObjectDefinition.GetProc(nativeProc.Name);
             if (proc.SuperProc == null) { // This proc was never overriden so just replace it

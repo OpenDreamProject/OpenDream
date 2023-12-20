@@ -3,12 +3,13 @@ using Robust.Server.Player;
 using Robust.Shared.Enums;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Rendering {
     public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
-        private readonly Dictionary<IconAppearance, uint> _appearanceToId = new();
-        private readonly Dictionary<uint, IconAppearance> _idToAppearance = new();
-        private uint _appearanceIdCounter;
+        private readonly Dictionary<IconAppearance, int> _appearanceToId = new();
+        private readonly Dictionary<int, IconAppearance> _idToAppearance = new();
+        private int _appearanceIdCounter;
 
         [Dependency] private readonly IPlayerManager _playerManager = default!;
 
@@ -28,8 +29,8 @@ namespace OpenDreamRuntime.Rendering {
             }
         }
 
-        public uint AddAppearance(IconAppearance appearance) {
-            if (!_appearanceToId.TryGetValue(appearance, out uint appearanceId)) {
+        public int AddAppearance(IconAppearance appearance) {
+            if (!_appearanceToId.TryGetValue(appearance, out int appearanceId)) {
                 appearanceId = _appearanceIdCounter++;
                 _appearanceToId.Add(appearance, appearanceId);
                 _idToAppearance.Add(appearanceId, appearance);
@@ -39,16 +40,20 @@ namespace OpenDreamRuntime.Rendering {
             return appearanceId;
         }
 
-        public IconAppearance MustGetAppearance(uint appearanceId) {
+        public IconAppearance MustGetAppearance(int appearanceId) {
             return _idToAppearance[appearanceId];
         }
 
-        public bool TryGetAppearance(uint appearanceId, [NotNullWhen(true)] out IconAppearance? appearance) {
+        public bool TryGetAppearance(int appearanceId, [NotNullWhen(true)] out IconAppearance? appearance) {
             return _idToAppearance.TryGetValue(appearanceId, out appearance);
         }
 
-        public void Animate(EntityUid entity, IconAppearance targetAppearance, TimeSpan duration) {
-            uint appearanceId = AddAppearance(targetAppearance);
+        public bool TryGetAppearanceId(IconAppearance appearance, out int appearanceId) {
+            return _appearanceToId.TryGetValue(appearance, out appearanceId);
+        }
+
+        public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration) {
+            int appearanceId = AddAppearance(targetAppearance);
 
             RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration));
         }

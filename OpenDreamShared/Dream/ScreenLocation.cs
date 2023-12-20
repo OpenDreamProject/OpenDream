@@ -37,8 +37,8 @@ public sealed class ScreenLocation {
 
     private static string[] _keywords = {
         "CENTER",
-        "WEST", "EAST",
-        "NORTH", "SOUTH",
+        "WEST", "EAST", "LEFT", "RIGHT",
+        "NORTH", "SOUTH", "TOP", "BOTTOM",
         "TOPLEFT", "TOPRIGHT",
         "BOTTOMLEFT", "BOTTOMRIGHT"
     };
@@ -107,7 +107,7 @@ public sealed class ScreenLocation {
 
             if (char.IsAsciiLetter(mapControl[0]) && mapControl.IndexOfAny(new[] { '+', '-' }) == -1 && !_keywords.Contains(mapControl)) {
                 MapControl = mapControl;
-                coordinateSplit[0] = rangeSplit[0].Substring(mapControlSplitIndex + 1);
+                coordinateSplit[0] = coordinateSplit[0].Substring(mapControlSplitIndex + 1);
             }
         }
 

@@ -1,12 +1,13 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream.Procs;
 using System.Globalization;
 using System.Runtime.CompilerServices;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using Robust.Server.GameObjects;
+using Robust.Server.GameStates;
 using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
@@ -29,11 +30,14 @@ namespace OpenDreamRuntime.Objects {
         protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
         protected IMapManager MapManager => ObjectDefinition.MapManager;
         protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
+        protected WalkManager WalkManager => ObjectDefinition.WalkManager;
         protected IEntityManager EntityManager => ObjectDefinition.EntityManager;
         protected IPlayerManager PlayerManager => ObjectDefinition.PlayerManager;
         protected ISerializationManager SerializationManager => ObjectDefinition.SerializationManager;
         protected ServerAppearanceSystem? AppearanceSystem => ObjectDefinition.AppearanceSystem;
         protected TransformSystem? TransformSystem => ObjectDefinition.TransformSystem;
+        protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
+        protected MetaDataSystem? MetaDataSystem => ObjectDefinition.MetaDataSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
 
@@ -119,8 +123,10 @@ namespace OpenDreamRuntime.Objects {
         }
 
         public virtual bool IsSaved(string name) {
-            //TODO: Add support for var/const/ and var/tmp/ once those are properly in
-            return ObjectDefinition.Variables.ContainsKey(name) && !ObjectDefinition.GlobalVariables.ContainsKey(name);
+            return ObjectDefinition.Variables.ContainsKey(name)
+                && !ObjectDefinition.GlobalVariables.ContainsKey(name)
+                && !(ObjectDefinition.ConstVariables is not null && ObjectDefinition.ConstVariables.Contains(name))
+                && !(ObjectDefinition.TmpVariables is not null && ObjectDefinition.TmpVariables.Contains(name));
         }
 
         public bool HasVariable(string name) {
@@ -180,6 +186,8 @@ namespace OpenDreamRuntime.Objects {
                     Tag = newTag;
                     break;
                 default:
+                    if (ObjectDefinition.ConstVariables is not null && ObjectDefinition.ConstVariables.Contains(varName))
+                        throw new Exception($"Cannot set const var \"{varName}\" on {ObjectDefinition.Type}");
                     if (!ObjectDefinition.Variables.ContainsKey(varName))
                         throw new Exception($"Cannot set var \"{varName}\" on {ObjectDefinition.Type}");
 
@@ -274,8 +282,6 @@ namespace OpenDreamRuntime.Objects {
                         return true;
                     case StringFormatEncoder.FormatSuffix.Improper:
                         return false;
-                    default:
-                        break;
                 }
             }
 
@@ -310,9 +316,7 @@ namespace OpenDreamRuntime.Objects {
             if (this is DreamObjectClient client)
                 return client.Connection.Session!.Name;
 
-            if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
-                return ObjectDefinition.Type.ToString();
-
+            var name = GetRawName();
             bool isProper = StringIsProper(name);
             name = StringFormatEncoder.RemoveFormatting(name); // TODO: Care about other formatting macros for obj names beyond \proper & \improper
             if(!isProper) {
@@ -333,9 +337,18 @@ namespace OpenDreamRuntime.Objects {
         /// Similar to <see cref="GetDisplayName"/> except it just returns the name as plaintext, with formatting removed. No article or anything.
         /// </summary>
         public string GetNameUnformatted() {
+            return StringFormatEncoder.RemoveFormatting(GetRawName());
+        }
+
+        /// <summary>
+        /// Returns the name of this object with no formatting evaluated
+        /// </summary>
+        /// <returns></returns>
+        public string GetRawName() {
             if (!TryGetVariable("name", out DreamValue nameVar) || !nameVar.TryGetValueAsString(out string? name))
-                return ObjectDefinition?.Type.ToString() ?? String.Empty;
-            return StringFormatEncoder.RemoveFormatting(name);
+                return ObjectDefinition.Type.ToString();
+
+            return name;
         }
         #endregion Name Helpers
 
@@ -414,7 +427,7 @@ namespace OpenDreamRuntime.Objects {
                 return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
             }
 
-            return ObjectDefinition.Type.ToString();
+            return ObjectDefinition.Type;
         }
     }
 }

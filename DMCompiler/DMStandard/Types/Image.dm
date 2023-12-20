@@ -27,7 +27,7 @@
 	var/name = "image"
 	var/opacity as opendream_unimplemented
 	var/list/overlays = null
-	var/override = 1 as opendream_unimplemented
+	var/override = 0
 	var/pixel_x = 0
 	var/pixel_y = 0
 	var/pixel_w = 0 as opendream_unimplemented

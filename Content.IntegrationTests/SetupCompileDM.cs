@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 
 // This it outside of any namespace so it affects the whole assembly.
 [SetUpFixture]

@@ -18,6 +18,7 @@ namespace OpenDreamClient.Input {
         [Dependency] private readonly IMapManager _mapManager = default!;
         [Dependency] private readonly IOverlayManager _overlayManager = default!;
         [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         private DreamViewOverlay? _dreamViewOverlay;
         private ContextMenuPopup _contextMenu = default!;
@@ -41,10 +42,10 @@ namespace OpenDreamClient.Input {
             bool ctrl = _inputManager.IsKeyDown(Keyboard.Key.Control);
             bool alt = _inputManager.IsKeyDown(Keyboard.Key.Alt);
 
-            Vector2 screenLocPos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size;
-            screenLocPos *= viewport.ViewportSize;
-            screenLocPos.Y = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
-            ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocPos.Y, 32); // TODO: icon_size other than 32
+            Vector2 screenLocPos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+
+            var screenLocY = viewport.ViewportSize.Y - screenLocPos.Y; // Flip the Y
+            ScreenLocation screenLoc = new ScreenLocation((int) screenLocPos.X, (int) screenLocY, 32); // TODO: icon_size other than 32
 
             MapCoordinates mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
             RendererMetaData? entity = GetEntityUnderMouse(screenLocPos);
@@ -56,7 +57,7 @@ namespace OpenDreamClient.Input {
                 mapCoords = new MapCoordinates(mapCoords.Position + new Vector2(0.5f), mapCoords.MapId);
 
                 if (_mapManager.TryFindGridAt(mapCoords, out _, out var grid)){
-                    Vector2i position = grid.CoordinatesToTile(mapCoords);
+                    Vector2i position = grid.CoordinatesToTile(grid.MapToGrid(mapCoords));
                     MapCoordinates worldPosition = grid.GridTileToWorld(position);
                     Vector2i turfIconPosition = (Vector2i) ((mapCoords.Position - position) * EyeManager.PixelsPerMeter);
                     RaiseNetworkEvent(new TurfClickedEvent(position, (int)worldPosition.MapId, screenLoc, middle, shift, ctrl, alt, turfIconPosition));
@@ -87,7 +88,8 @@ namespace OpenDreamClient.Input {
 
             // TODO: Take icon transformations into account
             Vector2i iconPosition = (Vector2i) ((mapCoords.Position - entity.Position) * EyeManager.PixelsPerMeter);
-            RaiseNetworkEvent(new EntityClickedEvent(entity.ClickUid, screenLoc, middle, shift, ctrl, alt, iconPosition));
+            NetEntity ent = _entityManager.GetNetEntity(entity.ClickUid);
+            RaiseNetworkEvent(new EntityClickedEvent(ent, screenLoc, middle, shift, ctrl, alt, iconPosition));
             return true;
         }
 

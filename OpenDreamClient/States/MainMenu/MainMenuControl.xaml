@@ -6,33 +6,45 @@
                           Orientation="Vertical">
                 <TextureRect Name="Logo"
                              Stretch="KeepCentered" />
-                <BoxContainer Orientation="Horizontal"
-                              SeparationOverride="4">
-                    <Label Text="Username: " FontColorOverride="#FFFFFF"/>
-                    <LineEdit Name="UsernameBoxProtected"
-                              PlaceHolder="JoeGenero"
-                              HorizontalExpand="True" />
+                <BoxContainer Orientation="Vertical"
+                              SetWidth="371"
+                              HorizontalAlignment="Center">
+                    <BoxContainer Orientation="Horizontal"
+                                  SeparationOverride="4">
+                        <Label Text="Username: " FontColorOverride="#FFFFFF"/>
+                        <LineEdit Name="UsernameBoxProtected"
+                                  PlaceHolder="JoeGenero"
+                                  HorizontalExpand="True" />
+                    </BoxContainer>
+                    <Control MinSize="0 2" />
+                    <BoxContainer Orientation="Horizontal"
+                                  SeparationOverride="4">
+                        <Label Text="Address: " FontColorOverride="#FFFFFF"/>
+                        <LineEdit Name="AddressBoxProtected"
+                                  PlaceHolder="127.0.0.1:1212"
+                                  HorizontalExpand="True" />
+                    </BoxContainer>
+                    <Control MinSize="0 2" />
+                    <Button Name="ConnectButtonProtected"
+                            Text="Connect"
+                            TextAlign="Center" />
+                    <Control MinSize="0 2" />
+                    <Button Name="QuitButtonProtected"
+                            Text="Quit"
+                            TextAlign="Center" />
                 </BoxContainer>
-                <Control MinSize="0 2" />
-                <BoxContainer Orientation="Horizontal"
-                                          SeparationOverride="4">
-                                <Label Text="Address: " FontColorOverride="#FFFFFF"/>
-                                <LineEdit Name="AddressBoxProtected"
-                                          PlaceHolder="127.0.0.1:25566"
-                                          HorizontalExpand="True" />
-                </BoxContainer>
-                <Control MinSize="0 2" />
-                <Button Name="ConnectButtonProtected"
-                        Text="Connect"
-                        TextAlign="Center" />
-                <Control MinSize="0 2" />
-                <Button Name="QuitButtonProtected"
-                        Text="Quit"
-                        TextAlign="Center" />
                 <Control MinHeight="128"></Control>
-                <BoxContainer Name="WIP" Orientation="Horizontal"
+                <BoxContainer Name="Notices" Orientation="Vertical"
                               SeparationOverride="4">
-                    <Label Name="WIPLabel" Text="Work In Progress" FontColorOverride="#FFFFFF"/>
+                    <Label Name="WIPLabel"
+                           Text="Work In Progress"
+                           FontColorOverride="#FFFFFF"
+                           HorizontalAlignment="Center"/>
+                    <Label Name="DebugWarningLabel"
+                           Text="OpenDream was compiled in the Debug .NET configuration. This will heavily impact performance!"
+                           FontColorOverride="#FF1111"
+                           HorizontalAlignment="Center"
+                           Visible="False"/>
                 </BoxContainer>
             </BoxContainer>
 

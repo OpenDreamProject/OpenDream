@@ -1,8 +1,7 @@
 ﻿using System.IO;
+using System.Text;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
-using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
@@ -24,6 +23,7 @@ using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
+using System.Linq;
 
 namespace OpenDreamClient.Interface;
 
@@ -43,6 +43,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     [Dependency] private readonly IInputManager _inputManager = default!;
     [Dependency] private readonly IUserInterfaceManager _uiManager = default!;
     [Dependency] private readonly IRobustRandom _random = default!;
+    [Dependency] private readonly ITimerManager _timerManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.interface");
 
@@ -76,6 +77,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     private ViewRange _view = new(5);
 
     public void LoadInterfaceFromSource(string source) {
+        Reset();
+
         DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
         DMFParser dmfParser = new DMFParser(dmfLexer, _serializationManager);
 
@@ -109,14 +112,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void Initialize() {
-        _userInterfaceManager.MainViewport.Visible = false;
-
-        AvailableVerbs = Array.Empty<(string, string, string)>();
-        Windows.Clear();
-        Menus.Clear();
-        MacroSets.Clear();
-        _popupWindows.Clear();
-
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
@@ -137,6 +132,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.RegisterNetMessage<MsgWinSet>(RxWinSet);
         _netManager.RegisterNetMessage<MsgWinClone>(RxWinClone);
         _netManager.RegisterNetMessage<MsgWinExists>(RxWinExists);
+        _netManager.RegisterNetMessage<MsgWinGet>(RxWinGet);
         _netManager.RegisterNetMessage<MsgFtp>(RxFtp);
         _netManager.RegisterNetMessage<MsgLoadInterface>(RxLoadInterface);
         _netManager.RegisterNetMessage<MsgAckLoadInterface>();
@@ -297,6 +293,19 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.ClientSendMessage(response);
     }
 
+    private void RxWinGet(MsgWinGet message) {
+        // Run this later to ensure any pending UI measurements have occured
+        _timerManager.AddTimer(new Timer(100, false, () => {
+            MsgPromptResponse response = new() {
+                PromptId = message.PromptId,
+                Type = DMValueType.Text,
+                Value = WinGet(message.ControlId, message.QueryValue)
+            };
+
+            _netManager.ClientSendMessage(response);
+        }));
+    }
+
     private void RxFtp(MsgFtp message) {
         _dreamResource.LoadResourceAsync<DreamResource>(message.ResourceId, async resource => {
             // TODO: Default the filename to message.SuggestedName
@@ -358,6 +367,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 window = Windows[windowId];
             } else if (_popupWindows.TryGetValue(windowId, out var popup)) {
                 window = popup.WindowElement;
+            } else if (Menus.TryGetValue(windowId, out var menu)) {
+                if(menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                    return menuElement;
             }
 
             if (window != null) {
@@ -414,6 +426,47 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
+    public void RunCommand(string command){
+        switch (command) {
+                case string x when x.StartsWith(".quit"):
+                    IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                    break;
+
+                case string x when x.StartsWith(".screenshot"):
+                    string[] split = command.Split(" ");
+                    SaveScreenshot(split.Length == 1 || split[1] != "auto");
+                    break;
+
+                case string x when x.StartsWith(".configure"):
+                    _sawmill.Warning(".configure command is not implemented");
+                    break;
+
+                case string x when x.StartsWith(".winset"):
+                    // Everything after .winset, excluding the space and quotes
+                    string winsetParams = command.Substring(7); //clip .winset
+                    winsetParams = winsetParams.Trim(); //clip space
+                    winsetParams = winsetParams.Trim('\"'); //clip quotes
+
+                    WinSet(null, winsetParams);
+                    break;
+
+                default: {
+                    // Send the entire command to the server.
+                    // It has more info about argument types so it can parse it better than we can.
+                    _netManager.ClientSendMessage(new MsgCommand(){Command = command});
+                    break;
+                }
+            }
+    }
+
+    public void StartRepeatingCommand(string command) {
+        _netManager.ClientSendMessage(new MsgCommandRepeatStart(){Command = command});
+    }
+
+    public void StopRepeatingCommand(string command) {
+        _netManager.ClientSendMessage(new MsgCommandRepeatStop(){Command = command});
+    }
+
     public void WinSet(string? controlId, string winsetParams) {
         DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
         DMFParser parser = new DMFParser(lexer, _serializationManager);
@@ -442,17 +495,20 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             if (CheckParserErrors())
                 return;
 
-            foreach (DMFWinSet winSet in winSets) {
-                if (winSet.Element == null) {
-                    if (winSet.Attribute == "command") {
-                        DreamCommandSystem commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
+            // id=abc overrides the elements of other winsets without an element
+            string? elementOverride = winSets.FirstOrNull(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
 
-                        commandSystem.RunCommand(winSet.Value);
+            foreach (DMFWinSet winSet in winSets) {
+                string? elementId = winSet.Element ?? elementOverride;
+
+                if (elementId == null) {
+                    if (winSet.Attribute == "command") {
+                        RunCommand(winSet.Value);
                     } else {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
                 } else {
-                    InterfaceElement? element = FindElementWithId(winSet.Element);
+                    InterfaceElement? element = FindElementWithId(elementId);
                     MappingDataNode node = new() {
                         {winSet.Attribute, winSet.Value}
                     };
@@ -460,7 +516,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     if (element != null) {
                         element.PopulateElementDescriptor(node, _serializationManager);
                     } else {
-                        _sawmill.Error($"Invalid element \"{controlId}\"");
+                        _sawmill.Error($"Invalid element \"{elementId}\"");
                     }
                 }
             }
@@ -490,6 +546,64 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 _sawmill.Error($"Invalid element \"{controlId}\"");
             }
         }
+    }
+
+    public string WinGet(string controlId, string queryValue) {
+        string GetProperty(string elementId) {
+            var element = FindElementWithId(elementId);
+            if (element == null) {
+                _sawmill.Error($"Could not winget element {elementId} because it does not exist");
+                return string.Empty;
+            }
+
+            if (!element.TryGetProperty(queryValue, out var value))
+                _sawmill.Error($"Could not winget property {queryValue} on {element.Id}");
+
+            return value;
+        }
+
+        var elementIds = controlId.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+
+        if (elementIds.Length == 0) {
+            switch (queryValue) {
+                // The server will actually never query this because it can predict the answer to be "true"
+                // But also have it here in case a local winget ever wants it
+                case "hwmode":
+                    return "true";
+                case "windows":
+                    return string.Join(';',
+                        Windows.Where(pair => !((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
+                case "panes":
+                    return string.Join(';',
+                        Windows.Where(pair => ((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
+                case "menus":
+                    return string.Join(';', Menus.Keys);
+                case "macros":
+                    return string.Join(';', MacroSets.Keys);
+                default:
+                    _sawmill.Error($"Special winget \"{queryValue}\" is not implemented");
+                    return string.Empty;
+            }
+        } else if (elementIds.Length == 1) {
+            return GetProperty(elementIds[0]);
+        }
+
+        var result = new StringBuilder(elementIds.Length * 6 - 1);
+
+        for (int i = 0; i < elementIds.Length; i++) {
+            var elementId = elementIds[i];
+
+            result.Append(elementId);
+            result.Append('.');
+            result.Append(queryValue);
+            result.Append('=');
+            result.Append(GetProperty(elementId));
+
+            if (i != elementIds.Length - 1)
+                result.Append(';');
+        }
+
+        return result.ToString();
     }
 
     public void WinClone(string controlId, string cloneId) {
@@ -522,6 +636,19 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
 
         LoadDescriptor(elementDescriptor);
+        if(elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)){
+            window.CreateChildControls();
+        }
+    }
+
+    private void Reset() {
+        _userInterfaceManager.MainViewport.Visible = false;
+
+        AvailableVerbs = Array.Empty<(string, string, string)>();
+        Windows.Clear();
+        Menus.Clear();
+        MacroSets.Clear();
+        _popupWindows.Clear();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {
@@ -558,7 +685,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         DefaultWindow.RegisterOnClydeWindow(_clyde.MainWindow);
         DefaultWindow.UIElement.Name = "MainWindow";
-
         LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
@@ -615,5 +741,9 @@ public interface IDreamInterfaceManager {
     InterfaceElement? FindElementWithId(string id);
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
+
+    void RunCommand(string command);
+    void StartRepeatingCommand(string command);
+    void StopRepeatingCommand(string command);
     void WinSet(string? controlId, string winsetParams);
 }

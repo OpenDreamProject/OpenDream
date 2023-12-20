@@ -49,11 +49,11 @@ namespace OpenDreamClient.Rendering {
 
         public DreamIcon() { }
 
-        public DreamIcon(uint appearanceId, AtomDirection? parentDir = null) {
+        public DreamIcon(int appearanceId, AtomDirection? parentDir = null) {
             SetAppearance(appearanceId, parentDir);
         }
 
-        public void SetAppearance(uint? appearanceId, AtomDirection? parentDir = null) {
+        public void SetAppearance(int? appearanceId, AtomDirection? parentDir = null) {
             // End any animations that are currently happening
             // Note that this isn't faithful to the original behavior
             EndAppearanceAnimation();
@@ -89,32 +89,24 @@ namespace OpenDreamClient.Rendering {
             _appearanceAnimation = null;
         }
 
-        public Box2 GetWorldAABB(Vector2 worldPos) {
-            Box2? aabb = null;
-
+        public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
             if (DMI != null && Appearance != null) {
                 Vector2 size = DMI.IconSize / (float)EyeManager.PixelsPerMeter;
                 Vector2 pixelOffset = Appearance.PixelOffset / (float)EyeManager.PixelsPerMeter;
 
                 worldPos += pixelOffset;
-                aabb = Box2.CenteredAround(worldPos, size);
+
+                Box2 thisAABB = Box2.CenteredAround(worldPos, size);
+                aabb = aabb?.Union(thisAABB) ?? thisAABB;
             }
 
             foreach (DreamIcon underlay in Underlays) {
-                Box2 underlayAABB = underlay.GetWorldAABB(worldPos);
-
-                if (aabb == null) aabb = underlayAABB;
-                else aabb = aabb.Value.Union(underlayAABB);
+                underlay.GetWorldAABB(worldPos, ref aabb);
             }
 
             foreach (DreamIcon overlay in Overlays) {
-                Box2 overlayAABB = overlay.GetWorldAABB(worldPos);
-
-                if (aabb == null) aabb = overlayAABB;
-                else aabb = aabb.Value.Union(overlayAABB);
+                overlay.GetWorldAABB(worldPos, ref aabb);
             }
-
-            return aabb ?? Box2.FromDimensions(Vector2.Zero, Vector2.Zero);
         }
 
         private void UpdateAnimation() {
@@ -185,7 +177,7 @@ namespace OpenDreamClient.Rendering {
             }
 
             Overlays.Clear();
-            foreach (uint overlayId in Appearance.Overlays) {
+            foreach (int overlayId in Appearance.Overlays) {
                 DreamIcon overlay = new DreamIcon(overlayId, Appearance.Direction);
                 overlay.SizeChanged += CheckSizeChange;
 
@@ -193,7 +185,7 @@ namespace OpenDreamClient.Rendering {
             }
 
             Underlays.Clear();
-            foreach (uint underlayId in Appearance.Underlays) {
+            foreach (int underlayId in Appearance.Underlays) {
                 DreamIcon underlay = new DreamIcon(underlayId, Appearance.Direction);
                 underlay.SizeChanged += CheckSizeChange;
 
@@ -202,7 +194,8 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void CheckSizeChange() {
-            Box2 aabb = GetWorldAABB(Vector2.Zero);
+            Box2? aabb = null;
+            GetWorldAABB(Vector2.Zero, ref aabb);
 
             if (aabb != _cachedAABB) {
                 _cachedAABB = aabb;

@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -7,8 +6,8 @@ using Robust.Client.UserInterface.Controls;
 namespace OpenDreamClient.Interface.Controls;
 
 public sealed class ControlWindow : InterfaceControl {
+    [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
@@ -19,13 +18,15 @@ public sealed class ControlWindow : InterfaceControl {
 
     public readonly List<InterfaceControl> ChildControls = new();
 
-    public InterfaceMacroSet Macro => _dreamInterface.MacroSets[WindowDescriptor.Macro];
+    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
     private Control _menuContainer = default!;
     private LayoutContainer _canvas = default!;
-    private readonly List<(OSWindow? osWindow, IClydeWindow? clydeWindow)> _openWindows = new();
+
+    private (OSWindow? osWindow, IClydeWindow? clydeWindow) _myWindow;
+
 
     public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
         IoCManager.InjectDependencies(this);
@@ -35,16 +36,15 @@ public sealed class ControlWindow : InterfaceControl {
         // Don't call base.UpdateElementDescriptor();
 
         _menuContainer.RemoveAllChildren();
-        if (WindowDescriptor.Menu != null && _dreamInterface.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
+        if (WindowDescriptor.Menu != null && _interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
             _menuContainer.AddChild(menu.MenuBar);
             _menuContainer.Visible = true;
         } else {
             _menuContainer.Visible = false;
         }
 
-        foreach (var window in _openWindows) {
-            UpdateWindowAttributes(window);
-        }
+        if(!WindowDescriptor.IsPane)
+            UpdateWindowAttributes(_myWindow);
 
         if (WindowDescriptor.IsDefault) {
             Macro.SetActive();
@@ -52,8 +52,12 @@ public sealed class ControlWindow : InterfaceControl {
     }
 
     public OSWindow CreateWindow() {
-        OSWindow window = new();
+        if(_myWindow.osWindow is not null)
+            return _myWindow.osWindow;
 
+        OSWindow window = new();
+        if(UIElement.Parent is not null)
+            UIElement.Orphan();
         window.Children.Add(UIElement);
         window.SetWidth = ControlDescriptor.Size?.X ?? 640;
         window.SetHeight = ControlDescriptor.Size?.Y ?? 440;
@@ -63,22 +67,27 @@ public sealed class ControlWindow : InterfaceControl {
             window.SetHeight = window.MaxHeight;
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
-            if (WindowDescriptor.OnClose != null && _entitySystemManager.TryGetEntitySystem(out DreamCommandSystem? commandSystem)) {
-                commandSystem.RunCommand(WindowDescriptor.OnClose);
+            if (WindowDescriptor.OnClose != null) {
+                _interfaceManager.RunCommand(WindowDescriptor.OnClose);
             }
-
-            _openWindows.Remove((window, null));
+            _myWindow = (null, _myWindow.clydeWindow);
         };
+        window.StartupLocation = WindowStartupLocation.CenterOwner;
+        window.Owner = _clyde.MainWindow;
 
-        _openWindows.Add((window, null));
-        UpdateWindowAttributes((window, null));
+        _myWindow = (window, _myWindow.clydeWindow);
+        UpdateWindowAttributes(_myWindow);
         return window;
     }
 
     public void RegisterOnClydeWindow(IClydeWindow window) {
         // todo: listen for closed.
-        _openWindows.Add((null, window));
-        UpdateWindowAttributes((null, window));
+        if(_myWindow.osWindow is not null){
+            _myWindow.osWindow.Close();
+            UIElement.Orphan();
+        }
+        _myWindow = (null, window);
+        UpdateWindowAttributes(_myWindow);
     }
 
     public void UpdateAnchors() {
@@ -97,19 +106,19 @@ public sealed class ControlWindow : InterfaceControl {
             if (control.Size?.Y == 0) {
                 elementSize.Y = (windowSize.Y - elementPos.Y);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null) {
+                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
                         var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
                         elementSize.Y = nextElementPos.Y - elementPos.Y;
                     }
                 }
 
-                element.SetHeight = (elementSize.Y / windowSize.Y) * _canvas.Height;
+                element.SetHeight = ((float)elementSize.Y / windowSize.Y) * _canvas.Height;
             }
 
             if (control.Size?.X == 0) {
                 elementSize.X = (windowSize.X - elementPos.X);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null) {
+                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
                         var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
                         if (nextElementPos.X < (elementSize.X + elementPos.X) &&
                             nextElementPos.Y < (elementSize.Y + elementPos.Y))
@@ -117,7 +126,7 @@ public sealed class ControlWindow : InterfaceControl {
                     }
                 }
 
-                element.SetWidth = (elementSize.X / windowSize.X) * _canvas.Width;
+                element.SetWidth = ((float)elementSize.X / windowSize.X) * _canvas.Width;
             }
 
             if (control.Anchor1.HasValue) {
@@ -151,6 +160,18 @@ public sealed class ControlWindow : InterfaceControl {
     private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
         // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
         var (osWindow, clydeWindow) = windowRoot;
+        //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
+        if(osWindow == null && clydeWindow == null) {
+            if (WindowDescriptor.IsVisible) {
+                CreateWindow();
+                return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
+            }
+        }
+        if(osWindow != null && !osWindow.IsOpen) {
+            if (WindowDescriptor.IsVisible) {
+                osWindow.Show();
+            }
+        }
 
         var title = WindowDescriptor.Title ?? "OpenDream World";
         if (osWindow != null) osWindow.Title = title;
@@ -165,6 +186,13 @@ public sealed class ControlWindow : InterfaceControl {
         if (root != null) {
             root.BackgroundColor = WindowDescriptor.BackgroundColor;
         }
+
+        if (osWindow != null && osWindow.ClydeWindow != null) {
+            osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible;
+        } else if (clydeWindow != null) {
+            clydeWindow.IsVisible = WindowDescriptor.IsVisible;
+        }
+
     }
 
     public void CreateChildControls() {
@@ -190,6 +218,7 @@ public sealed class ControlWindow : InterfaceControl {
             ControlDescriptorLabel => new ControlLabel(controlDescriptor, this),
             ControlDescriptorGrid => new ControlGrid(controlDescriptor, this),
             ControlDescriptorTab => new ControlTab(controlDescriptor, this),
+            ControlDescriptorBar => new ControlBar(controlDescriptor, this),
             _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
         };
 

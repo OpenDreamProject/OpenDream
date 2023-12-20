@@ -1,10 +1,10 @@
 using System.IO;
 using System.Linq;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream.Procs;
 using Robust.Server;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter;
@@ -150,7 +150,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
         // Check for a function breakpoint
         List<int>? hit = null;
-        if (_possibleFunctionBreakpoints.TryGetValue((state.Proc.OwningType.PathString, state.Proc.Name), out var slot)) {
+        if (_possibleFunctionBreakpoints.TryGetValue((state.Proc.OwningType.Path, state.Proc.Name), out var slot)) {
             foreach (var bp in slot.Breakpoints) {
                 if (TestBreakpoint(bp)) {
                     hit ??= new(1);
@@ -160,7 +160,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
         }
 
         if (hit != null) {
-            Output($"Function breakpoint hit at {state.Proc.OwningType.PathString}::{state.Proc.Name}");
+            Output($"Function breakpoint hit at {state.Proc.OwningType.Path}::{state.Proc.Name}");
             Stop(state.Thread, new StoppedEvent {
                 Reason = StoppedEvent.ReasonFunctionBreakpoint,
                 HitBreakpointIds = hit
@@ -422,7 +422,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
 
     private IEnumerable<(string Type, string Proc)> IterateProcs() {
         foreach (var proc in _objectTree.Procs) {
-            yield return (proc.OwningType.PathString, proc.Name);
+            yield return (proc.OwningType.Path, proc.Name);
         }
     }
 
@@ -692,7 +692,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private IEnumerable<Variable> ExpandArguments(RequestVariables req, DMProcState dmFrame) {
-        if (dmFrame.Proc.OwningType != OpenDreamShared.Dream.DreamPath.Root) {
+        if (dmFrame.Proc.OwningType != _objectTree.Root) {
             yield return DescribeValue("src", new(dmFrame.Instance));
         }
         yield return DescribeValue("usr", new(dmFrame.Usr));
@@ -720,8 +720,7 @@ internal sealed class DreamDebugManager : IDreamDebugManager {
     }
 
     private Variable DescribeValue(string name, DreamValue value) {
-        var varDesc = new Variable { Name = name };
-        varDesc.Value = value.ToString();
+        var varDesc = new Variable { Name = name, Value = value.ToString() };
         if (value.TryGetValueAsDreamList(out var list)) {
             if (list.GetLength() > 0) {
                 varDesc.VariablesReference = AllocVariableRef(req => ExpandList(req, list));

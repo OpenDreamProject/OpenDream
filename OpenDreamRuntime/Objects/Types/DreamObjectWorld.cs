@@ -126,6 +126,10 @@ public sealed class DreamObjectWorld : DreamObject {
                 value = new DreamValue((int)DateTime.UtcNow.TimeOfDay.TotalMilliseconds / 100);
                 return true;
 
+            case "timezone":
+                value = new DreamValue((int)DateTimeOffset.Now.Offset.TotalHours);
+                return true;
+
             case "time":
                 value = new DreamValue((_gameTiming.CurTick.Value - DreamManager.InitializedTick.Value) * TickLag);
                 return true;
@@ -206,6 +210,12 @@ public sealed class DreamObjectWorld : DreamObject {
                     value = new DreamValue(DefaultView.ToString());
                 }
 
+                return true;
+
+            // Remove OPENDREAM_TOPIC_PORT_EXISTS if this is ever removed
+            case "opendream_topic_port":
+                var topicPort = DreamManager.ActiveTopicPort;
+                value = topicPort.HasValue ? new DreamValue((int)topicPort) : DreamValue.Null;
                 return true;
 
             default:

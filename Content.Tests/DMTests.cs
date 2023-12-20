@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
-using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Asynchronous;
@@ -23,11 +22,9 @@ namespace Content.Tests
 {
     [TestFixture]
     public sealed class DMTests : ContentUnitTest {
-        public const string TestProject = "DMProject";
-        public const string MapFile = "map.dmm";
-        public const string InitializeEnvironment = "./environment.dme";
-
-        private const string TESTS_DIRECTORY = "Tests";
+        private const string TestProject = "DMProject";
+        private const string InitializeEnvironment = "./environment.dme";
+        private const string TestsDirectory = "Tests";
 
         [Dependency] private readonly DreamManager _dreamMan = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
@@ -60,7 +57,7 @@ namespace Content.Tests
 
         private static string? Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
-                Files = new() { sourceFile, MapFile }
+                Files = new() { sourceFile }
             });
 
             return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;
@@ -78,15 +75,15 @@ namespace Content.Tests
             string initialDirectory = Directory.GetCurrentDirectory();
             TestContext.WriteLine($"--- TEST {sourceFile} | Flags: {testFlags}");
             try {
-                string? compiledFile = Compile(Path.Join(initialDirectory, TESTS_DIRECTORY, sourceFile));
+                string? compiledFile = Compile(Path.Join(initialDirectory, TestsDirectory, sourceFile));
                 if (testFlags.HasFlag(DMTestFlags.CompileError)) {
-                    Assert.IsNull(compiledFile, $"Expected an error during DM compilation");
+                    Assert.IsNull(compiledFile, "Expected an error during DM compilation");
                     Cleanup(compiledFile);
                     TestContext.WriteLine($"--- PASS {sourceFile}");
                     return;
                 }
 
-                Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), $"Failed to compile DM source file");
+                Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
                 Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
                 _dreamMan.StartWorld();
 
@@ -158,8 +155,8 @@ namespace Content.Tests
         {
             Directory.SetCurrentDirectory(TestProject);
 
-            foreach (string sourceFile in Directory.GetFiles(TESTS_DIRECTORY, "*.dm", SearchOption.AllDirectories)) {
-                string sourceFile2 = sourceFile[$"{TESTS_DIRECTORY}/".Length..];
+            foreach (string sourceFile in Directory.GetFiles(TestsDirectory, "*.dm", SearchOption.AllDirectories)) {
+                string sourceFile2 = sourceFile[$"{TestsDirectory}/".Length..];
                 DMTestFlags testFlags = GetDMTestFlags(sourceFile);
                 if (testFlags.HasFlag(DMTestFlags.Ignore))
                     continue;

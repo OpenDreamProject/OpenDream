@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class BinaryOp : DMExpression {
@@ -425,11 +424,6 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
                 constant = lhs;
-                return true;
-            }
-
-            if (RHS.TryAsConstant(out var rhs)) {
-                constant = rhs;
                 return true;
             }
 

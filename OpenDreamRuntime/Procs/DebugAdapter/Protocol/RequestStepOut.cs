@@ -1,10 +1,13 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
+[UsedImplicitly]
 public sealed class RequestStepOut : Request {
-    [JsonPropertyName("arguments")] public RequestStepOutArguments Arguments { get; set; }
+    [JsonPropertyName("arguments")] public required RequestStepOutArguments Arguments { get; set; }
 
+    [UsedImplicitly]
     public sealed class RequestStepOutArguments {
         /**
          * Specifies the thread for which to resume execution for one step (of the

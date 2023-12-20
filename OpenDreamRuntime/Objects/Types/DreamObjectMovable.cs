@@ -18,7 +18,6 @@ public class DreamObjectMovable : DreamObjectAtom {
     public int Z => (int)_transformComponent.MapID;
 
     private readonly TransformComponent _transformComponent;
-    private readonly MetaDataComponent _metaDataComponent;
 
     private DreamObjectAtom? _loc;
 
@@ -41,17 +40,9 @@ public class DreamObjectMovable : DreamObjectAtom {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
-        _metaDataComponent = EntityManager.GetComponent<MetaDataComponent>(Entity);
 
         objectDefinition.Variables["screen_loc"].TryGetValueAsString(out var screenLoc);
         ScreenLoc = screenLoc;
-
-        if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.Add(this);
-        else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.Add((DreamObjectMob)this);
-        else
-            AtomManager.Movables.Add(this);
     }
 
     public override void Initialize(DreamProcArguments args) {
@@ -62,14 +53,9 @@ public class DreamObjectMovable : DreamObjectAtom {
     }
 
     protected override void HandleDeletion() {
-        if (IsSubtypeOf(ObjectTree.Obj))
-            AtomManager.Objects.RemoveSwap(AtomManager.Objects.IndexOf(this));
-        else if (IsSubtypeOf(ObjectTree.Mob))
-            AtomManager.Mobs.RemoveSwap(AtomManager.Mobs.IndexOf((DreamObjectMob)this));
-        else
-            AtomManager.Movables.RemoveSwap(AtomManager.Movables.IndexOf(this));
-
+        WalkManager.StopWalks(this);
         AtomManager.DeleteMovableEntity(this);
+
         base.HandleDeletion();
     }
 
@@ -141,11 +127,11 @@ public class DreamObjectMovable : DreamObjectAtom {
                 base.SetVar(varName, value); // Let DreamObjectAtom do its own name/desc handling
 
                 if (varName == "name") {
-                    _metaDataComponent.EntityName = GetDisplayName();
+                    MetaDataSystem?.SetEntityName(Entity, GetDisplayName());
                 } else {
                     value.TryGetValueAsString(out string? valueStr);
 
-                    _metaDataComponent.EntityDescription = valueStr ?? string.Empty;
+                    MetaDataSystem?.SetEntityDescription(Entity, valueStr ?? string.Empty);
                 }
 
                 break;
@@ -169,14 +155,34 @@ public class DreamObjectMovable : DreamObjectAtom {
         if (DreamMapManager.TryGetCellAt(Position, Z, out var oldMapCell))
             oldMapCell.Movables.Remove(this);
 
+        if (loc is DreamObjectArea area) { // Puts the atom on the area's first turf
+            loc = null; // Nullspace if we can't find a turf
+
+            // We don't actually keep track of area turfs currently
+            // So do the classic BYOND trick of looping through every turf and checking its area :)
+            // TODO: Remove this monstrosity
+            for (int z = 1; z <= DreamMapManager.Levels; z++) {
+                for (int x = 1; x <= DreamMapManager.Size.X; x++) {
+                    for (int y = 1; y <= DreamMapManager.Size.Y; y++) {
+                        if (!DreamMapManager.TryGetCellAt((x, y), z, out var cell))
+                            continue;
+
+                        if (cell.Area == area) {
+                            loc = cell.Turf;
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
         switch (loc) {
-            case DreamObjectTurf turf: {
+            case DreamObjectTurf turf:
                 TransformSystem.SetParent(Entity, DreamMapManager.GetZLevelEntity(turf.Z));
                 TransformSystem.SetWorldPosition(Entity, new Vector2(turf.X, turf.Y));
 
                 turf.Cell.Movables.Add(this);
                 break;
-            }
             case DreamObjectMovable movable:
                 TransformSystem.SetParent(Entity, movable.Entity);
                 TransformSystem.SetLocalPosition(Entity, Vector2.Zero);

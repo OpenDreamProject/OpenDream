@@ -9,16 +9,15 @@ namespace OpenDreamRuntime.Objects.Types;
 public sealed class DreamObjectClient : DreamObject {
     public readonly DreamConnection Connection;
     public readonly ClientScreenList Screen;
+    public readonly ClientImagesList Images;
     public readonly VerbsList Verbs;
-    public readonly DreamList Images; // TODO properly implement /client.images
-
     public ViewRange View { get; private set; }
 
-    public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem) : base(objectDefinition) {
+    public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
         Screen = new(ObjectTree, screenOverlaySystem, Connection);
         Verbs = new(ObjectTree, this);
-        Images = ObjectTree.CreateList();
+        Images = new(ObjectTree, clientImagesSystem, Connection);
 
         DreamManager.Clients.Add(this);
 
@@ -26,6 +25,7 @@ public sealed class DreamObjectClient : DreamObject {
     }
 
     protected override void HandleDeletion() {
+        Connection.Session?.ConnectedClient.Disconnect("Your client object was deleted");
         DreamManager.Clients.Remove(this);
 
         base.HandleDeletion();

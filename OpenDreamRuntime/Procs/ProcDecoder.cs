@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Text;
-using OpenDreamShared.Dream.Procs;
+using DMCompiler.Bytecode;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -132,8 +133,6 @@ public struct ProcDecoder {
             case DreamProcOpcode.JumpIfTrue:
             case DreamProcOpcode.PushType:
             case DreamProcOpcode.PushProc:
-            case DreamProcOpcode.PushProcStub:
-            case DreamProcOpcode.PushVerbStub:
             case DreamProcOpcode.MassConcatenation:
             case DreamProcOpcode.JumpIfNull:
             case DreamProcOpcode.JumpIfNullNoPop:

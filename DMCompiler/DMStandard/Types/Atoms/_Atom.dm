@@ -1,7 +1,7 @@
 ﻿/atom
 	parent_type = /datum
 
-	var/name = "atom"
+	var/name = null
 	var/text = null
 	var/desc = null
 	var/suffix = null as opendream_unimplemented
@@ -12,7 +12,7 @@
 	var/list/overlays = null
 	var/list/underlays = null
 	var/list/vis_locs = null as opendream_unimplemented
-	var/list/vis_contents = null as opendream_unimplemented
+	var/list/vis_contents = null
 
 	var/atom/loc
 	var/dir = SOUTH

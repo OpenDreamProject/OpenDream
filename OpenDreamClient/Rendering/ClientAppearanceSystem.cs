@@ -8,9 +8,9 @@ using OpenDreamClient.Resources.ResourceTypes;
 
 namespace OpenDreamClient.Rendering {
     internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
-        private Dictionary<uint, IconAppearance> _appearances = new();
-        private readonly Dictionary<uint, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
-        private readonly Dictionary<uint, DreamIcon> _turfIcons = new();
+        private Dictionary<int, IconAppearance> _appearances = new();
+        private readonly Dictionary<int, List<Action<IconAppearance>>> _appearanceLoadCallbacks = new();
+        private readonly Dictionary<int, DreamIcon> _turfIcons = new();
         private readonly Dictionary<DreamFilter, ShaderInstance> _filterShaders = new();
 
         [Dependency] private readonly IEntityManager _entityManager = default!;
@@ -30,7 +30,7 @@ namespace OpenDreamClient.Rendering {
             _turfIcons.Clear();
         }
 
-        public void LoadAppearance(uint appearanceId, Action<IconAppearance> loadCallback) {
+        public void LoadAppearance(int appearanceId, Action<IconAppearance> loadCallback) {
             if (_appearances.TryGetValue(appearanceId, out var appearance)) {
                 loadCallback(appearance);
             }
@@ -42,8 +42,8 @@ namespace OpenDreamClient.Rendering {
             _appearanceLoadCallbacks[appearanceId].Add(loadCallback);
         }
 
-        public DreamIcon GetTurfIcon(uint turfId) {
-            uint appearanceId = turfId - 1;
+        public DreamIcon GetTurfIcon(int turfId) {
+            int appearanceId = turfId - 1;
 
             if (!_turfIcons.TryGetValue(appearanceId, out var icon)) {
                 icon = new DreamIcon(appearanceId);
@@ -56,7 +56,7 @@ namespace OpenDreamClient.Rendering {
         private void OnAllAppearances(AllAppearancesEvent e, EntitySessionEventArgs session) {
             _appearances = e.Appearances;
 
-            foreach (KeyValuePair<uint, IconAppearance> pair in _appearances) {
+            foreach (KeyValuePair<int, IconAppearance> pair in _appearances) {
                 if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
                     foreach (var callback in callbacks) callback(pair.Value);
                 }
@@ -72,7 +72,8 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnAnimation(AnimationEvent e) {
-            if (!_entityManager.TryGetComponent<DMISpriteComponent>(e.Entity, out var sprite))
+            EntityUid ent = _entityManager.GetEntity(e.Entity);
+            if (!_entityManager.TryGetComponent<DMISpriteComponent>(ent, out var sprite))
                 return;
 
             LoadAppearance(e.TargetAppearanceId, targetAppearance => {
@@ -81,7 +82,11 @@ namespace OpenDreamClient.Rendering {
         }
 
         private void OnWorldAABB(EntityUid uid, DMISpriteComponent comp, ref WorldAABBEvent e) {
-            comp.GetAABB(_transformSystem, ref e);
+            Box2? aabb = null;
+
+            comp.Icon.GetWorldAABB(_transformSystem.GetWorldPosition(uid), ref aabb);
+            if (aabb != null)
+                e.AABB = aabb.Value;
         }
 
         public void ResetFilterUsageFlags() {

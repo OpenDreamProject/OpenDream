@@ -1,5 +1,4 @@
-﻿using OpenDreamRuntime.Procs;
-using OpenDreamShared.Dream;
+﻿using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -9,23 +8,28 @@ public class DreamObjectAtom : DreamObject {
     public string? Desc;
     public readonly DreamOverlaysList Overlays;
     public readonly DreamOverlaysList Underlays;
+    public readonly DreamVisContentsList VisContents;
     public readonly VerbsList Verbs;
     public readonly DreamFilterList Filters;
     public DreamList? VisLocs; // TODO: Implement
-    public DreamList? VisContents; // TODO: Implement
 
     public DreamObjectAtom(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
-        Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
-        Verbs = new(ObjectTree, this);
-        Filters = new(ObjectTree.List.ObjectDefinition, this);
-    }
-
-    public override void Initialize(DreamProcArguments args) {
-        base.Initialize(args);
-
         ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
         ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
+
+        Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
+        Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+        VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
+        Verbs = new(ObjectTree, this);
+        Filters = new(ObjectTree.List.ObjectDefinition, this);
+
+        AtomManager.AddAtom(this);
+    }
+
+    protected override void HandleDeletion() {
+        AtomManager.RemoveAtom(this);
+
+        base.HandleDeletion();
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -51,17 +55,6 @@ public class DreamObjectAtom : DreamObject {
 
                 value = new(appearanceCopy);
                 return true;
-            case "transform":{
-                var appearance = AtomManager.MustGetAppearance(this)!;
-
-                var transform = appearance.Transform;
-                var matrix = DreamObjectMatrix.MakeMatrix(ObjectTree,
-                    transform[0], transform[2], transform[4],
-                    transform[1], transform[3], transform[5]);
-
-                value = new(matrix);
-                return true;
-            }
             case "overlays":
                 value = new(Overlays);
                 return true;
@@ -79,7 +72,6 @@ public class DreamObjectAtom : DreamObject {
                 value = new(VisLocs);
                 return true;
             case "vis_contents":
-                VisContents ??= ObjectTree.CreateList();
                 value = new(VisContents);
                 return true;
 
@@ -110,6 +102,15 @@ public class DreamObjectAtom : DreamObject {
             case "desc":
                 value.TryGetValueAsString(out Desc);
                 break;
+            case "appearance":
+                if (!AtomManager.TryCreateAppearanceFrom(value, out var newAppearance))
+                    return; // Ignore attempts to set an invalid appearance
+
+                // The dir does not get changed
+                newAppearance.Direction = AtomManager.MustGetAppearance(this)!.Direction;
+
+                AtomManager.SetAtomAppearance(this, newAppearance);
+                break;
             case "overlays": {
                 Overlays.Cut();
 
@@ -134,6 +135,20 @@ public class DreamObjectAtom : DreamObject {
                     }
                 } else if (!value.IsNull) {
                     Underlays.AddValue(value);
+                }
+
+                break;
+            }
+            case "vis_contents": {
+                VisContents.Cut();
+
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    // TODO: This should postpone UpdateAppearance until after everything is added
+                    foreach (DreamValue visContentsValue in valueList.GetValues()) {
+                        VisContents.AddValue(visContentsValue);
+                    }
+                } else if (!value.IsNull) {
+                    VisContents.AddValue(value);
                 }
 
                 break;
@@ -166,7 +181,7 @@ public class DreamObjectAtom : DreamObject {
                 break;
             }
             default:
-                if (AtomManager.IsValidAppearanceVar(varName) || varName == "transform") {
+                if (AtomManager.IsValidAppearanceVar(varName)) {
                     // Basically AtomManager.UpdateAppearance() but without the performance impact of using actions
                     var appearance = AtomManager.MustGetAppearance(this);
 
@@ -174,16 +189,7 @@ public class DreamObjectAtom : DreamObject {
                     // TODO: We can probably avoid cloning while the DMISpriteComponent is dirty
                     appearance = (appearance != null) ? new(appearance) : new();
 
-                    if (varName == "transform") {
-                        float[] matrixArray = value.TryGetValueAsDreamObject<DreamObjectMatrix>(out var matrix)
-                            ? DreamObjectMatrix.MatrixToTransformFloatArray(matrix)
-                            : DreamObjectMatrix.IdentityMatrixArray;
-
-                        appearance.Transform = matrixArray;
-                    } else {
-                        AtomManager.SetAppearanceVar(appearance, varName, value);
-                    }
-
+                    AtomManager.SetAppearanceVar(appearance, varName, value);
                     AtomManager.SetAtomAppearance(this, appearance);
                     break;
                 }

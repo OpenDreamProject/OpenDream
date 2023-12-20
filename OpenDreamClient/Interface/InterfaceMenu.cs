@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Serialization.Manager;
 
@@ -21,6 +20,17 @@ public sealed class InterfaceMenu : InterfaceElement {
 
         _pauseMenuCreation = false;
         CreateMenu();
+    }
+
+    public void SetGroupChecked(string group, string id) {
+        foreach (MenuElement menuElement in MenuElements.Values) {
+            if (menuElement.ElementDescriptor is not MenuElementDescriptor menuElementDescriptor)
+                continue;
+
+            if (menuElementDescriptor.Group == group) {
+                menuElementDescriptor.IsChecked = menuElementDescriptor.Id == id;
+            }
+        }
     }
 
     public override void AddChild(ElementDescriptor descriptor) {
@@ -80,7 +90,6 @@ public sealed class InterfaceMenu : InterfaceElement {
         private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
         public string? Category => MenuElementDescriptor.Category;
         public string Command => MenuElementDescriptor.Command;
-
         private readonly InterfaceMenu _menu;
 
         public MenuElement(MenuElementDescriptor data, InterfaceMenu menu) : base(data) {
@@ -106,14 +115,51 @@ public sealed class InterfaceMenu : InterfaceElement {
             if (String.IsNullOrEmpty(text))
                 return new MenuBar.MenuSeparator();
 
+            if(MenuElementDescriptor.CanCheck)
+                if(MenuElementDescriptor.IsChecked)
+                    text =  text + " ☑";
+
             MenuBar.MenuButton menuButton = new() {
                 Text = text
             };
 
-            //result.IsCheckable = MenuElementDescriptor.CanCheck;
-            if (!String.IsNullOrEmpty(Command))
-                menuButton.OnPressed += () => { EntitySystem.Get<DreamCommandSystem>().RunCommand(Command); };
+
+            menuButton.OnPressed += () => {
+                    if(MenuElementDescriptor.CanCheck)
+                        if(!String.IsNullOrEmpty(MenuElementDescriptor.Group))
+                            _menu.SetGroupChecked(MenuElementDescriptor.Group, MenuElementDescriptor.Id);
+                        else
+                            MenuElementDescriptor.IsChecked = !MenuElementDescriptor.IsChecked;
+                        _menu.CreateMenu();
+                    if(!string.IsNullOrEmpty(MenuElementDescriptor.Command))
+                        _interfaceManager.RunCommand(Command);
+                };
             return menuButton;
+        }
+
+        public override bool TryGetProperty(string property, out string value) {
+            switch (property) {
+                case "command":
+                    value = Command;
+                    return true;
+                case "category":
+                    value = Category ?? "";
+                    return true;
+                case "can-check":
+                    value = MenuElementDescriptor.CanCheck.ToString();
+                    return true;
+                case "is-checked":
+                    value = MenuElementDescriptor.IsChecked.ToString();
+                    return true;
+                case "group":
+                    value = MenuElementDescriptor.Group ?? "";
+                    return true;
+                case "index":
+                    value = MenuElementDescriptor.Index.ToString();
+                    return true;
+                default:
+                    return base.TryGetProperty(property, out value);
+            }
         }
 
         public override void AddChild(ElementDescriptor descriptor) {

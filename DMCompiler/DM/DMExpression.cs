@@ -2,30 +2,11 @@ using System;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM {
-    abstract class DMExpression {
-        public enum ProcPushResult {
-            // The emitted code has pushed the proc onto the stack
-            Unconditional,
-
-            // The emitted code has pushed either null or the proc onto the stack
-            // If null was pushed, any calls to this proc should silently evaluate to null
-            Conditional,
-        }
-
-        public enum IdentifierPushResult {
-            // The emitted code has pushed the identifier onto the stack
-            Unconditional,
-
-            // The emitted code has pushed either null or the identifier onto the stack
-            // If null was pushed, any assignments to this identifier should silently evaluate to null
-            Conditional,
-        }
-
+    internal abstract class DMExpression {
         public Location Location;
 
         protected DMExpression(Location location) {
@@ -33,9 +14,7 @@ namespace DMCompiler.DM {
         }
 
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-            var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
-            expression.Visit(instance);
-            return instance.Result;
+            return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
         }
 
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {

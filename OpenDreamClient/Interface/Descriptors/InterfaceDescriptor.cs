@@ -22,7 +22,7 @@ public sealed class InterfaceDescriptor {
 }
 
 [Virtual, ImplicitDataDefinitionForInheritors]
-public class ElementDescriptor {
+public partial class ElementDescriptor {
     [DataField("type")]
     public string _type;
 

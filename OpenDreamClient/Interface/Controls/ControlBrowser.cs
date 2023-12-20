@@ -30,7 +30,6 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     [Dependency] private readonly IResourceManager _resourceManager = default!;
     [Dependency] private readonly IClientNetManager _netManager = default!;
-    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IDreamResourceManager _dreamResource = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.browser");
@@ -63,48 +62,31 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     public void SetFileSource(ResPath filepath, bool userData) {
-        _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
+        _webView.Url = (userData ? "usr://127.0.0.1/" : "res://127.0.0.1/") + filepath; // hostname must be the localhost IP for TGUI to work properly
     }
 
     private void BeforeBrowseHandler(IBeforeBrowseContext context) {
-        if (string.IsNullOrEmpty(_webView.Url))
-            return;
+        // An exception in here will freeze up / crash CEF, so catch any
+        try {
+            if (string.IsNullOrEmpty(_webView.Url))
+                return;
 
-        Uri oldUri = new Uri(_webView.Url);
-        Uri newUri = new Uri(context.Url);
+            Uri oldUri = new Uri(_webView.Url);
+            Uri newUri = new Uri(context.Url);
 
-        if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != String.Empty)) {
-            context.DoCancel();
+            if (newUri.Scheme == "byond" || (newUri.AbsolutePath == oldUri.AbsolutePath && newUri.Query != string.Empty)) {
+                context.DoCancel();
 
-            if (newUri.Host == "winset") { // Embedded winset. Ex: usr << browse("<a href=\"byond://winset?command=.quit\">Quit</a>", "window=quitbutton")
-                // Strip the question mark out before parsing
-                var queryParams = HttpUtility.ParseQueryString(newUri.Query.Substring(1));
-
-                // We need to extract the control element (if one was included)
-                string? element = queryParams.Get("element");
-                queryParams.Remove("element");
-
-                // Wrap each parameter in quotes so the entire value is used
-                foreach (var paramKey in queryParams.AllKeys) {
-                    var paramValue = queryParams[paramKey];
-                    if (paramValue == null)
-                        continue;
-
-                    queryParams.Set(paramKey, $"\"{paramValue}\"");
+                if (newUri.Host == "winset") {
+                    HandleEmbeddedWinset(newUri.Query);
+                    return;
                 }
 
-                // Reassemble the query params without element then convert to winset syntax
-                var query = queryParams.ToString();
-                query = HttpUtility.UrlDecode(query);
-                query = query!.Replace('&', ';'); // TODO: More robust parsing
-
-                // We can finally call winset
-                _interfaceManager.WinSet(element, query);
-                return;
+                var msg = new MsgTopic() { Query = newUri.Query };
+                _netManager.ClientSendMessage(msg);
             }
-
-            var msg = new MsgTopic() { Query = newUri.Query };
-            _netManager.ClientSendMessage(msg);
+        } catch (Exception e) {
+            _sawmill.Error($"Exception in BeforeBrowseHandler: {e}");
         }
     }
 
@@ -131,8 +113,38 @@ internal sealed class ControlBrowser : InterfaceControl {
                 mimeType = "application/octet-stream";
 
             context.DoRespondStream(stream, mimeType, status);
-            return;
         }
+    }
+
+    /// <summary>
+    /// Handles an embedded winset
+    /// <code>byond://winset?command=.quit</code>
+    /// </summary>
+    /// <param name="query">The query portion of the embedded winset</param>
+    private void HandleEmbeddedWinset(string query) {
+        // Strip the question mark out before parsing
+        var queryParams = HttpUtility.ParseQueryString(query.Substring(1));
+
+        // We need to extract the control element (if one was included)
+        string? element = queryParams.Get("element");
+        queryParams.Remove("element");
+
+        // Wrap each parameter in quotes so the entire value is used
+        foreach (var paramKey in queryParams.AllKeys) {
+            var paramValue = queryParams[paramKey];
+            if (paramValue == null)
+                continue;
+
+            queryParams.Set(paramKey, $"\"{paramValue}\"");
+        }
+
+        // Reassemble the query params without element then convert to winset syntax
+        var modifiedQuery = queryParams.ToString();
+        modifiedQuery = HttpUtility.UrlDecode(modifiedQuery);
+        modifiedQuery = modifiedQuery!.Replace('&', ';'); // TODO: More robust parsing
+
+        // We can finally call winset
+        _interfaceManager.WinSet(element, modifiedQuery);
     }
 }
 

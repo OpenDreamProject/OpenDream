@@ -2,6 +2,7 @@
 using OpenDreamShared.Dream;
 using System.Text.RegularExpressions;
 using OpenDreamRuntime.Objects.Types;
+using System.Text;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -9,6 +10,13 @@ namespace OpenDreamRuntime.Procs.Native;
 /// A container of procs that act as helpers for a few native procs.
 /// </summary>
 internal static partial class DreamProcNativeHelpers {
+    private static readonly char[] radixArray = new char[36] {
+        '0', '1', '2', '3', '4', '5', '6', '7',
+        '8', '9', 'a', 'b', 'c', 'd', 'e', 'f',
+        'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n',
+        'o', 'p', 'q', 'r', 's', 't', 'u', 'v',
+        'w', 'x', 'y', 'z'
+    };
     /// <summary>
     /// This is a helper proc for oview, view, orange, and range to do their strange iteration with.<br/>
     /// BYOND has a very strange, kinda-spiralling iteration pattern for the above procs, <br/>
@@ -128,12 +136,13 @@ internal static partial class DreamProcNativeHelpers {
     /// If a range argument is passed, like "11x4", then THAT is what we have to deal with.
     /// </remarks>
     /// <returns>The center (which may not be the turf), the distance along the x-axis, and the distance along the y-axis to iterate.</returns>
-    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamObjectAtom? usr, ReadOnlySpan<DreamValue> arguments) {
+    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamManager dreamMan, DreamObjectAtom? usr, ReadOnlySpan<DreamValue> arguments) {
+        ViewRange range = dreamMan.WorldInstance.DefaultView;
+
         if(arguments.Length == 0) {
-            return (usr, new ViewRange(5,5));
+            return (usr, range);
         }
 
-        ViewRange range = new ViewRange(5,5);
         DreamObjectAtom? center = usr;
 
         foreach (var arg in arguments) {
@@ -141,9 +150,9 @@ internal static partial class DreamProcNativeHelpers {
                 center = centerObject;
             } else if(arg.TryGetValueAsInteger(out int distValue)) {
                 range = new ViewRange(distValue);
-            } else if(arg.TryGetValueAsString(out var distString)) {
+            } else if (arg.TryGetValueAsString(out var distString)) {
                 range = new ViewRange(distString);
-            } else {
+            } else if (!arg.IsNull) { // null range arg is handled by DefaultView above
                 throw new Exception($"Invalid argument: {arg}");
             }
         }
@@ -297,6 +306,97 @@ internal static partial class DreamProcNativeHelpers {
         }
     }
 
+    /// <remarks>
+    /// It's a very BYONDish converter. Probably, you don't want to reuse it somewhere aside from the text2num implementation
+    /// </remarks>
+    public static double? StringToDouble(ReadOnlySpan<char> value, int radix) {
+        if (value == null || value.IsEmpty)
+            return null;
+
+        if (radix < 2 || radix > 36)
+            throw new Exception($"Invalid radix: {radix}");
+
+        bool negative = value[0] == '-';
+        if (negative || value[0] == '+')
+            value = value.Slice(1);
+
+        if (value.StartsWith("nan", StringComparison.CurrentCultureIgnoreCase)) {
+            return negative ? -double.NaN : double.NaN;
+        }
+
+        if (value.StartsWith("0x")) {
+            if (radix == 10 || radix == 16) {
+                radix = 16;
+                value = value.Slice(2);
+            }
+        }
+
+        int letterDigitsVariety = Math.Max(radix - 10, 0);
+
+        double? result = null;
+        int fractionalGrade = 0;
+
+        foreach (char c in value) {
+            if (c == '.') {
+                if (fractionalGrade != 0)
+                    break;
+                fractionalGrade = 1;
+                continue;
+            }
+
+            int digit = c;
+            if (!char.IsAsciiDigit(c)) {
+                if (c >= 'A' && c < 'A' + letterDigitsVariety) {
+                    digit -= 'A' - 10;
+                } else if (c >= 'a' && c <= 'a' + letterDigitsVariety) {
+                    digit -= 'a' - 10;
+                } else {
+                    break;
+                }
+            } else {
+                digit -= '0';
+            }
+
+            result ??= 0;
+            if (fractionalGrade == 0)
+                result = result * radix + digit;
+            else {
+                result += digit / Math.Pow(radix, fractionalGrade);
+                fractionalGrade++;
+            }
+        }
+
+        if (negative && result != null)
+            result *= -1;
+
+        return result;
+    }
+
+    public static string ToBase(int value, int radix) {
+        if(radix > 36) {
+            throw new ArgumentOutOfRangeException(nameof(radix), "radix is above 36");
+        }
+
+        StringBuilder resString = new();
+        bool wasNegative = false; // Theres likely a better way
+
+        if(value < 0) {
+            wasNegative = true;
+            value = Math.Abs(value);
+        }
+
+        while (value > 0) {
+            resString.Insert(0, radixArray[value % radix]);
+            value /= radix;
+        }
+
+        if(wasNegative) {
+            resString.Insert(0, '-');
+        }
+
+        return new string(resString.ToString());
+    }
+
     /// <summary>
     /// Returns the string with all non-alphanumeric characters (except @) removed, and all letters converted to lowercase.
     /// Mirrors the behaviour of BYOND's ckey() proc.
@@ -305,6 +405,59 @@ internal static partial class DreamProcNativeHelpers {
     /// <returns></returns>
     public static string Ckey(string input) {
         return CkeyRegex().Replace(input.ToLower(), "");
+    }
+
+    /// <summary>
+    /// Gets the direction from loc1 to loc2
+    /// </summary>
+    public static AtomDirection GetDir(AtomManager atomManager, DreamObjectAtom loc1, DreamObjectAtom loc2) {
+        var loc1Pos = atomManager.GetAtomPosition(loc1);
+        var loc2Pos = atomManager.GetAtomPosition(loc2);
+
+        if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
+            return 0;
+
+        AtomDirection direction = AtomDirection.None;
+
+        // East or West
+        if (loc2Pos.X < loc1Pos.X)
+            direction |= AtomDirection.West;
+        else if (loc2Pos.X > loc1Pos.X)
+            direction |= AtomDirection.East;
+
+        // North or South
+        if (loc2Pos.Y < loc1Pos.Y)
+            direction |= AtomDirection.South;
+        else if (loc2Pos.Y > loc1Pos.Y)
+            direction |= AtomDirection.North;
+
+        return direction;
+    }
+
+    /// <summary>
+    /// Gets the turf 1 step away from an atom in the given direction
+    /// </summary>
+    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, AtomDirection dir) {
+        var dirInt = (int)dir;
+        var locPos = atomManager.GetAtomPosition(loc);
+
+        if ((dirInt & (int) AtomDirection.North) != 0)
+            locPos.Y += 1;
+        if ((dirInt & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
+            locPos.Y -= 1;
+
+        if ((dirInt & (int) AtomDirection.East) != 0)
+            locPos.X += 1;
+        if ((dirInt & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
+            locPos.X -= 1;
+
+        if ((dirInt & (int) AtomDirection.Up) != 0)
+            locPos.Z += 1;
+        if ((dirInt & (int) AtomDirection.Down) != 0) // A dir of UP | DOWN will cancel out
+            locPos.Z -= 1;
+
+        mapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
+        return turf;
     }
 
     [GeneratedRegex("[\\^]|[^a-z0-9@]")]

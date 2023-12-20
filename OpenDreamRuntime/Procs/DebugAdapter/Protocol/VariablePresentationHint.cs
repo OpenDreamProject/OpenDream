@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
+[UsedImplicitly]
 public sealed class VariablePresentationHint {
     /**
      * The kind of variable. Before introducing additional values, try to use the

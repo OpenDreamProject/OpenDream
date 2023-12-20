@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using System.Linq;
 using System.Text.Json;
+using DMCompiler.Bytecode;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
@@ -77,13 +78,16 @@ namespace OpenDreamRuntime {
 
             // Call New() on all /area and /turf that exist, each with waitfor=FALSE separately. If <global init> created any /area, call New a SECOND TIME
             // new() up /objs and /mobs from compiled-in maps [order: (1,1) then (2,1) then (1,2) then (2,2)]
-            _dreamMapManager.InitializeAtoms(_compiledJson.Maps![0]);
+            _dreamMapManager.InitializeAtoms(_compiledJson.Maps);
 
             // Call world.New()
             WorldInstance.SpawnProc("New");
         }
 
         public void Shutdown() {
+            // TODO: Respect not calling parent and aborting shutdown
+            WorldInstance.Delete();
+            ShutdownConnectionManager();
             Initialized = false;
         }
 
@@ -94,7 +98,7 @@ namespace OpenDreamRuntime {
             _procScheduler.Process();
             UpdateStat();
             _dreamMapManager.UpdateTiles();
-
+            DreamObjectSavefile.FlushAllUpdates();
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
         }
 
@@ -107,9 +111,8 @@ namespace OpenDreamRuntime {
             if (json == null)
                 return false;
 
-            if (json.Maps == null || json.Maps.Count == 0) throw new ArgumentException("No maps were given");
-            if (json.Maps.Count > 1) {
-                _sawmill.Warning("Loading more than one map is not implemented, skipping additional maps");
+            if (!json.Metadata.Version.Equals(OpcodeVerifier.GetOpcodesHash())) {
+                _sawmill.Error("Compiler opcode version does not match the runtime version!");
             }
 
             _compiledJson = json;
@@ -141,8 +144,7 @@ namespace OpenDreamRuntime {
 
             Globals[GlobalNames.IndexOf("world")] = new DreamValue(WorldInstance);
 
-            // Load turfs and areas of compiled-in maps, recursively calling <init>, but suppressing all New
-            _dreamMapManager.LoadAreasAndTurfs(_compiledJson.Maps[0]);
+            _dreamMapManager.LoadMaps(_compiledJson.Maps);
 
             _statusHost.SetMagicAczProvider(new DreamMagicAczProvider(
                 _dependencyCollection, rootPath, resources
@@ -278,7 +280,7 @@ namespace OpenDreamRuntime {
                         return new DreamValue(resource);
                     case RefType.DreamAppearance:
                         _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
-                        return _appearanceSystem.TryGetAppearance((uint)refId, out IconAppearance? appearance)
+                        return _appearanceSystem.TryGetAppearance(refId, out IconAppearance? appearance)
                             ? new DreamValue(appearance)
                             : DreamValue.Null;
                     case RefType.Proc:

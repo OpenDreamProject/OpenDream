@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
 
 namespace DMCompiler.DM.Expressions {
     abstract class UnaryOp : DMExpression {

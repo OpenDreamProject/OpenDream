@@ -14,6 +14,7 @@ namespace DMCompiler.DM {
             Location = location;
         }
 
+        // TODO: proc and dmObject can be null, address nullability contract
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
             return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
         }

@@ -350,7 +350,7 @@ internal static class DMExpressionBuilder {
                 return new Global(identifier.Location);
             default: {
                 if (CurrentScopeMode == ScopeMode.Normal) {
-                    DMProc.LocalVariable localVar = proc.GetLocalVariable(name);
+                    DMProc.LocalVariable localVar = proc?.GetLocalVariable(name);
                     if (localVar != null)
                         return new Local(identifier.Location, localVar);
 

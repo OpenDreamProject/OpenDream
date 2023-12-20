@@ -31,6 +31,8 @@ public sealed class DreamUserInterfaceStateManager {
                 // When we disconnect from the server:
                 case ClientRunLevel.Error:
                 case ClientRunLevel.Initialize when args.OldLevel >= ClientRunLevel.Connected:
+                    // TODO: Reconnect without returning to the launcher
+                    // The client currently believes its still connected at this point and will refuse
                     if (_gameController.LaunchState is {
                             FromLauncher: true,
                             Ss14Address: not null

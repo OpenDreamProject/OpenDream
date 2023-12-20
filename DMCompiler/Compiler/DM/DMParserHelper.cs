@@ -1,5 +1,4 @@
 ﻿using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DMPreprocessor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +6,7 @@ using System.Text;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.Compiler.DM {
-    public partial class DMParser : Parser<Token> {
-
+    public partial class DMParser {
         /// <summary>
         /// A special override of Error() since, for DMParser, we know we are in a compilation context and can make use of error codes.
         /// </summary>

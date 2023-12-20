@@ -192,8 +192,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTObjectVarOverride varOverride:
                     // parent_type is treated as part of the object definition rather than an actual var override
                     if (varOverride.VarName == "parent_type") {
-                        DMASTConstantPath? parentTypePath = varOverride.Value as DMASTConstantPath;
-                        if (parentTypePath == null)
+                        if (varOverride.Value is not DMASTConstantPath parentTypePath)
                             throw new CompileErrorException(varOverride.Location, "Expected a constant path");
 
                         var parentType = DMObjectTree.GetDMObject(parentTypePath.Value.Path);
@@ -294,34 +293,31 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private static void ProcessVarOverride(DMObject? varObject, DMASTObjectVarOverride? varOverride) {
-            try {
-                switch (varOverride.VarName) { // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
-                    case "tag": {
-                        if(varObject.IsSubtypeOf(DreamPath.Datum)) {
-                            throw new CompileErrorException(varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");
-                        }
-
-                        break;
-                    }
-                }
-
-                DMVariable? variable;
-                if (varObject.HasLocalVariable(varOverride.VarName)) {
-                    variable = varObject.GetVariable(varOverride.VarName);
-                } else if (varObject.HasGlobalVariable(varOverride.VarName)) {
-                    variable = varObject.GetGlobalVariable(varOverride.VarName);
-                    DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
-                } else {
-                    DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location, $"var \"{varOverride.VarName}\" is not declared");
-                    return;
-                }
-
-                OverrideVariableValue(varObject, ref variable, varOverride.Value);
-                varObject.VariableOverrides[variable.Name] = variable;
-            } catch (CompileErrorException e) {
-                DMCompiler.Emit(e.Error);
+        private static void ProcessVarOverride(DMObject varObject, DMASTObjectVarOverride varOverride) {
+            // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
+            if (varOverride.VarName == "tag" && varObject.IsSubtypeOf(DreamPath.Datum)) {
+                DMCompiler.Emit(WarningCode.InvalidOverride,
+                    varOverride.Location,
+                    "var \"tag\" cannot be set to a value at compile-time");
+                return;
             }
+
+            DMVariable? variable;
+            if (varObject.HasLocalVariable(varOverride.VarName)) {
+                variable = varObject.GetVariable(varOverride.VarName);
+            } else if (varObject.HasGlobalVariable(varOverride.VarName)) {
+                variable = varObject.GetGlobalVariable(varOverride.VarName);
+                DMCompiler.Emit(WarningCode.StaticOverride,
+                    varOverride.Location,
+                    $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
+            } else {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location,
+                    $"var \"{varOverride.VarName}\" is not declared");
+                return;
+            }
+
+            OverrideVariableValue(varObject, ref variable, varOverride.Value);
+            varObject.VariableOverrides[variable.Name] = variable;
         }
 
         private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject? currentObject) {
@@ -475,11 +471,15 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (variable.IsConst) {
-                throw new CompileErrorException(location, "Value of const var must be a constant");
+                DMCompiler.Emit(WarningCode.HardConstContext, location, "Value of const var must be a constant");
+                return;
             }
 
             if (!IsValidRighthandSide(currentObject, variable, expression)) {
-                throw new CompileErrorException(location, $"Invalid initial value for \"{variable.Name}\"");
+                DMCompiler.Emit(WarningCode.BadExpression,
+                    location,
+                    $"Invalid initial value for \"{variable.Name}\"");
+                return;
             }
 
             variable = variable.WriteToValue(new Expressions.Null(Location.Internal));

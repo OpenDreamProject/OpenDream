@@ -192,13 +192,6 @@ public sealed class AtomManager {
         DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
         sprite.SetAppearance(GetAppearanceFromDefinition(movable.ObjectDefinition));
 
-        if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
-            _metaDataSystem ??= _entitySystemManager.GetEntitySystem<MetaDataSystem>();
-
-            _metaDataSystem.SetEntityName(entity, movable.GetDisplayName(), metaData);
-            _metaDataSystem.SetEntityDescription(entity, movable.Desc ?? string.Empty, metaData);
-        }
-
         _entityToAtom.Add(entity, movable);
         return entity;
     }

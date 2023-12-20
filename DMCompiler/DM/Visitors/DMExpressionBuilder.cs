@@ -409,8 +409,8 @@ internal static class DMExpressionBuilder {
 
                     switch (expression)
                     {
-                        case Dereference dereference:
-                            return new Initial(dereference.Location, dereference);
+                        case Dereference or Field:
+                            return new Initial(expression.Location, expression);
                         case ConstantPath when definition.GetVariable(name) is { } variable: {
                             return variable.Value.TryAsConstant(out var constant)
                                 ? constant

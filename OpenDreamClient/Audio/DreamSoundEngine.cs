@@ -1,7 +1,7 @@
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Network.Messages;
-using Robust.Client.Graphics;
+using Robust.Client.Audio;
 using Robust.Shared.Audio;
 using Robust.Shared.Network;
 
@@ -12,6 +12,9 @@ namespace OpenDreamClient.Audio {
         [Dependency] private readonly IDreamResourceManager _resourceManager = default!;
         [Dependency] private readonly ILogManager _logManager = default!;
         [Dependency] private readonly INetManager _netManager = default!;
+        [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private readonly IAudioManager _audioManager = default!;
+        private AudioSystem? _audioSystem;
 
         private ISawmill _sawmill = default!;
 
@@ -27,12 +30,15 @@ namespace OpenDreamClient.Audio {
 
         public void StopFinishedChannels() {
             for (int i = 0; i < SoundChannelLimit; i++) {
-                if (_channels[i]?.Source.IsPlaying is false or null)
+                if (_channels[i]?.Source.Component.Playing is false or null)
                     StopChannel(i + 1);
             }
         }
 
         public void PlaySound(int channel, MsgSound.FormatType format, ResourceSound sound, float volume) {
+            if (_audioSystem == null)
+                _entitySystemManager.Resolve(ref _audioSystem);
+
             if (channel == 0) {
                 //First available channel
                 for (int i = 0; i < _channels.Length; i++) {
@@ -50,19 +56,27 @@ namespace OpenDreamClient.Audio {
 
             StopChannel(channel);
 
-            // convert from DM volume (0-100) to OpenAL volume (db)
-            IClydeAudioSource? source = sound.Play(format, AudioParams.Default.WithVolume(20 * MathF.Log10(volume)));
-            if (source == null)
+            var stream = sound.GetStream(format, _audioManager);
+            if (stream == null) {
+                _sawmill.Error($"Failed to load audio ${sound}");
                 return;
+            }
 
-            _channels[channel - 1] = new DreamSoundChannel(source);
+            var db = 20 * MathF.Log10(volume); // convert from DM volume (0-100) to OpenAL volume (db)
+            var source = _audioSystem.PlayGlobal(stream, AudioParams.Default.WithVolume(db)); // TODO: Positional audio.
+            if (source == null) {
+                _sawmill.Error($"Failed to play audio ${sound}");
+                return;
+            }
+
+            _channels[channel - 1] = new DreamSoundChannel(_audioSystem, source.Value);
         }
 
 
         public void StopChannel(int channel) {
             ref DreamSoundChannel? ch = ref _channels[channel - 1];
 
-            ch?.Dispose();
+            ch?.Stop();
             // This will null the corresponding index in the array.
             ch = null;
         }

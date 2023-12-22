@@ -19,10 +19,10 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly DreamResourceManager _resourceManager = default!;
         [Dependency] private readonly WalkManager _walkManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+        [Dependency] private readonly ISharedPlayerManager _playerManager = default!;
 
         private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
         private readonly ServerClientImagesSystem? _clientImagesSystem;
-        private readonly ActorSystem? _actorSystem;
 
         [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
         [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
@@ -68,12 +68,7 @@ namespace OpenDreamRuntime {
             get => _eye;
             set {
                 _eye = value;
-
-                if (_eye != null) {
-                    _actorSystem?.Attach(_eye.Entity, Session!);
-                } else {
-                    _actorSystem?.Detach(Session!);
-                }
+                _playerManager.SetAttachedEntity(Session!, _eye?.Entity);
             }
         }
 
@@ -105,7 +100,6 @@ namespace OpenDreamRuntime {
 
             _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
             _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);
-            _entitySystemManager.TryGetEntitySystem(out _actorSystem);
         }
 
         public void HandleConnection(ICommonSession session) {

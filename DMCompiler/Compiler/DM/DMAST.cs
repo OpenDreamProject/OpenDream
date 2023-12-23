@@ -1193,9 +1193,9 @@ namespace DMCompiler.Compiler.DM {
 
     public sealed class DMASTScopeIdentifier : DMASTExpression {
         public readonly DMASTExpression? Expression;
-        public readonly DMASTIdentifier Identifier;
+        public readonly string Identifier;
 
-        public DMASTScopeIdentifier(Location location, DMASTExpression? expression, DMASTIdentifier identifier)
+        public DMASTScopeIdentifier(Location location, DMASTExpression? expression, string identifier)
             : base(location) {
             Expression = expression;
             Identifier = identifier;

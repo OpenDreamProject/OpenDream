@@ -463,7 +463,7 @@ namespace DMCompiler.Compiler.DM {
                     DMCompiler.Emit(WarningCode.BadExpression, Current().Location, "Global identifier expected");
                     return null;
                 }
-                expression = new DMASTScopeIdentifier(identifier.Location, expression, identifier);
+                expression = new DMASTScopeIdentifier(identifier.Location, expression, identifier.Identifier);
             } while (Check(TokenType.DM_DoubleColon));
 
             return expression;
@@ -2390,7 +2390,7 @@ namespace DMCompiler.Compiler.DM {
             DMASTCallParameter[]? callParameters = ProcCall();
             if (callParameters != null) {
                 if (expression is DMASTScopeIdentifier gid) {
-                    var globalProc = new DMASTCallableGlobalProc(expression.Location, gid.Identifier.Identifier);
+                    var globalProc = new DMASTCallableGlobalProc(expression.Location, gid.Identifier);
                     return new DMASTProcCall(gid.Location, globalProc, callParameters);
                 } else if (expression is DMASTCallable callable) {
                     return new DMASTProcCall(expression.Location, callable, callParameters);

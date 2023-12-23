@@ -2,7 +2,6 @@
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
 using Robust.Shared.Map;
-using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -40,13 +39,18 @@ public class DreamObjectMovable : DreamObjectAtom {
         Entity = AtomManager.CreateMovableEntity(this);
         SpriteComponent = EntityManager.GetComponent<DMISpriteComponent>(Entity);
         _transformComponent = EntityManager.GetComponent<TransformComponent>(Entity);
-
-        objectDefinition.Variables["screen_loc"].TryGetValueAsString(out var screenLoc);
-        ScreenLoc = screenLoc;
     }
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
+
+        ObjectDefinition.Variables["screen_loc"].TryGetValueAsString(out var screenLoc);
+        ScreenLoc = screenLoc;
+
+        if (EntityManager.TryGetComponent(Entity, out MetaDataComponent? metaData)) {
+            MetaDataSystem?.SetEntityName(Entity, GetDisplayName(), metaData);
+            MetaDataSystem?.SetEntityDescription(Entity, Desc ?? string.Empty, metaData);
+        }
 
         args.GetArgument(0).TryGetValueAsDreamObject<DreamObjectAtom>(out var loc);
         SetLoc(loc); //loc is set before /New() is ever called

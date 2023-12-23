@@ -93,7 +93,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// </summary>
     public IDreamJsonValue CurrentDir;
 
-    private string _currentPath = "";
+    private string _currentPath = "/";
 
     /// <summary>
     /// The current path, set this to change the Currentdir value
@@ -101,7 +101,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     public string CurrentPath {
         get => _currentPath;
         set {
-            _currentPath = value;
+            _currentPath = new DreamPath(_currentPath).PathString;
             IDreamJsonValue tempDir = SeekTo(value);
             if (tempDir != Savefile) CurrentDir = tempDir;
         }

@@ -136,6 +136,10 @@ public sealed partial class ControlDescriptorOutput : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorInfo : ControlDescriptor {
+    [DataField("on-show")]
+    public string? OnShowCommand;
+    [DataField("on-hide")]
+    public string? OnHideCommand;
     [DataField("allow-html")]
     public bool AllowHtml = true; // Supposedly false by default, but it isn't if you're not using BYOND's default skin
 }
@@ -150,6 +154,10 @@ public sealed partial class ControlDescriptorMap : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorBrowser : ControlDescriptor {
+    [DataField("on-show")]
+    public string? OnShowCommand;
+    [DataField("on-hide")]
+    public string? OnHideCommand;
 }
 
 public sealed partial class ControlDescriptorLabel : ControlDescriptor {

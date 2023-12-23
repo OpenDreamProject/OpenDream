@@ -21,11 +21,11 @@ internal static class DreamProcNativeSavefile {
         }
 
         // Treat pathStr as the name of a value in the current dir, as that's how icon2base64() uses it
-        if (!savefile.CurrentDir.TryGetValue(pathStr, out var exportValue)) {
+        if (!savefile.CurrentDir.TryGetValue(pathStr, out var exportValue) || exportValue is not DreamObjectSavefile.DreamFileValue fileData) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 
-        if (!bundle.ResourceManager.TryLoadIcon(exportValue, out var icon)) {
+        if (!bundle.ResourceManager.TryLoadIcon(savefile.RealizeJsonValue(fileData), out var icon)) {
             throw new NotImplementedException("General support for ExportText() is not implemented");
         }
 

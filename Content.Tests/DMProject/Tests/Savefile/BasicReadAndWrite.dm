@@ -7,6 +7,7 @@
 	// Indexing the object to write/read the savefile
 	S["ABC"] = 5
 	ASSERT(V == null)
+	ASSERT(S["ABC"] == 5)
 	V = S["ABC"]
 	ASSERT(V == 5)
 

@@ -361,7 +361,6 @@ public struct DMReference {
     }
 }
 
-
 // Dummy class-as-namespace because C# just kinda be like this
 public static class OpcodeVerifier {
     /// <summary>
@@ -382,7 +381,6 @@ public static class OpcodeVerifier {
         return BitConverter.ToString(hashBytes).Replace("-", "");
     }
 }
-
 
 /// <summary>
 /// Custom attribute for declaring <see cref="OpcodeMetadata"/> metadata for individual opcodes

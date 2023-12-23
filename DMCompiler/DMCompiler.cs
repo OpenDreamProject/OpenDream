@@ -1,12 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
@@ -16,6 +7,15 @@ using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Json;
 using Robust.Shared.Utility;
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 
 namespace DMCompiler;
 

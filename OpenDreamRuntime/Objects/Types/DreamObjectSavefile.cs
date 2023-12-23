@@ -302,14 +302,18 @@ public sealed class DreamObjectSavefile : DreamObject {
                 // TODO stub
                 break;
             case DreamObjectValue dreamObjectValue:
-                if (dreamObjectValue.TryGetValue("type", out var unserialType) && unserialType is DreamPrimitive primtype) {
+                // todo DOV should store WHERE is the actual path for data (normaly its .0)
+                if (!dreamObjectValue.TryGetValue(".0", out var saveData))
+                    break;
+
+                if (saveData.TryGetValue("type", out var unserialType) && unserialType is DreamPrimitive primtype) {
                     primtype.Value.MustGetValueAsType();
                     var newObj = GetProc("New").Spawn(this, new DreamProcArguments(primtype.Value));
                     var dObj = newObj.MustGetValueAsDreamObject()!;
 
                     foreach (var key in dObj.ObjectDefinition.Variables.Keys) {
                         DreamValue val = DreamValue.Null;
-                        if (dreamObjectValue.TryGetValue(key, out var dreamObjVal)) {
+                        if (saveData.TryGetValue(key, out var dreamObjVal)) {
                             val = (dreamObjVal is DreamPathValue) ? newObj : RealizeJsonValue(dreamObjVal);
                         }
                         dObj.SetVariable(key, val);
@@ -348,7 +352,9 @@ public sealed class DreamObjectSavefile : DreamObject {
                     };
                 }
                 return new DreamObjectValue {
-                    ["type"] = new DreamPrimitive { Value = val.MustGetValueAsDreamObject()!.GetVariable("type") }
+                    [".0"] = new DreamJsonValue {
+                        ["type"] = new DreamPrimitive { Value = val.MustGetValueAsDreamObject()!.GetVariable("type") }
+                    }
                 };
 
             // noop

@@ -219,5 +219,6 @@ public sealed class DreamObjectImage : DreamObject {
         if(_entity != EntityUid.Invalid) {
             EntityManager.DeleteEntity(_entity);
         }
+        base.HandleDeletion();
     }
 }

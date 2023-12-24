@@ -13,7 +13,7 @@ concurrency:
 env:
   OD_DOTNET_VERSION: 7
   TGS_DOTNET_VERSION: 8
-  TGS_REFERENCE: V6 # This will break after the V6 branch gets deleted during the TGS6 release cycle. When it does, change this to `dev`
+  TGS_REFERENCE: dev
 
 jobs:
   build:

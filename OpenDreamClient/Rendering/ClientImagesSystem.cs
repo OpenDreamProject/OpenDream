@@ -4,10 +4,9 @@ using Vector3 = Robust.Shared.Maths.Vector3;
 
 namespace OpenDreamClient.Rendering;
 sealed class ClientImagesSystem : SharedClientImagesSystem {
-    private readonly Dictionary<Vector3, List<int>> TurfClientImages = new();
-    private readonly Dictionary<EntityUid, List<int>> AMClientImages = new();
+    private readonly Dictionary<Vector3, List<NetEntity>> TurfClientImages = new();
+    private readonly Dictionary<EntityUid, List<NetEntity>> AMClientImages = new();
     private readonly Dictionary<int, DreamIcon> _idToIcon = new();
-    [Dependency] private readonly ClientAppearanceSystem _clientAppearanceSystem = default!;
     [Dependency] private IEntityManager _entityManager = default!;
 
     public override void Initialize() {
@@ -21,20 +20,14 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
         _idToIcon.Clear();
     }
 
-    public bool TryGetClientImages(EntityUid entity, Vector3? tileCoords, [NotNullWhen(true)] out List<DreamIcon>? result){
-        result = null;
-        List<int>? resultIDs;
+    public bool TryGetClientImages(EntityUid entity, Vector3? tileCoords, [NotNullWhen(true)] out List<NetEntity>? result){
         if(entity == EntityUid.Invalid && tileCoords is not null) {
-            if(!TurfClientImages.TryGetValue(tileCoords.Value, out resultIDs))
+            if(!TurfClientImages.TryGetValue(tileCoords.Value, out result))
                 return false;
         } else {
-            if(!AMClientImages.TryGetValue(entity, out resultIDs))
+            if(!AMClientImages.TryGetValue(entity, out result))
                 return false;
         }
-        result = new List<DreamIcon>();
-        foreach(int distinctID in resultIDs)
-            if(_idToIcon.TryGetValue(distinctID, out DreamIcon? icon))
-                result.Add(icon);
         return result.Count > 0;
     }
 
@@ -42,21 +35,13 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
         EntityUid ent = _entityManager.GetEntity(e.AttachedEntity);
         if(ent == EntityUid.Invalid) {
             if(!TurfClientImages.TryGetValue(e.TurfCoords, out var iconList))
-                iconList = new List<int>();
-            if(!_idToIcon.ContainsKey(e.ImageAppearance)){
-                DreamIcon icon = new DreamIcon(e.ImageAppearance);
-                _idToIcon[e.ImageAppearance] = icon;
-            }
-            iconList.Add(e.ImageAppearance);
+                iconList = new List<NetEntity>();
+            iconList.Add(e.ImageEntity);
             TurfClientImages[e.TurfCoords] = iconList;
         } else {
             if(!AMClientImages.TryGetValue(ent, out var iconList))
-                iconList = new List<int>();
-            if(!_idToIcon.ContainsKey(e.ImageAppearance)){
-                DreamIcon icon = new DreamIcon(e.ImageAppearance);
-                _idToIcon[e.ImageAppearance] = icon;
-            }
-            iconList.Add(e.ImageAppearance);
+                iconList = new List<NetEntity>();
+            iconList.Add(e.ImageEntity);
             AMClientImages[ent] = iconList;
         }
 
@@ -65,17 +50,21 @@ sealed class ClientImagesSystem : SharedClientImagesSystem {
     private void OnRemoveClientImage(RemoveClientImageEvent e) {
         EntityUid ent = _entityManager.GetEntity(e.AttachedEntity);
         if(ent == EntityUid.Invalid) {
-                if(!TurfClientImages.TryGetValue(e.TurfCoords, out var iconList))
-                    return;
-                iconList.Remove(e.ImageAppearance);
+            if(!TurfClientImages.TryGetValue(e.TurfCoords, out var iconList))
+                return;
+            iconList.Remove(e.ImageEntity);
+            if(iconList.Count == 0)
+                TurfClientImages.Remove(e.TurfCoords);
+            else
                 TurfClientImages[e.TurfCoords] = iconList;
-                _idToIcon.Remove(e.ImageAppearance);
         } else {
             if(!AMClientImages.TryGetValue(ent, out var iconList))
                 return;
-            iconList.Remove(e.ImageAppearance);
-            AMClientImages[ent] = iconList;
-            _idToIcon.Remove(e.ImageAppearance);
+            iconList.Remove(e.ImageEntity);
+            if(iconList.Count == 0)
+                AMClientImages.Remove(ent);
+            else
+                AMClientImages[ent] = iconList;
         }
     }
 }

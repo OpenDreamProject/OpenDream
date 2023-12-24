@@ -104,6 +104,10 @@ public sealed class DreamObjectImage : DreamObject {
                 newAppearance.Direction = Appearance!.Direction;
 
                 Appearance = newAppearance;
+                if(_entity != EntityUid.Invalid) {
+                    DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
+                    sprite.SetAppearance(Appearance!);
+                }
                 break;
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
@@ -182,6 +186,10 @@ public sealed class DreamObjectImage : DreamObject {
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     AtomManager.SetAppearanceVar(Appearance!, varName, value);
+                    if(_entity != EntityUid.Invalid) {
+                        DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
+                        sprite.SetAppearance(Appearance!);
+                    }
                     break;
                 }
 

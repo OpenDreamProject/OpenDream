@@ -188,6 +188,9 @@
 		for(var/turf/T in range(src, 2))
 			var/image/turf_image = image(icon = 'icons/hanoi.dmi', loc=T, icon_state="1")
 			src.client.images += turf_image
+		spawn(25)
+			src << "changing image"
+			i.icon_state = "5"
 		spawn(50)
 			src.client.images.Cut()
 

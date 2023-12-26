@@ -33,6 +33,7 @@ public static class ServerPackaging {
         "OpenDreamServer",
         "OpenDreamShared",
         "OpenDreamRuntime",
+        "OpenDreamPackaging",
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
@@ -44,6 +45,7 @@ public static class ServerPackaging {
         "OpenDreamServer",
         "OpenDreamShared",
         "OpenDreamRuntime",
+        "OpenDreamPackaging",
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
         "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above

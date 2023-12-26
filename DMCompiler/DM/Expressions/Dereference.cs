@@ -1,8 +1,8 @@
-using System;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
+using System;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
@@ -288,13 +288,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool TryAsConstant(out Constant constant) {
-            DreamPath? prevPath = null;
-
-            if (_operations.Length == 1) {
-                prevPath = _expression.Path;
-            } else {
-                prevPath = _operations[^2].Path;
-            }
+            var prevPath = _operations.Length == 1 ? _expression.Path : _operations[^2].Path;
 
             ref var operation = ref _operations[^1];
 
@@ -320,6 +314,30 @@ namespace DMCompiler.DM.Expressions {
 
             constant = null;
             return false;
+
+        }
+    }
+
+    internal sealed class ScopeReference : LValue {
+        private readonly DMVariable? _field;
+
+        public ScopeReference(Location location, DMVariable variable)
+            : base(location, variable.Type) {
+            _field = variable;
+        }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => _field.Name;
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            if (_field is LValue) {
+
+            }
+        }
+
+        public override DMReference EmitReference(
+            DMObject dmObject, DMProc proc, string endLabel,
+            ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+            return base.EmitReference(dmObject, proc, endLabel, shortCircuitMode);
         }
     }
 }

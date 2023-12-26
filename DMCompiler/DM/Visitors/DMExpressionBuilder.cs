@@ -1,10 +1,10 @@
-using System;
 using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Expressions;
-using Linguini.Syntax.Ast;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
+using System;
+using System.Diagnostics;
 using Resource = DMCompiler.DM.Expressions.Resource;
 
 namespace DMCompiler.DM.Visitors;
@@ -352,7 +352,7 @@ internal static class DMExpressionBuilder {
                 return new Global(identifier.Location);
             default: {
                 if (CurrentScopeMode == ScopeMode.Normal) {
-                    DMProc.LocalVariable localVar = proc?.GetLocalVariable(name);
+                    var localVar = proc?.GetLocalVariable(name);
                     if (localVar != null)
                         return new Local(identifier.Location, localVar);
 
@@ -362,11 +362,10 @@ internal static class DMExpressionBuilder {
                 }
 
                 if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
-                    int? globalId = proc?.GetGlobalVariableId(name) ?? dmObject?.GetGlobalVariableId(name);
+                    var globalId = proc?.GetGlobalVariableId(name) ?? dmObject?.GetGlobalVariableId(name);
 
                     if (globalId != null) {
                         var global = new GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
-
                         return global;
                     }
                 }
@@ -384,78 +383,80 @@ internal static class DMExpressionBuilder {
         var name = globalIdentifier.Identifier;
         var location = globalIdentifier.Expression?.Location ?? globalIdentifier.Location;
 
+        if (location is { SourceFile: "code/controllers/configuration/config_entry.dm" }) {
+            Debugger.Break();
+        }
+
+        if (CurrentScopeMode == ScopeMode.FirstPassStatic) {
+            throw new UnknownIdentifierException(location, name);
+        }
+
         DMExpression? expression;
-        if (globalIdentifier.Expression != null &&
-            globalIdentifier.Expression is not DMASTIdentifier { Identifier: "type" or "parent_type" }) {
+
+        if (globalIdentifier.Expression is DMASTIdentifier { Identifier: "type" or "parent_type" } identifier) {
             // "type" and "parent_type" cannot resolve in a static context, but it's still valid in scope contexts
+            // TODO: this snowflake code sucks
+            expression = identifier.Identifier switch {
+                "type" => new ConstantPath(location, dmObject, dmObject.Path),
+                "parent_type" => dmObject.Parent != null
+                    ? new ConstantPath(location, dmObject.Parent, dmObject.Parent.Path)
+                    : new Null(location),
+                _ => null
+            };
+        } else if (globalIdentifier.Expression != null) {
             expression = DMExpression.Create(dmObject, proc, globalIdentifier.Expression, inferredPath);
         } else {
             expression = null;
         }
 
-        if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
-            int? globalId;
-            switch (expression) {
-                case null: {
-                    globalId = dmObject.GetGlobalVariableId(name);
+        return new ScopeReference(location, variable);
+
+        int? globalId;
+        switch (expression) {
+            case null: {
+                globalId = dmObject.GetGlobalVariableId(name);
+                if (globalId != null) {
+                    return new GlobalField(location,
+                        DMObjectTree.Globals[globalId.Value].Type,
+                        globalId.Value);
+                }
+
+                if (name == "vars") {
+                    return new GlobalVars(location);
+                }
+
+                break;
+            }
+            case { Path: { } path }: {
+                var definition = DMObjectTree.GetDMObject(path, false);
+                if (definition != null) {
+                    globalId = definition.GetGlobalVariableId(name);
                     if (globalId != null) {
                         return new GlobalField(location,
                             DMObjectTree.Globals[globalId.Value].Type,
                             globalId.Value);
                     }
 
-                    var lhsIdentifier = (globalIdentifier.Expression as DMASTIdentifier)?.Identifier;
-
-                    switch (lhsIdentifier)
-                    {
-                        case "type":
-                            return new ConstantPath(location, dmObject, dmObject.Path);
-                        case "parent_type":
-                            return dmObject.Parent != null
-                                ? new ConstantPath(location, dmObject.Parent, dmObject.Parent.Path)
-                                : new Null(location);
-                    }
-
-                    if (name == "vars") {
-                        return new GlobalVars(location);
-                    }
-
-                    break;
-                }
-                case { Path: { } path }: {
-                    var definition = DMObjectTree.GetDMObject(path, false);
-                    if (definition != null) {
-                        globalId = definition.GetGlobalVariableId(name);
-                        if (globalId != null) {
-                            return new GlobalField(
-                                location,
-                                DMObjectTree.Globals[globalId.Value].Type,
-                                globalId.Value);
-                        }
-
-                        switch (expression) {
-                            case Dereference or Field:
-                                return new Initial(location, expression);
-                            case ConstantPath or ProcOwnerType when definition.GetVariable(name) is { } variable: {
-                                return variable.Value.TryAsConstant(out var constant)
-                                    ? constant
-                                    : new Initial(location, new Field(location, variable, definition));
-                            }
+                    switch (expression) {
+                        case Dereference or Field:
+                            return new ScopeReference(location, expression.);
+                            return new Initial(location, expression);
+                        case ConstantPath or ProcOwnerType when definition.GetVariable(name) is { } variable: {
+                            return variable.Value.TryAsConstant(out var constant)
+                                ? constant
+                                : new Initial(location, new Field(location, variable, definition));
                         }
                     }
-                    break;
                 }
-                default:
-                    // yes, you can do <literal>::variable and it compiles and returns null. BYOND is a magical thing
-                    return new Null(location);
+
+                break;
             }
+            default:
+                // yes, you can do <literal>::variable and it compiles and returns null. BYOND is a magical thing
+                return new Null(location);
         }
 
-        DMCompiler.Emit(WarningCode.ItemDoesntExist,
-            location,
-            $"Unknown {(expression == null ? "global" : "static")}" +
-            $" \"{((expression?.Path != null ? $"{expression.Path.Value}::" : "") + name)}\"");
-        return new Null(location);
+        throw new UnknownIdentifierException(location, name);
     }
 
     private static DMExpression BuildCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier, DMObject dmObject) {

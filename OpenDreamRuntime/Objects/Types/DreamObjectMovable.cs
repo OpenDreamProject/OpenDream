@@ -84,8 +84,8 @@ public class DreamObjectMovable : DreamObjectAtom {
                 DreamList contents = ObjectTree.CreateList();
 
                 using (var childEnumerator = _transformComponent.ChildEnumerator) {
-                    while (childEnumerator.MoveNext(out EntityUid? child)) {
-                        if (!AtomManager.TryGetMovableFromEntity(child.Value, out var childAtom))
+                    while (childEnumerator.MoveNext(out EntityUid child)) {
+                        if (!AtomManager.TryGetMovableFromEntity(child, out var childAtom))
                             continue;
 
                         contents.AddValue(new DreamValue(childAtom));

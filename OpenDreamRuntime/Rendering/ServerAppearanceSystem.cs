@@ -11,6 +11,11 @@ namespace OpenDreamRuntime.Rendering {
         private readonly Dictionary<int, IconAppearance> _idToAppearance = new();
         private int _appearanceIdCounter;
 
+        /// <summary>
+        /// This system is used by the PVS thread, we need to be thread-safe
+        /// </summary>
+        private readonly object _lock = new();
+
         [Dependency] private readonly IPlayerManager _playerManager = default!;
 
         public override void Initialize() {
@@ -18,9 +23,11 @@ namespace OpenDreamRuntime.Rendering {
         }
 
         public override void Shutdown() {
-            _appearanceToId.Clear();
-            _idToAppearance.Clear();
-            _appearanceIdCounter = 0;
+            lock (_lock) {
+                _appearanceToId.Clear();
+                _idToAppearance.Clear();
+                _appearanceIdCounter = 0;
+            }
         }
 
         private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
@@ -30,26 +37,34 @@ namespace OpenDreamRuntime.Rendering {
         }
 
         public int AddAppearance(IconAppearance appearance) {
-            if (!_appearanceToId.TryGetValue(appearance, out int appearanceId)) {
-                appearanceId = _appearanceIdCounter++;
-                _appearanceToId.Add(appearance, appearanceId);
-                _idToAppearance.Add(appearanceId, appearance);
-                RaiseNetworkEvent(new NewAppearanceEvent(appearanceId, appearance));
-            }
+            lock (_lock) {
+                if (!_appearanceToId.TryGetValue(appearance, out int appearanceId)) {
+                    appearanceId = _appearanceIdCounter++;
+                    _appearanceToId.Add(appearance, appearanceId);
+                    _idToAppearance.Add(appearanceId, appearance);
+                    RaiseNetworkEvent(new NewAppearanceEvent(appearanceId, appearance));
+                }
 
-            return appearanceId;
+                return appearanceId;
+            }
         }
 
         public IconAppearance MustGetAppearance(int appearanceId) {
-            return _idToAppearance[appearanceId];
+            lock (_lock) {
+                return _idToAppearance[appearanceId];
+            }
         }
 
         public bool TryGetAppearance(int appearanceId, [NotNullWhen(true)] out IconAppearance? appearance) {
-            return _idToAppearance.TryGetValue(appearanceId, out appearance);
+            lock (_lock) {
+                return _idToAppearance.TryGetValue(appearanceId, out appearance);
+            }
         }
 
         public bool TryGetAppearanceId(IconAppearance appearance, out int appearanceId) {
-            return _appearanceToId.TryGetValue(appearance, out appearanceId);
+            lock (_lock) {
+                return _appearanceToId.TryGetValue(appearance, out appearanceId);
+            }
         }
 
         public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration) {

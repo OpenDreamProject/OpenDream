@@ -76,6 +76,7 @@ public sealed class DreamObjectTree {
         _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
         _entitySystemManager.TryGetEntitySystem(out _transformSystem);
         _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
+        _entitySystemManager.TryGetEntitySystem(out _metaDataSystem);
 
         Strings = json.Strings ?? new();
 

@@ -27,6 +27,7 @@
 #pragma DanglingVarType warning
 #pragma MissingInterpolatedExpression warning
 #pragma AmbiguousResourcePath warning
+#pragma SuspiciousSwitchCase warning
 
 //3000-3999
 #pragma EmptyBlock notice

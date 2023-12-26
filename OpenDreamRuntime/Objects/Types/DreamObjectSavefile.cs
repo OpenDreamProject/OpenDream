@@ -1,3 +1,5 @@
+using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
@@ -17,35 +19,37 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Dumb structs for savefile
     /// </summary>
-    public abstract class IDreamJsonValue : Dictionary<string, IDreamJsonValue> { }
+    [SuppressMessage("Usage", "RA0003:Class must be explicitly marked as [Virtual], abstract, static or sealed")]
+    public class DreamJsonValue : Dictionary<string, DreamJsonValue> { }
 
     /// <summary>
     /// Standard byond types except objects
     /// </summary>
-    public sealed class DreamPrimitive : IDreamJsonValue {
+    public sealed class DreamPrimitive : DreamJsonValue {
         public DreamValue Value = DreamValue.Null;
     }
 
     /// <summary>
     /// Unique type for Objects
     /// </summary>
-    public sealed class DreamObjectValue : IDreamJsonValue { }
+    public sealed class DreamObjectValue : DreamJsonValue { }
 
-    public sealed class DreamListValue : IDreamJsonValue {
+    public sealed class DreamListValue : DreamJsonValue {
         public List<DreamValue> Data;
+        public Dictionary<DreamValue, DreamValue> AssocData;
     }
 
     /// <summary>
     /// Dummy type for objects that reference itself (it shows up as `object(..)`)
     /// </summary>
-    public sealed class DreamPathValue : IDreamJsonValue {
+    public sealed class DreamPathValue : DreamJsonValue {
         public required string Path;
     }
 
     /// <summary>
     /// DreamResource holder, encodes said file into base64
     /// </summary>
-    public sealed class DreamFileValue : IDreamJsonValue {
+    public sealed class DreamFileValue : DreamJsonValue {
         public string? Name;
         public string? Ext;
         public required int Length;
@@ -53,11 +57,6 @@ public sealed class DreamObjectSavefile : DreamObject {
         public string Encoding = "base64";
         public required string Data;
     }
-
-    /// <summary>
-    /// Generic iterable object
-    /// </summary>
-    public sealed class DreamJsonValue : IDreamJsonValue { }
 
     #endregion
 
@@ -91,7 +90,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// The current savefile' working dir. This could be a generic primitive
     /// </summary>
-    public IDreamJsonValue CurrentDir;
+    public DreamJsonValue CurrentDir;
 
     private string _currentPath = "/";
 
@@ -102,7 +101,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         get => _currentPath;
         set {
             _currentPath = new DreamPath(_currentPath).PathString;
-            IDreamJsonValue tempDir = SeekTo(value);
+            var tempDir = SeekTo(value);
             if (tempDir != Savefile) CurrentDir = tempDir;
         }
     }
@@ -252,8 +251,8 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Attempts to go to said path relative to CurrentPath (you still have to set CurrentDir)
     /// </summary>
-    private IDreamJsonValue SeekTo(string to) {
-        IDreamJsonValue tempDir = Savefile;
+    private DreamJsonValue SeekTo(string to) {
+        DreamJsonValue tempDir = Savefile;
         foreach (var path in (new DreamPath(_currentPath).AddToPath(to).PathString).Split("/")) {
             if (!tempDir.TryGetValue(path, out var newDir)) {
                 newDir = tempDir[path] = new DreamJsonValue();
@@ -294,15 +293,25 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Turn the json magic value into real byond values
     /// </summary>
-    public DreamValue RealizeJsonValue(IDreamJsonValue value) {
+    public DreamValue RealizeJsonValue(DreamJsonValue value) {
         switch (value) {
             case DreamFileValue dreamFileValue:
                 return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(dreamFileValue.Data)));
             case DreamListValue dreamListValue:
-                // TODO stub
-                break;
+                var l = ObjectTree.CreateList();
+                if (dreamListValue.AssocData.Count != 0) {
+                    foreach (var kv in dreamListValue.AssocData)
+                    {
+                        l.SetValue(kv.Key, kv.Value);
+                    }
+                }
+                for (var i = 0; i < dreamListValue.Data.Count; i++) {
+                    l.SetValue(new DreamValue(i), dreamListValue.Data[i]);
+                }
+
+                return new DreamValue(l);
             case DreamObjectValue dreamObjectValue:
-                // todo DOV should store WHERE is the actual path for data (normaly its .0)
+                // todo DOV should store WHERE is the actual path for data (normaly its ../'.0')
                 if (!dreamObjectValue.TryGetValue(".0", out var saveData))
                     break;
 
@@ -331,7 +340,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Serialize byond values/objects into savefile data
     /// </summary>
-    public IDreamJsonValue SerializeDreamValue(DreamValue val) {
+    public DreamJsonValue SerializeDreamValue(DreamValue val) {
         switch (val.Type) {
             case DreamValue.DreamValueType.String:
             case DreamValue.DreamValueType.Float:
@@ -341,22 +350,32 @@ public sealed class DreamObjectSavefile : DreamObject {
                 var dreamResource = val.MustGetValueAsDreamResource();
                 return new DreamFileValue {
                     Length = dreamResource.ResourceData!.Length,
-                    // Crc32 = Crc32 no System.IO.Hashing !!!
+                    // Crc32 =  new System.IO.Hashing.Crc32().
                     Data = Convert.ToBase64String(dreamResource.ResourceData)
                 };
             case DreamValue.DreamValueType.DreamObject:
                 if (val.TryGetValueAsDreamList(out var dreamList)) {
                     return new DreamListValue {
-                        // TODO oh god oh fuck we need to serialize the values of this list value as well
-                        Data = dreamList.GetValues() // HEY! implement assoc value!
+                        Data = dreamList.GetValues(),
+                        AssocData = dreamList.GetAssociativeValues()
                     };
                 }
-                return new DreamObjectValue {
-                    [".0"] = new DreamJsonValue {
-                        ["type"] = new DreamPrimitive { Value = val.MustGetValueAsDreamObject()!.GetVariable("type") }
-                    }
-                };
 
+                // TODO stub code here, for some reason type isnt saving or something
+                // TryGetVar("type", out var tgv);
+                // var tmpSavefile = GetProc("New").Spawn(this, new DreamProcArguments(tgv));
+                // tmpSavefile.TryGetValueAsDreamObject<DreamObjectSavefile>(out var tmpSavefileReal);
+                // Debug.Assert(tmpSavefileReal != null);
+                //
+                // var theObj = val.MustGetValueAsDreamObject()!;
+                // theObj.GetProc("Write").Spawn(theObj, new DreamProcArguments(tmpSavefile));
+                // tmpSavefileReal!.SetSavefileValue("type", theObj.GetVariable("type"));
+                // tmpSavefileReal.Delete();
+
+                // return new DreamObjectValue {
+                //     [".0"] = new DreamPrimitive() //tmpSavefileReal.Savefile
+                // };
+                break;
             // noop
             case DreamValue.DreamValueType.DreamProc:
             case DreamValue.DreamValueType.Appearance:

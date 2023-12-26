@@ -1,3 +1,4 @@
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
@@ -5,17 +6,16 @@ using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Json;
+using Robust.Shared.Utility;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
-using System.Reflection;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using DMCompiler.Bytecode;
-using Robust.Shared.Utility;
 
 namespace DMCompiler;
 
@@ -49,10 +49,6 @@ public static class DMCompiler {
 
         if (settings.SuppressUnimplementedWarnings) {
             ForcedWarning("Unimplemented proc & var warnings are currently suppressed");
-        }
-
-        if(OpcodeVerifier.AreOpcodesInvalid()) {
-            ForcedError("Some opcodes have the same byte value! Output assembly may be corrupted.");
         }
 
         DMPreprocessor preprocessor = Preprocess(settings.Files, settings.MacroDefines);

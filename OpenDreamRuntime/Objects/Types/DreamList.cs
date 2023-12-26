@@ -756,7 +756,7 @@ public sealed class DreamVisContentsList : DreamList {
 
         // TODO: Only override the entity's visibility if its parent atom is visible
         if (entity != EntityUid.Invalid)
-            _pvsOverrideSystem?.AddGlobalOverride(entity);
+            _pvsOverrideSystem?.AddGlobalOverride(_entityManager.GetNetEntity(entity));
 
         _atomManager.UpdateAppearance(_atom, appearance => {
             // Add even an invalid UID to keep this and _visContents in sync

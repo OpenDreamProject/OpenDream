@@ -2,52 +2,28 @@ using System.IO;
 using JetBrains.Annotations;
 using OpenDreamShared.Network.Messages;
 using Robust.Client.Audio;
-using Robust.Client.Graphics;
-using Robust.Shared.Audio;
 
-namespace OpenDreamClient.Resources.ResourceTypes {
-    [UsedImplicitly]
-    public sealed class ResourceSound : DreamResource {
-        private AudioStream? _stream;
+namespace OpenDreamClient.Resources.ResourceTypes;
 
-        public ResourceSound(int id, byte[] data) : base(id, data) { }
+[UsedImplicitly]
+public sealed class ResourceSound(int id, byte[] data) : DreamResource(id, data) {
+    private AudioStream? _stream;
 
-        public IClydeAudioSource? Play(MsgSound.FormatType format, AudioParams audioParams) {
-            LoadStream(format);
-            if (_stream == null)
-                return null;
-
-            // TODO: Positional audio.
-            var source = IoCManager.Resolve<IClydeAudio>().CreateAudioSource(_stream);
-
-            if (source != null) {
-                source.SetGlobal();
-                source.SetPitch(audioParams.PitchScale);
-                source.SetVolume(audioParams.Volume);
-                source.SetPlaybackPosition(audioParams.PlayOffsetSeconds);
-                source.IsLooping = audioParams.Loop;
-
-                source.StartPlaying();
-            }
-
-            return source;
-        }
-
-        private void LoadStream(MsgSound.FormatType format) {
-            if (_stream != null)
-                return;
-
+    public AudioStream? GetStream(MsgSound.FormatType format, IAudioManager audioManager) {
+        if (_stream == null) {
             switch (format) {
                 case MsgSound.FormatType.Ogg:
-                    _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioOggVorbis(new MemoryStream(Data));
+                    _stream = audioManager.LoadAudioOggVorbis(new MemoryStream(Data));
                     break;
                 case MsgSound.FormatType.Wav:
-                    _stream = IoCManager.Resolve<IClydeAudio>().LoadAudioWav(new MemoryStream(Data));
+                    _stream = audioManager.LoadAudioWav(new MemoryStream(Data));
                     break;
                 default:
                     Logger.GetSawmill("opendream.audio").Fatal("Only *.ogg and *.wav audio files are supported.");
                     break;
             }
         }
+
+        return _stream;
     }
 }

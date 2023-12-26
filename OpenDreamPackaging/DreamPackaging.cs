@@ -19,11 +19,9 @@ public static class DreamPackaging {
 
         var inputPass = graph.Input;
 
-        await RobustClientPackaging.WriteContentAssemblies(
-            inputPass,
+        await RobustClientPackaging.WriteClientResources(
             contentDir,
-            "Content.Client",
-            new[] { "OpenDreamClient", "OpenDreamShared" },
+            inputPass,
             cancel);
 
         await RobustClientPackaging.WriteClientResources(contentDir, inputPass, cancel);

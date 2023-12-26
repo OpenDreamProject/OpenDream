@@ -36,7 +36,7 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public sealed class DreamListValue : DreamJsonValue {
         public List<DreamValue> Data;
-        public Dictionary<DreamValue, DreamValue> AssocData;
+        public Dictionary<DreamValue, DreamValue>? AssocData;
     }
 
     /// <summary>
@@ -299,16 +299,16 @@ public sealed class DreamObjectSavefile : DreamObject {
                 return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(dreamFileValue.Data)));
             case DreamListValue dreamListValue:
                 var l = ObjectTree.CreateList();
-                if (dreamListValue.AssocData.Count != 0) {
+                if (dreamListValue.AssocData != null) {
                     foreach (var kv in dreamListValue.AssocData)
                     {
                         l.SetValue(kv.Key, kv.Value);
                     }
+                } else {
+                    for (var i = 0; i < dreamListValue.Data.Count; i++) {
+                        l.SetValue(new DreamValue(i+1), dreamListValue.Data[i], true);
+                    }
                 }
-                for (var i = 0; i < dreamListValue.Data.Count; i++) {
-                    l.SetValue(new DreamValue(i), dreamListValue.Data[i]);
-                }
-
                 return new DreamValue(l);
             case DreamObjectValue dreamObjectValue:
                 // todo DOV should store WHERE is the actual path for data (normaly its ../'.0')
@@ -357,7 +357,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 if (val.TryGetValueAsDreamList(out var dreamList)) {
                     return new DreamListValue {
                         Data = dreamList.GetValues(),
-                        AssocData = dreamList.GetAssociativeValues()
+                        AssocData = dreamList.IsAssociative ? dreamList.GetAssociativeValues() : null
                     };
                 }
 

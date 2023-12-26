@@ -23,9 +23,9 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
 
         NetEntity ent = GetNetEntity(locEntity);
         EntityUid imageObjectEntity = imageObject.GetEntity();
-        if (imageObjectEntity != EntityUid.Invalid)
-            _pvsOverrideSystem.AddGlobalOverride(imageObjectEntity);
         NetEntity imageObjectNetEntity = GetNetEntity(imageObjectEntity);
+        if (imageObjectNetEntity != NetEntity.Invalid)
+            _pvsOverrideSystem.AddGlobalOverride(imageObjectNetEntity);
         RaiseNetworkEvent(new AddClientImageEvent(ent, turfCoords, imageObjectNetEntity), connection.Session!.Channel);
     }
 

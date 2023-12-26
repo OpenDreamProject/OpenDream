@@ -68,6 +68,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
     // Defined here so it isn't recreated every frame
     private ViewAlgorithm.Tile?[,]? _tileInfo;
+    private readonly HashSet<EntityUid> _entities = new();
 
     public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
         ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem, ClientImagesSystem clientImagesSystem) {
@@ -140,19 +141,18 @@ internal sealed class DreamViewOverlay : Overlay {
 
         var worldHandle = args.WorldHandle;
 
-        HashSet<EntityUid> entities;
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
             //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
-            entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB.Scale(1.2f), MapLookupFlags);
+            _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB.Scale(1.2f), _entities, MapLookupFlags);
         }
 
         var eyeTile = grid.GetTileRef(eyeTransform.MapPosition);
-        var tiles = CalculateTileVisibility(grid, entities, eyeTile, seeVis);
+        var tiles = CalculateTileVisibility(grid, _entities, eyeTile, seeVis);
 
         RefreshRenderTargets(args.WorldHandle, viewportSize);
 
-        CollectVisibleSprites(tiles, grid, eyeTile, entities, seeVis, sight, args.WorldAABB);
+        CollectVisibleSprites(tiles, grid, eyeTile, _entities, seeVis, sight, args.WorldAABB);
         ClearPlanes();
         ProcessSprites(worldHandle, viewportSize, args.WorldAABB);
 

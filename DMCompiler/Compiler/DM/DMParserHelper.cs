@@ -1,5 +1,4 @@
 ﻿using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DMPreprocessor;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -7,8 +6,7 @@ using System.Text;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.Compiler.DM {
-    public partial class DMParser : Parser<Token> {
-
+    public partial class DMParser {
         /// <summary>
         /// A special override of Error() since, for DMParser, we know we are in a compilation context and can make use of error codes.
         /// </summary>
@@ -21,6 +19,12 @@ namespace DMCompiler.Compiler.DM {
             if (Emissions.Count < MAX_EMISSIONS_RECORDED)
                 Emissions.Add(new CompilerEmission(level, code, Current().Location, message));
             return level == ErrorLevel.Error;
+        }
+
+        /// <inheritdoc cref="Parser{SourceType}.Error(string, bool)"/>
+        [Obsolete("This is not a desirable way for DMParser to emit an error, as errors should emit an error code and not cause unnecessary throws. Use DMParser's overrides of this method, instead.")]
+        new protected void Error(string message, bool throwException = true) {
+            base.Error(message, throwException);
         }
 
         protected bool PeekDelimiter() {

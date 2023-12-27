@@ -1,23 +1,16 @@
-
-<Control xmlns="https://spacestation14.io">
-    <PanelContainer Name="Panel">
+<Control xmlns="https://spacestation14.io"
+         xmlns:labels="clr-namespace:OpenDreamClient.InfoLabels"
+         xmlns:bg="clr-namespace:OpenDreamClient.MainMenuBackground"
+         MinWidth="550">
+    <bg:MainMenuBg />
+    <labels:InfoLabel />
         <LayoutContainer>
-            <BoxContainer Name="VBox"
-                          Orientation="Vertical">
-                <TextureRect Name="Logo"
-                             Stretch="KeepCentered" />
-                <Control MinHeight="128"></Control>
-                <BoxContainer Orientation="Horizontal"
-                              SeparationOverride="4">
-                    <Label Name="ConnectingLabel" Text="Connecting... " FontColorOverride="#FFFFFF"/>
+            <TextureRect Name="Logo" Stretch="KeepCentered" />
+            <PanelContainer Name="InfoTexts">
+                <BoxContainer Orientation="Vertical">
+                    <Label Name="ConnectingLabel" Text="Connecting" HorizontalAlignment="Center"/>
+                    <Label Name="InfoText" Text="..." HorizontalAlignment="Center"/>
                 </BoxContainer>
-                <Control MinHeight="128"></Control>
-                <BoxContainer Name="WIP" Orientation="Horizontal"
-                              SeparationOverride="4">
-                    <Label Name="WIPLabel" Text="Work In Progress" FontColorOverride="#FFFFFF"/>
-                </BoxContainer>
-
-            </BoxContainer>
+            </PanelContainer>
         </LayoutContainer>
-    </PanelContainer>
 </Control>

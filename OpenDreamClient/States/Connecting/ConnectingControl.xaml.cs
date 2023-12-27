@@ -5,34 +5,69 @@ using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.XAML;
 using Robust.Shared.Configuration;
+using Robust.Shared.Network;
+using Robust.Shared.Timing;
 
 namespace OpenDreamClient.States.Connecting;
 
 [GenerateTypedNameReferences]
 public sealed partial class ConnectingControl : Control {
+    [Dependency] private readonly IClientNetManager _netManager = default!;
+    [Dependency] private readonly IGameTiming _timing = default!;
+
+    private float _tickSecond;
+
     public ConnectingControl(IResourceCache resCache, IConfigurationManager configMan) {
         RobustXamlLoader.Load(this);
+        IoCManager.InjectDependencies(this);
 
-        Panel.PanelOverride = new StyleBoxFlat(Color.Black);
+        InfoTexts.PanelOverride = new StyleBoxFlat(Color.Gray);
 
         ConnectingLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf"), 24);
-        WIPLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf"), 32);
 
         LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
 
-        LayoutContainer.SetAnchorPreset(VBox, LayoutContainer.LayoutPreset.Center);
-        LayoutContainer.SetGrowHorizontal(VBox, LayoutContainer.GrowDirection.Both);
-        LayoutContainer.SetGrowVertical(VBox, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetAnchorPreset(Logo, LayoutContainer.LayoutPreset.CenterTop);
+        LayoutContainer.SetMarginTop(Logo, 60 * UIScale);
+        LayoutContainer.SetGrowHorizontal(Logo, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetGrowVertical(Logo, LayoutContainer.GrowDirection.End);
 
-        LayoutContainer.SetAnchorPreset(ConnectingLabel, LayoutContainer.LayoutPreset.Center);
-        LayoutContainer.SetGrowHorizontal(ConnectingLabel, LayoutContainer.GrowDirection.Both);
-        LayoutContainer.SetGrowVertical(ConnectingLabel, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetAnchorPreset(InfoTexts, LayoutContainer.LayoutPreset.BottomWide);
+        LayoutContainer.SetMarginBottom(InfoTexts, -30 * UIScale);
+        LayoutContainer.SetGrowHorizontal(InfoTexts, LayoutContainer.GrowDirection.Both);
+        LayoutContainer.SetGrowVertical(InfoTexts, LayoutContainer.GrowDirection.Begin);
 
-        LayoutContainer.SetAnchorPreset(WIP, LayoutContainer.LayoutPreset.VerticalCenterWide);
-        LayoutContainer.SetGrowHorizontal(WIP, LayoutContainer.GrowDirection.Both);
-        LayoutContainer.SetGrowVertical(WIP, LayoutContainer.GrowDirection.Both);
+        Logo.Texture = resCache.GetResource<TextureResource>("/OpenDream/Logo/logo.png");
+    }
 
-        var logoTexture = resCache.GetResource<TextureResource>("/OpenDream/Logo/logo.png");
-        Logo.Texture = logoTexture;
+    protected override void FrameUpdate(FrameEventArgs args) {
+        base.FrameUpdate(args);
+        InfoText.Text = _netManager.ClientConnectState switch {
+            ClientConnectionState.ResolvingHost => "Resolving Host",
+            ClientConnectionState.EstablishingConnection => "Establishing Connection",
+            ClientConnectionState.Handshake => "Handshaking",
+            ClientConnectionState.Connected => "Connected",
+            _ => "Disconnected"
+        };
+
+        _tickSecond += args.DeltaSeconds;
+
+        if (_tickSecond >= 1) {
+            _tickSecond -= 1;
+            switch (ConnectingLabel.Text.Length) {
+                case 10:
+                    ConnectingLabel.Text = "Connecting.";
+                    break;
+                case 11:
+                    ConnectingLabel.Text = "Connecting..";
+                    break;
+                case 12:
+                    ConnectingLabel.Text = "Connecting...";
+                    break;
+                default:
+                    ConnectingLabel.Text = "Connecting";
+                    break;
+            }
+        }
     }
 }

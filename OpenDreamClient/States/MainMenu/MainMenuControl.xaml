@@ -1,53 +1,43 @@
-
-<Control xmlns="https://spacestation14.io">
-    <PanelContainer Name="Panel">
-        <LayoutContainer>
-            <BoxContainer Name="VBox"
-                          Orientation="Vertical">
-                <TextureRect Name="Logo"
-                             Stretch="KeepCentered" />
-                <BoxContainer Orientation="Vertical"
-                              SetWidth="371"
-                              HorizontalAlignment="Center">
-                    <BoxContainer Orientation="Horizontal"
+<Control xmlns="https://spacestation14.io"
+         xmlns:labels="clr-namespace:OpenDreamClient.InfoLabels"
+         xmlns:bg="clr-namespace:OpenDreamClient.MainMenuBackground"
+         MinWidth="550">
+    <bg:MainMenuBg />
+    <labels:InfoLabel />
+    <LayoutContainer>
+        <BoxContainer Name="VBox" Orientation="Vertical"
+                      SeparationOverride="2">
+            <!-- connect form -->
+                <TextureRect Name="Logo" Stretch="KeepCentered" />
+                <PanelContainer Name="InfoTexts" Margin="2">
+                    <BoxContainer Orientation="Vertical"
                                   SeparationOverride="4">
-                        <Label Text="Username: " FontColorOverride="#FFFFFF"/>
-                        <LineEdit Name="UsernameBoxProtected"
-                                  PlaceHolder="JoeGenero"
-                                  HorizontalExpand="True" />
-                    </BoxContainer>
-                    <Control MinSize="0 2" />
-                    <BoxContainer Orientation="Horizontal"
-                                  SeparationOverride="4">
-                        <Label Text="Address: " FontColorOverride="#FFFFFF"/>
+                        <BoxContainer Orientation="Horizontal"
+                                      SeparationOverride="4">
+                            <Label Text="{Loc 'main-menu-username-label'}" />
+                            <LineEdit Name="UsernameBoxProtected"
+                                      Access="Public"
+                                      PlaceHolder="{Loc 'main-menu-username-text'}"
+                                      HorizontalExpand="True" />
+                        </BoxContainer>
                         <LineEdit Name="AddressBoxProtected"
-                                  PlaceHolder="127.0.0.1:1212"
+                                  Access="Public"
+                                  Text="127.0.0.1:1212"
+                                  PlaceHolder="server address:port"
                                   HorizontalExpand="True" />
+                        <Button Name="ConnectButtonProtected"
+                                Access="Public"
+                                Text="{Loc 'main-menu-connect-button'}"
+                                TextAlign="Center"
+                                StyleClasses="od-button"
+                                StyleIdentifier="mainMenu" />
+                        <Button Name="QuitButtonProtected"
+                                Text="{Loc 'main-menu-quit-button'}"
+                                TextAlign="Center"
+                                StyleClasses="od-button"
+                                StyleIdentifier="mainMenu" />
                     </BoxContainer>
-                    <Control MinSize="0 2" />
-                    <Button Name="ConnectButtonProtected"
-                            Text="Connect"
-                            TextAlign="Center" />
-                    <Control MinSize="0 2" />
-                    <Button Name="QuitButtonProtected"
-                            Text="Quit"
-                            TextAlign="Center" />
-                </BoxContainer>
-                <Control MinHeight="128"></Control>
-                <BoxContainer Name="Notices" Orientation="Vertical"
-                              SeparationOverride="4">
-                    <Label Name="WIPLabel"
-                           Text="Work In Progress"
-                           FontColorOverride="#FFFFFF"
-                           HorizontalAlignment="Center"/>
-                    <Label Name="DebugWarningLabel"
-                           Text="OpenDream was compiled in the Debug .NET configuration. This will heavily impact performance!"
-                           FontColorOverride="#FF1111"
-                           HorizontalAlignment="Center"
-                           Visible="False"/>
-                </BoxContainer>
-            </BoxContainer>
-
-        </LayoutContainer>
-    </PanelContainer>
+                </PanelContainer>
+        </BoxContainer>
+    </LayoutContainer>
 </Control>

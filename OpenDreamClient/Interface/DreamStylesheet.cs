@@ -4,19 +4,55 @@ using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Client.UserInterface.CustomControls;
+using Robust.Shared.Utility;
 using static Robust.Client.UserInterface.StylesheetHelpers;
 
 namespace OpenDreamClient.Interface;
 
+public static class ResCacheExtension
+{
+    public static Font GetFont(this IResourceCache cache, ResPath[] path, int size)
+    {
+        var fs = new Font[path.Length];
+        for (var i = 0; i < path.Length; i++)
+            fs[i] = new VectorFont(cache.GetResource<FontResource>(path[i]), size);
+
+        return new StackedFont(fs);
+    }
+
+    public static Font GetFont(this IResourceCache cache, string[] path, int size)
+    {
+        var rp = new ResPath[path.Length];
+        for (var i = 0; i < path.Length; i++)
+            rp[i] = new ResPath(path[i]);
+
+        return cache.GetFont(rp, size);
+    }
+
+    // diet notostack from ss14
+    public static Font NotoStack(this IResourceCache resCache, string variation = "Regular", int size = 10, bool display = false)
+    {
+        var ds = display ? "Display" : "";
+        return resCache.GetFont
+        (
+            // Ew, but ok
+            [
+                $"/Fonts/NotoSans{ds}-{variation}.ttf",
+            ],
+            size
+        );
+    }
+}
+
 public static class DreamStylesheet {
+
     public static Stylesheet Make() {
         var res = IoCManager.Resolve<IResourceCache>();
         var textureCloseButton = res.GetResource<TextureResource>("/cross.svg.png").Texture;
-        var notoSansFont = res.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf");
-        var notoSansBoldFont = res.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf");
-        var notoSansFont10 = new VectorFont(notoSansFont, 10);
-        var notoSansFont12 = new VectorFont(notoSansFont, 12);
-        var notoSansBoldFont14 = new VectorFont(notoSansBoldFont, 14);
+        var notoSansFont10 = res.NotoStack();
+        var notoSansFont12 = res.NotoStack("Regular", 12);
+        var notoSansBold14 = res.NotoStack("Bold", 14);
+        var notoSansBold16 = res.NotoStack("Bold", 16);
 
         var scrollBarNormal = new StyleBoxFlat {
             BackgroundColor = Color.Gray.WithAlpha(0.35f), ContentMarginLeftOverride = 10,
@@ -38,10 +74,10 @@ public static class DreamStylesheet {
                 .Prop("background", Color.White),
 
             Element<PanelContainer>().Class("MapBackground")
-                .Prop("panel", new StyleBoxFlat { BackgroundColor = Color. Black}),
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat { BackgroundColor = Color. Black}),
 
             Element<PanelContainer>().Class("ContextMenuBackground")
-                .Prop("panel", new StyleBoxFlat() {
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat {
                     BackgroundColor = Color.White,
                     BorderColor = Color.DarkGray,
                     BorderThickness = new Thickness(1)
@@ -85,7 +121,7 @@ public static class DreamStylesheet {
                 // Color
                 .Prop(Label.StylePropertyFontColor, Color.FromHex("#000000"))
                 // Font
-                .Prop(Label.StylePropertyFont, notoSansBoldFont14),
+                .Prop(Label.StylePropertyFont, notoSansBold14),
 
             // Window header color.
             Element().Class(DefaultWindow.StyleClassWindowHeader)
@@ -180,6 +216,33 @@ public static class DreamStylesheet {
                 .Prop(Slider.StylePropertyForeground, new StyleBoxFlat { BackgroundColor = Color.LightGray, BorderThickness = new Thickness(1), BorderColor = Color.Black})
                 .Prop(Slider.StylePropertyGrabber, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(1), BorderColor = Color.Black, ContentMarginLeftOverride=10, ContentMarginRightOverride=10})
                 .Prop(Slider.StylePropertyFill, new StyleBoxFlat { BackgroundColor = Color.Transparent, BorderThickness = new Thickness(0), BorderColor = Color.Black}),
+
+
+            // main menu UI
+            Element<Label>().Class("od-important")
+                .Prop(Label.StylePropertyFont, notoSansBold14)
+                .Prop(Label.StylePropertyFontColor, Color.DarkRed),
+
+            Element<Label>().Class("od-wip")
+                .Prop(Label.StylePropertyFont, notoSansFont12)
+                .Prop(Label.StylePropertyFontColor, Color.FromHex("#aaaaaabb")),
+
+            Element<ContainerButton>().Class("od-button").Pseudo(ContainerButton.StylePseudoClassNormal)
+                .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat {
+                    BackgroundColor = Color.FromHex("#C0C0C0"),
+                }),
+            Element<ContainerButton>().Class("od-button").Pseudo(ContainerButton.StylePseudoClassHover)
+                .Prop(ContainerButton.StylePropertyStyleBox, new StyleBoxFlat {
+                    BackgroundColor = Color.FromHex("#d9d9d9"),
+                }),
+
+            new StyleRule(new SelectorChild(
+                    new SelectorElement(typeof(Button), null, "mainMenu", null),
+                    new SelectorElement(typeof(Label), null, null, null)),
+                new[]
+                {
+                    new StyleProperty("font", notoSansBold16),
+                }),
 
         });
     }

@@ -87,7 +87,7 @@ internal sealed class DreamViewOverlay : Overlay {
         _blockColorInstance = _protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendModeInstances = new(6) {
-            {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT TODO: Not the same as BLEND_OVERLAY
+            {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
             {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY
             {BlendMode.Add, _protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()}, //BLEND_ADD
             {BlendMode.Subtract, _protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()}, //BLEND_SUBTRACT
@@ -391,7 +391,6 @@ internal sealed class DreamViewOverlay : Overlay {
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
         // We can use no shader if everything is default
-        // TODO: BlendMode.Default is not the same as BlendMode.Overlay
         if (!iconMetaData.IsPlaneMaster && blendMode is BlendMode.Default or BlendMode.Overlay &&
             colorMatrix.Equals(ColorMatrix.Identity))
             return null;

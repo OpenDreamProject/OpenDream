@@ -5,6 +5,7 @@ using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
+using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering {
     internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
@@ -16,6 +17,7 @@ namespace OpenDreamClient.Rendering {
         [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
         [Dependency] private readonly TransformSystem _transformSystem = default!;
+        [Dependency] private readonly IGameTiming _gameTiming = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -46,7 +48,7 @@ namespace OpenDreamClient.Rendering {
             int appearanceId = turfId - 1;
 
             if (!_turfIcons.TryGetValue(appearanceId, out var icon)) {
-                icon = new DreamIcon(appearanceId);
+                icon = new DreamIcon(_gameTiming, this, appearanceId);
                 _turfIcons.Add(appearanceId, icon);
             }
 

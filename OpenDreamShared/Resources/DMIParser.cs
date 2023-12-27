@@ -125,7 +125,7 @@ namespace OpenDreamShared.Resources {
                     text.Append("\tdelay = ");
                     var frames = Directions.Values.First(); // Delays should be the same in each direction
                     for (int i = 0; i < frames.Length; i++) {
-                        var delay = frames[i].Delay / 100; // Convert back to deciseconds
+                        var delay = frames[i].Delay.TotalMilliseconds / 100; // Convert back to deciseconds
 
                         text.Append(delay.ToString(CultureInfo.InvariantCulture));
                         if (i != frames.Length - 1)
@@ -181,7 +181,7 @@ namespace OpenDreamShared.Resources {
 
         public sealed class ParsedDMIFrame {
             public int X, Y;
-            public float Delay;
+            public TimeSpan Delay;
         }
 
         /// <summary>
@@ -283,7 +283,7 @@ namespace OpenDreamShared.Resources {
                 var frame = new ParsedDMIFrame() {
                     X = 0,
                     Y = 0,
-                    Delay = 1
+                    Delay = TimeSpan.FromMilliseconds(100)
                 };
 
                 state.Directions.Add(AtomDirection.South, new [] { frame });
@@ -342,11 +342,13 @@ namespace OpenDreamShared.Resources {
                                         AtomDirection direction = DMIFrameDirections[j];
 
                                         ParsedDMIFrame frame = new ParsedDMIFrame();
+                                        float delay = (currentStateFrameDelays != null)
+                                            ? currentStateFrameDelays[i] * 100 // Convert from deciseconds to milliseconds
+                                            : 100;
 
                                         frame.X = currentFrameX;
                                         frame.Y = currentFrameY;
-                                        frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[i] : 1;
-                                        frame.Delay *= 100; //Convert from deciseconds to milliseconds
+                                        frame.Delay = TimeSpan.FromMilliseconds(delay);
                                         currentState.Directions[direction][i] = frame;
 
                                         currentFrameX += description.Width;
@@ -413,11 +415,13 @@ namespace OpenDreamShared.Resources {
                     AtomDirection direction = DMIFrameDirections[j];
 
                     ParsedDMIFrame frame = new ParsedDMIFrame();
+                    float delay = (currentStateFrameDelays != null)
+                        ? currentStateFrameDelays[i] * 100 // Convert from deciseconds to milliseconds
+                        : 100;
 
                     frame.X = currentFrameX;
                     frame.Y = currentFrameY;
-                    frame.Delay = (currentStateFrameDelays != null) ? currentStateFrameDelays[i] : 1;
-                    frame.Delay *= 100; //Convert from deciseconds to milliseconds
+                    frame.Delay = TimeSpan.FromMilliseconds(delay);
                     currentState.Directions[direction][i] = frame;
 
                     currentFrameX += description.Width;

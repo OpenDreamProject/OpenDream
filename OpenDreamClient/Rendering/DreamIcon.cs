@@ -3,15 +3,15 @@ using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
+using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering {
-    internal sealed class DreamIcon {
+    internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem appearanceSystem) {
         public delegate void SizeChangedEventHandler();
 
         public List<DreamIcon> Overlays { get; } = new();
         public List<DreamIcon> Underlays { get; } = new();
         public event SizeChangedEventHandler? SizeChanged;
-        private ClientAppearanceSystem? appearanceSystem = null;
         public DMIResource? DMI {
             get => _dmi;
             private set {
@@ -38,18 +38,17 @@ namespace OpenDreamClient.Rendering {
         }
         private IconAppearance? _appearance;
 
-        public AtlasTexture? CurrentFrame {
-            get => (Appearance == null || DMI == null) ? null : DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[AnimationFrame];
-        }
+        public AtlasTexture? CurrentFrame => (Appearance == null || DMI == null)
+            ? null
+            : DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[AnimationFrame];
 
         private int _animationFrame;
-        private DateTime _animationFrameTime = DateTime.Now;
-        private AppearanceAnimation? _appearanceAnimation = null;
-        private Box2? _cachedAABB = null;
+        private TimeSpan _animationFrameTime = gameTiming.CurTime;
+        private AppearanceAnimation? _appearanceAnimation;
+        private Box2? _cachedAABB;
 
-        public DreamIcon() { }
-
-        public DreamIcon(int appearanceId, AtomDirection? parentDir = null) {
+        public DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem appearanceSystem, int appearanceId,
+            AtomDirection? parentDir = null) : this(gameTiming, appearanceSystem) {
             SetAppearance(appearanceId, parentDir);
         }
 
@@ -62,9 +61,6 @@ namespace OpenDreamClient.Rendering {
                 Appearance = null;
                 return;
             }
-
-            //for some reason, doing this as a dependency doesn't initialise it in time so a null ref happens
-            appearanceSystem ??= EntitySystem.Get<ClientAppearanceSystem>();
 
             appearanceSystem.LoadAppearance(appearanceId.Value, appearance => {
                 if (parentDir != null && appearance.InheritsDirection) {
@@ -119,10 +115,10 @@ namespace OpenDreamClient.Rendering {
 
             if (_animationFrame == frames.Length - 1 && !dmiState.Loop) return;
 
-            double elapsedTime = DateTime.Now.Subtract(_animationFrameTime).TotalMilliseconds;
+            TimeSpan elapsedTime = gameTiming.CurTime.Subtract(_animationFrameTime);
             while (elapsedTime >= frames[_animationFrame].Delay) {
                 elapsedTime -= frames[_animationFrame].Delay;
-                _animationFrameTime = _animationFrameTime.AddMilliseconds(frames[_animationFrame].Delay);
+                _animationFrameTime += frames[_animationFrame].Delay;
                 _animationFrame++;
 
                 if (_animationFrame >= frames.Length) _animationFrame -= frames.Length;
@@ -172,13 +168,13 @@ namespace OpenDreamClient.Rendering {
 
                     DMI = dmi;
                     _animationFrame = 0;
-                    _animationFrameTime = DateTime.Now;
+                    _animationFrameTime = gameTiming.CurTime;
                 });
             }
 
             Overlays.Clear();
             foreach (int overlayId in Appearance.Overlays) {
-                DreamIcon overlay = new DreamIcon(overlayId, Appearance.Direction);
+                DreamIcon overlay = new DreamIcon(gameTiming, appearanceSystem, overlayId, Appearance.Direction);
                 overlay.SizeChanged += CheckSizeChange;
 
                 Overlays.Add(overlay);
@@ -186,7 +182,7 @@ namespace OpenDreamClient.Rendering {
 
             Underlays.Clear();
             foreach (int underlayId in Appearance.Underlays) {
-                DreamIcon underlay = new DreamIcon(underlayId, Appearance.Direction);
+                DreamIcon underlay = new DreamIcon(gameTiming, appearanceSystem, underlayId, Appearance.Direction);
                 underlay.SizeChanged += CheckSizeChange;
 
                 Underlays.Add(underlay);
@@ -203,16 +199,10 @@ namespace OpenDreamClient.Rendering {
             }
         }
 
-        private struct AppearanceAnimation {
-            public readonly DateTime Start;
-            public readonly TimeSpan Duration;
-            public readonly IconAppearance EndAppearance;
-
-            public AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance) {
-                Start = start;
-                Duration = duration;
-                EndAppearance = endAppearance;
-            }
+        private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance) {
+            public readonly DateTime Start = start;
+            public readonly TimeSpan Duration = duration;
+            public readonly IconAppearance EndAppearance = endAppearance;
         }
     }
 }

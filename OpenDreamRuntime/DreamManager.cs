@@ -146,9 +146,9 @@ namespace OpenDreamRuntime {
 
             _dreamMapManager.LoadMaps(_compiledJson.Maps);
 
-            _statusHost.SetMagicAczProvider(new DreamMagicAczProvider(
-                _dependencyCollection, rootPath, resources
-            ));
+            var aczProvider = new DreamAczProvider(_dependencyCollection, rootPath, resources);
+            _statusHost.SetMagicAczProvider(aczProvider);
+            _statusHost.SetFullHybridAczProvider(aczProvider);
 
             return true;
         }

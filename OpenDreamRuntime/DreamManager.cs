@@ -116,7 +116,7 @@ namespace OpenDreamRuntime {
             }
 
             _compiledJson = json;
-            var rootPath = Path.GetDirectoryName(jsonPath)!;
+            var rootPath = Path.GetFullPath(Path.GetDirectoryName(jsonPath)!);
             var resources = _compiledJson.Resources ?? Array.Empty<string>();
             _dreamResourceManager.Initialize(rootPath, resources);
             if(!string.IsNullOrEmpty(_compiledJson.Interface) && !_dreamResourceManager.DoesFileExist(_compiledJson.Interface))

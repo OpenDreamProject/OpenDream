@@ -1,6 +1,5 @@
 using Robust.Packaging;
 using Robust.Packaging.AssetProcessing;
-using Robust.Packaging.AssetProcessing.Passes;
 
 namespace OpenDreamPackaging;
 
@@ -20,21 +19,13 @@ public static class DreamPackaging {
 
         var inputPass = graph.Input;
 
-        await RobustSharedPackaging.WriteContentAssemblies(
-            inputPass,
+        await RobustClientPackaging.WriteClientResources(
             contentDir,
-            "Content.Client",
-            new[] { "OpenDreamClient", "OpenDreamShared" },
-            cancel: cancel);
+            inputPass,
+            cancel);
 
         await RobustClientPackaging.WriteClientResources(contentDir, inputPass, cancel);
 
-        WriteRscResources(dreamRootDir, resources, inputPass);
-
-        inputPass.InjectFinished();
-    }
-
-    public static void WriteRscResources(string dreamRootDir, string[] resources, AssetPassPipe inputPass) {
         for (var i = 0; i < resources.Length; i++) {
             var resource = resources[i].Replace('\\', Path.DirectorySeparatorChar);
             // The game client only knows a resource ID, so that's what we name the files.
@@ -44,5 +35,7 @@ public static class DreamPackaging {
 
             inputPass.InjectFileFromDisk(path, diskPath);
         }
+
+        inputPass.InjectFinished();
     }
 }

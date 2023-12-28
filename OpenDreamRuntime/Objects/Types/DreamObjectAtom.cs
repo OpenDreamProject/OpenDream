@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Dream;
+﻿using OpenDreamRuntime.Procs;
+using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -14,9 +15,6 @@ public class DreamObjectAtom : DreamObject {
     public DreamList? VisLocs; // TODO: Implement
 
     public DreamObjectAtom(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
-        ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
-
         Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
         VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
@@ -24,6 +22,11 @@ public class DreamObjectAtom : DreamObject {
         Filters = new(ObjectTree.List.ObjectDefinition, this);
 
         AtomManager.AddAtom(this);
+    }
+
+    public override void Initialize(DreamProcArguments args) {
+        ObjectDefinition.Variables["name"].TryGetValueAsString(out Name);
+        ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
     }
 
     protected override void HandleDeletion() {
@@ -101,6 +104,15 @@ public class DreamObjectAtom : DreamObject {
                 break;
             case "desc":
                 value.TryGetValueAsString(out Desc);
+                break;
+            case "appearance":
+                if (!AtomManager.TryCreateAppearanceFrom(value, out var newAppearance))
+                    return; // Ignore attempts to set an invalid appearance
+
+                // The dir does not get changed
+                newAppearance.Direction = AtomManager.MustGetAppearance(this)!.Direction;
+
+                AtomManager.SetAtomAppearance(this, newAppearance);
                 break;
             case "overlays": {
                 Overlays.Cut();

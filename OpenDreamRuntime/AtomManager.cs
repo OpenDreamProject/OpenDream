@@ -192,13 +192,6 @@ public sealed class AtomManager {
         DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
         sprite.SetAppearance(GetAppearanceFromDefinition(movable.ObjectDefinition));
 
-        if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
-            _metaDataSystem ??= _entitySystemManager.GetEntitySystem<MetaDataSystem>();
-
-            _metaDataSystem.SetEntityName(entity, movable.GetDisplayName(), metaData);
-            _metaDataSystem.SetEntityDescription(entity, movable.Desc ?? string.Empty, metaData);
-        }
-
         _entityToAtom.Add(entity, movable);
         return entity;
     }
@@ -232,6 +225,7 @@ public sealed class AtomManager {
             case "render_source":
             case "render_target":
             case "transform":
+            case "appearance":
                 return true;
 
             // Get/SetAppearanceVar doesn't handle these
@@ -336,6 +330,8 @@ public sealed class AtomManager {
 
                 appearance.Transform = transformArray;
                 break;
+            case "appearance":
+                throw new Exception("Cannot assign the appearance var on an appearance");
             // TODO: overlays, underlays, filters
             //       Those are handled separately by whatever is calling SetAppearanceVar currently
             default:
@@ -409,6 +405,9 @@ public sealed class AtomManager {
                     transform[1], transform[3], transform[5]);
 
                 return new(matrix);
+            case "appearance":
+                IconAppearance appearanceCopy = new IconAppearance(appearance); // Return a copy
+                return new(appearanceCopy);
             // TODO: overlays, underlays, filters
             //       Those are handled separately by whatever is calling GetAppearanceVar currently
             default:

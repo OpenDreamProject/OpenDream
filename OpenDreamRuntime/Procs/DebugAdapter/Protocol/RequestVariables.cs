@@ -1,10 +1,13 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
+[UsedImplicitly]
 public sealed class RequestVariables : Request {
-    [JsonPropertyName("arguments")] public RequestVariablesArguments Arguments { get; set; }
+    [JsonPropertyName("arguments")] public required RequestVariablesArguments Arguments { get; set; }
 
+    [UsedImplicitly]
     public sealed class RequestVariablesArguments {
         /**
          * The Variable reference.

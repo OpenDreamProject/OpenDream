@@ -68,6 +68,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
     // Defined here so it isn't recreated every frame
     private ViewAlgorithm.Tile?[,]? _tileInfo;
+    private readonly HashSet<EntityUid> _entities = new();
 
     public DreamViewOverlay(TransformSystem transformSystem, EntityLookupSystem lookupSystem,
         ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem, ClientImagesSystem clientImagesSystem) {
@@ -86,8 +87,8 @@ internal sealed class DreamViewOverlay : Overlay {
         _blockColorInstance = _protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
         _colorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendModeInstances = new(6) {
-            {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT
-            {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY (same as BLEND_DEFAULT)
+            {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
+            {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY
             {BlendMode.Add, _protoManager.Index<ShaderPrototype>("blend_add").InstanceUnique()}, //BLEND_ADD
             {BlendMode.Subtract, _protoManager.Index<ShaderPrototype>("blend_subtract").InstanceUnique()}, //BLEND_SUBTRACT
             {BlendMode.Multiply, _protoManager.Index<ShaderPrototype>("blend_multiply").InstanceUnique()}, //BLEND_MULTIPLY
@@ -140,19 +141,18 @@ internal sealed class DreamViewOverlay : Overlay {
 
         var worldHandle = args.WorldHandle;
 
-        HashSet<EntityUid> entities;
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
             //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
-            entities = _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB.Scale(1.2f), MapLookupFlags);
+            _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB.Scale(1.2f), _entities, MapLookupFlags);
         }
 
         var eyeTile = grid.GetTileRef(eyeTransform.MapPosition);
-        var tiles = CalculateTileVisibility(grid, entities, eyeTile, seeVis);
+        var tiles = CalculateTileVisibility(grid, _entities, eyeTile, seeVis);
 
         RefreshRenderTargets(args.WorldHandle, viewportSize);
 
-        CollectVisibleSprites(tiles, grid, eyeTile, entities, seeVis, sight, args.WorldAABB);
+        CollectVisibleSprites(tiles, grid, eyeTile, _entities, seeVis, sight, args.WorldAABB);
         ClearPlanes();
         ProcessSprites(worldHandle, viewportSize, args.WorldAABB);
 
@@ -219,6 +219,9 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.Layer = parentIcon.Layer;
             else
                 current.Layer = icon.Appearance.Layer;
+
+            if (current.BlendMode == BlendMode.Default)
+                current.BlendMode = parentIcon.BlendMode;
         } else {
             current.ColorToApply = icon.Appearance.Color;
             current.ColorMatrixToApply = icon.Appearance.ColorMatrix;
@@ -376,16 +379,23 @@ internal sealed class DreamViewOverlay : Overlay {
         handle.RenderInRenderTarget(target, () => {}, clearColor);
     }
 
-    public ShaderInstance GetBlendAndColorShader(RendererMetaData iconMetaData, Color? colorOverride = null, BlendMode? blendModeOverride = null) {
-        Color rgba = colorOverride ?? iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply);
+    public ShaderInstance? GetBlendAndColorShader(RendererMetaData iconMetaData, bool ignoreColor = false, bool useOverlayMode = false) {
+        BlendMode blendMode = useOverlayMode ? BlendMode.Overlay : iconMetaData.BlendMode;
 
         ColorMatrix colorMatrix;
-        if (colorOverride != null || iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))
-            colorMatrix = new ColorMatrix(rgba);
+        if (ignoreColor)
+            colorMatrix = ColorMatrix.Identity;
+        else if (iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))
+            colorMatrix = new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply));
         else
             colorMatrix = iconMetaData.ColorMatrixToApply;
 
-        if (!_blendModeInstances.TryGetValue(blendModeOverride ?? iconMetaData.BlendMode, out var blendAndColor))
+        // We can use no shader if everything is default
+        if (!iconMetaData.IsPlaneMaster && blendMode is BlendMode.Default or BlendMode.Overlay &&
+            colorMatrix.Equals(ColorMatrix.Identity))
+            return null;
+
+        if (!_blendModeInstances.TryGetValue(blendMode, out var blendAndColor))
             blendAndColor = _blendModeInstances[BlendMode.Default];
 
         blendAndColor = blendAndColor.Duplicate();
@@ -545,8 +555,7 @@ internal sealed class DreamViewOverlay : Overlay {
             //then we return the Action that draws the actual icon with filters applied
             iconDrawAction = renderTargetSize => {
                 //note we apply the color *before* the filters, so we use override here
-                handle.UseShader(GetBlendAndColorShader(iconMetaData, colorOverride: Color.White));
-
+                handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
                 handle.SetTransform(CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition - frame.Size / 2));
                 handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
                 handle.UseShader(null);

@@ -31,7 +31,7 @@ public sealed class DreamObjectDefinition {
     public readonly MetaDataSystem? MetaDataSystem;
 
     public readonly TreeEntry TreeEntry;
-    public DreamPath Type => TreeEntry.Path;
+    public string Type => TreeEntry.Path;
     public DreamObjectDefinition? Parent => TreeEntry.ParentEntry?.ObjectDefinition;
     public int? InitializationProc;
     public bool NoConstructors {

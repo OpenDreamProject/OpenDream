@@ -18,7 +18,7 @@ namespace OpenDreamRuntime {
 
     public abstract class DreamProc {
         public readonly int Id;
-        public readonly DreamPath OwningType;
+        public readonly TreeEntry OwningType;
         public readonly string Name;
         public readonly bool IsVerb;
 
@@ -38,7 +38,7 @@ namespace OpenDreamRuntime {
         private readonly string? _verbName;
         private readonly string? _verbDesc;
 
-        protected DreamProc(int id, DreamPath owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
+        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
             Id = id;
             OwningType = owningType;
             Name = name;
@@ -88,7 +88,7 @@ namespace OpenDreamRuntime {
         public override string ToString() {
             var procElement = (SuperProc == null) ? (IsVerb ? "verb/" : "proc/") : String.Empty; // Has "proc/" only if it's not an override
 
-            return OwningType == DreamPath.Root ? $"/{procElement}{Name}" : $"{OwningType}/{procElement}{Name}";
+            return $"{OwningType.Path}{(OwningType.Path.EndsWith('/') ? string.Empty : "/")}{procElement}{Name}";
         }
     }
 

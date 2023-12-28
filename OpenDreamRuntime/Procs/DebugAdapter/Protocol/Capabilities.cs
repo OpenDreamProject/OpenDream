@@ -78,11 +78,13 @@ public sealed class Capabilities {
      */
     [JsonPropertyName("supportsModulesRequest")] public bool? SupportsModulesRequest { get; set; }
 
+    /*
     /**
      * The set of additional module information exposed by the debug adapter.
      */
     //[JsonPropertyName("additionalModuleColumns")] public ColumnDescriptor[]? AdditionalModuleColumns { get; set; }
 
+    /*
     /**
      * Checksum algorithms supported by the debug adapter.
      */

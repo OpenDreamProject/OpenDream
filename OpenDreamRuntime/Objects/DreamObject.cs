@@ -427,7 +427,7 @@ namespace OpenDreamRuntime.Objects {
                 return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
             }
 
-            return ObjectDefinition.Type.ToString();
+            return ObjectDefinition.Type;
         }
     }
 }

@@ -55,7 +55,7 @@ internal sealed class DreamPlane {
         if (_temporaryRenderTarget != null) {
             // Draw again, but with the color applied
             handle.RenderInRenderTarget(_temporaryRenderTarget, () => {
-                handle.UseShader(overlay.GetBlendAndColorShader(Master, blendModeOverride: BlendMode.Overlay));
+                handle.UseShader(overlay.GetBlendAndColorShader(Master, useOverlayMode: true));
                 handle.SetTransform(overlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Vector2.Zero));
                 handle.DrawTextureRect(_mainRenderTarget.Texture, new Box2(Vector2.Zero, _mainRenderTarget.Size));
                 handle.SetTransform(Matrix3.Identity);

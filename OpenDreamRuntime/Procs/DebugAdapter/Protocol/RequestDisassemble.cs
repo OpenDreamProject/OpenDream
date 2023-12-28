@@ -1,16 +1,19 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
+[UsedImplicitly]
 public sealed class RequestDisassemble : Request {
-    [JsonPropertyName("arguments")] public RequestDisassembleArguments Arguments { get; set; }
+    [JsonPropertyName("arguments")] public required RequestDisassembleArguments Arguments { get; set; }
 
+    [UsedImplicitly]
     public sealed class RequestDisassembleArguments {
         /**
          * Memory reference to the base location containing the instructions to
          * disassemble.
          */
-        [JsonPropertyName("memoryReference")] public string MemoryReference { get; set; }
+        [JsonPropertyName("memoryReference")] public required string MemoryReference { get; set; }
 
         /**
          * Offset (in bytes) to be applied to the reference location before

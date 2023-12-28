@@ -34,8 +34,7 @@ public static class DreamPackaging {
         inputPass.InjectFinished();
     }
 
-    public static void WriteRscResources(string dreamRootDir, string[] resources, AssetPassPipe inputPass)
-    {
+    public static void WriteRscResources(string dreamRootDir, string[] resources, AssetPassPipe inputPass) {
         for (var i = 0; i < resources.Length; i++) {
             var resource = resources[i].Replace('\\', Path.DirectorySeparatorChar);
             // The game client only knows a resource ID, so that's what we name the files.

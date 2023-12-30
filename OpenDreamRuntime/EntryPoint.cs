@@ -25,10 +25,6 @@ namespace OpenDreamRuntime {
         private DreamCommandSystem? _commandSystem;
 
         public override void Init() {
-            IoCManager.Resolve<IStatusHost>().SetMagicAczProvider(new DefaultMagicAczProvider(
-                new DefaultMagicAczInfo("Content.Client", new[] {"OpenDreamClient", "OpenDreamShared"}),
-                IoCManager.Resolve<IDependencyCollection>()));
-
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 

@@ -1,28 +1,28 @@
 ﻿using OpenDreamShared.Rendering;
 
-namespace OpenDreamClient.Rendering {
-    internal sealed class ClientScreenOverlaySystem : SharedScreenOverlaySystem {
-        public HashSet<EntityUid> ScreenObjects = new();
+namespace OpenDreamClient.Rendering;
 
-        [Dependency] private readonly IEntityManager _entityManager = default!;
+internal sealed class ClientScreenOverlaySystem : SharedScreenOverlaySystem {
+    public HashSet<EntityUid> ScreenObjects = new();
 
-        public override void Initialize() {
-            SubscribeNetworkEvent<AddScreenObjectEvent>(OnAddScreenObject);
-            SubscribeNetworkEvent<RemoveScreenObjectEvent>(OnRemoveScreenObject);
-        }
+    [Dependency] private readonly IEntityManager _entityManager = default!;
 
-        public override void Shutdown() {
-            ScreenObjects.Clear();
-        }
+    public override void Initialize() {
+        SubscribeNetworkEvent<AddScreenObjectEvent>(OnAddScreenObject);
+        SubscribeNetworkEvent<RemoveScreenObjectEvent>(OnRemoveScreenObject);
+    }
 
-        private void OnAddScreenObject(AddScreenObjectEvent e) {
-            EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
-            ScreenObjects.Add(ent);
-        }
+    public override void Shutdown() {
+        ScreenObjects.Clear();
+    }
 
-        private void OnRemoveScreenObject(RemoveScreenObjectEvent e) {
-            EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
-            ScreenObjects.Remove(ent);
-        }
+    private void OnAddScreenObject(AddScreenObjectEvent e) {
+        EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
+        ScreenObjects.Add(ent);
+    }
+
+    private void OnRemoveScreenObject(RemoveScreenObjectEvent e) {
+        EntityUid ent = _entityManager.GetEntity(e.ScreenObject);
+        ScreenObjects.Remove(ent);
     }
 }

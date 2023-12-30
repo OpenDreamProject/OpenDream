@@ -1,10 +1,10 @@
 ﻿using OpenDreamShared.Rendering;
 
 namespace OpenDreamClient.Rendering {
-    sealed class ClientScreenOverlaySystem : SharedScreenOverlaySystem {
+    internal sealed class ClientScreenOverlaySystem : SharedScreenOverlaySystem {
         public HashSet<EntityUid> ScreenObjects = new();
 
-        [Dependency] private IEntityManager _entityManager = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
 
         public override void Initialize() {
             SubscribeNetworkEvent<AddScreenObjectEvent>(OnAddScreenObject);

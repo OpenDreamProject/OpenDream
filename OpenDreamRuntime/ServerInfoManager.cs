@@ -21,7 +21,6 @@ public sealed class ServerInfoManager {
 
     [Dependency] private readonly IStatusHost _statusHost = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
-    [Dependency] private readonly ILocalizationManager _loc = default!;
 
     public void Initialize() {
         _statusHost.OnInfoRequest += OnInfoRequest;
@@ -33,7 +32,7 @@ public sealed class ServerInfoManager {
             if (string.IsNullOrEmpty(url))
                 continue;
 
-            StatusHostHelpers.AddLink(json, _loc.GetString(name), url, icon);
+            StatusHostHelpers.AddLink(json, name, url, icon);
         }
     }
 }

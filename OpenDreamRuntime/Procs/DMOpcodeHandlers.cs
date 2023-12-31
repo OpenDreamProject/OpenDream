@@ -2468,16 +2468,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue DivideValues(DreamValue first, DreamValue second) {
-            if (first.IsNull) {
-                return new(0);
-            } else if (first.TryGetValueAsFloat(out var firstFloat) && second.TryGetValueAsFloat(out var secondFloat)) {
-                if (secondFloat == 0) {
-                    throw new Exception("Division by zero");
-                }
-                return new(firstFloat / secondFloat);
-            } else {
-                throw new Exception("Invalid divide operation on " + first + " and " + second);
-            }
+            var lhand = first.UnsafeGetValueAsFloat(); // Coalesce objects to 0.
+            var rhand = second.TryGetValueAsFloat(out var rhandMaybe) ? rhandMaybe : 1;
+            return new(lhand / rhand);
         }
 
         private static DreamValue BitXorValues(DreamObjectTree objectTree, DreamValue first, DreamValue second) {

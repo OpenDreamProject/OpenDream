@@ -21,6 +21,13 @@ namespace DMCompiler.Compiler.DM {
             return level == ErrorLevel.Error;
         }
 
+        protected bool Error(WarningCode code, Location location, string message) {
+            ErrorLevel level = DMCompiler.CodeToLevel(code);
+            if (Emissions.Count < MAX_EMISSIONS_RECORDED)
+                Emissions.Add(new CompilerEmission(level, code, location, message));
+            return level == ErrorLevel.Error;
+        }
+
         /// <inheritdoc cref="Parser{SourceType}.Error(string, bool)"/>
         [Obsolete("This is not a desirable way for DMParser to emit an error, as errors should emit an error code and not cause unnecessary throws. Use DMParser's overrides of this method, instead.")]
         new protected void Error(string message, bool throwException = true) {

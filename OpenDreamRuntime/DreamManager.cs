@@ -301,9 +301,22 @@ namespace OpenDreamRuntime {
             return DreamValue.Null;
         }
 
-        public void HandleException(Exception e) {
+        public void HandleException(Exception e, string msg = "", string file = "", string line = "") {
+            if (string.IsNullOrEmpty(msg)) { // Just print the C# exception if we don't override the message
+                msg = e.Message;
+            }
+
             LastDMException = e;
             OnException?.Invoke(this, e);
+
+            // Invoke world.Error()
+            var obj = (DreamObjectException)_objectTree.CreateObject(_objectTree.Exception);
+            obj.Name = e.Message;
+            obj.Description = msg;
+            obj.Line = line;
+            obj.File = file;
+
+            WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
         }
     }
 

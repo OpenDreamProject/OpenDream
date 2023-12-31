@@ -21,6 +21,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;
+        [Dependency] private readonly ServerInfoManager _serverInfoManager = default!;
 
         private DreamCommandSystem? _commandSystem;
 
@@ -51,6 +52,8 @@ namespace OpenDreamRuntime {
                     }
 
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
+
+            _serverInfoManager.Initialize();
         }
 
         public override void PostInit() {

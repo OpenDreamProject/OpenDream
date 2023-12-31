@@ -8,10 +8,8 @@ namespace OpenDreamRuntime;
 /// <summary>
 /// Adds additional data like info links to the server info endpoint
 /// </summary>
-public sealed class ServerInfoManager
-{
-    private static readonly (CVarDef<string> cVar, string icon, string name)[] Vars =
-    {
+public sealed class ServerInfoManager {
+    private static readonly (CVarDef<string> cVar, string icon, string name)[] Vars = {
         // @formatter:off
         (OpenDreamCVars.InfoLinksDiscord, "discord", "Discord"),
         (OpenDreamCVars.InfoLinksForum,   "forum",   "Forum"),
@@ -25,15 +23,12 @@ public sealed class ServerInfoManager
     [Dependency] private readonly IConfigurationManager _cfg = default!;
     [Dependency] private readonly ILocalizationManager _loc = default!;
 
-    public void Initialize()
-    {
+    public void Initialize() {
         _statusHost.OnInfoRequest += OnInfoRequest;
     }
 
-    private void OnInfoRequest(JsonNode json)
-    {
-        foreach (var (cVar, icon, name) in Vars)
-        {
+    private void OnInfoRequest(JsonNode json) {
+        foreach (var (cVar, icon, name) in Vars) {
             var url = _cfg.GetCVar(cVar);
             if (string.IsNullOrEmpty(url))
                 continue;

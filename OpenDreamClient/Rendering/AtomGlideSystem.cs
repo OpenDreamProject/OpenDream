@@ -11,7 +11,7 @@ public sealed class AtomGlideSystem : EntitySystem {
     private sealed class Glide(TransformComponent transform) {
         public readonly TransformComponent Transform = transform;
         public Vector2 EndPos;
-        public float MovementPerFrame;
+        public float MovementSpeed;
     }
 
     [Dependency] private readonly TransformSystem _transformSystem = default!;
@@ -43,7 +43,7 @@ public sealed class AtomGlideSystem : EntitySystem {
             var glide = _currentGlides[i];
             var currentPos = glide.Transform.LocalPosition;
             var newPos = currentPos;
-            var movement = glide.MovementPerFrame * frameTime;
+            var movement = glide.MovementSpeed * frameTime;
 
             // Move X towards the end position at a constant speed
             if (!MathHelper.CloseTo(currentPos.X, glide.EndPos.X)) {
@@ -119,11 +119,11 @@ public sealed class AtomGlideSystem : EntitySystem {
         _transformSystem.SetLocalPositionNoLerp(entity, startingFrom);
 
         glide.EndPos = glidingTo;
-        glide.MovementPerFrame = CalculateMovementPerFrame(sprite.Icon.Appearance.GlideSize);
+        glide.MovementSpeed = CalculateMovementSpeed(sprite.Icon.Appearance.GlideSize);
         _ignoreMoveEvent = false;
     }
 
-    private static float CalculateMovementPerFrame(byte glideSize) {
+    private static float CalculateMovementSpeed(byte glideSize) {
         if (glideSize == 0)
             glideSize = 4; // TODO: 0 gives us "automated control" over this value, not just setting it to 4
 

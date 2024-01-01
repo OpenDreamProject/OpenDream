@@ -333,6 +333,14 @@ public class DreamIconOperationBlend : IDreamIconOperation {
             }
 
             case BlendType.Overlay: {
+                // When overlaying onto 0 alpha, don't multiply the RGB values by alpha.
+                if (dst.A == 0) {
+                    pixels[dstPixelPosition].R = src.R;
+                    pixels[dstPixelPosition].G = src.G;
+                    pixels[dstPixelPosition].B = src.B;
+                    pixels[dstPixelPosition].A = src.A;
+                    break;
+                }
                 pixels[dstPixelPosition].R = (byte) (dst.R + (src.R - dst.R) * src.A / 255);
                 pixels[dstPixelPosition].G = (byte) (dst.G + (src.G - dst.G) * src.A / 255);
                 pixels[dstPixelPosition].B = (byte) (dst.B + (src.B - dst.B) * src.A / 255);

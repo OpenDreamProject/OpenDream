@@ -124,6 +124,10 @@ namespace DMCompiler.DM.Visitors {
             statementSpawn.Body.Visit(this);
         }
 
+        public void VisitProcStatementSleep(DMASTProcStatementSleep statementSleep) {
+            SimplifyExpression(ref statementSleep.Delay);
+        }
+
         public void VisitProcStatementGoto(DMASTProcStatementGoto statementGoto) {
 
         }

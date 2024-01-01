@@ -249,6 +249,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Locate, DMOpcodeHandlers.Locate},
             {DreamProcOpcode.IsNull, DMOpcodeHandlers.IsNull},
             {DreamProcOpcode.Spawn, DMOpcodeHandlers.Spawn},
+            {DreamProcOpcode.Sleep, DMOpcodeHandlers.Sleep},
+            {DreamProcOpcode.BackgroundSleep, DMOpcodeHandlers.BackgroundSleep},
             {DreamProcOpcode.OutputReference, DMOpcodeHandlers.OutputReference},
             {DreamProcOpcode.Output, DMOpcodeHandlers.Output},
             {DreamProcOpcode.JumpIfNullDereference, DMOpcodeHandlers.JumpIfNullDereference},

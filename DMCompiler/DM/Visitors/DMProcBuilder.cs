@@ -121,6 +121,7 @@ namespace DMCompiler.DM.Visitors {
                 case DMASTProcStatementBreak statementBreak: ProcessStatementBreak(statementBreak); break;
                 case DMASTProcStatementDel statementDel: ProcessStatementDel(statementDel); break;
                 case DMASTProcStatementSpawn statementSpawn: ProcessStatementSpawn(statementSpawn); break;
+                case DMASTProcStatementSleep statementSleep: ProcessStatementSleep(statementSleep); break;
                 case DMASTProcStatementReturn statementReturn: ProcessStatementReturn(statementReturn); break;
                 case DMASTProcStatementIf statementIf: ProcessStatementIf(statementIf); break;
                 case DMASTProcStatementFor statementFor: ProcessStatementFor(statementFor); break;
@@ -315,6 +316,21 @@ namespace DMCompiler.DM.Visitors {
             _proc.EndScope();
 
             _proc.AddLabel(afterSpawnLabel);
+        }
+
+        public void ProcessStatementSleep(DMASTProcStatementSleep statementSleep) {
+            var expr = DMExpression.Create(_dmObject, _proc, statementSleep.Delay);
+            if (expr.TryAsConstant(out var constant)) {
+                if (constant is Number constantNumber) {
+                    _proc.Sleep(constantNumber.Value);
+                    return;
+                }
+
+                constant.EmitPushValue(_dmObject, _proc);
+            } else
+                expr.EmitPushValue(_dmObject, _proc);
+
+            _proc.SleepDelayPushed();
         }
 
         public void ProcessStatementVarDeclaration(DMASTProcStatementVarDeclaration varDeclaration) {

@@ -9,7 +9,7 @@ using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class AsyncNativeProc : DreamProc {
-        public sealed class State : ProcState {
+        public sealed class State : AsyncProcState {
             public static readonly Stack<State> Pool = new();
 
             // IoC dependencies instead of proc fields because _proc can be null
@@ -52,7 +52,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             // Used to avoid reentrant resumptions in our proc
-            public void SafeResume() {
+            public override void SafeResume() {
                 if (_inResume) {
                     return;
                 }

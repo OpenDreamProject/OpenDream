@@ -78,6 +78,10 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitProcStatementSleep(DMASTProcStatementSleep statementSleep) {
+            throw new NotImplementedException();
+        }
+
         public void VisitProcStatementIf(DMASTProcStatementIf statementIf) {
             throw new NotImplementedException();
         }
@@ -917,6 +921,19 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitProcStatementSet(this);
+        }
+    }
+
+    public sealed class DMASTProcStatementSleep : DMASTProcStatement {
+        public DMASTExpression Delay;
+
+        public DMASTProcStatementSleep(Location location, DMASTExpression delay) :
+            base(location) {
+            Delay = delay;
+        }
+
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitProcStatementSleep(this);
         }
     }
 

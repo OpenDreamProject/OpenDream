@@ -459,19 +459,18 @@ namespace DMCompiler.DM {
             AddLabel($"{loopLabel}_continue");
         }
 
-        public void BackgroundSleep() {
-            // TODO This seems like a bad way to handle background, doesn't it?
+        public void SleepDelayPushed() => WriteOpcode(DreamProcOpcode.Sleep);
 
-            if ((Attributes & ProcAttributes.Background) == ProcAttributes.Background) {
-                if (!DMObjectTree.TryGetGlobalProc("sleep", out var sleepProc)) {
-                    throw new CompileErrorException(Location, "Cannot do a background sleep without a sleep proc");
-                }
-
-                PushFloat(-1); // argument given to sleep()
-                Call(DMReference.CreateGlobalProc(sleepProc.Id), DMCallArgumentsType.FromStack, 1);
-                Pop(); // Pop the result of the sleep call
+        public void Sleep(float delay) {
+            if(delay == -1.0f) // yielding
+                WriteOpcode(DreamProcOpcode.BackgroundSleep);
+            else {
+                PushFloat(delay);
+                WriteOpcode(DreamProcOpcode.Sleep);
             }
         }
+
+        public void BackgroundSleep() => WriteOpcode(DreamProcOpcode.BackgroundSleep);
 
         public void LoopJumpToStart(string loopLabel) {
             BackgroundSleep();

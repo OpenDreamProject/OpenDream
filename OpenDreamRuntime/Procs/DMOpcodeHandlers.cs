@@ -12,6 +12,8 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using Robust.Shared.Random;
+
+using DependencyAttribute = Robust.Shared.IoC.DependencyAttribute;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
 namespace OpenDreamRuntime.Procs {
@@ -167,7 +169,7 @@ namespace OpenDreamRuntime.Procs {
             var val = state.Pop();
             if (!val.TryGetValueAsType(out var objectType)) {
                 if (val.TryGetValueAsString(out var pathString)) {
-                    if (!state.Proc.ObjectTree.TryGetTreeEntry(new DreamPath(pathString), out objectType)) {
+                    if (!state.Proc.ObjectTree.TryGetTreeEntry(pathString, out objectType)) {
                         ThrowCannotCreateUnknownObject(val);
                     }
                 } else {
@@ -1711,6 +1713,83 @@ namespace OpenDreamRuntime.Procs {
             Wait();
             state.Jump(jumpTo);
             return ProcStatus.Continue;
+        }
+
+        public static ProcStatus Sleep(DMProcState state) {
+            state.Pop().TryGetValueAsFloat(out var delay);
+            return SleepCore(
+                state,
+                state.ProcScheduler.CreateDelay(delay));
+        }
+
+        public static ProcStatus BackgroundSleep(DMProcState state) => SleepCore(
+            state,
+            state.ProcScheduler.CreateDelayTicks(-1));
+
+        static ProcStatus SleepCore(DMProcState state, Task delay) {
+            if (delay.IsCompleted)
+                return ProcStatus.Continue; // fast path, skip state creation
+
+            if (!SleepState.Pool.TryPop(out var sleepState)) {
+                sleepState = new SleepState();
+            }
+
+            return sleepState.Initialize(state.Thread, state.Proc, delay);
+        }
+
+        // "proc state" we just need something to hold the delay task
+        sealed class SleepState : AsyncProcState {
+            public static readonly Stack<SleepState> Pool = new();
+
+            [Dependency] public readonly ProcScheduler ProcScheduler = null!;
+
+            DreamProc? _proc;
+            Task? _task;
+            bool inResume;
+
+            public SleepState() {
+                IoCManager.InjectDependencies(this);
+            }
+
+            public ProcStatus Initialize(DreamThread thread, DMProc proc, Task delay) {
+                Thread = thread;
+                _proc = proc;
+                _task = ProcScheduler.Schedule(this, delay);
+                thread.PushProcState(this);
+                return thread.HandleDefer();
+            }
+
+            public override void Dispose() {
+                base.Dispose();
+                Thread = null!;
+                _proc = null;
+                _task = null;
+                Pool.Push(this);
+            }
+
+            public override DreamProc? Proc => _proc;
+
+            public override void AppendStackFrame(StringBuilder builder) {
+                builder.Append("/proc/sleep");
+            }
+
+            // a sleep is always the top of a thread so it's always safe to resume
+            public override void SafeResume() => Thread.Resume();
+
+            public override ProcStatus Resume() {
+                if (_task!.IsCompleted) {
+                    // read before we get disposed when popped off
+                    var exception = _task.Exception;
+                    Thread.PopProcState();
+                    if (exception != null) {
+                        throw exception;
+                    }
+
+                    return ProcStatus.Returned;
+                }
+
+                return Thread.HandleDefer();
+            }
         }
 
         public static ProcStatus DebuggerBreakpoint(DMProcState state) {

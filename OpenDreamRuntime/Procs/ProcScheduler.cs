@@ -22,22 +22,32 @@
 namespace OpenDreamRuntime.Procs;
 
 public sealed partial class ProcScheduler {
-    private readonly HashSet<AsyncNativeProc.State> _sleeping = new();
-    private readonly Queue<AsyncNativeProc.State> _scheduled = new();
-    private AsyncNativeProc.State? _current;
+    private readonly HashSet<AsyncProcState> _sleeping = new();
+    private readonly Queue<AsyncProcState> _scheduled = new();
+    private AsyncProcState? _current;
 
     public bool HasProcsQueued => _scheduled.Count > 0 || _deferredTasks.Count > 0;
 
     public Task Schedule(AsyncNativeProc.State state, Func<AsyncNativeProc.State, Task<DreamValue>> taskFunc) {
         async Task Foo() {
             state.Result = await taskFunc(state);
-            if (!_sleeping.Remove(state))
+        }
+
+        return Schedule(
+            state,
+            Foo());
+    }
+
+    public Task Schedule(AsyncProcState state, Task asyncTask) {
+        async Task Bar() {
+            await asyncTask;
+            if(!_sleeping.Remove(state))
                 return;
 
             _scheduled.Enqueue(state);
         }
 
-        var task = Foo();
+        var task = Bar();
         if (!task.IsCompleted) // No need to schedule the proc if it's already finished
             _sleeping.Add(state);
 

@@ -100,11 +100,12 @@ namespace OpenDreamRuntime {
             if (!Initialized)
                 return;
 
+            // first process is allowed to update delays and run deferred tasks
             _procScheduler.Process(true);
             DreamThread.Run(_worldTickProc, WorldInstance, null);
-            _procScheduler.Process(false);
+            _procScheduler.Process(false); // nothing is allowed to run after /world/Tick()
 
-            UpdateStat();
+            UpdateStat(); // ... except for Stat
             _dreamMapManager.UpdateTiles();
 
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));

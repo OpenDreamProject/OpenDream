@@ -462,7 +462,7 @@ namespace DMCompiler.DM {
         public void SleepDelayPushed() => WriteOpcode(DreamProcOpcode.Sleep);
 
         public void Sleep(float delay) {
-            if(delay == -1.0f) // yielding
+            if(delay <= 0) // yielding
                 WriteOpcode(DreamProcOpcode.BackgroundSleep);
             else {
                 PushFloat(delay);

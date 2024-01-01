@@ -1069,7 +1069,7 @@ namespace DMCompiler.Compiler.DM {
                     Error("Expected a condition");
                 }
                 if (condition is DMASTAssign) {
-                    DMCompiler.Emit(WarningCode.AssignmentInConditional, Current().Location, "Assignment in conditional");
+                    DMCompiler.Emit(WarningCode.AssignmentInConditional, condition.Location, "Assignment in conditional");
                 }
                 BracketWhitespace();
                 ConsumeRightParenthesis();
@@ -1381,9 +1381,6 @@ namespace DMCompiler.Compiler.DM {
                             DMCompiler.Emit(WarningCode.BadExpression, Current().Location, "Expected an expression");
 
                         break;
-                    }
-                    if (expression is DMASTAssign) {
-                        DMCompiler.Emit(WarningCode.AssignmentInConditional, Current().Location, "Assignment in conditional");
                     }
 
                     if (Check(TokenType.DM_To)) {

@@ -31,14 +31,6 @@ public sealed class DreamObjectException : DreamObject {
         }
     }
 
-    protected override void SetVar(string varName, DreamValue value) {
-        switch (varName) {
-            case "desc": // TODO: Should this be settable?
-                break;
-            default:
-                throw new Exception($"Cannot set var \"{varName}\" on exceptions");
-        }
-    }
 
 
 }

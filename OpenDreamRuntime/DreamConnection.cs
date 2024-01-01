@@ -210,8 +210,7 @@ public sealed class DreamConnection {
                 }
 
                 return DreamValue.Null;
-            }
-            finally {
+            } finally {
                 _currentlyUpdatingStat = false;
             }
         });

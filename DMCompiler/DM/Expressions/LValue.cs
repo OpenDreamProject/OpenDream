@@ -1,6 +1,6 @@
-using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
     abstract class LValue : DMExpression {
@@ -44,9 +44,7 @@ namespace DMCompiler.DM.Expressions {
             return DMReference.Src;
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return "src";
-        }
+        public override string GetNameof() => "src";
     }
 
     // usr
@@ -104,9 +102,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return LocalVar.IsParameter ? proc.Parameters[LocalVar.Id] : proc.GetLocalVarName(LocalVar.Id);
-        }
+        public override string GetNameof() => LocalVar.Name;
     }
 
     // Identifier of field
@@ -148,6 +144,10 @@ namespace DMCompiler.DM.Expressions {
             constant = null;
             return false;
         }
+
+        public override string GetNameof() {
+            return Variable.Name;
+        }
     }
 
     // Id of global field
@@ -173,7 +173,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
+        public override string GetNameof() {
             DMVariable global = DMObjectTree.Globals[Id];
             return global.Name;
         }

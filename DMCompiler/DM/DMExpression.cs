@@ -1,10 +1,9 @@
-using System;
-using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM {
     internal abstract class DMExpression {
@@ -62,9 +61,7 @@ namespace DMCompiler.DM {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
-        public virtual string GetNameof(DMObject dmObject, DMProc proc) {
-            throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
-        }
+        public virtual string? GetNameof() => null;
 
         public virtual DreamPath? Path => null;
 

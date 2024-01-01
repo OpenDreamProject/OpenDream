@@ -1,10 +1,10 @@
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -600,7 +600,17 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushString(_expr.GetNameof(dmObject, proc));
+            if (_expr.GetNameof() is { } name) {
+                proc.PushString(name);
+            } else {
+                DMCompiler.Emit(WarningCode.HardConstContext, Location, "nameof() requires a var, proc reference, or type path");
+                proc.PushNull();
+            }
+        }
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            constant = _expr.GetNameof() is { } name ? new String(Location, name) : null;
+            return constant is not null;
         }
     }
 

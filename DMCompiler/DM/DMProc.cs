@@ -1,5 +1,7 @@
-using DMCompiler.DM.Visitors;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
+using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
@@ -7,30 +9,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
-        public class LocalVariable {
-            public readonly int Id;
-            public readonly bool IsParameter;
-            public DreamPath? Type;
+        public record LocalVariable(int Id, string Name, bool IsParameter, DreamPath? Type);
 
-            public LocalVariable(int id, bool isParameter, DreamPath? type) {
-                Id = id;
-                IsParameter = isParameter;
-                Type = type;
-            }
-        }
-
-        public sealed class LocalConstVariable : LocalVariable {
-            public readonly Expressions.Constant Value;
-
-            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
-                Value = value;
-            }
-        }
+        public sealed record LocalConstVariable(int Id, string Name, DreamPath? Type, Expressions.Constant Value)
+            : LocalVariable(Id, Name, false, Type);
 
         private struct CodeLabelReference {
             public readonly string Identifier;
@@ -227,7 +212,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
-                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type));
+                _parameters.Add(name, new LocalVariable(_parameters.Count, name, true, type));
             }
         }
 
@@ -320,7 +305,7 @@ namespace DMCompiler.DM {
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, name, false, type));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
@@ -328,7 +313,7 @@ namespace DMCompiler.DM {
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, name, type, value));
         }
 
         public LocalVariable? GetLocalVariable(string name) {

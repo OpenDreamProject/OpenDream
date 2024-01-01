@@ -29,7 +29,8 @@ public sealed class AtomGlideSystem : EntitySystem {
     public override void Initialize() {
         _spriteQuery = _entityManager.GetEntityQuery<DMISpriteComponent>();
 
-        SubscribeLocalEvent<TransformComponent, MoveEvent>(OnTransformMove);
+
+        _transformSystem.OnGlobalMoveEvent += OnTransformMove;
     }
 
     public override void Shutdown() {
@@ -77,10 +78,10 @@ public sealed class AtomGlideSystem : EntitySystem {
     /// <summary>
     /// Disables RT lerping and sets up the entity's glide
     /// </summary>
-    private void OnTransformMove(EntityUid entity, TransformComponent transform, ref MoveEvent e) {
+    private void OnTransformMove(ref MoveEvent e) {
         if (_ignoreMoveEvent || e.ParentChanged)
             return;
-        if (!_spriteQuery.TryGetComponent(entity, out var sprite) || sprite.Icon?.Appearance is null)
+        if (!_spriteQuery.TryGetComponent(e.Sender, out var sprite) || sprite.Icon?.Appearance is null)
             return;
 
         _ignoreMoveEvent = true;
@@ -88,7 +89,7 @@ public sealed class AtomGlideSystem : EntitySystem {
         // Look for any in-progress glides on this transform
         Glide? glide = null;
         foreach (var potentiallyThisTransform in _currentGlides) {
-            if (potentiallyThisTransform.Transform != transform)
+            if (potentiallyThisTransform.Transform != e.Component)
                 continue;
 
             glide = potentiallyThisTransform;
@@ -110,13 +111,13 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
 
         if (glide == null) {
-            glide = new(transform);
+            glide = new(e.Component);
             _currentGlides.Add(glide);
         }
 
         // Move the transform to our starting point
         // Also serves the function of disabling RT's lerp
-        _transformSystem.SetLocalPositionNoLerp(entity, startingFrom);
+        _transformSystem.SetLocalPositionNoLerp(e.Sender, startingFrom, e.Component);
 
         glide.EndPos = glidingTo;
         glide.MovementSpeed = CalculateMovementSpeed(sprite.Icon.Appearance.GlideSize);

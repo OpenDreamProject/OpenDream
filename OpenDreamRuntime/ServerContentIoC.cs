@@ -13,6 +13,7 @@ namespace OpenDreamRuntime {
             IoCManager.Register<DreamResourceManager>();
             IoCManager.Register<WalkManager, WalkManager>();
             IoCManager.Register<IDreamDebugManager, DreamDebugManager>();
+            IoCManager.Register<ServerInfoManager>();
 
             #if DEBUG
             IoCManager.Register<LocalHostConGroup>();

@@ -1,9 +1,9 @@
-﻿using OpenDreamShared.Dream;
+﻿using DMCompiler.Bytecode;
+using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
-using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     /// <remarks>
@@ -119,7 +119,7 @@ namespace DMCompiler.DM {
             return Parent?.GetGlobalVariableId(name);
         }
 
-        public DMVariable GetGlobalVariable(string name) {
+        public DMVariable? GetGlobalVariable(string name) {
             int? id = GetGlobalVariableId(name);
 
             return (id == null) ? null : DMObjectTree.Globals[id.Value];

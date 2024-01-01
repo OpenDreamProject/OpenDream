@@ -609,6 +609,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
             // We can remove the plane if there was nothing on it last frame
             if (plane.IconDrawActions.Count == 0 && plane.MouseMapDrawActions.Count == 0 && plane.Master == null) {
+                plane.Dispose();
                 _planes.Remove(pair.Key);
                 continue;
             }
@@ -625,6 +626,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         plane = new(renderTarget);
         _planes.Add(planeIndex, plane);
+        _sawmill.Info($"Created plane {planeIndex}");
         return plane;
     }
 

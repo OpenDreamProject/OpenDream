@@ -1,22 +1,16 @@
-﻿using OpenDreamShared.Dream;
-using Robust.Client.Graphics;
+﻿using Robust.Client.Graphics;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class DreamPlane {
-    public IRenderTexture RenderTarget => _temporaryRenderTarget ?? _mainRenderTarget;
+internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable {
+    public IRenderTexture RenderTarget => _temporaryRenderTarget ?? mainRenderTarget;
     public RendererMetaData? Master;
 
     public readonly List<Action<Vector2i>> IconDrawActions = new();
     public readonly List<Action<Vector2i>> MouseMapDrawActions = new();
 
-    private IRenderTexture _mainRenderTarget;
     private IRenderTexture? _temporaryRenderTarget;
-
-    public DreamPlane(IRenderTexture renderTarget) {
-        _mainRenderTarget = renderTarget;
-    }
 
     public void Clear() {
         Master = null;
@@ -25,13 +19,18 @@ internal sealed class DreamPlane {
         _temporaryRenderTarget = null;
     }
 
+    public void Dispose() {
+        mainRenderTarget.Dispose();
+        Clear();
+    }
+
     /// <summary>
     /// Sets this plane's main render target<br/>
     /// Persists through calls to <see cref="Clear()"/>
     /// </summary>
     public void SetMainRenderTarget(IRenderTexture renderTarget) {
-        _mainRenderTarget.Dispose();
-        _mainRenderTarget = renderTarget;
+        mainRenderTarget.Dispose();
+        mainRenderTarget = renderTarget;
     }
 
     /// <summary>
@@ -47,9 +46,9 @@ internal sealed class DreamPlane {
     /// </summary>
     public void Draw(DreamViewOverlay overlay, DrawingHandleWorld handle) {
         // Draw all icons
-        handle.RenderInRenderTarget(_mainRenderTarget, () => {
+        handle.RenderInRenderTarget(mainRenderTarget, () => {
             foreach (Action<Vector2i> iconAction in IconDrawActions)
-                iconAction(_mainRenderTarget.Size);
+                iconAction(mainRenderTarget.Size);
         }, new Color());
 
         if (_temporaryRenderTarget != null) {
@@ -57,7 +56,7 @@ internal sealed class DreamPlane {
             handle.RenderInRenderTarget(_temporaryRenderTarget, () => {
                 handle.UseShader(overlay.GetBlendAndColorShader(Master, useOverlayMode: true));
                 handle.SetTransform(overlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Vector2.Zero));
-                handle.DrawTextureRect(_mainRenderTarget.Texture, new Box2(Vector2.Zero, _mainRenderTarget.Size));
+                handle.DrawTextureRect(mainRenderTarget.Texture, new Box2(Vector2.Zero, mainRenderTarget.Size));
                 handle.SetTransform(Matrix3.Identity);
                 handle.UseShader(null);
             }, new Color());

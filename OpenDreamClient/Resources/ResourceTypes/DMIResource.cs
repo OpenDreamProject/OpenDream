@@ -1,5 +1,4 @@
 ﻿using System.IO;
-using OpenDreamClient.Input;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
@@ -14,7 +13,7 @@ namespace OpenDreamClient.Resources.ResourceTypes {
         public Vector2i IconSize;
         public DMIParser.ParsedDMIDescription Description;
 
-        private Dictionary<string, State> _states;
+        private readonly Dictionary<string, State> _states;
 
         public DMIResource(int id, byte[] data) : base(id, data) {
             if (!IsValidPNG()) throw new Exception("Attempted to create a DMI using an invalid PNG");
@@ -29,20 +28,17 @@ namespace OpenDreamClient.Resources.ResourceTypes {
             IconSize = new Vector2i(description.Width, description.Height);
             Description = description;
 
-            IClickMapManager clickMapManager = IoCManager.Resolve<IClickMapManager>();
-
             _states = new Dictionary<string, State>();
             foreach (DMIParser.ParsedDMIState parsedState in description.States.Values) {
                 State state = new State(Texture, parsedState, description.Width, description.Height);
 
                 _states.Add(parsedState.Name, state);
-                clickMapManager.CreateClickMap(state, image);
             }
         }
 
         public State? GetState(string? stateName) {
             if (stateName == null || !_states.ContainsKey(stateName))
-                return _states.TryGetValue(String.Empty, out var state) ? state : null; // Default state, if one exists
+                return _states.TryGetValue(string.Empty, out var state) ? state : null; // Default state, if one exists
 
             return _states[stateName];
         }

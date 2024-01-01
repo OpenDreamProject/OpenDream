@@ -3,6 +3,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
@@ -318,26 +319,53 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    // expression::identifier
     internal sealed class ScopeReference : LValue {
-        private readonly DMVariable? _field;
+        private readonly DMExpression _expression;
+        private readonly string _identifier;
 
-        public ScopeReference(Location location, DMVariable variable)
-            : base(location, variable.Type) {
-            _field = variable;
+        public ScopeReference(Location location, DMExpression expression, string identifier)
+            : base(location, expression.Path) {
+            _expression = expression;
+            _identifier = identifier;
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => _field.Name;
-
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_field is LValue) {
+            var type = _expression.Path.HasValue ? DMObjectTree.GetDMObject(_expression.Path.Value, false) : null;
 
+            // this is a developer error, the method that created this object should have verified that it's valid
+            if (type is null) {
+                throw new InvalidOperationException("Typeless left-hand expression is not accepted here");
+            }
+
+            DMVariable? variable = type.GetVariable(_identifier) ?? type.GetGlobalVariable(_identifier);
+            if (variable is null) {
+                throw new InvalidOperationException($"Type {_expression.Path} does not contain variable {_identifier}");
+            }
+
+            if (variable.IsGlobal) {
+                proc.PushReferenceValue(DMReference.CreateGlobal(type.GetGlobalVariableId(_identifier)!.Value));
+            } else {
+                _expression.EmitPushValue(dmObject, proc);
+                proc.PushString(_identifier);
+                proc.Initial();
             }
         }
 
-        public override DMReference EmitReference(
-            DMObject dmObject, DMProc proc, string endLabel,
-            ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-            return base.EmitReference(dmObject, proc, endLabel, shortCircuitMode);
+        public override string GetNameof() => _identifier;
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            constant = null;
+            if (!Path.HasValue || DMObjectTree.GetDMObject(Path.Value) is not { } varObject) {
+                return false;
+            }
+
+            var variable = varObject.GetVariable(_identifier);
+            if (variable is null) {
+                throw new InvalidOperationException($"Type {_expression.Path} does not contain variable {_identifier}");
+            }
+
+            return variable.Value.TryAsConstant(out constant);
         }
     }
 }

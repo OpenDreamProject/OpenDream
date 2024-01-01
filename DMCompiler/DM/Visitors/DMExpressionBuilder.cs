@@ -409,12 +409,37 @@ internal static class DMExpressionBuilder {
             expression = null;
         }
 
-        return new ScopeReference(location, variable);
-
-        int? globalId;
         switch (expression) {
+            case { Path: { } path }: {
+                var definition = DMObjectTree.GetDMObject(path, false);
+                if (definition != null) {
+                    var globalId = definition.GetGlobalVariableId(name);
+                    if (globalId != null) {
+                        return new GlobalField(location,
+                            DMObjectTree.Globals[globalId.Value].Type,
+                            globalId.Value);
+                    }
+
+                    return new ScopeReference(location, expression, name);
+
+                    // switch (expression) {
+                    //     case Dereference or Field:
+                    //         return new ScopeReference(location, expression, name);
+                    //     case ConstantPath or ProcOwnerType when definition.GetVariable(name) is { } variable: {
+                    //         return variable.Value.TryAsConstant(out var constant)
+                    //             ? constant
+                    //             : new Initial(location, new Field(location, variable, definition));
+                    //     }
+                    // }
+                }
+
+                break;
+            }
+            case Constant:
+                // yes, you can do <literal>::variable and it compiles and returns null. BYOND is a magical thing
+                return new Null(location);
             case null: {
-                globalId = dmObject.GetGlobalVariableId(name);
+                var globalId = DMObjectTree.Root.GetGlobalVariableId(name);
                 if (globalId != null) {
                     return new GlobalField(location,
                         DMObjectTree.Globals[globalId.Value].Type,
@@ -427,33 +452,6 @@ internal static class DMExpressionBuilder {
 
                 break;
             }
-            case { Path: { } path }: {
-                var definition = DMObjectTree.GetDMObject(path, false);
-                if (definition != null) {
-                    globalId = definition.GetGlobalVariableId(name);
-                    if (globalId != null) {
-                        return new GlobalField(location,
-                            DMObjectTree.Globals[globalId.Value].Type,
-                            globalId.Value);
-                    }
-
-                    switch (expression) {
-                        case Dereference or Field:
-                            return new ScopeReference(location, expression.);
-                            return new Initial(location, expression);
-                        case ConstantPath or ProcOwnerType when definition.GetVariable(name) is { } variable: {
-                            return variable.Value.TryAsConstant(out var constant)
-                                ? constant
-                                : new Initial(location, new Field(location, variable, definition));
-                        }
-                    }
-                }
-
-                break;
-            }
-            default:
-                // yes, you can do <literal>::variable and it compiles and returns null. BYOND is a magical thing
-                return new Null(location);
         }
 
         throw new UnknownIdentifierException(location, name);

@@ -1065,7 +1065,12 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 BracketWhitespace();
                 DMASTExpression? condition = Expression();
-                if (condition == null) Error("Expected a condition");
+                if (condition == null) {
+                    Error("Expected a condition");
+                }
+                if (condition is DMASTAssign) {
+                    DMCompiler.Emit(WarningCode.AssignmentInConditional, condition.Location, "Assignment in conditional");
+                }
                 BracketWhitespace();
                 ConsumeRightParenthesis();
                 Whitespace();

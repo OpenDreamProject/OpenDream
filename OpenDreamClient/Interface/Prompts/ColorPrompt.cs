@@ -14,12 +14,10 @@ internal sealed class ColorPrompt : InputWindow {
     private readonly ColorSelectorSliders _colorSelector;
     private readonly LineEdit _hexColor;
     private readonly Button _preview;
-    private readonly bool _nullable;
     private readonly Color _originalColor;
 
     public ColorPrompt(string title, string message, string defaultValue, bool canCancel,
-        Action<DMValueType, object?>? onClose, bool alpha = false) : base(title, message, true, onClose) {
-        _nullable = canCancel;
+        Action<DMValueType, object?>? onClose, bool alpha = false) : base(title, message, canCancel, onClose) {
         _originalColor = Color.FromHex(defaultValue, Color.White);
         _colorSelector = new() {
             Color = _originalColor,
@@ -77,15 +75,8 @@ internal sealed class ColorPrompt : InputWindow {
         }
     }
 
-    protected override void ButtonClicked(string button) {
-        if (button == "Ok") {
-            FinishPrompt(DMValueType.Color, _colorSelector.Color);
-        } else if (!_nullable) {
-            FinishPrompt(DMValueType.Color, _originalColor);
-        } else {
-            FinishPrompt(DMValueType.Null, null);
-        }
-        Close();
+    protected override void OkButtonClicked() {
+        FinishPrompt(DMValueType.Color, _colorSelector.Color);
     }
 }
 

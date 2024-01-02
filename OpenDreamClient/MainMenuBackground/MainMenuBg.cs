@@ -21,9 +21,8 @@ public class MainMenuBg : Control {
         var texSize = new Vector2(tex.Size.X * (int) Size.X, tex.Size.Y * (int) Size.X) * 3 / tex.Size.Length;
 
         var ourSize = PixelSize;
-        var currentTime = (float) _timing.RealTime.TotalSeconds;
-        var offset =  new Vector2(-MathF.Cos(currentTime * 0.4f), MathF.Sin(currentTime * 0.4f)) * (ourSize * 0.5f);
-
+        var currentTime = (float) _timing.RealTime.TotalSeconds * 0.5f;
+        var offset = new Vector2(-MathF.Cos(currentTime * 0.4f), MathF.Sin(currentTime * 0.4f)) * (ourSize * 0.5f);
         var origin = ((ourSize - texSize) / 2) + offset;
 
         // blur it "slightly"

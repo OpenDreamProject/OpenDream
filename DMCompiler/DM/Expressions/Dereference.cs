@@ -227,7 +227,7 @@ namespace DMCompiler.DM.Expressions {
             switch (operation) {
                 case FieldOperation fieldOperation:
                     if (prevPath is not null) {
-                        var obj = DMObjectTree.GetDMObject(prevPath.GetValueOrDefault());
+                        var obj = DMObjectTree.GetDMObject(prevPath.Value);
                         var variable = obj!.GetVariable(fieldOperation.Identifier);
                         if (variable != null) {
                             if (variable.IsConst)

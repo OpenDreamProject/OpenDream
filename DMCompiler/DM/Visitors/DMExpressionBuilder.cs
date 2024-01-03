@@ -583,7 +583,8 @@ internal static class DMExpressionBuilder {
                             }
 
                             if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
-                                DMCompiler.UnimplementedWarning(deref.Location, $"{prevPath}.{field} is not implemented and will have unexpected behavior");
+                                DMCompiler.UnimplementedWarning(deref.Location,
+                                    $"{prevPath}.{field} is not implemented and will have unexpected behavior");
                             }
 
                             operations = new Dereference.Operation[newOperationCount];
@@ -592,6 +593,10 @@ internal static class DMExpressionBuilder {
                             prevPath = property.Type;
                             pathIsFuzzy = prevPath == null;
                             continue;
+                        }
+
+                        if (property == null) {
+                            throw new UnknownIdentifierException(deref.Location, field);
                         }
                     }
 
@@ -628,11 +633,15 @@ internal static class DMExpressionBuilder {
 
                         DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
                         if (fromObject == null) {
-                            throw new CompileErrorException(deref.Location, $"Type {prevPath.Value} does not exist");
+                            DMCompiler.Emit(WarningCode.ItemDoesntExist, callOperation.Location,
+                                $"Type {prevPath.Value} does not exist");
+                            return new Null(deref.Location);
                         }
 
                         if (!fromObject.HasProc(field)) {
-                            throw new CompileErrorException(deref.Location, $"Type {prevPath.Value} does not have a proc named \"{field}\"");
+                            DMCompiler.Emit(WarningCode.ItemDoesntExist, callOperation.Location,
+                                $"Type {prevPath.Value} does not have a proc named \"{field}\"");
+                            return new Null(deref.Location);
                         }
                     }
 

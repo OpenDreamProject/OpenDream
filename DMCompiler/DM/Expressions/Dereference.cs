@@ -89,7 +89,7 @@ namespace DMCompiler.DM.Expressions {
                     break;
 
                 default:
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException("Unimplemented dereference operation");
             }
         }
 
@@ -134,10 +134,12 @@ namespace DMCompiler.DM.Expressions {
                     return DMReference.ListIndex;
 
                 case CallOperation:
-                    throw new CompileErrorException(Location, "Expected field or index as reference, got proc call result");
+                    DMCompiler.Emit(WarningCode.BadExpression, Location,
+                        "Expected field or index as reference, got proc call result");
+                    return default;
 
                 default:
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException("Unimplemented dereference operation");
             }
         }
 
@@ -171,10 +173,12 @@ namespace DMCompiler.DM.Expressions {
                     break;
 
                 case CallOperation:
-                    throw new CompileErrorException(Location, "Expected field or index for initial(), got proc call");
+                    DMCompiler.Emit(WarningCode.BadExpression, Location,
+                        "Expected field or index for initial(), got proc call result");
+                    break;
 
                 default:
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException("Unimplemented dereference operation");
             }
 
             proc.AddLabel(endLabel);
@@ -210,10 +214,12 @@ namespace DMCompiler.DM.Expressions {
                     break;
 
                 case CallOperation:
-                    throw new CompileErrorException(Location, "Expected field or index for issaved(), got proc call");
+                    DMCompiler.Emit(WarningCode.BadExpression, Location,
+                        "Expected field or index for issaved(), got proc call result");
+                    break;
 
                 default:
-                    throw new NotImplementedException();
+                    throw new InvalidOperationException("Unimplemented dereference operation");
             }
 
             proc.AddLabel(endLabel);

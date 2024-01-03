@@ -136,16 +136,9 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
             return false;
 
         var atom = underMouse.Value.Atom;
-        var iconPos = underMouse.Value.IconPosition;
+        var clickParams = CreateClickParams(viewport, args, underMouse.Value.IconPosition);
 
-        if (atom.AtomType == AtomReference.RefType.Turf) { // Left-clicked a turf
-            ClickParams clickParams = CreateClickParams(viewport, args, iconPos);
-
-            _selectedEntity = new(atom, args.PointerLocation, clickParams);
-            return true;
-        }
-
-        _selectedEntity = new(atom, args.PointerLocation, CreateClickParams(viewport, args, iconPos));
+        _selectedEntity = new(atom, args.PointerLocation, clickParams);
         return true;
     }
 

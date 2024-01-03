@@ -522,7 +522,7 @@ internal static class DMExpressionBuilder {
                         pathIsFuzzy = false;
                         break;
                     default:
-                        throw new NotImplementedException($"Missing implementation for {namedOperation}");
+                        throw new ArgumentOutOfRangeException($"Missing implementation for {namedOperation}");
                 }
 
                 var newOperationCount = operations.Length - 1;

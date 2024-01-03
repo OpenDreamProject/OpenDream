@@ -2215,15 +2215,13 @@ namespace DMCompiler.Compiler.DM {
                     Token token = Current();
 
                     // Check for a valid deref operation token
-                    {
-                        if (!Check(DereferenceTypes)) {
-                            Whitespace();
+                    if (!Check(DereferenceTypes)) {
+                        Whitespace();
 
-                            token = Current();
+                        token = Current();
 
-                            if (!Check(WhitespacedDereferenceTypes)) {
-                                break;
-                            }
+                        if (!Check(WhitespacedDereferenceTypes)) {
+                            break;
                         }
                     }
 
@@ -2261,7 +2259,12 @@ namespace DMCompiler.Compiler.DM {
                         case TokenType.DM_QuestionPeriod:
                         case TokenType.DM_Colon:
                         case TokenType.DM_QuestionColon: {
-                            DMASTIdentifier identifier = Identifier();
+                            var identifier = Identifier();
+
+                            if (identifier == null) {
+                                DMCompiler.Emit(WarningCode.BadToken, token.Location, "Identifier expected");
+                                return new DMASTConstantNull(token.Location);
+                            }
 
                             operation = new DMASTDereference.FieldOperation {
                                 Location = identifier.Location,
@@ -2277,7 +2280,13 @@ namespace DMCompiler.Compiler.DM {
                             ternaryBHasPriority = true;
 
                             Whitespace();
-                            DMASTExpression index = Expression();
+                            var index = Expression();
+
+                            if (index == null) {
+                                DMCompiler.Emit(WarningCode.BadToken, token.Location, "Expression expected");
+                                return new DMASTConstantNull(token.Location);
+                            }
+
                             ConsumeRightBracket();
 
                             operation = new DMASTDereference.IndexOperation {
@@ -2296,7 +2305,7 @@ namespace DMCompiler.Compiler.DM {
                     if (allowCalls) {
                         Whitespace();
 
-                        DMASTCallParameter[] parameters = ProcCall();
+                        var parameters = ProcCall();
 
                         if (parameters != null) {
                             ternaryBHasPriority = true;
@@ -2313,8 +2322,8 @@ namespace DMCompiler.Compiler.DM {
                                     break;
 
                                 case DMASTDereference.IndexOperation:
-                                    Error("attempt to call an invalid l-value");
-                                    return null;
+                                    DMCompiler.Emit(WarningCode.BadToken, token.Location, "Attempt to call an invalid l-value");
+                                    return new DMASTConstantNull(token.Location);
 
                                 default:
                                     throw new InvalidOperationException("unhandled dereference operation kind");
@@ -2335,7 +2344,7 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMASTExpression ParseProcCall(DMASTExpression expression) {
+        private DMASTExpression? ParseProcCall(DMASTExpression? expression) {
             if (expression is not (DMASTCallable or DMASTIdentifier or DMASTGlobalIdentifier)) return expression;
 
             Whitespace();

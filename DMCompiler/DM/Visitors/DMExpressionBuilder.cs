@@ -480,81 +480,62 @@ internal static class DMExpressionBuilder {
         var operations = new Dereference.Operation[deref.Operations.Length];
         int astOperationOffset = 0;
 
-        static bool IsFuzzy(DMExpression expr) {
-            switch (expr) {
-                case Dereference when expr.Path == null:
-                case ProcCall when expr.Path == null:
-                case New when expr.Path == null:
-                case List:
-                case Ternary:
-                case BinaryAnd:
-                case IsNull:
-                case Length:
-                case GetStep:
-                case GetDir:
-                    return true;
-                default: return false;
-            }
-        }
-
         // Path of the previous operation that was iterated over (starting as the base expression)
         DreamPath? prevPath = expr.Path;
-        bool pathIsFuzzy = IsFuzzy(expr);
+        var pathIsFuzzy = expr.PathIsFuzzy;
 
         // Special behaviour for `global.x`, `global.vars`, and `global.f()`
         if (expr is Global) {
             DMASTDereference.Operation firstOperation = astOperations[0];
 
-            switch (firstOperation)
-            {
-                case DMASTDereference.NamedOperation namedOperation:
-                {
-                    prevPath = null;
-                    pathIsFuzzy = true;
+            if (firstOperation is DMASTDereference.NamedOperation namedOperation) {
+                prevPath = null;
+                pathIsFuzzy = true;
 
-                    switch (namedOperation)
-                    {
-                        // `global.f()`
-                        case DMASTDereference.CallOperation callOperation:
-                            ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc, callOperation.Parameters);
+                switch (namedOperation) {
+                    // global.f()
+                    case DMASTDereference.CallOperation callOperation:
+                        ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc,
+                            callOperation.Parameters);
 
-                            var globalProc = new GlobalProc(expr.Location, callOperation.Identifier);
-                            expr = new ProcCall(expr.Location, globalProc, argumentList);
+                        var globalProc = new GlobalProc(expr.Location, callOperation.Identifier);
+                        expr = new ProcCall(expr.Location, globalProc, argumentList);
+                        break;
+
+                    case DMASTDereference.FieldOperation:
+                        // global.vars
+                        if (namedOperation is { Identifier: "vars" }) {
+                            expr = new GlobalVars(expr.Location);
                             break;
+                        }
 
-                        case DMASTDereference.FieldOperation:
-                            // `global.vars`
-                            if (namedOperation is { Identifier: "vars" }) {
-                                expr = new GlobalVars(expr.Location);
-                                break;
-                            }
-                            // global.variable
-                            var globalId = dmObject.GetGlobalVariableId(namedOperation.Identifier);
-                            if (globalId == null) {
-                                throw new UnknownIdentifierException(deref.Location, $"global.{namedOperation.Identifier}");
-                            }
+                        // global.variable
+                        var globalId = dmObject.GetGlobalVariableId(namedOperation.Identifier);
+                        if (globalId == null) {
+                            throw new UnknownIdentifierException(deref.Location, $"global.{namedOperation.Identifier}");
+                        }
 
-                            var property = DMObjectTree.Globals[globalId.Value];
-                            expr = new GlobalField(expr.Location, property.Type, globalId.Value);
+                        var property = DMObjectTree.Globals[globalId.Value];
+                        expr = new GlobalField(expr.Location, property.Type, globalId.Value);
 
-                            prevPath = property.Type;
-                            pathIsFuzzy = false;
-                            break;
-                        default:
-                            goto default;
-                    }
-
-                    var newOperationCount = operations.Length - 1;
-                    if (newOperationCount == 0) {
-                        return  expr;
-                    }
-
-                    operations = new Dereference.Operation[newOperationCount];
-                    astOperationOffset = 1;
-                    break;
+                        prevPath = property.Type;
+                        pathIsFuzzy = false;
+                        break;
+                    default:
+                        throw new NotImplementedException($"Missing implementation for {namedOperation}");
                 }
-                default:
-                    throw new CompileErrorException(deref.Location, $"Invalid dereference operation performed on `global`");
+
+                var newOperationCount = operations.Length - 1;
+                if (newOperationCount == 0) {
+                    return expr;
+                }
+
+                operations = new Dereference.Operation[newOperationCount];
+                astOperationOffset = 1;
+            } else {
+                DMCompiler.Emit(WarningCode.BadExpression, firstOperation.Location,
+                    "Invalid dereference operation performed on global");
+                expr = new Null(firstOperation.Location);
             }
         }
 
@@ -576,7 +557,9 @@ internal static class DMExpressionBuilder {
 
                         DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
                         if (fromObject == null) {
-                            throw new CompileErrorException(deref.Location, $"Type {prevPath.Value} does not exist");
+                            DMCompiler.Emit(WarningCode.ItemDoesntExist, fieldOperation.Location,
+                                $"Type {prevPath.Value} does not exist");
+                            return new Null(deref.Location);
                         }
 
                         property = fromObject.GetVariable(field);
@@ -672,7 +655,6 @@ internal static class DMExpressionBuilder {
         }
 
         // The final value in prevPath is our expression's path!
-
         return new Dereference(deref.Location, prevPath, expr, operations);
     }
 

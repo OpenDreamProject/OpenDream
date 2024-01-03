@@ -13,7 +13,7 @@ namespace DMCompiler.DM.Expressions {
     internal class Dereference : LValue {
         public abstract class Operation {
             public required bool Safe { get; init; }
-            public DreamPath? Path { get; set; }
+            public DreamPath? Path { get; init; }
         }
 
         public abstract class NamedOperation : Operation {

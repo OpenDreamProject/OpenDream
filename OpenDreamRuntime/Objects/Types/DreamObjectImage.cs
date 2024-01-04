@@ -1,5 +1,7 @@
 ﻿using OpenDreamRuntime.Procs;
+using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using Robust.Shared.Map;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -9,6 +11,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
+    private EntityUid _entity = EntityUid.Invalid;
 
     /// <summary>
     /// All the args in /image/New() after "icon" and "loc", in their correct order
@@ -100,6 +103,10 @@ public sealed class DreamObjectImage : DreamObject {
                 newAppearance.Direction = Appearance!.Direction;
 
                 Appearance = newAppearance;
+                if(_entity != EntityUid.Invalid) {
+                    DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
+                    sprite.SetAppearance(Appearance!);
+                }
                 break;
             case "loc":
                 value.TryGetValueAsDreamObject(out _loc);
@@ -178,6 +185,10 @@ public sealed class DreamObjectImage : DreamObject {
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
                     AtomManager.SetAppearanceVar(Appearance!, varName, value);
+                    if(_entity != EntityUid.Invalid) {
+                        DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
+                        sprite.SetAppearance(Appearance!);
+                    }
                     break;
                 }
 
@@ -188,5 +199,25 @@ public sealed class DreamObjectImage : DreamObject {
 
     public DreamObject? GetAttachedLoc(){
         return this._loc;
+    }
+
+    /// <summary>
+    /// Get or create the entity associated with this image. Used for putting this image in the world ie, with vis_contents
+    /// The associated entity is deleted when the image is.
+    /// </summary>
+    public EntityUid GetEntity() {
+        if(_entity == EntityUid.Invalid) {
+            _entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
+            DMISpriteComponent sprite = EntityManager.AddComponent<DMISpriteComponent>(_entity);
+            sprite.SetAppearance(Appearance!);
+        }
+        return _entity;
+    }
+
+    protected override void HandleDeletion() {
+        if(_entity != EntityUid.Invalid) {
+            EntityManager.DeleteEntity(_entity);
+        }
+        base.HandleDeletion();
     }
 }

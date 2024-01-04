@@ -476,8 +476,11 @@ internal sealed class DreamViewOverlay : Overlay {
         Action<Vector2i>? mouseMapDrawAction;
 
         //setup the MouseMapLookup shader for use in DrawIcon()
-        byte[] rgba = BitConverter.GetBytes(iconMetaData.GetHashCode());
-        Color targetColor = new Color(rgba[0], rgba[1], rgba[2]); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
+        int hash = iconMetaData.GetHashCode();
+        var colorR = (byte)(hash & 0xFF);
+        var colorG = (byte)((hash >> 8) & 0xFF);
+        var colorB = (byte)((hash >> 16) & 0xFF);
+        Color targetColor = new Color(colorR, colorG, colorB); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
         MouseMapLookup[targetColor] = iconMetaData;
 
         //go fast when the only filter is color, and we don't have more color things to consider

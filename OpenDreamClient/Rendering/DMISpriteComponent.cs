@@ -5,16 +5,10 @@ namespace OpenDreamClient.Rendering;
 
 [RegisterComponent]
 internal sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
-    [ViewVariables] public DreamIcon Icon { get; set; } = new DreamIcon();
+    [ViewVariables] public DreamIcon Icon { get; set; }
     [ViewVariables] public ScreenLocation? ScreenLocation { get; set; }
 
     [Dependency] private readonly IEntityManager _entityManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemMan = default!;
-    private EntityLookupSystem? _lookupSystem;
-
-    public DMISpriteComponent() {
-        Icon.SizeChanged += OnIconSizeChanged;
-    }
 
     public bool IsVisible(bool checkWorld = true, int seeInvis = 0) {
         if (Icon.Appearance?.Invisibility > seeInvis) return false;
@@ -30,11 +24,5 @@ internal sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
         }
 
         return true;
-    }
-
-    private void OnIconSizeChanged() {
-        _entityManager.TryGetComponent<TransformComponent>(Owner, out var transform);
-        _lookupSystem ??= _entitySystemMan.GetEntitySystem<EntityLookupSystem>();
-        _lookupSystem?.FindAndAddToEntityTree(Owner, xform: transform);
     }
 }

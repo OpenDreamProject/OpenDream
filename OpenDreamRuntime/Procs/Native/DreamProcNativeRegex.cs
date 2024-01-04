@@ -96,8 +96,10 @@ namespace OpenDreamRuntime.Procs.Native {
                     currentHaystack = regex.Regex.Replace(currentHaystack, replacement, 1, currentStart);
                     currentStart = match.Index + Math.Max(replacement.Length, 1);
 
-                    if (!regex.IsGlobal)
+                    if (!regex.IsGlobal){
+                        regex.SetVariable("next", new DreamValue(currentStart + 1));
                         break;
+                    }
                 }
 
                 var replaced = currentHaystack;
@@ -108,6 +110,12 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             DreamValue DoTextReplace(string replacement) {
+                if(!regex.IsGlobal) {
+                    var match = regex.Regex.Match(haystackString, Math.Clamp(start - 1, 0, haystackSubstring.Length));
+                    if (!match.Success) return new DreamValue(haystackString);
+                    regexInstance.SetVariable("next", new DreamValue(match.Index + Math.Max(replacement.Length, 1)));
+                }
+
                 string replaced = regex.Regex.Replace(haystackSubstring, replacement, regex.IsGlobal ? -1 : 1,
                     Math.Clamp(start - 1, 0, haystackSubstring.Length));
 

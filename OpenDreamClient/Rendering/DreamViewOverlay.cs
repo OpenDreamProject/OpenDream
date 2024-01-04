@@ -363,8 +363,6 @@ internal sealed class DreamViewOverlay : Overlay {
             } else {
                 result = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
             }
-
-            _renderTargetCache[size] = listResult; //put the shorter list back
         }
 
         return result;
@@ -375,7 +373,6 @@ internal sealed class DreamViewOverlay : Overlay {
             storeList = new List<IRenderTexture>(4);
 
         storeList.Add(rental);
-        _renderTargetCache[rental.Size] = storeList;
     }
 
     private void ClearRenderTarget(IRenderTexture target, DrawingHandleWorld handle, Color clearColor) {

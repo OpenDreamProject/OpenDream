@@ -53,28 +53,50 @@ public sealed partial class ProcScheduler {
         }
 
         var tcs = new TaskCompletionSource();
-        _tickers.Add(new DelayTicker(tcs) { TicksLeft = ticks + 1 }); // Add 1 because it'll get decreased at the end of this tick
+
+        InsertTask(new DelayTicker(tcs) { TicksAt = _gameTiming.CurTick.Value + (uint)ticks }); //safe cast because ticks is always positive here
         return tcs.Task;
     }
 
-    private void UpdateDelays() {
-        // TODO: This is O(n) every tick for the amount of delays we have.
-        // It may be possible to optimize this.
-        for (var i = 0; i < _tickers.Count; i++) {
-            var ticker = _tickers[i];
-            ticker.TicksLeft -= 1;
-            if (ticker.TicksLeft != 0)
-                continue;
 
-            ticker.TaskCompletionSource.TrySetResult();
-            _tickers.RemoveSwap(i);
-            i -= 1;
+    /// <summary>
+    /// binary insertion of a ticker into the list to maintain sorted order
+    /// </summary>
+    /// <param name="ticker"></param>
+    private void InsertTask(DelayTicker ticker) {
+        int left = 0;
+        int right = _tickers.Count - 1;
+
+        while (left <= right) {
+            int mid = left + (right - left)/2;
+            if (_tickers[mid].TicksAt <= ticker.TicksAt)
+                left = mid + 1;
+            else
+                right = mid - 1;
         }
+
+        _tickers.EnsureCapacity(_tickers.Count + 1);
+        _tickers.Insert(left, ticker);
+    }
+
+
+    private void UpdateDelays() {
+        var i = 0;
+        while(i < _tickers.Count) {
+            var ticker = _tickers[i];
+            if(ticker.TicksAt > _gameTiming.CurTick.Value)
+                break; //list is sorted, so if we hit a ticker that isn't ready, we can stop
+            ticker.TaskCompletionSource.TrySetResult();
+            i++;
+        }
+        //remove the ones we processed
+        while(i > 0)
+            _tickers.RemoveAt(--i);
     }
 
     private sealed class DelayTicker {
         public readonly TaskCompletionSource TaskCompletionSource;
-        public int TicksLeft;
+        public uint TicksAt;
 
         public DelayTicker(TaskCompletionSource taskCompletionSource) {
             TaskCompletionSource = taskCompletionSource;

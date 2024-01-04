@@ -37,14 +37,6 @@
 	New()
 		..()
 		loc = locate(5, 5, 1)
-		var/image/i = image(icon = 'icons/hanoi.dmi', icon_state="8")
-		src.vis_contents += i
-		spawn(50)
-			src << "changing image"
-			i.icon_state = "1"
-		spawn(100)
-			src << "removing image"
-			src.vis_contents.Cut()
 
 	Login()
 		world.log << "login ran"

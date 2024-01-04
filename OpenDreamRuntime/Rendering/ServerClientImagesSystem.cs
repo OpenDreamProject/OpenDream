@@ -24,8 +24,8 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
         NetEntity ent = GetNetEntity(locEntity);
         EntityUid imageObjectEntity = imageObject.GetEntity();
         NetEntity imageObjectNetEntity = GetNetEntity(imageObjectEntity);
-        if (imageObjectNetEntity != NetEntity.Invalid)
-            _pvsOverrideSystem.AddGlobalOverride(imageObjectNetEntity);
+        if (imageObjectEntity != EntityUid.Invalid)
+            _pvsOverrideSystem.AddSessionOverride(imageObjectEntity, connection.Session!);
         RaiseNetworkEvent(new AddClientImageEvent(ent, turfCoords, imageObjectNetEntity), connection.Session!.Channel);
     }
 
@@ -44,6 +44,9 @@ public sealed class ServerClientImagesSystem : SharedClientImagesSystem {
 
 
         NetEntity ent = GetNetEntity(locEntity);
+        EntityUid imageObjectEntity = imageObject.GetEntity();
+        if (imageObjectEntity != EntityUid.Invalid)
+            _pvsOverrideSystem.RemoveSessionOverride(imageObjectEntity, connection.Session!);
         NetEntity imageObjectNetEntity = GetNetEntity(imageObject.GetEntity());
         RaiseNetworkEvent(new RemoveClientImageEvent(ent, turfCoords, imageObjectNetEntity), connection.Session!.Channel);
     }

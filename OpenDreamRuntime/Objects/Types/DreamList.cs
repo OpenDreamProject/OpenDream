@@ -696,7 +696,7 @@ public sealed class DreamVisContentsList : DreamList {
     [Dependency] private IEntityManager _entityManager = default!;
     private readonly PvsOverrideSystem? _pvsOverrideSystem;
 
-    private readonly List<DreamObject> _visContents = new();
+    private readonly List<DreamObjectAtom> _visContents = new();
     private readonly DreamObject _atom;
 
     public DreamVisContentsList(DreamObjectDefinition listDef, PvsOverrideSystem? pvsOverrideSystem, DreamObject atom) : base(listDef, 0) {
@@ -747,9 +747,6 @@ public sealed class DreamVisContentsList : DreamList {
         } else if (value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf)) {
             _visContents.Add(turf);
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
-        } else if(value.TryGetValueAsDreamObject<DreamObjectImage>(out var image)) {
-            _visContents.Add(image);
-            entity = image.GetEntity();
         } else {
             throw new Exception($"Cannot add {value} to a vis_contents list");
         }

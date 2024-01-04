@@ -6,7 +6,6 @@ using Robust.Shared.Map;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectImage : DreamObject {
-
     public IconAppearance? Appearance;
 
     private DreamObject? _loc;

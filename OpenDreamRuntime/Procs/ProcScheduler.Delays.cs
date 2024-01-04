@@ -78,8 +78,9 @@ public sealed partial class ProcScheduler {
             _tickers.RemoveAt(--i);
     }
 
-    private sealed class DelayTicker : IComparable{
+    private sealed class DelayTicker : IComparable<DelayTicker>{
         public readonly TaskCompletionSource TaskCompletionSource;
+
         public uint TicksAt;
 
         public int CompareTo(DelayTicker other){

@@ -215,6 +215,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             prompt = new NumberPrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
         } else if ((pPrompt.Types & DMValueType.Message) == DMValueType.Message) {
             prompt = new MessagePrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
+        } else if ((pPrompt.Types & DMValueType.Color) == DMValueType.Color) {
+            prompt = new ColorPrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
         }
 
         if (prompt != null) {
@@ -368,7 +370,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             } else if (_popupWindows.TryGetValue(windowId, out var popup)) {
                 window = popup.WindowElement;
             } else if (Menus.TryGetValue(windowId, out var menu)) {
-                if(menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
                     return menuElement;
             }
 
@@ -426,45 +428,45 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
-    public void RunCommand(string command){
+    public void RunCommand(string command) {
         switch (command) {
-                case string x when x.StartsWith(".quit"):
-                    IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
-                    break;
+            case string x when x.StartsWith(".quit"):
+                IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                break;
 
-                case string x when x.StartsWith(".screenshot"):
-                    string[] split = command.Split(" ");
-                    SaveScreenshot(split.Length == 1 || split[1] != "auto");
-                    break;
+            case string x when x.StartsWith(".screenshot"):
+                string[] split = command.Split(" ");
+                SaveScreenshot(split.Length == 1 || split[1] != "auto");
+                break;
 
-                case string x when x.StartsWith(".configure"):
-                    _sawmill.Warning(".configure command is not implemented");
-                    break;
+            case string x when x.StartsWith(".configure"):
+                _sawmill.Warning(".configure command is not implemented");
+                break;
 
-                case string x when x.StartsWith(".winset"):
-                    // Everything after .winset, excluding the space and quotes
-                    string winsetParams = command.Substring(7); //clip .winset
-                    winsetParams = winsetParams.Trim(); //clip space
-                    winsetParams = winsetParams.Trim('\"'); //clip quotes
+            case string x when x.StartsWith(".winset"):
+                // Everything after .winset, excluding the space and quotes
+                string winsetParams = command.Substring(7); //clip .winset
+                winsetParams = winsetParams.Trim(); //clip space
+                winsetParams = winsetParams.Trim('\"'); //clip quotes
 
-                    WinSet(null, winsetParams);
-                    break;
+                WinSet(null, winsetParams);
+                break;
 
-                default: {
-                    // Send the entire command to the server.
-                    // It has more info about argument types so it can parse it better than we can.
-                    _netManager.ClientSendMessage(new MsgCommand(){Command = command});
-                    break;
-                }
+            default: {
+                // Send the entire command to the server.
+                // It has more info about argument types so it can parse it better than we can.
+                _netManager.ClientSendMessage(new MsgCommand() { Command = command });
+                break;
             }
+        }
     }
 
     public void StartRepeatingCommand(string command) {
-        _netManager.ClientSendMessage(new MsgCommandRepeatStart(){Command = command});
+        _netManager.ClientSendMessage(new MsgCommandRepeatStart() { Command = command });
     }
 
     public void StopRepeatingCommand(string command) {
-        _netManager.ClientSendMessage(new MsgCommandRepeatStop(){Command = command});
+        _netManager.ClientSendMessage(new MsgCommandRepeatStop() { Command = command });
     }
 
     public void WinSet(string? controlId, string winsetParams) {
@@ -615,7 +617,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         // that name already, we will create a new control of that type from scratch.
         if (elementDescriptor == null) {
             switch (controlId) {
-                case "window" :
+                case "window":
                     elementDescriptor = new WindowDescriptor(cloneId);
                     break;
                 case "menu":
@@ -636,7 +638,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
 
         LoadDescriptor(elementDescriptor);
-        if(elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)){
+        if (elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)) {
             window.CreateChildControls();
         }
     }

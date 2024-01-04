@@ -21,14 +21,11 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;
+        [Dependency] private readonly ServerInfoManager _serverInfoManager = default!;
 
         private DreamCommandSystem? _commandSystem;
 
         public override void Init() {
-            IoCManager.Resolve<IStatusHost>().SetMagicAczProvider(new DefaultMagicAczProvider(
-                new DefaultMagicAczInfo("Content.Client", new[] {"OpenDreamClient", "OpenDreamShared"}),
-                IoCManager.Resolve<IDependencyCollection>()));
-
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 
@@ -55,6 +52,8 @@ namespace OpenDreamRuntime {
                     }
 
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
+
+            _serverInfoManager.Initialize();
         }
 
         public override void PostInit() {

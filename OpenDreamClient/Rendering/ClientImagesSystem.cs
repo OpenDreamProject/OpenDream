@@ -57,16 +57,14 @@ internal sealed class ClientImagesSystem : SharedClientImagesSystem {
             iconList.Remove(e.ImageEntity);
             if(iconList.Count == 0)
                 _turfClientImages.Remove(e.TurfCoords);
-            else
-                _turfClientImages[e.TurfCoords] = iconList;
+
         } else {
             if(!_amClientImages.TryGetValue(ent, out var iconList))
                 return;
             iconList.Remove(e.ImageEntity);
             if(iconList.Count == 0)
                 _amClientImages.Remove(ent);
-            else
-                _amClientImages[ent] = iconList;
+
         }
     }
 }

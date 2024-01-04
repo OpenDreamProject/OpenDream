@@ -9,7 +9,7 @@ namespace OpenDreamRuntime.Procs;
 public sealed partial class ProcScheduler {
     [Dependency] private readonly IGameTiming _gameTiming = default!;
 
-    private SortedList<uint, DelayTicker> _tickers = new();
+    private SortedList<DelayTicker, uint> _tickers = new();
 
     // This is for deferred tasks that need to fire in the current tick.
     private readonly Queue<TaskCompletionSource> _deferredTasks = new();
@@ -54,7 +54,7 @@ public sealed partial class ProcScheduler {
 
         var tcs = new TaskCompletionSource();
         var newTicker = new DelayTicker(tcs) { TicksAt = _gameTiming.CurTick.Value + (uint)ticks }; //safe cast because ticks is always positive here
-        _tickers.Add(newTicker.TicksAt, newTicker);
+        _tickers.Add(newTicker, newTicker.TicksAt);
         return tcs.Task;
     }
 
@@ -67,7 +67,7 @@ public sealed partial class ProcScheduler {
     private void UpdateDelays() {
         var i = 0;
         while(i < _tickers.Count) {
-            var ticker = _tickers.GetValueAtIndex(i);
+            var ticker = _tickers.GetKeyAtIndex(i);
             if(ticker.TicksAt > _gameTiming.CurTick.Value)
                 break; //list is sorted, so if we hit a ticker that isn't ready, we can stop
             ticker.TaskCompletionSource.TrySetResult();
@@ -78,9 +78,13 @@ public sealed partial class ProcScheduler {
             _tickers.RemoveAt(--i);
     }
 
-    private sealed class DelayTicker {
+    private sealed class DelayTicker : IComparable{
         public readonly TaskCompletionSource TaskCompletionSource;
         public uint TicksAt;
+
+        public int CompareTo(DelayTicker other){
+            return this.TicksAt - other.TicksAt;
+        }
 
         public DelayTicker(TaskCompletionSource taskCompletionSource) {
             TaskCompletionSource = taskCompletionSource;

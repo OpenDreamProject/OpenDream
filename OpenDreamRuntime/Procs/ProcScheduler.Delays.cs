@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Robust.Shared.Collections;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Procs;
@@ -9,7 +8,7 @@ namespace OpenDreamRuntime.Procs;
 public sealed partial class ProcScheduler {
     [Dependency] private readonly IGameTiming _gameTiming = default!;
 
-    private ValueList<DelayTicker> _tickers;
+    private PriorityQueue<DelayTicker, uint> _tickers = new();
 
     // This is for deferred tasks that need to fire in the current tick.
     private readonly Queue<TaskCompletionSource> _deferredTasks = new();
@@ -60,38 +59,21 @@ public sealed partial class ProcScheduler {
 
 
     /// <summary>
-    /// binary insertion of a ticker into the list to maintain sorted order
+    /// Insert a ticker into the queue to maintain sorted order
     /// </summary>
     /// <param name="ticker"></param>
     private void InsertTask(DelayTicker ticker) {
-        int left = 0;
-        int right = _tickers.Count - 1;
-
-        while (left <= right) {
-            int mid = left + (right - left)/2;
-            if (_tickers[mid].TicksAt <= ticker.TicksAt)
-                left = mid + 1;
-            else
-                right = mid - 1;
-        }
-
-        _tickers.EnsureCapacity(_tickers.Count + 1);
-        _tickers.Insert(left, ticker);
+        _tickers.Enqueue(ticker, ticker.TicksAt);
     }
 
-
     private void UpdateDelays() {
-        var i = 0;
-        while(i < _tickers.Count) {
-            var ticker = _tickers[i];
+        while(_tickers.Count > 0) {
+            var ticker = _tickers.Peek();
             if(ticker.TicksAt > _gameTiming.CurTick.Value)
-                break; //list is sorted, so if we hit a ticker that isn't ready, we can stop
+                break; //queue is sorted, so if we hit a ticker that isn't ready, we can stop
             ticker.TaskCompletionSource.TrySetResult();
-            i++;
+            _tickers.Dequeue();
         }
-        //remove the ones we processed
-        while(i > 0)
-            _tickers.RemoveAt(--i);
     }
 
     private sealed class DelayTicker {

@@ -78,7 +78,7 @@ public sealed partial class ProcScheduler {
 
     private sealed class DelayTicker {
         public readonly TaskCompletionSource TaskCompletionSource;
-        public uint TicksAt;
+        public required uint TicksAt;
 
         public DelayTicker(TaskCompletionSource taskCompletionSource) {
             TaskCompletionSource = taskCompletionSource;

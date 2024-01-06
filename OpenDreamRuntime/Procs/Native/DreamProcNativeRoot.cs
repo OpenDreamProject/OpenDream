@@ -2378,7 +2378,9 @@ namespace OpenDreamRuntime.Procs.Native {
                     end = text.Length;
                 else
                     end -= 1; //1-indexed
-            bool include_delimiters = bundle.GetArgument(4, "include_delimiters").IsTruthy();
+            bool includeDelimiters = false;
+            if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var include_delimiters_int))
+                includeDelimiters = include_delimiters_int != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
             if(start > 0 || end < text.Length)
                 text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
@@ -2386,7 +2388,7 @@ namespace OpenDreamRuntime.Procs.Native {
             var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
 
             if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
-                if(include_delimiters) {
+                if(includeDelimiters) {
                     var values = new List<string>();
                     int pos = 0;
                     foreach (Match m in regexObject.Regex.Matches(text)) {
@@ -2401,7 +2403,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             } else if (delim.TryGetValueAsString(out var delimiter)) {
                 string[] splitText;
-                if(include_delimiters) {
+                if(includeDelimiters) {
                     //basically split on delimeter, and then add the delimiter back in after each split (except the last one)
                     splitText= text.Split(delimiter);
                     splitText = splitText.SelectMany((s, index) => index < splitText.Length - 1 ? new List<string> { s, delimiter } : new List<string> { s }).ToArray();

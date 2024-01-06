@@ -36,7 +36,8 @@ public sealed class ControlMap : InterfaceControl {
 
     protected override Control CreateUIElement() {
         Viewport = new ScalingViewport { MouseFilter = Control.MouseFilterMode.Stop };
-        Viewport.OnKeyBindDown += OnViewportKeyBindDown;
+        Viewport.OnKeyBindDown += OnViewportKeyBindEvent;
+        Viewport.OnKeyBindUp += OnViewportKeyBindEvent;
         Viewport.OnVisibilityChanged += (args) => {
             if (args.Visible) {
                 OnShowEvent();
@@ -54,12 +55,12 @@ public sealed class ControlMap : InterfaceControl {
         return new PanelContainer { StyleClasses = {"MapBackground"}, Children = { Viewport } };
     }
 
-    private void OnViewportKeyBindDown(GUIBoundKeyEventArgs e) {
+    private void OnViewportKeyBindEvent(GUIBoundKeyEventArgs e) {
         if (e.Function == EngineKeyFunctions.Use || e.Function == EngineKeyFunctions.TextCursorSelect ||
             e.Function == EngineKeyFunctions.UIRightClick || e.Function == OpenDreamKeyFunctions.MouseMiddle) {
             _entitySystemManager.Resolve(ref _mouseInput);
 
-            if (_mouseInput.HandleViewportClick(Viewport, e)) {
+            if (_mouseInput.HandleViewportEvent(Viewport, e)) {
                 e.Handle();
             }
         }

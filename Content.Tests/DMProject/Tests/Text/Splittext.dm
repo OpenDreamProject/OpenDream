@@ -1,7 +1,6 @@
 /proc/list_equal_asert(list/A, list/B)
 	ASSERT(length(A) == length(B))
-	for (var/i = 1; i <= length(A); i++)
-		ASSERT(A[i] == B[i])
+	ASSERT(A ~= B)
 
 /proc/RunTest()
 	var/test_text = "The average of 1, 2, 3, 4, 5 is: 3"

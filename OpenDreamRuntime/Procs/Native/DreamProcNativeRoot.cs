@@ -2406,7 +2406,13 @@ namespace OpenDreamRuntime.Procs.Native {
                 if(includeDelimiters) {
                     //basically split on delimeter, and then add the delimiter back in after each split (except the last one)
                     splitText= text.Split(delimiter);
-                    splitText = splitText.SelectMany((s, index) => index < splitText.Length - 1 ? new List<string> { s, delimiter } : new List<string> { s }).ToArray();
+                    string[] longerSplitText = new string[splitText.Length * 2 - 1];
+                    for(int i = 0; i < splitText.Length; i++) {
+                        longerSplitText[i * 2] = splitText[i];
+                        if(i < splitText.Length - 1)
+                            longerSplitText[i * 2 + 1] = delimiter;
+                    }
+                    splitText = longerSplitText;
                 } else {
                     splitText = text.Split(delimiter);
                 }

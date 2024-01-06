@@ -23,6 +23,7 @@ public static class TgsPackaging {
             Platform = platform.RId,
             HybridAcz = true, // Force Hybrid ACZ with TGS
             SkipBuild = options.SkipBuild,
+            BuildConfiguration = options.BuildConfiguration,
             InPlatformSubDir = false,
             TgsEngineBuild = true
         });
@@ -33,7 +34,7 @@ public static class TgsPackaging {
                 ArgumentList = {
                     "build",
                     "DMCompiler/DMCompiler.csproj",
-                    "-c", "Release",
+                    "-c", options.BuildConfiguration,
                     "--nologo",
                     "/v:m",
                     $"/p:TargetOS={platform.TargetOs}",
@@ -42,14 +43,14 @@ public static class TgsPackaging {
                 }
             }).Wait();
 
-            PublishCompiler(platform.RId, platform.TargetOs);
+            PublishCompiler(platform.RId, platform.TargetOs, options.BuildConfiguration);
         }
 
         // Package the compiler to <output dir>/bin/compiler
         Program.CopyDirectory($"bin/DMCompiler/{platform.RId}/publish", Path.Combine(options.OutputDir, "bin", "compiler"));
     }
 
-    private static void PublishCompiler(string platformRId, string targetOs) {
+    private static void PublishCompiler(string platformRId, string targetOs, string buildConfig) {
         ProcessHelpers.RunCheck(new ProcessStartInfo {
             FileName = "dotnet",
             ArgumentList = {
@@ -57,7 +58,7 @@ public static class TgsPackaging {
                 "DMCompiler/DMCompiler.csproj",
                 "--runtime", platformRId,
                 "--no-self-contained",
-                "-c", "Release",
+                "-c", buildConfig,
                 $"/p:TargetOS={targetOs}",
                 "/m"
             }

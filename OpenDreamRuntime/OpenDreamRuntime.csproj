@@ -5,6 +5,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <Configurations>Debug;Release;Tools</Configurations>
     <Platforms>AnyCPU</Platforms>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
   </PropertyGroup>
   <ItemGroup>
     <ProjectReference Include="..\DMCompiler\DMCompiler.csproj" />

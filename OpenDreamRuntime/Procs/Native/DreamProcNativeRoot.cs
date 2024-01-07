@@ -2379,8 +2379,8 @@ namespace OpenDreamRuntime.Procs.Native {
                 else
                     end -= 1; //1-indexed
             bool includeDelimiters = false;
-            if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var include_delimiters_int))
-                includeDelimiters = include_delimiters_int != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
+            if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
+                includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
 
             if(start > 0 || end < text.Length)
                 text = text[Math.Max(start,0)..Math.Min(end, text.Length)];

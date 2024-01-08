@@ -337,7 +337,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             // This is a compiler developer error, scope references do not handle global variables. See GlobalField
             if (_variable.IsGlobal) {
-                throw new InvalidOperationException($"Global variable {_variable.Name} are not allowed here");
+                throw new InvalidOperationException($"Global variable {_variable.Name} is not allowed here");
             }
 
             _expression.EmitPushValue(dmObject, proc);

@@ -1,6 +1,6 @@
+using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
-using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
     abstract class LValue : DMExpression {

@@ -295,31 +295,34 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
-        private static void ProcessVarOverride(DMObject varObject, DMASTObjectVarOverride varOverride) {
-            // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
-            if (varOverride.VarName == "tag" && varObject.IsSubtypeOf(DreamPath.Datum)) {
-                DMCompiler.Emit(WarningCode.InvalidOverride,
-                    varOverride.Location,
-                    "var \"tag\" cannot be set to a value at compile-time");
-                return;
-            }
+        private static void ProcessVarOverride(DMObject? varObject, DMASTObjectVarOverride? varOverride) {
+            try {
+                switch (varOverride.VarName) { // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
+                    case "tag": {
+                        if(varObject.IsSubtypeOf(DreamPath.Datum)) {
+                            throw new CompileErrorException(varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");
+                        }
 
-            DMVariable? variable;
-            if (varObject.HasLocalVariable(varOverride.VarName)) {
-                variable = varObject.GetVariable(varOverride.VarName);
-            } else if (varObject.HasGlobalVariable(varOverride.VarName)) {
-                variable = varObject.GetGlobalVariable(varOverride.VarName);
-                DMCompiler.Emit(WarningCode.StaticOverride,
-                    varOverride.Location,
-                    $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
-            } else {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location,
-                    $"var \"{varOverride.VarName}\" is not declared");
-                return;
-            }
+                        break;
+                    }
+                }
 
-            OverrideVariableValue(varObject, ref variable, varOverride.Value);
-            varObject.VariableOverrides[variable.Name] = variable;
+                DMVariable? variable;
+                if (varObject.HasLocalVariable(varOverride.VarName)) {
+                    variable = varObject.GetVariable(varOverride.VarName);
+                } else if (varObject.HasGlobalVariable(varOverride.VarName)) {
+                    variable = varObject.GetGlobalVariable(varOverride.VarName);
+                    DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
+                } else {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location, $"var \"{varOverride.VarName}\" is not declared");
+                    return;
+                }
+
+                OverrideVariableValue(varObject, ref variable, varOverride.Value);
+                varObject.VariableOverrides[variable.Name] = variable;
+            } catch (CompileErrorException e) {
+                DMCompiler.Emit(e.Error);
+            }
         }
 
         private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject? currentObject) {

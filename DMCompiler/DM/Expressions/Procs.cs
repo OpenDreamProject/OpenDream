@@ -1,9 +1,9 @@
-using System;
-using System.Linq;
-using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
+using System;
+using System.Linq;
+using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)

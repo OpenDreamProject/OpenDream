@@ -3,7 +3,6 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using System;
-using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
@@ -35,7 +34,6 @@ namespace DMCompiler.DM.Expressions {
 
         public override DreamPath? Path { get; }
         public override DreamPath? NestedPath { get; }
-        public override bool IsFuzzy => Path == null;
 
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
@@ -290,7 +288,13 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool TryAsConstant(out Constant constant) {
-            var prevPath = _operations.Length == 1 ? _expression.Path : _operations[^2].Path;
+            DreamPath? prevPath = null;
+
+            if (_operations.Length == 1) {
+                prevPath = _expression.Path;
+            } else {
+                prevPath = _operations[^2].Path;
+            }
 
             ref var operation = ref _operations[^1];
 
@@ -316,7 +320,6 @@ namespace DMCompiler.DM.Expressions {
 
             constant = null;
             return false;
-
         }
     }
 
@@ -342,7 +345,7 @@ namespace DMCompiler.DM.Expressions {
             proc.Initial();
         }
 
-        public override string GetNameof() => _variable.Name;
+        public override string GetNameof(DMObject dmObject, DMProc proc) => _variable.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             return _variable.Value.TryAsConstant(out constant);

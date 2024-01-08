@@ -396,7 +396,7 @@ internal static class DMExpressionBuilder {
                         // Normal variables however are transitive, so we check to see if the variable was defined on the
                         // current object
                         if (dmObject.VariableOverrides.GetValueOrDefault(name) is null &&
-                            (dmObject.GetVariable(name) is { } variable && variable.Type != dmObject.Path)) {
+                            dmObject.Parent?.GetVariable(name) is not null) {
                             throw new UnknownIdentifierException(location, name);
                         }
                         expression = new ConstantPath(location, dmObject, dmObject.Path);
@@ -569,10 +569,26 @@ internal static class DMExpressionBuilder {
         var operations = new Dereference.Operation[deref.Operations.Length];
         int astOperationOffset = 0;
 
+        static bool IsFuzzy(DMExpression expr) {
+            switch (expr) {
+                case Dereference when expr.Path == null:
+                case ProcCall when expr.Path == null:
+                case New when expr.Path == null:
+                case List:
+                case Ternary:
+                case BinaryAnd:
+                case IsNull:
+                case Length:
+                case GetStep:
+                case GetDir:
+                    return true;
+                default: return false;
+            }
+        }
 
         // Path of the previous operation that was iterated over (starting as the base expression)
         DreamPath? prevPath = expr.Path;
-        bool pathIsFuzzy = expr.IsFuzzy;
+        bool pathIsFuzzy = IsFuzzy(expr);
 
         // Special behaviour for `global.x`, `global.vars`, and `global.f()`
         if (expr is Global) {

@@ -458,7 +458,7 @@ namespace DMCompiler.Compiler.DM {
             do {
                 var identifier = Identifier();
                 if (identifier == null) {
-                    DMCompiler.Emit(WarningCode.BadExpression, Current().Location, "Global identifier expected");
+                    DMCompiler.Emit(WarningCode.BadToken, Current().Location, "Identifier expected");
                     return null;
                 }
 

@@ -61,13 +61,13 @@ namespace DMCompiler.DM {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
-        public virtual string? GetNameof() => null;
+        public virtual string GetNameof(DMObject dmObject, DMProc proc) {
+            throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
+        }
 
         public virtual DreamPath? Path => null;
 
         public virtual DreamPath? NestedPath => Path;
-
-        public virtual bool IsFuzzy => false;
     }
 
     // (a, b, c, ...)

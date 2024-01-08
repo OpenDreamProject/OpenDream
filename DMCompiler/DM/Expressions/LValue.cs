@@ -44,7 +44,9 @@ namespace DMCompiler.DM.Expressions {
             return DMReference.Src;
         }
 
-        public override string GetNameof() => "src";
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
+            return "src";
+        }
     }
 
     // usr
@@ -102,26 +104,22 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string GetNameof() => LocalVar.Name;
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
+            return LocalVar.IsParameter ? proc.Parameters[LocalVar.Id] : proc.GetLocalVarName(LocalVar.Id);
+        }
     }
 
     // Identifier of field
     sealed class Field : LValue {
         public readonly DMVariable Variable;
-        public readonly DMObject? Owner;
 
-        public Field(Location location, DMVariable variable, DMObject? owner = null)
+        public Field(Location location, DMVariable variable)
             : base(location, variable.Type) {
             Variable = variable;
-            Owner = owner;
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            if (Owner != null) {
-                proc.PushType(Owner.Id);
-            } else {
-                proc.PushReferenceValue(DMReference.Src);
-            }
+            proc.PushReferenceValue(DMReference.Src);
             proc.PushString(Variable.Name);
             proc.Initial();
         }
@@ -143,10 +141,6 @@ namespace DMCompiler.DM.Expressions {
 
             constant = null;
             return false;
-        }
-
-        public override string GetNameof() {
-            return Variable.Name;
         }
     }
 
@@ -173,7 +167,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string GetNameof() {
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
             DMVariable global = DMObjectTree.Globals[Id];
             return global.Name;
         }

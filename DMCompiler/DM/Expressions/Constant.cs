@@ -525,7 +525,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override string GetNameof() {
+        public override string GetNameof(DMObject dmObject, DMProc proc) {
             return Value.LastElement;
         }
 

@@ -12,10 +12,25 @@ using System.Linq;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
-        public record LocalVariable(int Id, string Name, bool IsParameter, DreamPath? Type);
+        public class LocalVariable {
+            public readonly int Id;
+            public readonly bool IsParameter;
+            public DreamPath? Type;
 
-        public sealed record LocalConstVariable(int Id, string Name, DreamPath? Type, Expressions.Constant Value)
-            : LocalVariable(Id, Name, false, Type);
+            public LocalVariable(int id, bool isParameter, DreamPath? type) {
+                Id = id;
+                IsParameter = isParameter;
+                Type = type;
+            }
+        }
+
+        public sealed class LocalConstVariable : LocalVariable {
+            public readonly Expressions.Constant Value;
+
+            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
+                Value = value;
+            }
+        }
 
         private struct CodeLabelReference {
             public readonly string Identifier;
@@ -67,7 +82,6 @@ namespace DMCompiler.DM {
         public Location Location;
         public ProcAttributes Attributes;
         public bool IsVerb = false;
-        public bool IsInitProc => _astDefinition == null;
         public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
@@ -78,12 +92,7 @@ namespace DMCompiler.DM {
         public sbyte Invisibility;
 
         private DMObject _dmObject;
-
-        /// <summary>
-        /// The definition of the proc, or null if this proc was not defined by user code (eg. object init procs).
-        /// </summary>
         private DMASTProcDefinition? _astDefinition;
-
         private BinaryWriter _bytecodeWriter;
         private Stack<CodeLabelReference> _pendingLabelReferences = new();
         private Dictionary<string, long> _labels = new();
@@ -127,7 +136,7 @@ namespace DMCompiler.DM {
         public void Compile() {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
 
-            if (!IsInitProc) { // It's null for initialization procs
+            if (_astDefinition is not null) { // It's null for initialization procs
                 foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
                     AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
                 }
@@ -218,7 +227,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
-                _parameters.Add(name, new LocalVariable(_parameters.Count, name, true, type));
+                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type));
             }
         }
 
@@ -311,7 +320,7 @@ namespace DMCompiler.DM {
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, name, false, type));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
@@ -319,7 +328,7 @@ namespace DMCompiler.DM {
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, name, type, value));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
         }
 
         public LocalVariable? GetLocalVariable(string name) {

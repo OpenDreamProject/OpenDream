@@ -67,6 +67,7 @@ namespace DMCompiler.DM {
         public Location Location;
         public ProcAttributes Attributes;
         public bool IsVerb = false;
+        public bool IsInitProc => _astDefinition == null;
         public string Name => _astDefinition?.Name ?? "<init>";
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
@@ -77,7 +78,12 @@ namespace DMCompiler.DM {
         public sbyte Invisibility;
 
         private DMObject _dmObject;
+
+        /// <summary>
+        /// The definition of the proc, or null if this proc was not defined by user code (eg. object init procs).
+        /// </summary>
         private DMASTProcDefinition? _astDefinition;
+
         private BinaryWriter _bytecodeWriter;
         private Stack<CodeLabelReference> _pendingLabelReferences = new();
         private Dictionary<string, long> _labels = new();
@@ -121,7 +127,7 @@ namespace DMCompiler.DM {
         public void Compile() {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
 
-            if (_astDefinition is not null) { // It's null for initialization procs
+            if (!IsInitProc) { // It's null for initialization procs
                 foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
                     AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
                 }

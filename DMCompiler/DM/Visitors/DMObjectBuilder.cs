@@ -86,7 +86,12 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            // Step 5: Attempt to resolve all vars that referenced other not-yet-existing vars
+            // Step 5: Apply var overrides
+            foreach (var varOverride in VarOverrides) {
+                ProcessVarOverride(varOverride.Item1, varOverride.Item2);
+            }
+
+            // Step 6: Attempt to resolve all vars that referenced other not-yet-existing vars
             int lastLateVarDefCount;
             do {
                 lastLateVarDefCount = lateVarDefs.Count + lateProcVarDefs.Count;
@@ -134,11 +139,6 @@ namespace DMCompiler.DM.Visitors {
 
             foreach (var lateVarDef in lateProcVarDefs) {
                 DMCompiler.Emit(lateVarDef.Item5.Error);
-            }
-
-            // Step 6: Apply var overrides
-            foreach (var varOverride in VarOverrides) {
-                ProcessVarOverride(varOverride.Item1, varOverride.Item2);
             }
 
             // Step 7: Create each types' initialization proc (initializes vars that aren't constants)
@@ -207,7 +207,7 @@ namespace DMCompiler.DM.Visitors {
                     if (procDefinition.Body != null) {
                         foreach (var stmt in GetStatements(procDefinition.Body)) {
                             // TODO multiple var definitions.
-                            if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
+                            if (stmt is DMASTProcStatementVarDeclaration { IsGlobal: true }) {
                                 if (_firstProcGlobal == -1)
                                     _firstProcGlobal = StaticObjectVars.Count;
                                 break;
@@ -258,6 +258,7 @@ namespace DMCompiler.DM.Visitors {
                 if (varDefinition.IsGlobal)
                     DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static; // FirstPassStatic is not used for object vars
 
+                // TODO: no, bad. instance field declarations should have a proc assigned to them.
                 expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
                     varDefinition.Value, varDefinition.Type);
             } catch (UnknownIdentifierException) {
@@ -287,6 +288,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             try {
+                // why are we passing the variable ref? we aren't using it after this
                 SetVariableValue(varObject, ref variable, varDefinition.Location, expression);
             } catch (CompileErrorException e) {
                 DMCompiler.Emit(e.Error);

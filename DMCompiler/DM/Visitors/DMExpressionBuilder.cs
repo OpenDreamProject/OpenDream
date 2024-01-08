@@ -4,20 +4,20 @@ using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
 using System;
-using System.Diagnostics;
+using System.Collections.Generic;
 using Resource = DMCompiler.DM.Expressions.Resource;
 
 namespace DMCompiler.DM.Visitors;
 
 internal static class DMExpressionBuilder {
     public enum ScopeMode {
-        // All in-scope procs and vars available
+        /// All in-scope procs and vars available
         Normal,
 
-        // Only global vars and procs available
+        /// Only global vars and procs available
         Static,
 
-        // Only global procs available
+        /// Only global procs available
         FirstPassStatic
     }
 
@@ -346,8 +346,8 @@ internal static class DMExpressionBuilder {
                 return new Args(identifier.Location);
             case "__TYPE__":
                 return new ProcOwnerType(identifier.Location);
-            case "__PROC__": // The saner alternative to .....
-                return new ProcType(identifier.Location);
+            case "__PROC__": // The saner alternative to "....."
+                return new ProcType(identifier.Location, proc);
             case "global":
                 return new Global(identifier.Location);
             default: {
@@ -383,26 +383,39 @@ internal static class DMExpressionBuilder {
         var name = globalIdentifier.Identifier;
         var location = globalIdentifier.Expression?.Location ?? globalIdentifier.Location;
 
-        if (location is { SourceFile: "code/controllers/configuration/config_entry.dm" }) {
-            Debugger.Break();
-        }
-
-        if (CurrentScopeMode == ScopeMode.FirstPassStatic) {
-            throw new UnknownIdentifierException(location, name);
-        }
-
         DMExpression? expression;
 
+        // "type" and "parent_type" cannot resolve in a static context, but it's still valid with scope identifiers
+        // TODO: this snowflake code sucks ass holy shit, redo the entire object variable system
         if (globalIdentifier.Expression is DMASTIdentifier { Identifier: "type" or "parent_type" } identifier) {
-            // "type" and "parent_type" cannot resolve in a static context, but it's still valid in scope contexts
-            // TODO: this snowflake code sucks
-            expression = identifier.Identifier switch {
-                "type" => new ConstantPath(location, dmObject, dmObject.Path),
-                "parent_type" => dmObject.Parent != null
-                    ? new ConstantPath(location, dmObject.Parent, dmObject.Parent.Path)
-                    : new Null(location),
-                _ => null
-            };
+            if (CurrentScopeMode is not ScopeMode.Normal || proc == null) {
+                switch (identifier.Identifier) {
+                    case "type":
+                        // Necessary check to make sure we have the right value, not an overridden one
+                        // Overrides are not transitive, therefore we only need to check if this object has an override
+                        // Normal variables however are transitive, so we
+                        if (dmObject.VariableOverrides.GetValueOrDefault(name) is null &&
+                            (dmObject.GetVariable(name) is { } variable && variable.Type != dmObject.Path)) {
+                            throw new UnknownIdentifierException(location, name);
+                        }
+                        expression = new ConstantPath(location, dmObject, dmObject.Path);
+                        break;
+                    case "parent_type":
+                        expression = dmObject.Parent != null
+                            ? new ConstantPath(location, dmObject.Parent, dmObject.Parent.Path)
+                            : new Null(location);
+                        break;
+                    default:
+                        expression = null; // not possible
+                        break;
+                }
+            } else {
+                // This is the same behaviour as in BYOND, but BYOND simply raises an undefined var error.
+                // We want to give end users an explanation at least.
+                DMCompiler.Emit(WarningCode.BadExpression, identifier.Location,
+                    "Use of \"type::\" and \"parent_type::\" outside of a static context is forbidden");
+                return new Null(location);
+            }
         } else if (globalIdentifier.Expression != null) {
             expression = DMExpression.Create(dmObject, proc, globalIdentifier.Expression, inferredPath);
         } else {
@@ -412,42 +425,50 @@ internal static class DMExpressionBuilder {
         switch (expression) {
             case { Path: { } path }: {
                 var definition = DMObjectTree.GetDMObject(path, false);
-                if (definition != null) {
-                    var globalId = definition.GetGlobalVariableId(name);
+                if (definition == null) {
+                    throw new UnknownIdentifierException(location, name);
+                }
+
+                if (globalIdentifier.CallArguments is { } args) {
+                    // BYOND ignores this but we should clear misconceptions early on
+                    if (args.Length > 0) {
+                        DMCompiler.Emit(WarningCode.TooManyArguments, location, "Proc references do not take arguments");
+                    }
+
+                    if (definition.GetProcs(name) is { } procs) {
+                        return new ProcType(location, DMObjectTree.AllProcs[procs[^1]]);
+                    }
+
+                    throw new UnknownIdentifierException(location, name);
+                }
+
+                if (definition.GetGlobalVariableId(name) is { } globalId) {
+                    return new GlobalField(location, DMObjectTree.Globals[globalId].Type, globalId);
+                }
+
+                if (definition.HasLocalVariable(name)) {
+                    return new ScopeReference(location, expression, name);
+                }
+
+                throw new UnknownIdentifierException(location, name);
+            }
+            case null: {
+                if (globalIdentifier.CallArguments != null) {
+                    if (DMObjectTree.TryGetGlobalProc(name, out _)) {
+                        return new ProcCall(location, new GlobalProc(location, globalIdentifier.Identifier),
+                            new ArgumentList(location, dmObject, proc, globalIdentifier.CallArguments, inferredPath));
+                    }
+                } else {
+                    var globalId = DMObjectTree.Root.GetGlobalVariableId(name);
                     if (globalId != null) {
                         return new GlobalField(location,
                             DMObjectTree.Globals[globalId.Value].Type,
                             globalId.Value);
                     }
 
-                    return new ScopeReference(location, expression, name);
-
-                    // switch (expression) {
-                    //     case Dereference or Field:
-                    //         return new ScopeReference(location, expression, name);
-                    //     case ConstantPath or ProcOwnerType when definition.GetVariable(name) is { } variable: {
-                    //         return variable.Value.TryAsConstant(out var constant)
-                    //             ? constant
-                    //             : new Initial(location, new Field(location, variable, definition));
-                    //     }
-                    // }
-                }
-
-                break;
-            }
-            case Constant:
-                // yes, you can do <literal>::variable and it compiles and returns null. BYOND is a magical thing
-                return new Null(location);
-            case null: {
-                var globalId = DMObjectTree.Root.GetGlobalVariableId(name);
-                if (globalId != null) {
-                    return new GlobalField(location,
-                        DMObjectTree.Globals[globalId.Value].Type,
-                        globalId.Value);
-                }
-
-                if (name == "vars") {
-                    return new GlobalVars(location);
+                    if (name == "vars") {
+                        return new GlobalVars(location);
+                    }
                 }
 
                 break;

@@ -1191,14 +1191,16 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public sealed class DMASTScopeIdentifier : DMASTExpression {
+    public sealed class DMASTScopeIdentifier : DMASTExpression, DMASTCallable {
         public readonly DMASTExpression? Expression;
         public readonly string Identifier;
+        public readonly DMASTCallParameter[]? CallArguments;
 
-        public DMASTScopeIdentifier(Location location, DMASTExpression? expression, string identifier)
+        public DMASTScopeIdentifier(Location location, DMASTExpression? expression, string identifier, DMASTCallParameter[]? callArguments)
             : base(location) {
             Expression = expression;
             Identifier = identifier;
+            CallArguments = callArguments;
         }
 
         public override void Visit(DMASTVisitor visitor) {

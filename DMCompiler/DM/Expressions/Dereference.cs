@@ -3,6 +3,7 @@ using DMCompiler.Compiler.DM;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
@@ -335,12 +336,12 @@ namespace DMCompiler.DM.Expressions {
 
             // this is a developer error, the method that created this object should have verified that it's valid
             if (type is null) {
-                throw new InvalidOperationException("Typeless left-hand expression is not accepted here");
+                throw new CompileAbortException("Typeless left-hand expression is not accepted here");
             }
 
             DMVariable? variable = type.GetVariable(_identifier) ?? type.GetGlobalVariable(_identifier);
             if (variable is null) {
-                throw new InvalidOperationException($"Type {_expression.Path} does not contain variable {_identifier}");
+                throw new CompileAbortException($"Type {_expression.Path} does not contain variable {_identifier}");
             }
 
             if (variable.IsGlobal) {
@@ -360,7 +361,8 @@ namespace DMCompiler.DM.Expressions {
                 return false;
             }
 
-            var variable = varObject.GetVariable(_identifier);
+            // TODO: This blows, better variable system
+            var variable = varObject.VariableOverrides.GetValueOrDefault(_identifier) ?? varObject.GetVariable(_identifier);
             if (variable is null) {
                 throw new InvalidOperationException($"Type {_expression.Path} does not contain variable {_identifier}");
             }

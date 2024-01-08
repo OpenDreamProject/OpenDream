@@ -92,7 +92,7 @@ namespace DMCompiler.DM {
         }
 
         public List<int>? GetProcs(string name) {
-            return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
+            return Procs.GetValueOrDefault(name) ?? Parent?.GetProcs(name);
         }
 
         public void AddVerb(DMProc verb) {

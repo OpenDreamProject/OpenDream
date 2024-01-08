@@ -1,10 +1,29 @@
-var/static/one = "one"
-
 /datum
 	var/static/datum/three/three
+	var/text = "hello"
+	
+var/static/one = "one"
 
 /datum/three
 	var/static/datum/four/four
+	text = "hi"
+	var/overridden_text = type::text
+	var/original_text = parent_type::text
+	
+/datum/three/proc/typetest()
+	// initial shorthand, type:: and parent_type::
+	ASSERT(text == "hi")
+	ASSERT(original_text == "hello")
+	ASSERT(overridden_text == "hi")
+	overridden_text = "hi there!"
+	original_text = "hello there"
+	text = "hi there"
+	ASSERT(src::text == "hi")
+	ASSERT(src::overridden_text == "hi")
+	ASSERT(src::original_text == "hello")
+	
+	// proc reference
+	ASSERT(__PROC__ == /datum/three::typetest())
 
 /datum/four
 	var/datum/five/five
@@ -36,3 +55,6 @@ var/static/one = "one"
 	test::three::four.five::six = "7 8 9 10"
 	ASSERT(test::three::four.five::six == "7 8 9 10")
 	ASSERT(/datum::three::four.five::six == "7 8 9 10")
+	
+	var/datum/three/threetest = new
+	threetest.typetest()

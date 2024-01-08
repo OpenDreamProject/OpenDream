@@ -656,14 +656,17 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // __PROC__
-    sealed class ProcType : DMExpression {
-        public ProcType(Location location)
-            : base(location)
-        {}
+    // __PROC__, type::proc()
+    internal sealed class ProcType : DMExpression {
+        private readonly DMProc? _proc;
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushProc(proc.Id);
+        public ProcType(Location location, DMProc? proc)
+            : base(location) {
+            _proc = proc;
+        }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc? proc) {
+            proc.PushProc(_proc.Id);
         }
     }
 

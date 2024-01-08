@@ -393,7 +393,8 @@ internal static class DMExpressionBuilder {
                     case "type":
                         // Necessary check to make sure we have the right value, not an overridden one
                         // Overrides are not transitive, therefore we only need to check if this object has an override
-                        // Normal variables however are transitive, so we
+                        // Normal variables however are transitive, so we check to see if the variable was defined on the
+                        // current object
                         if (dmObject.VariableOverrides.GetValueOrDefault(name) is null &&
                             (dmObject.GetVariable(name) is { } variable && variable.Type != dmObject.Path)) {
                             throw new UnknownIdentifierException(location, name);
@@ -446,8 +447,8 @@ internal static class DMExpressionBuilder {
                     return new GlobalField(location, DMObjectTree.Globals[globalId].Type, globalId);
                 }
 
-                if (definition.HasLocalVariable(name)) {
-                    return new ScopeReference(location, expression, name);
+                if ((definition.VariableOverrides.GetValueOrDefault(name) ?? definition.GetVariable(name)) is { } variable) {
+                    return new ScopeReference(location, expression, variable);
                 }
 
                 throw new UnknownIdentifierException(location, name);

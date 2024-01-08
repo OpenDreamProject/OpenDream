@@ -323,51 +323,29 @@ namespace DMCompiler.DM.Expressions {
     // expression::identifier
     internal sealed class ScopeReference : LValue {
         private readonly DMExpression _expression;
-        private readonly string _identifier;
+        private readonly DMVariable _variable;
 
-        public ScopeReference(Location location, DMExpression expression, string identifier)
-            : base(location, expression.Path) {
+        public ScopeReference(Location location, DMExpression expression, DMVariable variable)
+            : base(location, variable.Type) {
             _expression = expression;
-            _identifier = identifier;
+            _variable = variable;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var type = _expression.Path.HasValue ? DMObjectTree.GetDMObject(_expression.Path.Value, false) : null;
-
-            // this is a developer error, the method that created this object should have verified that it's valid
-            if (type is null) {
-                throw new CompileAbortException("Typeless left-hand expression is not accepted here");
+            // This is a compiler developer error, scope references do not handle global variables. See GlobalField
+            if (_variable.IsGlobal) {
+                throw new InvalidOperationException($"Global variable {_variable.Name} are not allowed here");
             }
 
-            DMVariable? variable = type.GetVariable(_identifier) ?? type.GetGlobalVariable(_identifier);
-            if (variable is null) {
-                throw new CompileAbortException($"Type {_expression.Path} does not contain variable {_identifier}");
-            }
-
-            if (variable.IsGlobal) {
-                proc.PushReferenceValue(DMReference.CreateGlobal(type.GetGlobalVariableId(_identifier)!.Value));
-            } else {
-                _expression.EmitPushValue(dmObject, proc);
-                proc.PushString(_identifier);
-                proc.Initial();
-            }
+            _expression.EmitPushValue(dmObject, proc);
+            proc.PushString(_variable.Name);
+            proc.Initial();
         }
 
-        public override string GetNameof() => _identifier;
+        public override string GetNameof() => _variable.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            constant = null;
-            if (!Path.HasValue || DMObjectTree.GetDMObject(Path.Value) is not { } varObject) {
-                return false;
-            }
-
-            // TODO: This blows, better variable system
-            var variable = varObject.VariableOverrides.GetValueOrDefault(_identifier) ?? varObject.GetVariable(_identifier);
-            if (variable is null) {
-                throw new InvalidOperationException($"Type {_expression.Path} does not contain variable {_identifier}");
-            }
-
-            return variable.Value.TryAsConstant(out constant);
+            return _variable.Value.TryAsConstant(out constant);
         }
     }
 }

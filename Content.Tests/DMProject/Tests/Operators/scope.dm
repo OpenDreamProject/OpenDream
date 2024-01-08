@@ -48,10 +48,11 @@ var/static/one = "one"
 	::one = "1"
 	ASSERT(::one == "1")
 
-	/datum::three::four.five::six = "3 4 5 6"
+	/datum::three::four::five::six = "3 4 5 6"
 	ASSERT(test::three::four.five::six == "3 4 5 6")
 	ASSERT(/datum::three::four.five::six == "3 4 5 6")
 
+	// this does not compile in BYOND, that is just a bug 
 	test::three::four.five::six = "7 8 9 10"
 	ASSERT(test::three::four.five::six == "7 8 9 10")
 	ASSERT(/datum::three::four.five::six == "7 8 9 10")

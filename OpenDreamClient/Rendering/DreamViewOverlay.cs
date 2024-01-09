@@ -304,14 +304,17 @@ internal sealed class DreamViewOverlay : Overlay {
         //client images act as either an overlay or replace the main icon
         //notably they cannot be applied to overlays, so don't check for them if this is an under/overlay
         //note also that we use turfCoords and not current.Position because we want world-coordinates, not screen coordinates. This is only used for turfs.
-        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<DreamIcon>? attachedClientImages)){
-            foreach(DreamIcon CI in attachedClientImages){
-                if(CI.Appearance == null)
+        if(parentIcon == null && _clientImagesSystem.TryGetClientImages(current.Uid, turfCoords, out List<NetEntity>? attachedClientImages)){
+            foreach(NetEntity CINetEntity in attachedClientImages){
+                EntityUid imageEntity = _entityManager.GetEntity(CINetEntity);
+                if (!_spriteQuery.TryGetComponent(imageEntity, out var sprite))
                     continue;
-                if(CI.Appearance.Override)
-                    current.MainIcon = CI;
+                if(sprite.Icon.Appearance == null)
+                    continue;
+                if(sprite.Icon.Appearance.Override)
+                    current.MainIcon = sprite.Icon;
                 else
-                    ProcessIconComponents(CI, current.Position, uid, isScreen, ref tieBreaker, result, current, false);
+                    ProcessIconComponents(sprite.Icon, current.Position, uid, isScreen, ref tieBreaker, result, current, false);
             }
         }
 
@@ -360,8 +363,6 @@ internal sealed class DreamViewOverlay : Overlay {
             } else {
                 result = _clyde.CreateRenderTarget(size, new(RenderTargetColorFormat.Rgba8Srgb));
             }
-
-            _renderTargetCache[size] = listResult; //put the shorter list back
         }
 
         return result;
@@ -372,7 +373,6 @@ internal sealed class DreamViewOverlay : Overlay {
             storeList = new List<IRenderTexture>(4);
 
         storeList.Add(rental);
-        _renderTargetCache[rental.Size] = storeList;
     }
 
     private void ClearRenderTarget(IRenderTexture target, DrawingHandleWorld handle, Color clearColor) {
@@ -476,8 +476,11 @@ internal sealed class DreamViewOverlay : Overlay {
         Action<Vector2i>? mouseMapDrawAction;
 
         //setup the MouseMapLookup shader for use in DrawIcon()
-        byte[] rgba = BitConverter.GetBytes(iconMetaData.GetHashCode());
-        Color targetColor = new Color(rgba[0], rgba[1], rgba[2]); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
+        int hash = iconMetaData.GetHashCode();
+        var colorR = (byte)(hash & 0xFF);
+        var colorG = (byte)((hash >> 8) & 0xFF);
+        var colorB = (byte)((hash >> 16) & 0xFF);
+        Color targetColor = new Color(colorR, colorG, colorB); //TODO - this could result in mis-clicks due to hash-collision since we ditch a whole byte.
         MouseMapLookup[targetColor] = iconMetaData;
 
         //go fast when the only filter is color, and we don't have more color things to consider
@@ -608,7 +611,8 @@ internal sealed class DreamViewOverlay : Overlay {
             var plane = pair.Value;
 
             // We can remove the plane if there was nothing on it last frame
-            if (plane.IconDrawActions.Count == 0 && plane.MouseMapDrawActions.Count == 0) {
+            if (plane.IconDrawActions.Count == 0 && plane.MouseMapDrawActions.Count == 0 && plane.Master == null) {
+                plane.Dispose();
                 _planes.Remove(pair.Key);
                 continue;
             }
@@ -625,6 +629,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         plane = new(renderTarget);
         _planes.Add(planeIndex, plane);
+        _sawmill.Info($"Created plane {planeIndex}");
         return plane;
     }
 

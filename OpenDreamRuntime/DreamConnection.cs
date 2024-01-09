@@ -30,7 +30,8 @@ public sealed class DreamConnection {
 
     [ViewVariables] public ICommonSession? Session { get; private set; }
     [ViewVariables] public DreamObjectClient? Client { get; private set; }
-    [ViewVariables] public DreamObjectMob? Mob {
+    [ViewVariables]
+    public DreamObjectMob? Mob {
         get => _mob;
         set {
             if (_mob != value) {
@@ -234,7 +235,7 @@ public sealed class DreamConnection {
         if (_outputStatPanel == null || !_statPanels.ContainsKey(_outputStatPanel))
             SetOutputStatPanel("Stats");
 
-        _statPanels[_outputStatPanel].Add( (name, value, atomRef) );
+        _statPanels[_outputStatPanel].Add((name, value, atomRef));
     }
 
     public void HandleMsgSelectStatPanel(MsgSelectStatPanel message) {
@@ -251,6 +252,7 @@ public sealed class DreamConnection {
             DMValueType.Null => DreamValue.Null,
             DMValueType.Text or DMValueType.Message => new DreamValue((string)message.Value),
             DMValueType.Num => new DreamValue((float)message.Value),
+            DMValueType.Color => new DreamValue(((Color)message.Value).ToHexNoAlpha()),
             _ => throw new Exception("Invalid prompt response '" + message.Type + "'")
         };
 
@@ -372,7 +374,7 @@ public sealed class DreamConnection {
                                     DMValueType argumentType = verb.ArgumentTypes[i];
 
                                     if (argumentType == DMValueType.Text) {
-                                        arguments[i] = new(args[i+1]);
+                                        arguments[i] = new(args[i + 1]);
                                     } else {
                                         _sawmill.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
                                         return DreamValue.Null;

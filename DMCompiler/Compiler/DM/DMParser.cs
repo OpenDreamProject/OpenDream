@@ -1210,7 +1210,7 @@ namespace DMCompiler.Compiler.DM {
                     } else {
                         statement = ProcStatement();
                         if (statement == null) {
-                            Error(WarningCode.BadExpression, forLocation, "Expected body or statement");
+                            DMCompiler.Emit(WarningCode.BadExpression, forLocation, "Expected body or statement");
                             statement = new DMASTProcStatementExpression(loc, new DMASTConstantNull(loc)); // just so we can continue compiling.
                         }
                     }

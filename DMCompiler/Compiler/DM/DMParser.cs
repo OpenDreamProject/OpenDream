@@ -1198,7 +1198,6 @@ namespace DMCompiler.Compiler.DM {
             return null;
 
             DMASTProcBlockInner GetForBody(Location forLocation) {
-
                 Whitespace();
                 Newline();
 

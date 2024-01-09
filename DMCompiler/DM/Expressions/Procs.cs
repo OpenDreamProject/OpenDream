@@ -102,6 +102,8 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression _target;
         private readonly ArgumentList _arguments;
 
+        public override bool PathIsFuzzy => Path == null;
+
         public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
             _target = target;
             _arguments = arguments;

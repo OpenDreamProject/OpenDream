@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using DMCompiler.Compiler.DMPreprocessor;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
@@ -2220,15 +2220,13 @@ namespace DMCompiler.Compiler.DM {
                     Token token = Current();
 
                     // Check for a valid deref operation token
-                    {
-                        if (!Check(DereferenceTypes)) {
-                            Whitespace();
+                    if (!Check(DereferenceTypes)) {
+                        Whitespace();
 
-                            token = Current();
+                        token = Current();
 
-                            if (!Check(WhitespacedDereferenceTypes)) {
-                                break;
-                            }
+                        if (!Check(WhitespacedDereferenceTypes)) {
+                            break;
                         }
                     }
 
@@ -2259,46 +2257,49 @@ namespace DMCompiler.Compiler.DM {
                         break;
                     }
 
-                    DMASTDereference.Operation operation = new() {
-                        Kind = DMASTDereference.OperationKind.Invalid,
-                    };
+                    DMASTDereference.Operation operation;
 
                     switch (token.Type) {
                         case TokenType.DM_Period:
                         case TokenType.DM_QuestionPeriod:
                         case TokenType.DM_Colon:
                         case TokenType.DM_QuestionColon: {
-                                DMASTIdentifier identifier = Identifier();
+                            var identifier = Identifier();
 
-                                operation.Kind = token.Type switch {
-                                    TokenType.DM_Period => DMASTDereference.OperationKind.Field,
-                                    TokenType.DM_QuestionPeriod => DMASTDereference.OperationKind.FieldSafe,
-                                    TokenType.DM_Colon => DMASTDereference.OperationKind.FieldSearch,
-                                    TokenType.DM_QuestionColon => DMASTDereference.OperationKind.FieldSafeSearch,
-                                    _ => throw new InvalidOperationException(),
-                                };
-
-                                operation.Identifier = identifier;
+                            if (identifier == null) {
+                                DMCompiler.Emit(WarningCode.BadToken, token.Location, "Identifier expected");
+                                return new DMASTConstantNull(token.Location);
                             }
+
+                            operation = new DMASTDereference.FieldOperation {
+                                Location = identifier.Location,
+                                Safe = token.Type is TokenType.DM_QuestionPeriod or TokenType.DM_QuestionColon,
+                                Identifier = identifier.Identifier,
+                                NoSearch = token.Type is TokenType.DM_Colon or TokenType.DM_QuestionColon
+                            };
                             break;
+                        }
 
                         case TokenType.DM_LeftBracket:
                         case TokenType.DM_QuestionLeftBracket: {
-                                ternaryBHasPriority = true;
+                            ternaryBHasPriority = true;
 
-                                Whitespace();
-                                DMASTExpression index = Expression();
-                                ConsumeRightBracket();
+                            Whitespace();
+                            var index = Expression();
+                            ConsumeRightBracket();
 
-                                operation.Kind = token.Type switch {
-                                    TokenType.DM_LeftBracket => DMASTDereference.OperationKind.Index,
-                                    TokenType.DM_QuestionLeftBracket => DMASTDereference.OperationKind.IndexSafe,
-                                    _ => throw new InvalidOperationException(),
-                                };
-
-                                operation.Index = index;
+                            if (index == null) {
+                                DMCompiler.Emit(WarningCode.BadToken, token.Location, "Expression expected");
+                                return new DMASTConstantNull(token.Location);
                             }
+
+                            operation = new DMASTDereference.IndexOperation {
+                                Index = index,
+                                Location = index.Location,
+                                Safe = token.Type is TokenType.DM_QuestionLeftBracket
+                            };
                             break;
+                        }
 
                         default:
                             throw new InvalidOperationException("unhandled dereference token");
@@ -2308,39 +2309,26 @@ namespace DMCompiler.Compiler.DM {
                     if (allowCalls) {
                         Whitespace();
 
-                        DMASTCallParameter[] parameters = ProcCall();
+                        var parameters = ProcCall();
 
                         if (parameters != null) {
                             ternaryBHasPriority = true;
 
-                            switch (operation.Kind) {
-                                case DMASTDereference.OperationKind.Field:
-                                    operation.Kind = DMASTDereference.OperationKind.Call;
-                                    operation.Parameters = parameters;
+                            switch (operation) {
+                                case DMASTDereference.FieldOperation fieldOperation:
+                                    operation = new DMASTDereference.CallOperation {
+                                        Parameters = parameters,
+                                        Location = fieldOperation.Location,
+                                        Safe = fieldOperation.Safe,
+                                        Identifier = fieldOperation.Identifier,
+                                        NoSearch = fieldOperation.NoSearch
+                                    };
                                     break;
 
-                                case DMASTDereference.OperationKind.FieldSafe:
-                                    operation.Kind = DMASTDereference.OperationKind.CallSafe;
-                                    operation.Parameters = parameters;
-                                    break;
+                                case DMASTDereference.IndexOperation:
+                                    DMCompiler.Emit(WarningCode.BadToken, token.Location, "Attempt to call an invalid l-value");
+                                    return new DMASTConstantNull(token.Location);
 
-                                case DMASTDereference.OperationKind.FieldSearch:
-                                    operation.Kind = DMASTDereference.OperationKind.CallSearch;
-                                    operation.Parameters = parameters;
-                                    break;
-
-                                case DMASTDereference.OperationKind.FieldSafeSearch:
-                                    operation.Kind = DMASTDereference.OperationKind.CallSafeSearch;
-                                    operation.Parameters = parameters;
-                                    break;
-
-                                case DMASTDereference.OperationKind.Index:
-                                case DMASTDereference.OperationKind.IndexSafe:
-                                    Error("attempt to call an invalid l-value");
-                                    return null;
-
-                                case DMASTDereference.OperationKind.Call:
-                                case DMASTDereference.OperationKind.CallSafe:
                                 default:
                                     throw new InvalidOperationException("unhandled dereference operation kind");
                             }
@@ -2350,7 +2338,7 @@ namespace DMCompiler.Compiler.DM {
                     operations.Add(operation);
                 }
 
-                if (operations.Any()) {
+                if (operations.Count != 0) {
                     Whitespace();
                     return new DMASTDereference(expression.Location, expression, operations.ToArray());
                 }
@@ -2360,7 +2348,7 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMASTExpression ParseProcCall(DMASTExpression expression) {
+        private DMASTExpression? ParseProcCall(DMASTExpression? expression) {
             if (expression is not (DMASTCallable or DMASTIdentifier or DMASTGlobalIdentifier)) return expression;
 
             Whitespace();

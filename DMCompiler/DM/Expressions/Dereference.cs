@@ -12,21 +12,37 @@ namespace DMCompiler.DM.Expressions {
     // etc.
     internal class Dereference : LValue {
         public abstract class Operation {
+            /// <summary>
+            /// Whether this operation will short circuit if the dereference equals null. (equal to x?.y)
+            /// </summary>
             public required bool Safe { get; init; }
+
+            /// <summary>
+            /// The path of the l-value being dereferenced.
+            /// </summary>
             public DreamPath? Path { get; init; }
         }
 
         public abstract class NamedOperation : Operation {
+            /// <summary>
+            /// The name of the identifier.
+            /// </summary>
             public required string Identifier { get; init; }
         }
 
         public sealed class FieldOperation : NamedOperation;
 
         public sealed class IndexOperation : Operation {
+            /// <summary>
+            /// The index expression. (eg. x[expr])
+            /// </summary>
             public required DMExpression Index { get; init; }
         }
 
         public sealed class CallOperation : NamedOperation {
+            /// <summary>
+            /// The argument list inside the call operation's parentheses. (eg. x(args, ...))
+            /// </summary>
             public required ArgumentList Parameters { get; init; }
         }
 
@@ -230,21 +246,17 @@ namespace DMCompiler.DM.Expressions {
 
             var operation = _operations[^1];
 
-            switch (operation) {
-                case FieldOperation fieldOperation:
-                    if (prevPath is not null) {
-                        var obj = DMObjectTree.GetDMObject(prevPath.Value);
-                        var variable = obj!.GetVariable(fieldOperation.Identifier);
-                        if (variable != null) {
-                            if (variable.IsConst)
-                                return variable.Value.TryAsConstant(out constant);
-                            if (variable.ValType.HasFlag(DMValueType.CompiletimeReadonly)) {
-                                variable.Value.TryAsConstant(out constant!);
-                                return true; // MUST be true.
-                            }
-                        }
+            if (operation is FieldOperation fieldOperation && prevPath is not null) {
+                var obj = DMObjectTree.GetDMObject(prevPath.Value);
+                var variable = obj!.GetVariable(fieldOperation.Identifier);
+                if (variable != null) {
+                    if (variable.IsConst)
+                        return variable.Value.TryAsConstant(out constant);
+                    if (variable.ValType.HasFlag(DMValueType.CompiletimeReadonly)) {
+                        variable.Value.TryAsConstant(out constant!);
+                        return true; // MUST be true.
                     }
-                    break;
+                }
             }
 
             constant = null;

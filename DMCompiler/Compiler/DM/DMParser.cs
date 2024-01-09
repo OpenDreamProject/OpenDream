@@ -1,9 +1,9 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using DMCompiler.Compiler.DMPreprocessor;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
@@ -2281,13 +2281,12 @@ namespace DMCompiler.Compiler.DM {
 
                             Whitespace();
                             var index = Expression();
+                            ConsumeRightBracket();
 
                             if (index == null) {
                                 DMCompiler.Emit(WarningCode.BadToken, token.Location, "Expression expected");
                                 return new DMASTConstantNull(token.Location);
                             }
-
-                            ConsumeRightBracket();
 
                             operation = new DMASTDereference.IndexOperation {
                                 Index = index,

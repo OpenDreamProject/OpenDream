@@ -1,9 +1,9 @@
-using System;
+using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Expressions;
 using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DM;
 using OpenDreamShared.Dream;
 using Robust.Shared.Utility;
+using System;
 
 namespace DMCompiler.DM.Visitors;
 
@@ -612,8 +612,8 @@ internal static class DMExpressionBuilder {
                 }
 
                 case DMASTDereference.IndexOperation indexOperation:
-                    // Passing the path here is cursed, but one of the tests seems to suggest we want that?
                     operation = new Dereference.IndexOperation {
+                        // Passing the path here is cursed, but one of the tests seems to suggest we want that?
                         Index = DMExpression.Create(dmObject, proc, indexOperation.Index, prevPath),
                         Safe = indexOperation.Safe,
                         Path = prevPath

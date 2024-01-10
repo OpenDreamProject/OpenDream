@@ -8,10 +8,10 @@ namespace OpenDreamClient.Rendering;
 /// Disables RobustToolbox's transform lerping and replaces it with our own gliding
 /// </summary>
 public sealed class AtomGlideSystem : EntitySystem {
-    private sealed class Glide(TransformComponent transform) {
+    private sealed class Glide(TransformComponent transform, DMISpriteComponent sprite) {
         public readonly TransformComponent Transform = transform;
+        public readonly DMISpriteComponent Sprite = sprite;
         public Vector2 EndPos;
-        public float MovementSpeed;
     }
 
     [Dependency] private readonly TransformSystem _transformSystem = default!;
@@ -42,9 +42,16 @@ public sealed class AtomGlideSystem : EntitySystem {
 
         for (int i = 0; i < _currentGlides.Count; i++) {
             var glide = _currentGlides[i];
+
+            if (glide.Sprite.Icon.Appearance == null) {
+                _currentGlides.RemoveSwap(i--);
+                continue;
+            }
+
             var currentPos = glide.Transform.LocalPosition;
             var newPos = currentPos;
-            var movement = glide.MovementSpeed * frameTime;
+            var movementSpeed = CalculateMovementSpeed(glide.Sprite.Icon.Appearance.GlideSize);
+            var movement = movementSpeed * frameTime;
 
             // Move X towards the end position at a constant speed
             if (!MathHelper.CloseTo(currentPos.X, glide.EndPos.X)) {
@@ -111,7 +118,7 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
 
         if (glide == null) {
-            glide = new(e.Component);
+            glide = new(e.Component, sprite);
             _currentGlides.Add(glide);
         }
 
@@ -120,16 +127,15 @@ public sealed class AtomGlideSystem : EntitySystem {
         _transformSystem.SetLocalPositionNoLerp(e.Sender, startingFrom, e.Component);
 
         glide.EndPos = glidingTo;
-        glide.MovementSpeed = CalculateMovementSpeed(sprite.Icon.Appearance.GlideSize);
         _ignoreMoveEvent = false;
     }
 
-    private static float CalculateMovementSpeed(byte glideSize) {
+    private static float CalculateMovementSpeed(float glideSize) {
         if (glideSize == 0)
             glideSize = 4; // TODO: 0 gives us "automated control" over this value, not just setting it to 4
 
         // Assume a 20 TPS server
         // TODO: Support other TPS
-        return (float)glideSize / EyeManager.PixelsPerMeter * 20f;
+        return glideSize / EyeManager.PixelsPerMeter * 20f;
     }
 }

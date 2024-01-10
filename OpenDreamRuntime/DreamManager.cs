@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using System.Linq;
 using System.Text.Json;
 using DMCompiler.Bytecode;
@@ -51,10 +52,14 @@ namespace OpenDreamRuntime {
         private int _dreamObjectRefIdCounter;
 
         private DreamCompiledJson _compiledJson;
+
+        [MemberNotNullWhen(true, nameof(_worldTickProc))]
         public bool Initialized { get; private set; }
         public GameTick InitializedTick { get; private set; }
 
         private ISawmill _sawmill = default!;
+
+        private DreamProc? _worldTickProc;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
@@ -95,8 +100,12 @@ namespace OpenDreamRuntime {
             if (!Initialized)
                 return;
 
-            _procScheduler.Process();
-            UpdateStat();
+            // first process is allowed to update delays and run deferred tasks
+            _procScheduler.Process(true);
+            DreamThread.Run(_worldTickProc, WorldInstance, null);
+            _procScheduler.Process(false); // nothing is allowed to run after /world/Tick()
+
+            UpdateStat(); // ... except for Stat
             _dreamMapManager.UpdateTiles();
             DreamObjectSavefile.FlushAllUpdates();
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
@@ -131,6 +140,8 @@ namespace OpenDreamRuntime {
 
             // Call /world/<init>. This is an IMPLEMENTATION DETAIL and non-DMStandard should NOT be run here.
             WorldInstance.InitSpawn(new());
+
+            _worldTickProc = WorldInstance.GetProc("Tick");
 
             if (_compiledJson.Globals is GlobalListJson jsonGlobals) {
                 Globals = new DreamValue[jsonGlobals.GlobalCount];

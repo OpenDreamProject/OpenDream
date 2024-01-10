@@ -60,6 +60,10 @@ namespace DMCompiler.DM {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
+        /// <summary>
+        /// Gets the canonical name of the expression if it exists.
+        /// </summary>
+        /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
         public virtual string? GetNameof() => null;
 
         /// <summary>

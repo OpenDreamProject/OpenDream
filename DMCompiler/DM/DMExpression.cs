@@ -65,6 +65,12 @@ namespace DMCompiler.DM {
             throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
         }
 
+        /// <summary>
+        /// Determines whether the expression returns an ambiguous path.
+        /// </summary>
+        /// <remarks>Dereferencing these expressions will always skip validation via the "expr:y" operation.</remarks>
+        public virtual bool PathIsFuzzy => false;
+
         public virtual DreamPath? Path => null;
 
         public virtual DreamPath? NestedPath => Path;

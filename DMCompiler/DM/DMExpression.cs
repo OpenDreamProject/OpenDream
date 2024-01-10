@@ -60,9 +60,7 @@ namespace DMCompiler.DM {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
-        public virtual string GetNameof(DMObject dmObject, DMProc proc) {
-            throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
-        }
+        public virtual string? GetNameof() => null;
 
         /// <summary>
         /// Determines whether the expression returns an ambiguous path.

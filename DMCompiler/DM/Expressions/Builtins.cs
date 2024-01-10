@@ -600,7 +600,24 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushString(_expr.GetNameof(dmObject, proc));
+            if (_expr.GetNameof() is { } nameof) {
+                proc.PushString(nameof);
+            } else {
+                DMCompiler.Emit(WarningCode.BadArgument, Location,
+                    "nameof() requires a var, proc reference, or type path");
+                proc.PushString("");
+            }
+        }
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if (_expr.GetNameof() is { } nameof) {
+                constant = new String(Location, nameof);
+                return true;
+            }
+            DMCompiler.Emit(WarningCode.BadArgument, Location,
+                "nameof() requires a var, proc reference, or type path");
+            constant = null;
+            return false;
         }
     }
 
@@ -644,6 +661,11 @@ namespace DMCompiler.DM.Expressions {
                 proc.PushType(dmObject.Id);
             }
         }
+
+        public override string GetNameof() {
+            DMCompiler.UnimplementedWarning(Location, "nameof(__TYPE__) is unimplemented");
+            return "";
+        }
     }
 
     // __PROC__
@@ -654,6 +676,12 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushProc(proc.Id);
+        }
+
+        public override string GetNameof() {
+            // TODO: refactor proc references
+            DMCompiler.UnimplementedWarning(Location, "nameof(__PROC__) is unimplemented");
+            return "";
         }
     }
 

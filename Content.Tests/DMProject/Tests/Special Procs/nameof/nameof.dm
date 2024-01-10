@@ -9,7 +9,7 @@ var/global/foobar
 	var/datum/test/two/two
 
 /datum/test/proc/testarg(atom/movable/A, B)
-	ASSERT(two == "two")
+	ASSERT(nameof(two) == "two")
 	ASSERT(nameof(A) == "A")
 	ASSERT(nameof(B) == "B")
 

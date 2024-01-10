@@ -603,8 +603,7 @@ namespace DMCompiler.DM.Expressions {
             if (_expr.GetNameof() is { } nameof) {
                 proc.PushString(nameof);
             } else {
-                DMCompiler.Emit(WarningCode.BadArgument, Location,
-                    "nameof() requires a var, proc reference, or type path");
+                DMCompiler.Emit(WarningCode.BadArgument, Location, "nameof() requires a var, proc reference, or type path");
                 proc.PushString("");
             }
         }
@@ -614,8 +613,7 @@ namespace DMCompiler.DM.Expressions {
                 constant = new String(Location, nameof);
                 return true;
             }
-            DMCompiler.Emit(WarningCode.BadArgument, Location,
-                "nameof() requires a var, proc reference, or type path");
+            DMCompiler.Emit(WarningCode.BadArgument, Location, "nameof() requires a var, proc reference, or type path");
             constant = null;
             return false;
         }

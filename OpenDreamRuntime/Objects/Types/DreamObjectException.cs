@@ -1,6 +1,6 @@
 namespace OpenDreamRuntime.Objects.Types;
 
-public sealed class DreamObjectException : DreamObject {
+public sealed class DreamObjectException(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
     public string Name = string.Empty;
     public string Description = string.Empty;
     public string File = string.Empty;

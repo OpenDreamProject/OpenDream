@@ -310,7 +310,7 @@ namespace OpenDreamRuntime {
             OnException?.Invoke(this, e);
 
             // Invoke world.Error()
-            var obj = (DreamObjectException)_objectTree.CreateObject(_objectTree.Exception);
+            var obj =_objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
             obj.Name = e.Message;
             obj.Description = msg;
             obj.Line = line;

@@ -26,7 +26,4 @@ public sealed class DreamObjectException : DreamObject {
                 return base.TryGetVar(varName, out value);
         }
     }
-
-
-
 }

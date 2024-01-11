@@ -8,10 +8,6 @@ public sealed class DreamObjectException : DreamObject {
 
     //TODO: Match the format of BYOND exceptions since SS13 does splittext and other things to extract data from exceptions
 
-    public DreamObjectException(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-
-    }
-
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "name":

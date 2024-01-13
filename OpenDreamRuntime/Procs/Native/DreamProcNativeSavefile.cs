@@ -4,6 +4,7 @@ using OpenDreamRuntime.Resources;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using System.IO;
 using System.Linq;
+using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -18,11 +19,19 @@ internal static class DreamProcNativeSavefile {
         DreamValue file = bundle.GetArgument(1, "file");
 
         if(!path.IsNull && path.TryGetValueAsString(out var pathStr)) { //invalid path values are just ignored in BYOND
-            savefile.ChangeDirectory(pathStr);
+            savefile.CurrentPath = pathStr;
         }
 
         string result = ExportTextInternal(savefile);
-        //TODO if file is not null, write to file
+        if(!file.IsNull){
+            if(file.TryGetValueAsString(out var fileStr)) {
+                File.WriteAllText(fileStr, result);
+            } else if(file.TryGetValueAsDreamResource(out var fileResource)) {
+                fileResource.Output(new DreamValue(result));
+            } else {
+                throw new ArgumentException($"Invalid file value {file}");
+            }
+        }
         return new DreamValue(result);
     }
 
@@ -36,7 +45,7 @@ internal static class DreamProcNativeSavefile {
         DreamValue source = bundle.GetArgument(1, "source");
 
         if(!path.IsNull && path.TryGetValueAsString(out var pathStr)) { //invalid path values are just ignored in BYOND
-            savefile.ChangeDirectory(pathStr);
+            savefile.CurrentPath = pathStr;
         }
         //if source is a file, read text from file and parse
         //else if source is a string, parse string
@@ -63,7 +72,7 @@ internal static class DreamProcNativeSavefile {
                 var value = keyValue[1].Trim();
                 if (value.StartsWith("object(")) {
                     directoryStack.Push(key);
-                    savefile.ChangeDirectory(string.Join("/", directoryStack.Reverse()));
+                    savefile.CurrentPath = string.Join("/", directoryStack.Reverse());
                 } else {
                     savefile.OperatorIndexAssign(new DreamValue(key), new DreamValue(value));
                 }
@@ -78,36 +87,47 @@ internal static class DreamProcNativeSavefile {
 
     private static string ExportTextInternal(DreamObjectSavefile savefile, int indent = 0) {
         string result = "";
-
-        foreach (string key in savefile.GetCurrentDirKeys()) {
-            var value = savefile.CurrentDir[key]; //TODO handle savefile directories
-            //if value is a savefile directory, recurse
-            //result += ExportTextInternal(savefile, indent + 1);
-            if(value.IsNull)
-                result += $"{new string('\t', indent)}{key} = null\n";
-            else {
-                switch(value.Type) {
+        var value = savefile.CurrentDir;
+        var key = savefile.CurrentPath;
+        switch(value) {
+            case DreamObjectSavefile.DreamPrimitive primitiveValue:
+                if(primitiveValue.Value.IsNull)
+                    result += $"{new string('\t', indent)}{key} = null\n";
+                else switch(primitiveValue.Value.Type){
                     case DreamValue.DreamValueType.String:
-                        result += $"{new string('\t', indent)}{key} = \"{value.MustGetValueAsString()}\"\n";
+                        result += $"{new string('\t', indent)}{key} = \"{primitiveValue.Value.MustGetValueAsString()}\"\n";
                         break;
                     case DreamValue.DreamValueType.Float:
-                        result += $"{new string('\t', indent)}{key} = {value.MustGetValueAsFloat()}\n";
+                        result += $"{new string('\t', indent)}{key} = {primitiveValue.Value.MustGetValueAsFloat()}\n";
                         break;
-                    case DreamValue.DreamValueType.DreamResource: //TODO this should probably be implemented in SaveFile.Read instead
-                        DreamResource dreamResource = value.MustGetValueAsDreamResource();
-                        result += $"{new string('\t', indent)}{key} = \nfiledata(\"";
-                        result += $"name={dreamResource.ResourcePath};";
-                        result += $"ext={Path.GetExtension(dreamResource.ResourcePath)};";
-                        result += $"length={dreamResource.ResourceData!.Length};";
-                        result += $"crc32=0x00000000;"; //TODO crc32
-                        result += $"encoding=base64\",{{\"{Convert.ToBase64String(dreamResource.ResourceData!)}\"}}";
-                        result += ")\n";
-                        break;
-                    default:
-                        throw new NotImplementedException($"Unhandled type {key} = {value.Stringify()} in ExportText()");
                 }
-            }
+                break;
+            case DreamObjectSavefile.DreamFileValue fileValue:
+                result += $"{new string('\t', indent)}{key} = \nfiledata(\"";
+                result += $"name={fileValue.Name};";
+                result += $"ext={fileValue.Ext};";
+                result += $"length={fileValue.Length};";
+                result += $"crc32={fileValue.Crc32};"; //TODO crc32
+                result += $"encoding=base64\",{{\"{fileValue.Data}\"}}";
+                //result += $"encoding=base64\",{{\"{Convert.ToBase64String(fileValue.Data)}\"}}";
+                result += ")\n";
+                break;
+            case DreamObjectSavefile.DreamJsonValue jsonValue:
+                result += $"{new string('\t', indent)}{key}\n";
+                break;
+            default:
+                throw new NotImplementedException($"Unhandled type {key} = {value} in ExportText()");
         }
+
+        foreach (string subkey in savefile.CurrentDir.Keys) {
+            if (subkey == "")
+                continue;
+            savefile.CurrentPath = subkey;
+            result += ExportTextInternal(savefile, indent + 1);
+        }
+        savefile.CurrentPath = key;
+
+
         return result;
     }
 

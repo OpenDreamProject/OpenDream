@@ -35,9 +35,9 @@
 	F["dir7"] = null
 	F["dirIcon"] = new /icon()
 
-	ASSERT(F.ExportText("dir6/subdir6") == ". = 321")
-	ASSERT(F.ExportText("dir6/subdir6/") == ". = 321")
-	ASSERT(F.ExportText("dir6") == "subdir6 = 321")
+	ASSERT(F.ExportText("dir6/subdir6") == ". = 321\n")
+	ASSERT(F.ExportText("dir6/subdir6/") == ". = 321\n")
+	ASSERT(F.ExportText("dir6") == "\nsubdir6 = 321\n")
 
 
 	var/import_test = @{"

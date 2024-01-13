@@ -1,6 +1,5 @@
 ﻿using System;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using DMCompiler.DM;
 using System.Collections.Generic;

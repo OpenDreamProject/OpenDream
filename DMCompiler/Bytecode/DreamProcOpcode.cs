@@ -364,27 +364,6 @@ public struct DMReference {
 // Dummy class-as-namespace because C# just kinda be like this
 public static class OpcodeVerifier {
     /// <summary>
-    /// Validates that the opcodes in DreamProcOpcode are all unique, such that none resolve to the same byte.
-    /// </summary>
-    /// <returns>True if there are duplicate opcodes, false if not</returns>
-    // FIXME: Can this be made into something done during compiletime? Like, *this code's* compiletime? >:/
-    public static bool AreOpcodesInvalid() {
-        // I'm not *too* satisfied with this boolean schtick, as opposed to throwing,
-        // but I want each executable to be able to do what they want with this information.
-
-        HashSet<DreamProcOpcode> bytePool = new();
-        foreach (DreamProcOpcode usedInt in Enum.GetValues(typeof(DreamProcOpcode))) {
-            if(bytePool.Contains(usedInt)) {
-                return true;
-            }
-
-            bytePool.Add(usedInt);
-        }
-
-        return false;
-    }
-
-    /// <summary>
     /// Calculates a hash of all the <c>DreamProcOpcode</c>s for warning on incompatibilities.
     /// </summary>
     /// <returns>A MD5 hash string</returns>

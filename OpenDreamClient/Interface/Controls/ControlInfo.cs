@@ -205,7 +205,17 @@ public sealed class ControlInfo : InterfaceControl {
         _tabControl.OnTabChanged += OnSelectionChanged;
 
         RefreshVerbs();
-
+        _tabControl.OnVisibilityChanged += (args) => {
+            if (args.Visible) {
+                OnShowEvent();
+            } else {
+                OnHideEvent();
+            }
+        };
+        if(ControlDescriptor.IsVisible)
+            OnShowEvent();
+        else
+            OnHideEvent();
         return _tabControl;
     }
 
@@ -284,5 +294,19 @@ public sealed class ControlInfo : InterfaceControl {
         };
 
         _netManager.ClientSendMessage(msg);
+    }
+
+    public void OnShowEvent() {
+        ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
+        if (controlDescriptor.OnShowCommand != null) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        }
+    }
+
+    public void OnHideEvent() {
+        ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
+        if (controlDescriptor.OnHideCommand != null) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        }
     }
 }

@@ -1,7 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
     abstract class BinaryOp : DMExpression {
@@ -215,6 +214,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x & y
     sealed class BinaryAnd : BinaryOp {
+        public override bool PathIsFuzzy => true;
+
         public BinaryAnd(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 

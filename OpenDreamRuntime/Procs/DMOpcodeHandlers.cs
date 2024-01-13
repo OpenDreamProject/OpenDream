@@ -167,7 +167,7 @@ namespace OpenDreamRuntime.Procs {
             var val = state.Pop();
             if (!val.TryGetValueAsType(out var objectType)) {
                 if (val.TryGetValueAsString(out var pathString)) {
-                    if (!state.Proc.ObjectTree.TryGetTreeEntry(new DreamPath(pathString), out objectType)) {
+                    if (!state.Proc.ObjectTree.TryGetTreeEntry(pathString, out objectType)) {
                         ThrowCannotCreateUnknownObject(val);
                     }
                 } else {
@@ -1697,14 +1697,13 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
             state.Pop().TryGetValueAsFloat(out var delay);
-            int delayMilliseconds = (int)(delay * 100);
 
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
 
             //Negative delays mean the spawned code runs immediately
-            if (delayMilliseconds < 0) {
+            if (delay < 0) {
                 newContext.Resume();
                 // TODO: Does the rest of the proc get scheduled?
                 // Does the value of the delay mean anything?

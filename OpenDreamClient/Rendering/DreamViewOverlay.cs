@@ -752,12 +752,14 @@ internal sealed class DreamViewOverlay : Overlay {
             // TODO use a sprite tree.
             if (!_spriteQuery.TryGetComponent(entity, out var sprite))
                 continue;
-            if (!sprite.IsVisible(seeInvis: seeVis))
+
+            var transform = _xformQuery.GetComponent(entity);
+            if (!sprite.IsVisible(transform, seeVis))
                 continue;
             if (sprite.Icon.Appearance == null) //appearance hasn't loaded yet
                 continue;
 
-            var worldPos = _transformSystem.GetWorldPosition(entity, _xformQuery);
+            var worldPos = _transformSystem.GetWorldPosition(transform);
             var tilePos = grid.WorldToTile(worldPos) - eyeTile.GridIndices + viewRange.Center;
             if (tilePos.X < 0 || tilePos.Y < 0 || tilePos.X >= _tileInfo.GetLength(0) || tilePos.Y >= _tileInfo.GetLength(1))
                 continue;
@@ -801,10 +803,12 @@ internal sealed class DreamViewOverlay : Overlay {
                 // TODO use a sprite tree.
                 if (!_spriteQuery.TryGetComponent(entity, out var sprite))
                     continue;
-                if (!sprite.IsVisible(seeInvis: seeVis))
+
+                var transform = _xformQuery.GetComponent(entity);
+                if (!sprite.IsVisible(transform, seeVis))
                     continue;
 
-                var worldPos = _transformSystem.GetWorldPosition(entity, _xformQuery);
+                var worldPos = _transformSystem.GetWorldPosition(transform);
 
                 // Check for visibility if the eye doesn't have SEE_OBJS or SEE_MOBS
                 // TODO: Differentiate between objs and mobs
@@ -830,7 +834,7 @@ internal sealed class DreamViewOverlay : Overlay {
             foreach (EntityUid uid in _screenOverlaySystem.ScreenObjects) {
                 if (!_entityManager.TryGetComponent(uid, out DMISpriteComponent? sprite) || sprite.ScreenLocation == null)
                     continue;
-                if (!sprite.IsVisible(checkWorld: false, seeInvis: seeVis))
+                if (!sprite.IsVisible(null, seeVis))
                     continue;
                 if (sprite.ScreenLocation.MapControl != null) // Don't render screen objects meant for other map controls
                     continue;

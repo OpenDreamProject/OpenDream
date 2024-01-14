@@ -328,7 +328,7 @@ public sealed class AtomManager {
                 break;
             case "glide_size":
                 value.TryGetValueAsFloat(out float glideSize);
-                appearance.GlideSize = (byte) glideSize;
+                appearance.GlideSize = glideSize;
                 break;
             case "render_source":
                 value.TryGetValueAsString(out appearance.RenderSource);

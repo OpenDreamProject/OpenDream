@@ -22,6 +22,7 @@ internal static class DreamProcNativeSavefile {
             savefile.CurrentPath = pathStr;
         }
 
+
         string result = ExportTextInternal(savefile);
         if(!file.IsNull){
             if(file.TryGetValueAsString(out var fileStr)) {

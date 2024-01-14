@@ -1,4 +1,4 @@
-﻿using System.Diagnostics;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -259,6 +259,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// </summary>
     private DreamJsonValue SeekTo(string to) {
         DreamJsonValue tempDir = Savefile;
+
         var searchPath = new DreamPath(_currentPath).AddToPath(to).PathString; //relative path
         if(to.StartsWith("/")) //absolute path
             searchPath = to;
@@ -394,4 +395,5 @@ public sealed class DreamObjectSavefile : DreamObject {
 
         return new DreamPrimitive();
     }
+
 }

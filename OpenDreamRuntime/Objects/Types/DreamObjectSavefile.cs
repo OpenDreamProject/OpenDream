@@ -100,9 +100,15 @@ public sealed class DreamObjectSavefile : DreamObject {
     public string CurrentPath {
         get => _currentPath;
         set {
-            _currentPath = new DreamPath(_currentPath).PathString;
             var tempDir = SeekTo(value);
-            if (tempDir != Savefile) CurrentDir = tempDir;
+            if (tempDir != CurrentDir) {
+                CurrentDir = tempDir;
+                if(value.StartsWith("/")) //absolute path
+                    _currentPath = value;
+                else //relative path
+                    _currentPath = new DreamPath(_currentPath).AddToPath(value).PathString;
+
+            }
         }
     }
 
@@ -253,7 +259,12 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// </summary>
     private DreamJsonValue SeekTo(string to) {
         DreamJsonValue tempDir = Savefile;
-        foreach (var path in (new DreamPath(_currentPath).AddToPath(to).PathString).Split("/")) {
+
+        var searchPath = new DreamPath(_currentPath).AddToPath(to).PathString; //relative path
+        if(to.StartsWith("/")) //absolute path
+            searchPath = to;
+
+        foreach (var path in searchPath.Split("/")) {
             if (!tempDir.TryGetValue(path, out var newDir)) {
                 newDir = tempDir[path] = new DreamJsonValue();
             }

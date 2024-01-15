@@ -314,9 +314,9 @@ public class DreamIconOperationBlend : IDreamIconOperation {
                 break;
             }
             case BlendType.Subtract: {
-                pixels[dstPixelPosition].R = (byte)Math.Max(dst.R - src.R, byte.MinValue);
-                pixels[dstPixelPosition].G = (byte)Math.Max(dst.G - src.G, byte.MinValue);
-                pixels[dstPixelPosition].B = (byte)Math.Max(dst.B - src.B, byte.MinValue);
+                pixels[dstPixelPosition].R = (byte)Math.Max(src.R - dst.R, byte.MinValue);
+                pixels[dstPixelPosition].G = (byte)Math.Max(src.G - dst.G, byte.MinValue);
+                pixels[dstPixelPosition].B = (byte)Math.Max(src.B - dst.B, byte.MinValue);
 
                 // BYOND uses the smaller of the two alphas
                 pixels[dstPixelPosition].A = Math.Min(dst.A, src.A);

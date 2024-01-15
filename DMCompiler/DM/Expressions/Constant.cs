@@ -505,10 +505,10 @@ namespace DMCompiler.DM.Expressions {
 
             switch (pathInfo.Value.Type) {
                 case PathType.TypeReference:
-                    proc.PushType(pathInfo.Value.Id);
+                    proc.PushType(pathInfo.Value.Id, Value);
                     break;
                 case PathType.ProcReference:
-                    proc.PushProc(pathInfo.Value.Id);
+                    proc.PushProc(pathInfo.Value.Id, Value);
                     break;
                 case PathType.ProcStub:
                 case PathType.VerbStub:

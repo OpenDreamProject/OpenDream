@@ -9,136 +9,136 @@ namespace DMCompiler.Bytecode;
 
 public enum DreamProcOpcode : byte {
     [OpcodeMetadata(stackDelta: -1)] BitShiftLeft = 0x1,
-    [OpcodeMetadata(stackDelta: 1)] PushType = 0x2,
-    [OpcodeMetadata(stackDelta: 1)] PushString = 0x3,
-    FormatString = 0x4,
-    [OpcodeMetadata(stackDelta: -2)]SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.
-    [OpcodeMetadata(stackDelta: 1)] PushReferenceValue = 0x6, // TODO: Local refs should be pure, and other refs that aren't modified
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.TypeId)] PushType = 0x2,
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.String)] PushString = 0x3,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.String, OpcodeArgType.FormatCount)] FormatString = 0x4,
+    [OpcodeMetadata(stackDelta: -2, OpcodeArgType.Label)] SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.Reference)] PushReferenceValue = 0x6, // TODO: Local refs should be pure, and other refs that aren't modified
     //0x7
     [OpcodeMetadata(stackDelta: -1)] Add = 0x8,
-    Assign = 0x9,
-    Call = 0xA,
-    MultiplyReference = 0xB,
-    [OpcodeMetadata(stackDelta: -1)] JumpIfFalse = 0xC,
-    [OpcodeMetadata(stackDelta: -1)] JumpIfTrue = 0xD,
-    Jump = 0xE,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] Assign = 0x9,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)] Call = 0xA,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] MultiplyReference = 0xB,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.Label)] JumpIfFalse = 0xC,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.Label)] JumpIfTrue = 0xD,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Label)] Jump = 0xE,
     [OpcodeMetadata(stackDelta: -1)] CompareEquals = 0xF,
     [OpcodeMetadata(stackDelta: -1)] Return = 0x10,
     [OpcodeMetadata(stackDelta: 1)] PushNull = 0x11,
     [OpcodeMetadata(stackDelta: -1)] Subtract = 0x12,
     [OpcodeMetadata(stackDelta: -1)] CompareLessThan = 0x13,
     [OpcodeMetadata(stackDelta: -1)] CompareGreaterThan = 0x14,
-    [OpcodeMetadata(stackDelta: -1)] BooleanAnd = 0x15, //Either shrinks the stack 1 or 0. Assume 1.
-    BooleanNot = 0x16,
-    DivideReference = 0x17,
-    Negate = 0x18,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.Label)] BooleanAnd = 0x15, //Either shrinks the stack 1 or 0. Assume 1.
+    [OpcodeMetadata(stackDelta: 0)] BooleanNot = 0x16,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] DivideReference = 0x17,
+    [OpcodeMetadata(stackDelta: 0)] Negate = 0x18,
     [OpcodeMetadata(stackDelta: -1)] Modulus = 0x19,
-    Append = 0x1A,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] Append = 0x1A,
     [OpcodeMetadata(stackDelta: -3)] CreateRangeEnumerator = 0x1B,
-    Input = 0x1C,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference, OpcodeArgType.Reference)] Input = 0x1C,
     [OpcodeMetadata(stackDelta: -1)] CompareLessThanOrEqual = 0x1D,
-    CreateAssociativeList = 0x1E,
-    Remove = 0x1F,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.ListSize)] CreateAssociativeList = 0x1E,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] Remove = 0x1F,
     [OpcodeMetadata(stackDelta: -1)] DeleteObject = 0x20,
-    [OpcodeMetadata(stackDelta: 1)] PushResource = 0x21,
-    CreateList = 0x22,
-    CallStatement = 0x23,
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.Resource)] PushResource = 0x21,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.ListSize)] CreateList = 0x22,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)] CallStatement = 0x23,
     [OpcodeMetadata(stackDelta: -1)] BitAnd = 0x24,
     [OpcodeMetadata(stackDelta: -1)] CompareNotEquals = 0x25,
-    [OpcodeMetadata(stackDelta: 1)] PushProc = 0x26,
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.ProcId)] PushProc = 0x26,
     [OpcodeMetadata(stackDelta: -1)] Divide = 0x27,
     [OpcodeMetadata(stackDelta: -1)] Multiply = 0x28,
-    BitXorReference = 0x29,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] BitXorReference = 0x29,
     [OpcodeMetadata(stackDelta: -1)] BitXor = 0x2A,
     [OpcodeMetadata(stackDelta: -1)] BitOr = 0x2B,
-    BitNot = 0x2C,
-    Combine = 0x2D,
-    CreateObject = 0x2E,
-    [OpcodeMetadata(stackDelta: -1)] BooleanOr = 0x2F, // Shrinks the stack by 1 or 0. Assume 1.
+    [OpcodeMetadata(stackDelta: 0)] BitNot = 0x2C,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] Combine = 0x2D,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)] CreateObject = 0x2E,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.Label)] BooleanOr = 0x2F, // Shrinks the stack by 1 or 0. Assume 1.
     //0x30
     [OpcodeMetadata(stackDelta: -1)] CompareGreaterThanOrEqual = 0x31,
-    [OpcodeMetadata(stackDelta: -1)] SwitchCase = 0x32, //This could either shrink the stack by 1 or 2. Assume 1.
-    Mask = 0x33,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.Label)] SwitchCase = 0x32, //This could either shrink the stack by 1 or 2. Assume 1.
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] Mask = 0x33,
     //0x34
-    Error = 0x35,
+    [OpcodeMetadata(stackDelta: 0)] Error = 0x35,
     [OpcodeMetadata(stackDelta: -1)] IsInList = 0x36,
     //0x37
-    [OpcodeMetadata(stackDelta: 1)] PushFloat = 0x38,
-    ModulusReference = 0x39,
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.Float)] PushFloat = 0x38,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] ModulusReference = 0x39,
     [OpcodeMetadata(stackDelta: -1)] CreateListEnumerator = 0x3A,
-    Enumerate = 0x3B,
-    DestroyEnumerator = 0x3C,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference, OpcodeArgType.Label)] Enumerate = 0x3B,
+    [OpcodeMetadata(stackDelta: 0)] DestroyEnumerator = 0x3C,
     [OpcodeMetadata(stackDelta: -3)] Browse = 0x3D,
     [OpcodeMetadata(stackDelta: -3)] BrowseResource = 0x3E,
     [OpcodeMetadata(stackDelta: -3)] OutputControl = 0x3F,
     [OpcodeMetadata(stackDelta: -1)] BitShiftRight = 0x40,
-    [OpcodeMetadata(stackDelta: -1)] CreateFilteredListEnumerator = 0x41,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.FilterId)] CreateFilteredListEnumerator = 0x41,
     [OpcodeMetadata(stackDelta: -1)] Power = 0x42,
     //0x43,
     //0x44
-    [OpcodeMetadata(stackDelta: -3)] Prompt = 0x45,
+    [OpcodeMetadata(stackDelta: -3, OpcodeArgType.TypeId)] Prompt = 0x45,
     [OpcodeMetadata(stackDelta: -3)] Ftp = 0x46,
     [OpcodeMetadata(stackDelta: -1)] Initial = 0x47,
     //0x48
     [OpcodeMetadata(stackDelta: -1)] IsType = 0x49,
     [OpcodeMetadata(stackDelta: -2)] LocateCoord = 0x4A,
     [OpcodeMetadata(stackDelta: -1)] Locate = 0x4B,
-    IsNull = 0x4C,
-    [OpcodeMetadata(stackDelta: -1)] Spawn = 0x4D,
-    [OpcodeMetadata(stackDelta: -1)] OutputReference = 0x4E,
+    [OpcodeMetadata(stackDelta: 0)] IsNull = 0x4C,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.Label)] Spawn = 0x4D,
+    [OpcodeMetadata(stackDelta: -1, OpcodeArgType.Reference)] OutputReference = 0x4E,
     [OpcodeMetadata(stackDelta: -2)] Output = 0x4F,
-    JumpIfNullDereference = 0x50,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference, OpcodeArgType.Label)] JumpIfNullDereference = 0x50,
     [OpcodeMetadata(stackDelta: -1)] Pop = 0x51,
-    Prob = 0x52,
+    [OpcodeMetadata(stackDelta: 0)] Prob = 0x52,
     [OpcodeMetadata(stackDelta: -1)] IsSaved = 0x53,
-    PickUnweighted = 0x54,
-    PickWeighted = 0x55,
-    [OpcodeMetadata(stackDelta: 1)] Increment = 0x56,
-    [OpcodeMetadata(stackDelta: 1)] Decrement = 0x57,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.PickCount)] PickUnweighted = 0x54,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.PickCount)] PickWeighted = 0x55,
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.Reference)] Increment = 0x56,
+    [OpcodeMetadata(stackDelta: 1, OpcodeArgType.Reference)] Decrement = 0x57,
     [OpcodeMetadata(stackDelta: -1)] CompareEquivalent = 0x58,
     [OpcodeMetadata(stackDelta: -1)] CompareNotEquivalent = 0x59,
-    Throw = 0x5A,
+    [OpcodeMetadata(stackDelta: 0)] Throw = 0x5A,
     [OpcodeMetadata(stackDelta: -2)] IsInRange = 0x5B,
-    MassConcatenation = 0x5C,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.ConcatCount)] MassConcatenation = 0x5C,
     [OpcodeMetadata(stackDelta: -1)] CreateTypeEnumerator = 0x5D,
     //0x5E
     [OpcodeMetadata(stackDelta: 1)] PushGlobalVars = 0x5F,
     [OpcodeMetadata(stackDelta: -1)] ModulusModulus = 0x60,
-    ModulusModulusReference = 0x61,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] ModulusModulusReference = 0x61,
     //0x62
     //0x63
-    JumpIfNull = 0x64,
-    JumpIfNullNoPop = 0x65,
-    JumpIfTrueReference = 0x66,
-    JumpIfFalseReference = 0x67,
-    DereferenceField = 0x68,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Label)] JumpIfNull = 0x64,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Label)] JumpIfNullNoPop = 0x65,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference, OpcodeArgType.Label)] JumpIfTrueReference = 0x66,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference, OpcodeArgType.Label)] JumpIfFalseReference = 0x67,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.String)] DereferenceField = 0x68,
     [OpcodeMetadata(stackDelta: -1)] DereferenceIndex = 0x69,
-    DereferenceCall = 0x6A,
-    PopReference = 0x6B,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.String, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)] DereferenceCall = 0x6A,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] PopReference = 0x6B,
     //0x6C
-    BitShiftLeftReference = 0x6D,
-    BitShiftRightReference = 0x6E,
-    Try = 0x6F,
-    TryNoValue = 0x70,
-    EndTry = 0x71,
-    EnumerateNoAssign = 0x72,
-    Gradient = 0x73,
-    AssignInto = 0x74,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] BitShiftLeftReference = 0x6D,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] BitShiftRightReference = 0x6E,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Label, OpcodeArgType.Reference)] Try = 0x6F,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Label)] TryNoValue = 0x70,
+    [OpcodeMetadata(stackDelta: 0)] EndTry = 0x71,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Label)] EnumerateNoAssign = 0x72,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)] Gradient = 0x73,
+    [OpcodeMetadata(stackDelta: 0, OpcodeArgType.Reference)] AssignInto = 0x74,
     [OpcodeMetadata(stackDelta: -1)] GetStep = 0x75,
-    Length = 0x76,
+    [OpcodeMetadata(stackDelta: 0)] Length = 0x76,
     [OpcodeMetadata(stackDelta: -1)] GetDir = 0x77,
-    DebuggerBreakpoint = 0x78,
-    Sin = 0x79,
-    Cos = 0x7A,
-    Tan = 0x7B,
-    ArcSin = 0x7C,
-    ArcCos = 0x7D,
-    ArcTan = 0x7E,
+    [OpcodeMetadata(stackDelta: 0)] DebuggerBreakpoint = 0x78,
+    [OpcodeMetadata(stackDelta: 0)] Sin = 0x79,
+    [OpcodeMetadata(stackDelta: 0)] Cos = 0x7A,
+    [OpcodeMetadata(stackDelta: 0)] Tan = 0x7B,
+    [OpcodeMetadata(stackDelta: 0)] ArcSin = 0x7C,
+    [OpcodeMetadata(stackDelta: 0)] ArcCos = 0x7D,
+    [OpcodeMetadata(stackDelta: 0)] ArcTan = 0x7E,
     [OpcodeMetadata(stackDelta: -1)] ArcTan2 = 0x7F,
-    Sqrt = 0x80,
+    [OpcodeMetadata(stackDelta: 0)] Sqrt = 0x80,
     [OpcodeMetadata(stackDelta: -1)] Log = 0x81,
-    LogE = 0x82,
-    Abs = 0x83,
+    [OpcodeMetadata(stackDelta: 0)] LogE = 0x82,
+    [OpcodeMetadata(stackDelta: 0)] Abs = 0x83,
 }
 
 /// <summary>
@@ -389,9 +389,27 @@ public static class OpcodeVerifier {
 internal sealed class OpcodeMetadataAttribute : Attribute {
     public OpcodeMetadata Metadata;
 
-    public OpcodeMetadataAttribute(int stackDelta = 0) {
-        Metadata = new OpcodeMetadata(stackDelta);
+    public OpcodeMetadataAttribute(int stackDelta = 0, params OpcodeArgType[] requiredArgs) {
+        Metadata = new OpcodeMetadata(stackDelta, requiredArgs);
     }
+}
+
+public enum OpcodeArgType {
+    ArgType,
+    StackDelta,
+    Resource,
+    TypeId,
+    ProcId,
+    FilterId,
+    ListSize,
+    Int,
+    Label,
+    Float,
+    String,
+    Reference,
+    FormatCount,
+    PickCount,
+    ConcatCount,
 }
 
 /// <summary>
@@ -399,9 +417,11 @@ internal sealed class OpcodeMetadataAttribute : Attribute {
 /// </summary>
 public struct OpcodeMetadata {
     public readonly int StackDelta; // Net change in stack size caused by this opcode
+    public readonly List<OpcodeArgType> RequiredArgs; // The types of arguments this opcode requires
 
-    public OpcodeMetadata(int stackDelta = 0) {
+    public OpcodeMetadata(int stackDelta = 0, params OpcodeArgType[] requiredArgs) {
         StackDelta = stackDelta;
+        RequiredArgs = new List<OpcodeArgType>(requiredArgs);
     }
 }
 

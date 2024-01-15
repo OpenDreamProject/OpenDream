@@ -591,7 +591,7 @@ namespace DMCompiler.DM.Visitors {
             }
 
             if (DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
-                _proc.PushType(typeId);
+                _proc.PushType(typeId, type.Value);
                 _proc.CreateTypeEnumerator();
             } else {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, initializer.Location, $"Type {type.Value} does not exist");

@@ -1,5 +1,4 @@
 ﻿using System.Threading.Tasks;
-using Robust.Shared.Collections;
 using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Procs;
@@ -9,7 +8,7 @@ namespace OpenDreamRuntime.Procs;
 public sealed partial class ProcScheduler {
     [Dependency] private readonly IGameTiming _gameTiming = default!;
 
-    private ValueList<DelayTicker> _tickers;
+    private PriorityQueue<DelayTicker, uint> _tickers = new();
 
     // This is for deferred tasks that need to fire in the current tick.
     private readonly Queue<TaskCompletionSource> _deferredTasks = new();
@@ -53,28 +52,33 @@ public sealed partial class ProcScheduler {
         }
 
         var tcs = new TaskCompletionSource();
-        _tickers.Add(new DelayTicker(tcs) { TicksLeft = ticks + 1 }); // Add 1 because it'll get decreased at the end of this tick
+
+        InsertTask(new DelayTicker(tcs) { TicksAt = _gameTiming.CurTick.Value + (uint)ticks }); //safe cast because ticks is always positive here
         return tcs.Task;
     }
 
-    private void UpdateDelays() {
-        // TODO: This is O(n) every tick for the amount of delays we have.
-        // It may be possible to optimize this.
-        for (var i = 0; i < _tickers.Count; i++) {
-            var ticker = _tickers[i];
-            ticker.TicksLeft -= 1;
-            if (ticker.TicksLeft != 0)
-                continue;
 
+    /// <summary>
+    /// Insert a ticker into the queue to maintain sorted order
+    /// </summary>
+    /// <param name="ticker"></param>
+    private void InsertTask(DelayTicker ticker) {
+        _tickers.Enqueue(ticker, ticker.TicksAt);
+    }
+
+    private void UpdateDelays() {
+        while(_tickers.Count > 0) {
+            var ticker = _tickers.Peek();
+            if(ticker.TicksAt > _gameTiming.CurTick.Value)
+                break; //queue is sorted, so if we hit a ticker that isn't ready, we can stop
             ticker.TaskCompletionSource.TrySetResult();
-            _tickers.RemoveSwap(i);
-            i -= 1;
+            _tickers.Dequeue();
         }
     }
 
     private sealed class DelayTicker {
         public readonly TaskCompletionSource TaskCompletionSource;
-        public int TicksLeft;
+        public required uint TicksAt;
 
         public DelayTicker(TaskCompletionSource taskCompletionSource) {
             TaskCompletionSource = taskCompletionSource;

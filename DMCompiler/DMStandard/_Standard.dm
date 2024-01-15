@@ -162,6 +162,10 @@ proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 	set opendream_unimplemented = TRUE
 	CRASH("/get_step_to() is not implemented")
 
+/proc/get_steps_to(Ref, Trg, Min=0)
+	set opendream_unimplemented = TRUE
+	CRASH("/get_steps_to() is not implemented")
+
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE
 	CRASH("/walk_away() is not implemented")

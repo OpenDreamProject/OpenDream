@@ -30,6 +30,22 @@ internal class Program {
         LoadAllProcs();
         LoadAllTypes();
 
+        if(args.Length > 1) {
+            string command = args[1].ToLower();
+            switch (command) {
+                case "search": Search(args); break;
+                case "sel":
+                case "select": Select(args); break;
+                case "list": List(args); break;
+                case "d":
+                case "decompile": Decompile(args); break;
+                case "dump-all": DumpAll(); break;
+                case "test-all": TestAll(); break;
+                default: Console.WriteLine("Invalid command \"" + command + "\""); break;
+            }
+            return;
+        }
+
         bool acceptingCommands = true;
         while (acceptingCommands) {
             if (_selectedType != null) {
@@ -53,6 +69,7 @@ internal class Program {
                 case "list": List(split); break;
                 case "d":
                 case "decompile": Decompile(split); break;
+                case "dump-all": DumpAll(); break;
                 case "test-all": TestAll(); break;
                 default: Console.WriteLine("Invalid command \"" + command + "\""); break;
             }
@@ -210,5 +227,15 @@ internal class Program {
             ++all;
         }
         Console.WriteLine($"Errors in {errored}/{all} procs");
+    }
+
+    private static void DumpAll() {
+        foreach (DMProc proc in Procs) {
+            string value = proc.Decompile();
+            if (proc.exception != null) {
+                Console.WriteLine("Error disassembling " + proc.Name);
+                Console.WriteLine(value);
+            }
+        }
     }
 }

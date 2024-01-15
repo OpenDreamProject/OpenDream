@@ -232,10 +232,8 @@ internal class Program {
     private static void DumpAll() {
         foreach (DMProc proc in Procs) {
             string value = proc.Decompile();
-            if (proc.exception != null) {
-                Console.WriteLine("Error disassembling " + proc.Name);
-                Console.WriteLine(value);
-            }
+            Console.WriteLine("Proc " + proc.Name);
+            Console.WriteLine(value);
         }
     }
 }

@@ -125,7 +125,7 @@ namespace DMCompiler.DM.Optimizer {
             _requiredArgs.Pop();
 
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeType(type, location));
-            Write((byte)type);
+            Write((int)type);
 
         }
 

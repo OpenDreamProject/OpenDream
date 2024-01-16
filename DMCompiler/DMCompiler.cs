@@ -388,6 +388,7 @@ public struct DMCompilerSettings {
     public bool NoStandard = false;
     public bool Verbose = false;
     public bool DumpBytecode = false;
+    public bool DumpCFGTable = false;
     public Dictionary<string, string>? MacroDefines = null;
 
     /// <summary> A user-provided pragma config file, if one was provided. </summary>

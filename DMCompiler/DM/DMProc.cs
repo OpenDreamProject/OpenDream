@@ -112,13 +112,18 @@ namespace DMCompiler.DM {
             procDefinition.VerbDesc = VerbDesc;
             procDefinition.Invisibility = Invisibility;
 
+            BytecodeOptimizer optimizer = new();
+
+            var bytecodelist = optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode(),
+                $"{_dmObject.Path.PathString}{Name}");
+
+            //procDefinition.MaxStackSize = optimizer.GetMaxStackSize();
             procDefinition.MaxStackSize = AnnotatedBytecode.GetMaxStackSize();
             AnnotatedBytecodeSerializer serializer = new();
 
-            if (AnnotatedBytecode.GetLength() > 0) {
+            if (bytecodelist.Count > 0)
                 procDefinition.Bytecode =
                     serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode());
-            }
 
             if (Parameters.Count > 0) {
                 procDefinition.Arguments = new List<ProcArgumentJson>();

@@ -9,7 +9,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 
 namespace DMCompiler.DM.Optimizer {
-    internal interface IAnnotatedBytecode {
+    public interface IAnnotatedBytecode {
         public void AddArg(IAnnotatedBytecode arg);
     }
 
@@ -311,9 +311,7 @@ namespace DMCompiler.DM.Optimizer {
         private static readonly List<string> indent_cache = new();
 
         public static void Print(IReadOnlyList<IAnnotatedBytecode> annotatedBytecode, List<SourceInfoJson> sourceInfo,
-            StringBuilder output) {
-            int indent = 1;
-
+            StringBuilder output, int indent = 1) {
             int currentLine = 0;
 
             Dictionary<int, SourceInfoJson> sourceInfoByLine = new();
@@ -361,7 +359,8 @@ namespace DMCompiler.DM.Optimizer {
                             currentLine = (annotatedBytecodeInstruction.Location.Line) ?? -1;
                             if (sourceInfoByLine.ContainsKey(currentLine) && currentFile != "" &&
                                 currentLine - 1 < currentFileContents.Count) {
-                                output.Append(" // ").Append(currentFileContents[currentLine - 1].Trim()).Append("\n");
+                                output.Append(' ', indent * 4).Append(" // ")
+                                    .Append(currentFileContents[currentLine - 1].Trim()).Append("\n");
                             }
                         }
 
@@ -376,7 +375,8 @@ namespace DMCompiler.DM.Optimizer {
                         break;
                     case AnnotatedBytecodeVariable variable:
                         if (variable.Exitingscope) {
-                            output.Append("//Variable").Append(localScopeVariables.Count == 1 ? " " : "s ");
+                            output.Append(' ', indent * 4).Append("//Variable")
+                                .Append(localScopeVariables.Count == 1 ? " " : "s ");
                             for (var i = 0; i < localScopeVariables.Count; i++) {
                                 output.Append(localScopeVariables[i]);
                                 if (i < localScopeVariables.Count - 2)
@@ -387,9 +387,12 @@ namespace DMCompiler.DM.Optimizer {
 
                             var havehas = localScopeVariables.Count == 1 ? "has" : "have";
                             output.Append($" {havehas} exited scope\n");
-                            localScopeVariables.RemoveRange(localScopeVariables.Count - variable.Exit, variable.Exit);
+                            if (localScopeVariables.Count - variable.Exit >= 0)
+                                localScopeVariables.RemoveRange(localScopeVariables.Count - variable.Exit,
+                                    variable.Exit);
                         } else {
-                            output.Append("// Variable ").Append(variable.Name).Append(" has entered scope\n");
+                            output.Append(' ', indent * 4).Append("// Variable ").Append(variable.Name)
+                                .Append(" has entered scope\n");
                             localScopeVariables.Add(variable.Name);
                         }
 

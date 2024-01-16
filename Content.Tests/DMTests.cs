@@ -18,10 +18,23 @@ using Robust.Shared.Timing;
 #pragma warning disable NUnit2010 // We do not use the constraint model
 #pragma warning disable NUnit2017 // We use Assert.IsNull
 
-namespace Content.Tests
-{
+namespace Content.Tests {
     [TestFixture]
     public sealed class DMTests : ContentUnitTest {
+        [OneTimeSetUp]
+        public void OneTimeSetup() {
+            IoCManager.InjectDependencies(this);
+            _taskManager.Initialize();
+            IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
+            componentFactory.RegisterClass<DMISpriteComponent>();
+            componentFactory
+                .RegisterClass<DreamMobSightComponent>(); //wow this is terrible TODO figure out why this is necessary
+            componentFactory.GenerateNetIds();
+            Compile(InitializeEnvironment);
+            _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
+            _dreamMan.OnException += OnException;
+        }
+
         private const string TestProject = "DMProject";
         private const string InitializeEnvironment = "./environment.dme";
         private const string TestsDirectory = "Tests";
@@ -32,32 +45,19 @@ namespace Content.Tests
 
         [Flags]
         public enum DMTestFlags {
-            NoError = 0,        // Should run without errors
-            Ignore = 1,         // Ignore entirely
-            CompileError = 2,   // Should fail to compile
-            RuntimeError = 4,   // Should throw an exception at runtime
-            ReturnTrue = 8,     // Should return TRUE
-            NoReturn = 16,      // Shouldn't return (aka stopped by a stack-overflow or runtimes)
+            NoError = 0, // Should run without errors
+            Ignore = 1, // Ignore entirely
+            CompileError = 2, // Should fail to compile
+            RuntimeError = 4, // Should throw an exception at runtime
+            ReturnTrue = 8, // Should return TRUE
+            NoReturn = 16, // Shouldn't return (aka stopped by a stack-overflow or runtimes)
         }
 
         private void OnException(object? sender, Exception exception) => TestContext.WriteLine(exception);
 
-        [OneTimeSetUp]
-        public void OneTimeSetup() {
-            IoCManager.InjectDependencies(this);
-            _taskManager.Initialize();
-            IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
-            componentFactory.RegisterClass<DMISpriteComponent>();
-            componentFactory.RegisterClass<DreamMobSightComponent>(); //wow this is terrible TODO figure out why this is necessary
-            componentFactory.GenerateNetIds();
-            Compile(InitializeEnvironment);
-            _dreamMan.PreInitialize(Path.ChangeExtension(InitializeEnvironment, "json"));
-            _dreamMan.OnException += OnException;
-        }
-
         private static string? Compile(string sourceFile) {
             bool successfulCompile = DMCompiler.DMCompiler.Compile(new() {
-                Files = new() { sourceFile }
+                Files = new List<string> { sourceFile }
             });
 
             return successfulCompile ? Path.ChangeExtension(sourceFile, "json") : null;
@@ -83,7 +83,8 @@ namespace Content.Tests
                     return;
                 }
 
-                Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
+                Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile),
+                    "Failed to compile DM source file");
                 Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
                 _dreamMan.StartWorld();
 
@@ -101,7 +102,8 @@ namespace Content.Tests
                     if (exception != null)
                         Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception}\"");
                     else
-                        Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
+                        Assert.IsTrue(successfulRun,
+                            "A DM runtime exception was thrown, and its message could not be recovered!");
                 }
 
                 if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
@@ -111,7 +113,8 @@ namespace Content.Tests
 
                 Cleanup(compiledFile);
                 TestContext.WriteLine($"--- PASS {sourceFile}");
-            } finally {
+            }
+            finally {
                 // Restore the original CurrentDirectory, since loading a compiled JSON changes it.
                 Directory.SetCurrentDirectory(initialDirectory);
             }
@@ -147,12 +150,12 @@ namespace Content.Tests
                 }
             }
 
-            bool retSuccess = _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
+            bool retSuccess =
+                _dreamMan.LastDMException == prev; // Works because "null == null" is true in this language.
             return (retSuccess, retValue, _dreamMan.LastDMException);
         }
 
-        private static IEnumerable<object[]> GetTests()
-        {
+        private static IEnumerable<object[]> GetTests() {
             Directory.SetCurrentDirectory(TestProject);
 
             foreach (string sourceFile in Directory.GetFiles(TestsDirectory, "*.dm", SearchOption.AllDirectories)) {

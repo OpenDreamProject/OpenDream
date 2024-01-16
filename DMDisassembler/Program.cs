@@ -32,17 +32,8 @@ internal class Program {
 
         if(args.Length > 1) {
             string command = args[1].ToLower();
-            switch (command) {
-                case "search": Search(args); break;
-                case "sel":
-                case "select": Select(args); break;
-                case "list": List(args); break;
-                case "d":
-                case "decompile": Decompile(args); break;
-                case "dump-all": DumpAll(); break;
-                case "test-all": TestAll(); break;
-                default: Console.WriteLine("Invalid command \"" + command + "\""); break;
-            }
+            string[] split = args[2..];
+            HandleArguments(command, split, out _);
             return;
         }
 
@@ -61,18 +52,23 @@ internal class Program {
             string[] split = input.Split(" ");
             string command = split[0].ToLower();
 
-            switch (command) {
-                case "q": acceptingCommands = false; break;
-                case "search": Search(split); break;
-                case "sel":
-                case "select": Select(split); break;
-                case "list": List(split); break;
-                case "d":
-                case "decompile": Decompile(split); break;
-                case "dump-all": DumpAll(); break;
-                case "test-all": TestAll(); break;
-                default: Console.WriteLine("Invalid command \"" + command + "\""); break;
-            }
+            HandleArguments(command, split, out acceptingCommands);
+        }
+    }
+
+    private static void HandleArguments(string command, string[] split, out bool acceptingCommands) {
+        acceptingCommands = true;
+        switch (command) {
+            case "q": acceptingCommands = false; break;
+            case "search": Search(split); break;
+            case "sel":
+            case "select": Select(split); break;
+            case "list": List(split); break;
+            case "d":
+            case "decompile": Decompile(split); break;
+            case "dump-all": DumpAll(); break;
+            case "test-all": TestAll(); break;
+            default: Console.WriteLine("Invalid command \"" + command + "\""); break;
         }
     }
 

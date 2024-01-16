@@ -1,5 +1,7 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Json;
@@ -11,6 +13,7 @@ public class CFGBasicBlock {
     private static int nextId;
     public List<IAnnotatedBytecode> Bytecode = new();
     public int id = -1;
+    public Dictionary<string, int> LabelMap = new();
     public List<CFGBasicBlock> Predecessors = new();
     public List<CFGBasicBlock> Successors = new();
 
@@ -34,117 +37,67 @@ public class CFGStackCodeConverter {
 
     public static List<CFGBasicBlock> Convert(List<IAnnotatedBytecode> input, string errorPath) {
         var cfgStackCodeConverter = new CFGStackCodeConverter();
-        return cfgStackCodeConverter.ConvertInternal(input, errorPath);
+        return cfgStackCodeConverter.GenerateCFG(input, errorPath);
     }
 
-    private List<CFGBasicBlock> ConvertInternal(List<IAnnotatedBytecode> input, string fileName) {
+    private List<CFGBasicBlock> GenerateCFG(List<IAnnotatedBytecode> input, string fileName) {
         var basicBlocks = SplitBasicBlocks(input);
 
-        // Remove empty blocks and update label table
+        RemoveEmptyBlocksAndUpdateLabels(basicBlocks);
+
+        ConnectBlocksInOrder(basicBlocks);
+
+        ResolveJumps(basicBlocks);
+
+        //DumpCFGToDebugDir(basicBlocks, "preMerge");
+
+        MergeBlocks(basicBlocks);
+
+        RenumberBlocks(basicBlocks);
+
+        RemoveRedundantLabels(basicBlocks);
+
+        //DumpCFGToDebugDir(basicBlocks, "postMerge");
+
+        AttachLabelsToBlocks(basicBlocks);
+
+        return basicBlocks;
+    }
+
+    private void RemoveEmptyBlocksAndUpdateLabels(List<CFGBasicBlock> basicBlocks) {
         var changed = true;
         while (changed) {
             changed = false;
             for (var i = 0; i < basicBlocks.Count; i++)
                 if (basicBlocks[i].Bytecode.Count == 0) {
                     changed = true;
-                    // First search the label table for labels that point to this block
-                    foreach (var label in labels)
-                        if (label.Value == basicBlocks[i])
-                            labels[label.Key] = basicBlocks[i + 1];
-
+                    UpdateLabelTable(basicBlocks, i);
                     basicBlocks.RemoveAt(i);
                     i--;
                 }
         }
+    }
 
-        // Naive connect blocks in order
+    private void UpdateLabelTable(List<CFGBasicBlock> basicBlocks, int index) {
+        foreach (var label in labels)
+            if (label.Value == basicBlocks[index])
+                labels[label.Key] = basicBlocks[index + 1];
+    }
+
+    private void ConnectBlocksInOrder(List<CFGBasicBlock> basicBlocks) {
         for (var i = 0; i < basicBlocks.Count - 1; i++) {
             basicBlocks[i].Successors.Add(basicBlocks[i + 1]);
             basicBlocks[i + 1].Predecessors.Add(basicBlocks[i]);
         }
-
-        // Resolve jumps
-        ResolveJumps(basicBlocks);
-
-        // Merge blocks that only have one direct predecessor and direct successor
-        changed = true;
-        var removed = 0;
-        var beginId = basicBlocks[0].id;
-        while (changed) {
-            changed = false;
-            for (var i = 0; i < basicBlocks.Count;)
-                if (basicBlocks[i].Predecessors.Count == 1 && basicBlocks[i].Successors.Count == 1) {
-                    var predecessor = basicBlocks[i].Predecessors[0];
-                    var successor = basicBlocks[i].Successors[0];
-                    if (successor != basicBlocks[i + 1] || predecessor.Successors.Count > 1 ||
-                        successor.Predecessors.Count > 1) {
-                        i++;
-                        continue;
-                    }
-
-                    if (i != 0 && predecessor != basicBlocks[i - 1]) {
-                        i++;
-                        continue;
-                    }
-
-                    changed = true;
-                    removed++;
-                    predecessor.Successors.Remove(basicBlocks[i]);
-                    predecessor.Successors.Add(successor);
-                    successor.Predecessors.Remove(basicBlocks[i]);
-                    successor.Predecessors.Add(predecessor);
-                    predecessor.Bytecode.AddRange(basicBlocks[i].Bytecode);
-                    basicBlocks.RemoveAt(i);
-                    i--;
-                    if (i < 0) i = 0;
-                } else if (basicBlocks[i].Predecessors.Count == 0) // No predecessors? Root for proc, check if mergeable
-                {
-                    if (basicBlocks[i].Successors.Count == 1 && basicBlocks[i].Successors[0].Predecessors.Count == 1) {
-                        var id = basicBlocks[i].id;
-                        var successor = basicBlocks[i].Successors[0];
-                        changed = true;
-                        removed++;
-                        successor.Predecessors.Remove(basicBlocks[i]);
-                        successor.Bytecode.InsertRange(0, basicBlocks[i].Bytecode);
-                        basicBlocks.RemoveAt(i);
-                        i--;
-                        if (i < 0) i = 0;
-                    } else {
-                        i++;
-                    }
-                } else {
-                    i++;
-                }
-        }
-
-        // Renumber blocks
-        for (var i = 0; i < basicBlocks.Count; i++) basicBlocks[i].id = beginId + i;
-
-        // Remove all labels not at the start of a block and all labels at the start of a block if the block only has one contiguous predecessor
-        foreach (var block in basicBlocks)
-            for (var i = 0; i < block.Bytecode.Count; i++)
-                if (block.Bytecode[i] is AnnotatedBytecodeLabel label) {
-                    if (i != 0) {
-                        block.Bytecode.RemoveAt(i);
-                        i--;
-                    } else if (block.Predecessors.Count == 1 && block.Predecessors[0].id == block.id - 1) {
-                        block.Bytecode.RemoveAt(i);
-                        i--;
-                    }
-                }
-
-        // Should do a pass to calculate dominators and expand blocks
-        return basicBlocks;
     }
 
     private void ResolveJumps(List<CFGBasicBlock> basicBlocks) {
         foreach (var block in basicBlocks)
             for (var index = 0; index < block.Bytecode.Count; index++) {
                 var bytecode = block.Bytecode[index];
-                // Only need to handle jumps, labels are already handled
                 if (bytecode is AnnotatedBytecodeInstruction instruction)
                     switch (instruction.Opcode) {
-                        // Conditional jumps w/ label in arg 0, preserve naive fallthrough
+                        // Handle conditional jumps
                         case DreamProcOpcode.SwitchCase:
                         case DreamProcOpcode.SwitchCaseRange:
                         case DreamProcOpcode.JumpIfFalse:
@@ -154,55 +107,22 @@ public class CFGStackCodeConverter {
                         case DreamProcOpcode.JumpIfNull:
                         case DreamProcOpcode.JumpIfNullNoPop:
                         case DreamProcOpcode.EnumerateNoAssign:
-                        case DreamProcOpcode.Spawn: {
-                            if (index != block.Bytecode.Count - 1)
-                                throw new Exception("Conditional jump is not the last instruction in the block");
-                            var alternate = (instruction.GetArgs()[0] as AnnotatedBytecodeLabel)!.LabelName;
-                            if (!labels.ContainsKey(alternate)) {
-                                if (labelAliases.ContainsKey(alternate))
-                                    alternate = labelAliases[alternate];
-                                else
-                                    throw new Exception("Label " + alternate + " does not exist");
-                            }
-
-                            block.Successors.Add(labels[alternate]);
-                            labels[alternate].Predecessors.Add(block);
+                        case DreamProcOpcode.Spawn:
+                            HandleConditionalJump(block, index, instruction);
                             break;
-                        }
-                        // Conditional jumps w/ label in arg 1, preserve naive fallthrough
+
+                        // Handle conditional jumps with label in arg 1
                         case DreamProcOpcode.Enumerate:
                         case DreamProcOpcode.JumpIfFalseReference:
-                        case DreamProcOpcode.JumpIfTrueReference: {
-                            if (index != block.Bytecode.Count - 1)
-                                throw new Exception("Conditional jump is not the last instruction in the block");
-                            var defaultLabel = (instruction.GetArgs()[1] as AnnotatedBytecodeLabel)!.LabelName;
-                            if (!labels.ContainsKey(defaultLabel)) {
-                                if (labelAliases.ContainsKey(defaultLabel))
-                                    defaultLabel = labelAliases[defaultLabel];
-                                else
-                                    throw new Exception("Label " + defaultLabel + " does not exist");
-                            }
-
-                            block.Successors.Add(labels[defaultLabel]);
-                            labels[defaultLabel].Predecessors.Add(block);
+                        case DreamProcOpcode.JumpIfTrueReference:
+                            HandleConditionalJumpWithLabelArg1(block, index, instruction);
                             break;
-                        }
-                        // Unconditional jumps w/ label in arg 0, do not preserve naive fallthrough
-                        case DreamProcOpcode.Jump: {
-                            var defaultLabel = (instruction.GetArgs()[0] as AnnotatedBytecodeLabel)!.LabelName;
-                            if (!labels.ContainsKey(defaultLabel)) {
-                                if (labelAliases.ContainsKey(defaultLabel))
-                                    defaultLabel = labelAliases[defaultLabel];
-                                else
-                                    throw new Exception("Label " + defaultLabel + " does not exist");
-                            }
 
-                            block.Successors[0].Predecessors.Remove(block);
-                            block.Successors.Clear();
-                            block.Successors.Add(labels[defaultLabel]);
-                            labels[defaultLabel].Predecessors.Add(block);
+                        // Handle unconditional jumps
+                        case DreamProcOpcode.Jump:
+                            HandleUnconditionalJump(block, index, instruction);
                             break;
-                        }
+
                         // Return, do not preserve naive fallthrough
                         case DreamProcOpcode.Return: {
                             // If return is in the last block, we don't need to do anything
@@ -259,6 +179,128 @@ public class CFGStackCodeConverter {
             }
     }
 
+
+    private void HandleConditionalJump(CFGBasicBlock block, int index, AnnotatedBytecodeInstruction instruction) {
+        if (index != block.Bytecode.Count - 1)
+            throw new Exception("Conditional jump is not the last instruction in the block");
+
+        var alternate = GetLabelName(instruction.GetArgs()[0]);
+        var successor = GetSuccessorBlock(alternate);
+        block.Successors.Add(successor);
+        successor.Predecessors.Add(block);
+    }
+
+    private void HandleConditionalJumpWithLabelArg1(CFGBasicBlock block, int index,
+        AnnotatedBytecodeInstruction instruction) {
+        if (index != block.Bytecode.Count - 1)
+            throw new Exception("Conditional jump is not the last instruction in the block");
+
+        var defaultLabel = GetLabelName(instruction.GetArgs()[1]);
+        var successor = GetSuccessorBlock(defaultLabel);
+        block.Successors.Add(successor);
+        successor.Predecessors.Add(block);
+    }
+
+    private void HandleUnconditionalJump(CFGBasicBlock block, int index, AnnotatedBytecodeInstruction instruction) {
+        var defaultLabel = GetLabelName(instruction.GetArgs()[0]);
+        var successor = GetSuccessorBlock(defaultLabel);
+        block.Successors.Add(successor);
+        successor.Predecessors.Add(block);
+    }
+
+    private string GetLabelName(object arg) {
+        var label = (arg as AnnotatedBytecodeLabel)?.LabelName;
+        if (!labels.ContainsKey(label)) {
+            if (labelAliases.ContainsKey(label))
+                label = labelAliases[label];
+            else
+                throw new Exception("Label " + label + " does not exist");
+        }
+
+        return label;
+    }
+
+    private CFGBasicBlock GetSuccessorBlock(string label) {
+        if (!labels.ContainsKey(label)) {
+            if (labelAliases.ContainsKey(label))
+                label = labelAliases[label];
+            else
+                throw new Exception("Label " + label + " does not exist");
+        }
+
+        return labels[label];
+    }
+
+    private void MergeBlocks(List<CFGBasicBlock> basicBlocks) {
+        var changed = true;
+        var removed = 0;
+        var beginId = basicBlocks[0].id;
+        while (changed) {
+            changed = false;
+            for (var i = 0; i < basicBlocks.Count;)
+                if (basicBlocks[i].Predecessors.Count == 1 && basicBlocks[i].Successors.Count == 1) {
+                    var predecessor = basicBlocks[i].Predecessors[0];
+                    var successor = basicBlocks[i].Successors[0];
+                    if (successor != basicBlocks[i + 1] || predecessor.Successors.Count > 1 ||
+                        successor.Predecessors.Count > 1) {
+                        i++;
+                        continue;
+                    }
+
+                    if (i != 0 && predecessor != basicBlocks[i - 1]) {
+                        i++;
+                        continue;
+                    }
+
+                    changed = true;
+                    removed++;
+                    predecessor.Successors.Remove(basicBlocks[i]);
+                    predecessor.Successors.Add(successor);
+                    successor.Predecessors.Remove(basicBlocks[i]);
+                    successor.Predecessors.Add(predecessor);
+                    predecessor.Bytecode.AddRange(basicBlocks[i].Bytecode);
+                    basicBlocks.RemoveAt(i);
+                    i--;
+                    if (i < 0) i = 0;
+                } else if (basicBlocks[i].Predecessors.Count == 0) {
+                    if (basicBlocks[i].Successors.Count == 1 && basicBlocks[i].Successors[0].Predecessors.Count == 1) {
+                        var id = basicBlocks[i].id;
+                        var successor = basicBlocks[i].Successors[0];
+                        changed = true;
+                        removed++;
+                        successor.Predecessors.Remove(basicBlocks[i]);
+                        successor.Bytecode.InsertRange(0, basicBlocks[i].Bytecode);
+                        basicBlocks.RemoveAt(i);
+                        i--;
+                        if (i < 0) i = 0;
+                    } else {
+                        i++;
+                    }
+                } else {
+                    i++;
+                }
+        }
+    }
+
+    private void RenumberBlocks(List<CFGBasicBlock> basicBlocks) {
+        var beginId = basicBlocks[0].id;
+        for (var i = 0; i < basicBlocks.Count; i++) basicBlocks[i].id = beginId + i;
+    }
+
+    private void RemoveRedundantLabels(List<CFGBasicBlock> basicBlocks) {
+        foreach (var block in basicBlocks)
+            for (var i = 0; i < block.Bytecode.Count; i++)
+                if (block.Bytecode[i] is AnnotatedBytecodeLabel label) {
+                    if (i != 0) {
+                        block.Bytecode.RemoveAt(i);
+                        i--;
+                    } else if (block.Predecessors.Count == 1 && block.Predecessors[0].id == block.id - 1) {
+                        block.Bytecode.RemoveAt(i);
+                        i--;
+                    }
+                }
+    }
+
     private List<CFGBasicBlock> SplitBasicBlocks(List<IAnnotatedBytecode> input) {
         var root = new CFGBasicBlock();
         currentBlock = root;
@@ -300,6 +342,10 @@ public class CFGStackCodeConverter {
         return basicBlocks;
     }
 
+    private void AttachLabelsToBlocks(List<CFGBasicBlock> basicBlocks) {
+        foreach (var block in basicBlocks) block.LabelMap = labels.ToDictionary(x => x.Key, x => x.Value.id);
+    }
+
     public static string DumpCFGTable(List<CFGBasicBlock> blocks) {
         var sb = new StringBuilder();
 
@@ -317,5 +363,28 @@ public class CFGStackCodeConverter {
         }
 
         return sb.ToString();
+    }
+
+    private static void DumpCFGToFile(List<CFGBasicBlock> blocks, string fileName) {
+        var sb = new StringBuilder();
+
+        foreach (var block in blocks) {
+            sb.Append("Block " + block.id + ":\n");
+            AnnotatedBytecodePrinter.Print(block.Bytecode, new List<SourceInfoJson>(), sb, 2);
+            sb.Append("Successors: ");
+            if (block.Successors.Count == 0) sb.Append("None");
+            foreach (var successor in block.Successors) sb.Append(successor.id + " ");
+            sb.Append("\n");
+            sb.Append("Predecessors: ");
+            if (block.Predecessors.Count == 0) sb.Append("None");
+            foreach (var predecessor in block.Predecessors) sb.Append(predecessor.id + " ");
+            sb.Append("\n\n");
+        }
+
+        File.WriteAllText(fileName, sb.ToString());
+    }
+
+    public static void DumpCFGToDebugDir(List<CFGBasicBlock> blocks, string name) {
+        DumpCFGToFile(blocks, Directory.GetCurrentDirectory() + "/" + name);
     }
 }

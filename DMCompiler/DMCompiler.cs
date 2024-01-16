@@ -1,12 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Globalization;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Text;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
@@ -16,7 +7,15 @@ using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Json;
 using Robust.Shared.Utility;
-
+using System;
+using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 namespace DMCompiler;
 
 //TODO: Make this not a static class
@@ -25,11 +24,11 @@ public static class DMCompiler {
     public static int ErrorCount;
     public static int WarningCount;
     public static DMCompilerSettings Settings;
+    public static IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
 
     private static readonly DMCompilerConfiguration Config = new();
     private static readonly List<string> _resourceDirectories = new();
     private static DateTime _compileStartTime;
-    public static IReadOnlyList<string> ResourceDirectories => _resourceDirectories;
 
     public static bool Compile(DMCompilerSettings settings) {
         ErrorCount = 0;
@@ -97,7 +96,6 @@ public static class DMCompiler {
                     preproc.DefineMacro(key, value);
                 }
             }
-
             DefineFatalErrors();
 
             // NB: IncludeFile pushes newly seen files to a stack, so push
@@ -108,7 +106,6 @@ public static class DMCompiler {
 
                 preproc.IncludeFile(includeDir, fileName);
             }
-
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
             StandardLibraryDirectory = dmStandardDirectory;
@@ -120,7 +117,7 @@ public static class DMCompiler {
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
             string pragmaName;
             string pragmaDirectory;
-            if (Settings.PragmaFileOverride is not null) {
+            if(Settings.PragmaFileOverride is not null) {
                 pragmaDirectory = Path.GetDirectoryName(Settings.PragmaFileOverride);
                 pragmaName = Path.GetFileName(Settings.PragmaFileOverride);
             } else {
@@ -128,11 +125,10 @@ public static class DMCompiler {
                 pragmaName = "DefaultPragmaConfig.dm";
             }
 
-            if (!File.Exists(Path.Join(pragmaDirectory, pragmaName))) {
+            if(!File.Exists(Path.Join(pragmaDirectory, pragmaName))) {
                 ForcedError($"Configuration file '{pragmaName}' not found.");
                 return null;
             }
-
             preproc.IncludeFile(pragmaDirectory, pragmaName);
             return preproc;
         }
@@ -310,7 +306,7 @@ public static class DMCompiler {
             globalListJson.Names = new List<string>(globalListJson.GlobalCount);
 
             // Approximate capacity (4/285 in tgstation, ~3%)
-            globalListJson.Globals = new Dictionary<int, object>((int)(DMObjectTree.Globals.Count * 0.03));
+            globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
 
             for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                 DMVariable global = DMObjectTree.Globals[i];
@@ -323,7 +319,6 @@ public static class DMCompiler {
                     globalListJson.Globals.Add(i, globalJson);
                 }
             }
-
             compiledDream.Globals = globalListJson;
         }
 
@@ -337,7 +332,7 @@ public static class DMCompiler {
 
             try {
                 JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault });
+                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault });
 
                 return $"Saved to {outputFile}";
             } catch (Exception e) {
@@ -350,7 +345,7 @@ public static class DMCompiler {
 
     public static void DefineFatalErrors() {
         foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
-            if ((int)code < 1_000) {
+            if((int)code < 1_000) {
                 Config.ErrorConfig[code] = ErrorLevel.Error;
             }
         }
@@ -360,10 +355,9 @@ public static class DMCompiler {
     /// This method also enforces the rule that all emissions with codes less than 1000 are mandatory errors.
     /// </summary>
     public static void CheckAllPragmasWereSet() {
-        foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
+        foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
             if (!Config.ErrorConfig.ContainsKey(code)) {
-                ForcedWarning(
-                    $"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
+                ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
                 Config.ErrorConfig.Add(code, ErrorLevel.Disabled);
             }
         }
@@ -390,7 +384,6 @@ public struct DMCompilerSettings {
     public bool DumpBytecode = false;
     public bool DumpCFGTable = false;
     public Dictionary<string, string>? MacroDefines = null;
-
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;
 

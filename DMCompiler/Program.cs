@@ -9,7 +9,6 @@ namespace DMCompiler;
 internal struct Argument {
     /// <summary> The text we found that's in the '--whatever' format. May be null if no such text was present.</summary>
     public string? Name;
-
     /// <summary> The value, either set in a '--whatever=whoever' format or just left by itself anonymously. May be null.</summary>
     public string? Value;
 }
@@ -30,26 +29,21 @@ internal static class Program {
     /// <summary> Helper for TryParseArguments(), to turn the arg array into something better-parsed.</summary>
     private static IEnumerable<Argument> StringArrayToArguments(string[] args) {
         List<Argument> retArgs = new(args.Length);
-        for (var i = 0; i < args.Length; i += 1) {
+        for (var i = 0; i < args.Length; i+=1) {
             var firstString = args[i];
-            if (string.IsNullOrWhiteSpace(
-                    firstString)) // Is this possible? I don't even know. (IsNullOrWhiteSpace also checks if the string is empty, btw)
+            if (string.IsNullOrWhiteSpace(firstString)) // Is this possible? I don't even know. (IsNullOrWhiteSpace also checks if the string is empty, btw)
                 continue;
-            if (!firstString.StartsWith("--")) {
-                // If it's a value-only argument
+            if (!firstString.StartsWith("--")) { // If it's a value-only argument
                 retArgs.Add(new Argument { Value = firstString });
                 continue;
             }
 
             firstString = firstString.TrimStart('-');
             var split = firstString.Split('=');
-            if (split.Length == 1) {
-                // If it's a name-only argument
-                if (firstString == "define" && i + 1 < args.Length) {
-                    // Weird snowflaking to make our define syntax work
+            if (split.Length == 1) { // If it's a name-only argument
+                if (firstString == "define" && i + 1 < args.Length) { // Weird snowflaking to make our define syntax work
                     i += 1;
-                    if (!args[i].StartsWith("--")) {
-                        // To make the error make a schmidge more sense
+                    if (!args[i].StartsWith("--")) { // To make the error make a schmidge more sense
                         retArgs.Add(new Argument { Name = firstString, Value = args[i] });
                     }
                 }
@@ -87,8 +81,7 @@ internal static class Program {
         Console.WriteLine("--define [KEY=VAL]        : Add extra defines to the compilation");
         Console.WriteLine("--verbose                 : Show verbose output during compile");
         Console.WriteLine("--notices-enabled         : Show notice output during compile");
-        Console.WriteLine(
-            "--pragma-config [file].dm : Configure the error/warning/notice/ignore level of compiler messages");
+        Console.WriteLine("--pragma-config [file].dm : Configure the error/warning/notice/ignore level of compiler messages");
     }
 
     private static bool TryParseArguments(string[] args, out DMCompilerSettings settings) {
@@ -103,28 +96,15 @@ internal static class Program {
                 case "help":
                     PrintHelp();
                     return false;
-                case "suppress-unimplemented":
-                    settings.SuppressUnimplementedWarnings = true;
-                    break;
-                case "dump-preprocessor":
-                    settings.DumpPreprocessor = true;
-                    break;
-                case "dump-bytecode":
-                    settings.DumpBytecode = true;
-                    break;
-                case "dump-cfg":
-                    settings.DumpCFGTable = true;
-                    break;
-                case "no-standard":
-                    settings.NoStandard = true;
-                    break;
-                case "verbose":
-                    settings.Verbose = true;
-                    break;
+                case "suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
+                case "dump-preprocessor": settings.DumpPreprocessor = true; break;
+                case "dump-bytecode": settings.DumpBytecode = true; break;
+                case "dump-cfg": settings.DumpCFGTable = true; break;
+                case "no-standard": settings.NoStandard = true; break;
+                case "verbose": settings.Verbose = true; break;
                 case "skip-bad-args": break;
                 case "define":
-                    var parts = arg.Value?.Split('=',
-                        2); // Only split on the first = in case of stuff like "--define AAA=0==1"
+                    var parts = arg.Value?.Split('=', 2); // Only split on the first = in case of stuff like "--define AAA=0==1"
                     if (parts is { Length: 0 }) {
                         Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                         return false;
@@ -141,8 +121,7 @@ internal static class Program {
                 case "pragma-config": {
                     if (arg.Value is null || !HasValidDMExtension(arg.Value)) {
                         if (skipBad) {
-                            DMCompiler.ForcedWarning(
-                                $"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
+                            DMCompiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
                             continue;
                         }
 
@@ -156,27 +135,21 @@ internal static class Program {
                 case "version": {
                     if (arg.Value is null) {
                         if (skipBad) {
-                            DMCompiler.ForcedWarning(
-                                "Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
+                            DMCompiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
                             continue;
                         }
 
-                        Console.WriteLine(
-                            "Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
+                        Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
                         return false;
                     }
 
                     var split = arg.Value.Split('.', StringSplitOptions.RemoveEmptyEntries);
-                    if (split.Length != 2 || !int.TryParse(split[0], out _) || !int.TryParse(split[1], out _)) {
-                        // We want to make sure that they *are* ints but the preprocessor takes strings
+                    if (split.Length != 2 || !int.TryParse(split[0], out _) || !int.TryParse(split[1], out _)) { // We want to make sure that they *are* ints but the preprocessor takes strings
                         if (skipBad) {
-                            DMCompiler.ForcedWarning(
-                                "Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
+                            DMCompiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
                             continue;
                         }
-
-                        Console.WriteLine(
-                            "Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
+                        Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
                         return false;
                     }
 
@@ -184,15 +157,13 @@ internal static class Program {
                     settings.DMBuild = split[1];
                     break;
                 }
-                case null: {
-                    // Value-only argument
+                case null: { // Value-only argument
                     if (arg.Value is null) // A completely empty argument? This should be a bug.
                         continue;
                     if (HasValidDMExtension(arg.Value)) {
                         settings.Files.Add(arg.Value);
                         break;
                     }
-
                     if (skipBad) {
                         DMCompiler.ForcedWarning($"Invalid compiler arg '{arg.Value}', skipping");
                     } else {
@@ -219,7 +190,7 @@ internal static class Program {
             return false;
         }
 
-        foreach (var file in settings.Files) {
+        foreach(var file in settings.Files) {
             Console.WriteLine($"Compiling {Path.GetFileName(file)} on {settings.DMVersion}.{settings.DMBuild}");
         }
 

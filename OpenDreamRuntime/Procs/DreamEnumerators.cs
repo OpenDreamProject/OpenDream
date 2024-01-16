@@ -55,7 +55,7 @@ internal sealed class DreamObjectEnumerator : IDreamValueEnumerator {
 
         // Assign regardless of success
         if (reference != null)
-            state.AssignReference(reference.Value, new DreamValue(_dreamObjectEnumerator.Current));
+            state.AssignReference(reference.Value, success ? new DreamValue(_dreamObjectEnumerator.Current) : DreamValue.Null);
         return success;
     }
 }

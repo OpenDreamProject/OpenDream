@@ -34,6 +34,30 @@ namespace DMCompiler.DM.Optimizer {
         }
     }
 
+    internal class AnnotatedBytecodeVariable : IAnnotatedBytecode {
+        public int Exit;
+        public bool Exitingscope;
+        public Location Location;
+        public string Name;
+
+        public AnnotatedBytecodeVariable(string name, Location location) {
+            Name = name;
+            Location = location;
+            Exitingscope = false;
+        }
+
+        public AnnotatedBytecodeVariable(int popoff, Location location) {
+            Exitingscope = true;
+            Exit = popoff;
+            Location = location;
+        }
+
+        public void AddArg(IAnnotatedBytecode arg) {
+            DMCompiler.ForcedError(Location, "Cannot add args to a variable");
+        }
+    }
+
+
     internal class AnnotatedBytecodeInteger : IAnnotatedBytecode {
         public Location Location;
         public int Value;
@@ -329,6 +353,7 @@ namespace DMCompiler.DM.Optimizer {
                 return;
             }
 
+            List<string> localScopeVariables = new();
             foreach (IAnnotatedBytecode annotatedBytecodeItem in annotatedBytecode) {
                 switch (annotatedBytecodeItem) {
                     case AnnotatedBytecodeInstruction annotatedBytecodeInstruction:
@@ -348,6 +373,26 @@ namespace DMCompiler.DM.Optimizer {
                         break;
                     case AnnotatedBytecodeLabel label:
                         output.Append(label.LabelName).Append(":").Append("\n");
+                        break;
+                    case AnnotatedBytecodeVariable variable:
+                        if (variable.Exitingscope) {
+                            output.Append("//Variable").Append(localScopeVariables.Count == 1 ? " " : "s ");
+                            for (var i = 0; i < localScopeVariables.Count; i++) {
+                                output.Append(localScopeVariables[i]);
+                                if (i < localScopeVariables.Count - 2)
+                                    output.Append(", ");
+                                else if (i == localScopeVariables.Count - 2)
+                                    output.Append(" and ");
+                            }
+
+                            var havehas = localScopeVariables.Count == 1 ? "has" : "have";
+                            output.Append($" {havehas} exited scope\n");
+                            localScopeVariables.RemoveRange(localScopeVariables.Count - variable.Exit, variable.Exit);
+                        } else {
+                            output.Append("// Variable ").Append(variable.Name).Append(" has entered scope\n");
+                            localScopeVariables.Add(variable.Name);
+                        }
+
                         break;
                     default:
                         throw new Exception(

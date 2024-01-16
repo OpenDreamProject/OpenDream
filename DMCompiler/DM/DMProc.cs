@@ -14,6 +14,7 @@ using OpenDreamShared.Json;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
+        private readonly List<string> _localVariableNames = new();
         private readonly List<SourceInfoJson> _sourceInfo = new();
         private Dictionary<string, long> _annotatedBytecodeLabels = new();
         private DMASTProcDefinition? _astDefinition;
@@ -22,8 +23,6 @@ namespace DMCompiler.DM {
         private int _labelIdCounter;
         private string? _lastSourceFile;
         private int _localVariableIdCounter;
-
-        private List<LocalVariableJson> _localVariableNames = new();
         private Stack<string>? _loopStack = null;
         private Dictionary<string, LocalVariable> _parameters = new();
         private Stack<CodeLabelReference> _pendingLabelReferences = new();
@@ -59,14 +58,15 @@ namespace DMCompiler.DM {
         public string Name => _astDefinition?.Name ?? "<init>";
 
         private int AllocLocalVariable(string name) {
-            _localVariableNames.Add(new LocalVariableJson { Offset = (int)AnnotatedBytecode.Position, Add = name });
+            _localVariableNames.Add(name);
+            AnnotatedBytecode.WriteLocalVariable(name, _writerLocation);
             return _localVariableIdCounter++;
         }
 
         private void DeallocLocalVariables(int amount) {
             if (amount > 0) {
-                _localVariableNames.Add(new LocalVariableJson
-                    { Offset = (int)AnnotatedBytecode.Position, Remove = amount });
+                _localVariableNames.RemoveRange(_localVariableNames.Count - amount, amount);
+                AnnotatedBytecode.WriteLocalVariableDealloc(amount, _writerLocation);
                 _localVariableIdCounter -= amount;
             }
         }
@@ -113,9 +113,9 @@ namespace DMCompiler.DM {
             procDefinition.Invisibility = Invisibility;
 
             procDefinition.MaxStackSize = AnnotatedBytecode.GetMaxStackSize();
+            AnnotatedBytecodeSerializer serializer = new();
 
             if (AnnotatedBytecode.GetLength() > 0) {
-                AnnotatedBytecodeSerializer serializer = new();
                 procDefinition.Bytecode =
                     serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode());
             }
@@ -135,7 +135,7 @@ namespace DMCompiler.DM {
             }
 
             if (_localVariableNames.Count > 0) {
-                procDefinition.Locals = _localVariableNames;
+                procDefinition.Locals = serializer.GetLocalVariablesJSON();
             }
 
             if (stringBuilder is not null) {
@@ -166,7 +166,7 @@ namespace DMCompiler.DM {
         }
 
         public string GetLocalVarName(int index) {
-            return _localVariableNames[index].Add;
+            return _localVariableNames[index];
         }
 
         public void WaitFor(bool waitFor) {
@@ -1022,7 +1022,7 @@ namespace DMCompiler.DM {
                 case DMReference.Type.Argument:
                     return Parameters[int.Max(reference.Index, 0)];
                 case DMReference.Type.Local:
-                    return _localVariableNames[reference.Index].Add;
+                    return _localVariableNames[reference.Index];
                 case DMReference.Type.Global:
                     return reference.Name;
                 case DMReference.Type.GlobalProc:

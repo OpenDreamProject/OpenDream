@@ -397,5 +397,13 @@ namespace DMCompiler.DM.Optimizer {
         public void AddLabel(string name) {
             _annotatedBytecode.Add(new AnnotatedBytecodeLabel(name, _location));
         }
+
+        public void WriteLocalVariable(string name, Location writerLocation) {
+            _annotatedBytecode.Add(new AnnotatedBytecodeVariable(name, writerLocation));
+        }
+
+        public void WriteLocalVariableDealloc(int amount, Location writerLocation) {
+            _annotatedBytecode.Add(new AnnotatedBytecodeVariable(amount, writerLocation));
+        }
     }
 }

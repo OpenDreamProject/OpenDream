@@ -3,10 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Json;
 
 namespace DMCompiler.DM.Optimizer;
 
 internal class AnnotatedBytecodeSerializer {
+    private readonly List<LocalVariableJson> _localVariables = new();
     private BinaryWriter _bytecodeWriter;
     private Dictionary<string, int> _labels = new();
     private List<(long Position, string LabelName)> _unresolvedLabels = new();
@@ -23,6 +25,17 @@ internal class AnnotatedBytecodeSerializer {
                 SerializeInstruction(instruction);
             } else if (bytecodeChunk is AnnotatedBytecodeLabel label) {
                 SerializeLabel(label);
+            } else if (bytecodeChunk is AnnotatedBytecodeVariable localVariable) {
+                if (localVariable.Exitingscope)
+                    _localVariables.Add(new LocalVariableJson {
+                        Offset = (int)Bytecode.Position,
+                        Remove = localVariable.Exit
+                    });
+                else
+                    _localVariables.Add(new LocalVariableJson {
+                        Offset = (int)Bytecode.Position,
+                        Add = localVariable.Name
+                    });
             } else {
                 return null;
             }
@@ -36,7 +49,7 @@ internal class AnnotatedBytecodeSerializer {
         _bytecodeWriter.Write((byte)instruction.Opcode);
         var opcodeMetadata = OpcodeMetadataCache.GetMetadata(instruction.Opcode);
         if (opcodeMetadata.RequiredArgs.Count != instruction.GetArgs().Count) {
-            throw new System.Exception("Invalid number of arguments for opcode " + instruction.Opcode);
+            throw new Exception("Invalid number of arguments for opcode " + instruction.Opcode);
         }
 
         var args = instruction.GetArgs();
@@ -153,5 +166,9 @@ internal class AnnotatedBytecodeSerializer {
             default:
                 throw new CompileAbortException(Location.Internal, $"Invalid reference type {reference.RefType}");
         }
+    }
+
+    public List<LocalVariableJson> GetLocalVariablesJSON() {
+        return _localVariables;
     }
 }

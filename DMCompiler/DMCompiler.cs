@@ -21,6 +21,7 @@ namespace DMCompiler;
 
 //TODO: Make this not a static class
 public static class DMCompiler {
+    public static string StandardLibraryDirectory = "";
     public static int ErrorCount;
     public static int WarningCount;
     public static DMCompilerSettings Settings;
@@ -108,6 +109,7 @@ public static class DMCompiler {
             }
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
+            StandardLibraryDirectory = dmStandardDirectory;
             // Push DMStandard to the top of the stack, prioritizing it.
             if (!Settings.NoStandard) {
                 preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
@@ -270,7 +272,13 @@ public static class DMCompiler {
     }
 
     private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
-        var jsonRep = DMObjectTree.CreateJsonRepresentation();
+        StreamWriter? optWriter = null;
+        if (Settings.DumpBytecode) {
+            var bytecodeDumpFile = Path.ChangeExtension(outputFile, "dmc");
+            optWriter = new StreamWriter(bytecodeDumpFile);
+        }
+
+        var jsonRep = DMObjectTree.CreateJsonRepresentation(optWriter);
         DreamCompiledJson compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
             Strings = DMObjectTree.StringTable,
@@ -281,7 +289,7 @@ public static class DMCompiler {
             Procs = jsonRep.Item2
         };
 
-        if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
+        if (DMObjectTree.GlobalInitProc.AnnotatedBytecode.GetLength() > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation(optWriter);
 
         if (DMObjectTree.Globals.Count > 0) {
             GlobalListJson globalListJson = new GlobalListJson();
@@ -364,6 +372,7 @@ public struct DMCompilerSettings {
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;
     public bool Verbose = false;
+    public bool DumpBytecode = true;
     public Dictionary<string, string>? MacroDefines = null;
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;

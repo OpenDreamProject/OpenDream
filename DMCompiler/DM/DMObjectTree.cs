@@ -2,6 +2,7 @@ using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using System.IO;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using JetBrains.Annotations;
@@ -205,16 +206,23 @@ namespace DMCompiler.DM {
             GlobalInitProc.ResolveLabels();
         }
 
-        public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation() {
+        public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation(StreamWriter? bytecodeDump) {
             DreamTypeJson[] types = new DreamTypeJson[AllObjects.Count];
             ProcDefinitionJson[] procs = new ProcDefinitionJson[AllProcs.Count];
 
+            if (bytecodeDump != null) {
+                bytecodeDump.WriteLine("OpenDream Bytecode Dump:");
+                bytecodeDump.WriteLine("\t Version: " + DMCompiler.Settings.DMVersion + "." + DMCompiler.Settings.DMBuild);
+                bytecodeDump.WriteLine("\t File: " + string.Join(", ", DMCompiler.Settings.Files ?? new List<string>()));
+                bytecodeDump.WriteLine("\t Macros: \n" + string.Join("\n\t  ", DMCompiler.Settings.MacroDefines ?? new Dictionary<string, string>()));
+            }
+
             foreach (DMObject dmObject in AllObjects) {
-                types[dmObject.Id] = dmObject.CreateJsonRepresentation();
+                types[dmObject.Id] = dmObject.CreateJsonRepresentation(bytecodeDump);
             }
 
             foreach (DMProc dmProc in AllProcs) {
-                procs[dmProc.Id] = dmProc.GetJsonRepresentation();
+                procs[dmProc.Id] = dmProc.GetJsonRepresentation(bytecodeDump);
             }
 
             return (types, procs);

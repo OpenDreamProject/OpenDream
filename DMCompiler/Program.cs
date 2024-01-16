@@ -70,6 +70,7 @@ internal static class Program {
         Console.WriteLine("--skip-bad-args           : Skip arguments the compiler doesn't recognize");
         Console.WriteLine("--suppress-unimplemented  : Do not warn about unimplemented proc and var uses");
         Console.WriteLine("--dump-preprocessor       : This saves the result of preprocessing (#include, #if, defines, etc) in a file called preprocessor_dump.dm beside the given DME file.");
+        Console.WriteLine("--dump-bytecode           : This saves the result of the bytecode generation in a file called [file].dmc beside the given DME file.");
         Console.WriteLine("--no-standard             : This disables objects and procs that are usually built-into every DM program by not including DMStandard.dm.");
         Console.WriteLine("--define [KEY=VAL]        : Add extra defines to the compilation");
         Console.WriteLine("--verbose                 : Show verbose output during compile");
@@ -91,6 +92,7 @@ internal static class Program {
                     return false;
                 case "suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
                 case "dump-preprocessor": settings.DumpPreprocessor = true; break;
+                case "dump-bytecode": settings.DumpBytecode = true; break;
                 case "no-standard": settings.NoStandard = true; break;
                 case "verbose": settings.Verbose = true; break;
                 case "skip-bad-args": break;

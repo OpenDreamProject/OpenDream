@@ -2,6 +2,7 @@
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
 
@@ -143,7 +144,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DreamTypeJson CreateJsonRepresentation() {
+        public DreamTypeJson CreateJsonRepresentation(StreamWriter? bytecodeDump) {
             DreamTypeJson typeJson = new DreamTypeJson();
 
             typeJson.Path = Path.PathString;

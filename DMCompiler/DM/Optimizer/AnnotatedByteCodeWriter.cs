@@ -12,7 +12,7 @@ namespace DMCompiler.DM.Optimizer {
  * Provides a wrapper about BinaryWriter that stores information about the bytecode
  * for optimization and debugging.
  */
-    internal class AnnotatedByteCodeWriter : BinaryWriter {
+    internal class AnnotatedByteCodeWriter {
         private Location _location = new();
         private readonly List<(long Position, string LabelName)> _unresolvedLabels = new();
         private readonly List<(long Position, string LabelName)> _unresolvedLabelsInAnnotatedBytecode = new();
@@ -22,11 +22,12 @@ namespace DMCompiler.DM.Optimizer {
         private int _currentStackSize;
         private bool _negativeStackSizeError;
 
-        public AnnotatedByteCodeWriter(MemoryStream bytecode) : base(bytecode) {
+        public long Position {
+            get => _annotatedBytecode.Count;
         }
 
-        public AnnotatedByteCodeWriter() {
-            OutStream = new MemoryStream();
+        public List<IAnnotatedBytecode> GetAnnotatedBytecode() {
+            return _annotatedBytecode;
         }
 
 
@@ -40,7 +41,6 @@ namespace DMCompiler.DM.Optimizer {
             if (_requiredArgs.Count > 0) {
                 DMCompiler.ForcedError(location, "Expected argument");
             }
-            Write((byte)opcode);
             var metadata = OpcodeMetadataCache.GetMetadata(opcode);
             // Goal here is to maintain correspondence between the raw bytecode and the annotated bytecode such that
             // the annotated bytecode can be used to generate the raw bytecode again.
@@ -64,7 +64,6 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeInteger(val, location));
-            Write(val);
         }
 
         /// <summary>
@@ -79,7 +78,6 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFloat(val, location));
-            Write(val);
         }
 
         /// <summary>
@@ -94,7 +92,6 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeArgumentType(argtype, location));
-            Write((byte)argtype);
         }
 
         /// <summary>
@@ -108,8 +105,7 @@ namespace DMCompiler.DM.Optimizer {
                 DMCompiler.ForcedError(location, "Expected stack delta argument");
             }
             _requiredArgs.Pop();
-            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeInteger(delta, location));
-            Write(delta);
+            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeStackDelta(delta, location));
         }
 
         /// <summary>
@@ -125,7 +121,6 @@ namespace DMCompiler.DM.Optimizer {
             _requiredArgs.Pop();
 
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeType(type, location));
-            Write((int)type);
 
         }
 
@@ -141,10 +136,9 @@ namespace DMCompiler.DM.Optimizer {
                 DMCompiler.ForcedError(location, "Expected string argument");
             }
             _requiredArgs.Pop();
-            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(value, location));
             int stringId = DMObjectTree.AddString(value);
+            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(value, stringId, location));
 
-            Write(stringId);
         }
 
         /// <summary>
@@ -165,7 +159,6 @@ namespace DMCompiler.DM.Optimizer {
             _requiredArgs.Pop();
 
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFilter(filterTypeId, filterPath, location));
-            Write(filterTypeId);
         }
 
         /// <summary>
@@ -182,8 +175,7 @@ namespace DMCompiler.DM.Optimizer {
                 DMCompiler.ForcedError(location, "List size cannot be negative");
             }
             _requiredArgs.Pop();
-            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeInteger(value, location));
-            Write(value);
+            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeListSize(value, location));
         }
 
         /// <summary>
@@ -196,26 +188,12 @@ namespace DMCompiler.DM.Optimizer {
             if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Label) {
                 DMCompiler.ForcedError(location, "Expected label argument");
             }
-            _unresolvedLabels.Add((OutStream.Position, s));
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeLabel(s, location));
             _unresolvedLabelsInAnnotatedBytecode.Add((_annotatedBytecode.Count - 1, s));
-            Write(0);
-        }
-
-        public void UpdateLabel(int unresolvedLabelPosition, long newPos) {
-            OutStream.Seek(unresolvedLabelPosition, SeekOrigin.Begin);
-            Write((int)newPos);
-            OutStream.Seek(0, SeekOrigin.End);
         }
 
 
-        public void UpdateLabelInAnnotatedBytecode(string labelName) {
-            // For the annotated bytecode, labels are explicitly stored as a string and not as a position
-            // So we just need to push the position of the label onto the code
-            _annotatedBytecode.Add(new AnnotatedBytecodeLabel(labelName, _location));
-        }
-
-        public void ResolveCodeLabelReferences(Stack<DMProc.CodeLabelReference> pendingLabelReferences, ref Dictionary<string, long> labels) {
+        public void ResolveCodeLabelReferences(Stack<DMProc.CodeLabelReference> pendingLabelReferences, ref Dictionary<string, long> annotatedlabels) {
             while (pendingLabelReferences.Count > 0) {
                 DMProc.CodeLabelReference reference = pendingLabelReferences.Pop();
                 DMProc.CodeLabel? label = GetCodeLabel(reference.Identifier, reference.Scope);
@@ -229,15 +207,17 @@ namespace DMCompiler.DM.Optimizer {
                     );
                     // Not cleaning away the placeholder will emit another compiler error
                     // let's not do that
-                    _unresolvedLabels.RemoveAt(
-                        _unresolvedLabels.FindIndex(((long Position, string LabelName) o) =>
+                    _unresolvedLabelsInAnnotatedBytecode.RemoveAt(
+                        _unresolvedLabelsInAnnotatedBytecode.FindIndex(((long Position, string LabelName) o) =>
                             o.LabelName == reference.Placeholder)
                     );
                     continue;
                 }
 
                 // Found it.
-                labels.Add(reference.Placeholder, label.ByteOffset);
+                annotatedlabels.Add(reference.Placeholder, label.AnnotatedByteOffset);
+                AddLabel(reference.Placeholder);
+
                 label.ReferencedCount += 1;
 
                 // I was thinking about going through to replace all the placeholers
@@ -251,20 +231,20 @@ namespace DMCompiler.DM.Optimizer {
             // }
         }
 
-        public void ResolveLabels(Stack<DMProc.CodeLabelReference> pendingLabelReferences, ref Dictionary<string, long> labels) {
-            ResolveCodeLabelReferences(pendingLabelReferences, ref labels);
+        public void ResolveLabels(Stack<DMProc.CodeLabelReference> pendingLabelReferences, ref Dictionary<string, long> annotatedlabels) {
+            ResolveCodeLabelReferences(pendingLabelReferences, ref annotatedlabels);
             foreach ((long Position, string LabelName) unresolvedLabel in _unresolvedLabels) {
-                if (labels.TryGetValue(unresolvedLabel.LabelName, out long labelPosition)) {
-                    UpdateLabel((int)unresolvedLabel.Position, labelPosition);
-                    UpdateLabelInAnnotatedBytecode(unresolvedLabel.LabelName);
-                } else {
+                if (annotatedlabels.TryGetValue(unresolvedLabel.LabelName, out long annotatedlabelPosition)) {
+                    _annotatedBytecode.Insert((int)annotatedlabelPosition,
+                        new AnnotatedBytecodeLabel(unresolvedLabel.LabelName, _location));
+                }
+                else {
                     DMCompiler.Emit(WarningCode.BadLabel, _location,
                         "Label \"" + unresolvedLabel.LabelName + "\" could not be resolved");
                 }
             }
 
             _unresolvedLabels.Clear();
-            Seek(0, SeekOrigin.End);
         }
 
         internal DMProc.CodeLabel? GetCodeLabel(string name, DMProc.DMProcScope? scope) {
@@ -304,10 +284,9 @@ namespace DMCompiler.DM.Optimizer {
 
             }
             _requiredArgs.Pop();
-            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(value, location));
             int stringId = DMObjectTree.AddString(value);
+            _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(value, stringId, location));
 
-            Write(stringId);
         }
 
         public void WriteTypeId(int typeId, DreamPath? path, Location location)
@@ -318,7 +297,6 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeID(typeId, path, location));
-            Write(typeId);
         }
 
 
@@ -329,7 +307,6 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeProcID(procId, path, location));
-            Write(procId);
         }
 
         public void WriteFormatCount(int formatCount, Location location) {
@@ -339,7 +316,6 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeFormatCount(formatCount, location));
-            Write(formatCount);
 
         }
 
@@ -350,7 +326,6 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodePickCount(count, location));
-            Write(count);
         }
 
         public void WriteConcatCount(int count, Location location) {
@@ -360,48 +335,42 @@ namespace DMCompiler.DM.Optimizer {
             }
             _requiredArgs.Pop();
             _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(count, location));
-            Write(count);
         }
 
 
 
-        public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
+        public void WriteReference(DMReference reference, Location location, string name, bool affectStack = true) {
             _location = location;
             if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {
                 DMCompiler.ForcedError(location, "Expected reference argument");
             }
-            Write((byte)reference.RefType);
             switch (reference.RefType) {
                 case DMReference.Type.Argument:
                 case DMReference.Type.Local:
-                    Write((byte)reference.Index);
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, name, location));
                     break;
 
 
                 case DMReference.Type.Global:
                 case DMReference.Type.GlobalProc:
-                    Write(reference.Index);
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, name, location));
                     break;
 
 
                 case DMReference.Type.Field:
                     int fieldID = DMObjectTree.AddString(reference.Name);
-                    Write(fieldID);
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, name, location));
                     ResizeStack(affectStack ? -1 : 0);
                     break;
 
                 case DMReference.Type.SrcProc:
                 case DMReference.Type.SrcField:
                     fieldID = DMObjectTree.AddString(reference.Name);
-                    Write(fieldID);
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, name, location));
                     break;
 
                 case DMReference.Type.ListIndex:
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, name, location));
                     ResizeStack(affectStack ? -2 : 0);
                     break;
 
@@ -410,12 +379,20 @@ namespace DMCompiler.DM.Optimizer {
                 case DMReference.Type.Self:
                 case DMReference.Type.Args:
                 case DMReference.Type.Usr:
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, name, location));
                     break;
 
                 default:
                     throw new CompileAbortException(location, $"Invalid reference type {reference.RefType}");
             }
+        }
+
+        public int GetLength() {
+            return _annotatedBytecode.Count;
+        }
+
+        public void AddLabel(string name) {
+            _annotatedBytecode.Add(new AnnotatedBytecodeLabel(name, _location));
         }
     }
 }

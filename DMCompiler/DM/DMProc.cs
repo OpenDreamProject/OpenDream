@@ -1,125 +1,48 @@
-using DMCompiler.DM.Visitors;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
+using DMCompiler.DM.Expressions;
+using DMCompiler.DM.Optimizer;
+using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using DMCompiler.Bytecode;
-using DMCompiler.DM.Optimizer;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
-        public class LocalVariable {
-            public readonly int Id;
-            public readonly bool IsParameter;
-            public DreamPath? Type;
+        private readonly List<SourceInfoJson> _sourceInfo = new();
+        private Dictionary<string, long> _annotatedBytecodeLabels = new();
+        private DMASTProcDefinition? _astDefinition;
 
-            public LocalVariable(int id, bool isParameter, DreamPath? type) {
-                Id = id;
-                IsParameter = isParameter;
-                Type = type;
-            }
-        }
+        private DMObject _dmObject;
+        private int _labelIdCounter;
+        private string? _lastSourceFile;
+        private int _localVariableIdCounter;
 
-        public sealed class LocalConstVariable : LocalVariable {
-            public readonly Expressions.Constant Value;
-
-            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
-                Value = value;
-            }
-        }
-
-        public struct CodeLabelReference {
-            public readonly string Identifier;
-            public readonly string Placeholder;
-            public readonly Location Location;
-            public readonly DMProcScope Scope;
-
-            public CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
-                Identifier = identifier;
-                Placeholder = placeholder;
-                Scope = scope;
-                Location = location;
-            }
-        }
-
-        public class CodeLabel {
-            public readonly int Id;
-            public readonly string Name;
-            public readonly long AnnotatedByteOffset;
-
-            public int ReferencedCount = 0;
-
-            public string LabelName => $"{Name}_{Id}_codelabel";
-
-            private static int _idCounter = 0;
-
-            public CodeLabel(string name, long annotatedOffset) {
-                Id = _idCounter++;
-                Name = name;
-                AnnotatedByteOffset = annotatedOffset;
-            }
-        }
-
-        internal class DMProcScope {
-            public readonly Dictionary<string, LocalVariable> LocalVariables = new();
-            public readonly Dictionary<string, CodeLabel> LocalCodeLabels = new();
-            public readonly DMProcScope? ParentScope;
-
-            public DMProcScope() {
-            }
-
-            public DMProcScope(DMProcScope? parentScope) {
-                ParentScope = parentScope;
-            }
-        }
+        private List<LocalVariableJson> _localVariableNames = new();
+        private Stack<string>? _loopStack = null;
+        private Dictionary<string, LocalVariable> _parameters = new();
+        private Stack<CodeLabelReference> _pendingLabelReferences = new();
+        private Stack<DMProcScope> _scopes = new();
+        private Location _writerLocation;
+        public AnnotatedByteCodeWriter AnnotatedBytecode = new();
+        public ProcAttributes Attributes;
+        public Dictionary<string, int> GlobalVariables = new();
+        public int Id;
+        public sbyte Invisibility;
+        public bool IsVerb = false;
+        public Location Location;
 
         public List<string> Parameters = new();
         public List<DMValueType> ParameterTypes = new();
-        public Location Location;
-        private Location _writerLocation;
-        public ProcAttributes Attributes;
-        public bool IsVerb = false;
-        public string Name => _astDefinition?.Name ?? "<init>";
-        public int Id;
-        public Dictionary<string, int> GlobalVariables = new();
-
-        public string? VerbName;
         public string? VerbCategory = string.Empty;
         public string? VerbDesc;
-        public sbyte Invisibility;
 
-        private DMObject _dmObject;
-        private DMASTProcDefinition? _astDefinition;
-        public AnnotatedByteCodeWriter AnnotatedBytecode = new();
-        private Stack<CodeLabelReference> _pendingLabelReferences = new();
-        private Stack<string>? _loopStack = null;
-        private Stack<DMProcScope> _scopes = new();
-        private Dictionary<string, LocalVariable> _parameters = new();
-        private int _labelIdCounter;
-
-        private List<LocalVariableJson> _localVariableNames = new();
-        private int _localVariableIdCounter;
-
-        private readonly List<SourceInfoJson> _sourceInfo = new();
-        private string? _lastSourceFile;
-        private Dictionary<string, long> _annotatedBytecodeLabels = new();
-
-        private int AllocLocalVariable(string name) {
-            _localVariableNames.Add(new LocalVariableJson { Offset = (int)AnnotatedBytecode.Position, Add = name });
-            return _localVariableIdCounter++;
-        }
-
-        private void DeallocLocalVariables(int amount) {
-            if (amount > 0) {
-                _localVariableNames.Add(new LocalVariableJson { Offset = (int)AnnotatedBytecode.Position, Remove = amount });
-                _localVariableIdCounter -= amount;
-            }
-        }
+        public string? VerbName;
 
         public DMProc(int id, DMObject dmObject, DMASTProcDefinition? astDefinition) {
             Id = id;
@@ -131,6 +54,21 @@ namespace DMCompiler.DM {
             _writerLocation = Location;
             AnnotatedBytecode = new AnnotatedByteCodeWriter();
             _scopes.Push(new DMProcScope());
+        }
+
+        public string Name => _astDefinition?.Name ?? "<init>";
+
+        private int AllocLocalVariable(string name) {
+            _localVariableNames.Add(new LocalVariableJson { Offset = (int)AnnotatedBytecode.Position, Add = name });
+            return _localVariableIdCounter++;
+        }
+
+        private void DeallocLocalVariables(int amount) {
+            if (amount > 0) {
+                _localVariableNames.Add(new LocalVariableJson
+                    { Offset = (int)AnnotatedBytecode.Position, Remove = amount });
+                _localVariableIdCounter -= amount;
+            }
         }
 
 
@@ -151,7 +89,7 @@ namespace DMCompiler.DM {
             }
         }
 
-        public ProcDefinitionJson GetJsonRepresentation(StreamWriter? bytecodeDump) {
+        public ProcDefinitionJson GetJsonRepresentation(StringBuilder? stringBuilder) {
             ProcDefinitionJson procDefinition = new ProcDefinitionJson();
 
             procDefinition.OwningTypeId = _dmObject.Id;
@@ -181,6 +119,7 @@ namespace DMCompiler.DM {
                 procDefinition.Bytecode =
                     serializer.Serialize(AnnotatedBytecode.GetAnnotatedBytecode());
             }
+
             if (Parameters.Count > 0) {
                 procDefinition.Arguments = new List<ProcArgumentJson>();
 
@@ -199,31 +138,28 @@ namespace DMCompiler.DM {
                 procDefinition.Locals = _localVariableNames;
             }
 
-            if (bytecodeDump is not null) {
-                var pathString = _dmObject.Path.ToString() == "/" ? "<internal>" : _dmObject.Path.ToString();
+            if (stringBuilder is not null) {
+                var pathString = _dmObject.Path.ToString() == "/" ? "<global>" : _dmObject.Path.ToString();
                 var attributeString = Attributes.ToString().Replace(", ", " | ");
                 if (attributeString != "0") {
-                    bytecodeDump.WriteLine($"[{attributeString}]");
+                    stringBuilder.AppendLine($"[{attributeString}]");
                 }
-                bytecodeDump.Write($"Proc {pathString}/{(IsVerb ? "verb/" : "")}{Name}(");
+
+                stringBuilder.Append($"Proc {pathString}/{(IsVerb ? "verb/" : "")}{Name}(");
                 for (int i = 0; i < Parameters.Count; i++) {
                     string argumentName = Parameters[i];
                     DMValueType argumentType = ParameterTypes[i];
 
-                    bytecodeDump.Write($"{argumentName}: {argumentType}");
+                    stringBuilder.Append($"{argumentName}: {argumentType}");
                     if (i < Parameters.Count - 1) {
-                        bytecodeDump.Write(", ");
+                        stringBuilder.Append(", ");
                     }
                 }
-                bytecodeDump.WriteLine("):");
+
+                stringBuilder.AppendLine("):");
                 var bytecode = AnnotatedBytecode.GetAnnotatedBytecode();
-                var bytecodestring = AnnotatedBytecodePrinter.Print(bytecode, _sourceInfo);
-                if (bytecodestring.Length == 0) {
-                    bytecodeDump.WriteLine("    pass");
-                } else {
-                    bytecodeDump.WriteLine(bytecodestring);
-                }
-                bytecodeDump.WriteLine();
+                AnnotatedBytecodePrinter.Print(bytecode, _sourceInfo, stringBuilder);
+                stringBuilder.AppendLine();
             }
 
             return procDefinition;
@@ -302,7 +238,7 @@ namespace DMCompiler.DM {
             return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
         }
 
-        public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
+        public bool TryAddLocalConstVariable(string name, DreamPath? type, Constant value) {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
@@ -512,8 +448,8 @@ namespace DMCompiler.DM {
         public void Break(DMASTIdentifier? label = null) {
             if (label is not null) {
                 var codeLabel = (AnnotatedBytecode.GetCodeLabel(label.Identifier, _scopes.Peek())?.LabelName ??
-                    label.Identifier + "_codelabel"
-                );
+                                 label.Identifier + "_codelabel"
+                    );
                 if (!_annotatedBytecodeLabels.ContainsKey(codeLabel)) {
                     DMCompiler.Emit(WarningCode.ItemDoesntExist, label.Location, $"Unknown label {label.Identifier}");
                 }
@@ -626,7 +562,8 @@ namespace DMCompiler.DM {
         public void JumpIfNullDereference(DMReference reference, string label) {
             //Either grows the stack by 0 or 1. Assume 0.
             AnnotatedBytecode.WriteOpcode(DreamProcOpcode.JumpIfNullDereference, _writerLocation);
-            AnnotatedBytecode.WriteReference(reference, _writerLocation, ResolveReferenceToString(reference), affectStack: false);
+            AnnotatedBytecode.WriteReference(reference, _writerLocation, ResolveReferenceToString(reference),
+                affectStack: false);
             AnnotatedBytecode.WriteLabel(label, _writerLocation);
         }
 
@@ -643,13 +580,15 @@ namespace DMCompiler.DM {
 
         public void JumpIfTrueReference(DMReference reference, string label) {
             AnnotatedBytecode.WriteOpcode(DreamProcOpcode.JumpIfTrueReference, _writerLocation);
-            AnnotatedBytecode.WriteReference(reference, _writerLocation, ResolveReferenceToString(reference), affectStack: false);
+            AnnotatedBytecode.WriteReference(reference, _writerLocation, ResolveReferenceToString(reference),
+                affectStack: false);
             AnnotatedBytecode.WriteLabel(label, _writerLocation);
         }
 
         public void JumpIfFalseReference(DMReference reference, string label) {
             AnnotatedBytecode.WriteOpcode(DreamProcOpcode.JumpIfFalseReference, _writerLocation);
-            AnnotatedBytecode.WriteReference(reference, _writerLocation, ResolveReferenceToString(reference), affectStack: false);
+            AnnotatedBytecode.WriteReference(reference, _writerLocation, ResolveReferenceToString(reference),
+                affectStack: false);
             AnnotatedBytecode.WriteLabel(label, _writerLocation);
         }
 
@@ -1090,7 +1029,7 @@ namespace DMCompiler.DM {
                     // Need to find the KEY in the global proc dictionary with the VALUE of the reference index
                     var procName = DMObjectTree.GlobalProcs.FirstOrDefault(x => x.Value == reference.Index).Key;
                     if (DMObjectTree.TryGetGlobalProc(procName, out var proc)) {
-                        var path = proc._dmObject.Path.PathString ==  "/" ? "" : proc._dmObject.Path.PathString;
+                        var path = proc._dmObject.Path.PathString == "/" ? "" : proc._dmObject.Path.PathString;
                         return $"{path}{proc.Name}";
                     } else {
                         return $"proc#{reference.Index}";
@@ -1105,7 +1044,69 @@ namespace DMCompiler.DM {
                     throw new ArgumentOutOfRangeException();
             }
         }
+
+        public class LocalVariable {
+            public readonly int Id;
+            public readonly bool IsParameter;
+            public DreamPath? Type;
+
+            public LocalVariable(int id, bool isParameter, DreamPath? type) {
+                Id = id;
+                IsParameter = isParameter;
+                Type = type;
+            }
+        }
+
+        public sealed class LocalConstVariable : LocalVariable {
+            public readonly Constant Value;
+
+            public LocalConstVariable(int id, DreamPath? type, Constant value) : base(id, false, type) {
+                Value = value;
+            }
+        }
+
+        public struct CodeLabelReference {
+            public readonly string Identifier;
+            public readonly string Placeholder;
+            public readonly Location Location;
+            public readonly DMProcScope Scope;
+
+            public CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
+                Identifier = identifier;
+                Placeholder = placeholder;
+                Scope = scope;
+                Location = location;
+            }
+        }
+
+        public class CodeLabel {
+            private static int _idCounter = 0;
+            public readonly long AnnotatedByteOffset;
+            public readonly int Id;
+            public readonly string Name;
+
+            public int ReferencedCount = 0;
+
+            public CodeLabel(string name, long annotatedOffset) {
+                Id = _idCounter++;
+                Name = name;
+                AnnotatedByteOffset = annotatedOffset;
+            }
+
+            public string LabelName => $"{Name}_{Id}_codelabel";
+        }
+
+        internal class DMProcScope {
+            public readonly Dictionary<string, CodeLabel> LocalCodeLabels = new();
+            public readonly Dictionary<string, LocalVariable> LocalVariables = new();
+            public readonly DMProcScope? ParentScope;
+
+            public DMProcScope() {
+            }
+
+            public DMProcScope(DMProcScope? parentScope) {
+                ParentScope = parentScope;
+            }
+        }
     }
-
-
 }

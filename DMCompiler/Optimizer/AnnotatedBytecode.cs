@@ -1,27 +1,22 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
-using System.Reflection;
 using System.Text;
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler.DMPreprocessor;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
-using Robust.Shared.Utility;
 
 namespace DMCompiler.DM.Optimizer {
-
     internal interface IAnnotatedBytecode {
         public void AddArg(IAnnotatedBytecode arg);
     }
 
     internal class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
-        public DreamProcOpcode Opcode;
-        public Location Location;
         private List<IAnnotatedBytecode> _args = new();
+        public Location Location;
+        public DreamProcOpcode Opcode;
         public int StackSizeDelta;
 
         public AnnotatedBytecodeInstruction(DreamProcOpcode opcode, int stackSizeDelta, Location location) {
@@ -40,8 +35,8 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeInteger : IAnnotatedBytecode {
-        public int Value;
         public Location Location;
+        public int Value;
 
         public AnnotatedBytecodeInteger(int value, Location location) {
             Value = value;
@@ -54,8 +49,8 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeFloat : IAnnotatedBytecode {
-        public float Value;
         public Location Location;
+        public float Value;
 
         public AnnotatedBytecodeFloat(float value, Location location) {
             Value = value;
@@ -68,9 +63,9 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeString : IAnnotatedBytecode {
-        public string Value;
         public int ID;
         public Location Location;
+        public string Value;
 
         public AnnotatedBytecodeString(string value, int id, Location location) {
             Value = value;
@@ -84,8 +79,8 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {
-        public DMCallArgumentsType Value;
         public Location Location;
+        public DMCallArgumentsType Value;
 
         public AnnotatedBytecodeArgumentType(DMCallArgumentsType value, Location location) {
             Value = value;
@@ -98,8 +93,8 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeType : IAnnotatedBytecode {
-        public DMValueType Value;
         public Location Location;
+        public DMValueType Value;
 
         public AnnotatedBytecodeType(DMValueType value, Location location) {
             Value = value;
@@ -112,9 +107,9 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeTypeID : IAnnotatedBytecode {
-        public int TypeID;
-        public DreamPath? Path;
         public Location Location;
+        public DreamPath? Path;
+        public int TypeID;
 
         public AnnotatedBytecodeTypeID(int typeID, DreamPath? path, Location location) {
             TypeID = typeID;
@@ -128,9 +123,9 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeProcID : IAnnotatedBytecode {
-        public int ProcID;
-        public DreamPath? Path;
         public Location Location;
+        public DreamPath? Path;
+        public int ProcID;
 
         public AnnotatedBytecodeProcID(int procID, DreamPath? path, Location location) {
             ProcID = procID;
@@ -172,8 +167,8 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeListSize : IAnnotatedBytecode {
-        public int Size;
         public Location Location;
+        public int Size;
 
         public AnnotatedBytecodeListSize(int size, Location location) {
             Size = size;
@@ -214,9 +209,9 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeResource : IAnnotatedBytecode {
-        public string Value;
-        public int ResourceID;
         public Location Location;
+        public int ResourceID;
+        public string Value;
 
         public AnnotatedBytecodeResource(string value, int rid, Location location) {
             Value = value;
@@ -245,8 +240,8 @@ namespace DMCompiler.DM.Optimizer {
 
 
     internal class AnnotatedBytecodeFilter : IAnnotatedBytecode {
-        public int FilterTypeId;
         public DreamPath FilterPath;
+        public int FilterTypeId;
         public Location Location;
 
         public AnnotatedBytecodeFilter(int filterTypeId, DreamPath filterPath, Location location) {
@@ -261,10 +256,10 @@ namespace DMCompiler.DM.Optimizer {
     }
 
     internal class AnnotatedBytecodeReference : IAnnotatedBytecode {
-        public DMReference.Type RefType;
         public int Index;
-        public string Name;
         public Location Location;
+        public string Name;
+        public DMReference.Type RefType;
 
         public AnnotatedBytecodeReference(DMReference.Type refType, int index, string name, Location location) {
             RefType = refType;
@@ -287,9 +282,12 @@ namespace DMCompiler.DM.Optimizer {
     internal class AnnotatedBytecodePrinter {
         private static string oldFile = "";
         private static List<string> oldFileContents = new();
-        public static string Print(IReadOnlyList<IAnnotatedBytecode> annotatedBytecode, List<SourceInfoJson> sourceInfo)
-        {
-            StringBuilder output = new StringBuilder();
+
+        private static int max_opcode_length = -1;
+        private static readonly List<string> indent_cache = new();
+
+        public static void Print(IReadOnlyList<IAnnotatedBytecode> annotatedBytecode, List<SourceInfoJson> sourceInfo,
+            StringBuilder output) {
             int indent = 1;
 
             int currentLine = 0;
@@ -298,93 +296,111 @@ namespace DMCompiler.DM.Optimizer {
 
             string currentFile = "";
 
-            foreach (SourceInfoJson sourceInfoItem in sourceInfo)
-            {
-                if (sourceInfoItem.File != null)
-                {
+            foreach (SourceInfoJson sourceInfoItem in sourceInfo) {
+                if (sourceInfoItem.File != null) {
                     currentFile = DMObjectTree.StringTable[sourceInfoItem.File.Value];
                 }
+
                 sourceInfoByLine.TryAdd(sourceInfoItem.Line, sourceInfoItem);
             }
 
             List<string> currentFileContents = new();
-            if (currentFile != "" && currentFile != oldFile)
-            {
-                if (!File.Exists(currentFile))
-                {
+            if (currentFile != "" && currentFile != oldFile) {
+                if (!File.Exists(currentFile)) {
                     currentFile = Path.Join(DMCompiler.StandardLibraryDirectory, currentFile);
                 }
 
-                if (!File.Exists(currentFile))
-                {
+                if (!File.Exists(currentFile)) {
                     currentFile = "";
-                }
-                else
-                {
+                } else {
                     currentFileContents = File.ReadLines(currentFile).ToList();
                 }
             }
-            if (currentFile != oldFile)
-            {
+
+            if (currentFile != oldFile) {
                 oldFile = currentFile;
                 oldFileContents = currentFileContents;
             } else {
                 currentFileContents = oldFileContents;
             }
-            foreach (IAnnotatedBytecode annotatedBytecodeItem in annotatedBytecode)
-            {
-                switch (annotatedBytecodeItem)
-                {
+
+            if (annotatedBytecode.Count == 0) {
+                output.Append("\t pass\n");
+                return;
+            }
+
+            foreach (IAnnotatedBytecode annotatedBytecodeItem in annotatedBytecode) {
+                switch (annotatedBytecodeItem) {
                     case AnnotatedBytecodeInstruction annotatedBytecodeInstruction:
-                        if (annotatedBytecodeInstruction.Location.Line != currentLine)
-                        {
+                        if (annotatedBytecodeInstruction.Location.Line != currentLine) {
                             currentLine = (annotatedBytecodeInstruction.Location.Line) ?? -1;
-                            if (sourceInfoByLine.ContainsKey(currentLine) && currentFile != "" && currentLine - 1 < currentFileContents.Count)
-                            {
+                            if (sourceInfoByLine.ContainsKey(currentLine) && currentFile != "" &&
+                                currentLine - 1 < currentFileContents.Count) {
                                 output.Append(" // ").Append(currentFileContents[currentLine - 1].Trim()).Append("\n");
                             }
                         }
+
                         // For now all this does is keep labels flush with the left side
                         // Later may do something different e.g basic blocks
-                        output.Append(' ', indent * 4).Append(Print(annotatedBytecodeInstruction)).Append("\n");
+                        output.Append(' ', indent * 4);
+                        Print(annotatedBytecodeInstruction, output);
+                        output.Append("\n");
                         break;
                     case AnnotatedBytecodeLabel label:
                         output.Append(label.LabelName).Append(":").Append("\n");
                         break;
                     default:
-                        throw new Exception("Only labels and instructions allowed at top-level, others should be args to instructions");
+                        throw new Exception(
+                            "Only labels and instructions allowed at top-level, others should be args to instructions");
                 }
             }
-
-            return output.ToString();
         }
 
-        private static int max_opcode_length = -1;
-
-        private static string Print(AnnotatedBytecodeInstruction annotatedBytecode) {
+        private static void Print(AnnotatedBytecodeInstruction annotatedBytecode, StringBuilder sb) {
             DreamProcOpcode opcode = annotatedBytecode.Opcode;
-            if (max_opcode_length == -1) {
-                max_opcode_length = Enum.GetNames(typeof(DreamProcOpcode)).Max(x => x.Length);
-            }
+            if (max_opcode_length == -1) max_opcode_length = Enum.GetNames(typeof(DreamProcOpcode)).Max(x => x.Length);
             // If the length of the opcode name is less than the max opcode length, add spaces to the end of the opcode name
-            string less_offset = new string(' ', max_opcode_length - opcode.ToString().Length) + "\t";
+            // Also cache the indent strings for each opcode length
+            if (indent_cache.Count == 0)
+                for (var i = 0; i <= max_opcode_length; i++)
+                    indent_cache.Add(new string(' ', max_opcode_length - i) + "\t");
+            var less_offset = indent_cache[opcode.ToString().Length];
             switch (opcode) {
                 case DreamProcOpcode.FormatString:
-                    // FormatString takes an unformatted string and the interpolation count to pop off the stack
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeFormatCount)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeFormatCount)!, sb);
+                    break;
                 case DreamProcOpcode.PushString:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    break;
                 case DreamProcOpcode.PushResource:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeResource)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeResource)!, sb);
+                    break;
                 case DreamProcOpcode.DereferenceField:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    break;
                 case DreamProcOpcode.DereferenceCall:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeArgumentType)!)}, {Print((annotatedBytecode.GetArgs()[2] as AnnotatedBytecodeStackDelta)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeArgumentType)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[2] as AnnotatedBytecodeStackDelta)!, sb);
+                    break;
                 case DreamProcOpcode.Prompt:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeType)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeType)!, sb);
+                    break;
 
                 case DreamProcOpcode.PushFloat:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeFloat)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeFloat)!, sb);
+                    break;
 
                 case DreamProcOpcode.Assign:
                 case DreamProcOpcode.AssignInto:
@@ -404,18 +420,38 @@ namespace DMCompiler.DM.Optimizer {
                 case DreamProcOpcode.OutputReference:
                 case DreamProcOpcode.PushReferenceValue:
                 case DreamProcOpcode.PopReference:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    break;
 
                 case DreamProcOpcode.Input:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeReference)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeReference)!, sb);
+                    break;
 
                 case DreamProcOpcode.CallStatement:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeArgumentType)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeStackDelta)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeArgumentType)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeStackDelta)!, sb);
+                    break;
                 case DreamProcOpcode.CreateObject:
                 case DreamProcOpcode.Gradient:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeArgumentType)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeStackDelta)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeArgumentType)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeStackDelta)!, sb);
+                    break;
                 case DreamProcOpcode.Call:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeArgumentType)!)}, {Print((annotatedBytecode.GetArgs()[2] as AnnotatedBytecodeStackDelta)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeArgumentType)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[2] as AnnotatedBytecodeStackDelta)!, sb);
+                    break;
 
                 case DreamProcOpcode.EnumerateNoAssign:
                 case DreamProcOpcode.Spawn:
@@ -429,108 +465,132 @@ namespace DMCompiler.DM.Optimizer {
                 case DreamProcOpcode.JumpIfNull:
                 case DreamProcOpcode.JumpIfNullNoPop:
                 case DreamProcOpcode.TryNoValue:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeLabel)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeLabel)!, sb);
+                    break;
                 case DreamProcOpcode.CreateList:
                 case DreamProcOpcode.CreateAssociativeList:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeListSize)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeListSize)!, sb);
+                    break;
                 case DreamProcOpcode.CreateFilteredListEnumerator:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeFilter)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeFilter)!, sb);
+                    break;
                 case DreamProcOpcode.PickWeighted:
                 case DreamProcOpcode.PickUnweighted:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodePickCount)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodePickCount)!, sb);
+                    break;
                 case DreamProcOpcode.PushType:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeTypeID)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeTypeID)!, sb);
+                    break;
                 case DreamProcOpcode.PushProc:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeProcID)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeProcID)!, sb);
+                    break;
                 case DreamProcOpcode.MassConcatenation:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeConcatCount)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeConcatCount)!, sb);
+                    break;
 
                 case DreamProcOpcode.JumpIfNullDereference:
                 case DreamProcOpcode.JumpIfTrueReference:
                 case DreamProcOpcode.JumpIfFalseReference:
                 case DreamProcOpcode.Enumerate:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeLabel)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeLabel)!, sb);
+                    break;
 
                 case DreamProcOpcode.Try:
-                    return $"{opcode}{less_offset} {Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeLabel)!)}, {Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeReference)!)}";
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeLabel)!, sb);
+                    sb.Append(", ");
+                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeReference)!, sb);
+                    break;
 
                 default:
                     if (annotatedBytecode.GetArgs().Count > 0) {
                         throw new Exception($"UH OH YOU FORGOT TO ADD A CASE FOR {opcode}");
                     }
-                    return opcode.ToString();
+
+                    sb.Append($"{opcode}{less_offset}");
+
+                    return;
             }
-
-            throw new Exception($"Unknown opcode {opcode}");
         }
 
-        private static string Print(AnnotatedBytecodeInteger annotatedBytecode) {
-            return annotatedBytecode.Value.ToString();
+        private static void Print(AnnotatedBytecodeInteger annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.Value.ToString());
         }
 
-        private static string Print(AnnotatedBytecodeFloat annotatedBytecode) {
-            return annotatedBytecode.Value.ToString();
+        private static void Print(AnnotatedBytecodeFloat annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.Value.ToString());
         }
 
-        private static string Print(AnnotatedBytecodeString annotatedBytecode) {
-            return "\"" + StringFormatEncoder.PrettyPrint(annotatedBytecode.Value) + "\"";
+        private static void Print(AnnotatedBytecodeString annotatedBytecode, StringBuilder sb) {
+            sb.Append("\"").Append(StringFormatEncoder.PrettyPrint(annotatedBytecode.Value)).Append("\"");
         }
 
-        private static string Print(AnnotatedBytecodeArgumentType annotatedBytecode) {
-            return annotatedBytecode.Value.ToString();
+        private static void Print(AnnotatedBytecodeArgumentType annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.Value.ToString());
         }
 
-        private static string Print(AnnotatedBytecodeType annotatedBytecode) {
-            return annotatedBytecode.Value.ToString();
+        private static void Print(AnnotatedBytecodeType annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.Value.ToString());
         }
 
-        private static string Print(AnnotatedBytecodeTypeID annotatedBytecode) {
+        private static void Print(AnnotatedBytecodeTypeID annotatedBytecode, StringBuilder sb) {
             // Print the type and the path if it's not null
-            return annotatedBytecode.TypeID.ToString() +
-                   (annotatedBytecode.Path is not null ? " -> " + annotatedBytecode.Path.ToString() : "");
+            sb.Append(annotatedBytecode.TypeID.ToString());
+            if (annotatedBytecode.Path is not null) sb.Append(" -> ").Append(annotatedBytecode.Path.ToString());
         }
 
-        private static string Print(AnnotatedBytecodeProcID annotatedBytecode) {
+        private static void Print(AnnotatedBytecodeProcID annotatedBytecode, StringBuilder sb) {
             // Print the proc and the path if it's not null
-            return annotatedBytecode.ProcID.ToString() +
-                   (annotatedBytecode.Path is not null ? " -> " + annotatedBytecode.Path.ToString() : "");
+            sb.Append(annotatedBytecode.ProcID.ToString());
+            if (annotatedBytecode.Path is not null) sb.Append(" -> ").Append(annotatedBytecode.Path.ToString());
         }
 
-        private static string Print(AnnotatedBytecodeFormatCount annotatedBytecode) {
-            return $"FormatCount {annotatedBytecode.Count}";
+        private static void Print(AnnotatedBytecodeFormatCount annotatedBytecode, StringBuilder sb) {
+            sb.Append("FormatCount ").Append(annotatedBytecode.Count);
         }
 
-        private static string Print(AnnotatedBytecodePickCount annotatedBytecode) {
-            return $"PickCount {annotatedBytecode.Count}";
+        private static void Print(AnnotatedBytecodePickCount annotatedBytecode, StringBuilder sb) {
+            sb.Append("PickCount ").Append(annotatedBytecode.Count);
         }
 
-        private static string Print(AnnotatedBytecodeConcatCount annotatedBytecode) {
-            return $"ConcatCount {annotatedBytecode.Count}";
+        private static void Print(AnnotatedBytecodeConcatCount annotatedBytecode, StringBuilder sb) {
+            sb.Append("ConcatCount ").Append(annotatedBytecode.Count);
         }
 
-        private static string Print(AnnotatedBytecodeStackDelta annotatedBytecode) {
-            return $"StackDelta {annotatedBytecode.Delta}";
+        private static void Print(AnnotatedBytecodeStackDelta annotatedBytecode, StringBuilder sb) {
+            sb.Append("StackDelta ").Append(annotatedBytecode.Delta);
         }
 
-        private static string Print(AnnotatedBytecodeListSize annotatedBytecode) {
-            return $"ListSize {annotatedBytecode.Size}";
+        private static void Print(AnnotatedBytecodeListSize annotatedBytecode, StringBuilder sb) {
+            sb.Append("ListSize ").Append(annotatedBytecode.Size);
         }
 
-        private static string Print(AnnotatedBytecodeResource annotatedBytecode) {
-            return annotatedBytecode.Value;
+        private static void Print(AnnotatedBytecodeResource annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.Value);
         }
 
-        private static string Print(AnnotatedBytecodeLabel annotatedBytecode) {
-            return annotatedBytecode.LabelName;
+        private static void Print(AnnotatedBytecodeLabel annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.LabelName);
         }
 
-        private static string Print(AnnotatedBytecodeFilter annotatedBytecode) {
-            return annotatedBytecode.FilterTypeId.ToString() + " -> " + annotatedBytecode.FilterPath.ToString();
+        private static void Print(AnnotatedBytecodeFilter annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.FilterTypeId.ToString()).Append(" -> ")
+                .Append(annotatedBytecode.FilterPath.ToString());
         }
 
-        private static string Print(AnnotatedBytecodeReference annotatedBytecode) {
-            return annotatedBytecode.RefType.ToString() + " " + annotatedBytecode.Index.ToString() + " -> " + annotatedBytecode.Name;
+        private static void Print(AnnotatedBytecodeReference annotatedBytecode, StringBuilder sb) {
+            sb.Append(annotatedBytecode.RefType.ToString()).Append(" ").Append(annotatedBytecode.Index.ToString())
+                .Append(" -> ").Append(annotatedBytecode.Name);
         }
-
     }
 }

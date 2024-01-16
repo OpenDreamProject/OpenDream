@@ -7,14 +7,15 @@ using OpenDreamShared.Compiler;
 namespace DMCompiler.DM.Optimizer;
 
 internal class AnnotatedBytecodeSerializer {
-    public MemoryStream Bytecode = new();
     private BinaryWriter _bytecodeWriter;
     private Dictionary<string, int> _labels = new();
     private List<(long Position, string LabelName)> _unresolvedLabels = new();
+    public MemoryStream Bytecode = new();
 
     public AnnotatedBytecodeSerializer() {
         _bytecodeWriter = new BinaryWriter(Bytecode);
     }
+
 
     public byte[]? Serialize(List<IAnnotatedBytecode> annotatedBytecode) {
         foreach (IAnnotatedBytecode bytecodeChunk in annotatedBytecode) {

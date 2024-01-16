@@ -1,12 +1,13 @@
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using System.Text;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using JetBrains.Annotations;
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 using Robust.Shared.Utility;
 
 namespace DMCompiler.DM {
@@ -17,16 +18,16 @@ namespace DMCompiler.DM {
         //TODO: These don't belong in the object tree
         public static readonly List<DMVariable> Globals = new();
         public static readonly Dictionary<string, int> GlobalProcs = new();
+
         /// <summary>
         /// Used to keep track of when we see a /proc/foo() or whatever, so that duplicates or missing definitions can be discovered,
         /// even as GlobalProcs keeps clobbering old global proc overrides/definitions.
         /// </summary>
         public static readonly HashSet<string> SeenGlobalProcDefinition = new();
+
         public static readonly List<string> StringTable = new();
         public static DMProc GlobalInitProc;
         public static readonly HashSet<string> Resources = new();
-
-        public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         private static readonly Dictionary<string, int> StringToStringId = new();
         private static readonly List<(int GlobalId, DMExpression Value)> _globalInitAssigns = new();
@@ -38,6 +39,8 @@ namespace DMCompiler.DM {
         static DMObjectTree() {
             Reset();
         }
+
+        public static DMObject Root => GetDMObject(DreamPath.Root)!;
 
         /// <summary>
         /// A thousand curses upon you if you add a new member to this thing without deleting it here.
@@ -83,11 +86,13 @@ namespace DMCompiler.DM {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             }
+
             if (!createIfNonexistent) return null;
 
             DMObject? parent = null;
             if (path.Elements.Length > 1) {
-                parent = GetDMObject(path.FromElements(0, -2)); // Create all parent classes as dummies, if we're being dummy-created too
+                parent = GetDMObject(path.FromElements(0,
+                    -2)); // Create all parent classes as dummies, if we're being dummy-created too
             } else if (path.Elements.Length == 1) {
                 switch (path.LastElement) {
                     case "client":
@@ -103,7 +108,8 @@ namespace DMCompiler.DM {
                 }
             }
 
-            DebugTools.Assert(path == DreamPath.Root || parent != null); // Parent SHOULD NOT be null here! (unless we're root lol)
+            DebugTools.Assert(path == DreamPath.Root ||
+                              parent != null); // Parent SHOULD NOT be null here! (unless we're root lol)
 
             DMObject dmObject = new DMObject(_dmObjectIdCounter++, path, parent);
             AllObjects.Add(dmObject);
@@ -159,7 +165,8 @@ namespace DMCompiler.DM {
                     } else if (foundTypeId == Root.Id && GlobalProcs.ContainsKey(searchingProcName)) {
                         return new DreamPath("/proc/" + searchingProcName);
                     }
-                } else if (foundType) { // We're searching for a type
+                } else if (foundType) {
+                    // We're searching for a type
                     return currentPath.Combine(search);
                 }
 
@@ -173,7 +180,8 @@ namespace DMCompiler.DM {
             return null;
         }
 
-        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
+        public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst,
+            DMValueType valType = DMValueType.Anything) {
             int id = Globals.Count;
 
             global = new DMVariable(type, name, true, isConst, false, valType);
@@ -182,11 +190,12 @@ namespace DMCompiler.DM {
         }
 
         public static void AddGlobalProc(string name, int id) {
-            GlobalProcs[name] = id; // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
+            GlobalProcs[name] =
+                id; // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
         }
 
         public static void AddGlobalInitAssign(int globalId, DMExpression value) {
-            _globalInitAssigns.Add( (globalId, value) );
+            _globalInitAssigns.Add((globalId, value));
         }
 
         public static void CreateGlobalInitProc() {
@@ -212,18 +221,25 @@ namespace DMCompiler.DM {
 
             if (bytecodeDump != null) {
                 bytecodeDump.WriteLine("OpenDream Bytecode Dump:");
-                bytecodeDump.WriteLine("\t Version: " + DMCompiler.Settings.DMVersion + "." + DMCompiler.Settings.DMBuild);
-                bytecodeDump.WriteLine("\t File: " + string.Join(", ", DMCompiler.Settings.Files ?? new List<string>()));
-                bytecodeDump.WriteLine("\t Macros: \n" + string.Join("\n\t  ", DMCompiler.Settings.MacroDefines ?? new Dictionary<string, string>()));
+                bytecodeDump.WriteLine("\t Version: " + DMCompiler.Settings.DMVersion + "." +
+                                       DMCompiler.Settings.DMBuild);
+                bytecodeDump.WriteLine("\t File: " +
+                                       string.Join(", ", DMCompiler.Settings.Files ?? new List<string>()));
+                bytecodeDump.WriteLine("\t Macros: \n" + string.Join("\n\t  ",
+                    DMCompiler.Settings.MacroDefines ?? new Dictionary<string, string>()));
             }
 
+            var stringBuilder = bytecodeDump != null ? new StringBuilder() : null;
             foreach (DMObject dmObject in AllObjects) {
-                types[dmObject.Id] = dmObject.CreateJsonRepresentation(bytecodeDump);
+                types[dmObject.Id] = dmObject.CreateJsonRepresentation(stringBuilder);
             }
 
             foreach (DMProc dmProc in AllProcs) {
-                procs[dmProc.Id] = dmProc.GetJsonRepresentation(bytecodeDump);
+                procs[dmProc.Id] = dmProc.GetJsonRepresentation(stringBuilder);
+                stringBuilder?.Append("\n");
             }
+
+            bytecodeDump?.WriteLine(stringBuilder?.ToString());
 
             return (types, procs);
         }

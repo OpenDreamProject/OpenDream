@@ -1,10 +1,10 @@
-﻿using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Text;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
+using OpenDreamShared.Dream;
+using OpenDreamShared.Json;
 
 namespace DMCompiler.DM {
     /// <remarks>
@@ -13,29 +13,32 @@ namespace DMCompiler.DM {
     /// including its procs, vars, path, parent, etc.
     /// </remarks>
     internal sealed class DMObject {
-        public int Id;
-        public DreamPath Path;
-        public DMObject? Parent;
-        public Dictionary<string, List<int>> Procs = new();
-        public Dictionary<string, DMVariable> Variables = new();
-        /// <summary> It's OK if the override var is not literally the exact same object as what it overrides. </summary>
-        public Dictionary<string, DMVariable> VariableOverrides = new();
-        public Dictionary<string, int> GlobalVariables = new();
+        private List<DMProc>? _verbs;
+
         /// <summary>A list of var and verb initializations implicitly done before the user's New() is called.</summary>
         public HashSet<string> ConstVariables = new();
-        public HashSet<string> TmpVariables = new();
-        public List<DMExpression> InitializationProcExpressions = new();
+
+        public Dictionary<string, int> GlobalVariables = new();
+        public int Id;
         public int? InitializationProc;
+        public List<DMExpression> InitializationProcExpressions = new();
+        public DMObject? Parent;
+        public DreamPath Path;
+        public Dictionary<string, List<int>> Procs = new();
+        public HashSet<string> TmpVariables = new();
 
-        public bool IsRoot => Path == DreamPath.Root;
+        /// <summary> It's OK if the override var is not literally the exact same object as what it overrides. </summary>
+        public Dictionary<string, DMVariable> VariableOverrides = new();
 
-        private List<DMProc>? _verbs;
+        public Dictionary<string, DMVariable> Variables = new();
 
         public DMObject(int id, DreamPath path, DMObject? parent) {
             Id = id;
             Path = path;
             Parent = parent;
         }
+
+        public bool IsRoot => Path == DreamPath.Root;
 
         public void AddProc(string name, DMProc proc) {
             if (!Procs.ContainsKey(name)) Procs.Add(name, new List<int>(1));
@@ -101,7 +104,8 @@ namespace DMCompiler.DM {
             _verbs.Add(verb);
         }
 
-        public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
+        public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst,
+            DMValueType valType = DMValueType.Anything) {
             int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType);
 
             GlobalVariables[name] = id;
@@ -144,8 +148,64 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DreamTypeJson CreateJsonRepresentation(StreamWriter? bytecodeDump) {
+        public DreamTypeJson CreateJsonRepresentation(StringBuilder? stringBuilder) {
             DreamTypeJson typeJson = new DreamTypeJson();
+
+            if (stringBuilder != null) {
+                stringBuilder.AppendLine($"Type: {Path.PathString}");
+                stringBuilder.AppendLine("\tParent: " + (Parent?.Path.PathString ?? "null"));
+                stringBuilder.AppendLine("\tProcs:");
+                foreach (var proc in Procs) stringBuilder.AppendLine($"\t\t{proc.Key}()");
+
+                if (Variables.Count > 0) {
+                    stringBuilder.AppendLine("\tVariables:");
+                    foreach (var variable in Variables) {
+                        var res = variable.Value.Type;
+                        if (res == null) {
+                            stringBuilder.AppendLine($"\t\t{variable.Key}: untyped");
+                            continue;
+                        }
+
+                        stringBuilder.AppendLine($"\t\t{variable.Key}: {res.Value.PathString ?? "null"}");
+                    }
+                }
+
+                if (VariableOverrides.Count > 0) {
+                    stringBuilder.AppendLine("\tVariable Overrides:");
+                    foreach (var variable in VariableOverrides) {
+                        var res = variable.Value.Type;
+                        if (res == null) {
+                            stringBuilder.AppendLine($"\t\t{variable.Key}: untyped");
+                            continue;
+                        }
+
+                        stringBuilder.AppendLine($"\t\t{variable.Key}: {res.Value.PathString ?? "null"}");
+                    }
+                }
+
+                if (GlobalVariables.Count > 0) {
+                    stringBuilder.AppendLine("\tGlobal Variables:");
+                    foreach (var variable in GlobalVariables)
+                        stringBuilder.AppendLine($"\t\t{variable.Key}: {variable.Value}");
+                }
+
+                if (ConstVariables.Count > 0) {
+                    stringBuilder.AppendLine("\tConst Variables:");
+                    foreach (var variable in ConstVariables) stringBuilder.AppendLine($"\t\t{variable}");
+                }
+
+                if (TmpVariables.Count > 0) {
+                    stringBuilder.AppendLine("\tTmp Variables:");
+                    foreach (var variable in TmpVariables) stringBuilder.AppendLine($"\t\t{variable}");
+                }
+
+                if (_verbs != null) {
+                    stringBuilder.AppendLine("\tVerbs:");
+                    foreach (var verb in _verbs) stringBuilder.AppendLine($"\t\t{verb.Name}");
+                }
+
+                stringBuilder.AppendLine();
+            }
 
             typeJson.Path = Path.PathString;
             typeJson.Parent = Parent?.Id;

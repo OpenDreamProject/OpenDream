@@ -77,36 +77,35 @@ namespace Content.Tests
             try {
                 string? compiledFile = Compile(Path.Join(initialDirectory, TestsDirectory, sourceFile));
                 if (testFlags.HasFlag(DMTestFlags.CompileError)) {
-                    Assert.IsNull(compiledFile, "Expected an error during DM compilation");
+                    Assert.That(compiledFile, Is.Null, "Expected an error during DM compilation");
                     Cleanup(compiledFile);
                     TestContext.WriteLine($"--- PASS {sourceFile}");
                     return;
                 }
 
-                Assert.IsTrue(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
-                Assert.IsTrue(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
+                Assert.That(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
+                Assert.That(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
                 _dreamMan.StartWorld();
 
                 (bool successfulRun, DreamValue? returned, Exception? exception) = RunTest();
 
                 if (testFlags.HasFlag(DMTestFlags.NoReturn)) {
-                    Assert.IsFalse(returned.HasValue, "proc returned unexpectedly");
+                    Assert.That(returned.HasValue, Is.False, "proc returned unexpectedly");
                 } else {
-                    Assert.IsTrue(returned.HasValue, "proc did not return (did it hit an exception?)");
+                    Assert.That(returned.HasValue, "proc did not return (did it hit an exception?)");
                 }
 
                 if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
-                    Assert.IsFalse(successfulRun, "A DM runtime exception was expected");
+                    Assert.That(successfulRun, Is.False, "A DM runtime exception was expected");
                 } else {
                     if (exception != null)
-                        Assert.IsTrue(successfulRun, $"A DM runtime exception was thrown: \"{exception}\"");
+                        Assert.That(successfulRun, $"A DM runtime exception was thrown: \"{exception}\"");
                     else
-                        Assert.IsTrue(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
+                        Assert.That(successfulRun, "A DM runtime exception was thrown, and its message could not be recovered!");
                 }
 
                 if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
-                    Assert.That(returned.HasValue, Is.True);
-                    Assert.IsTrue(returned.Value.IsTruthy(), "Test was expected to return TRUE");
+                    Assert.That(returned?.IsTruthy(), Is.True, "Test was expected to return TRUE");
                 }
 
                 Cleanup(compiledFile);

@@ -802,18 +802,19 @@ internal sealed class DreamViewOverlay : Overlay {
         IRenderTexture ping = RentRenderTarget(frame.Size * 2);
         IRenderTexture pong = RentRenderTarget(ping.Size);
 
-        //we can use the color matrix shader here, since we don't need to blend
-        //also because blend mode is none, we don't need to clear
-        var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
-            ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
-            : iconMetaData.ColorMatrixToApply;
-
-        ShaderInstance colorShader = _colorInstance.Duplicate();
-        colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
-        colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
-        colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
-        handle.UseShader(colorShader);
         handle.RenderInRenderTarget(pong, () => {
+            //we can use the color matrix shader here, since we don't need to blend
+            //also because blend mode is none, we don't need to clear
+            var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
+                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
+                : iconMetaData.ColorMatrixToApply;
+
+            ShaderInstance colorShader = _colorInstance.Duplicate();
+            colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
+            colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
+            colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
+            handle.UseShader(colorShader);
+
             handle.SetTransform(CreateRenderTargetFlipMatrix(pong.Size, frame.Size / 2));
             handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
         }, Color.Black.WithAlpha(0));
@@ -821,8 +822,9 @@ internal sealed class DreamViewOverlay : Overlay {
         foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
             ShaderInstance s = _appearanceSystem.GetFilterShader(filterId, RenderSourceLookup);
 
-            handle.UseShader(s); // Set the shader out here to avoid a closure alloc
             handle.RenderInRenderTarget(ping, () => {
+                handle.UseShader(s);
+
                 // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
                 var transform = CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero);
 

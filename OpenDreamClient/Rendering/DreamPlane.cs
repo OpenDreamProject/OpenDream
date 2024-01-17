@@ -62,8 +62,6 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
                 handle.UseShader(overlay.GetBlendAndColorShader(Master, useOverlayMode: true));
                 handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_temporaryRenderTarget.Size, Vector2.Zero));
                 handle.DrawTextureRect(mainRenderTarget.Texture, new Box2(Vector2.Zero, mainRenderTarget.Size));
-                handle.SetTransform(Matrix3.Identity);
-                handle.UseShader(null);
             }, new Color());
         }
     }

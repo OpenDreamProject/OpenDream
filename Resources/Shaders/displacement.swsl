@@ -10,20 +10,18 @@ void fragment() {
     highp vec2 iResolution = vec2(textureSize(TEXTURE, 0))/2.0; //input texture is doubled in size, but we need the original size
     highp vec2 dResolution = vec2(textureSize(displacement_map, 0)); //this one is its original size
 
-    vec2 offset = vec2(x,y)/iResolution.xy;
-    vec2 maxdistortion = size/iResolution.xy;
-    
+    highp vec2 offset = vec2(x,y)/iResolution.xy;
+    highp vec2 maxdistortion = size/iResolution.xy;
 
-    vec2 subcoord = ((UV * textureSize(TEXTURE, 0)/dResolution) + (0.5 - (textureSize(TEXTURE, 0)/dResolution)/2.0)) + offset;
+    highp vec2 subcoord = ((UV * vec2(textureSize(TEXTURE, 0))/dResolution) + (0.5 - (vec2(textureSize(TEXTURE, 0))/dResolution)/2.0)) + offset;
     //sample the displacement map
-    vec4 dis = texture(displacement_map, subcoord);
+    highp vec4 dis = texture(displacement_map, subcoord);
     dis.r = (clamp(dis.r, 0.5-maxdistortion.x, 0.5+maxdistortion.x) - 0.5) * dis.a;//center them and apply alpha
     dis.g = (clamp(dis.g, 0.5-maxdistortion.y, 0.5+maxdistortion.y) - 0.5) * dis.a; 
 
-
-    vec2 dis_coord = vec2(dis.r, -dis.g)/2.0;
+    highp vec2 dis_coord = vec2(dis.r, -dis.g)/2.0;
     // Sample the texture
-    vec4 col = texture(TEXTURE, UV+dis_coord);
+    highp vec4 col = texture(TEXTURE, UV+dis_coord);
     
     // Output to screen
     COLOR = vec4(col);

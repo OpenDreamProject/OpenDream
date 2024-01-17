@@ -26,5 +26,5 @@ void fragment() {
                 oldColor[2] * colorMatrix[3][2] + 
                 oldColor[3] * colorMatrix[3][3];
     COLOR = zFromSrgb(COLOR + offsetVector);
-    COLOR.rgb *= isPlaneMaster ? 1 : COLOR.a;
+    COLOR.rgb *= isPlaneMaster ? 1.0 : COLOR.a;
 }

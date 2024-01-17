@@ -13,6 +13,7 @@ using Robust.Client.GameObjects;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
+using Dependency = Robust.Shared.IoC.DependencyAttribute;
 
 namespace OpenDreamClient.Rendering;
 
@@ -32,13 +33,13 @@ internal sealed class DreamViewOverlay : Overlay {
 
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
-    [Robust.Shared.IoC.Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Robust.Shared.IoC.Dependency] private readonly IPlayerManager _playerManager = default!;
-    [Robust.Shared.IoC.Dependency] private readonly IEntityManager _entityManager = default!;
-    [Robust.Shared.IoC.Dependency] private readonly IMapManager _mapManager = default!;
-    [Robust.Shared.IoC.Dependency] private readonly IClyde _clyde = default!;
-    [Robust.Shared.IoC.Dependency] private readonly IPrototypeManager _protoManager = default!;
-    [Robust.Shared.IoC.Dependency] private readonly ProfManager _prof = default!;
+    [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private readonly IPlayerManager _playerManager = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
+    [Dependency] private readonly IMapManager _mapManager = default!;
+    [Dependency] private readonly IClyde _clyde = default!;
+    [Dependency] private readonly IPrototypeManager _protoManager = default!;
+    [Dependency] private readonly ProfManager _prof = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.view");
 

@@ -16,6 +16,7 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+
 namespace DMCompiler;
 
 //TODO: Make this not a static class
@@ -29,6 +30,7 @@ public static class DMCompiler {
     private static readonly DMCompilerConfiguration Config = new();
     private static readonly List<string> _resourceDirectories = new();
     private static DateTime _compileStartTime;
+    public static readonly Dictionary<string, int> SourceFilesDictionary = new();
 
     public static bool Compile(DMCompilerSettings settings) {
         ErrorCount = 0;

@@ -31,7 +31,7 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(0, requiredArgs: OpcodeArgType.Reference)]
     Assign = 0x9,
 
-    [OpcodeMetadata(0,
+    [OpcodeMetadata(0, splitsBasicBlock: true,
         requiredArgs: new[] { OpcodeArgType.Reference, OpcodeArgType.ArgType, OpcodeArgType.StackDelta })]
     Call = 0xA,
 
@@ -83,7 +83,8 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(0, requiredArgs: OpcodeArgType.ListSize)]
     CreateList = 0x22,
 
-    [OpcodeMetadata(0, requiredArgs: new[] { OpcodeArgType.ArgType, OpcodeArgType.StackDelta })]
+    [OpcodeMetadata(0, splitsBasicBlock: true,
+        requiredArgs: new[] { OpcodeArgType.ArgType, OpcodeArgType.StackDelta })]
     CallStatement = 0x23,
     [OpcodeMetadata(stackDelta: -1)] BitAnd = 0x24,
     [OpcodeMetadata(stackDelta: -1)] CompareNotEquals = 0x25,
@@ -212,7 +213,8 @@ public enum DreamProcOpcode : byte {
     DereferenceField = 0x68,
     [OpcodeMetadata(stackDelta: -1)] DereferenceIndex = 0x69,
 
-    [OpcodeMetadata(0, requiredArgs: new[] { OpcodeArgType.String, OpcodeArgType.ArgType, OpcodeArgType.StackDelta })]
+    [OpcodeMetadata(0, splitsBasicBlock: true,
+        requiredArgs: new[] { OpcodeArgType.String, OpcodeArgType.ArgType, OpcodeArgType.StackDelta })]
     DereferenceCall = 0x6A,
 
     [OpcodeMetadata(0, requiredArgs: OpcodeArgType.Reference)]

@@ -14,6 +14,10 @@ internal class AnnotatedBytecodeSerializer {
     private List<(long Position, string LabelName)> _unresolvedLabels = new();
     public MemoryStream Bytecode = new();
 
+    private Location? location;
+
+    public List<SourceInfoJson> SourceInfo = new();
+
     public AnnotatedBytecodeSerializer() {
         _bytecodeWriter = new BinaryWriter(Bytecode);
     }
@@ -45,7 +49,20 @@ internal class AnnotatedBytecodeSerializer {
         return Bytecode.ToArray();
     }
 
+
     private void SerializeInstruction(AnnotatedBytecodeInstruction instruction) {
+        if (instruction.Location.Line != null && (location == null || instruction.Location.Line != location?.Line)) {
+            int sourceFileId = -1;
+            if (!DMCompiler.SourceFilesDictionary.TryGetValue(instruction.Location.SourceFile, out sourceFileId)) {
+                sourceFileId = DMObjectTree.StringTable.FindIndex(x => x == instruction.Location.SourceFile);
+            }
+            SourceInfo.Add(new SourceInfoJson {
+                Offset = (int)Bytecode.Position,
+                File = sourceFileId,
+                Line = (int)instruction.Location.Line
+            });
+            location = instruction.Location;
+        }
         _bytecodeWriter.Write((byte)instruction.Opcode);
         var opcodeMetadata = OpcodeMetadataCache.GetMetadata(instruction.Opcode);
         if (opcodeMetadata.RequiredArgs.Count != instruction.GetArgs().Count) {

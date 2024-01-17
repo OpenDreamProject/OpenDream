@@ -95,7 +95,6 @@ namespace DMCompiler.DM {
             procDefinition.OwningTypeId = _dmObject.Id;
             procDefinition.Name = Name;
             procDefinition.IsVerb = IsVerb;
-            procDefinition.SourceInfo = _sourceInfo;
 
             if ((Attributes & ProcAttributes.None) != ProcAttributes.None) {
                 procDefinition.Attributes = Attributes;
@@ -142,6 +141,8 @@ namespace DMCompiler.DM {
             if (_localVariableNames.Count > 0) {
                 procDefinition.Locals = serializer.GetLocalVariablesJSON();
             }
+
+            procDefinition.SourceInfo = serializer.SourceInfo;
 
             if (stringBuilder is not null) {
                 var pathString = _dmObject.Path.ToString() == "/" ? "<global>" : _dmObject.Path.ToString();
@@ -289,6 +290,7 @@ namespace DMCompiler.DM {
             // Only write the source file if it has changed
             if (_lastSourceFile != sourceFile) {
                 sourceInfo.File = DMObjectTree.AddString(sourceFile);
+                DMCompiler.SourceFilesDictionary.TryAdd(sourceFile, sourceInfo.File.Value);
             } else if (_sourceInfo.Count > 0 && sourceInfo.Line == _sourceInfo[^1].Line) {
                 // Don't need to write this source info if it's the same source & line as the last
                 return;

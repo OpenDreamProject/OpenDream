@@ -25,6 +25,14 @@ namespace DMCompiler.DM.Optimizer {
             Location = location;
         }
 
+        // Given an existing instruction, create a new instruction with the same opcode and stack delta, but with new args
+        public AnnotatedBytecodeInstruction(AnnotatedBytecodeInstruction instruction, List<IAnnotatedBytecode> args) {
+            Opcode = instruction.Opcode;
+            StackSizeDelta = instruction.StackSizeDelta;
+            Location = instruction.Location;
+            _args = args;
+        }
+
         public void AddArg(IAnnotatedBytecode arg) {
             _args.Add(arg);
         }
@@ -55,6 +63,8 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a variable");
         }
+
+
     }
 
 

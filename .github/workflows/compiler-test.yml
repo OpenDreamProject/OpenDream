@@ -14,24 +14,14 @@ jobs:
       uses: actions/checkout@v2
       with:
         path: main
-    - name: Setup submodule
-      run: |
-        cd main/
-        git submodule update --init --recursive
-    - name: Pull engine updates
-      uses: space-wizards/submodule-dependency@v0.1.5
-    - name: Update Engine Submodules
-      run: |
-        cd main/RobustToolbox/
-        git submodule update --init --recursive
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
         dotnet-version: 8.0.100
     - name: Install dependencies
-      run: dotnet restore main/OpenDream.sln
+      run: dotnet restore main/DMCompiler/DMCompiler.csproj
     - name: Build
-      run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
+      run: dotnet build main/DMCompiler/DMCompiler.csproj --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
     - name: Checkout Modified /tg/station

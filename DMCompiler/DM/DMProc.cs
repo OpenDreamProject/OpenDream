@@ -14,6 +14,70 @@ using OpenDreamShared.Json;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
+        public class LocalVariable {
+            public readonly int Id;
+            public readonly bool IsParameter;
+            public DreamPath? Type;
+
+            public LocalVariable(int id, bool isParameter, DreamPath? type) {
+                Id = id;
+                IsParameter = isParameter;
+                Type = type;
+            }
+        }
+
+        public sealed class LocalConstVariable : LocalVariable {
+            public readonly Expressions.Constant Value;
+
+            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
+                Value = value;
+            }
+        }
+
+        public struct CodeLabelReference {
+            public readonly string Identifier;
+            public readonly string Placeholder;
+            public readonly Location Location;
+            public readonly DMProcScope Scope;
+
+            public CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
+                Identifier = identifier;
+                Placeholder = placeholder;
+                Scope = scope;
+                Location = location;
+            }
+        }
+
+        public class CodeLabel {
+            private static int _idCounter = 0;
+            public readonly long AnnotatedByteOffset;
+            public readonly int Id;
+            public readonly string Name;
+
+            public int ReferencedCount = 0;
+
+            public string LabelName => $"{Name}_{Id}_codelabel";
+
+
+            public CodeLabel(string name, long offset) {
+                Id = _idCounter++;
+                Name = name;
+                AnnotatedByteOffset = offset;
+            }
+        }
+
+        internal class DMProcScope {
+            public readonly Dictionary<string, LocalVariable> LocalVariables = new();
+            public readonly Dictionary<string, CodeLabel> LocalCodeLabels = new();
+            public readonly DMProcScope? ParentScope;
+
+            public DMProcScope() { }
+
+            public DMProcScope(DMProcScope? parentScope) {
+                ParentScope = parentScope;
+            }
+        }
+
         private readonly List<string> _localVariableNames = new();
         private readonly List<SourceInfoJson> _sourceInfo = new();
         private Dictionary<string, long> _annotatedBytecodeLabels = new();
@@ -1052,68 +1116,6 @@ namespace DMCompiler.DM {
             }
         }
 
-        public class LocalVariable {
-            public readonly int Id;
-            public readonly bool IsParameter;
-            public DreamPath? Type;
 
-            public LocalVariable(int id, bool isParameter, DreamPath? type) {
-                Id = id;
-                IsParameter = isParameter;
-                Type = type;
-            }
-        }
-
-        public sealed class LocalConstVariable : LocalVariable {
-            public readonly Constant Value;
-
-            public LocalConstVariable(int id, DreamPath? type, Constant value) : base(id, false, type) {
-                Value = value;
-            }
-        }
-
-        public struct CodeLabelReference {
-            public readonly string Identifier;
-            public readonly string Placeholder;
-            public readonly Location Location;
-            public readonly DMProcScope Scope;
-
-            public CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
-                Identifier = identifier;
-                Placeholder = placeholder;
-                Scope = scope;
-                Location = location;
-            }
-        }
-
-        public class CodeLabel {
-            private static int _idCounter = 0;
-            public readonly long AnnotatedByteOffset;
-            public readonly int Id;
-            public readonly string Name;
-
-            public int ReferencedCount = 0;
-
-            public CodeLabel(string name, long annotatedOffset) {
-                Id = _idCounter++;
-                Name = name;
-                AnnotatedByteOffset = annotatedOffset;
-            }
-
-            public string LabelName => $"{Name}_{Id}_codelabel";
-        }
-
-        internal class DMProcScope {
-            public readonly Dictionary<string, CodeLabel> LocalCodeLabels = new();
-            public readonly Dictionary<string, LocalVariable> LocalVariables = new();
-            public readonly DMProcScope? ParentScope;
-
-            public DMProcScope() {
-            }
-
-            public DMProcScope(DMProcScope? parentScope) {
-                ParentScope = parentScope;
-            }
-        }
     }
 }

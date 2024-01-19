@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using DMCompiler.Optimizer.CFG;
 using OpenDreamShared.Json;
 
 namespace DMCompiler.DM.Optimizer;
@@ -14,9 +15,7 @@ public class BytecodeOptimizer {
         if (input.Count == 0) return input;
 
         var cfgCode = CFGStackCodeConverter.Convert(input, errorPath);
-        //List<SSAObject> ssaInstructions = new List<SSAObject>();
-        //ssaInstructions = SSAConvert.Convert(root);
-        var newCode = cfgCode.SelectMany(x => x.Bytecode).ToList();
+        var newCode = CFGStackCodeConverter.ConvertBack(cfgCode);
         return newCode;
     }
 

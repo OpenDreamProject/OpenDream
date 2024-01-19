@@ -292,20 +292,17 @@ namespace DMCompiler.DM.Optimizer {
     internal class AnnotatedBytecodeReference : IAnnotatedBytecode {
         public int Index;
         public Location Location;
-        public string Name;
         public DMReference.Type RefType;
 
-        public AnnotatedBytecodeReference(DMReference.Type refType, int index, string name, Location location) {
+        public AnnotatedBytecodeReference(DMReference.Type refType, int index, Location location) {
             RefType = refType;
             Index = index;
-            Name = name;
             Location = location;
         }
 
-        public AnnotatedBytecodeReference(DMReference.Type refType, string name, Location location) {
+        public AnnotatedBytecodeReference(DMReference.Type refType, Location location) {
             RefType = refType;
             Location = location;
-            Name = name;
         }
 
         public void AddArg(IAnnotatedBytecode arg) {
@@ -648,7 +645,11 @@ namespace DMCompiler.DM.Optimizer {
 
         private static void Print(AnnotatedBytecodeReference annotatedBytecode, StringBuilder sb) {
             sb.Append(annotatedBytecode.RefType.ToString()).Append(" ").Append(annotatedBytecode.Index.ToString())
-                .Append(" -> ").Append(annotatedBytecode.Name);
+                .Append(" -> ").Append(ResolveReference(annotatedBytecode.RefType, annotatedBytecode.Index));
+        }
+
+        private static string ResolveReference(DMReference.Type annotatedBytecodeRefType, int annotatedBytecodeIndex) {
+            return ""; // TODO
         }
     }
 }

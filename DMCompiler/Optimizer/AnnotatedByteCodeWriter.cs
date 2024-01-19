@@ -331,7 +331,7 @@ namespace DMCompiler.DM.Optimizer {
         }
 
 
-        public void WriteReference(DMReference reference, Location location, string name, bool affectStack = true) {
+        public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
             _location = location;
             if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {
                 DMCompiler.ForcedError(location, "Expected reference argument");
@@ -341,21 +341,21 @@ namespace DMCompiler.DM.Optimizer {
                 case DMReference.Type.Argument:
                 case DMReference.Type.Local:
                     _annotatedBytecode[^1]
-                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, name, location));
+                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                     break;
 
 
                 case DMReference.Type.Global:
                 case DMReference.Type.GlobalProc:
                     _annotatedBytecode[^1]
-                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, name, location));
+                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                     break;
 
 
                 case DMReference.Type.Field:
                     int fieldID = DMObjectTree.AddString(reference.Name);
                     _annotatedBytecode[^1]
-                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, name, location));
+                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, location));
                     ResizeStack(affectStack ? -1 : 0);
                     break;
 
@@ -363,11 +363,11 @@ namespace DMCompiler.DM.Optimizer {
                 case DMReference.Type.SrcField:
                     fieldID = DMObjectTree.AddString(reference.Name);
                     _annotatedBytecode[^1]
-                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, name, location));
+                        .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, location));
                     break;
 
                 case DMReference.Type.ListIndex:
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, name, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
                     ResizeStack(affectStack ? -2 : 0);
                     break;
 
@@ -376,7 +376,7 @@ namespace DMCompiler.DM.Optimizer {
                 case DMReference.Type.Self:
                 case DMReference.Type.Args:
                 case DMReference.Type.Usr:
-                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, name, location));
+                    _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeReference(reference.RefType, location));
                     break;
 
                 default:

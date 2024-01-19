@@ -30,13 +30,6 @@ internal class Program {
         LoadAllProcs();
         LoadAllTypes();
 
-        if(args.Length > 1) {
-            string command = args[1].ToLower();
-            string[] split = args[2..];
-            HandleArguments(command, split, out _);
-            return;
-        }
-
         bool acceptingCommands = true;
         while (acceptingCommands) {
             if (_selectedType != null) {
@@ -52,23 +45,17 @@ internal class Program {
             string[] split = input.Split(" ");
             string command = split[0].ToLower();
 
-            HandleArguments(command, split, out acceptingCommands);
-        }
-    }
-
-    private static void HandleArguments(string command, string[] split, out bool acceptingCommands) {
-        acceptingCommands = true;
-        switch (command) {
-            case "q": acceptingCommands = false; break;
-            case "search": Search(split); break;
-            case "sel":
-            case "select": Select(split); break;
-            case "list": List(split); break;
-            case "d":
-            case "decompile": Decompile(split); break;
-            case "dump-all": DumpAll(); break;
-            case "test-all": TestAll(); break;
-            default: Console.WriteLine("Invalid command \"" + command + "\""); break;
+            switch (command) {
+                case "q": acceptingCommands = false; break;
+                case "search": Search(split); break;
+                case "sel":
+                case "select": Select(split); break;
+                case "list": List(split); break;
+                case "d":
+                case "decompile": Decompile(split); break;
+                case "test-all": TestAll(); break;
+                default: Console.WriteLine("Invalid command \"" + command + "\""); break;
+            }
         }
     }
 
@@ -223,13 +210,5 @@ internal class Program {
             ++all;
         }
         Console.WriteLine($"Errors in {errored}/{all} procs");
-    }
-
-    private static void DumpAll() {
-        foreach (DMProc proc in Procs) {
-            string value = proc.Decompile();
-            Console.WriteLine("Proc " + proc.Name);
-            Console.WriteLine(value);
-        }
     }
 }

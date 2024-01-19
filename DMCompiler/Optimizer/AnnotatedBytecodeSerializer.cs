@@ -52,10 +52,7 @@ internal class AnnotatedBytecodeSerializer {
 
     private void SerializeInstruction(AnnotatedBytecodeInstruction instruction) {
         if (instruction.Location.Line != null && (location == null || instruction.Location.Line != location?.Line)) {
-            int sourceFileId = -1;
-            if (!DMCompiler.SourceFilesDictionary.TryGetValue(instruction.Location.SourceFile, out sourceFileId)) {
-                sourceFileId = DMObjectTree.StringTable.FindIndex(x => x == instruction.Location.SourceFile);
-            }
+            int sourceFileId = DMObjectTree.AddString(instruction.Location.SourceFile);
             SourceInfo.Add(new SourceInfoJson {
                 Offset = (int)Bytecode.Position,
                 File = sourceFileId,
@@ -162,14 +159,12 @@ internal class AnnotatedBytecodeSerializer {
 
 
             case DMReference.Type.Field:
-                int fieldID = DMObjectTree.AddString(reference.Name);
-                _bytecodeWriter.Write(fieldID);
+                _bytecodeWriter.Write(reference.Index);
                 break;
 
             case DMReference.Type.SrcProc:
             case DMReference.Type.SrcField:
-                fieldID = DMObjectTree.AddString(reference.Name);
-                _bytecodeWriter.Write(fieldID);
+                _bytecodeWriter.Write(reference.Index);
                 break;
 
             case DMReference.Type.ListIndex:

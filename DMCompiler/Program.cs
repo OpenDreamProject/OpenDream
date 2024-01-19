@@ -3,24 +3,29 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Robust.Shared.Utility;
+
 namespace DMCompiler;
+
 internal struct Argument {
     /// <summary> The text we found that's in the '--whatever' format. May be null if no such text was present.</summary>
     public string? Name;
     /// <summary> The value, either set in a '--whatever=whoever' format or just left by itself anonymously. May be null.</summary>
     public string? Value;
 }
+
 internal static class Program {
     private static void Main(string[] args) {
         if (!TryParseArguments(args, out DMCompilerSettings settings)) {
             Environment.Exit(1);
             return;
         }
+
         if (!DMCompiler.Compile(settings)) {
             //Compile errors, exit with an error code
             Environment.Exit(1);
         }
     }
+
     /// <summary> Helper for TryParseArguments(), to turn the arg array into something better-parsed.</summary>
     private static IEnumerable<Argument> StringArrayToArguments(string[] args) {
         List<Argument> retArgs = new(args.Length);
@@ -49,6 +54,7 @@ internal static class Program {
 
         return retArgs.AsEnumerable();
     }
+
     private static bool HasValidDMExtension(string filename) {
         var extension = Path.GetExtension(filename);
         return !string.IsNullOrEmpty(extension) && (extension == ".dme" || extension == ".dm");
@@ -87,7 +93,6 @@ internal static class Program {
                 case "suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
                 case "dump-preprocessor": settings.DumpPreprocessor = true; break;
                 case "dump-bytecode": settings.DumpBytecode = true; break;
-                case "dump-cfg": settings.DumpCFGTable = true; break;
                 case "no-standard": settings.NoStandard = true; break;
                 case "verbose": settings.Verbose = true; break;
                 case "skip-bad-args": break;
@@ -97,7 +102,6 @@ internal static class Program {
                         Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                         return false;
                     }
-
                     DebugTools.Assert(parts is { Length: <= 2 });
                     settings.MacroDefines ??= new Dictionary<string, string>();
                     settings.MacroDefines[parts[0]] = parts.Length > 1 ? parts[1] : "";
@@ -112,11 +116,9 @@ internal static class Program {
                             DMCompiler.ForcedWarning($"Compiler arg 'pragma-config' requires filename of valid DM file, skipping");
                             continue;
                         }
-
                         Console.WriteLine("Compiler arg 'pragma-config' requires filename of valid DM file");
                         return false;
                     }
-
                     settings.PragmaFileOverride = arg.Value;
                     break;
                 }
@@ -126,7 +128,6 @@ internal static class Program {
                             DMCompiler.ForcedWarning("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584), skipping");
                             continue;
                         }
-
                         Console.WriteLine("Compiler arg 'version' requires a full BYOND build (e.g. --version=514.1584)");
                         return false;
                     }

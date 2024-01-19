@@ -4,16 +4,37 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
+using DMCompiler.DM.Optimizer;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Json;
 
-namespace DMCompiler.DM.Optimizer;
+namespace DMCompiler.Optimizer.CFG;
 
 public class CFGBasicBlock {
+    public Location Location;
     private static int nextId;
     public List<IAnnotatedBytecode> Bytecode;
+    public string LabelName = "";
     public int id = -1;
     public List<CFGBasicBlock> Predecessors = new();
     public List<CFGBasicBlock> Successors = new();
+
+    public CFGBasicBlock? DirectSuccessor;
+    public CFGBasicBlock? AlternateSuccessor;
+
+    public enum FlowExitType {
+        Fallthrough,
+        Return,
+        Throw,
+        Jump,
+        ConditionalJump,
+    }
+
+    public FlowExitType ExitType = FlowExitType.Fallthrough;
+
+    public string DirectLabelName = "";
+    public string AlternateLabelName = "";
+
 
     public CFGBasicBlock() {
         id = nextId;
@@ -49,13 +70,14 @@ public class CFGStackCodeConverter {
         bool first = true;
         bool ucePass = false;
         int pass = 0;
+        DumpCFGToDebugDir(basicBlocks, "preopt");
         // Run the CFG optimizer until it stops changing
         while (true) {
             totalChanged += changed;
             changed = 0;
             labelChanged = 0;
             // Build the basic CFG
-            RemoveEmptyBlocksAndUpdateLabels(basicBlocks);
+            RemoveEmptyBlocksAndUpdateLabels(basicBlocks, ref changed);
 
             ConnectBlocksInOrder(basicBlocks);
 
@@ -66,7 +88,7 @@ public class CFGStackCodeConverter {
 
             JumpForwarding(basicBlocks, ref changed);
 
-            RemoveBlocksWithNoPredecessors(basicBlocks, ref changed);
+            NormalizeTree(basicBlocks, ref changed);
 
             RenumberBlocks(basicBlocks);
 
@@ -74,9 +96,6 @@ public class CFGStackCodeConverter {
             bool requireRebuild = false;
             RemoveUnreferencedLabels(basicBlocks, out requireRebuildFromUnrefLabels, ref labelChanged);
 
-            if (changed == 0) {
-                break;
-            }
             labels.Clear();
             labelReferences.Clear();
             ClearConnectedBlocks(basicBlocks);
@@ -85,20 +104,54 @@ public class CFGStackCodeConverter {
                 basicBlocks = SplitBasicBlocks(basicBlocks.Count, basicBlocks.Max(x => x.Bytecode.Count),
                     basicBlocks.SelectMany(x => x.Bytecode).ToList(), basicBlocks);
             }
+
+            if (changed == 0 && labelChanged == 0 && !requireRebuild && !requireRebuildFromUnrefLabels) {
+                ResolveJumps(basicBlocks, ref labelChanged);
+
+                RenumberBlocks(basicBlocks);
+
+                RemoveUnreferencedLabels(basicBlocks, out requireRebuildFromUnrefLabels, ref labelChanged);
+
+
+                break;
+            }
             pass++;
 
+        }
+        if (totalChanged > 10) {
+            DumpCFGToDebugDir(basicBlocks, "prehoist");
+        } else {
+            RemoveDumpCFGToDebugDir("preopt");
+        }
+        HoistLabels(basicBlocks);
+        if (totalChanged > 10) {
+            DumpCFGToDebugDir(basicBlocks, "postopt");
+        } else {
+            RemoveDumpCFGToDebugDir("preopt");
+            RemoveDumpCFGToDebugDir("prehoist");
         }
 
         return basicBlocks;
     }
 
-    private void RemoveBlocksWithNoPredecessors(List<CFGBasicBlock> basicBlocks, ref int changed) {
-        // Root is exempt.
+
+    private void NormalizeTree(List<CFGBasicBlock> basicBlocks, ref int changed) {
+        // Remove blocks with no predecessors
         for (var i = 1; i < basicBlocks.Count; i++) {
             if (basicBlocks[i].Predecessors.Count == 0) {
                 changed++;
                 basicBlocks.RemoveAt(i);
                 i--;
+            }
+        }
+        // If the last block in the tree is a label with no bytecode, add a return
+        if (basicBlocks.Count > 0) {
+            var lastBlock = basicBlocks[basicBlocks.Count - 1];
+            int j = 0;
+            if (lastBlock.Successors.Count != 0) return;
+            while (j < lastBlock.Bytecode.Count && lastBlock.Bytecode[j] is AnnotatedBytecodeLabel) j++;
+            if (j >= lastBlock.Bytecode.Count) {
+                lastBlock.Bytecode.Add(new AnnotatedBytecodeInstruction(DreamProcOpcode.Return, 0, lastBlock.Location));
             }
         }
     }
@@ -221,18 +274,19 @@ public class CFGStackCodeConverter {
         return basicBlocks;
     }
 
-    private void RemoveEmptyBlocksAndUpdateLabels(List<CFGBasicBlock> basicBlocks) {
-        var changed = true;
-        while (changed) {
-            changed = false;
+    private void RemoveEmptyBlocksAndUpdateLabels(List<CFGBasicBlock> basicBlocks, ref int changed) {
+        int oldChanged = 0;
+        do {
+            oldChanged = changed;
             for (var i = 0; i < basicBlocks.Count; i++)
                 if (basicBlocks[i].Bytecode.Count == 0) {
-                    changed = true;
+                    changed++;
                     UpdateLabelTable(basicBlocks, i);
                     basicBlocks.RemoveAt(i);
                     i--;
                 }
         }
+        while (oldChanged != changed);
     }
 
     private void UpdateLabelTable(List<CFGBasicBlock> basicBlocks, int index) {
@@ -246,6 +300,105 @@ public class CFGStackCodeConverter {
             basicBlocks[i].Successors.Add(basicBlocks[i + 1]);
             basicBlocks[i + 1].Predecessors.Add(basicBlocks[i]);
         }
+    }
+
+    private void HoistLabels(List<CFGBasicBlock> basicBlocks) {
+        Dictionary<string, int> finalLabels = new();
+        int id = 0;
+        // Hoist labels from the list into a field
+        foreach (var block in basicBlocks) {
+            block.id = id++;
+            if (block.Bytecode.Count == 0) throw new Exception("Empty block");
+            if ((block.Bytecode[0] is AnnotatedBytecodeLabel)) {
+                var name = (block.Bytecode[0] as AnnotatedBytecodeLabel)!.LabelName;
+                block.Location = (block.Bytecode[0] as AnnotatedBytecodeLabel)!.Location;
+                block.Bytecode.RemoveAt(0);
+                block.LabelName = name;
+                finalLabels.Add(name, block.id);
+            }
+
+            bool foundExit = false;
+            for (var index = 0; index < block.Bytecode.Count; index++) {
+                var bytecode = block.Bytecode[index];
+                if (bytecode is AnnotatedBytecodeLabel label) {
+                    throw new Exception("Label in non-first position");
+                }
+            }
+        }
+
+        // Disambiguate jumps
+        for (var blockIndex = 0; blockIndex < basicBlocks.Count; blockIndex++) {
+            var block = basicBlocks[blockIndex];
+            bool foundExit = false;
+            for (var index = 0; index < block.Bytecode.Count; index++) {
+                var bytecode = block.Bytecode[index];
+                if (bytecode is AnnotatedBytecodeInstruction instruction) {
+                    if (IsJump(instruction) && !IsUnconditionalJump(instruction)) {
+                        if (foundExit) throw new Exception("Multiple exits in block");
+                        foundExit = true;
+                        if (!TryGetLabelFromJump(instruction, out var label, out var loc))
+                            throw new Exception("Jump without label");
+                        if (finalLabels.ContainsKey(label)) {
+                            var target = finalLabels[label];
+                            block.ExitType = CFGBasicBlock.FlowExitType.ConditionalJump;
+                            block.DirectSuccessor = basicBlocks[blockIndex + 1];
+                            block.AlternateLabelName = label;
+                            block.AlternateSuccessor = basicBlocks[target];
+                        } else {
+                            throw new Exception("Jump to non-existent label");
+                        }
+                    } else if (IsUnconditionalJump(instruction)) {
+                        if (foundExit) throw new Exception("Multiple exits in block");
+                        foundExit = true;
+                        if (!TryGetLabelFromJump(instruction, out var label, out var loc))
+                            throw new Exception("Jump without label");
+                        if (finalLabels.ContainsKey(label)) {
+                            var target = finalLabels[label];
+                            block.ExitType = CFGBasicBlock.FlowExitType.Jump;
+                            block.DirectSuccessor = basicBlocks[target];
+                            block.DirectLabelName = label;
+                        }
+                        else {
+                            throw new Exception("Jump to non-existent label");
+                        }
+                    } else if (instruction.Opcode == DreamProcOpcode.Return) {
+                        if (foundExit) throw new Exception("Multiple exits in block");
+                        foundExit = true;
+                        block.ExitType = CFGBasicBlock.FlowExitType.Return;
+                    } else if (instruction.Opcode == DreamProcOpcode.Throw) {
+                        if (foundExit) throw new Exception("Multiple exits in block");
+                        foundExit = true;
+                        block.ExitType = CFGBasicBlock.FlowExitType.Throw;
+                    }
+                }
+            }
+            if (!foundExit) {
+                block.ExitType = CFGBasicBlock.FlowExitType.Fallthrough;
+                if (blockIndex == basicBlocks.Count - 1) {
+                    block.ExitType = CFGBasicBlock.FlowExitType.Return;
+                    break;
+                }
+                block.DirectSuccessor = basicBlocks[blockIndex + 1];
+            }
+
+            if (block.ExitType == CFGBasicBlock.FlowExitType.Fallthrough) {
+                if (block.DirectSuccessor == null) {
+                    throw new Exception("Block has more than 1 successor");
+                }
+            }
+        }
+
+        return;
+    }
+
+    public static List<IAnnotatedBytecode> ConvertBack(List<CFGBasicBlock> blocks) {
+        var output = new List<IAnnotatedBytecode>();
+        foreach (var block in blocks) {
+            if (block.LabelName != "") output.Add(new AnnotatedBytecodeLabel(block.LabelName, block.Location));
+            output.AddRange(block.Bytecode);
+        }
+
+        return output;
     }
 
     private void ResolveJumps(List<CFGBasicBlock> basicBlocks, ref int changed) {
@@ -306,8 +459,7 @@ public class CFGStackCodeConverter {
 
                         case DreamProcOpcode.Call:
                         case DreamProcOpcode.DereferenceCall:
-                        case DreamProcOpcode.CallStatement:
-                        {
+                        case DreamProcOpcode.CallStatement: {
                             // Since we're not doing interprocedural analysis, we can't know if a call throws, so we have to assume it does and
                             // treat it like a throw, with the caveat that it can also continue execution
                             if (index == block.Bytecode.Count - 1) break;
@@ -412,7 +564,6 @@ public class CFGStackCodeConverter {
     private bool IsUnconditionalJump(AnnotatedBytecodeInstruction instruction) {
         switch (instruction.Opcode) {
             case DreamProcOpcode.Jump:
-            case DreamProcOpcode.Return:
                 return true;
             default:
                 return false;
@@ -526,7 +677,7 @@ public class CFGStackCodeConverter {
                     while (j < targetBytecode.Count && targetBytecode[j] is AnnotatedBytecodeLabel) j++;
                     if (j >= targetBytecode.Count) continue;
                     if (!(targetBytecode[j] is AnnotatedBytecodeInstruction targetInstruction)) continue;
-                    if (!IsUnconditionalJump(targetInstruction)) continue;
+                    if ((!(IsUnconditionalJump(targetInstruction))) && (!(targetInstruction.Opcode == DreamProcOpcode.Return))) continue;
                     var targetLabel = "";
                     if (!TryGetLabelFromJump(targetInstruction, out targetLabel, out _)) continue;
 
@@ -544,6 +695,7 @@ public class CFGStackCodeConverter {
         int firstId = blocks[0].id;
         foreach (var block in blocks) {
             sb.Append("Block " + (block.id - firstId) + ":\n");
+            if (block.LabelName != "") sb.Append(block.LabelName + ":\n");
             AnnotatedBytecodePrinter.Print(block.Bytecode, new List<SourceInfoJson>(), sb, 2);
             sb.Append("Successors: ");
             if (block.Successors.Count == 0) sb.Append("None");
@@ -552,6 +704,24 @@ public class CFGStackCodeConverter {
             sb.Append("Predecessors: ");
             if (block.Predecessors.Count == 0) sb.Append("None");
             foreach (var predecessor in block.Predecessors) sb.Append((predecessor.id - firstId) + " ");
+            if (block.ExitType == CFGBasicBlock.FlowExitType.Return) {
+                sb.Append("\n");
+                sb.Append("Return");
+            } else if (block.ExitType == CFGBasicBlock.FlowExitType.Throw) {
+                sb.Append("\n");
+                sb.Append("Throw");
+            } else if (block.ExitType == CFGBasicBlock.FlowExitType.Jump) {
+                sb.Append("\n");
+                sb.Append("Direct Successor: " + (block.DirectSuccessor!.id - firstId) + "\n");
+                sb.Append("Direct Label: " + block.DirectLabelName + "\n");
+            }
+            else if (block.ExitType == CFGBasicBlock.FlowExitType.ConditionalJump) {
+                sb.Append("\n");
+                sb.Append("Direct Successor: " + (block.DirectSuccessor!.id - firstId) + "\n");
+                sb.Append("Direct Label: " + block.DirectLabelName + "\n");
+                sb.Append("Alternate Successor: " + (block.AlternateSuccessor!.id - firstId) + "\n");
+                sb.Append("Alternate Label: " + block.AlternateLabelName + "\n");
+            }
             sb.Append("\n\n");
         }
 
@@ -562,7 +732,7 @@ public class CFGStackCodeConverter {
         Directory.CreateDirectory(Directory.GetCurrentDirectory() + "/cfg");
         name = name.Replace("/", "_");
         DumpCFGToFile(blocks, Directory.GetCurrentDirectory() + "/cfg/" + name);
-        var insts = blocks.SelectMany(x => x.Bytecode).ToList();
+        var insts = ConvertBack(blocks);
         var sb = new StringBuilder();
         AnnotatedBytecodePrinter.Print(insts, new List<SourceInfoJson>(), sb);
         File.WriteAllText(Directory.GetCurrentDirectory() + "/cfg/" + name + "_insts", sb.ToString());
@@ -573,4 +743,5 @@ public class CFGStackCodeConverter {
         File.Delete(Directory.GetCurrentDirectory() + "/cfg/" + name);
         File.Delete(Directory.GetCurrentDirectory() + "/cfg/" + name + "_insts");
     }
+
 }

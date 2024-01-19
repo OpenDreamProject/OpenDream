@@ -1,7 +1,6 @@
 ﻿using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
-using System.Text;
 using System.Collections.Generic;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
@@ -144,64 +143,8 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DreamTypeJson CreateJsonRepresentation(StringBuilder? stringBuilder) {
+        public DreamTypeJson CreateJsonRepresentation() {
             DreamTypeJson typeJson = new DreamTypeJson();
-
-            if (stringBuilder != null) {
-                stringBuilder.AppendLine($"Type: {Path.PathString}");
-                stringBuilder.AppendLine("\tParent: " + (Parent?.Path.PathString ?? "null"));
-                stringBuilder.AppendLine("\tProcs:");
-                foreach (var proc in Procs) stringBuilder.AppendLine($"\t\t{proc.Key}()");
-
-                if (Variables.Count > 0) {
-                    stringBuilder.AppendLine("\tVariables:");
-                    foreach (var variable in Variables) {
-                        var res = variable.Value.Type;
-                        if (res == null) {
-                            stringBuilder.AppendLine($"\t\t{variable.Key}: untyped");
-                            continue;
-                        }
-
-                        stringBuilder.AppendLine($"\t\t{variable.Key}: {res.Value.PathString ?? "null"}");
-                    }
-                }
-
-                if (VariableOverrides.Count > 0) {
-                    stringBuilder.AppendLine("\tVariable Overrides:");
-                    foreach (var variable in VariableOverrides) {
-                        var res = variable.Value.Type;
-                        if (res == null) {
-                            stringBuilder.AppendLine($"\t\t{variable.Key}: untyped");
-                            continue;
-                        }
-
-                        stringBuilder.AppendLine($"\t\t{variable.Key}: {res.Value.PathString ?? "null"}");
-                    }
-                }
-
-                if (GlobalVariables.Count > 0) {
-                    stringBuilder.AppendLine("\tGlobal Variables:");
-                    foreach (var variable in GlobalVariables)
-                        stringBuilder.AppendLine($"\t\t{variable.Key}: {variable.Value}");
-                }
-
-                if (ConstVariables.Count > 0) {
-                    stringBuilder.AppendLine("\tConst Variables:");
-                    foreach (var variable in ConstVariables) stringBuilder.AppendLine($"\t\t{variable}");
-                }
-
-                if (TmpVariables.Count > 0) {
-                    stringBuilder.AppendLine("\tTmp Variables:");
-                    foreach (var variable in TmpVariables) stringBuilder.AppendLine($"\t\t{variable}");
-                }
-
-                if (_verbs != null) {
-                    stringBuilder.AppendLine("\tVerbs:");
-                    foreach (var verb in _verbs) stringBuilder.AppendLine($"\t\t{verb.Name}");
-                }
-
-                stringBuilder.AppendLine();
-            }
 
             typeJson.Path = Path.PathString;
             typeJson.Parent = Parent?.Id;

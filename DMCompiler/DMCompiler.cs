@@ -115,7 +115,6 @@ public static class DMCompiler {
             if (!Settings.NoStandard) {
                 preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
             }
-
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
             string pragmaName;
             string pragmaDirectory;
@@ -126,12 +125,11 @@ public static class DMCompiler {
                 pragmaDirectory = dmStandardDirectory;
                 pragmaName = "DefaultPragmaConfig.dm";
             }
-
-            if(!File.Exists(Path.Join(pragmaDirectory, pragmaName))) {
+            if(!File.Exists(Path.Join(pragmaDirectory,pragmaName))) {
                 ForcedError($"Configuration file '{pragmaName}' not found.");
                 return null;
             }
-            preproc.IncludeFile(pragmaDirectory, pragmaName);
+            preproc.IncludeFile(pragmaDirectory,pragmaName);
             return preproc;
         }
 
@@ -275,32 +273,23 @@ public static class DMCompiler {
     }
 
     private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
-        StreamWriter? optWriter = null;
         if (Settings.DumpBytecode) {
             var bytecodeDumpFile = Path.ChangeExtension(outputFile, "dmc");
-            optWriter = new StreamWriter(bytecodeDumpFile);
         }
 
-        var jsonRep = DMObjectTree.CreateJsonRepresentation(optWriter);
+        var jsonRep = DMObjectTree.CreateJsonRepresentation();
         DreamCompiledJson compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },
             Strings = DMObjectTree.StringTable,
             Resources = DMObjectTree.Resources.ToArray(),
             Maps = maps,
-            Interface = string.IsNullOrEmpty(interfaceFile)
-                ? ""
-                : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
+            Interface = string.IsNullOrEmpty(interfaceFile) ? "" : Path.GetRelativePath(Path.GetDirectoryName(Path.GetFullPath(outputFile)), interfaceFile),
             Types = jsonRep.Item1,
             Procs = jsonRep.Item2
         };
 
-        StringBuilder stringBuilder = new();
         if (DMObjectTree.GlobalInitProc.AnnotatedBytecode.GetLength() > 0)
-            compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation(stringBuilder);
-        if (optWriter != null) {
-            optWriter.WriteLine(stringBuilder.ToString());
-            optWriter.Close();
-        }
+            compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
         if (DMObjectTree.Globals.Count > 0) {
             GlobalListJson globalListJson = new GlobalListJson();
@@ -334,7 +323,7 @@ public static class DMCompiler {
 
             try {
                 JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault });
+                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
 
                 return $"Saved to {outputFile}";
             } catch (Exception e) {
@@ -384,7 +373,6 @@ public struct DMCompilerSettings {
     public bool NoStandard = false;
     public bool Verbose = false;
     public bool DumpBytecode = false;
-    public bool DumpCFGTable = false;
     public Dictionary<string, string>? MacroDefines = null;
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;

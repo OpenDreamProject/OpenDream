@@ -199,8 +199,7 @@ namespace DMCompiler.DM.Optimizer {
         }
 
 
-        public void ResolveCodeLabelReferences(Stack<DMProc.CodeLabelReference> pendingLabelReferences,
-            ref Dictionary<string, long> annotatedlabels) {
+        public void ResolveCodeLabelReferences(Stack<DMProc.CodeLabelReference> pendingLabelReferences) {
             while (pendingLabelReferences.Count > 0) {
                 DMProc.CodeLabelReference reference = pendingLabelReferences.Pop();
                 DMProc.CodeLabel? label = GetCodeLabel(reference.Identifier, reference.Scope);
@@ -222,7 +221,7 @@ namespace DMCompiler.DM.Optimizer {
                 }
 
                 // Found it.
-                annotatedlabels.Add(reference.Placeholder, label.AnnotatedByteOffset);
+                _labels.Add(reference.Placeholder, label.AnnotatedByteOffset);
                 AddLabel(reference.Placeholder);
 
                 label.ReferencedCount += 1;
@@ -236,11 +235,6 @@ namespace DMCompiler.DM.Optimizer {
             // foreach (CodeLabel codeLabel in CodeLabels) {
             //  ...
             // }
-        }
-
-        public void ResolveLabels(Stack<DMProc.CodeLabelReference> pendingLabelReferences,
-            ref Dictionary<string, long> annotatedlabels) {
-            ResolveCodeLabelReferences(pendingLabelReferences, ref annotatedlabels);
         }
 
         internal DMProc.CodeLabel? GetCodeLabel(string name, DMProc.DMProcScope? scope) {
@@ -393,9 +387,18 @@ namespace DMCompiler.DM.Optimizer {
         public int GetLength() {
             return _annotatedBytecode.Count;
         }
-
+        private Dictionary<string, long> _labels = new();
         public void AddLabel(string name) {
+            _labels.Add(name, _annotatedBytecode.Count);
             _annotatedBytecode.Add(new AnnotatedBytecodeLabel(name, _location));
+        }
+
+        public bool LabelExists(string name) {
+            return _labels.ContainsKey(name);
+        }
+
+        public Dictionary<string, long> GetLabels() {
+            return _labels;
         }
 
         public void WriteLocalVariable(string name, Location writerLocation) {

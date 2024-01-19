@@ -1,7 +1,5 @@
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
-using System.IO;
-using System.Text;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
@@ -39,7 +37,6 @@ namespace DMCompiler.DM {
         static DMObjectTree() {
             Reset();
         }
-
 
         /// <summary>
         /// A thousand curses upon you if you add a new member to this thing without deleting it here.
@@ -85,7 +82,6 @@ namespace DMCompiler.DM {
             if (_pathToTypeId.TryGetValue(path, out int typeId)) {
                 return AllObjects[typeId];
             }
-
             if (!createIfNonexistent) return null;
 
             DMObject? parent = null;
@@ -209,31 +205,17 @@ namespace DMCompiler.DM {
             GlobalInitProc.ResolveLabels();
         }
 
-        public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation(StreamWriter? bytecodeDump) {
+        public static (DreamTypeJson[], ProcDefinitionJson[]) CreateJsonRepresentation() {
             DreamTypeJson[] types = new DreamTypeJson[AllObjects.Count];
             ProcDefinitionJson[] procs = new ProcDefinitionJson[AllProcs.Count];
 
-            if (bytecodeDump != null) {
-                bytecodeDump.WriteLine("OpenDream Bytecode Dump:");
-                bytecodeDump.WriteLine("\t Version: " + DMCompiler.Settings.DMVersion + "." +
-                                       DMCompiler.Settings.DMBuild);
-                bytecodeDump.WriteLine("\t File: " +
-                                       string.Join(", ", DMCompiler.Settings.Files ?? new List<string>()));
-                bytecodeDump.WriteLine("\t Macros: \n" + string.Join("\n\t  ",
-                    DMCompiler.Settings.MacroDefines ?? new Dictionary<string, string>()));
-            }
-
-            var stringBuilder = bytecodeDump != null ? new StringBuilder() : null;
             foreach (DMObject dmObject in AllObjects) {
-                types[dmObject.Id] = dmObject.CreateJsonRepresentation(stringBuilder);
+                types[dmObject.Id] = dmObject.CreateJsonRepresentation();
             }
 
             foreach (DMProc dmProc in AllProcs) {
-                procs[dmProc.Id] = dmProc.GetJsonRepresentation(stringBuilder);
-                stringBuilder?.Append("\n");
+                procs[dmProc.Id] = dmProc.GetJsonRepresentation();
             }
-
-            bytecodeDump?.WriteLine(stringBuilder?.ToString());
 
             return (types, procs);
         }

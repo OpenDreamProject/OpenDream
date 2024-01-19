@@ -287,7 +287,7 @@ public static class DMCompiler {
             Procs = jsonRep.Item2
         };
 
-        if (DMObjectTree.GlobalInitProc.Bytecode.Length > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
+        if (DMObjectTree.GlobalInitProc.AnnotatedBytecode.GetLength() > 0) compiledDream.GlobalInitProc = DMObjectTree.GlobalInitProc.GetJsonRepresentation();
 
         if (DMObjectTree.Globals.Count > 0) {
             GlobalListJson globalListJson = new GlobalListJson();

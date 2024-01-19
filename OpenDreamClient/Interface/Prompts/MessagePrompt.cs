@@ -8,7 +8,7 @@ internal sealed class MessagePrompt : InputWindow {
     private readonly TextEdit _textEdit;
 
     public MessagePrompt(string title, string message, string defaultValue, bool canCancel,
-        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        Action<DreamValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _textEdit = new TextEdit {
             TextRope = new Rope.Leaf(defaultValue),
 
@@ -21,6 +21,6 @@ internal sealed class MessagePrompt : InputWindow {
     }
 
     protected override void OkButtonClicked() {
-        FinishPrompt(DMValueType.Message, Rope.Collapse(_textEdit.TextRope));
+        FinishPrompt(DreamValueType.Message, Rope.Collapse(_textEdit.TextRope));
     }
 }

@@ -1,9 +1,7 @@
 using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Expressions;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using Robust.Shared.Utility;
 using System;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Visitors;
 
@@ -816,7 +814,6 @@ internal static class DMExpressionBuilder {
         switch (call.CallParameters.Length) {
             default:
                 DMCompiler.Emit(WarningCode.TooManyArguments, call.Location, "Too many arguments for call()");
-                DebugTools.Assert(call.CallParameters.Length > 2); // This feels paranoid but, whatever
                 goto case 2; // Fallthrough!
             case 2: {
                 var a = DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);

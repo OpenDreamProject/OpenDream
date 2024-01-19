@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Text.Json;
 using DMCompiler.Bytecode;
+using DMCompiler.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
@@ -10,7 +11,6 @@ using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using Robust.Server;
 using Robust.Server.Player;
 using Robust.Server.ServerStatus;

@@ -1,9 +1,8 @@
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z

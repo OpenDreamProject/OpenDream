@@ -2196,7 +2196,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Prompt(DMProcState state) {
-            DMValueType types = (DMValueType)state.ReadInt();
+            DreamValueType types = (DreamValueType)state.ReadInt();
             DreamValue list = state.Pop();
             DreamValue message, title, defaultValue;
 

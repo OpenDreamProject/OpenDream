@@ -3,13 +3,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using DMCompiler.Bytecode;
+using DMCompiler.DM;
+using DMCompiler.Json;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using OpenDreamShared.Json;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class DMProc : DreamProc {
@@ -132,12 +132,12 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static List<DMValueType>? GetArgumentTypes(ProcDefinitionJson json) {
+        private static List<DreamValueType> GetArgumentTypes(ProcDefinitionJson json) {
             if (json.Arguments == null) {
                 return new();
             } else {
-                var argumentTypes = new List<DMValueType>(json.Arguments.Count);
-                argumentTypes.AddRange(json.Arguments.Select(a => a.Type));
+                var argumentTypes = new List<DreamValueType>(json.Arguments.Count);
+                argumentTypes.AddRange(json.Arguments.Select(a => (DreamValueType)a.Type));
                 return argumentTypes;
             }
         }

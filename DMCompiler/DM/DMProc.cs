@@ -1,49 +1,30 @@
 using DMCompiler.DM.Visitors;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
-using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
-        public class LocalVariable {
-            public readonly int Id;
-            public readonly bool IsParameter;
-            public DreamPath? Type;
-
-            public LocalVariable(int id, bool isParameter, DreamPath? type) {
-                Id = id;
-                IsParameter = isParameter;
-                Type = type;
-            }
+        public class LocalVariable(int id, bool isParameter, DreamPath? type) {
+            public readonly int Id = id;
+            public bool IsParameter = isParameter;
+            public DreamPath? Type = type;
         }
 
-        public sealed class LocalConstVariable : LocalVariable {
-            public readonly Expressions.Constant Value;
-
-            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
-                Value = value;
-            }
+        public sealed class LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : LocalVariable(id, false, type) {
+            public readonly Expressions.Constant Value = value;
         }
 
-        private struct CodeLabelReference {
-            public readonly string Identifier;
-            public readonly string Placeholder;
-            public readonly Location Location;
-            public readonly DMProcScope Scope;
-
-            public CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
-                Identifier = identifier;
-                Placeholder = placeholder;
-                Scope = scope;
-                Location = location;
-            }
+        private struct CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
+            public readonly string Identifier = identifier;
+            public readonly string Placeholder = placeholder;
+            public readonly Location Location = location;
+            public readonly DMProcScope Scope = scope;
         }
 
         public class CodeLabel {
@@ -51,11 +32,11 @@ namespace DMCompiler.DM {
             public readonly string Name;
             public readonly long ByteOffset;
 
-            public int ReferencedCount = 0;
+            public int ReferencedCount;
 
             public string LabelName => $"{Name}_{Id}_codelabel";
 
-            private static int _idCounter = 0;
+            private static int _idCounter ;
 
             public CodeLabel(string name, long offset) {
                 Id = _idCounter++;
@@ -255,7 +236,7 @@ namespace DMCompiler.DM {
                 _labels.Add(reference.Placeholder, label.ByteOffset);
                 label.ReferencedCount += 1;
 
-                // I was thinking about going through to replace all the placeholers
+                // I was thinking about going through to replace all the placeholders
                 // with the actual label.LabelName, but it means I need to modify
                 // _unresolvedLabels, being a list of tuple objects. Fuck that noise
             }
@@ -296,12 +277,12 @@ namespace DMCompiler.DM {
         }
 
         private CodeLabel? GetCodeLabel(string name, DMProcScope? scope = null) {
-            DMProcScope? _scope = scope ?? _scopes.Peek();
-            while (_scope != null) {
-                if (_scope.LocalCodeLabels.TryGetValue(name, out var localCodeLabel))
+            scope ??= _scopes.Peek();
+            while (scope != null) {
+                if (scope.LocalCodeLabels.TryGetValue(name, out var localCodeLabel))
                     return localCodeLabel;
 
-                _scope = _scope.ParentScope;
+                scope = scope.ParentScope;
             }
             return null;
         }

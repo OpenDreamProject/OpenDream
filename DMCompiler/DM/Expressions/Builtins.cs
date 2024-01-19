@@ -1,10 +1,9 @@
-using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"

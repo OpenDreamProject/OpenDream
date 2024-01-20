@@ -31,7 +31,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     [JsonDerivedType(typeof(DreamPathValue), typeDiscriminator: "path")]
     [JsonDerivedType(typeof(DreamFileValue), typeDiscriminator: "file")]
     public abstract class DreamJsonValue {
-        //because dictionary implements its own serialization, we basically just store a dict internally and wrap the functions we need
+        //because dictionary implements its own serialization, we basically just store a dict internally and wrap the functions we need instead of inheriting from it
         [JsonInclude]
         private Dictionary<string, DreamJsonValue> nodes = new();
 

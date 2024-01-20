@@ -1,8 +1,12 @@
-﻿using System.Diagnostics;
+﻿using System.Collections.ObjectModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
+using System.Security.Cryptography;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using DMCompiler;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Resources;
@@ -19,13 +23,40 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Dumb structs for savefile
     /// </summary>
-    [SuppressMessage("Usage", "RA0003:Class must be explicitly marked as [Virtual], abstract, static or sealed")]
-    public class DreamJsonValue : Dictionary<string, DreamJsonValue> { }
+    [JsonPolymorphic]
+    [JsonDerivedType(typeof(DreamDir),  typeDiscriminator: "dir")]
+    [JsonDerivedType(typeof(DreamPrimitive), typeDiscriminator: "primitive")]
+    [JsonDerivedType(typeof(DreamObjectValue), typeDiscriminator: "object")]
+    [JsonDerivedType(typeof(DreamListValue), typeDiscriminator: "list")]
+    [JsonDerivedType(typeof(DreamPathValue), typeDiscriminator: "path")]
+    [JsonDerivedType(typeof(DreamFileValue), typeDiscriminator: "file")]
+    public abstract class DreamJsonValue {
+        //because dictionary implements its own serialization, we basically just store a dict internally and wrap the functions we need
+        [JsonInclude]
+        private Dictionary<string, DreamJsonValue> nodes = new();
 
+        [JsonIgnore]
+        public DreamJsonValue this[string key] {
+            get => nodes[key];
+            set => nodes[key] = value;
+        }
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out DreamJsonValue value) => nodes.TryGetValue(key, out value);
+        [JsonIgnore]
+        public Dictionary<string, DreamJsonValue>.KeyCollection Keys => nodes.Keys;
+        [JsonIgnore]
+        public int Count => nodes.Count;
+
+    }
+
+    /// <summary>
+    /// Dummy type for directories
+    /// </summary>
+    public sealed class DreamDir : DreamJsonValue { }
     /// <summary>
     /// Standard byond types except objects
     /// </summary>
     public sealed class DreamPrimitive : DreamJsonValue {
+        [JsonInclude]
         public DreamValue Value = DreamValue.Null;
     }
 
@@ -35,7 +66,9 @@ public sealed class DreamObjectSavefile : DreamObject {
     public sealed class DreamObjectValue : DreamJsonValue { }
 
     public sealed class DreamListValue : DreamJsonValue {
+        [JsonInclude]
         public List<DreamValue> Data;
+        [JsonInclude]
         public Dictionary<DreamValue, DreamValue>? AssocData;
     }
 
@@ -43,6 +76,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// Dummy type for objects that reference itself (it shows up as `object(..)`)
     /// </summary>
     public sealed class DreamPathValue : DreamJsonValue {
+        [JsonInclude]
         public required string Path;
     }
 
@@ -50,11 +84,17 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// DreamResource holder, encodes said file into base64
     /// </summary>
     public sealed class DreamFileValue : DreamJsonValue {
+        [JsonInclude]
         public string? Name;
+        [JsonInclude]
         public string? Ext;
+        [JsonInclude]
         public required int Length;
+        [JsonInclude]
         public int Crc32 = 0x00000000;
+        [JsonInclude]
         public string Encoding = "base64";
+        [JsonInclude]
         public required string Data;
     }
 
@@ -130,10 +170,10 @@ public sealed class DreamObjectSavefile : DreamObject {
             var data = Resource.ReadAsString();
 
             if (!string.IsNullOrEmpty(data)) {
-                CurrentDir = _rootNode = JsonSerializer.Deserialize<DreamJsonValue>(data);
+                CurrentDir = _rootNode = JsonSerializer.Deserialize<DreamJsonValue>(data)!;
                 SavefileDirectories.Add(filename, _rootNode);
             } else {
-                CurrentDir = _rootNode = new DreamJsonValue();
+                CurrentDir = _rootNode = new DreamDir();
                 SavefileDirectories.Add(filename, _rootNode);
                 //create the file immediately
                 Flush();
@@ -251,7 +291,7 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public void Flush() {
         Resource.Clear();
-        Resource.Output(new DreamValue(JsonSerializer.Serialize(_rootNode)));
+        Resource.Output(new DreamValue(JsonSerializer.Serialize<DreamJsonValue>(_rootNode)));
     }
 
     /// <summary>
@@ -268,7 +308,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             if(path == string.Empty)
                 continue;
             if (!tempDir.TryGetValue(path, out var newDir)) {
-                newDir = tempDir[path] = new DreamJsonValue();
+                newDir = tempDir[path] = new DreamDir();
             }
             tempDir = newDir;
         }

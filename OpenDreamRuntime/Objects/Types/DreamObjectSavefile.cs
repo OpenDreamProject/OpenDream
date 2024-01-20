@@ -16,7 +16,9 @@ namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectSavefile : DreamObject {
 
-    public DreamObjectSavefile(DreamObjectDefinition objectDefinition) : base(objectDefinition) { }
+    public DreamObjectSavefile(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
+        CurrentDir = _rootNode = new DreamDir();
+    }
 
     #region JSON Savefile Types
 
@@ -67,7 +69,7 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public sealed class DreamListValue : DreamJsonValue {
         [JsonInclude]
-        public List<DreamValue> Data;
+        public List<DreamValue> Data = new List<DreamValue>();
         [JsonInclude]
         public Dictionary<DreamValue, DreamValue>? AssocData;
     }
@@ -173,7 +175,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 CurrentDir = _rootNode = JsonSerializer.Deserialize<DreamJsonValue>(data)!;
                 SavefileDirectories.Add(filename, _rootNode);
             } else {
-                CurrentDir = _rootNode = new DreamDir();
+                //_rootNode is created in constructor
                 SavefileDirectories.Add(filename, _rootNode);
                 //create the file immediately
                 Flush();

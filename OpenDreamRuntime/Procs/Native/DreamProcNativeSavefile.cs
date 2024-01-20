@@ -124,10 +124,9 @@ internal static class DreamProcNativeSavefile {
         }
 
         foreach (string subkey in savefile.CurrentDir.Keys) {
-            if (subkey == "")
-                continue;
             savefile.CurrentPath = subkey;
             result += ExportTextInternal(savefile, indent + 1);
+            savefile.CurrentPath = "../";
         }
         savefile.CurrentPath = oldPath;
 

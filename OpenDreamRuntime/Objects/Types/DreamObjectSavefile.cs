@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
@@ -83,9 +83,9 @@ public sealed class DreamObjectSavefile : DreamObject {
     public DreamResource Resource = default!;
 
     /// <summary>
-    /// The current savefile data holder
+    /// The current savefile data holder - the root of the savefile tree
     /// </summary>
-    public DreamJsonValue Savefile = default!;
+    private DreamJsonValue _rootNode = default!;
 
     /// <summary>
     /// The current savefile' working dir. This could be a generic primitive
@@ -130,11 +130,11 @@ public sealed class DreamObjectSavefile : DreamObject {
             var data = Resource.ReadAsString();
 
             if (!string.IsNullOrEmpty(data)) {
-                CurrentDir = Savefile = JsonSerializer.Deserialize<DreamJsonValue>(data);
-                SavefileDirectories.Add(filename, Savefile);
+                CurrentDir = _rootNode = JsonSerializer.Deserialize<DreamJsonValue>(data);
+                SavefileDirectories.Add(filename, _rootNode);
             } else {
-                CurrentDir = Savefile = new DreamJsonValue();
-                SavefileDirectories.Add(filename, Savefile);
+                CurrentDir = _rootNode = new DreamJsonValue();
+                SavefileDirectories.Add(filename, _rootNode);
                 //create the file immediately
                 Flush();
             }
@@ -251,20 +251,22 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public void Flush() {
         Resource.Clear();
-        Resource.Output(new DreamValue(JsonSerializer.Serialize(Savefile)));
+        Resource.Output(new DreamValue(JsonSerializer.Serialize(_rootNode)));
     }
 
     /// <summary>
     /// Attempts to go to said path relative to CurrentPath (you still have to set CurrentDir)
     /// </summary>
     private DreamJsonValue SeekTo(string to) {
-        DreamJsonValue tempDir = Savefile;
+        DreamJsonValue tempDir = _rootNode;
 
         var searchPath = new DreamPath(_currentPath).AddToPath(to).PathString; //relative path
         if(to.StartsWith("/")) //absolute path
             searchPath = to;
 
         foreach (var path in searchPath.Split("/")) {
+            if(path == string.Empty)
+                continue;
             if (!tempDir.TryGetValue(path, out var newDir)) {
                 newDir = tempDir[path] = new DreamJsonValue();
             }
@@ -291,13 +293,19 @@ public sealed class DreamObjectSavefile : DreamObject {
 
         var pathArray = index.Split("/");
         if (pathArray.Length == 1) {
-            CurrentDir[index] = SerializeDreamValue(value);
-            _savefilesToFlush.Add(this);
-            return;
+            var newValue = SerializeDreamValue(value);
+            if(CurrentDir.TryGetValue(index, out var oldValue)) {
+                foreach(var key in oldValue.Keys) {
+                    newValue[key] = oldValue[key];
+                }
+            }
+            CurrentDir[index] = newValue;
+        } else {
+            string oldPath = CurrentPath;
+            CurrentPath = new DreamPath(index).AddToPath("../").PathString; //get the parent of the target path
+            SetSavefileValue(pathArray[pathArray.Length - 1], value);
+            CurrentPath = oldPath;
         }
-
-        // go to said dir, seek down and get the last path BEFORE we index the thing
-        SeekTo(new DreamPath(index).AddToPath("../").PathString)[pathArray[pathArray.Length - 1]] = SerializeDreamValue(value);
         _savefilesToFlush.Add(this);
     }
 

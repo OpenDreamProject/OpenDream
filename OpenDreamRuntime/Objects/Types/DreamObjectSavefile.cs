@@ -247,10 +247,10 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public DreamValue GetSavefileValue(string? index) {
         if (index == null) {
-            return RealizeJsonValue(CurrentDir);
+            return DeserializeJsonValue(CurrentDir);
         }
 
-        return RealizeJsonValue(index.Split("/").Length == 1 ? CurrentDir[index] : SeekTo(index));
+        return DeserializeJsonValue(index.Split("/").Length == 1 ? CurrentDir[index] : SeekTo(index));
     }
 
     public void SetSavefileValue(string? index, DreamValue value) {
@@ -282,20 +282,20 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Turn the json magic value into real byond values
     /// </summary>
-    public DreamValue RealizeJsonValue(SFDreamJsonValue value) {
+    public DreamValue DeserializeJsonValue(SFDreamJsonValue value) {
         switch (value) {
             case SFDreamFileValue SFDreamFileValue:
                 return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(SFDreamFileValue.Data)));
             case SFDreamListValue SFDreamListValue:
                 var l = ObjectTree.CreateList();
-                if (SFDreamListValue.AssocData != null) {
-                    foreach (var kv in SFDreamListValue.AssocData)
-                    {
-                        l.SetValue(kv.Key, kv.Value);
-                    }
-                } else {
+                if(SFDreamListValue.Data != null) {
                     for (var i = 0; i < SFDreamListValue.Data.Count; i++) {
-                        l.SetValue(new DreamValue(i+1), SFDreamListValue.Data[i], true);
+                        l.AddValue(DeserializeJsonValue(SFDreamListValue.Data[i]));
+                    }
+                }
+                if (SFDreamListValue.AssocKeys != null && SFDreamListValue.AssocData != null) {
+                    for(int i=0; i < SFDreamListValue.AssocKeys.Count; i++) {
+                        l.SetValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]), DeserializeJsonValue(SFDreamListValue.AssocData[i]));
                     }
                 }
                 return new DreamValue(l);
@@ -312,7 +312,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     foreach (var key in dObj.ObjectDefinition.Variables.Keys) {
                         DreamValue val = DreamValue.Null;
                         if (saveData.TryGetValue(key, out var dreamObjVal)) {
-                            val = (dreamObjVal is SFDreamPathValue) ? newObj : RealizeJsonValue(dreamObjVal);
+                            val = (dreamObjVal is SFDreamPathValue) ? newObj : DeserializeJsonValue(dreamObjVal);
                         }
                         dObj.SetVariable(key, val);
                     }
@@ -351,10 +351,20 @@ public sealed class DreamObjectSavefile : DreamObject {
                 };
             case DreamValue.DreamValueType.DreamObject:
                 if (val.TryGetValueAsDreamList(out var dreamList)) {
-                    return new SFDreamListValue {
-                        Data = dreamList.GetValues(),
-                        AssocData = dreamList.IsAssociative ? dreamList.GetAssociativeValues() : null
-                    };
+                    SFDreamListValue jsonEncodedList = new SFDreamListValue();
+                    jsonEncodedList.Data = new List<SFDreamJsonValue>();
+                    foreach (var value in dreamList.GetValues()) {
+                        jsonEncodedList.Data.Add(SerializeDreamValue(value));
+                    }
+                    if(dreamList.IsAssociative) {
+                        jsonEncodedList.AssocData = new List<SFDreamJsonValue>();
+                        jsonEncodedList.AssocKeys = new List<SFDreamJsonValue>();
+                        foreach (var (key, value) in dreamList.GetAssociativeValues()) {
+                            jsonEncodedList.AssocKeys.Add(SerializeDreamValue(key));
+                            jsonEncodedList.AssocData.Add(SerializeDreamValue(value));
+                        }
+                    }
+                    return jsonEncodedList;
                 }
 
                 // TODO stub code here, for some reason type isnt saving or something
@@ -440,9 +450,11 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public sealed class SFDreamListValue : SFDreamJsonValue {
         [JsonInclude]
-        public List<DreamValue> Data = new List<DreamValue>();
+        public List<SFDreamJsonValue>? Data;
         [JsonInclude]
-        public Dictionary<DreamValue, DreamValue>? AssocData;
+        public List<SFDreamJsonValue>? AssocKeys;
+        [JsonInclude]
+        public List<SFDreamJsonValue>? AssocData;
     }
 
     /// <summary>

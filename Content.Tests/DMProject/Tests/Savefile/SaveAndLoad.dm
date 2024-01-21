@@ -41,3 +41,4 @@
 
 
 	fdel("savefile.sav")
+	fdel("savefile2.sav")

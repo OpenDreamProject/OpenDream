@@ -10,6 +10,7 @@ internal sealed class DreamClientSystem : EntitySystem {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
     [Dependency] private readonly TransformSystem _transformSystem = default!;
+    [Dependency] private readonly MapSystem _mapSystem = default!;
     [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
     [Dependency] private readonly ClientAppearanceSystem _appearanceSystem = default!;
     [Dependency] private readonly ClientScreenOverlaySystem _screenOverlaySystem = default!;
@@ -18,7 +19,7 @@ internal sealed class DreamClientSystem : EntitySystem {
     public override void Initialize() {
         SubscribeLocalEvent<LocalPlayerAttachedEvent>(OnPlayerAttached);
 
-        var mapOverlay = new DreamViewOverlay(_transformSystem, _lookupSystem, _appearanceSystem, _screenOverlaySystem, _clientImagesSystem);
+        var mapOverlay = new DreamViewOverlay(_transformSystem, _mapSystem, _lookupSystem, _appearanceSystem, _screenOverlaySystem, _clientImagesSystem);
         _overlayManager.AddOverlay(mapOverlay);
     }
 

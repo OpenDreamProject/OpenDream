@@ -33,6 +33,22 @@ namespace DMCompiler.DM.Optimizer {
             _args = args;
         }
 
+        // Look up the stack delta for the opcode and create a new instruction with that stack delta and args
+        public AnnotatedBytecodeInstruction(DreamProcOpcode op, List<IAnnotatedBytecode> args) {
+            Opcode = op;
+            OpcodeMetadata metadata = OpcodeMetadataCache.GetMetadata(op);
+            StackSizeDelta = metadata.StackDelta;
+            Location = new Location("Internal", null, null);
+            _args = args;
+        }
+
+        public AnnotatedBytecodeInstruction(DreamProcOpcode opcode, int stackSizeDelta, List<IAnnotatedBytecode> args) {
+            Opcode = opcode;
+            StackSizeDelta = stackSizeDelta;
+            Location = new Location("Internal", null, null);
+            _args = args;
+        }
+
         public void AddArg(IAnnotatedBytecode arg) {
             _args.Add(arg);
         }
@@ -63,8 +79,6 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a variable");
         }
-
-
     }
 
 
@@ -317,8 +331,14 @@ namespace DMCompiler.DM.Optimizer {
         private static int max_opcode_length = -1;
         private static readonly List<string> indent_cache = new();
 
+        private static DMProc _input;
+
+        private static List<string> localScopeVariables = new();
+        private static List<string> localScopeVariablesNoRemove = new();
+
         public static void Print(IReadOnlyList<IAnnotatedBytecode> annotatedBytecode, List<SourceInfoJson> sourceInfo,
-            StringBuilder output, int indent = 1) {
+            StreamWriter outp, DMProc input, int indent = 1) {
+            _input = input;
             int currentLine = 0;
 
             Dictionary<int, SourceInfoJson> sourceInfoByLine = new();
@@ -336,7 +356,12 @@ namespace DMCompiler.DM.Optimizer {
             List<string> currentFileContents = new();
             if (currentFile != "" && currentFile != oldFile) {
                 if (!File.Exists(currentFile)) {
-                    currentFile = Path.Join(DMCompiler.StandardLibraryDirectory, currentFile);
+                    var newFile = Path.Join(DMCompiler.StandardLibraryDirectory, currentFile);
+                    if (File.Exists(newFile)) {
+                        currentFile = newFile;
+                    } else {
+                        currentFile = Path.Join(DMCompiler.MainDirectory, currentFile);
+                    }
                 }
 
                 if (!File.Exists(currentFile)) {
@@ -353,12 +378,13 @@ namespace DMCompiler.DM.Optimizer {
                 currentFileContents = oldFileContents;
             }
 
+            StringBuilder output = new();
+
             if (annotatedBytecode.Count == 0) {
                 output.Append("\t pass\n");
                 return;
             }
 
-            List<string> localScopeVariables = new();
             foreach (IAnnotatedBytecode annotatedBytecodeItem in annotatedBytecode) {
                 switch (annotatedBytecodeItem) {
                     case AnnotatedBytecodeInstruction annotatedBytecodeInstruction:
@@ -401,6 +427,7 @@ namespace DMCompiler.DM.Optimizer {
                             output.Append(' ', indent * 4).Append("// Variable ").Append(variable.Name)
                                 .Append(" has entered scope\n");
                             localScopeVariables.Add(variable.Name);
+                            localScopeVariablesNoRemove.Add(variable.Name);
                         }
 
                         break;
@@ -409,6 +436,11 @@ namespace DMCompiler.DM.Optimizer {
                             "Only labels and instructions allowed at top-level, others should be args to instructions");
                 }
             }
+
+            localScopeVariables.Clear();
+            localScopeVariablesNoRemove.Clear();
+
+            outp.Write(output.ToString());
         }
 
         private static void Print(AnnotatedBytecodeInstruction annotatedBytecode, StringBuilder sb) {
@@ -423,38 +455,38 @@ namespace DMCompiler.DM.Optimizer {
             switch (opcode) {
                 case DreamProcOpcode.FormatString:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeFormatCount)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     break;
                 case DreamProcOpcode.PushString:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     break;
                 case DreamProcOpcode.PushResource:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeResource)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     break;
                 case DreamProcOpcode.DereferenceField:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     break;
                 case DreamProcOpcode.DereferenceCall:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeString)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeArgumentType)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[2] as AnnotatedBytecodeStackDelta)!, sb);
+                    Print(annotatedBytecode.GetArgs()[2], sb);
                     break;
                 case DreamProcOpcode.Prompt:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeType)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     break;
 
                 case DreamProcOpcode.PushFloat:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeFloat)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     break;
 
                 case DreamProcOpcode.Assign:
@@ -476,36 +508,36 @@ namespace DMCompiler.DM.Optimizer {
                 case DreamProcOpcode.PushReferenceValue:
                 case DreamProcOpcode.PopReference:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     break;
 
                 case DreamProcOpcode.Input:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeReference)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     break;
 
                 case DreamProcOpcode.CallStatement:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeArgumentType)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeStackDelta)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     break;
                 case DreamProcOpcode.CreateObject:
                 case DreamProcOpcode.Gradient:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeArgumentType)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeStackDelta)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     break;
                 case DreamProcOpcode.Call:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeArgumentType)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[2] as AnnotatedBytecodeStackDelta)!, sb);
+                    Print(annotatedBytecode.GetArgs()[2], sb);
                     break;
 
                 case DreamProcOpcode.EnumerateNoAssign:
@@ -518,36 +550,21 @@ namespace DMCompiler.DM.Optimizer {
                 case DreamProcOpcode.JumpIfFalse:
                 case DreamProcOpcode.JumpIfTrue:
                 case DreamProcOpcode.JumpIfNull:
+                case DreamProcOpcode.JumpIfNotNull:
                 case DreamProcOpcode.JumpIfNullNoPop:
                 case DreamProcOpcode.TryNoValue:
-                    sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeLabel)!, sb);
-                    break;
+                case DreamProcOpcode.NullRef:
                 case DreamProcOpcode.CreateList:
                 case DreamProcOpcode.CreateAssociativeList:
-                    sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeListSize)!, sb);
-                    break;
                 case DreamProcOpcode.CreateFilteredListEnumerator:
-                    sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeFilter)!, sb);
-                    break;
                 case DreamProcOpcode.PickWeighted:
                 case DreamProcOpcode.PickUnweighted:
-                    sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodePickCount)!, sb);
-                    break;
                 case DreamProcOpcode.PushType:
-                    sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeTypeID)!, sb);
-                    break;
+                case DreamProcOpcode.IsTypeDirect:
                 case DreamProcOpcode.PushProc:
-                    sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeProcID)!, sb);
-                    break;
                 case DreamProcOpcode.MassConcatenation:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeConcatCount)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     break;
 
                 case DreamProcOpcode.JumpIfNullDereference:
@@ -555,18 +572,94 @@ namespace DMCompiler.DM.Optimizer {
                 case DreamProcOpcode.JumpIfFalseReference:
                 case DreamProcOpcode.Enumerate:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeReference)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeLabel)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     break;
 
                 case DreamProcOpcode.Try:
                     sb.Append($"{opcode}{less_offset} ");
-                    Print((annotatedBytecode.GetArgs()[0] as AnnotatedBytecodeLabel)!, sb);
+                    Print(annotatedBytecode.GetArgs()[0], sb);
                     sb.Append(", ");
-                    Print((annotatedBytecode.GetArgs()[1] as AnnotatedBytecodeReference)!, sb);
+                    Print(annotatedBytecode.GetArgs()[1], sb);
                     break;
+                // Peephole optimizations
+                case DreamProcOpcode.PushRefandJumpIfNotNull:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append(", ");
+                    Print(annotatedBytecode.GetArgs()[1], sb);
+                    break;
+                case DreamProcOpcode.AssignPop:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    break;
+                case DreamProcOpcode.PushRefAndDereferenceField:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append(", ");
+                    Print(annotatedBytecode.GetArgs()[1], sb);
+                    break;
+                case DreamProcOpcode.PushNFloats:
+                case DreamProcOpcode.PushNResources:
+                case DreamProcOpcode.PushNRefs:
+                case DreamProcOpcode.PushNStrings:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append("  ->   ");
+                    for (var i = 1; i < annotatedBytecode.GetArgs().Count; i++) {
+                        Print(annotatedBytecode.GetArgs()[i], sb);
+                        if (i < annotatedBytecode.GetArgs().Count - 1) sb.Append(", ");
+                    }
 
+                    break;
+                case DreamProcOpcode.PushStringFloat:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append(", ");
+                    Print(annotatedBytecode.GetArgs()[1], sb);
+                    break;
+                case DreamProcOpcode.JumpIfReferenceFalse:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append(", ");
+                    Print(annotatedBytecode.GetArgs()[1], sb);
+                    break;
+                case DreamProcOpcode.SwitchOnFloat:
+                case DreamProcOpcode.SwitchOnString:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append(", ");
+                    Print(annotatedBytecode.GetArgs()[1], sb);
+                    break;
+                case DreamProcOpcode.PushNOfStringFloats: {
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append("  ->   ");
+                    for (var i = 1; i < annotatedBytecode.GetArgs().Count; i++) {
+                        Print(annotatedBytecode.GetArgs()[i], sb);
+                        sb.Append(", ");
+                        Print(annotatedBytecode.GetArgs()[i + 1], sb);
+                        if (i < annotatedBytecode.GetArgs().Count - 2) sb.Append(", ");
+                        i++;
+                    }
+
+                    break;
+                }
+
+                case DreamProcOpcode.CreateListNFloats:
+                case DreamProcOpcode.CreateListNStrings:
+                case DreamProcOpcode.CreateListNRefs:
+                case DreamProcOpcode.CreateListNResources:
+                    sb.Append($"{opcode}{less_offset} ");
+                    Print(annotatedBytecode.GetArgs()[0], sb);
+                    sb.Append("  ->   ");
+                    for (var i = 1; i < annotatedBytecode.GetArgs().Count; i++) {
+                        Print(annotatedBytecode.GetArgs()[i], sb);
+                        if (i < annotatedBytecode.GetArgs().Count - 1) sb.Append(", ");
+                    }
+
+                    break;
                 default:
                     if (annotatedBytecode.GetArgs().Count > 0) {
                         throw new Exception($"UH OH YOU FORGOT TO ADD A CASE FOR {opcode}");
@@ -575,6 +668,67 @@ namespace DMCompiler.DM.Optimizer {
                     sb.Append($"{opcode}{less_offset}");
 
                     return;
+            }
+        }
+
+        private static void Print(IAnnotatedBytecode annotatedBytecode, StringBuilder sb) {
+            switch (annotatedBytecode) {
+                case AnnotatedBytecodeInstruction annotatedBytecodeInstruction:
+                    Print(annotatedBytecodeInstruction, sb);
+                    break;
+                case AnnotatedBytecodeVariable annotatedBytecodeVariable:
+                    Print(annotatedBytecodeVariable, sb);
+                    break;
+                case AnnotatedBytecodeInteger annotatedBytecodeInteger:
+                    Print(annotatedBytecodeInteger, sb);
+                    break;
+                case AnnotatedBytecodeFloat annotatedBytecodeFloat:
+                    Print(annotatedBytecodeFloat, sb);
+                    break;
+                case AnnotatedBytecodeString annotatedBytecodeString:
+                    Print(annotatedBytecodeString, sb);
+                    break;
+                case AnnotatedBytecodeArgumentType annotatedBytecodeArgumentType:
+                    Print(annotatedBytecodeArgumentType, sb);
+                    break;
+                case AnnotatedBytecodeType annotatedBytecodeType:
+                    Print(annotatedBytecodeType, sb);
+                    break;
+                case AnnotatedBytecodeTypeID annotatedBytecodeTypeID:
+                    Print(annotatedBytecodeTypeID, sb);
+                    break;
+                case AnnotatedBytecodeProcID annotatedBytecodeProcID:
+                    Print(annotatedBytecodeProcID, sb);
+                    break;
+                case AnnotatedBytecodeFormatCount annotatedBytecodeFormatCount:
+                    Print(annotatedBytecodeFormatCount, sb);
+                    break;
+                case AnnotatedBytecodePickCount annotatedBytecodePickCount:
+                    Print(annotatedBytecodePickCount, sb);
+                    break;
+                case AnnotatedBytecodeConcatCount annotatedBytecodeConcatCount:
+                    Print(annotatedBytecodeConcatCount, sb);
+                    break;
+                case AnnotatedBytecodeStackDelta annotatedBytecodeStackDelta:
+                    Print(annotatedBytecodeStackDelta, sb);
+                    break;
+                case AnnotatedBytecodeListSize annotatedBytecodeListSize:
+                    Print(annotatedBytecodeListSize, sb);
+                    break;
+                case AnnotatedBytecodeResource annotatedBytecodeResource:
+                    Print(annotatedBytecodeResource, sb);
+                    break;
+                case AnnotatedBytecodeLabel annotatedBytecodeLabel:
+                    Print(annotatedBytecodeLabel, sb);
+                    break;
+                case AnnotatedBytecodeFilter annotatedBytecodeFilter:
+                    Print(annotatedBytecodeFilter, sb);
+                    break;
+                case AnnotatedBytecodeReference @ref:
+                    Print(@ref, sb);
+                    break;
+                default:
+                    throw new Exception("Unknown annotated bytecode type");
             }
         }
 
@@ -643,13 +797,41 @@ namespace DMCompiler.DM.Optimizer {
                 .Append(annotatedBytecode.FilterPath.ToString());
         }
 
-        private static void Print(AnnotatedBytecodeReference annotatedBytecode, StringBuilder sb) {
-            sb.Append(annotatedBytecode.RefType.ToString()).Append(" ").Append(annotatedBytecode.Index.ToString())
-                .Append(" -> ").Append(ResolveReference(annotatedBytecode.RefType, annotatedBytecode.Index));
-        }
-
-        private static string ResolveReference(DMReference.Type annotatedBytecodeRefType, int annotatedBytecodeIndex) {
-            return ""; // TODO
+        private static void Print(AnnotatedBytecodeReference @ref, StringBuilder sb) {
+            switch (@ref.RefType) {
+                case DMReference.Type.Src:
+                case DMReference.Type.Self:
+                case DMReference.Type.Usr:
+                case DMReference.Type.Args:
+                case DMReference.Type.SuperProc:
+                case DMReference.Type.ListIndex:
+                    sb.Append(@ref.RefType.ToString());
+                    break;
+                case DMReference.Type.Argument:
+                    sb.Append("Param ").Append(_input.Parameters[@ref.Index]);
+                    break;
+                case DMReference.Type.Local:
+                    sb.Append("Local ").Append(localScopeVariables[@ref.Index]);
+                    break;
+                case DMReference.Type.Global:
+                    sb.Append("Global ").Append(DMObjectTree.Globals[@ref.Index].Name);
+                    break;
+                case DMReference.Type.GlobalProc:
+                    sb.Append("GlobalProc ").Append(DMObjectTree.AllProcs[@ref.Index].Name);
+                    break;
+                case DMReference.Type.Field:
+                    sb.Append("Field ").Append(DMObjectTree.StringTable[@ref.Index]);
+                    break;
+                case DMReference.Type.SrcField:
+                    sb.Append("SrcField ").Append(DMObjectTree.StringTable[@ref.Index]);
+                    break;
+                case DMReference.Type.SrcProc:
+                    sb.Append("SrcProc ").Append(DMObjectTree.StringTable[@ref.Index]);
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(@ref.RefType), @ref.RefType,
+                        null);
+            }
         }
     }
 }

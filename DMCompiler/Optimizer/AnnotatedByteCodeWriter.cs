@@ -387,9 +387,11 @@ namespace DMCompiler.DM.Optimizer {
         public int GetLength() {
             return _annotatedBytecode.Count;
         }
+
         private Dictionary<string, long> _labels = new();
+
         public void AddLabel(string name) {
-            _labels.Add(name, _annotatedBytecode.Count);
+            _labels.TryAdd(name, _annotatedBytecode.Count);
             _annotatedBytecode.Add(new AnnotatedBytecodeLabel(name, _location));
         }
 

@@ -179,7 +179,7 @@ namespace DMCompiler.DM {
             BytecodeOptimizer optimizer = new();
 
             var bytecodelist = optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode(),
-                $"{_dmObject.Path.PathString}{Name}");
+                $"{_dmObject.Path.PathString}{Name}", out int stackDepth);
 
             //procDefinition.MaxStackSize = optimizer.GetMaxStackSize();
             procDefinition.MaxStackSize = AnnotatedBytecode.GetMaxStackSize();
@@ -1123,5 +1123,28 @@ namespace DMCompiler.DM {
             AnnotatedBytecode.ResolveCodeLabelReferences(_pendingLabelReferences);
         }
 
+        public void Dump(StreamWriter bytecodeDumpWriter) {
+            var pathString = _dmObject.Path.ToString() == "/" ? "<global>" : _dmObject.Path.ToString();
+            var attributeString = Attributes.ToString().Replace(", ", " | ");
+            if (attributeString != "0") {
+                bytecodeDumpWriter.Write($"[{attributeString}] ");
+            }
+
+            bytecodeDumpWriter.Write($"Proc {pathString}/{(IsVerb ? "verb/" : "")}{Name}(");
+            for (int i = 0; i < Parameters.Count; i++) {
+                string argumentName = Parameters[i];
+                DMValueType argumentType = ParameterTypes[i];
+
+                bytecodeDumpWriter.Write($"{argumentName}: {argumentType}");
+                if (i < Parameters.Count - 1) {
+                    bytecodeDumpWriter.Write(", ");
+                }
+            }
+
+            bytecodeDumpWriter.Write("):\n");
+            var bytecode = AnnotatedBytecode.GetAnnotatedBytecode();
+            AnnotatedBytecodePrinter.Print(bytecode, _sourceInfo, bytecodeDumpWriter, this);
+            bytecodeDumpWriter.WriteLine();
+        }
     }
 }

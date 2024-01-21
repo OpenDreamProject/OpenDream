@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Json;
@@ -46,6 +47,8 @@ internal class AnnotatedBytecodeSerializer {
         }
 
         ResolveLabels();
+        // Sort and remove duplicates
+        SourceInfo = SourceInfo.GroupBy(x => x.Line, (key, group) => group.First()).OrderBy(x => x.Offset).ToList();
         return Bytecode.ToArray();
     }
 
@@ -60,9 +63,10 @@ internal class AnnotatedBytecodeSerializer {
             });
             location = instruction.Location;
         }
+
         _bytecodeWriter.Write((byte)instruction.Opcode);
         var opcodeMetadata = OpcodeMetadataCache.GetMetadata(instruction.Opcode);
-        if (opcodeMetadata.RequiredArgs.Count != instruction.GetArgs().Count) {
+        if (opcodeMetadata.RequiredArgs.Count != instruction.GetArgs().Count && !opcodeMetadata.VariableArgs) {
             throw new Exception("Invalid number of arguments for opcode " + instruction.Opcode);
         }
 

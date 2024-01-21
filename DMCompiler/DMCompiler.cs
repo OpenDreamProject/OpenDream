@@ -16,12 +16,14 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DMCompiler.DM.Optimizer;
 
 namespace DMCompiler;
 
 //TODO: Make this not a static class
 public static class DMCompiler {
     public static string StandardLibraryDirectory = "";
+    public static string MainDirectory = "";
     public static int ErrorCount;
     public static int WarningCount;
     public static DMCompilerSettings Settings;
@@ -104,9 +106,9 @@ public static class DMCompiler {
             for (var i = files.Count - 1; i >= 0; i--) {
                 string includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
-
                 preproc.IncludeFile(includeDir, fileName);
             }
+            MainDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
             StandardLibraryDirectory = dmStandardDirectory;
@@ -315,6 +317,37 @@ public static class DMCompiler {
             compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToArray();
         }
 
+        var potentialPairs5Len = BytecodeOptimizer.opcodeTestPairsForPeephole5Len.Where(pair => pair.Value > 100).Select(pair => (pair.Key, pair.Value)).OrderByDescending(pair => pair.Value).ToList();
+        foreach (var pair in potentialPairs5Len) {
+            Console.WriteLine($"Potential 5 len peephole optimization: {pair.Key.Item1} {pair.Key.Item2}  {pair.Key.Item3}  {pair.Key.Item4}  {pair.Key.Item5} - {pair.Value} occurrences");
+        }
+
+        var potentialPairs4Len = BytecodeOptimizer.opcodeTestPairsForPeephole4Len.Where(pair => pair.Value > 200).Select(pair => (pair.Key, pair.Value)).OrderByDescending(pair => pair.Value).ToList();
+        foreach (var pair in potentialPairs4Len) {
+            Console.WriteLine($"Potential 4 len peephole optimization: {pair.Key.Item1} {pair.Key.Item2}  {pair.Key.Item3}  {pair.Key.Item4} - {pair.Value} occurrences");
+        }
+
+        var potentialPairs3Len = BytecodeOptimizer.opcodeTestPairsForPeephole3Len.Where(pair => pair.Value > 400).Select(pair => (pair.Key, pair.Value)).OrderByDescending(pair => pair.Value).ToList();
+        foreach (var pair in potentialPairs3Len) {
+            Console.WriteLine($"Potential 3 len peephole optimization: {pair.Key.Item1} {pair.Key.Item2}  {pair.Key.Item3} - {pair.Value} occurrences");
+        }
+
+        var potentialPairs = BytecodeOptimizer.opcodeTestPairsForPeephole2Len.Where(pair => pair.Value > 800).Select(pair => (pair.Key, pair.Value)).OrderByDescending(pair => pair.Value).ToList();
+        foreach (var pair in potentialPairs) {
+            Console.WriteLine($"Potential 2 len peephole optimization: {pair.Key.Item1} {pair.Key.Item2} - {pair.Value} occurrences");
+        }
+
+
+        if(Settings.DumpBytecode) {
+            var bytecodeDumpFile = Path.ChangeExtension(outputFile, "dmc");
+            using var bytecodeDumpHandle = File.Create(bytecodeDumpFile);
+            using var bytecodeDumpWriter = new StreamWriter(bytecodeDumpHandle);
+            DMObjectTree.GlobalInitProc.Dump(bytecodeDumpWriter);
+            foreach (var proc in DMObjectTree.AllProcs) {
+                proc.Dump(bytecodeDumpWriter);
+            }
+        }
+
         // Successful serialization
         if (ErrorCount == 0) {
             using var outputFileHandle = File.Create(outputFile);
@@ -370,7 +403,7 @@ public struct DMCompilerSettings {
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;
     public bool Verbose = false;
-    public bool DumpBytecode = false;
+    public bool DumpBytecode = true;
     public Dictionary<string, string>? MacroDefines = null;
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;

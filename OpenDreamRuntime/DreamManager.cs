@@ -124,6 +124,7 @@ namespace OpenDreamRuntime {
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
 
             _objectTree.LoadJson(json);
+
             DreamProcNative.SetupNativeProcs(_objectTree);
             ImageConstructor = _objectTree.Image.ObjectDefinition.GetProc("New");
             _objectTree.TryGetGlobalProc("image", out ImageFactoryProc!);

@@ -272,7 +272,7 @@ namespace OpenDreamRuntime {
             throw new InvalidOperationException();
         }
 
-        public void PushProcState(ProcState state, bool pushResult = true) {
+        public void PushProcState(ProcState state) {
             if (_stack.Count >= MaxStackDepth) {
                 throw new DMError("stack depth limit reached");
             }
@@ -281,7 +281,7 @@ namespace OpenDreamRuntime {
                 _syncCount++;
             }
 
-            if (_current != null && pushResult) {
+            if (_current != null) {
                 _stack.Push(_current);
             }
             _current = state;

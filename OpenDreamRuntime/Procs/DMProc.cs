@@ -29,12 +29,8 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager,
-            AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager,
-            DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
-            : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json),
-                GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility,
-                json.IsVerb) {
+        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
+            : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
             SourceInfo = json.SourceInfo;
@@ -100,8 +96,7 @@ namespace OpenDreamRuntime.Procs {
             return false;
         }
 
-        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr,
-            DreamProcArguments arguments) {
+        public override ProcState CreateState(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
             if (IsNullProc) {
                 if (!NullProcState.Pool.TryPop(out var nullState)) {
                     nullState = new NullProcState();
@@ -121,8 +116,7 @@ namespace OpenDreamRuntime.Procs {
 
         private bool CheckIfNullProc() {
             // We check for two possible patterns, entirely empty procs or pushing and returning self.
-            if (Bytecode.Length == 0 || Bytecode is
-                    [(byte)DreamProcOpcode.PushReferenceValue, 0x01, (byte)DreamProcOpcode.Return])
+            if (Bytecode.Length == 0 || Bytecode is [(byte)DreamProcOpcode.PushReferenceValue, 0x01, (byte)DreamProcOpcode.Return])
                 return true;
 
             return false;
@@ -183,153 +177,151 @@ namespace OpenDreamRuntime.Procs {
         private static readonly ArrayPool<DreamValue> _dreamValuePool = ArrayPool<DreamValue>.Create();
 
         #region Opcode Handlers
-
         //Human readable friendly version, which will be converted to a more efficient lookup at runtime.
         private static readonly Dictionary<DreamProcOpcode, OpcodeHandler> _opcodeHandlers = new() {
-            { DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft },
-            { DreamProcOpcode.PushType, DMOpcodeHandlers.PushType },
-            { DreamProcOpcode.PushString, DMOpcodeHandlers.PushString },
-            { DreamProcOpcode.FormatString, DMOpcodeHandlers.FormatString },
-            { DreamProcOpcode.SwitchCaseRange, DMOpcodeHandlers.SwitchCaseRange },
-            { DreamProcOpcode.PushReferenceValue, DMOpcodeHandlers.PushReferenceValue },
-            { DreamProcOpcode.Add, DMOpcodeHandlers.Add },
-            { DreamProcOpcode.Assign, DMOpcodeHandlers.Assign },
-            { DreamProcOpcode.Call, DMOpcodeHandlers.Call },
-            { DreamProcOpcode.MultiplyReference, DMOpcodeHandlers.MultiplyReference },
-            { DreamProcOpcode.JumpIfFalse, DMOpcodeHandlers.JumpIfFalse },
-            { DreamProcOpcode.JumpIfTrue, DMOpcodeHandlers.JumpIfTrue },
-            { DreamProcOpcode.Jump, DMOpcodeHandlers.Jump },
-            { DreamProcOpcode.CompareEquals, DMOpcodeHandlers.CompareEquals },
-            { DreamProcOpcode.Return, DMOpcodeHandlers.Return },
-            { DreamProcOpcode.PushNull, DMOpcodeHandlers.PushNull },
-            { DreamProcOpcode.Subtract, DMOpcodeHandlers.Subtract },
-            { DreamProcOpcode.CompareLessThan, DMOpcodeHandlers.CompareLessThan },
-            { DreamProcOpcode.CompareGreaterThan, DMOpcodeHandlers.CompareGreaterThan },
-            { DreamProcOpcode.BooleanAnd, DMOpcodeHandlers.BooleanAnd },
-            { DreamProcOpcode.BooleanNot, DMOpcodeHandlers.BooleanNot },
-            { DreamProcOpcode.DivideReference, DMOpcodeHandlers.DivideReference },
-            { DreamProcOpcode.Negate, DMOpcodeHandlers.Negate },
-            { DreamProcOpcode.Modulus, DMOpcodeHandlers.Modulus },
-            { DreamProcOpcode.Append, DMOpcodeHandlers.Append },
-            { DreamProcOpcode.CreateRangeEnumerator, DMOpcodeHandlers.CreateRangeEnumerator },
-            { DreamProcOpcode.Input, DMOpcodeHandlers.Input },
-            { DreamProcOpcode.CompareLessThanOrEqual, DMOpcodeHandlers.CompareLessThanOrEqual },
-            { DreamProcOpcode.CreateAssociativeList, DMOpcodeHandlers.CreateAssociativeList },
-            { DreamProcOpcode.Remove, DMOpcodeHandlers.Remove },
-            { DreamProcOpcode.DeleteObject, DMOpcodeHandlers.DeleteObject },
-            { DreamProcOpcode.PushResource, DMOpcodeHandlers.PushResource },
-            { DreamProcOpcode.CreateList, DMOpcodeHandlers.CreateList },
-            { DreamProcOpcode.CallStatement, DMOpcodeHandlers.CallStatement },
-            { DreamProcOpcode.BitAnd, DMOpcodeHandlers.BitAnd },
-            { DreamProcOpcode.CompareNotEquals, DMOpcodeHandlers.CompareNotEquals },
-            { DreamProcOpcode.PushProc, DMOpcodeHandlers.PushProc },
-            { DreamProcOpcode.Divide, DMOpcodeHandlers.Divide },
-            { DreamProcOpcode.Multiply, DMOpcodeHandlers.Multiply },
-            { DreamProcOpcode.BitXorReference, DMOpcodeHandlers.BitXorReference },
-            { DreamProcOpcode.BitXor, DMOpcodeHandlers.BitXor },
-            { DreamProcOpcode.BitOr, DMOpcodeHandlers.BitOr },
-            { DreamProcOpcode.BitNot, DMOpcodeHandlers.BitNot },
-            { DreamProcOpcode.Combine, DMOpcodeHandlers.Combine },
-            { DreamProcOpcode.CreateObject, DMOpcodeHandlers.CreateObject },
-            { DreamProcOpcode.BooleanOr, DMOpcodeHandlers.BooleanOr },
-            { DreamProcOpcode.CompareGreaterThanOrEqual, DMOpcodeHandlers.CompareGreaterThanOrEqual },
-            { DreamProcOpcode.SwitchCase, DMOpcodeHandlers.SwitchCase },
-            { DreamProcOpcode.Mask, DMOpcodeHandlers.Mask },
-            { DreamProcOpcode.Error, DMOpcodeHandlers.Error },
-            { DreamProcOpcode.IsInList, DMOpcodeHandlers.IsInList },
-            { DreamProcOpcode.PushFloat, DMOpcodeHandlers.PushFloat },
-            { DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference },
-            { DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator },
-            { DreamProcOpcode.Enumerate, DMOpcodeHandlers.Enumerate },
-            { DreamProcOpcode.DestroyEnumerator, DMOpcodeHandlers.DestroyEnumerator },
-            { DreamProcOpcode.Browse, DMOpcodeHandlers.Browse },
-            { DreamProcOpcode.BrowseResource, DMOpcodeHandlers.BrowseResource },
-            { DreamProcOpcode.OutputControl, DMOpcodeHandlers.OutputControl },
-            { DreamProcOpcode.BitShiftRight, DMOpcodeHandlers.BitShiftRight },
-            { DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator },
-            { DreamProcOpcode.Power, DMOpcodeHandlers.Power },
-            { DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt },
-            { DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp },
-            { DreamProcOpcode.Initial, DMOpcodeHandlers.Initial },
-            { DreamProcOpcode.IsType, DMOpcodeHandlers.IsType },
-            { DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord },
-            { DreamProcOpcode.Locate, DMOpcodeHandlers.Locate },
-            { DreamProcOpcode.IsNull, DMOpcodeHandlers.IsNull },
-            { DreamProcOpcode.Spawn, DMOpcodeHandlers.Spawn },
-            { DreamProcOpcode.OutputReference, DMOpcodeHandlers.OutputReference },
-            { DreamProcOpcode.Output, DMOpcodeHandlers.Output },
-            { DreamProcOpcode.JumpIfNullDereference, DMOpcodeHandlers.JumpIfNullDereference },
-            { DreamProcOpcode.Pop, DMOpcodeHandlers.Pop },
-            { DreamProcOpcode.Prob, DMOpcodeHandlers.Prob },
-            { DreamProcOpcode.IsSaved, DMOpcodeHandlers.IsSaved },
-            { DreamProcOpcode.PickUnweighted, DMOpcodeHandlers.PickUnweighted },
-            { DreamProcOpcode.PickWeighted, DMOpcodeHandlers.PickWeighted },
-            { DreamProcOpcode.Increment, DMOpcodeHandlers.Increment },
-            { DreamProcOpcode.Decrement, DMOpcodeHandlers.Decrement },
-            { DreamProcOpcode.CompareEquivalent, DMOpcodeHandlers.CompareEquivalent },
-            { DreamProcOpcode.CompareNotEquivalent, DMOpcodeHandlers.CompareNotEquivalent },
-            { DreamProcOpcode.Throw, DMOpcodeHandlers.Throw },
-            { DreamProcOpcode.IsInRange, DMOpcodeHandlers.IsInRange },
-            { DreamProcOpcode.MassConcatenation, DMOpcodeHandlers.MassConcatenation },
-            { DreamProcOpcode.CreateTypeEnumerator, DMOpcodeHandlers.CreateTypeEnumerator },
-            { DreamProcOpcode.PushGlobalVars, DMOpcodeHandlers.PushGlobalVars },
-            { DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus },
-            { DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference },
-            { DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto },
-            { DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull },
-            { DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop },
-            { DreamProcOpcode.JumpIfTrueReference, DMOpcodeHandlers.JumpIfTrueReference },
-            { DreamProcOpcode.JumpIfFalseReference, DMOpcodeHandlers.JumpIfFalseReference },
-            { DreamProcOpcode.DereferenceField, DMOpcodeHandlers.DereferenceField },
-            { DreamProcOpcode.DereferenceIndex, DMOpcodeHandlers.DereferenceIndex },
-            { DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall },
-            { DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference },
-            { DreamProcOpcode.BitShiftLeftReference, DMOpcodeHandlers.BitShiftLeftReference },
-            { DreamProcOpcode.BitShiftRightReference, DMOpcodeHandlers.BitShiftRightReference },
-            { DreamProcOpcode.Try, DMOpcodeHandlers.Try },
-            { DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue },
-            { DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry },
-            { DreamProcOpcode.Gradient, DMOpcodeHandlers.Gradient },
-            { DreamProcOpcode.Sin, DMOpcodeHandlers.Sin },
-            { DreamProcOpcode.Cos, DMOpcodeHandlers.Cos },
-            { DreamProcOpcode.Tan, DMOpcodeHandlers.Tan },
-            { DreamProcOpcode.ArcSin, DMOpcodeHandlers.ArcSin },
-            { DreamProcOpcode.ArcCos, DMOpcodeHandlers.ArcCos },
-            { DreamProcOpcode.ArcTan, DMOpcodeHandlers.ArcTan },
-            { DreamProcOpcode.ArcTan2, DMOpcodeHandlers.ArcTan2 },
-            { DreamProcOpcode.Sqrt, DMOpcodeHandlers.Sqrt },
-            { DreamProcOpcode.Log, DMOpcodeHandlers.Log },
-            { DreamProcOpcode.LogE, DMOpcodeHandlers.LogE },
-            { DreamProcOpcode.Abs, DMOpcodeHandlers.Abs },
-            { DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign },
-            { DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep },
-            { DreamProcOpcode.Length, DMOpcodeHandlers.Length },
-            { DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir },
-            { DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint },
+            {DreamProcOpcode.BitShiftLeft, DMOpcodeHandlers.BitShiftLeft},
+            {DreamProcOpcode.PushType, DMOpcodeHandlers.PushType},
+            {DreamProcOpcode.PushString, DMOpcodeHandlers.PushString},
+            {DreamProcOpcode.FormatString, DMOpcodeHandlers.FormatString},
+            {DreamProcOpcode.SwitchCaseRange, DMOpcodeHandlers.SwitchCaseRange},
+            {DreamProcOpcode.PushReferenceValue, DMOpcodeHandlers.PushReferenceValue},
+            {DreamProcOpcode.Add, DMOpcodeHandlers.Add},
+            {DreamProcOpcode.Assign, DMOpcodeHandlers.Assign},
+            {DreamProcOpcode.Call, DMOpcodeHandlers.Call},
+            {DreamProcOpcode.MultiplyReference, DMOpcodeHandlers.MultiplyReference},
+            {DreamProcOpcode.JumpIfFalse, DMOpcodeHandlers.JumpIfFalse},
+            {DreamProcOpcode.JumpIfTrue, DMOpcodeHandlers.JumpIfTrue},
+            {DreamProcOpcode.Jump, DMOpcodeHandlers.Jump},
+            {DreamProcOpcode.CompareEquals, DMOpcodeHandlers.CompareEquals},
+            {DreamProcOpcode.Return, DMOpcodeHandlers.Return},
+            {DreamProcOpcode.PushNull, DMOpcodeHandlers.PushNull},
+            {DreamProcOpcode.Subtract, DMOpcodeHandlers.Subtract},
+            {DreamProcOpcode.CompareLessThan, DMOpcodeHandlers.CompareLessThan},
+            {DreamProcOpcode.CompareGreaterThan, DMOpcodeHandlers.CompareGreaterThan},
+            {DreamProcOpcode.BooleanAnd, DMOpcodeHandlers.BooleanAnd},
+            {DreamProcOpcode.BooleanNot, DMOpcodeHandlers.BooleanNot},
+            {DreamProcOpcode.DivideReference, DMOpcodeHandlers.DivideReference},
+            {DreamProcOpcode.Negate, DMOpcodeHandlers.Negate},
+            {DreamProcOpcode.Modulus, DMOpcodeHandlers.Modulus},
+            {DreamProcOpcode.Append, DMOpcodeHandlers.Append},
+            {DreamProcOpcode.CreateRangeEnumerator, DMOpcodeHandlers.CreateRangeEnumerator},
+            {DreamProcOpcode.Input, DMOpcodeHandlers.Input},
+            {DreamProcOpcode.CompareLessThanOrEqual, DMOpcodeHandlers.CompareLessThanOrEqual},
+            {DreamProcOpcode.CreateAssociativeList, DMOpcodeHandlers.CreateAssociativeList},
+            {DreamProcOpcode.Remove, DMOpcodeHandlers.Remove},
+            {DreamProcOpcode.DeleteObject, DMOpcodeHandlers.DeleteObject},
+            {DreamProcOpcode.PushResource, DMOpcodeHandlers.PushResource},
+            {DreamProcOpcode.CreateList, DMOpcodeHandlers.CreateList},
+            {DreamProcOpcode.CallStatement, DMOpcodeHandlers.CallStatement},
+            {DreamProcOpcode.BitAnd, DMOpcodeHandlers.BitAnd},
+            {DreamProcOpcode.CompareNotEquals, DMOpcodeHandlers.CompareNotEquals},
+            {DreamProcOpcode.PushProc, DMOpcodeHandlers.PushProc},
+            {DreamProcOpcode.Divide, DMOpcodeHandlers.Divide},
+            {DreamProcOpcode.Multiply, DMOpcodeHandlers.Multiply},
+            {DreamProcOpcode.BitXorReference, DMOpcodeHandlers.BitXorReference},
+            {DreamProcOpcode.BitXor, DMOpcodeHandlers.BitXor},
+            {DreamProcOpcode.BitOr, DMOpcodeHandlers.BitOr},
+            {DreamProcOpcode.BitNot, DMOpcodeHandlers.BitNot},
+            {DreamProcOpcode.Combine, DMOpcodeHandlers.Combine},
+            {DreamProcOpcode.CreateObject, DMOpcodeHandlers.CreateObject},
+            {DreamProcOpcode.BooleanOr, DMOpcodeHandlers.BooleanOr},
+            {DreamProcOpcode.CompareGreaterThanOrEqual, DMOpcodeHandlers.CompareGreaterThanOrEqual},
+            {DreamProcOpcode.SwitchCase, DMOpcodeHandlers.SwitchCase},
+            {DreamProcOpcode.Mask, DMOpcodeHandlers.Mask},
+            {DreamProcOpcode.Error, DMOpcodeHandlers.Error},
+            {DreamProcOpcode.IsInList, DMOpcodeHandlers.IsInList},
+            {DreamProcOpcode.PushFloat, DMOpcodeHandlers.PushFloat},
+            {DreamProcOpcode.ModulusReference, DMOpcodeHandlers.ModulusReference},
+            {DreamProcOpcode.CreateListEnumerator, DMOpcodeHandlers.CreateListEnumerator},
+            {DreamProcOpcode.Enumerate, DMOpcodeHandlers.Enumerate},
+            {DreamProcOpcode.DestroyEnumerator, DMOpcodeHandlers.DestroyEnumerator},
+            {DreamProcOpcode.Browse, DMOpcodeHandlers.Browse},
+            {DreamProcOpcode.BrowseResource, DMOpcodeHandlers.BrowseResource},
+            {DreamProcOpcode.OutputControl, DMOpcodeHandlers.OutputControl},
+            {DreamProcOpcode.BitShiftRight, DMOpcodeHandlers.BitShiftRight},
+            {DreamProcOpcode.CreateFilteredListEnumerator, DMOpcodeHandlers.CreateFilteredListEnumerator},
+            {DreamProcOpcode.Power, DMOpcodeHandlers.Power},
+            {DreamProcOpcode.Prompt, DMOpcodeHandlers.Prompt},
+            {DreamProcOpcode.Ftp, DMOpcodeHandlers.Ftp},
+            {DreamProcOpcode.Initial, DMOpcodeHandlers.Initial},
+            {DreamProcOpcode.IsType, DMOpcodeHandlers.IsType},
+            {DreamProcOpcode.LocateCoord, DMOpcodeHandlers.LocateCoord},
+            {DreamProcOpcode.Locate, DMOpcodeHandlers.Locate},
+            {DreamProcOpcode.IsNull, DMOpcodeHandlers.IsNull},
+            {DreamProcOpcode.Spawn, DMOpcodeHandlers.Spawn},
+            {DreamProcOpcode.OutputReference, DMOpcodeHandlers.OutputReference},
+            {DreamProcOpcode.Output, DMOpcodeHandlers.Output},
+            {DreamProcOpcode.JumpIfNullDereference, DMOpcodeHandlers.JumpIfNullDereference},
+            {DreamProcOpcode.Pop, DMOpcodeHandlers.Pop},
+            {DreamProcOpcode.Prob, DMOpcodeHandlers.Prob},
+            {DreamProcOpcode.IsSaved, DMOpcodeHandlers.IsSaved},
+            {DreamProcOpcode.PickUnweighted, DMOpcodeHandlers.PickUnweighted},
+            {DreamProcOpcode.PickWeighted, DMOpcodeHandlers.PickWeighted},
+            {DreamProcOpcode.Increment, DMOpcodeHandlers.Increment},
+            {DreamProcOpcode.Decrement, DMOpcodeHandlers.Decrement},
+            {DreamProcOpcode.CompareEquivalent, DMOpcodeHandlers.CompareEquivalent},
+            {DreamProcOpcode.CompareNotEquivalent, DMOpcodeHandlers.CompareNotEquivalent},
+            {DreamProcOpcode.Throw, DMOpcodeHandlers.Throw},
+            {DreamProcOpcode.IsInRange, DMOpcodeHandlers.IsInRange},
+            {DreamProcOpcode.MassConcatenation, DMOpcodeHandlers.MassConcatenation},
+            {DreamProcOpcode.CreateTypeEnumerator, DMOpcodeHandlers.CreateTypeEnumerator},
+            {DreamProcOpcode.PushGlobalVars, DMOpcodeHandlers.PushGlobalVars},
+            {DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus},
+            {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
+            {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
+            {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
+            {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},
+            {DreamProcOpcode.JumpIfTrueReference, DMOpcodeHandlers.JumpIfTrueReference},
+            {DreamProcOpcode.JumpIfFalseReference, DMOpcodeHandlers.JumpIfFalseReference},
+            {DreamProcOpcode.DereferenceField, DMOpcodeHandlers.DereferenceField},
+            {DreamProcOpcode.DereferenceIndex, DMOpcodeHandlers.DereferenceIndex},
+            {DreamProcOpcode.DereferenceCall, DMOpcodeHandlers.DereferenceCall},
+            {DreamProcOpcode.PopReference, DMOpcodeHandlers.PopReference},
+            {DreamProcOpcode.BitShiftLeftReference,DMOpcodeHandlers.BitShiftLeftReference},
+            {DreamProcOpcode.BitShiftRightReference, DMOpcodeHandlers.BitShiftRightReference},
+            {DreamProcOpcode.Try, DMOpcodeHandlers.Try},
+            {DreamProcOpcode.TryNoValue, DMOpcodeHandlers.TryNoValue},
+            {DreamProcOpcode.EndTry, DMOpcodeHandlers.EndTry},
+            {DreamProcOpcode.Gradient, DMOpcodeHandlers.Gradient},
+            {DreamProcOpcode.Sin, DMOpcodeHandlers.Sin},
+            {DreamProcOpcode.Cos, DMOpcodeHandlers.Cos},
+            {DreamProcOpcode.Tan, DMOpcodeHandlers.Tan},
+            {DreamProcOpcode.ArcSin, DMOpcodeHandlers.ArcSin},
+            {DreamProcOpcode.ArcCos, DMOpcodeHandlers.ArcCos},
+            {DreamProcOpcode.ArcTan, DMOpcodeHandlers.ArcTan},
+            {DreamProcOpcode.ArcTan2, DMOpcodeHandlers.ArcTan2},
+            {DreamProcOpcode.Sqrt, DMOpcodeHandlers.Sqrt},
+            {DreamProcOpcode.Log, DMOpcodeHandlers.Log},
+            {DreamProcOpcode.LogE, DMOpcodeHandlers.LogE},
+            {DreamProcOpcode.Abs, DMOpcodeHandlers.Abs},
+            {DreamProcOpcode.EnumerateNoAssign, DMOpcodeHandlers.EnumerateNoAssign},
+            {DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep},
+            {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
+            {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
+            {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
             // Peephole optimizer opcode handlers
-            { DreamProcOpcode.PushRefandJumpIfNotNull, DMOpcodeHandlers.PushReferenceAndJumpIfNotNull },
-            { DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef },
-            { DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop },
-            { DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField },
-            { DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs },
-            { DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats },
-            { DreamProcOpcode.PushNStrings, DMOpcodeHandlers.PushNStrings },
-            { DreamProcOpcode.PushNResources, DMOpcodeHandlers.PushNResources },
-            { DreamProcOpcode.PushStringFloat, DMOpcodeHandlers.PushStringFloat },
-            { DreamProcOpcode.SwitchOnFloat, DMOpcodeHandlers.SwitchOnFloat },
-            { DreamProcOpcode.SwitchOnString, DMOpcodeHandlers.SwitchOnString },
-            { DreamProcOpcode.JumpIfReferenceFalse, DMOpcodeHandlers.JumpIfReferenceFalse },
-            { DreamProcOpcode.PushNOfStringFloats, DMOpcodeHandlers.PushNOfStringFloat },
-            { DreamProcOpcode.CreateListNFloats, DMOpcodeHandlers.CreateListNFloats },
-            { DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings },
-            { DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs },
-            { DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources },
-            { DreamProcOpcode.JumpIfNotNull, DMOpcodeHandlers.JumpIfNotNull },
-            { DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect },
+            {DreamProcOpcode.PushRefandJumpIfNotNull, DMOpcodeHandlers.PushReferenceAndJumpIfNotNull},
+            {DreamProcOpcode.NullRef, DMOpcodeHandlers.NullRef},
+            {DreamProcOpcode.AssignPop, DMOpcodeHandlers.AssignPop},
+            {DreamProcOpcode.PushRefAndDereferenceField, DMOpcodeHandlers.PushReferenceAndDereferenceField},
+            {DreamProcOpcode.PushNRefs, DMOpcodeHandlers.PushNRefs},
+            {DreamProcOpcode.PushNFloats, DMOpcodeHandlers.PushNFloats},
+            {DreamProcOpcode.PushNStrings, DMOpcodeHandlers.PushNStrings},
+            {DreamProcOpcode.PushNResources, DMOpcodeHandlers.PushNResources},
+            {DreamProcOpcode.PushStringFloat, DMOpcodeHandlers.PushStringFloat},
+            {DreamProcOpcode.SwitchOnFloat, DMOpcodeHandlers.SwitchOnFloat},
+            {DreamProcOpcode.SwitchOnString, DMOpcodeHandlers.SwitchOnString},
+            {DreamProcOpcode.JumpIfReferenceFalse, DMOpcodeHandlers.JumpIfReferenceFalse},
+            {DreamProcOpcode.PushNOfStringFloats, DMOpcodeHandlers.PushNOfStringFloat},
+            {DreamProcOpcode.CreateListNFloats, DMOpcodeHandlers.CreateListNFloats},
+            {DreamProcOpcode.CreateListNStrings, DMOpcodeHandlers.CreateListNStrings},
+            {DreamProcOpcode.CreateListNRefs, DMOpcodeHandlers.CreateListNRefs},
+            {DreamProcOpcode.CreateListNResources, DMOpcodeHandlers.CreateListNResources},
+            {DreamProcOpcode.JumpIfNotNull, DMOpcodeHandlers.JumpIfNotNull},
+            {DreamProcOpcode.IsTypeDirect, DMOpcodeHandlers.IsTypeDirect},
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
-
         #endregion
 
         public DreamManager DreamManager => _proc.DreamManager;
@@ -338,7 +330,6 @@ namespace OpenDreamRuntime.Procs {
 
         /// <summary> This stores our 'src' value. May be null!</summary>
         public DreamObject? Instance;
-
         public DreamObject? Usr;
         public int ArgumentCount;
         private readonly Stack<int> _catchPosition = new();
@@ -364,8 +355,7 @@ namespace OpenDreamRuntime.Procs {
 
             OpcodeHandlers = new delegate*<DMProcState, ProcStatus>[256];
             foreach (var (dpo, handler) in _opcodeHandlers) {
-                OpcodeHandlers[(int)dpo] =
-                    (delegate*<DMProcState, ProcStatus>)handler.Method.MethodHandle.GetFunctionPointer();
+                OpcodeHandlers[(int) dpo] = (delegate*<DMProcState, ProcStatus>) handler.Method.MethodHandle.GetFunctionPointer();
             }
 
             var invalid = DMOpcodeHandlers.Invalid;
@@ -377,8 +367,7 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        public DMProcState() {
-        }
+        public DMProcState() { }
 
         private DMProcState(DMProcState other, DreamThread thread) {
             base.Initialize(thread, other.WaitFor);
@@ -394,8 +383,7 @@ namespace OpenDreamRuntime.Procs {
             Array.Copy(other._localVariables, _localVariables, other._localVariables.Length);
         }
 
-        public void Initialize(DMProc proc, DreamThread thread, int maxStackSize, DreamObject? instance,
-            DreamObject? usr, DreamProcArguments arguments) {
+        public void Initialize(DMProc proc, DreamThread thread, int maxStackSize, DreamObject? instance, DreamObject? usr, DreamProcArguments arguments) {
             base.Initialize(thread, (proc.Attributes & ProcAttributes.DisableWaitfor) != ProcAttributes.DisableWaitfor);
             _proc = proc;
             Instance = instance;
@@ -477,20 +465,15 @@ namespace OpenDreamRuntime.Procs {
             Result = value;
         }
 
-        public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments, bool pushResult = true) {
+        public ProcStatus Call(DreamProc proc, DreamObject? src, DreamProcArguments arguments) {
             if (proc is NativeProc p) {
                 // Skip a whole song and dance.
-                if (pushResult) {
-                    Push(p.Call(Thread, src, Usr, arguments));
-                } else {
-                    p.Call(Thread, src, Usr, arguments);
-                }
-
+                Push(p.Call(Thread, src, Usr, arguments));
                 return ProcStatus.Continue;
             }
 
             var state = proc.CreateState(Thread, src, Usr, arguments);
-            Thread.PushProcState(state, pushResult);
+            Thread.PushProcState(state);
             return ProcStatus.Called;
         }
 
@@ -568,7 +551,6 @@ namespace OpenDreamRuntime.Procs {
         }
 
         #region Stack
-
         private DreamValue[] _stack;
         private int _stackIndex = 0;
         public ReadOnlyMemory<DreamValue> DebugStack() => _stack.AsMemory(0, _stackIndex);
@@ -587,11 +569,6 @@ namespace OpenDreamRuntime.Procs {
 
         public void PopDrop() {
             _stackIndex -= 1;
-        }
-
-        public void PopRangeChecked() {
-            if (_stackIndex > 0)
-                _stackIndex -= 1;
         }
 
         /// <summary>
@@ -616,17 +593,14 @@ namespace OpenDreamRuntime.Procs {
         /// <param name="argumentsType">The source of the arguments</param>
         /// <param name="argumentStackSize">The amount of items the arguments have on the stack</param>
         /// <returns>The arguments in a DreamProcArguments struct</returns>
-        public DreamProcArguments PopProcArguments(DreamProc? proc, DMCallArgumentsType argumentsType,
-            int argumentStackSize) {
+        public DreamProcArguments PopProcArguments(DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
             var values = PopCount(argumentStackSize);
 
             return CreateProcArguments(values, proc, argumentsType, argumentStackSize);
         }
-
         #endregion
 
         #region Operands
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public int ReadByte() {
             var r = _proc.Bytecode[_pc];
@@ -695,13 +669,11 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public (DMCallArgumentsType Type, int StackSize) ReadProcArguments() {
-            return ((DMCallArgumentsType)ReadByte(), ReadInt());
+            return ((DMCallArgumentsType) ReadByte(), ReadInt());
         }
-
         #endregion
 
         #region References
-
         public bool IsNullDereference(DreamReference reference) {
             switch (reference.Type) {
                 case DMReference.Type.Field: {
@@ -731,8 +703,7 @@ namespace OpenDreamRuntime.Procs {
         /// as well as what it's being indexed with.
         /// </summary>
         /// <param name="reference">A ListIndex DMReference</param>
-        public void GetIndexReferenceValues(DreamReference reference, out DreamValue index, out DreamValue indexing,
-            bool peek = false) {
+        public void GetIndexReferenceValues(DreamReference reference, out DreamValue index, out DreamValue indexing, bool peek = false) {
             if (reference.Type != DMReference.Type.ListIndex)
                 ThrowReferenceNotListIndex();
 
@@ -749,21 +720,11 @@ namespace OpenDreamRuntime.Procs {
 
         public void AssignReference(DreamReference reference, DreamValue value) {
             switch (reference.Type) {
-                case DMReference.Type.Self:
-                    Result = value;
-                    break;
-                case DMReference.Type.Argument:
-                    SetArgument(reference.Value, value);
-                    break;
-                case DMReference.Type.Local:
-                    _localVariables[ArgumentCount + reference.Value] = value;
-                    break;
-                case DMReference.Type.SrcField:
-                    Instance.SetVariable(ResolveString(reference.Value), value);
-                    break;
-                case DMReference.Type.Global:
-                    DreamManager.Globals[reference.Value] = value;
-                    break;
+                case DMReference.Type.Self: Result = value; break;
+                case DMReference.Type.Argument: SetArgument(reference.Value, value); break;
+                case DMReference.Type.Local: _localVariables[ArgumentCount + reference.Value] = value; break;
+                case DMReference.Type.SrcField: Instance.SetVariable(ResolveString(reference.Value), value); break;
+                case DMReference.Type.Global: DreamManager.Globals[reference.Value] = value; break;
                 case DMReference.Type.Src:
                     //TODO: src can be assigned to non-DreamObject values
                     if (!value.TryGetValueAsDreamObject(out Instance)) {
@@ -776,7 +737,6 @@ namespace OpenDreamRuntime.Procs {
                     if (!value.TryGetValueAsDreamObject(out Usr)) {
                         ThrowCannotAssignUsrTo(value);
                     }
-
                     break;
                 case DMReference.Type.Field: {
                     DreamValue owner = Pop();
@@ -897,8 +857,7 @@ namespace OpenDreamRuntime.Procs {
                 case DMReference.Type.Field:
                     PopDrop();
                     return;
-                default:
-                    ThrowPopInvalidType(reference.Type);
+                default: ThrowPopInvalidType(reference.Type);
                     return;
             }
         }
@@ -984,7 +943,6 @@ namespace OpenDreamRuntime.Procs {
                     ++i;
                 }
             }
-
             // If the caller supplied excess positional arguments, they have no
             // name, but the debugger should report them anyways.
             while (i < ArgumentCount) {
@@ -1004,11 +962,9 @@ namespace OpenDreamRuntime.Procs {
                 if (info.Offset > _pc) {
                     break;
                 }
-
                 if (info.Remove is int remove) {
                     count -= remove;
                 }
-
                 if (info.Add is string add) {
                     names[count++] = add;
                 }
@@ -1025,8 +981,7 @@ namespace OpenDreamRuntime.Procs {
             // being there, so just stop after the named locals.
         }
 
-        public DreamProcArguments CreateProcArguments(ReadOnlySpan<DreamValue> values, DreamProc? proc,
-            DMCallArgumentsType argumentsType, int argumentStackSize) {
+        public DreamProcArguments CreateProcArguments(ReadOnlySpan<DreamValue> values, DreamProc? proc, DMCallArgumentsType argumentsType, int argumentStackSize) {
             switch (argumentsType) {
                 case DMCallArgumentsType.None:
                     return new DreamProcArguments();
@@ -1089,8 +1044,7 @@ namespace OpenDreamRuntime.Procs {
                     for (int i = 0; i < listValues.Count; i++) {
                         var value = listValues[i];
 
-                        if (argList.ContainsKey(value)) {
-                            //Named argument
+                        if (argList.ContainsKey(value)) { //Named argument
                             if (!value.TryGetValueAsString(out var argumentName))
                                 throw new Exception("List contains a non-string key, and cannot be used as an arglist");
 
@@ -1099,7 +1053,6 @@ namespace OpenDreamRuntime.Procs {
                                 throw new Exception($"{proc} has no argument named {argumentName}");
 
                             arguments[argumentIndex] = argList.GetValue(value);
-
                         } else { //Ordered argument
                             // image() or new /image() will skip the loc arg if the second arg is a string
                             // Really don't like this but it's BYOND behavior
@@ -1107,6 +1060,7 @@ namespace OpenDreamRuntime.Procs {
                             // Hopefully nothing depends on that though
                             if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
                                 skippingArg = true;
+
                             // TODO: Verify ordered args precede all named args
                             arguments[skippingArg ? i + 1 : i] = value;
                         }

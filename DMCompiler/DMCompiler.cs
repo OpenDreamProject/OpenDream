@@ -99,7 +99,6 @@ public static class DMCompiler {
                     preproc.DefineMacro(key, value);
                 }
             }
-
             DefineFatalErrors();
 
             // NB: IncludeFile pushes newly seen files to a stack, so push
@@ -107,9 +106,9 @@ public static class DMCompiler {
             for (var i = files.Count - 1; i >= 0; i--) {
                 string includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
+
                 preproc.IncludeFile(includeDir, fileName);
             }
-
             MainDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
@@ -118,24 +117,21 @@ public static class DMCompiler {
             if (!Settings.NoStandard) {
                 preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
             }
-
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
             string pragmaName;
             string pragmaDirectory;
-            if (Settings.PragmaFileOverride is not null) {
+            if(Settings.PragmaFileOverride is not null) {
                 pragmaDirectory = Path.GetDirectoryName(Settings.PragmaFileOverride);
                 pragmaName = Path.GetFileName(Settings.PragmaFileOverride);
             } else {
                 pragmaDirectory = dmStandardDirectory;
                 pragmaName = "DefaultPragmaConfig.dm";
             }
-
-            if (!File.Exists(Path.Join(pragmaDirectory, pragmaName))) {
+            if(!File.Exists(Path.Join(pragmaDirectory,pragmaName))) {
                 ForcedError($"Configuration file '{pragmaName}' not found.");
                 return null;
             }
-
-            preproc.IncludeFile(pragmaDirectory, pragmaName);
+            preproc.IncludeFile(pragmaDirectory,pragmaName);
             return preproc;
         }
 
@@ -305,7 +301,7 @@ public static class DMCompiler {
             globalListJson.Names = new List<string>(globalListJson.GlobalCount);
 
             // Approximate capacity (4/285 in tgstation, ~3%)
-            globalListJson.Globals = new Dictionary<int, object>((int)(DMObjectTree.Globals.Count * 0.03));
+            globalListJson.Globals = new Dictionary<int, object>((int) (DMObjectTree.Globals.Count * 0.03));
 
             for (int i = 0; i < DMObjectTree.Globals.Count; i++) {
                 DMVariable global = DMObjectTree.Globals[i];
@@ -318,7 +314,6 @@ public static class DMCompiler {
                     globalListJson.Globals.Add(i, globalJson);
                 }
             }
-
             compiledDream.Globals = globalListJson;
         }
 
@@ -343,7 +338,7 @@ public static class DMCompiler {
 
             try {
                 JsonSerializer.Serialize(outputFileHandle, compiledDream,
-                    new JsonSerializerOptions() { DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault });
+                    new JsonSerializerOptions() {DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingDefault});
 
                 return $"Saved to {outputFile}";
             } catch (Exception e) {
@@ -356,7 +351,7 @@ public static class DMCompiler {
 
     public static void DefineFatalErrors() {
         foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
-            if ((int)code < 1_000) {
+            if((int)code < 1_000) {
                 Config.ErrorConfig[code] = ErrorLevel.Error;
             }
         }
@@ -366,10 +361,9 @@ public static class DMCompiler {
     /// This method also enforces the rule that all emissions with codes less than 1000 are mandatory errors.
     /// </summary>
     public static void CheckAllPragmasWereSet() {
-        foreach (WarningCode code in Enum.GetValues<WarningCode>()) {
+        foreach(WarningCode code in Enum.GetValues<WarningCode>()) {
             if (!Config.ErrorConfig.ContainsKey(code)) {
-                ForcedWarning(
-                    $"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
+                ForcedWarning($"Warning #{(int)code:d4} '{code.ToString()}' was never declared as error, warning, notice, or disabled.");
                 Config.ErrorConfig.Add(code, ErrorLevel.Disabled);
             }
         }
@@ -395,7 +389,6 @@ public struct DMCompilerSettings {
     public bool Verbose = false;
     public bool DumpBytecode = false;
     public Dictionary<string, string>? MacroDefines = null;
-
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;
 

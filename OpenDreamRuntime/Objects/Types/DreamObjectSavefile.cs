@@ -108,6 +108,9 @@ public sealed class DreamObjectSavefile : DreamObject {
                 //create the file immediately
                 Flush();
             }
+        } else {
+            //if the savefile has already been loaded, just point to it
+            CurrentDir = _rootNode = SavefileDirectories[filename];
         }
 
         Savefiles.Add(this);
@@ -250,7 +253,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             return DeserializeJsonValue(CurrentDir);
         }
 
-        return DeserializeJsonValue(index.Split("/").Length == 1 ? CurrentDir[index] : SeekTo(index));
+        return DeserializeJsonValue(SeekTo(index));
     }
 
     public void SetSavefileValue(string? index, DreamValue value) {

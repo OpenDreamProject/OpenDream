@@ -15,109 +15,31 @@ namespace OpenDreamRuntime.Objects.Types;
 
 
 public sealed class DreamObjectSavefile : DreamObject {
-
-    public DreamObjectSavefile(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
-        CurrentDir = _rootNode = new DreamDir();
-    }
-
-    #region JSON Savefile Types
-
-    /// <summary>
-    /// Dumb structs for savefile
-    /// </summary>
-    [JsonPolymorphic]
-    [JsonDerivedType(typeof(DreamDir),  typeDiscriminator: "dir")]
-    [JsonDerivedType(typeof(DreamPrimitive), typeDiscriminator: "primitive")]
-    [JsonDerivedType(typeof(DreamObjectValue), typeDiscriminator: "object")]
-    [JsonDerivedType(typeof(DreamListValue), typeDiscriminator: "list")]
-    [JsonDerivedType(typeof(DreamPathValue), typeDiscriminator: "path")]
-    [JsonDerivedType(typeof(DreamFileValue), typeDiscriminator: "file")]
-    public abstract class DreamJsonValue {
-        //because dictionary implements its own serialization, we basically just store a dict internally and wrap the functions we need instead of inheriting from it
-        [JsonInclude]
-        private Dictionary<string, DreamJsonValue> nodes = new();
-
-        [JsonIgnore]
-        public DreamJsonValue this[string key] {
-            get => nodes[key];
-            set => nodes[key] = value;
-        }
-        public bool TryGetValue(string key, [MaybeNullWhen(false)] out DreamJsonValue value) => nodes.TryGetValue(key, out value);
-        [JsonIgnore]
-        public Dictionary<string, DreamJsonValue>.KeyCollection Keys => nodes.Keys;
-        [JsonIgnore]
-        public int Count => nodes.Count;
-
-    }
-
-    /// <summary>
-    /// Dummy type for directories
-    /// </summary>
-    public sealed class DreamDir : DreamJsonValue { }
-    /// <summary>
-    /// Standard byond types except objects
-    /// </summary>
-    public sealed class DreamPrimitive : DreamJsonValue {
-        [JsonInclude]
-        public DreamValue Value = DreamValue.Null;
-    }
-
-    /// <summary>
-    /// Unique type for Objects
-    /// </summary>
-    public sealed class DreamObjectValue : DreamJsonValue { }
-
-    public sealed class DreamListValue : DreamJsonValue {
-        [JsonInclude]
-        public List<DreamValue> Data = new List<DreamValue>();
-        [JsonInclude]
-        public Dictionary<DreamValue, DreamValue>? AssocData;
-    }
-
-    /// <summary>
-    /// Dummy type for objects that reference itself (it shows up as `object(..)`)
-    /// </summary>
-    public sealed class DreamPathValue : DreamJsonValue {
-        [JsonInclude]
-        public required string Path;
-    }
-
-    /// <summary>
-    /// DreamResource holder, encodes said file into base64
-    /// </summary>
-    public sealed class DreamFileValue : DreamJsonValue {
-        [JsonInclude]
-        public string? Name;
-        [JsonInclude]
-        public string? Ext;
-        [JsonInclude]
-        public required int Length;
-        [JsonInclude]
-        public int Crc32 = 0x00000000;
-        [JsonInclude]
-        public string Encoding = "base64";
-        [JsonInclude]
-        public required string Data;
-    }
-
-    #endregion
-
-    public override bool ShouldCallNew => false;
+    private static DreamObjectTree _objectTree;
 
     /// <summary>
     /// Cache list for all savefiles, used to keep track for datums using it
     /// </summary>
     public static readonly List<DreamObjectSavefile> Savefiles = new();
 
+    /// <summary>
+    /// Savefiles that have been modified since the last flush, processed at the end of the tick
+    /// </summary>
     private static readonly HashSet<DreamObjectSavefile> _savefilesToFlush = new();
 
     private static ISawmill? _sawmill;
 
+
+    public override bool ShouldCallNew => false;
+    /// <summary>
     /// Temporary savefiles should be deleted when the DreamObjectSavefile is deleted. Temporary savefiles can be created by creating a new savefile datum with a null filename or an entry in the world's resource cache
+    /// </summary>
     private bool _isTemporary;
 
-    //basically a global database of savefile contents, which each savefile datum points to - this preserves state between savefiles and reduces memory usage
-    private static readonly Dictionary<string, DreamJsonValue> SavefileDirectories = new();
+    /// <summary>
+    /// basically a global database of savefile contents, which each savefile datum points to - this preserves state between savefiles and reduces memory usage
+    /// </summary>
+    private static readonly Dictionary<string, SFDreamJsonValue> SavefileDirectories = new();
 
     /// <summary>
     /// Real savefile location on the host OS
@@ -127,12 +49,12 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// The current savefile data holder - the root of the savefile tree
     /// </summary>
-    private DreamJsonValue _rootNode = default!;
+    private SFDreamJsonValue _rootNode = default!;
 
     /// <summary>
     /// The current savefile' working dir. This could be a generic primitive
     /// </summary>
-    public DreamJsonValue CurrentDir;
+    public SFDreamJsonValue CurrentDir;
 
     private string _currentPath = "/";
 
@@ -154,6 +76,12 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
     }
 
+
+    public DreamObjectSavefile(DreamObjectDefinition objectDefinition) : base(objectDefinition) {
+        CurrentDir = _rootNode = new SFDreamDir();
+        _objectTree ??= objectDefinition.ObjectTree;
+    }
+
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
 
@@ -172,7 +100,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             var data = Resource.ReadAsString();
 
             if (!string.IsNullOrEmpty(data)) {
-                CurrentDir = _rootNode = JsonSerializer.Deserialize<DreamJsonValue>(data)!;
+                CurrentDir = _rootNode = JsonSerializer.Deserialize<SFDreamJsonValue>(data)!;
                 SavefileDirectories.Add(filename, _rootNode);
             } else {
                 //_rootNode is created in constructor
@@ -293,14 +221,14 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public void Flush() {
         Resource.Clear();
-        Resource.Output(new DreamValue(JsonSerializer.Serialize<DreamJsonValue>(_rootNode)));
+        Resource.Output(new DreamValue(JsonSerializer.Serialize<SFDreamJsonValue>(_rootNode)));
     }
 
     /// <summary>
     /// Attempts to go to said path relative to CurrentPath (you still have to set CurrentDir)
     /// </summary>
-    private DreamJsonValue SeekTo(string to) {
-        DreamJsonValue tempDir = _rootNode;
+    private SFDreamJsonValue SeekTo(string to) {
+        SFDreamJsonValue tempDir = _rootNode;
 
         var searchPath = new DreamPath(_currentPath).AddToPath(to).PathString; //relative path
         if(to.StartsWith("/")) //absolute path
@@ -310,7 +238,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             if(path == string.Empty)
                 continue;
             if (!tempDir.TryGetValue(path, out var newDir)) {
-                newDir = tempDir[path] = new DreamDir();
+                newDir = tempDir[path] = new SFDreamDir();
             }
             tempDir = newDir;
         }
@@ -354,29 +282,29 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Turn the json magic value into real byond values
     /// </summary>
-    public DreamValue RealizeJsonValue(DreamJsonValue value) {
+    public DreamValue RealizeJsonValue(SFDreamJsonValue value) {
         switch (value) {
-            case DreamFileValue dreamFileValue:
-                return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(dreamFileValue.Data)));
-            case DreamListValue dreamListValue:
+            case SFDreamFileValue SFDreamFileValue:
+                return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(SFDreamFileValue.Data)));
+            case SFDreamListValue SFDreamListValue:
                 var l = ObjectTree.CreateList();
-                if (dreamListValue.AssocData != null) {
-                    foreach (var kv in dreamListValue.AssocData)
+                if (SFDreamListValue.AssocData != null) {
+                    foreach (var kv in SFDreamListValue.AssocData)
                     {
                         l.SetValue(kv.Key, kv.Value);
                     }
                 } else {
-                    for (var i = 0; i < dreamListValue.Data.Count; i++) {
-                        l.SetValue(new DreamValue(i+1), dreamListValue.Data[i], true);
+                    for (var i = 0; i < SFDreamListValue.Data.Count; i++) {
+                        l.SetValue(new DreamValue(i+1), SFDreamListValue.Data[i], true);
                     }
                 }
                 return new DreamValue(l);
-            case DreamObjectValue dreamObjectValue:
+            case SFDreamObjectValue SFDreamObjectValue:
                 // todo DOV should store WHERE is the actual path for data (normaly its ../'.0')
-                if (!dreamObjectValue.TryGetValue(".0", out var saveData))
+                if (!SFDreamObjectValue.TryGetValue(".0", out var saveData))
                     break;
 
-                if (saveData.TryGetValue("type", out var unserialType) && unserialType is DreamPrimitive primtype) {
+                if (saveData.TryGetValue("type", out var unserialType) && unserialType is SFDreamPrimitive primtype) {
                     primtype.Value.MustGetValueAsType();
                     var newObj = GetProc("New").Spawn(this, new DreamProcArguments(primtype.Value));
                     var dObj = newObj.MustGetValueAsDreamObject()!;
@@ -384,7 +312,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     foreach (var key in dObj.ObjectDefinition.Variables.Keys) {
                         DreamValue val = DreamValue.Null;
                         if (saveData.TryGetValue(key, out var dreamObjVal)) {
-                            val = (dreamObjVal is DreamPathValue) ? newObj : RealizeJsonValue(dreamObjVal);
+                            val = (dreamObjVal is SFDreamPathValue) ? newObj : RealizeJsonValue(dreamObjVal);
                         }
                         dObj.SetVariable(key, val);
                     }
@@ -392,8 +320,14 @@ public sealed class DreamObjectSavefile : DreamObject {
                     return newObj;
                 }
                 break;
-            case DreamPrimitive dreamPrimitive:
-                return dreamPrimitive.Value;
+            case SFDreamType SFDreamTypeValue:
+                if(_objectTree.TryGetTreeEntry(SFDreamTypeValue.TypePath, out var type)) {
+                    return new DreamValue(type);
+                } else {
+                    return DreamValue.Null;
+                }
+            case SFDreamPrimitive SFDreamPrimitive:
+                return SFDreamPrimitive.Value;
         }
         return DreamValue.Null;
     }
@@ -401,22 +335,23 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Serialize byond values/objects into savefile data
     /// </summary>
-    public DreamJsonValue SerializeDreamValue(DreamValue val) {
+    public SFDreamJsonValue SerializeDreamValue(DreamValue val) {
         switch (val.Type) {
             case DreamValue.DreamValueType.String:
             case DreamValue.DreamValueType.Float:
+                return new SFDreamPrimitive { Value = val };
             case DreamValue.DreamValueType.DreamType:
-                return new DreamPrimitive { Value = val };
+                return new SFDreamType { TypePath = val.MustGetValueAsType().Path };
             case DreamValue.DreamValueType.DreamResource:
                 var dreamResource = val.MustGetValueAsDreamResource();
-                return new DreamFileValue {
+                return new SFDreamFileValue {
                     Length = dreamResource.ResourceData!.Length,
                     // Crc32 =  new System.IO.Hashing.Crc32().
                     Data = Convert.ToBase64String(dreamResource.ResourceData)
                 };
             case DreamValue.DreamValueType.DreamObject:
                 if (val.TryGetValueAsDreamList(out var dreamList)) {
-                    return new DreamListValue {
+                    return new SFDreamListValue {
                         Data = dreamList.GetValues(),
                         AssocData = dreamList.IsAssociative ? dreamList.GetAssociativeValues() : null
                     };
@@ -433,8 +368,8 @@ public sealed class DreamObjectSavefile : DreamObject {
                 // tmpSavefileReal!.SetSavefileValue("type", theObj.GetVariable("type"));
                 // tmpSavefileReal.Delete();
 
-                // return new DreamObjectValue {
-                //     [".0"] = new DreamPrimitive() //tmpSavefileReal.Savefile
+                // return new SFDreamObjectValue {
+                //     [".0"] = new SFDreamPrimitive() //tmpSavefileReal.Savefile
                 // };
                 break;
             // noop
@@ -443,7 +378,99 @@ public sealed class DreamObjectSavefile : DreamObject {
                 break;
         }
 
-        return new DreamPrimitive();
+        return new SFDreamPrimitive();
     }
+
+
+
+    #region JSON Savefile Types
+
+    /// <summary>
+    /// Dumb structs for savefile
+    /// </summary>
+    [JsonPolymorphic]
+    [JsonDerivedType(typeof(SFDreamDir),  typeDiscriminator: "dir")]
+    [JsonDerivedType(typeof(SFDreamPrimitive), typeDiscriminator: "primitive")]
+    [JsonDerivedType(typeof(SFDreamType), typeDiscriminator: "typepath")]
+    [JsonDerivedType(typeof(SFDreamObjectValue), typeDiscriminator: "object")]
+    [JsonDerivedType(typeof(SFDreamListValue), typeDiscriminator: "list")]
+    [JsonDerivedType(typeof(SFDreamPathValue), typeDiscriminator: "path")]
+    [JsonDerivedType(typeof(SFDreamFileValue), typeDiscriminator: "file")]
+    public abstract class SFDreamJsonValue {
+        //because dictionary implements its own serialization, we basically just store a dict internally and wrap the functions we need instead of inheriting from it
+        [JsonInclude]
+        private Dictionary<string, SFDreamJsonValue> nodes = new();
+
+        [JsonIgnore]
+        public SFDreamJsonValue this[string key] {
+            get => nodes[key];
+            set => nodes[key] = value;
+        }
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out SFDreamJsonValue value) => nodes.TryGetValue(key, out value);
+        [JsonIgnore]
+        public Dictionary<string, SFDreamJsonValue>.KeyCollection Keys => nodes.Keys;
+        [JsonIgnore]
+        public int Count => nodes.Count;
+
+    }
+
+    /// <summary>
+    /// Dummy type for directories
+    /// </summary>
+    public sealed class SFDreamDir : SFDreamJsonValue { }
+    /// <summary>
+    /// Standard byond types except objects and type paths
+    /// </summary>
+    public sealed class SFDreamPrimitive : SFDreamJsonValue {
+        [JsonInclude]
+        public DreamValue Value = DreamValue.Null;
+    }
+    /// <summary>
+    /// Standard byond type paths
+    /// </summary>
+    public sealed class SFDreamType : SFDreamJsonValue {
+        [JsonInclude]
+        public string TypePath = "";
+    }
+
+    /// <summary>
+    /// Unique type for Objects
+    /// </summary>
+    public sealed class SFDreamObjectValue : SFDreamJsonValue { }
+
+    public sealed class SFDreamListValue : SFDreamJsonValue {
+        [JsonInclude]
+        public List<DreamValue> Data = new List<DreamValue>();
+        [JsonInclude]
+        public Dictionary<DreamValue, DreamValue>? AssocData;
+    }
+
+    /// <summary>
+    /// Dummy type for objects that reference itself (it shows up as `object(..)`)
+    /// </summary>
+    public sealed class SFDreamPathValue : SFDreamJsonValue {
+        [JsonInclude]
+        public required string Path;
+    }
+
+    /// <summary>
+    /// DreamResource holder, encodes said file into base64
+    /// </summary>
+    public sealed class SFDreamFileValue : SFDreamJsonValue {
+        [JsonInclude]
+        public string? Name;
+        [JsonInclude]
+        public string? Ext;
+        [JsonInclude]
+        public required int Length;
+        [JsonInclude]
+        public int Crc32 = 0x00000000;
+        [JsonInclude]
+        public string Encoding = "base64";
+        [JsonInclude]
+        public required string Data;
+    }
+
+    #endregion
 
 }

@@ -92,7 +92,7 @@ internal static class DreamProcNativeSavefile {
         var oldPath = savefile.CurrentPath;
         var key = savefile.CurrentPath.Split('/').Last();
         switch(value) {
-            case DreamObjectSavefile.DreamPrimitive primitiveValue:
+            case DreamObjectSavefile.SFDreamPrimitive primitiveValue:
                 if(primitiveValue.Value.IsNull)
                     result += $"{new string('\t', indent)}{key} = null\n";
                 else switch(primitiveValue.Value.Type){
@@ -104,7 +104,7 @@ internal static class DreamProcNativeSavefile {
                         break;
                 }
                 break;
-            case DreamObjectSavefile.DreamFileValue fileValue:
+            case DreamObjectSavefile.SFDreamFileValue fileValue:
                 result += $"{new string('\t', indent)}{key} = \nfiledata(\"";
                 result += $"name={fileValue.Name};";
                 result += $"ext={fileValue.Ext};";
@@ -114,9 +114,9 @@ internal static class DreamProcNativeSavefile {
                 //result += $"encoding=base64\",{{\"{Convert.ToBase64String(fileValue.Data)}\"}}";
                 result += ")\n";
                 break;
-            case DreamObjectSavefile.DreamObjectValue objectValue:
+            case DreamObjectSavefile.SFDreamObjectValue objectValue:
                 throw new NotImplementedException($"ExportText() can't do objects yet TODO");
-            case DreamObjectSavefile.DreamJsonValue jsonValue:
+            case DreamObjectSavefile.SFDreamJsonValue jsonValue:
                 result += $"{new string('\t', indent)}{key}\n";
                 break;
             default:

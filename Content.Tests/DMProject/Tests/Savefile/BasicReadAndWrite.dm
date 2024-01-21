@@ -25,10 +25,10 @@
 	// test list()
 	var/list/array = list("3.14159", "pizza")
 	S["pie"] << array
-	ASSERT(S["pie"], array)
+	ASSERT(S["pie"] ~= array)
 	var/list/assoc = list("6.28" = "pizza", "aaaaa" = "bbbbbbb")
 	S["pie2"] << assoc
-	ASSERT(S["pie2"] == assoc)
+	ASSERT(S["pie2"] ~= assoc)
 
 	// Shouldn't evaluate CRASH
 	S2?["ABC"] << CRASH("rhs should not evaluate due to null-conditional")

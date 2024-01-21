@@ -29,7 +29,10 @@
 	S.Flush()
 
 	// test loading
-	S2 = new("savefile.sav")
+	//gotta copy it because otherwise we're accessing the cache
+	fcopy("savefile.sav", "savefile2.sav")
+	ASSERT(fexists("savefile2.sav"))
+	S2 = new("savefile2.sav")
 	ASSERT(S2["ABC"] == 5)
 	ASSERT(S2["DEF"] == 10)
 	ASSERT(S2["pathymcpathface"] == /datum/foobar)

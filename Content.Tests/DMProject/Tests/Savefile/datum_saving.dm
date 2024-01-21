@@ -29,11 +29,12 @@
 	ASSERT(S["mapdata/.0/current_map"] == null)
 	ASSERT(S["mapdata/.0/default_cube"] == null)
 
-	var/datum/foo/W = new()
+	var/datum/foo/W 
 	S["mapdata"] >> W
 	
 	// load test
 	ASSERT(istype(W))
+	ASSERT(W != F) //they are equivelant, but not the same datum
 	ASSERT(W.best_map == "pl_pier")
 	ASSERT(W.worst_map == null)
 	ASSERT(W.null_me == null)

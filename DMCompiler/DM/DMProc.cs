@@ -1,5 +1,7 @@
-using DMCompiler.DM.Visitors;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
+using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
@@ -7,17 +9,17 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
         public class LocalVariable {
+            public readonly string Name;
             public readonly int Id;
             public readonly bool IsParameter;
             public DreamPath? Type;
 
-            public LocalVariable(int id, bool isParameter, DreamPath? type) {
+            public LocalVariable(string name, int id, bool isParameter, DreamPath? type) {
+                Name = name;
                 Id = id;
                 IsParameter = isParameter;
                 Type = type;
@@ -27,7 +29,8 @@ namespace DMCompiler.DM {
         public sealed class LocalConstVariable : LocalVariable {
             public readonly Expressions.Constant Value;
 
-            public LocalConstVariable(int id, DreamPath? type, Expressions.Constant value) : base(id, false, type) {
+            public LocalConstVariable(string name, int id, DreamPath? type, Expressions.Constant value)
+                : base(name, id, false, type) {
                 Value = value;
             }
         }
@@ -192,10 +195,6 @@ namespace DMCompiler.DM {
             return procDefinition;
         }
 
-        public string GetLocalVarName(int index) {
-            return _localVariableNames[index].Add;
-        }
-
         public void WaitFor(bool waitFor) {
             if (waitFor) {
                 // "waitfor" is true by default
@@ -227,7 +226,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
-                _parameters.Add(name, new LocalVariable(_parameters.Count, true, type));
+                _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type));
             }
         }
 
@@ -320,7 +319,7 @@ namespace DMCompiler.DM {
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(localVarId, false, type));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
@@ -328,7 +327,7 @@ namespace DMCompiler.DM {
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(localVarId, type, value));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalConstVariable(name, localVarId, type, value));
         }
 
         public LocalVariable? GetLocalVariable(string name) {

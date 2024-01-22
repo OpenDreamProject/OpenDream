@@ -29,7 +29,7 @@ public sealed class AtomManager {
     private int _nextEmptyAreaSlot;
     private int _nextEmptyTurfSlot;
 
-    private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
+    private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
     private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
@@ -196,13 +196,26 @@ public sealed class AtomManager {
         return entity;
     }
 
-    public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable) {
+    public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObjectMovable? movable) {
         return _entityToAtom.TryGetValue(entity, out movable);
     }
 
     public void DeleteMovableEntity(DreamObjectMovable movable) {
         _entityToAtom.Remove(movable.Entity);
         _entityManager.DeleteEntity(movable.Entity);
+    }
+
+    public DreamObjectAtom? GetAtom(AtomReference reference) {
+        switch (reference.AtomType) {
+            case AtomReference.RefType.Entity:
+                TryGetMovableFromEntity(_entityManager.GetEntity(reference.Entity), out var atom);
+                return atom;
+            case AtomReference.RefType.Turf:
+                _dreamMapManager.TryGetTurfAt((reference.TurfX, reference.TurfY), reference.TurfZ, out var turf);
+                return turf;
+        }
+
+        return null;
     }
 
     public bool IsValidAppearanceVar(string name) {
@@ -315,7 +328,7 @@ public sealed class AtomManager {
                 break;
             case "glide_size":
                 value.TryGetValueAsFloat(out float glideSize);
-                appearance.GlideSize = (byte) glideSize;
+                appearance.GlideSize = glideSize;
                 break;
             case "render_source":
                 value.TryGetValueAsString(out appearance.RenderSource);

@@ -981,6 +981,9 @@ namespace OpenDreamRuntime.Procs {
 
                     var argumentCount = argumentStackSize / 2;
                     var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
+                    var skippingArg = false;
+                    var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
+                                             proc == Proc.DreamManager.ImageFactoryProc;
 
                     Array.Fill(arguments, DreamValue.Null);
                     for (int i = 0; i < argumentCount; i++) {
@@ -988,7 +991,15 @@ namespace OpenDreamRuntime.Procs {
                         var value = values[i*2+1];
 
                         if (key.IsNull) {
-                            arguments[i] = value;
+                            // image() or new /image() will skip the loc arg if the second arg is a string
+                            // Really don't like this but it's BYOND behavior
+                            // Note that the way we're doing it leads to different argument placement when there are no named args
+                            // Hopefully nothing depends on that though
+                            // TODO: We aim to do sanity improvements in the future, yea? Big one here
+                            if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
+                                skippingArg = true;
+
+                            arguments[skippingArg ? i + 1 : i] = value;
                         } else {
                             string argumentName = key.MustGetValueAsString();
                             int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
@@ -1009,6 +1020,9 @@ namespace OpenDreamRuntime.Procs {
 
                     var listValues = argList.GetValues();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
+                    var skippingArg = false;
+                    var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
+                                             proc == Proc.DreamManager.ImageFactoryProc;
 
                     Array.Fill(arguments, DreamValue.Null);
                     for (int i = 0; i < listValues.Count; i++) {
@@ -1024,8 +1038,15 @@ namespace OpenDreamRuntime.Procs {
 
                             arguments[argumentIndex] = argList.GetValue(value);
                         } else { //Ordered argument
+                            // image() or new /image() will skip the loc arg if the second arg is a string
+                            // Really don't like this but it's BYOND behavior
+                            // Note that the way we're doing it leads to different argument placement when there are no named args
+                            // Hopefully nothing depends on that though
+                            if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
+                                skippingArg = true;
+
                             // TODO: Verify ordered args precede all named args
-                            arguments[i] = value;
+                            arguments[skippingArg ? i + 1 : i] = value;
                         }
                     }
 

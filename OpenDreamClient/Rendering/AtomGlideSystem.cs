@@ -8,14 +8,10 @@ namespace OpenDreamClient.Rendering;
 /// Disables RobustToolbox's transform lerping and replaces it with our own gliding
 /// </summary>
 public sealed class AtomGlideSystem : EntitySystem {
-    private sealed class Glide {
-        public readonly TransformComponent Transform;
+    private sealed class Glide(TransformComponent transform, DMISpriteComponent sprite) {
+        public readonly TransformComponent Transform = transform;
+        public readonly DMISpriteComponent Sprite = sprite;
         public Vector2 EndPos;
-        public float MovementPerFrame;
-
-        public Glide(TransformComponent transform) {
-            Transform = transform;
-        }
     }
 
     [Dependency] private readonly TransformSystem _transformSystem = default!;
@@ -46,23 +42,31 @@ public sealed class AtomGlideSystem : EntitySystem {
 
         for (int i = 0; i < _currentGlides.Count; i++) {
             var glide = _currentGlides[i];
+
+            if (glide.Sprite.Icon.Appearance == null) {
+                _currentGlides.RemoveSwap(i--);
+                continue;
+            }
+
             var currentPos = glide.Transform.LocalPosition;
             var newPos = currentPos;
+            var movementSpeed = CalculateMovementSpeed(glide.Sprite.Icon.Appearance.GlideSize);
+            var movement = movementSpeed * frameTime;
 
             // Move X towards the end position at a constant speed
             if (!MathHelper.CloseTo(currentPos.X, glide.EndPos.X)) {
                 if (currentPos.X < glide.EndPos.X)
-                    newPos.X = Math.Min(glide.EndPos.X, newPos.X + glide.MovementPerFrame);
+                    newPos.X = Math.Min(glide.EndPos.X, newPos.X + movement);
                 else if (currentPos.X > glide.EndPos.X)
-                    newPos.X = Math.Max(glide.EndPos.X, newPos.X - glide.MovementPerFrame);
+                    newPos.X = Math.Max(glide.EndPos.X, newPos.X - movement);
             }
 
             // Move Y towards the end position at a constant speed
             if (!MathHelper.CloseTo(currentPos.Y, glide.EndPos.Y)) {
                 if (currentPos.Y < glide.EndPos.Y)
-                    newPos.Y = Math.Min(glide.EndPos.Y, newPos.Y + glide.MovementPerFrame);
+                    newPos.Y = Math.Min(glide.EndPos.Y, newPos.Y + movement);
                 else if (currentPos.Y > glide.EndPos.Y)
-                    newPos.Y = Math.Max(glide.EndPos.Y, newPos.Y - glide.MovementPerFrame);
+                    newPos.Y = Math.Max(glide.EndPos.Y, newPos.Y - movement);
             }
 
             if (newPos.EqualsApprox(glide.EndPos)) { // Glide is finished
@@ -84,7 +88,7 @@ public sealed class AtomGlideSystem : EntitySystem {
     private void OnTransformMove(ref MoveEvent e) {
         if (_ignoreMoveEvent || e.ParentChanged)
             return;
-        if (!_spriteQuery.TryGetComponent(e.Sender, out var sprite))
+        if (!_spriteQuery.TryGetComponent(e.Sender, out var sprite) || sprite.Icon?.Appearance is null)
             return;
 
         _ignoreMoveEvent = true;
@@ -114,7 +118,7 @@ public sealed class AtomGlideSystem : EntitySystem {
         }
 
         if (glide == null) {
-            glide = new(e.Component);
+            glide = new(e.Component, sprite);
             _currentGlides.Add(glide);
         }
 
@@ -123,18 +127,15 @@ public sealed class AtomGlideSystem : EntitySystem {
         _transformSystem.SetLocalPositionNoLerp(e.Sender, startingFrom, e.Component);
 
         glide.EndPos = glidingTo;
-        glide.MovementPerFrame = CalculateMovementPerFrame(sprite.Icon.Appearance.GlideSize);
         _ignoreMoveEvent = false;
     }
 
-    private static float CalculateMovementPerFrame(byte glideSize) {
+    private static float CalculateMovementSpeed(float glideSize) {
         if (glideSize == 0)
             glideSize = 4; // TODO: 0 gives us "automated control" over this value, not just setting it to 4
 
-        // Assume a 60 FPS client and a 20 TPS server
-        // TODO: Support other FPS and TPS
-        var scaling = (60f / 20f);
-
-        return glideSize / scaling / EyeManager.PixelsPerMeter;
+        // Assume a 20 TPS server
+        // TODO: Support other TPS
+        return glideSize / EyeManager.PixelsPerMeter * 20f;
     }
 }

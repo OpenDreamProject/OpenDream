@@ -214,6 +214,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x & y
     sealed class BinaryAnd : BinaryOp {
+        public override bool PathIsFuzzy => true;
+
         public BinaryAnd(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 

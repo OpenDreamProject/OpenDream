@@ -3,69 +3,90 @@ using System.Web;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Input;
-using Robust.Shared.Player;
 
-namespace OpenDreamRuntime.Input {
-    internal sealed class MouseInputSystem : SharedMouseInputSystem {
-        [Dependency] private readonly AtomManager _atomManager = default!;
-        [Dependency] private readonly DreamManager _dreamManager = default!;
-        [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
-        [Dependency] private readonly IEntityManager _entityManager = default!;
+namespace OpenDreamRuntime.Input;
 
-        public override void Initialize() {
-            base.Initialize();
+internal sealed class MouseInputSystem : SharedMouseInputSystem {
+    [Dependency] private readonly AtomManager _atomManager = default!;
+    [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly IDreamMapManager _mapManager = default!;
 
-            SubscribeNetworkEvent<EntityClickedEvent>(OnEntityClicked);
-            SubscribeNetworkEvent<TurfClickedEvent>(OnTurfClicked);
-            SubscribeNetworkEvent<StatClickedEvent>(OnStatClicked);
+    public override void Initialize() {
+        base.Initialize();
+
+        SubscribeNetworkEvent<AtomClickedEvent>(OnAtomClicked);
+        SubscribeNetworkEvent<AtomDraggedEvent>(OnAtomDragged);
+        SubscribeNetworkEvent<StatClickedEvent>(OnStatClicked);
+    }
+
+    private void OnAtomClicked(AtomClickedEvent e, EntitySessionEventArgs sessionEvent) {
+        var atom = _atomManager.GetAtom(e.Atom);
+        if (atom == null)
+            return;
+
+        HandleAtomClick(e, atom, sessionEvent);
+    }
+
+    private void OnAtomDragged(AtomDraggedEvent e, EntitySessionEventArgs sessionEvent) {
+        var src = _atomManager.GetAtom(e.SrcAtom);
+        if (src == null)
+            return;
+
+        var over = (e.OverAtom != null) ? _atomManager.GetAtom(e.OverAtom.Value) : null;
+        var session = sessionEvent.SenderSession;
+        var connection = _dreamManager.GetConnectionBySession(session);
+        var usr = connection.Mob;
+        var srcPos = _atomManager.GetAtomPosition(src);
+
+        _mapManager.TryGetTurfAt((srcPos.X, srcPos.Y), srcPos.Z, out var srcLoc);
+
+        DreamValue overLocValue = DreamValue.Null;
+        if (over != null) {
+            var overPos = _atomManager.GetAtomPosition(over);
+
+            _mapManager.TryGetTurfAt((overPos.X, overPos.Y), overPos.Z, out var overLoc);
+            overLocValue = new(overLoc);
         }
 
-        private void OnEntityClicked(EntityClickedEvent e, EntitySessionEventArgs sessionEvent) {
-            EntityUid ent = _entityManager.GetEntity(e.NetEntity);
-            if (!_atomManager.TryGetMovableFromEntity(ent, out var atom))
-                return;
+        connection.Client?.SpawnProc("MouseDrop", usr: usr,
+            new DreamValue(src),
+            new DreamValue(over),
+            new DreamValue(srcLoc), // TODO: Location can be a skin element
+            overLocValue,
+            DreamValue.Null, // TODO: src_control and over_control
+            DreamValue.Null,
+            new DreamValue(ConstructClickParams(e.Params)));
+    }
 
-            HandleAtomClick(e, atom, sessionEvent);
-        }
+    private void OnStatClicked(StatClickedEvent e, EntitySessionEventArgs sessionEvent) {
+        if (!_dreamManager.LocateRef(e.AtomRef).TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
+            return;
 
-        private void OnTurfClicked(TurfClickedEvent e, EntitySessionEventArgs sessionEvent) {
-            if (!_dreamMapManager.TryGetTurfAt(e.Position, e.Z, out var turf))
-                return;
+        HandleAtomClick(e, dreamObject, sessionEvent);
+    }
 
-            HandleAtomClick(e, turf, sessionEvent);
-        }
+    private void HandleAtomClick(IAtomMouseEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {
+        var session = sessionEvent.SenderSession;
+        var connection = _dreamManager.GetConnectionBySession(session);
+        var usr = connection.Mob;
 
-        private void OnStatClicked(StatClickedEvent e, EntitySessionEventArgs sessionEvent) {
-            if (!_dreamManager.LocateRef(e.AtomRef).TryGetValueAsDreamObject<DreamObjectAtom>(out var dreamObject))
-                return;
+        connection.Client?.SpawnProc("Click", usr: usr,
+            new DreamValue(atom),
+            DreamValue.Null,
+            DreamValue.Null,
+            new DreamValue(ConstructClickParams(e.Params)));
+    }
 
-            HandleAtomClick(e, dreamObject, sessionEvent);
-        }
+    private string ConstructClickParams(ClickParams clickParams) {
+        NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(string.Empty);
+        if (clickParams.Middle) paramsBuilder.Add("middle", "1");
+        if (clickParams.Shift) paramsBuilder.Add("shift", "1");
+        if (clickParams.Ctrl) paramsBuilder.Add("ctrl", "1");
+        if (clickParams.Alt) paramsBuilder.Add("alt", "1");
+        paramsBuilder.Add("screen-loc", clickParams.ScreenLoc.ToString());
+        paramsBuilder.Add("icon-x", clickParams.IconX.ToString());
+        paramsBuilder.Add("icon-y", clickParams.IconY.ToString());
 
-        private void HandleAtomClick(IAtomClickedEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {
-            ICommonSession session = sessionEvent.SenderSession;
-            var connection = _dreamManager.GetConnectionBySession(session);
-            var usr = connection.Mob;
-
-            connection.Client?.SpawnProc("Click", usr: usr, ConstructClickArguments(atom, e));
-        }
-
-        private DreamValue[] ConstructClickArguments(DreamObject atom, IAtomClickedEvent e) {
-            NameValueCollection paramsBuilder = HttpUtility.ParseQueryString(String.Empty);
-            if (e.Middle) paramsBuilder.Add("middle", "1");
-            if (e.Shift) paramsBuilder.Add("shift", "1");
-            if (e.Ctrl) paramsBuilder.Add("ctrl", "1");
-            if (e.Alt) paramsBuilder.Add("alt", "1");
-            paramsBuilder.Add("screen-loc", e.ScreenLoc.ToString());
-            paramsBuilder.Add("icon-x", e.IconX.ToString());
-            paramsBuilder.Add("icon-y", e.IconY.ToString());
-
-            return new[] {
-                new DreamValue(atom),
-                DreamValue.Null,
-                DreamValue.Null,
-                new DreamValue(paramsBuilder.ToString())
-            };
-        }
+        return paramsBuilder.ToString();
     }
 }

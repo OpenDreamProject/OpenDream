@@ -27,6 +27,11 @@ namespace OpenDreamClient {
 
         public override void PreInit() {
             var config = IoCManager.Resolve<IConfigurationManager>();
+
+            // We share settings with other RT games, such as SS14.
+            // SS14 supports fullscreen, but it breaks us horribly. This disables fullscreen if it's already set.
+            config.SetCVar(CVars.DisplayWindowMode, 0);
+
             if (config.GetCVar(OpenDreamCVars.SpoofIEUserAgent)) {
                 config.OverrideDefault(WCVars.WebUserAgentOverride, UserAgent);
             }

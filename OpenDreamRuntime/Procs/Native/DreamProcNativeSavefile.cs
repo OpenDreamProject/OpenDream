@@ -65,7 +65,7 @@ internal static class DreamProcNativeSavefile {
         var lines = sourceStr.Split('\n');
         var directoryStack = new Stack<string>();
         foreach (var line in lines) {
-            var indentCount = line.TakeWhile(Char.IsWhiteSpace).Count();
+            var indentCount = line.TakeWhile(char.IsWhiteSpace).Count();
             while (directoryStack.Count > indentCount) {
                 directoryStack.Pop();
             }
@@ -127,10 +127,10 @@ internal static class DreamProcNativeSavefile {
                 result += $"{new string('\t', indent)}{key} = {typeValue.TypePath}\n";
                 break;
             case DreamObjectSavefile.SFDreamListValue listValue:
-                result += $"{new string('\t', indent)}{key} = list()\n"; //TODO this has funky behaviour, ceebs doing it right now
+                result += $"{new string('\t', indent)}{key} = {ExportTextInternalListFormat(listValue)}\n";
                 break;
             case DreamObjectSavefile.SFDreamDir jsonValue:
-                if(string.IsNullOrEmpty(key)){ //root dir has a minor difference in formatting
+                if(indent==0){ //root dir has a minor difference in formatting
                     indent--;
                     result += "\n";
                 } else
@@ -146,6 +146,43 @@ internal static class DreamProcNativeSavefile {
             savefile.CurrentPath = "../";
         }
         return result;
+    }
+
+    private static string ExportTextInternalListFormat(DreamObjectSavefile.SFDreamJsonValue listEntry){
+        switch(listEntry) {
+            case DreamObjectSavefile.SFDreamPrimitive primitiveValue:
+                if(primitiveValue.Value.IsNull)
+                    return "null";
+                else switch(primitiveValue.Value.Type){
+                    case DreamValue.DreamValueType.String:
+                        return $"\"{primitiveValue.Value.MustGetValueAsString()}\"";
+                    case DreamValue.DreamValueType.Float:
+                        return $"{primitiveValue.Value.MustGetValueAsFloat()}";
+                }
+                throw new NotImplementedException($"Unhandled list entry type {listEntry} in ExportTextInternalListFormat()");
+            case DreamObjectSavefile.SFDreamObjectPathValue objectValue:
+                return $"object(\"{objectValue.Path}\")";
+            case DreamObjectSavefile.SFDreamType typeValue:
+                return $"{typeValue.TypePath}";
+            case DreamObjectSavefile.SFDreamListValue listValue:
+                string result = "list(";
+                if(listValue.Data != null)
+                    foreach(var entry in listValue.Data){
+                        result += ExportTextInternalListFormat(entry);
+                        result += ",";
+                    }
+                if(listValue.AssocKeys != null && listValue.AssocData != null)
+                    for(int i=0; i<listValue.AssocKeys.Count; i++){
+                        result += ExportTextInternalListFormat(listValue.AssocKeys[i])+" = "+ExportTextInternalListFormat(listValue.AssocData[i]);
+                        result += ",";
+                    }
+                result = result.TrimEnd(',');
+                result += ")";
+                return result;
+            default:
+                throw new NotImplementedException($"Unhandled list entry type {listEntry} in ExportTextInternalListFormat()");
+        }
+
     }
 
     [DreamProc("Flush")]

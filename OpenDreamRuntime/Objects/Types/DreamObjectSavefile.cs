@@ -354,17 +354,19 @@ public sealed class DreamObjectSavefile : DreamObject {
             case DreamValue.DreamValueType.DreamObject:
                 if (val.TryGetValueAsDreamList(out var dreamList)) {
                     SFDreamListValue jsonEncodedList = new SFDreamListValue();
-                    int thisObjectCount = 0;
+                    int thisObjectCount = objectCount;
                     foreach (var value in dreamList.GetValues()) {
                         jsonEncodedList.Data ??= new List<SFDreamJsonValue>(dreamList.GetLength()); //only init the list if it's needed
                         if(value.TryGetValueAsDreamObject(out var _) && !value.IsNull) {
-                            SFDreamObjectPathValue jsonEncodedObject = (SFDreamObjectPathValue)SerializeDreamValue(value, thisObjectCount);
+                            SFDreamJsonValue jsonEncodedObject = SerializeDreamValue(value, thisObjectCount);
                             //merge the object subdirectories into the list parent directory
                             foreach(var key in jsonEncodedObject.Keys) {
                                 jsonEncodedList[key] = jsonEncodedObject[key];
                             }
+                            //we already merged the nodes into the parent, so clear them from the child
+                            jsonEncodedObject.Clear();
                             //add the object path to the list
-                            jsonEncodedList.Data.Add(new SFDreamObjectPathValue(){Path = jsonEncodedObject.Path});
+                            jsonEncodedList.Data.Add(jsonEncodedObject);
                             thisObjectCount++;
                         } else {
                             jsonEncodedList.Data.Add(SerializeDreamValue(value));
@@ -460,6 +462,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         public Dictionary<string, SFDreamJsonValue>.KeyCollection Keys => nodes.Keys;
         [JsonIgnore]
         public int Count => nodes.Count;
+        public void Clear() => nodes.Clear();
 
     }
 

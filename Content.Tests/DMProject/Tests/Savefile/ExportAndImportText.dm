@@ -21,10 +21,19 @@
 	F["dir6/subdir6"] = 321
 	F["dir7"] = null
 	F["dirIcon"] = new /icon()
+	F["list"] << list("1",2,"three"=3,4, new /datum(), new /datum(), list(1,2,3, new /datum()))
 
 	ASSERT(F.ExportText("dir6/subdir6") == ". = 321\n")
 	ASSERT(F.ExportText("dir6/subdir6/") == ". = 321\n")
 	ASSERT(F.ExportText("dir6") == "\nsubdir6 = 321\n")
+	var/list_match = @{". = list("1",2,"three" = 3,4,object(".0"),object(".1"),list(1,2,3,object(".2")))
+.0
+    type = /datum
+.1
+    type = /datum
+.2
+    type = /datum"}
+	ASSERT(F.ExportText("list") == list_match)
 
 
 	var/import_test = @{"

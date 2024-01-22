@@ -18,12 +18,14 @@ internal static class DreamProcNativeSavefile {
         DreamValue path = bundle.GetArgument(0, "path");
         DreamValue file = bundle.GetArgument(1, "file");
 
+        string oldPath = savefile.CurrentPath;
         if(!path.IsNull && path.TryGetValueAsString(out var pathStr)) { //invalid path values are just ignored in BYOND
             savefile.CurrentPath = pathStr;
         }
 
-
         string result = ExportTextInternal(savefile);
+
+        savefile.CurrentPath = oldPath; //restore current directory after a query
         if(!file.IsNull){
             if(file.TryGetValueAsString(out var fileStr)) {
                 File.WriteAllText(fileStr, result);
@@ -86,11 +88,15 @@ internal static class DreamProcNativeSavefile {
     }
 
 
-    private static string ExportTextInternal(DreamObjectSavefile savefile, int indent = 0) {
+    private static string ExportTextInternal(DreamObjectSavefile savefile, int indent = int.MinValue) {
         string result = "";
         var value = savefile.CurrentDir;
-        var oldPath = savefile.CurrentPath;
         var key = savefile.CurrentPath.Split('/').Last();
+        if(indent == int.MinValue){
+            if(!string.IsNullOrEmpty(key)) //if this is is the start and not root dir, use . = value syntax
+                key = ".";
+            indent = 0; //either way, set indent to 0 so we know we're not at the start anymore
+        }
         switch(value) {
             case DreamObjectSavefile.SFDreamPrimitive primitiveValue:
                 if(primitiveValue.Value.IsNull)
@@ -124,7 +130,11 @@ internal static class DreamProcNativeSavefile {
                 result += $"{new string('\t', indent)}{key} = list()\n"; //TODO this has funky behaviour, ceebs doing it right now
                 break;
             case DreamObjectSavefile.SFDreamDir jsonValue:
-                result += $"{new string('\t', indent)}{key}\n";
+                if(string.IsNullOrEmpty(key)){ //root dir has a minor difference in formatting
+                    indent--;
+                    result += "\n";
+                } else
+                    result += $"{new string('\t', indent)}{key}\n";
                 break;
             default:
                 throw new NotImplementedException($"Unhandled type {key} = {value} in ExportText()");
@@ -135,9 +145,6 @@ internal static class DreamProcNativeSavefile {
             result += ExportTextInternal(savefile, indent + 1);
             savefile.CurrentPath = "../";
         }
-        savefile.CurrentPath = oldPath;
-
-
         return result;
     }
 

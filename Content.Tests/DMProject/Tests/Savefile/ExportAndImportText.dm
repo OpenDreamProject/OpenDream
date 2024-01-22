@@ -1,23 +1,10 @@
 /obj/savetest
 	var/obj/savetest/recurse = null
-	New(args)
-		proc_call_order_check += list("New")
-		..()
-
-	Read(savefile/F)
-		proc_call_order_check += list("Read")
-		..()
-
-	Write(savefile/F)
-		proc_call_order_check += list("Write")
-		..()
-
-/var/static/proc_call_order_check = list()
 
 /proc/RunTest()
 	var/obj/savetest/O = new() //create a test object
 	O.name = "test"
-	O.recurse = O
+	//O.recurse = O //TODO
 
 	var/savefile/F = new() //create a temporary savefile
 

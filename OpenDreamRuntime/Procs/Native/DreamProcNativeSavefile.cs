@@ -114,14 +114,14 @@ internal static class DreamProcNativeSavefile {
                 //result += $"encoding=base64\",{{\"{Convert.ToBase64String(fileValue.Data)}\"}}";
                 result += ")\n";
                 break;
-            case DreamObjectSavefile.SFDreamObjectValue objectValue:
-                result += $"{new string('\t', indent)}{key} = object(\".{objectValue.ObjectKey}\")\n";
+            case DreamObjectSavefile.SFDreamObjectPathValue objectValue:
+                result += $"{new string('\t', indent)}{key} = object(\"{objectValue.Path}\")\n";
                 break;
             case DreamObjectSavefile.SFDreamType typeValue:
                 result += $"{new string('\t', indent)}{key} = {typeValue.TypePath}\n";
                 break;
             case DreamObjectSavefile.SFDreamListValue listValue:
-                result += $"{new string('\t', indent)}{key} = list(TODO)\n"; //TODO this has funky behaviour, ceebs doing it right now
+                result += $"{new string('\t', indent)}{key} = list()\n"; //TODO this has funky behaviour, ceebs doing it right now
                 break;
             case DreamObjectSavefile.SFDreamDir jsonValue:
                 result += $"{new string('\t', indent)}{key}\n";

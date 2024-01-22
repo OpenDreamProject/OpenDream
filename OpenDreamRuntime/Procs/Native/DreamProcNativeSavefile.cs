@@ -115,8 +115,15 @@ internal static class DreamProcNativeSavefile {
                 result += ")\n";
                 break;
             case DreamObjectSavefile.SFDreamObjectValue objectValue:
-                throw new NotImplementedException($"ExportText() can't do objects yet TODO");
-            case DreamObjectSavefile.SFDreamJsonValue jsonValue:
+                result += $"{new string('\t', indent)}{key} = object(\".{objectValue.ObjectKey}\")\n";
+                break;
+            case DreamObjectSavefile.SFDreamType typeValue:
+                result += $"{new string('\t', indent)}{key} = {typeValue.TypePath}\n";
+                break;
+            case DreamObjectSavefile.SFDreamListValue listValue:
+                result += $"{new string('\t', indent)}{key} = list(TODO)\n"; //TODO this has funky behaviour, ceebs doing it right now
+                break;
+            case DreamObjectSavefile.SFDreamDir jsonValue:
                 result += $"{new string('\t', indent)}{key}\n";
                 break;
             default:

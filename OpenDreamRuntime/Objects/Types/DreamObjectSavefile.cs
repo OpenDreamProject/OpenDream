@@ -314,7 +314,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     foreach (var key in dObj.ObjectDefinition.Variables.Keys) {
                         DreamValue val = DreamValue.Null;
                         if (saveData.TryGetValue(key, out var dreamObjVal)) {
-                            val = (dreamObjVal is SFDreamPathValue) ? newObj : DeserializeJsonValue(dreamObjVal);
+                            val = (dreamObjVal is SFDreamObjectPathValue) ? newObj : DeserializeJsonValue(dreamObjVal);
                         }
                         dObj.SetVariable(key, val);
                     }
@@ -337,7 +337,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Serialize byond values/objects into savefile data
     /// </summary>
-    public SFDreamJsonValue SerializeDreamValue(DreamValue val) {
+    public SFDreamJsonValue SerializeDreamValue(DreamValue val, int objectCount = 0) {
         switch (val.Type) {
             case DreamValue.DreamValueType.String:
             case DreamValue.DreamValueType.Float:
@@ -348,37 +348,48 @@ public sealed class DreamObjectSavefile : DreamObject {
                 var dreamResource = val.MustGetValueAsDreamResource();
                 return new SFDreamFileValue {
                     Length = dreamResource.ResourceData!.Length,
-                    // Crc32 =  new System.IO.Hashing.Crc32().
+                    //Crc32 =  new System.IO.Hashing.Crc32().
                     Data = Convert.ToBase64String(dreamResource.ResourceData)
                 };
             case DreamValue.DreamValueType.DreamObject:
                 if (val.TryGetValueAsDreamList(out var dreamList)) {
                     SFDreamListValue jsonEncodedList = new SFDreamListValue();
+                    int thisObjectCount = 0;
                     foreach (var value in dreamList.GetValues()) {
                         jsonEncodedList.Data ??= new List<SFDreamJsonValue>(dreamList.GetLength()); //only init the list if it's needed
-                        jsonEncodedList.Data.Add(SerializeDreamValue(value));
+                        if(value.TryGetValueAsDreamObject(out var _))
+                            thisObjectCount++;
+                        jsonEncodedList.Data.Add(SerializeDreamValue(value, thisObjectCount));
                     }
                     if(dreamList.IsAssociative) {
                         jsonEncodedList.AssocData = new List<SFDreamJsonValue>();
                         jsonEncodedList.AssocKeys = new List<SFDreamJsonValue>();
                         foreach (var (key, value) in dreamList.GetAssociativeValues()) {
+                            if(key.TryGetValueAsDreamObject(out var _))
+                                thisObjectCount++;
                             jsonEncodedList.AssocKeys.Add(SerializeDreamValue(key));
+                            if(value.TryGetValueAsDreamObject(out var _))
+                                thisObjectCount++;
                             jsonEncodedList.AssocData.Add(SerializeDreamValue(value));
                         }
                     }
                     return jsonEncodedList;
                 } else if( val.TryGetValueAsDreamObject(out var dreamObject) && !(dreamObject is null)) { //dreamobject can be null if it's disposed
-                    SFDreamObjectValue jsonEncodedObject = new SFDreamObjectValue();
+                    SFDreamObjectValue jsonEncodedObject = new SFDreamObjectValue(){ObjectKey = objectCount};
+                    SFDreamDir objectVars = new SFDreamDir();
+                    //special handling for type, because it's const but we need to save it anyway
+                    objectVars["type"] = SerializeDreamValue(dreamObject.GetVariable("type"));
                     foreach (var key in dreamObject.ObjectDefinition.Variables.Keys) {
                         if((dreamObject.ObjectDefinition.ConstVariables is not null && dreamObject.ObjectDefinition.ConstVariables.Contains(key)) || (dreamObject.ObjectDefinition.TmpVariables is not null && dreamObject.ObjectDefinition.TmpVariables.Contains(key)))
                             continue; //skip const & tmp variables (they're not saved
                         DreamValue objectVarVal = dreamObject.GetVariable(key);
                         if(dreamObject.ObjectDefinition.Variables[key] == objectVarVal)
                             continue; //skip default values
-                        jsonEncodedObject.Vars[key] = SerializeDreamValue(objectVarVal);
+                        objectVars[key] = SerializeDreamValue(objectVarVal);
                     }
                     //Call the Write proc on the object - note that this is a weird one, it does not need to call parent to the native function to save the object
-                    dreamObject.SpawnProc("Write", null, [new DreamValue(this)]);
+                    //dreamObject.SpawnProc("Write", null, [new DreamValue(this)]);
+                    jsonEncodedObject[$".{jsonEncodedObject.ObjectKey}"] = objectVars;
                     return jsonEncodedObject;
                 }
                 break;
@@ -404,7 +415,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     [JsonDerivedType(typeof(SFDreamType), typeDiscriminator: "typepath")]
     [JsonDerivedType(typeof(SFDreamObjectValue), typeDiscriminator: "object")]
     [JsonDerivedType(typeof(SFDreamListValue), typeDiscriminator: "list")]
-    [JsonDerivedType(typeof(SFDreamPathValue), typeDiscriminator: "path")]
+    [JsonDerivedType(typeof(SFDreamObjectPathValue), typeDiscriminator: "path")]
     [JsonDerivedType(typeof(SFDreamFileValue), typeDiscriminator: "file")]
     public abstract class SFDreamJsonValue {
         //because dictionary implements its own serialization, we basically just store a dict internally and wrap the functions we need instead of inheriting from it
@@ -448,7 +459,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// </summary>
     public sealed class SFDreamObjectValue : SFDreamJsonValue {
         [JsonInclude]
-        public Dictionary<string, SFDreamJsonValue> Vars = new();
+        public int ObjectKey = 0;
     }
 
     public sealed class SFDreamListValue : SFDreamJsonValue {
@@ -463,7 +474,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Dummy type for objects that reference itself (it shows up as `object(..)`)
     /// </summary>
-    public sealed class SFDreamPathValue : SFDreamJsonValue {
+    public sealed class SFDreamObjectPathValue : SFDreamJsonValue {
         [JsonInclude]
         public required string Path;
     }

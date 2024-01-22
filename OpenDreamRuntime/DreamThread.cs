@@ -389,7 +389,7 @@ namespace OpenDreamRuntime {
             string file = string.Empty;
             int line = 0;
             if(_current is DMProcState dmProc) { // TODO: Cope with the other ProcStates
-                var source = dmProc.GetExceptionSource();
+                var source = dmProc.GetCurrentSource();
                 file = source.Item1;
                 line = source.Item2;
             }

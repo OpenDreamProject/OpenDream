@@ -120,6 +120,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Insert);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Join);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Remove);
+            objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_RemoveAll);
             objectTree.SetNativeProc(objectTree.List, DreamProcNativeList.NativeProc_Swap);
 
             objectTree.SetNativeProc(objectTree.Matrix, DreamProcNativeMatrix.NativeProc_Add);

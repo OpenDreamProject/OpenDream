@@ -387,13 +387,13 @@ namespace OpenDreamRuntime {
 
             // Instantiate an /exception and invoke world.Error()
             string file = string.Empty;
-            int? line = null;
+            int line = 0;
             if(_current is DMProcState dmProc) { // TODO: Cope with the other ProcStates
                 var source = dmProc.GetExceptionSource();
                 file = source.Item1;
                 line = source.Item2;
             }
-            dreamMan.HandleException(exception, msg, file, line?.ToString() ?? string.Empty);
+            dreamMan.HandleException(exception, msg, file, line);
 
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }

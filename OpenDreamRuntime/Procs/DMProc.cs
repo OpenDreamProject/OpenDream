@@ -437,7 +437,7 @@ namespace OpenDreamRuntime.Procs {
             builder.Append(Proc.GetSourceAtOffset(_pc - 1).Line);
         }
 
-        public (string, int) GetExceptionSource() {
+        public (string, int) GetCurrentSource() {
             return Proc.GetSourceAtOffset(_pc - 1);
         }
 

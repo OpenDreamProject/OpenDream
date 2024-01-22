@@ -4,7 +4,7 @@ public sealed class DreamObjectException(DreamObjectDefinition objectDefinition)
     public string Name = string.Empty;
     public string Description = string.Empty;
     public string File = string.Empty;
-    public string Line = string.Empty;
+    public int Line = 0;
 
     //TODO: Match the format of BYOND exceptions since SS13 does splittext and other things to extract data from exceptions
 

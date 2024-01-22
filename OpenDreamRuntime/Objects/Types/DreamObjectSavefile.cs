@@ -290,14 +290,12 @@ public sealed class DreamObjectSavefile : DreamObject {
                 return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(SFDreamFileValue.Data)));
             case SFDreamListValue SFDreamListValue:
                 var l = ObjectTree.CreateList();
-                if(SFDreamListValue.Data != null) {
-                    for (var i = 0; i < SFDreamListValue.Data.Count; i++) {
-                        l.AddValue(DeserializeJsonValue(SFDreamListValue.Data[i]));
-                    }
-                }
-                if (SFDreamListValue.AssocKeys != null && SFDreamListValue.AssocData != null) {
+                if (SFDreamListValue.AssocKeys != null) {
                     for(int i=0; i < SFDreamListValue.AssocKeys.Count; i++) {
-                        l.SetValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]), DeserializeJsonValue(SFDreamListValue.AssocData[i]));
+                        if(SFDreamListValue.AssocData != null && SFDreamListValue.AssocData[i] != null) //note that null != DreamValue.Null
+                            l.SetValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]), DeserializeJsonValue(SFDreamListValue.AssocData[i]!));
+                        else
+                            l.AddValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]));
                     }
                 }
                 return new DreamValue(l);
@@ -355,10 +353,12 @@ public sealed class DreamObjectSavefile : DreamObject {
                 if (val.TryGetValueAsDreamList(out var dreamList)) {
                     SFDreamListValue jsonEncodedList = new SFDreamListValue();
                     int thisObjectCount = objectCount;
-                    foreach (var value in dreamList.GetValues()) {
-                        jsonEncodedList.Data ??= new List<SFDreamJsonValue>(dreamList.GetLength()); //only init the list if it's needed
-                        if(value.TryGetValueAsDreamObject(out var _) && !value.IsNull) {
-                            SFDreamJsonValue jsonEncodedObject = SerializeDreamValue(value, thisObjectCount);
+                    if(dreamList.IsAssociative)
+                        jsonEncodedList.AssocData = new List<SFDreamJsonValue?>(dreamList.GetLength()); //only init the list if it's needed
+
+                    foreach (var keyValue in dreamList.GetValues()) { //get all normal values and keys
+                        if(keyValue.TryGetValueAsDreamObject(out var _) && !keyValue.IsNull) {
+                            SFDreamJsonValue jsonEncodedObject = SerializeDreamValue(keyValue, thisObjectCount);
                             //merge the object subdirectories into the list parent directory
                             foreach(var key in jsonEncodedObject.Keys) {
                                 jsonEncodedList[key] = jsonEncodedObject[key];
@@ -366,44 +366,34 @@ public sealed class DreamObjectSavefile : DreamObject {
                             //we already merged the nodes into the parent, so clear them from the child
                             jsonEncodedObject.Clear();
                             //add the object path to the list
-                            jsonEncodedList.Data.Add(jsonEncodedObject);
+                            jsonEncodedList.AssocKeys.Add(jsonEncodedObject);
                             thisObjectCount++;
                         } else {
-                            jsonEncodedList.Data.Add(SerializeDreamValue(value));
+                            jsonEncodedList.AssocKeys.Add(SerializeDreamValue(keyValue));
+                        }
+                        if(dreamList.IsAssociative) { //if it's an assoc list, check if this value is a key
+                            if(!dreamList.ContainsKey(keyValue)) {
+                                jsonEncodedList.AssocData!.Add(null); //store an actual null if this key does not have an associated value - this is distinct from storing DreamValue.Null
+                            } else {
+                                var assocValue = dreamList.GetValue(keyValue);
+                                if(assocValue.TryGetValueAsDreamObject(out var _) && !assocValue.IsNull) {
+                                    SFDreamJsonValue jsonEncodedObject = SerializeDreamValue(assocValue, thisObjectCount);
+                                    //merge the object subdirectories into the list parent directory
+                                    foreach(var key in jsonEncodedObject.Keys) {
+                                        jsonEncodedList[key] = jsonEncodedObject[key];
+                                    }
+                                    //we already merged the nodes into the parent, so clear them from the child
+                                    jsonEncodedObject.Clear();
+                                    //add the object path to the list
+                                    jsonEncodedList.AssocData!.Add(jsonEncodedObject);
+                                    thisObjectCount++;
+                                } else {
+                                    jsonEncodedList.AssocData!.Add(SerializeDreamValue(assocValue));
+                                }
+                            }
                         }
                     }
-                    if(dreamList.IsAssociative) {
-                        jsonEncodedList.AssocData = new List<SFDreamJsonValue>();
-                        jsonEncodedList.AssocKeys = new List<SFDreamJsonValue>();
-                        foreach (var (key, value) in dreamList.GetAssociativeValues()) {
-                            if(key.TryGetValueAsDreamObject(out var _) && !key.IsNull) {
-                                SFDreamObjectPathValue jsonEncodedObject = (SFDreamObjectPathValue)SerializeDreamValue(key, thisObjectCount);
-                                //merge the object subdirectories into the list parent directory
-                                foreach(var subkey in jsonEncodedObject.Keys) {
-                                    jsonEncodedList[subkey] = jsonEncodedObject[subkey];
-                                }
-                                //add the object path to the list
-                                jsonEncodedList.AssocKeys.Add(new SFDreamObjectPathValue(){Path = jsonEncodedObject.Path});
-                                thisObjectCount++;
-                            } else {
-                                jsonEncodedList.AssocKeys.Add(SerializeDreamValue(key));
-                            }
 
-                            if(value.TryGetValueAsDreamObject(out var _) && !value.IsNull) {
-                                SFDreamObjectPathValue jsonEncodedObject = (SFDreamObjectPathValue)SerializeDreamValue(value, thisObjectCount);
-                                //merge the object subdirectories into the list parent directory
-                                foreach(var subkey in jsonEncodedObject.Keys) {
-                                    jsonEncodedList[subkey] = jsonEncodedObject[subkey];
-                                }
-                                //add the object path to the list
-                                jsonEncodedList.AssocData.Add(new SFDreamObjectPathValue(){Path = jsonEncodedObject.Path});
-                                thisObjectCount++;
-                            } else {
-                                jsonEncodedList.AssocData.Add(SerializeDreamValue(value));
-                            }
-
-                        }
-                    }
                     return jsonEncodedList;
                 } else if( val.TryGetValueAsDreamObject(out var dreamObject) && !(dreamObject is null)) { //dreamobject can be null if it's disposed
                     SFDreamObjectPathValue jsonEncodedObject = new SFDreamObjectPathValue(){Path = $".{objectCount}"};
@@ -485,17 +475,18 @@ public sealed class DreamObjectSavefile : DreamObject {
         public string TypePath = "";
     }
 
+    /// <summary>
+    /// List type, with support for associative lists
+    /// </summary>
     public sealed class SFDreamListValue : SFDreamJsonValue {
         [JsonInclude]
-        public List<SFDreamJsonValue>? Data;
+        public List<SFDreamJsonValue> AssocKeys = new();
         [JsonInclude]
-        public List<SFDreamJsonValue>? AssocKeys;
-        [JsonInclude]
-        public List<SFDreamJsonValue>? AssocData;
+        public List<SFDreamJsonValue?>? AssocData;
     }
 
     /// <summary>
-    /// Dummy type for objects that reference itself (it shows up as `object(..)`)
+    /// Dummy type for objects (it shows up as `object(relative-path-to-vars-dir)`)
     /// </summary>
     public sealed class SFDreamObjectPathValue : SFDreamJsonValue {
         [JsonInclude]

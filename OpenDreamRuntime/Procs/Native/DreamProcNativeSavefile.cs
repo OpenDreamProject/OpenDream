@@ -166,14 +166,12 @@ internal static class DreamProcNativeSavefile {
                 return $"{typeValue.TypePath}";
             case DreamObjectSavefile.SFDreamListValue listValue:
                 string result = "list(";
-                if(listValue.Data != null)
-                    foreach(var entry in listValue.Data){
-                        result += ExportTextInternalListFormat(entry);
-                        result += ",";
-                    }
-                if(listValue.AssocKeys != null && listValue.AssocData != null)
+
                     for(int i=0; i<listValue.AssocKeys.Count; i++){
-                        result += ExportTextInternalListFormat(listValue.AssocKeys[i])+" = "+ExportTextInternalListFormat(listValue.AssocData[i]);
+                        if(listValue.AssocData != null && listValue.AssocData[i] != null)
+                            result += ExportTextInternalListFormat(listValue.AssocKeys[i])+" = "+ExportTextInternalListFormat(listValue.AssocData[i]!);
+                        else
+                            result += ExportTextInternalListFormat(listValue.AssocKeys[i]);
                         result += ",";
                     }
                 result = result.TrimEnd(',');

@@ -3,6 +3,7 @@ using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Visitors;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM;
 

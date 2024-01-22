@@ -2,6 +2,8 @@ using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"

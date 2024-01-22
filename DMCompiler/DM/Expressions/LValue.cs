@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 

@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DMCompiler.Compiler;
+using DMCompiler.DM.Visitors;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM {

@@ -1,9 +1,7 @@
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
-using DMCompiler.Compiler;
-using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -590,19 +588,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // nameof(x)
-    sealed class Nameof : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Nameof(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushString(_expr.GetNameof(dmObject, proc));
-        }
-    }
-
     // call(...)(...)
     sealed class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
@@ -643,6 +628,15 @@ namespace DMCompiler.DM.Expressions {
                 proc.PushType(dmObject.Id);
             }
         }
+
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            if (dmObject.Path.LastElement != null) {
+                return dmObject.Path.LastElement;
+            }
+
+            DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
+            return null;
+        }
     }
 
     // __PROC__
@@ -654,6 +648,8 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushProc(proc.Id);
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
     internal class Sin : DMExpression {

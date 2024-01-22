@@ -1,9 +1,8 @@
-using System;
-using DMCompiler.DM.Visitors;
-using DMCompiler.Compiler.DM;
-using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM;
+using DMCompiler.DM.Visitors;
+using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM;
 
@@ -57,9 +56,11 @@ internal abstract class DMExpression(Location location) {
         throw new CompileErrorException(Location, $"attempt to reference r-value");
     }
 
-    public virtual string GetNameof(DMObject dmObject, DMProc proc) {
-        throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
-    }
+    /// <summary>
+        /// Gets the canonical name of the expression if it exists.
+        /// </summary>
+        /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
+        public virtual string? GetNameof(DMObject dmObject, DMProc proc) => null;
 
     /// <summary>
     /// Determines whether the expression returns an ambiguous path.

@@ -11,6 +11,9 @@ using OpenDreamShared.Json;
 namespace DMCompiler.DM.Optimizer {
     public interface IAnnotatedBytecode {
         public void AddArg(IAnnotatedBytecode arg);
+        void SetLocation(IAnnotatedBytecode location);
+        void SetLocation(Location location);
+        public Location GetLocation();
     }
 
     internal class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
@@ -115,6 +118,19 @@ namespace DMCompiler.DM.Optimizer {
         public List<IAnnotatedBytecode> GetArgs() {
             return _args;
         }
+
+        private Location? _location;
+        public void SetLocation(IAnnotatedBytecode loc) {
+            if (_location != null) return;
+            _location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            if (_location != null) return;
+            _location = loc;
+        }
+        public Location GetLocation() {
+            return _location ?? Location;
+        }
     }
 
     internal class AnnotatedBytecodeVariable : IAnnotatedBytecode {
@@ -138,6 +154,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a variable");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
 
@@ -153,6 +178,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to an integer");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeFloat : IAnnotatedBytecode {
@@ -166,6 +200,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a float");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -183,6 +226,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a string");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {
@@ -197,6 +249,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to an argument type");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeType : IAnnotatedBytecode {
@@ -210,6 +271,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a type");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -227,6 +297,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a type");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeProcID : IAnnotatedBytecode {
@@ -243,6 +322,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a type");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeFormatCount : IAnnotatedBytecode {
@@ -256,6 +344,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a format count");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -271,6 +368,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a stack delta");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeListSize : IAnnotatedBytecode {
@@ -284,6 +390,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a list size");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -299,6 +414,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a pick count");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeConcatCount : IAnnotatedBytecode {
@@ -312,6 +436,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a concat count");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -329,6 +462,15 @@ namespace DMCompiler.DM.Optimizer {
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a resource");
         }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
+        }
     }
 
     internal class AnnotatedBytecodeLabel : IAnnotatedBytecode {
@@ -342,6 +484,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a label");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -359,6 +510,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a filter");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -380,6 +540,15 @@ namespace DMCompiler.DM.Optimizer {
 
         public void AddArg(IAnnotatedBytecode arg) {
             DMCompiler.ForcedError(Location, "Cannot add args to a reference");
+        }
+        public void SetLocation(IAnnotatedBytecode loc) {
+            Location = loc.GetLocation();
+        }
+        public void SetLocation(Location loc) {
+            Location = loc;
+        }
+        public Location GetLocation() {
+            return Location;
         }
     }
 
@@ -413,7 +582,9 @@ namespace DMCompiler.DM.Optimizer {
             }
 
             List<string> currentFileContents = new();
+            string fileNameRelative = "";
             if (currentFile != "" && currentFile != oldFile) {
+                fileNameRelative = currentFile;
                 if (!File.Exists(currentFile)) {
                     var newFile = Path.Join(DMCompiler.StandardLibraryDirectory, currentFile);
                     if (File.Exists(newFile)) {
@@ -444,14 +615,26 @@ namespace DMCompiler.DM.Optimizer {
                 return;
             }
 
+            List<int> hideSetLines = new();
+
+            sourceInfoByLine = sourceInfoByLine.Where(x => x.Key >= 0 && x.Key < currentFileContents.Count && (currentFileContents[x.Key].Trim() != "" || currentFileContents[x.Key - 1].Trim() != "")).ToDictionary(x => x.Key, x => x.Value);
+
+            if(sourceInfoByLine.Count == 0 && annotatedBytecode.Count > 0) {
+                output.Append("// No source info available. Likely function stub with code for initializing default values\n");
+                if(annotatedBytecode[0].GetLocation().Line != null && currentFileContents.Count > annotatedBytecode[0].GetLocation().Line - 1 && currentFileContents[(Index)(annotatedBytecode[0].GetLocation().Line - 1)].Trim() != "") {
+                    output.Append("// First line of code: ").Append(currentFileContents[(Index)(annotatedBytecode[0].GetLocation().Line - 1)].Trim()).Append("\n");
+                }
+            }
+
             foreach (IAnnotatedBytecode annotatedBytecodeItem in annotatedBytecode) {
                 switch (annotatedBytecodeItem) {
                     case AnnotatedBytecodeInstruction annotatedBytecodeInstruction:
                         if (annotatedBytecodeInstruction.Location.Line != currentLine) {
                             currentLine = (annotatedBytecodeInstruction.Location.Line) ?? -1;
                             if (sourceInfoByLine.ContainsKey(currentLine) && currentFile != "" &&
-                                currentLine - 1 < currentFileContents.Count) {
-                                output.Append(' ', indent * 4).Append(" // ")
+                                currentLine - 1 < currentFileContents.Count && !hideSetLines.Contains(currentLine)) {
+                                hideSetLines.Add(currentLine);
+                                output.Append(' ', indent * 4).Append(" // ").Append(fileNameRelative).Append("@").Append(currentLine).Append(": ")
                                     .Append(currentFileContents[currentLine - 1].Trim()).Append("\n");
                             }
                         }

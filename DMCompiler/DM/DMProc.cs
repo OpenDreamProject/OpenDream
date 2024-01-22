@@ -1123,13 +1123,19 @@ namespace DMCompiler.DM {
             AnnotatedBytecode.ResolveCodeLabelReferences(_pendingLabelReferences);
         }
 
+        private static string _lastDumpedFile = "";
         public void Dump(StreamWriter bytecodeDumpWriter) {
             var pathString = _dmObject.Path.ToString() == "/" ? "<global>" : _dmObject.Path.ToString();
             var attributeString = Attributes.ToString().Replace(", ", " | ");
+            if (!string.IsNullOrEmpty(_lastSourceFile) && _lastSourceFile != _lastDumpedFile) {
+                _lastDumpedFile = _lastSourceFile;
+                bytecodeDumpWriter.WriteLine();
+                bytecodeDumpWriter.WriteLine();
+                bytecodeDumpWriter.Write($"In file {_lastSourceFile} at line {_sourceInfo.FirstOrDefault()?.Line ?? -1}:\n");
+            }
             if (attributeString != "0") {
                 bytecodeDumpWriter.Write($"[{attributeString}] ");
             }
-
             bytecodeDumpWriter.Write($"Proc {pathString}/{(IsVerb ? "verb/" : "")}{Name}(");
             for (int i = 0; i < Parameters.Count; i++) {
                 string argumentName = Parameters[i];
@@ -1141,10 +1147,15 @@ namespace DMCompiler.DM {
                 }
             }
 
-            bytecodeDumpWriter.Write("):\n");
+            bytecodeDumpWriter.Write("):");
             var bytecode = AnnotatedBytecode.GetAnnotatedBytecode();
-            AnnotatedBytecodePrinter.Print(bytecode, _sourceInfo, bytecodeDumpWriter, this);
-            bytecodeDumpWriter.WriteLine();
+            if (bytecode.Count > 0) {
+                bytecodeDumpWriter.WriteLine();
+                AnnotatedBytecodePrinter.Print(bytecode, _sourceInfo, bytecodeDumpWriter, this);
+                bytecodeDumpWriter.WriteLine();
+            } else {
+                bytecodeDumpWriter.Write(" <empty>\n");
+            }
         }
     }
 }

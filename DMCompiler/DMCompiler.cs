@@ -387,7 +387,7 @@ public struct DMCompilerSettings {
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;
     public bool Verbose = false;
-    public bool DumpBytecode = false;
+    public bool DumpBytecode = true;
     public Dictionary<string, string>? MacroDefines = null;
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;

@@ -624,8 +624,10 @@ namespace DMCompiler.DM.Optimizer {
                         foreach (var opt in optimizations) {
                             if (opt.GetLength() == 5 && opt.GetOpcodes().SequenceEqual(slice5) &&
                                 opt.CheckPreconditions(input, i)) {
+                                var startpoint = input.GetRange(i, 5).Where(x => x.GetLocation().Line != null ).FirstOrDefault() ?? input[i];
                                 changes++;
                                 opt.Apply(input, i);
+                                input[i].SetLocation(startpoint);
                             }
                         }
                     }
@@ -643,8 +645,10 @@ namespace DMCompiler.DM.Optimizer {
                         foreach (var opt in optimizations) {
                             if (opt.GetLength() == 4 && opt.GetOpcodes().SequenceEqual(slice4) &&
                                 opt.CheckPreconditions(input, i)) {
+                                var startpoint = input.GetRange(i, 4).Where(x => x.GetLocation().Line != null).FirstOrDefault() ?? input[i];
                                 changes++;
                                 opt.Apply(input, i);
+                                input[i].SetLocation(startpoint);
                             }
                         }
                     }
@@ -664,8 +668,10 @@ namespace DMCompiler.DM.Optimizer {
                         foreach (var opt in optimizations) {
                             if (opt.GetLength() == 3 && opt.GetOpcodes().SequenceEqual(slice3) &&
                                 opt.CheckPreconditions(input, i)) {
+                                var startpoint = input.GetRange(i, 3).Where(x => x.GetLocation().Line != null).FirstOrDefault() ?? input[i];
                                 changes++;
                                 opt.Apply(input, i);
+                                input[i].SetLocation(startpoint);
                             }
                         }
                     }
@@ -684,7 +690,9 @@ namespace DMCompiler.DM.Optimizer {
                             if (opt.GetLength() == 2 && opt.GetOpcodes().SequenceEqual(slice2) &&
                                 opt.CheckPreconditions(input, i)) {
                                 changes++;
+                                var startpoint = input.GetRange(i, 2).Where(x => x.GetLocation().Line != null).FirstOrDefault() ?? input[i];
                                 opt.Apply(input, i);
+                                input[i].SetLocation(startpoint);
                             }
                         }
                     }

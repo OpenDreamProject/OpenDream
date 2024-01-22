@@ -1,9 +1,9 @@
-using System;
+using DMCompiler.Bytecode;
+using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DM;
+using System;
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM {
     internal abstract class DMExpression {
@@ -64,7 +64,7 @@ namespace DMCompiler.DM {
         /// Gets the canonical name of the expression if it exists.
         /// </summary>
         /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
-        public virtual string? GetNameof() => null;
+        public virtual string? GetNameof(DMObject dmObject, DMProc proc) => null;
 
         /// <summary>
         /// Determines whether the expression returns an ambiguous path.

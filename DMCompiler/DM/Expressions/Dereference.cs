@@ -2,6 +2,7 @@ using DMCompiler.Bytecode;
 using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using System;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace DMCompiler.DM.Expressions {
@@ -241,11 +242,13 @@ namespace DMCompiler.DM.Expressions {
         }
 
         // BYOND says the nameof is invalid if the chain is not purely field operations
-        public override string? GetNameof() => _operations.All(op => op is FieldOperation)
-            ? ((FieldOperation)_operations[^1]).Identifier
-            : null;
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            return _operations.All(op => op is FieldOperation)
+                ? ((FieldOperation)_operations[^1]).Identifier
+                : null;
+        }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             var prevPath = _operations.Length == 1 ? _expression.Path : _operations[^2].Path;
 
             var operation = _operations[^1];

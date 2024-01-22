@@ -1,5 +1,7 @@
-using DMCompiler.DM.Visitors;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
+using DMCompiler.DM.Visitors;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Json;
@@ -7,8 +9,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
@@ -193,10 +193,6 @@ namespace DMCompiler.DM {
             }
 
             return procDefinition;
-        }
-
-        public string GetLocalVarName(int index) {
-            return _localVariableNames[index].Add;
         }
 
         public void WaitFor(bool waitFor) {

@@ -523,9 +523,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override string? GetNameof() {
-            return Value.LastElement;
-        }
+        public override string? GetNameof(DMObject dmObject, DMProc proc) => Value.LastElement;
 
         public override bool IsTruthy() => true;
 

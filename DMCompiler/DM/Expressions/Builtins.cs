@@ -1,10 +1,10 @@
-using OpenDreamShared.Compiler;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -591,34 +591,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // nameof(x)
-    sealed class Nameof : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Nameof(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_expr.GetNameof() is { } nameof) {
-                proc.PushString(nameof);
-            } else {
-                DMCompiler.Emit(WarningCode.BadArgument, Location, "nameof() requires a var, proc reference, or type path");
-                proc.PushString("");
-            }
-        }
-
-        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (_expr.GetNameof() is { } nameof) {
-                constant = new String(Location, nameof);
-                return true;
-            }
-            DMCompiler.Emit(WarningCode.BadArgument, Location, "nameof() requires a var, proc reference, or type path");
-            constant = null;
-            return false;
-        }
-    }
-
     // call(...)(...)
     sealed class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
@@ -660,9 +632,13 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override string GetNameof() {
-            DMCompiler.UnimplementedWarning(Location, "nameof(__TYPE__) is unimplemented");
-            return "";
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            if (dmObject.Path.LastElement != null) {
+                return dmObject.Path.LastElement;
+            }
+
+            DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
+            return null;
         }
     }
 
@@ -676,11 +652,7 @@ namespace DMCompiler.DM.Expressions {
             proc.PushProc(proc.Id);
         }
 
-        public override string GetNameof() {
-            // TODO: refactor proc references
-            DMCompiler.UnimplementedWarning(Location, "nameof(__PROC__) is unimplemented");
-            return "";
-        }
+        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
     internal class Sin : DMExpression {

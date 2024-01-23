@@ -5,6 +5,6 @@
   return emptylist
   
 /proc/RunTest()
-	ASSERT(have_fun() == "jumping around")
+  ASSERT(have_fun() == "jumping around")
   ASSERT(have_fun(list("eating cake", "spinning")) == "spinning")
   ASSERT(isnull(emptylistproc()))

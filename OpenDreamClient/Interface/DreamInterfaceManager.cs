@@ -440,7 +440,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 } else { // Attempt to parse the given arguments
                     if (args.Length != verbInfo.Arguments.Length + 1) {
                         _sawmill.Error(
-                            $"Attempted to call a verb with {verbInfo.Arguments} argument(s) with only {args.Length - 1}");
+                            $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Length - 1}");
                         return;
                     }
 
@@ -450,6 +450,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                         if (argumentType == DreamValueType.Text) {
                             arguments[i] = args[i + 1];
+                        } else if (argumentType == DreamValueType.Num) {
+                            if (!float.TryParse(args[i + 1], out var numArg)) {
+                                _sawmill.Error(
+                                    $"Invalid number argument \"{args[i + 1]}\"; ignoring command ({fullCommand})");
+                                return;
+                            }
+
+                            arguments[i] = numArg;
                         } else {
                             _sawmill.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
                             return;

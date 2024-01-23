@@ -12,6 +12,7 @@ namespace OpenDreamShared.Compiler {
         BadToken = 1,
         BadDirective = 10,
         BadExpression = 11,
+        MissingExpression = 12,
         BadLabel = 19,
         InvalidReference = 50,
         BadArgument = 100,
@@ -44,6 +45,7 @@ namespace OpenDreamShared.Compiler {
         PointlessParentCall = 2205,
         PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
         SuspiciousMatrixCall = 2207, // Calling matrix() with seemingly the wrong arguments
+        FallbackBuiltinArgument = 2208, // A builtin (sin(), cos(), etc) with an invalid/fallback argument
         MalformedRange = 2300,
         InvalidRange = 2301,
         InvalidSetStatement = 2302,
@@ -55,7 +57,9 @@ namespace OpenDreamShared.Compiler {
         // 3000 - 3999 are reserved for stylistic configuration.
         EmptyBlock = 3100,
         EmptyProc = 3101,
-        UnsafeClientAccess = 3200
+        UnsafeClientAccess = 3200,
+        SuspiciousSwitchCase = 3201, // "else if" cases are actually valid DM, they just spontaneously end the switch context and begin an if-else ladder within the else case of the switch
+        AssignmentInConditional = 3202,
 
         // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
     }

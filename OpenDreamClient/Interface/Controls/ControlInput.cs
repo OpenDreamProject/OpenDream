@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -7,7 +6,6 @@ namespace OpenDreamClient.Interface.Controls;
 
 internal sealed class ControlInput : InterfaceControl {
     private LineEdit _textBox;
-
     public ControlInput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
     protected override Control CreateUIElement() {
@@ -18,7 +16,7 @@ internal sealed class ControlInput : InterfaceControl {
     }
 
     private void TextBox_OnSubmit(LineEdit.LineEditEventArgs lineEditEventArgs) {
-        EntitySystem.Get<DreamCommandSystem>().RunCommand(_textBox.Text);
+        _interfaceManager.RunCommand(_textBox.Text);
         _textBox.Clear();
     }
 }

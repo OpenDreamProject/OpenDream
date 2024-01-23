@@ -7,8 +7,10 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{72
 	ProjectSection(SolutionItems) = preProject
 		TestGame\code.dm = TestGame\code.dm
 		TestGame\environment.dme = TestGame\environment.dme
-		TestGame\map.dmm = TestGame\map.dmm
 		TestGame\renderer_tests.dm = TestGame\renderer_tests.dm
+		TestGame\map_z1.dmm = TestGame\map_z1.dmm
+		TestGame\map_z2.dmm = TestGame\map_z2.dmm
+		TestGame\map_z3.dmm = TestGame\map_z3.dmm
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68-4117-4ECC-8174-D399C1D6C409}"
@@ -54,8 +56,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "OpenToolkit.GraphicsLibrary
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robust.LoaderApi", "RobustToolbox\Robust.LoaderApi\Robust.LoaderApi\Robust.LoaderApi.csproj", "{7AA19C30-0627-473E-B3D0-08E96FC2D77D}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Robust.Physics", "RobustToolbox\Robust.Physics\Robust.Physics.csproj", "{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "XamlX", "XamlX", "{2E99CFE9-C7C6-4275-8730-2672E28CCEA4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XamlX", "RobustToolbox\XamlX\src\XamlX\XamlX.csproj", "{ECB7A503-FF99-4E73-927A-B434915A452A}"
@@ -96,6 +96,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamPackaging", "OpenDreamPackaging\OpenDreamPackaging.csproj", "{A86753A5-C9D8-4F3E-B030-BCFC64DF35D6}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Robust.Serialization.Generator", "RobustToolbox\Robust.Serialization.Generator\Robust.Serialization.Generator.csproj", "{366AA569-0889-491B-AB00-F038EAEC5221}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "OpenDreamPackageTool", "OpenDreamPackageTool\OpenDreamPackageTool.csproj", "{351729DE-F70D-4136-AD48-1E08A715C1B1}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -276,16 +278,6 @@ Global
 		{7AA19C30-0627-473E-B3D0-08E96FC2D77D}.Release|x64.Build.0 = Release|Any CPU
 		{7AA19C30-0627-473E-B3D0-08E96FC2D77D}.Tools|Any CPU.ActiveCfg = Tools|Any CPU
 		{7AA19C30-0627-473E-B3D0-08E96FC2D77D}.Tools|Any CPU.Build.0 = Tools|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Debug|x64.ActiveCfg = Debug|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Debug|x64.Build.0 = Debug|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Release|x64.ActiveCfg = Release|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Release|x64.Build.0 = Release|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Tools|Any CPU.ActiveCfg = Tools|Any CPU
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E}.Tools|Any CPU.Build.0 = Tools|Any CPU
 		{ECB7A503-FF99-4E73-927A-B434915A452A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{ECB7A503-FF99-4E73-927A-B434915A452A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{ECB7A503-FF99-4E73-927A-B434915A452A}.Debug|x64.ActiveCfg = Debug|Any CPU
@@ -426,6 +418,16 @@ Global
 		{366AA569-0889-491B-AB00-F038EAEC5221}.Release|x64.Build.0 = Release|Any CPU
 		{366AA569-0889-491B-AB00-F038EAEC5221}.Tools|Any CPU.ActiveCfg = Debug|Any CPU
 		{366AA569-0889-491B-AB00-F038EAEC5221}.Tools|Any CPU.Build.0 = Debug|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Debug|x64.Build.0 = Debug|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Release|Any CPU.Build.0 = Release|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Release|x64.ActiveCfg = Release|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Release|x64.Build.0 = Release|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Tools|Any CPU.ActiveCfg = Debug|Any CPU
+		{351729DE-F70D-4136-AD48-1E08A715C1B1}.Tools|Any CPU.Build.0 = Debug|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -447,7 +449,6 @@ Global
 		{4A4148E4-C82C-45F5-8278-371CA0567EFB} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
 		{D5D921FD-A535-40CE-AED2-0526AC4015E4} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
 		{7AA19C30-0627-473E-B3D0-08E96FC2D77D} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
-		{B9712645-6DAD-4D51-BF56-8FE1422EDB3E} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
 		{2E99CFE9-C7C6-4275-8730-2672E28CCEA4} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
 		{ECB7A503-FF99-4E73-927A-B434915A452A} = {2E99CFE9-C7C6-4275-8730-2672E28CCEA4}
 		{C598983A-4FE6-45FF-A6C2-1563394285E1} = {2E99CFE9-C7C6-4275-8730-2672E28CCEA4}
@@ -457,6 +458,7 @@ Global
 		{CBF4EBB8-A6A0-446F-82D4-B1D24FF5B3FF} = {534AFACE-24AF-4F54-B7B0-951C5D62DF34}
 		{F3735A7F-44A2-4BEE-ADD6-952577D4DC33} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
 		{D080D3FA-CE53-40D2-AC9A-940FD9EB5055} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
+		{366AA569-0889-491B-AB00-F038EAEC5221} = {DBFD7471-84E2-4AAB-86E9-F8DFF917ED5B}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {970174FD-D22D-44D9-A410-F82A015E6F74}

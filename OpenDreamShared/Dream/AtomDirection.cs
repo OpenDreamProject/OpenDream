@@ -12,6 +12,9 @@ public enum AtomDirection : byte {
     East = 4,
     West = 8,
 
+    Up = 16,
+    Down = 32,
+
     Northeast = North | East,
     Southeast = South | East,
     Southwest = South | West,

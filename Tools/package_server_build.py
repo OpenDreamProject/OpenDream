@@ -63,7 +63,9 @@ SERVER_IGNORED_RESOURCES = {
 SERVER_CONTENT_ASSEMBLIES = [
     "OpenDreamServer",
     "OpenDreamShared",
-    "OpenDreamRuntime"
+    "OpenDreamRuntime",
+    "Byond.TopicSender",
+    "DMCompiler"
 ]
 
 # Extra assemblies to copy on the server, with a startswith

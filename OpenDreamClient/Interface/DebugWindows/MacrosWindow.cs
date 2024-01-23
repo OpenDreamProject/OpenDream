@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Prompts;
+﻿using OpenDreamClient.Interface.Prompts;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Console;
 
@@ -11,11 +10,10 @@ namespace OpenDreamClient.Interface.DebugWindows;
 public sealed class MacrosWindow : OSWindow {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    private readonly DreamCommandSystem _commandSystem;
+
 
     public MacrosWindow() {
         IoCManager.InjectDependencies(this);
-        _commandSystem = _entitySystemManager.GetEntitySystem<DreamCommandSystem>();
 
         Title = "Macros";
         SizeToContent = WindowSizeToContent.WidthAndHeight;
@@ -60,13 +58,13 @@ public sealed class MacrosWindow : OSWindow {
                         if (value == null)
                             return; // Cancelled
 
-                        _commandSystem.RunCommand(macro.Command.Replace("[[*]]", (string)value));
+                        _interfaceManager.RunCommand(macro.Command.Replace("[[*]]", (string)value));
                     });
 
                     prompt.Owner = ClydeWindow;
                     prompt.Show();
                 } else {
-                    _commandSystem.RunCommand(macro.Command);
+                    _interfaceManager.RunCommand(macro.Command);
                 }
             };
 

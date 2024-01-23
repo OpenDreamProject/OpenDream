@@ -1,31 +1,12 @@
-using System;
+using DMCompiler.Bytecode;
+using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Visitors;
 using OpenDreamShared.Compiler;
-using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
+using System;
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM {
-    abstract class DMExpression {
-        public enum ProcPushResult {
-            // The emitted code has pushed the proc onto the stack
-            Unconditional,
-
-            // The emitted code has pushed either null or the proc onto the stack
-            // If null was pushed, any calls to this proc should silently evaluate to null
-            Conditional,
-        }
-
-        public enum IdentifierPushResult {
-            // The emitted code has pushed the identifier onto the stack
-            Unconditional,
-
-            // The emitted code has pushed either null or the identifier onto the stack
-            // If null was pushed, any assignments to this identifier should silently evaluate to null
-            Conditional,
-        }
-
+    internal abstract class DMExpression {
         public Location Location;
 
         protected DMExpression(Location location) {
@@ -33,9 +14,7 @@ namespace DMCompiler.DM {
         }
 
         public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-            var instance = new DMVisitorExpression(dmObject, proc, inferredPath);
-            expression.Visit(instance);
-            return instance.Result;
+            return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
         }
 
         public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
@@ -81,9 +60,17 @@ namespace DMCompiler.DM {
             throw new CompileErrorException(Location, $"attempt to reference r-value");
         }
 
-        public virtual string GetNameof(DMObject dmObject, DMProc proc) {
-            throw new CompileAbortException(Location, "nameof: requires a var, proc reference, or type path");
-        }
+        /// <summary>
+        /// Gets the canonical name of the expression if it exists.
+        /// </summary>
+        /// <returns>The name of the expression, or <c>null</c> if it does not have one.</returns>
+        public virtual string? GetNameof(DMObject dmObject, DMProc proc) => null;
+
+        /// <summary>
+        /// Determines whether the expression returns an ambiguous path.
+        /// </summary>
+        /// <remarks>Dereferencing these expressions will always skip validation via the "expr:y" operation.</remarks>
+        public virtual bool PathIsFuzzy => false;
 
         public virtual DreamPath? Path => null;
 

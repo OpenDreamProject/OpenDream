@@ -1,10 +1,13 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
+[UsedImplicitly]
 public sealed class RequestNext : Request {
-    [JsonPropertyName("arguments")] public RequestNextArguments Arguments { get; set; }
+    [JsonPropertyName("arguments")] public required RequestNextArguments Arguments { get; set; }
 
+    [UsedImplicitly]
     public sealed class RequestNextArguments {
         /**
          * Specifies the thread for which to resume execution for one step (of the

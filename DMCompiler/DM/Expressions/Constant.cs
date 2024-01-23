@@ -1,10 +1,9 @@
 using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
-using JetBrains.Annotations;
 using System.IO;
 
 namespace DMCompiler.DM.Expressions {
@@ -96,49 +95,6 @@ namespace DMCompiler.DM.Expressions {
 
         public virtual Constant LessThanOrEqual(Constant rhs) {
             throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
-        }
-
-        public virtual Constant Sin() {
-            throw new CompileErrorException(Location, $"const operation \"sin({this})\" is invalid");
-        }
-
-        public virtual Constant Cos() {
-            throw new CompileErrorException(Location, $"const operation \"cos({this})\" is invalid");
-        }
-
-        public virtual Constant Tan() {
-            throw new CompileErrorException(Location, $"const operation \"tan({this})\" is invalid");
-        }
-
-        public virtual Constant Arcsin() {
-            throw new CompileErrorException(Location, $"const operation \"arcsin({this})\" is invalid");
-        }
-
-        public virtual Constant Arccos() {
-            throw new CompileErrorException(Location, $"const operation \"arccos({this})\" is invalid");
-        }
-
-        public virtual Constant Arctan() {
-            throw new CompileErrorException(Location, $"const operation \"arctan({this})\" is invalid");
-        }
-
-        public virtual Constant Arctan2(Constant yConst) {
-            throw new CompileErrorException(Location, $"const operation \"arctan({this}, {yConst})\" is invalid");
-        }
-
-        public virtual Constant Sqrt() {
-            throw new CompileErrorException(Location, $"const operation \"sqrt({this})\" is invalid");
-        }
-
-        public virtual Constant Log(Constant? baseVal) {
-            if (baseVal == null) {
-                throw new CompileErrorException(Location, $"const operation \"log({this})\" is invalid");
-            }
-            throw new CompileErrorException(Location, $"const operation \"log({baseVal}, {this})\" is invalid");
-        }
-
-        public virtual Constant Abs() {
-            throw new CompileErrorException(Location, $"const operation \"abs({this})\" is invalid");
         }
         #endregion
     }
@@ -359,70 +315,6 @@ namespace DMCompiler.DM.Expressions {
             }
             return new Number(Location, (Value <= rhsNum.Value) ? 1 : 0);
         }
-
-        public override Constant Sin() {
-            return new Number(Location, MathF.Sin(Value / 180 * MathF.PI));
-        }
-
-        public override Constant Cos() {
-            return new Number(Location, MathF.Cos(Value / 180 * MathF.PI));
-        }
-
-        public override Constant Tan() {
-            return new Number(Location, MathF.Tan(Value / 180 * MathF.PI));
-        }
-
-        public override Constant Arcsin() {
-            if (Value < -1 || Value > 1) {
-                throw new CompileErrorException(Location, $"const operation \"arcsin({this})\" is invalid (out of range)");
-            }
-            return new Number(Location, MathF.Asin(Value) / MathF.PI * 180);
-        }
-
-        public override Constant Arccos() {
-            if (Value < -1 || Value > 1) {
-                throw new CompileErrorException(Location, $"const operation \"arccos({this})\" is invalid (out of range)");
-            }
-            return new Number(Location, MathF.Acos(Value) / MathF.PI * 180);
-        }
-
-        public override Constant Arctan() {
-            return new Number(Location, MathF.Atan(Value) / MathF.PI * 180);
-        }
-
-        public override Constant Arctan2(Constant yConst) {
-            if (yConst is not Number yNum) {
-                throw new CompileErrorException(Location, $"const operation \"arctan2({this}, {yConst})\" is invalid");
-            }
-            return new Number(Location, MathF.Atan2(yNum.Value, Value) / MathF.PI * 180);
-        }
-
-        public override Constant Sqrt() {
-            if (Value < 0) {
-                throw new CompileErrorException(Location, $"const operation \"sqrt({this})\" is invalid (negative)");
-            }
-            return new Number(Location, MathF.Sqrt(Value));
-        }
-
-        public override Constant Log(Constant? baseVal) {
-            if (Value <= 0) {
-                throw new CompileErrorException(Location, $"const operation \"log({this})\" is invalid (non-positive)");
-            }
-            if (baseVal == null) {
-                return new Number(Location, MathF.Log(Value));
-            }
-            if (baseVal is not Number baseNum) {
-                throw new CompileErrorException(Location, $"const operation \"log({this}, {baseVal})\" is invalid");
-            }
-            if (baseNum.Value <= 0) {
-                throw new CompileErrorException(Location, $"const operation \"log({this}, {baseVal})\" is invalid (non-positive base)");
-            }
-            return new Number(Location, MathF.Log(Value, baseNum.Value));
-        }
-
-        public override Constant Abs() {
-            return new Number(Location, MathF.Abs(Value));
-        }
     }
 
     // "abc"
@@ -619,10 +511,11 @@ namespace DMCompiler.DM.Expressions {
                     proc.PushProc(pathInfo.Value.Id);
                     break;
                 case PathType.ProcStub:
-                    proc.PushProcStub(pathInfo.Value.Id);
-                    break;
                 case PathType.VerbStub:
-                    proc.PushVerbStub(pathInfo.Value.Id);
+                    var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+
+                    // /datum/proc and /datum/verb just compile down to strings lmao
+                    proc.PushString($"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}");
                     break;
                 default:
                     DMCompiler.ForcedError(Location, $"Invalid PathType {pathInfo.Value.Type}");
@@ -630,9 +523,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return Value.LastElement;
-        }
+        public override string? GetNameof(DMObject dmObject, DMProc proc) => Value.LastElement;
 
         public override bool IsTruthy() => true;
 
@@ -642,11 +533,17 @@ namespace DMCompiler.DM.Expressions {
                 return false;
             }
 
+            if (pathInfo.Value.Type is PathType.ProcStub or PathType.VerbStub) {
+                var type = DMObjectTree.AllObjects[pathInfo.Value.Id].Path.PathString;
+
+                json = $"{type}/{(pathInfo.Value.Type == PathType.ProcStub ? "proc" : "verb")}";
+                return true;
+            }
+
             JsonVariableType jsonType = pathInfo.Value.Type switch {
                 PathType.TypeReference => JsonVariableType.Type,
                 PathType.ProcReference => JsonVariableType.Proc,
-                PathType.ProcStub => JsonVariableType.ProcStub,
-                PathType.VerbStub => JsonVariableType.VerbStub
+                _ => throw new UnreachableException()
             };
 
             json = new Dictionary<string, object>() {

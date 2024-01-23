@@ -136,12 +136,13 @@ internal static partial class DreamProcNativeHelpers {
     /// If a range argument is passed, like "11x4", then THAT is what we have to deal with.
     /// </remarks>
     /// <returns>The center (which may not be the turf), the distance along the x-axis, and the distance along the y-axis to iterate.</returns>
-    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamObjectAtom? usr, ReadOnlySpan<DreamValue> arguments) {
+    public static (DreamObjectAtom?, ViewRange) ResolveViewArguments(DreamManager dreamMan, DreamObjectAtom? usr, ReadOnlySpan<DreamValue> arguments) {
+        ViewRange range = dreamMan.WorldInstance.DefaultView;
+
         if(arguments.Length == 0) {
-            return (usr, new ViewRange(5,5));
+            return (usr, range);
         }
 
-        ViewRange range = new ViewRange(5,5);
         DreamObjectAtom? center = usr;
 
         foreach (var arg in arguments) {
@@ -149,9 +150,9 @@ internal static partial class DreamProcNativeHelpers {
                 center = centerObject;
             } else if(arg.TryGetValueAsInteger(out int distValue)) {
                 range = new ViewRange(distValue);
-            } else if(arg.TryGetValueAsString(out var distString)) {
+            } else if (arg.TryGetValueAsString(out var distString)) {
                 range = new ViewRange(distString);
-            } else {
+            } else if (!arg.IsNull) { // null range arg is handled by DefaultView above
                 throw new Exception($"Invalid argument: {arg}");
             }
         }
@@ -404,6 +405,59 @@ internal static partial class DreamProcNativeHelpers {
     /// <returns></returns>
     public static string Ckey(string input) {
         return CkeyRegex().Replace(input.ToLower(), "");
+    }
+
+    /// <summary>
+    /// Gets the direction from loc1 to loc2
+    /// </summary>
+    public static AtomDirection GetDir(AtomManager atomManager, DreamObjectAtom loc1, DreamObjectAtom loc2) {
+        var loc1Pos = atomManager.GetAtomPosition(loc1);
+        var loc2Pos = atomManager.GetAtomPosition(loc2);
+
+        if (loc1Pos.Z != loc2Pos.Z) // They must be on the same z-level
+            return 0;
+
+        AtomDirection direction = AtomDirection.None;
+
+        // East or West
+        if (loc2Pos.X < loc1Pos.X)
+            direction |= AtomDirection.West;
+        else if (loc2Pos.X > loc1Pos.X)
+            direction |= AtomDirection.East;
+
+        // North or South
+        if (loc2Pos.Y < loc1Pos.Y)
+            direction |= AtomDirection.South;
+        else if (loc2Pos.Y > loc1Pos.Y)
+            direction |= AtomDirection.North;
+
+        return direction;
+    }
+
+    /// <summary>
+    /// Gets the turf 1 step away from an atom in the given direction
+    /// </summary>
+    public static DreamObjectTurf? GetStep(AtomManager atomManager, IDreamMapManager mapManager, DreamObjectAtom loc, AtomDirection dir) {
+        var dirInt = (int)dir;
+        var locPos = atomManager.GetAtomPosition(loc);
+
+        if ((dirInt & (int) AtomDirection.North) != 0)
+            locPos.Y += 1;
+        if ((dirInt & (int) AtomDirection.South) != 0) // A dir of NORTH | SOUTH will cancel out
+            locPos.Y -= 1;
+
+        if ((dirInt & (int) AtomDirection.East) != 0)
+            locPos.X += 1;
+        if ((dirInt & (int) AtomDirection.West) != 0) // A dir of EAST | WEST will cancel out
+            locPos.X -= 1;
+
+        if ((dirInt & (int) AtomDirection.Up) != 0)
+            locPos.Z += 1;
+        if ((dirInt & (int) AtomDirection.Down) != 0) // A dir of UP | DOWN will cancel out
+            locPos.Z -= 1;
+
+        mapManager.TryGetTurfAt((locPos.X, locPos.Y), locPos.Z, out var turf);
+        return turf;
     }
 
     [GeneratedRegex("[\\^]|[^a-z0-9@]")]

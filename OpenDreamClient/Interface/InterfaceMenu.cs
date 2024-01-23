@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Serialization.Manager;
 
@@ -133,7 +132,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                             MenuElementDescriptor.IsChecked = !MenuElementDescriptor.IsChecked;
                         _menu.CreateMenu();
                     if(!string.IsNullOrEmpty(MenuElementDescriptor.Command))
-                        EntitySystem.Get<DreamCommandSystem>().RunCommand(Command);
+                        _interfaceManager.RunCommand(Command);
                 };
             return menuButton;
         }

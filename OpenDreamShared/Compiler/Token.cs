@@ -39,7 +39,9 @@ namespace OpenDreamShared.Compiler {
         DM_Preproc_Punctuator_RightBracket,
         DM_Preproc_Punctuator_RightParenthesis,
         DM_Preproc_Punctuator_Semicolon,
-        DM_Preproc_String,
+        DM_Preproc_StringBegin,
+        DM_Preproc_StringMiddle,
+        DM_Preproc_StringEnd,
         DM_Preproc_TokenConcat,
         DM_Preproc_Undefine,
         DM_Preproc_Warning,
@@ -61,6 +63,7 @@ namespace OpenDreamShared.Compiler {
         DM_Catch,
         DM_Colon,
         DM_Comma,
+        DM_ConstantString,
         DM_Continue,
         DM_Dedent,
         DM_Del,
@@ -125,7 +128,9 @@ namespace OpenDreamShared.Compiler {
         DM_StarEquals,
         DM_StarStar,
         DM_Step,
-        DM_String,
+        DM_StringBegin,
+        DM_StringMiddle,
+        DM_StringEnd,
         DM_SuperProc,
         DM_Switch,
         DM_Throw,
@@ -152,7 +157,7 @@ namespace OpenDreamShared.Compiler {
         DMF_Window
     }
 
-    public sealed class Token {
+    public struct Token {
         public readonly TokenType Type;
         public Location Location;
         /// <remarks> Use <see cref="PrintableText"/> if you intend to show this to the user.</remarks>

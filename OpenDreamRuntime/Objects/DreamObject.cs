@@ -30,12 +30,14 @@ namespace OpenDreamRuntime.Objects {
         protected IDreamMapManager DreamMapManager => ObjectDefinition.DreamMapManager;
         protected IMapManager MapManager => ObjectDefinition.MapManager;
         protected DreamResourceManager DreamResourceManager => ObjectDefinition.DreamResourceManager;
+        protected WalkManager WalkManager => ObjectDefinition.WalkManager;
         protected IEntityManager EntityManager => ObjectDefinition.EntityManager;
         protected IPlayerManager PlayerManager => ObjectDefinition.PlayerManager;
         protected ISerializationManager SerializationManager => ObjectDefinition.SerializationManager;
         protected ServerAppearanceSystem? AppearanceSystem => ObjectDefinition.AppearanceSystem;
         protected TransformSystem? TransformSystem => ObjectDefinition.TransformSystem;
         protected PvsOverrideSystem? PvsOverrideSystem => ObjectDefinition.PvsOverrideSystem;
+        protected MetaDataSystem? MetaDataSystem => ObjectDefinition.MetaDataSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
 
@@ -425,7 +427,7 @@ namespace OpenDreamRuntime.Objects {
                 return $"{ObjectDefinition.Type}{{name=\"{name}\"}}";
             }
 
-            return ObjectDefinition.Type.ToString();
+            return ObjectDefinition.Type;
         }
     }
 }

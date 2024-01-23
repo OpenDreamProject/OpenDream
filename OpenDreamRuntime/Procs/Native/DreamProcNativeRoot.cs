@@ -721,7 +721,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Path", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_flist(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if (!bundle.GetArgument(0, "Path").TryGetValueAsString(out var path)) {
-                path = IoCManager.Resolve<DreamResourceManager>().RootPath + Path.DirectorySeparatorChar;
+                path = "./";
             }
 
             try {
@@ -1110,7 +1110,7 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (value.TryGetValueAsString(out var text))
                 writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
-                writer.WriteStringValue(type.Path.PathString);
+                writer.WriteStringValue(type.Path);
             else if (value.TryGetValueAsProc(out var proc))
                 writer.WriteStringValue(proc.ToString());
             else if (value.TryGetValueAsDreamList(out var list)) {
@@ -1580,7 +1580,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
@@ -1599,7 +1599,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_oview(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList view = bundle.ObjectTree.CreateList();
 
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return new(view);
 
@@ -1658,8 +1658,11 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!depthValue.TryGetValueAsInteger(out var depth))
                 depth = 5; //TODO: Default to world.view
 
-            foreach (DreamObjectMob mob in bundle.AtomManager.Mobs) {
-                if (mob.X == centerPos.X && mob.Y == centerPos.Y) continue;
+            foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+                var mob = (DreamObjectMob)atom;
+
+                if (mob.X == centerPos.X && mob.Y == centerPos.Y)
+                    continue;
 
                 if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
                     view.AddValue(new DreamValue(mob));
@@ -1771,7 +1774,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Dist", Type = DreamValueTypeFlag.Float, DefaultValue = 5)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_range(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return DreamValue.Null; // NOTE: Not sure if parity
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
@@ -2358,22 +2361,65 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("splittext")]
         [DreamProcParameter("Text", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("Delimiter", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
                 return new DreamValue(bundle.ObjectTree.CreateList());
             }
 
-            var arg2 = bundle.GetArgument(1, "Delimiter");
-            if (!arg2.TryGetValueAsString(out var delimiter)) {
-                if (!arg2.Equals(DreamValue.Null)) {
-                    return new DreamValue(bundle.ObjectTree.CreateList());
+            int start = 0;
+            int end = 0;
+            if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+                start -= 1; //1-indexed
+            if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+                if(end == 0)
+                    end = text.Length;
+                else
+                    end -= 1; //1-indexed
+            bool includeDelimiters = false;
+            if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
+                includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
+
+            if(start > 0 || end < text.Length)
+                text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+
+            var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
+
+            if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
+                if(includeDelimiters) {
+                    var values = new List<string>();
+                    int pos = 0;
+                    foreach (Match m in regexObject.Regex.Matches(text)) {
+                        values.Add(text.Substring(pos, m.Index - pos));
+                        values.Add(m.Value);
+                        pos = m.Index + m.Length;
+                    }
+                    values.Add(text.Substring(pos));
+                    return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
+                } else {
+                    return new DreamValue(bundle.ObjectTree.CreateList(regexObject.Regex.Split(text)));
                 }
+            } else if (delim.TryGetValueAsString(out var delimiter)) {
+                string[] splitText;
+                if(includeDelimiters) {
+                    //basically split on delimeter, and then add the delimiter back in after each split (except the last one)
+                    splitText= text.Split(delimiter);
+                    string[] longerSplitText = new string[splitText.Length * 2 - 1];
+                    for(int i = 0; i < splitText.Length; i++) {
+                        longerSplitText[i * 2] = splitText[i];
+                        if(i < splitText.Length - 1)
+                            longerSplitText[i * 2 + 1] = delimiter;
+                    }
+                    splitText = longerSplitText;
+                } else {
+                    splitText = text.Split(delimiter);
+                }
+                return new DreamValue(bundle.ObjectTree.CreateList(splitText));
+            } else {
+                return new DreamValue(bundle.ObjectTree.CreateList());
             }
-
-            string[] splitText = text.Split(delimiter);
-            DreamList list = bundle.ObjectTree.CreateList(splitText);
-
-            return new DreamValue(list);
         }
 
         private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
@@ -2505,17 +2551,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_text2path(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "T").TryGetValueAsString(out var text) || string.IsNullOrWhiteSpace(text)) {
+            if (!bundle.GetArgument(0, "T").TryGetValueAsString(out var path) || string.IsNullOrWhiteSpace(path)) {
                 return DreamValue.Null;
             }
 
-            DreamPath path = new DreamPath(text);
-
             bool isVerb = false;
 
-            int procElementIndex = path.FindElement("proc");
+            int procElementIndex = path.IndexOf("/proc/", StringComparison.Ordinal);
             if (procElementIndex == -1) {
-                procElementIndex = path.FindElement("verb");
+                procElementIndex = path.IndexOf("/verb/", StringComparison.Ordinal);
                 if (procElementIndex != -1)
                     isVerb = true;
             }
@@ -2524,17 +2568,17 @@ namespace OpenDreamRuntime.Procs.Native {
 
             string? procName = null;
             if (isProcPath) {
-                procName = path.LastElement;
+                procName = path.Substring(path.LastIndexOf('/') + 1);
 
                 if (procElementIndex == 0) { // global procs
-                    if (procName != null && bundle.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
+                    if (bundle.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
                         return new DreamValue(globalProc);
                     else
                         return DreamValue.Null;
                 }
             }
 
-            DreamPath typePath = isProcPath ? path.FromElements(0, procElementIndex) : path;
+            string typePath = isProcPath ? path.Substring(0, procElementIndex) : path;
 
             if (!bundle.ObjectTree.TryGetTreeEntry(typePath, out var type) || type == bundle.ObjectTree.Root)
                 return DreamValue.Null;
@@ -2572,7 +2616,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             // The DM reference says this is 0-864000. That's wrong, it's actually a 7-day range instead of 1
             if (timestamp >= 0 && timestamp < 864000*7) {
-                ticks += DateTime.Today.Ticks;
+                ticks += new DateTime(DateTime.UtcNow.Year, DateTime.UtcNow.Month, DateTime.UtcNow.Day).Ticks;
             } else {
                 // Offset from January 1st, 2020
                 ticks += new DateTime(2000, 1, 1).Ticks;
@@ -2707,7 +2751,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("typesof")]
-        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.ProcStub | DreamValueTypeFlag.VerbStub)]
+        [DreamProcParameter("Item1", Type = DreamValueTypeFlag.DreamType | DreamValueTypeFlag.DreamObject | DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_typesof(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = bundle.ObjectTree.CreateList(bundle.Arguments.Length); // Assume every arg will add at least one type
 
@@ -2721,20 +2765,15 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         type = typeObj.ObjectDefinition.TreeEntry;
                     } else if (typeValue.TryGetValueAsString(out var typeString)) {
-                        DreamPath path = new DreamPath(typeString);
-
-                        if (path.LastElement is "proc" or "verb") {
-                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                        if (typeString.EndsWith("/proc")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
                             addingProcs = type.ObjectDefinition.Procs.Values;
+                        } else if (typeString.EndsWith("/verb")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
+                            addingProcs = type.ObjectDefinition.Verbs;
                         } else {
-                            type = bundle.ObjectTree.GetTreeEntry(path);
+                            type = bundle.ObjectTree.GetTreeEntry(typeString);
                         }
-                    } else if (typeValue.TryGetValueAsProcStub(out var owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Procs.Values;
-                    } else if (typeValue.TryGetValueAsVerbStub(out owner)) {
-                        type = owner;
-                        addingProcs = type.ObjectDefinition.Verbs;
                     } else {
                         continue;
                     }
@@ -2795,7 +2834,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_view(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList view = bundle.ObjectTree.CreateList();
 
-            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(usr as DreamObjectAtom, bundle.Arguments);
+            (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
                 return new(view);
 
@@ -2856,7 +2895,9 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!depthValue.TryGetValueAsInteger(out var depth))
                 depth = 5; //TODO: Default to world.view
 
-            foreach (DreamObjectMob mob in bundle.AtomManager.Mobs) {
+            foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
+                var mob = (DreamObjectMob)atom;
+
                 if (Math.Abs(centerX - mob.X) <= depth && Math.Abs(centerY - mob.Y) <= depth) {
                     view.AddValue(new DreamValue(mob));
                 }
@@ -2885,6 +2926,27 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_walk_to(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             //TODO: Implement walk_to()
 
+            return DreamValue.Null;
+        }
+
+        [DreamProc("walk_towards")]
+        [DreamProcParameter("Ref", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("Trg", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("Lag", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("Speed", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        public static DreamValue NativeProc_walk_towards(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            if (!bundle.GetArgument(0, "Ref").TryGetValueAsDreamObject<DreamObjectMovable>(out var refAtom))
+                return DreamValue.Null;
+
+            if (!bundle.GetArgument(1, "Trg").TryGetValueAsDreamObject<DreamObjectAtom>(out var trgAtom)) {
+                bundle.WalkManager.StopWalks(refAtom);
+                return DreamValue.Null;
+            }
+
+            bundle.GetArgument(2, "Lag").TryGetValueAsInteger(out var lag);
+            bundle.GetArgument(3, "Speed").TryGetValueAsInteger(out var speed); // TODO: Use this. Speed=0 uses Ref.step_size
+
+            bundle.WalkManager.StartWalkTowards(refAtom, trgAtom, lag);
             return DreamValue.Null;
         }
 

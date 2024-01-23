@@ -29,7 +29,7 @@ namespace OpenDreamRuntime.Procs {
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, DreamPath owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
+        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
@@ -268,8 +268,6 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.PushGlobalVars, DMOpcodeHandlers.PushGlobalVars},
             {DreamProcOpcode.ModulusModulus, DMOpcodeHandlers.ModulusModulus},
             {DreamProcOpcode.ModulusModulusReference, DMOpcodeHandlers.ModulusModulusReference},
-            {DreamProcOpcode.PushProcStub, DMOpcodeHandlers.PushProcStub},
-            {DreamProcOpcode.PushVerbStub, DMOpcodeHandlers.PushVerbStub},
             {DreamProcOpcode.AssignInto, DMOpcodeHandlers.AssignInto},
             {DreamProcOpcode.JumpIfNull, DMOpcodeHandlers.JumpIfNull},
             {DreamProcOpcode.JumpIfNullNoPop, DMOpcodeHandlers.JumpIfNullNoPop},
@@ -288,10 +286,10 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.Sin, DMOpcodeHandlers.Sin},
             {DreamProcOpcode.Cos, DMOpcodeHandlers.Cos},
             {DreamProcOpcode.Tan, DMOpcodeHandlers.Tan},
-            {DreamProcOpcode.Arcsin, DMOpcodeHandlers.Arcsin},
-            {DreamProcOpcode.Arccos, DMOpcodeHandlers.Arccos},
-            {DreamProcOpcode.Arctan, DMOpcodeHandlers.Arctan},
-            {DreamProcOpcode.Arctan2, DMOpcodeHandlers.Arctan2},
+            {DreamProcOpcode.ArcSin, DMOpcodeHandlers.ArcSin},
+            {DreamProcOpcode.ArcCos, DMOpcodeHandlers.ArcCos},
+            {DreamProcOpcode.ArcTan, DMOpcodeHandlers.ArcTan},
+            {DreamProcOpcode.ArcTan2, DMOpcodeHandlers.ArcTan2},
             {DreamProcOpcode.Sqrt, DMOpcodeHandlers.Sqrt},
             {DreamProcOpcode.Log, DMOpcodeHandlers.Log},
             {DreamProcOpcode.LogE, DMOpcodeHandlers.LogE},
@@ -427,8 +425,8 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public override void AppendStackFrame(StringBuilder builder) {
-            if (Proc.OwningType != DreamPath.Root) {
-                builder.Append(Proc.OwningType.ToString());
+            if (Proc.OwningType != Proc.ObjectTree.Root) {
+                builder.Append(Proc.OwningType);
                 builder.Append('/');
             }
 
@@ -437,6 +435,10 @@ namespace OpenDreamRuntime.Procs {
 
             // Subtract 1 because _pc may have been advanced to the next line
             builder.Append(Proc.GetSourceAtOffset(_pc - 1).Line);
+        }
+
+        public (string, int) GetCurrentSource() {
+            return Proc.GetSourceAtOffset(_pc - 1);
         }
 
         public void Jump(int position) {
@@ -979,6 +981,9 @@ namespace OpenDreamRuntime.Procs {
 
                     var argumentCount = argumentStackSize / 2;
                     var arguments = new DreamValue[Math.Max(argumentCount, proc.ArgumentNames.Count)];
+                    var skippingArg = false;
+                    var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
+                                             proc == Proc.DreamManager.ImageFactoryProc;
 
                     Array.Fill(arguments, DreamValue.Null);
                     for (int i = 0; i < argumentCount; i++) {
@@ -986,7 +991,15 @@ namespace OpenDreamRuntime.Procs {
                         var value = values[i*2+1];
 
                         if (key.IsNull) {
-                            arguments[i] = value;
+                            // image() or new /image() will skip the loc arg if the second arg is a string
+                            // Really don't like this but it's BYOND behavior
+                            // Note that the way we're doing it leads to different argument placement when there are no named args
+                            // Hopefully nothing depends on that though
+                            // TODO: We aim to do sanity improvements in the future, yea? Big one here
+                            if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
+                                skippingArg = true;
+
+                            arguments[skippingArg ? i + 1 : i] = value;
                         } else {
                             string argumentName = key.MustGetValueAsString();
                             int argumentIndex = proc.ArgumentNames.IndexOf(argumentName);
@@ -1007,6 +1020,9 @@ namespace OpenDreamRuntime.Procs {
 
                     var listValues = argList.GetValues();
                     var arguments = new DreamValue[Math.Max(listValues.Count, proc.ArgumentNames.Count)];
+                    var skippingArg = false;
+                    var isImageConstructor = proc == Proc.DreamManager.ImageConstructor ||
+                                             proc == Proc.DreamManager.ImageFactoryProc;
 
                     Array.Fill(arguments, DreamValue.Null);
                     for (int i = 0; i < listValues.Count; i++) {
@@ -1022,8 +1038,15 @@ namespace OpenDreamRuntime.Procs {
 
                             arguments[argumentIndex] = argList.GetValue(value);
                         } else { //Ordered argument
+                            // image() or new /image() will skip the loc arg if the second arg is a string
+                            // Really don't like this but it's BYOND behavior
+                            // Note that the way we're doing it leads to different argument placement when there are no named args
+                            // Hopefully nothing depends on that though
+                            if (isImageConstructor && i == 1 && value.Type == DreamValue.DreamValueType.String)
+                                skippingArg = true;
+
                             // TODO: Verify ordered args precede all named args
-                            arguments[i] = value;
+                            arguments[skippingArg ? i + 1 : i] = value;
                         }
                     }
 

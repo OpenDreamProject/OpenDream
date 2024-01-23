@@ -1,9 +1,10 @@
-using OpenDreamShared.Compiler;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
+using OpenDreamShared.Compiler;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Json;
 using System.Collections.Generic;
-using DMCompiler.Bytecode;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -46,6 +47,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class New : DMExpression {
         private readonly DMExpression _expr;
         private readonly ArgumentList _arguments;
+
+        public override bool PathIsFuzzy => Path == null;
 
         public New(Location location, DMExpression expr, ArgumentList arguments) : base(location) {
             _expr = expr;
@@ -344,6 +347,8 @@ namespace DMCompiler.DM.Expressions {
     internal sealed class IsNull : DMExpression {
         private readonly DMExpression _value;
 
+        public override bool PathIsFuzzy => true;
+
         public IsNull(Location location, DMExpression value) : base(location) {
             _value = value;
         }
@@ -357,6 +362,8 @@ namespace DMCompiler.DM.Expressions {
     // length(x)
     internal sealed class Length : DMExpression {
         private readonly DMExpression _value;
+
+        public override bool PathIsFuzzy => true;
 
         public Length(Location location, DMExpression value) : base(location) {
             _value = value;
@@ -372,6 +379,8 @@ namespace DMCompiler.DM.Expressions {
     internal sealed class GetStep : DMExpression {
         private readonly DMExpression _ref;
         private readonly DMExpression _dir;
+
+        public override bool PathIsFuzzy => true;
 
         public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
             _ref = refValue;
@@ -390,6 +399,8 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression _loc1;
         private readonly DMExpression _loc2;
 
+        public override bool PathIsFuzzy => true;
+
         public GetDir(Location location, DMExpression loc1, DMExpression loc2) : base(location) {
             _loc1 = loc1;
             _loc2 = loc2;
@@ -406,6 +417,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class List : DMExpression {
         private readonly (DMExpression? Key, DMExpression Value)[] _values;
         private readonly bool _isAssociative;
+
+        public override bool PathIsFuzzy => true;
 
         public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
             _values = values;
@@ -578,19 +591,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // nameof(x)
-    sealed class Nameof : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Nameof(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushString(_expr.GetNameof(dmObject, proc));
-        }
-    }
-
     // call(...)(...)
     sealed class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
@@ -631,6 +631,15 @@ namespace DMCompiler.DM.Expressions {
                 proc.PushType(dmObject.Id);
             }
         }
+
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            if (dmObject.Path.LastElement != null) {
+                return dmObject.Path.LastElement;
+            }
+
+            DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
+            return null;
+        }
     }
 
     // __PROC__
@@ -642,22 +651,30 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushProc(proc.Id);
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
-    class Sin : DMExpression {
-        DMExpression _expr;
+    internal class Sin : DMExpression {
+        private readonly DMExpression _expr;
 
         public Sin(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Sin();
+            if (constant is not Number {Value: var x}) {
+                x = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, sin(0) will always be 0");
+            }
+
+            constant = new Number(Location, SharedOperations.Sin(x));
             return true;
         }
 
@@ -667,20 +684,26 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class Cos : DMExpression {
-        DMExpression _expr;
+    internal class Cos : DMExpression {
+        private readonly DMExpression _expr;
 
         public Cos(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Cos();
+            if (constant is not Number {Value: var x}) {
+                x = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, cos(0) will always be 1");
+            }
+
+            constant = new Number(Location, SharedOperations.Cos(x));
             return true;
         }
 
@@ -690,20 +713,26 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class Tan : DMExpression {
-        DMExpression _expr;
+    internal class Tan : DMExpression {
+        private readonly DMExpression _expr;
 
         public Tan(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Tan();
+            if (constant is not Number {Value: var x}) {
+                x = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, tan(0) will always be 0");
+            }
+
+            constant = new Number(Location, SharedOperations.Tan(x));
             return true;
         }
 
@@ -713,115 +742,164 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class Arcsin : DMExpression {
-        DMExpression _expr;
+    internal class ArcSin : DMExpression {
+        private readonly DMExpression _expr;
 
-        public Arcsin(Location location, DMExpression expr) : base(location) {
+        public ArcSin(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Arcsin();
+            if (constant is not Number {Value: var x}) {
+                x = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, arcsin(0) will always be 0");
+            }
+
+            if (x is < -1 or > 1) {
+                DMCompiler.Emit(WarningCode.BadArgument, _expr.Location, $"Invalid value {x}, must be >= -1 and <= 1");
+                x = 0;
+            }
+
+            constant = new Number(Location, SharedOperations.ArcSin(x));
             return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.Arcsin();
+            proc.ArcSin();
         }
     }
 
-    class Arccos : DMExpression {
-        DMExpression _expr;
+    internal class ArcCos : DMExpression {
+        private readonly DMExpression _expr;
 
-        public Arccos(Location location, DMExpression expr) : base(location) {
+        public ArcCos(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Arccos();
+            if (constant is not Number {Value: var x}) {
+                x = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, arccos(0) will always be 1");
+            }
+
+            if (x is < -1 or > 1) {
+                DMCompiler.Emit(WarningCode.BadArgument, _expr.Location, $"Invalid value {x}, must be >= -1 and <= 1");
+                x = 0;
+            }
+
+            constant = new Number(Location, SharedOperations.ArcCos(x));
             return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.Arccos();
+            proc.ArcCos();
         }
     }
 
-    class Arctan : DMExpression {
-        DMExpression _expr;
+    internal class ArcTan : DMExpression {
+        private readonly DMExpression _expr;
 
-        public Arctan(Location location, DMExpression expr) : base(location) {
+        public ArcTan(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Arctan();
+            if (constant is not Number {Value: var a}) {
+                a = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, arctan(0) will always be 0");
+            }
+
+            constant = new Number(Location, SharedOperations.ArcTan(a));
             return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             _expr.EmitPushValue(dmObject, proc);
-            proc.Arctan();
+            proc.ArcTan();
         }
     }
 
-    class Arctan2 : DMExpression {
-        DMExpression _xexpr;
-        DMExpression _yexpr;
+    internal class ArcTan2 : DMExpression {
+        private readonly DMExpression _xExpr;
+        private readonly DMExpression _yExpr;
 
-        public Arctan2(Location location, DMExpression xexpr, DMExpression yexpr) : base(location) {
-            _xexpr = xexpr;
-            _yexpr = yexpr;
+        public ArcTan2(Location location, DMExpression xExpr, DMExpression yExpr) : base(location) {
+            _xExpr = xExpr;
+            _yExpr = yExpr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
-            if (!_xexpr.TryAsConstant(out Constant xconst) || !_yexpr.TryAsConstant(out Constant yconst)) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+            if (!_xExpr.TryAsConstant(out var xConst) || !_yExpr.TryAsConstant(out var yConst)) {
                 constant = null;
                 return false;
             }
 
-            constant = xconst.Arctan2(yconst);
+            if (xConst is not Number {Value: var x}) {
+                x = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _xExpr.Location, "Invalid x value treated as 0");
+            }
+
+            if (yConst is not Number {Value: var y}) {
+                y = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _xExpr.Location, "Invalid y value treated as 0");
+            }
+
+            constant = new Number(Location, SharedOperations.ArcTan(x, y));
             return true;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            _xexpr.EmitPushValue(dmObject, proc);
-            _yexpr.EmitPushValue(dmObject, proc);
-            proc.Arctan2();
+            _xExpr.EmitPushValue(dmObject, proc);
+            _yExpr.EmitPushValue(dmObject, proc);
+            proc.ArcTan2();
         }
     }
 
-    class Sqrt : DMExpression {
-        DMExpression _expr;
+    internal class Sqrt : DMExpression {
+        private readonly DMExpression _expr;
 
         public Sqrt(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Sqrt();
+            if (constant is not Number {Value: var a}) {
+                a = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, sqrt(0) will always be 0");
+            }
+
+            if (a < 0) {
+                DMCompiler.Emit(WarningCode.BadArgument, _expr.Location,
+                    $"Cannot get the square root of a negative number ({a})");
+            }
+
+            constant = new Number(Location, SharedOperations.Sqrt(a));
             return true;
         }
 
@@ -831,32 +909,44 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class Log : DMExpression {
-        DMExpression _expr;
-        DMExpression? _baseExpr;
+    internal class Log : DMExpression {
+        private readonly DMExpression _expr;
+        private readonly DMExpression? _baseExpr;
 
         public Log(Location location, DMExpression expr, DMExpression? baseExpr) : base(location) {
             _expr = expr;
             _baseExpr = baseExpr;
         }
-        
-        public override bool TryAsConstant(out Constant constant) {
+
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
+            if (constant is not Number {Value: var value} || value <= 0) {
+                value = 1;
+                DMCompiler.Emit(WarningCode.BadArgument, _expr.Location,
+                    "Invalid value, must be a number greater than 0");
+            }
+
             if (_baseExpr == null) {
-                constant = constant.Log(null);
+                constant = new Number(Location, SharedOperations.Log(value));
                 return true;
             }
 
-            if (!_baseExpr.TryAsConstant(out Constant baseConstant)) {
+            if (!_baseExpr.TryAsConstant(out var baseConstant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Log(baseConstant);
+            if (baseConstant is not Number {Value: var baseValue} || baseValue <= 0) {
+                baseValue = 10;
+                DMCompiler.Emit(WarningCode.BadArgument, _baseExpr.Location,
+                    "Invalid base, must be a number greater than 0");
+            }
+
+            constant = new Number(Location, SharedOperations.Log(value, baseValue));
             return true;
         }
 
@@ -871,20 +961,26 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    class Abs : DMExpression {
-        DMExpression _expr;
+    internal class Abs : DMExpression {
+        private readonly DMExpression _expr;
 
         public Abs(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
 
-        public override bool TryAsConstant(out Constant constant) {
+        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!_expr.TryAsConstant(out constant)) {
                 constant = null;
                 return false;
             }
 
-            constant = constant.Abs();
+            if (constant is not Number {Value: var a}) {
+                a = 0;
+                DMCompiler.Emit(WarningCode.FallbackBuiltinArgument, _expr.Location,
+                    "Invalid value treated as 0, abs(0) will always be 0");
+            }
+
+            constant = new Number(Location, SharedOperations.Abs(a));
             return true;
         }
 

@@ -134,7 +134,6 @@
 		src_object.MouseDrag(over_object,src_location,over_location,src_control,over_control,params)
 
 	proc/MouseDrop(atom/src_object,over_object,src_location,over_location,src_control,over_control,params)
-		set opendream_unimplemented = TRUE
 		src_object.MouseDrop(over_object,src_location,over_location,src_control,over_control,params)
 
 	proc/MouseEntered(atom/object,location,control,params)

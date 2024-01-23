@@ -31,6 +31,7 @@ namespace OpenDreamRuntime {
 
         public readonly List<DMValueType>? ArgumentTypes;
 
+        public int? VerbId = null; // Null until registered as a verb in ServerVerbSystem
         public string VerbName => _verbName ?? Name;
         public readonly string? VerbCategory = string.Empty;
         public readonly sbyte Invisibility;
@@ -86,7 +87,7 @@ namespace OpenDreamRuntime {
         }
 
         public override string ToString() {
-            var procElement = (SuperProc == null) ? (IsVerb ? "verb/" : "proc/") : String.Empty; // Has "proc/" only if it's not an override
+            var procElement = (SuperProc == null) ? (IsVerb ? "verb/" : "proc/") : string.Empty; // Has "proc/" only if it's not an override
 
             return $"{OwningType.Path}{(OwningType.Path.EndsWith('/') ? string.Empty : "/")}{procElement}{Name}";
         }

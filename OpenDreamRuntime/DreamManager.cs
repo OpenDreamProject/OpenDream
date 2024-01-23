@@ -20,6 +20,7 @@ using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
+        [Dependency] private readonly AtomManager _atomManager = default!;
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPlayerManager _playerManager = default!;
         [Dependency] private readonly IDreamMapManager _dreamMapManager = default!;
@@ -28,6 +29,7 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly ITaskManager _taskManager = default!;
         [Dependency] private readonly IGameTiming _gameTiming = default!;
         [Dependency] private readonly DreamObjectTree _objectTree = default!;
+        [Dependency] private readonly IEntityManager _entityManager = default!;
         [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
         [Dependency] private readonly IStatusHost _statusHost = default!;
         [Dependency] private readonly IDependencyCollection _dependencyCollection = default!;
@@ -299,6 +301,21 @@ namespace OpenDreamRuntime {
 
             // Nothing found
             return DreamValue.Null;
+        }
+
+        public DreamObject? GetFromClientReference(DreamConnection connection, ClientObjectReference reference) {
+            switch (reference.Type) {
+                case ClientObjectReference.RefType.Client:
+                    return connection.Client;
+                case ClientObjectReference.RefType.Entity:
+                    _atomManager.TryGetMovableFromEntity(_entityManager.GetEntity(reference.Entity), out var atom);
+                    return atom;
+                case ClientObjectReference.RefType.Turf:
+                    _dreamMapManager.TryGetTurfAt((reference.TurfX, reference.TurfY), reference.TurfZ, out var turf);
+                    return turf;
+            }
+
+            return null;
         }
 
         public void HandleException(Exception e) {

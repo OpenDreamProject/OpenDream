@@ -1,5 +1,4 @@
-﻿using System;
-using Lidgren.Network;
+﻿using Lidgren.Network;
 using OpenDreamShared.Dream;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
@@ -10,9 +9,9 @@ namespace OpenDreamShared.Network.Messages {
 
         public int PromptId;
         public DMValueType Types;
-        public string Title = String.Empty;
-        public string Message = String.Empty;
-        public string DefaultValue = String.Empty;
+        public string Title = string.Empty;
+        public string Message = string.Empty;
+        public string DefaultValue = string.Empty;
 
         public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
             PromptId = buffer.ReadVariableInt32();

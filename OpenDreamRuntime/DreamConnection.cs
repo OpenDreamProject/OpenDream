@@ -6,7 +6,6 @@ using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
@@ -23,8 +22,8 @@ public sealed class DreamConnection {
 
     private readonly ServerScreenOverlaySystem? _screenOverlaySystem;
     private readonly ServerClientImagesSystem? _clientImagesSystem;
+    private readonly ServerVerbSystem? _verbSystem;
 
-    [ViewVariables] private readonly Dictionary<string, (DreamObject Src, DreamProc Verb)> _availableVerbs = new();
     [ViewVariables] private readonly Dictionary<string, List<(string, string, string?)>> _statPanels = new();
     [ViewVariables] private bool _currentlyUpdatingStat;
 
@@ -58,8 +57,6 @@ public sealed class DreamConnection {
                     _mob.Key = Session!.Name;
                     _mob.SpawnProc("Login", usr: _mob);
                 }
-
-                UpdateAvailableVerbs();
             }
         }
     }
@@ -101,16 +98,16 @@ public sealed class DreamConnection {
 
         _entitySystemManager.TryGetEntitySystem(out _screenOverlaySystem);
         _entitySystemManager.TryGetEntitySystem(out _clientImagesSystem);
+        _entitySystemManager.TryGetEntitySystem(out _verbSystem);
     }
 
     public void HandleConnection(ICommonSession session) {
-        var client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem, _clientImagesSystem);
-
         Session = session;
 
-        Client = client;
+        Client = new DreamObjectClient(_objectTree.Client.ObjectDefinition, this, _screenOverlaySystem, _clientImagesSystem);
         Client.InitSpawn(new());
 
+        _verbSystem?.UpdateClientVerbs(Client);
         SendClientInfoUpdate();
     }
 
@@ -132,64 +129,6 @@ public sealed class DreamConnection {
         Client = null;
 
         Session = null;
-    }
-
-    public void UpdateAvailableVerbs() {
-        _availableVerbs.Clear();
-        var verbs = new List<(string, string, string)>();
-
-        void AddVerbs(DreamObject src, IEnumerable<DreamValue> adding) {
-            foreach (DreamValue mobVerb in adding) {
-                if (!mobVerb.TryGetValueAsProc(out var proc))
-                    continue;
-
-                string verbName = proc.VerbName ?? proc.Name;
-                string verbId = verbName.ToLowerInvariant().Replace(" ", "-"); // Case-insensitive, dashes instead of spaces
-                if (_availableVerbs.ContainsKey(verbId)) {
-                    // BYOND will actually show the user two verbs with different capitalization/dashes, but they will both execute the same verb.
-                    // We make a warning and ignore the latter ones instead.
-                    _sawmill.Warning($"User \"{Session.Name}\" has multiple verb commands named \"{verbId}\", ignoring all but the first");
-                    continue;
-                }
-
-                _availableVerbs.Add(verbId, (src, proc));
-
-                // Don't send invisible verbs.
-                if (_mob != null && proc.Invisibility > _mob.SeeInvisible) {
-                    continue;
-                }
-
-                // Don't send hidden verbs. Names starting with "." count as hidden.
-                if ((proc.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden ||
-                    verbName.StartsWith('.')) {
-                    continue;
-                }
-
-                string? category = proc.VerbCategory;
-                // Explicitly null category is hidden from verb panels, "" category becomes the default_verb_category
-                if (category == string.Empty) {
-                    // But if default_verb_category is null, we hide it from the verb panel
-                    Client.GetVariable("default_verb_category").TryGetValueAsString(out category);
-                }
-
-                // Null category is serialized as an empty string and treated as hidden
-                verbs.Add((verbName, verbId, category ?? string.Empty));
-            }
-        }
-
-        if (Client != null) {
-            AddVerbs(Client, Client.Verbs.GetValues());
-        }
-
-        if (Mob != null) {
-            AddVerbs(Mob, Mob.Verbs.GetValues());
-        }
-
-        var msg = new MsgUpdateAvailableVerbs() {
-            AvailableVerbs = verbs.ToArray()
-        };
-
-        Session?.ConnectedClient.SendMessage(msg);
     }
 
     public void UpdateStat() {
@@ -317,9 +256,8 @@ public sealed class DreamConnection {
         Session?.ConnectedClient.SendMessage(msg);
     }
 
+    // TODO: Remove this. Vestigial and doesn't run all commands.
     public void HandleCommand(string fullCommand) {
-        // TODO: Arguments are a little more complicated than "split by spaces"
-        // e.g. strings can be passed
         string[] args = fullCommand.Split(' ', StringSplitOptions.TrimEntries);
         string command = args[0].ToLowerInvariant(); // Case-insensitive
 
@@ -349,55 +287,12 @@ public sealed class DreamConnection {
                 if (Mob != null)
                     _walkManager.StopWalks(Mob);
                 Client?.SpawnProc(movementProc, Mob); break;
-
-            default: {
-                if (_availableVerbs.TryGetValue(command, out var value)) {
-                    (DreamObject verbSrc, DreamProc verb) = value;
-
-                    DreamThread.Run(fullCommand, async (state) => {
-                        DreamValue[] arguments;
-                        if (verb.ArgumentNames != null) {
-                            arguments = new DreamValue[verb.ArgumentNames.Count];
-
-                            // TODO: this should probably be done on the client, shouldn't it?
-                            if (args.Length == 1) { // No args given; prompt the client for them
-                                for (int i = 0; i < verb.ArgumentNames.Count; i++) {
-                                    String argumentName = verb.ArgumentNames[i];
-                                    DMValueType argumentType = verb.ArgumentTypes[i];
-                                    DreamValue argumentValue = await Prompt(argumentType, title: String.Empty, // No settable title for verbs
-                                        argumentName, defaultValue: String.Empty); // No default value for verbs
-
-                                    arguments[i] = argumentValue;
-                                }
-                            } else { // Attempt to parse the given arguments
-                                for (int i = 0; i < verb.ArgumentNames.Count; i++) {
-                                    DMValueType argumentType = verb.ArgumentTypes[i];
-
-                                    if (argumentType == DMValueType.Text) {
-                                        arguments[i] = new(args[i + 1]);
-                                    } else {
-                                        _sawmill.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
-                                        return DreamValue.Null;
-                                    }
-                                }
-                            }
-                        } else {
-                            arguments = Array.Empty<DreamValue>();
-                        }
-
-                        await state.Call(verb, verbSrc, Mob, arguments);
-                        return DreamValue.Null;
-                    });
-                }
-
-                break;
-            }
         }
     }
 
-    public Task<DreamValue> Prompt(DMValueType types, String title, String message, String defaultValue) {
+    public Task<DreamValue> Prompt(DMValueType types, string title, string message, string defaultValue) {
         var task = MakePromptTask(out var promptId);
-        var msg = new MsgPrompt() {
+        var msg = new MsgPrompt {
             PromptId = promptId,
             Title = title,
             Message = message,

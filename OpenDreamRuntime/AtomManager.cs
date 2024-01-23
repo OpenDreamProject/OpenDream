@@ -33,8 +33,9 @@ public sealed class AtomManager {
     private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
     private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+    private ServerVerbSystem VerbSystem => _verbSystem ??= _entitySystemManager.GetEntitySystem<ServerVerbSystem>();
     private ServerAppearanceSystem? _appearanceSystem;
-    private MetaDataSystem? _metaDataSystem;
+    private ServerVerbSystem? _verbSystem;
 
     // ReSharper disable ForCanBeConvertedToForeach (the collections could be added to)
     public IEnumerable<DreamObjectAtom> EnumerateAtoms(TreeEntry? filterType = null) {
@@ -205,19 +206,6 @@ public sealed class AtomManager {
         _entityManager.DeleteEntity(movable.Entity);
     }
 
-    public DreamObjectAtom? GetAtom(AtomReference reference) {
-        switch (reference.AtomType) {
-            case AtomReference.RefType.Entity:
-                TryGetMovableFromEntity(_entityManager.GetEntity(reference.Entity), out var atom);
-                return atom;
-            case AtomReference.RefType.Turf:
-                _dreamMapManager.TryGetTurfAt((reference.TurfX, reference.TurfY), reference.TurfZ, out var turf);
-                return turf;
-        }
-
-        return null;
-    }
-
     public bool IsValidAppearanceVar(string name) {
         switch (name) {
             case "icon":
@@ -239,6 +227,7 @@ public sealed class AtomManager {
             case "render_target":
             case "transform":
             case "appearance":
+            case "verbs":
                 return true;
 
             // Get/SetAppearanceVar doesn't handle these
@@ -342,6 +331,29 @@ public sealed class AtomManager {
                     : DreamObjectMatrix.IdentityMatrixArray;
 
                 appearance.Transform = transformArray;
+                break;
+            case "verbs":
+                appearance.Verbs.Clear();
+
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    foreach (DreamValue verbValue in valueList.GetValues()) {
+                        if (!verbValue.TryGetValueAsProc(out var verb))
+                            continue;
+
+                        if (!verb.VerbId.HasValue)
+                            VerbSystem.RegisterVerb(verb);
+                        if (appearance.Verbs.Contains(verb.VerbId!.Value))
+                            continue;
+
+                        appearance.Verbs.Add(verb.VerbId.Value);
+                    }
+                } else if (value.TryGetValueAsProc(out var verb)) {
+                    if (!verb.VerbId.HasValue)
+                        VerbSystem.RegisterVerb(verb);
+
+                    appearance.Verbs.Add(verb.VerbId!.Value);
+                }
+
                 break;
             case "appearance":
                 throw new Exception("Cannot assign the appearance var on an appearance");
@@ -568,6 +580,14 @@ public sealed class AtomManager {
 
         if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformMatrix)) {
             appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
+        }
+
+        if (def.Verbs != null) {
+            foreach (var verb in def.Verbs) {
+                var verbProc = _objectTree.Procs[verb];
+
+                appearance.Verbs.Add(verbProc.VerbId!.Value);
+            }
         }
 
         _definitionAppearanceCache.Add(def, appearance);

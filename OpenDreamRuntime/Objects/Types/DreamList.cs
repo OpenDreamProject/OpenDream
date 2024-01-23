@@ -506,35 +506,41 @@ sealed class DreamGlobalVars : DreamList {
     }
 }
 
-// verbs list
-// Keeps track of an atom's or client's verbs
-public sealed class VerbsList : DreamList {
-    private readonly List<DreamProc> _verbs = new();
+// client.verbs list
+// Keeps track of a client's verbs
+public sealed class ClientVerbsList : DreamList {
+    public readonly List<DreamProc> Verbs = new();
 
-    public VerbsList(DreamObjectTree objectTree, DreamObject dreamObject) : base(objectTree.List.ObjectDefinition, 0) {
-        List<int>? verbs = dreamObject.ObjectDefinition.Verbs;
+    private readonly DreamObjectClient _client;
+    private readonly ServerVerbSystem? _verbSystem;
+
+    public ClientVerbsList(DreamObjectTree objectTree, ServerVerbSystem? verbSystem, DreamObjectClient client) : base(objectTree.List.ObjectDefinition, 0) {
+        _client = client;
+        _verbSystem = verbSystem;
+
+        List<int>? verbs = _client.ObjectDefinition.Verbs;
         if (verbs == null)
             return;
 
-        _verbs.EnsureCapacity(verbs.Count);
+        Verbs.EnsureCapacity(verbs.Count);
         foreach (int verbId in verbs) {
-            _verbs.Add(objectTree.Procs[verbId]);
+            Verbs.Add(objectTree.Procs[verbId]);
         }
     }
 
     public override DreamValue GetValue(DreamValue key) {
         if (!key.TryGetValueAsInteger(out var index))
             throw new Exception($"Invalid index into verbs list: {key}");
-        if (index < 1 || index > _verbs.Count)
+        if (index < 1 || index > Verbs.Count)
             throw new Exception($"Out of bounds index on verbs list: {index}");
 
-        return new DreamValue(_verbs[index - 1]);
+        return new DreamValue(Verbs[index - 1]);
     }
 
     public override List<DreamValue> GetValues() {
-        List<DreamValue> values = new(_verbs.Count);
+        List<DreamValue> values = new(Verbs.Count);
 
-        foreach (DreamProc verb in _verbs)
+        foreach (DreamProc verb in Verbs)
             values.Add(new(verb));
 
         return values;
@@ -547,21 +553,96 @@ public sealed class VerbsList : DreamList {
     public override void AddValue(DreamValue value) {
         if (!value.TryGetValueAsProc(out var verb))
             throw new Exception($"Cannot add {value} to verbs list");
-        if (_verbs.Contains(verb))
+        if (Verbs.Contains(verb))
             return; // Even += won't add the verb if it's already in this list
 
-        _verbs.Add(verb);
+        Verbs.Add(verb);
+        _verbSystem?.RegisterVerb(verb);
+        _verbSystem?.UpdateClientVerbs(_client);
     }
 
     public override void Cut(int start = 1, int end = 0) {
-        int verbCount = _verbs.Count + 1;
+        int verbCount = Verbs.Count + 1;
         if (end == 0 || end > verbCount) end = verbCount;
 
-        _verbs.RemoveRange(start - 1, end - start);
+        Verbs.RemoveRange(start - 1, end - start);
+        _verbSystem?.UpdateClientVerbs(_client);
     }
 
     public override int GetLength() {
-        return _verbs.Count;
+        return Verbs.Count;
+    }
+}
+
+// atom's verbs list
+// Keeps track of an appearance's verbs (atom.verbs, mutable_appearance.verbs, etc)
+public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManager, ServerVerbSystem? verbSystem, DreamObjectAtom atom) : DreamList(objectTree.List.ObjectDefinition, 0) {
+   public override DreamValue GetValue(DreamValue key) {
+        if (verbSystem == null)
+           return DreamValue.Null;
+        if (!key.TryGetValueAsInteger(out var index))
+            throw new Exception($"Invalid index into verbs list: {key}");
+
+        var verbs = GetVerbs();
+        if (index < 1 || index > verbs.Count)
+            throw new Exception($"Out of bounds index on verbs list: {index}");
+
+        return new DreamValue(verbSystem.GetVerb(verbs[index - 1]));
+    }
+
+    public override List<DreamValue> GetValues() {
+        var appearance = atomManager.MustGetAppearance(atom);
+        if (appearance == null || verbSystem == null)
+            return new List<DreamValue>();
+
+        var values = new List<DreamValue>(appearance.Verbs.Count);
+
+        foreach (var verbId in appearance.Verbs) {
+            var verb = verbSystem.GetVerb(verbId);
+
+            values.Add(new(verb));
+        }
+
+        return values;
+    }
+
+    public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+        throw new Exception("Cannot set the values of a verbs list");
+    }
+
+    public override void AddValue(DreamValue value) {
+        if (!value.TryGetValueAsProc(out var verb))
+            throw new Exception($"Cannot add {value} to verbs list");
+
+        atomManager.UpdateAppearance(atom, appearance => {
+            if (!verb.VerbId.HasValue)
+                verbSystem?.RegisterVerb(verb);
+            if (!verb.VerbId.HasValue || appearance.Verbs.Contains(verb.VerbId.Value))
+                return; // Even += won't add the verb if it's already in this list
+
+            appearance.Verbs.Add(verb.VerbId.Value);
+        });
+    }
+
+    public override void Cut(int start = 1, int end = 0) {
+        atomManager.UpdateAppearance(atom, appearance => {
+            int count = appearance.Verbs.Count + 1;
+            if (end == 0 || end > count) end = count;
+
+            appearance.Verbs.RemoveRange(start - 1, end - start);
+        });
+    }
+
+    public override int GetLength() {
+        return GetVerbs().Count;
+    }
+
+    private List<int> GetVerbs() {
+        IconAppearance? appearance = atomManager.MustGetAppearance(atom);
+        if (appearance == null)
+            throw new Exception("Atom has no appearance");
+
+        return appearance.Verbs;
     }
 }
 
@@ -693,7 +774,7 @@ public sealed class DreamOverlaysList : DreamList {
 // Operates on an atom's appearance
 public sealed class DreamVisContentsList : DreamList {
     [Dependency] private readonly AtomManager _atomManager = default!;
-    [Dependency] private IEntityManager _entityManager = default!;
+    [Dependency] private readonly IEntityManager _entityManager = default!;
     private readonly PvsOverrideSystem? _pvsOverrideSystem;
 
     private readonly List<DreamObjectAtom> _visContents = new();
@@ -753,7 +834,7 @@ public sealed class DreamVisContentsList : DreamList {
 
         // TODO: Only override the entity's visibility if its parent atom is visible
         if (entity != EntityUid.Invalid)
-            _pvsOverrideSystem?.AddGlobalOverride(_entityManager.GetNetEntity(entity));
+            _pvsOverrideSystem?.AddGlobalOverride(entity);
 
         _atomManager.UpdateAppearance(_atom, appearance => {
             // Add even an invalid UID to keep this and _visContents in sync

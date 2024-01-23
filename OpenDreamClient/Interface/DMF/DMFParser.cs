@@ -1,23 +1,25 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using OpenDreamClient.Interface.Descriptors;
-using OpenDreamShared.Compiler;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
+using Token = OpenDreamClient.Interface.DMF.DMFLexer.Token;
+using TokenType = OpenDreamClient.Interface.DMF.DMFLexer.TokenType;
 
 namespace OpenDreamClient.Interface.DMF;
 
-public sealed class DMFParser : Parser<char> {
-    private readonly ISerializationManager _serializationManager;
+public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializationManager) {
+    public List<string> Errors = new();
 
     private readonly TokenType[] _attributeTokenTypes = {
-        TokenType.DMF_Attribute,
-        TokenType.DMF_Macro,
-        TokenType.DMF_Menu
+        TokenType.Attribute,
+        TokenType.Macro,
+        TokenType.Menu
     };
 
-    public DMFParser(DMFLexer lexer, ISerializationManager serializationManager) : base(lexer) {
-        _serializationManager = serializationManager;
-    }
+    private Token _currentToken = lexer.NextToken();
+    private bool _errorMode;
+    private readonly Queue<Token> _tokenQueue = new();
 
     /// <summary>
     /// Parse the command used in a global winset()
@@ -39,32 +41,32 @@ public sealed class DMFParser : Parser<char> {
 
         bool parsing = true;
         while (parsing) {
-            try {
-                WindowDescriptor? windowDescriptor = Window();
-                if (windowDescriptor != null) {
-                    windowDescriptors.Add(windowDescriptor);
-                    Newline();
-                }
+            WindowDescriptor? windowDescriptor = Window();
+            if (windowDescriptor != null) {
+                windowDescriptors.Add(windowDescriptor);
+                Newline();
+            }
 
-                MacroSetDescriptor? macroSet = MacroSet();
-                if (macroSet != null) {
-                    macroSetDescriptors.Add(macroSet);
-                    Newline();
-                }
+            MacroSetDescriptor? macroSet = MacroSet();
+            if (macroSet != null) {
+                macroSetDescriptors.Add(macroSet);
+                Newline();
+            }
 
-                MenuDescriptor? menu = Menu();
-                if (menu != null) {
-                    menuDescriptors.Add(menu);
-                    Newline();
-                }
+            MenuDescriptor? menu = Menu();
+            if (menu != null) {
+                menuDescriptors.Add(menu);
+                Newline();
+            }
 
-                if (windowDescriptor == null && macroSet == null && menu == null) {
-                    parsing = false;
-                }
-            } catch (CompileErrorException) {
+            if (windowDescriptor == null && macroSet == null && menu == null) {
+                parsing = false;
+            }
+
+            if (_errorMode) {
                 //Error recovery
                 Token token = Current();
-                while (token.Type is not (TokenType.DMF_Window or TokenType.DMF_Macro or TokenType.DMF_Menu)) {
+                while (token.Type is not (TokenType.Window or TokenType.Macro or TokenType.Menu)) {
                     token = Advance();
 
                     if (token.Type == TokenType.EndOfFile) {
@@ -80,9 +82,9 @@ public sealed class DMFParser : Parser<char> {
     }
 
     private WindowDescriptor? Window() {
-        if (Check(TokenType.DMF_Window)) {
+        if (Check(TokenType.Window)) {
             Token windowIdToken = Current();
-            Consume(TokenType.DMF_Value, "Expected a window id");
+            Consume(TokenType.Value, "Expected a window id");
             string windowId = windowIdToken.Text;
             Newline();
 
@@ -96,18 +98,20 @@ public sealed class DMFParser : Parser<char> {
     }
 
     private bool Element(WindowDescriptor window) {
-        if (Check(TokenType.DMF_Elem)) {
+        if (Check(TokenType.Elem)) {
             Token elementIdToken = Current();
-            Consume(TokenType.DMF_Value, "Expected an element id");
+            Consume(TokenType.Value, "Expected an element id");
             string elementId = elementIdToken.Text;
             Newline();
 
             var attributes = Attributes();
             attributes.Add("id", elementId);
 
-            var control = window.CreateChildDescriptor(_serializationManager, attributes);
-            if (control == null)
+            var control = window.CreateChildDescriptor(serializationManager, attributes);
+            if (control == null) {
                 Error($"Element '{elementId}' does not have a valid 'type' attribute");
+                return false;
+            }
 
             return true;
         }
@@ -116,9 +120,9 @@ public sealed class DMFParser : Parser<char> {
     }
 
     private MacroSetDescriptor? MacroSet() {
-        if (Check(TokenType.DMF_Macro)) {
+        if (Check(TokenType.Macro)) {
             Token macroSetIdToken = Current();
-            Consume(TokenType.DMF_Value, "Expected a macro set id");
+            Consume(TokenType.Value, "Expected a macro set id");
             Newline();
 
             MacroSetDescriptor macroSet = new(macroSetIdToken.Text);
@@ -131,9 +135,9 @@ public sealed class DMFParser : Parser<char> {
     }
 
     private bool Macro(MacroSetDescriptor macroSet) {
-        if (Check(TokenType.DMF_Elem)) {
+        if (Check(TokenType.Elem)) {
             Token macroIdToken = Current();
-            bool hasId = Check(TokenType.DMF_Value);
+            bool hasId = Check(TokenType.Value);
             Newline();
 
             var attributes = Attributes();
@@ -141,7 +145,7 @@ public sealed class DMFParser : Parser<char> {
             if (hasId) attributes.Add("id", macroIdToken.Text);
             else attributes.Add("id", attributes.Get("name"));
 
-            macroSet.CreateChildDescriptor(_serializationManager, attributes);
+            macroSet.CreateChildDescriptor(serializationManager, attributes);
             return true;
         }
 
@@ -149,9 +153,9 @@ public sealed class DMFParser : Parser<char> {
     }
 
     private MenuDescriptor? Menu() {
-        if (Check(TokenType.DMF_Menu)) {
+        if (Check(TokenType.Menu)) {
             Token menuIdToken = Current();
-            Consume(TokenType.DMF_Value, "Expected a menu id");
+            Consume(TokenType.Value, "Expected a menu id");
             Newline();
 
             var menu = new MenuDescriptor(menuIdToken.Text);
@@ -164,9 +168,9 @@ public sealed class DMFParser : Parser<char> {
     }
 
     private bool MenuElement(MenuDescriptor menu) {
-        if (Check(TokenType.DMF_Elem)) {
+        if (Check(TokenType.Elem)) {
             Token elementIdToken = Current();
-            bool hasId = Check(TokenType.DMF_Value);
+            bool hasId = Check(TokenType.Value);
             Newline();
 
             var attributes = Attributes();
@@ -174,7 +178,7 @@ public sealed class DMFParser : Parser<char> {
             if (hasId) attributes.Add("id", elementIdToken.Text);
             else attributes.Add("id", attributes.Get("name"));
 
-            menu.CreateChildDescriptor(_serializationManager, attributes);
+            menu.CreateChildDescriptor(serializationManager, attributes);
             return true;
         }
 
@@ -188,7 +192,7 @@ public sealed class DMFParser : Parser<char> {
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {
-            while(Check(TokenType.DMF_Period)) { // element.attribute=value
+            while(Check(TokenType.Period)) { // element.attribute=value
                 element ??= "";
                 if(element.Length > 0) element += ".";
                 element += attributeToken.Text;
@@ -201,21 +205,23 @@ public sealed class DMFParser : Parser<char> {
                 }
             }
 
-            if (!Check(TokenType.DMF_Equals)) {
-                ReuseToken(attributeToken);
+            if (!Check(TokenType.Equals)) {
+                // Ew
+                _tokenQueue.Enqueue(_currentToken);
+                _currentToken = attributeToken;
 
                 return false;
             }
 
             Token attributeValue = Current();
             string valueText = attributeValue.Text;
-            if (Check(TokenType.DMF_Period)) { // hidden verbs start with a period
+            if (Check(TokenType.Period)) { // hidden verbs start with a period
                 attributeValue = Current();
                 valueText += attributeValue.Text;
-                if (!Check(TokenType.DMF_Value) && !Check(TokenType.DMF_Attribute))
+                if (!Check(TokenType.Value) && !Check(TokenType.Attribute))
                     Error($"Invalid attribute value ({valueText})");
-            } else if (!Check(TokenType.DMF_Value))
-                if(Check(TokenType.DMF_Semicolon)) //thing.attribute=; means thing.attribute=empty string
+            } else if (!Check(TokenType.Value))
+                if(Check(TokenType.Semicolon)) //thing.attribute=; means thing.attribute=empty string
                     valueText = "";
                 else
                     Error($"Invalid attribute value ({valueText})");
@@ -248,7 +254,52 @@ public sealed class DMFParser : Parser<char> {
     }
 
     private void Newline() {
-        while (Check(TokenType.Newline) || Check(TokenType.DMF_Semicolon)) {
+        while (Check(TokenType.Newline) || Check(TokenType.Semicolon)) {
         }
+    }
+
+    private void Error(string errorMessage) {
+        if (_errorMode)
+            return;
+
+        _errorMode = true;
+        Errors.Add(errorMessage);
+    }
+
+    private Token Current() {
+        return _currentToken;
+    }
+
+    private Token Advance() {
+        _currentToken = (_tokenQueue.Count > 0) ? _tokenQueue.Dequeue() : lexer.NextToken();
+        while (_currentToken.Type is TokenType.Error) {
+            Error(_currentToken.Text);
+            _currentToken = (_tokenQueue.Count > 0) ? _tokenQueue.Dequeue() : lexer.NextToken();
+        }
+
+        return Current();
+    }
+
+    private bool Check(TokenType type) {
+        if (_currentToken.Type != type)
+            return false;
+
+        Advance();
+        return true;
+    }
+
+    private bool Check(TokenType[] types) {
+        if (!types.Contains(_currentToken.Type))
+            return false;
+
+        Advance();
+        return true;
+    }
+
+    private void Consume(TokenType type, string errorMessage) {
+        if (Check(type))
+            return;
+
+        Error(errorMessage);
     }
 }

@@ -6,7 +6,7 @@ namespace OpenDreamClient.Interface.Prompts;
 [Virtual]
 internal class InputWindow : PromptWindow {
     protected InputWindow(string title, string message, bool canCancel,
-        Action<DMValueType, object?>? onClose) : base(title, message, onClose) {
+        Action<DreamValueType, object?>? onClose) : base(title, message, onClose) {
         CreateButton("Ok", true);
         if (canCancel) CreateButton("Cancel", false);
     }
@@ -19,7 +19,7 @@ internal class InputWindow : PromptWindow {
 
     protected override void ButtonClicked(string button) {
         if (button == "Ok") OkButtonClicked();
-        else FinishPrompt(DMValueType.Null, null);
+        else FinishPrompt(DreamValueType.Null, null);
 
         base.ButtonClicked(button);
     }

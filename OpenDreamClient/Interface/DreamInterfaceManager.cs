@@ -380,17 +380,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
-    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose) {
+    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose) {
         PromptWindow? prompt = null;
-        bool canCancel = (types & DMValueType.Null) == DMValueType.Null;
+        bool canCancel = (types & DreamValueType.Null) == DreamValueType.Null;
 
-        if ((types & DMValueType.Text) == DMValueType.Text) {
+        if ((types & DreamValueType.Text) == DreamValueType.Text) {
             prompt = new TextPrompt(title, message, defaultValue, canCancel, onClose);
-        } else if ((types & DMValueType.Num) == DMValueType.Num) {
+        } else if ((types & DreamValueType.Num) == DreamValueType.Num) {
             prompt = new NumberPrompt(title, message, defaultValue, canCancel, onClose);
-        } else if ((types & DMValueType.Message) == DMValueType.Message) {
+        } else if ((types & DreamValueType.Message) == DreamValueType.Message) {
             prompt = new MessagePrompt(title, message, defaultValue, canCancel, onClose);
-        } else if ((types & DMValueType.Color) == DMValueType.Color) {
+        } else if ((types & DreamValueType.Color) == DreamValueType.Color) {
             prompt = new ColorPrompt(title, message, defaultValue, canCancel, onClose);
         }
 
@@ -446,9 +446,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
                     var arguments = new object?[verbInfo.Arguments.Length];
                     for (int i = 0; i < verbInfo.Arguments.Length; i++) {
-                        DMValueType argumentType = verbInfo.Arguments[i].Types;
+                        DreamValueType argumentType = verbInfo.Arguments[i].Types;
 
-                        if (argumentType == DMValueType.Text) {
+                        if (argumentType == DreamValueType.Text) {
                             arguments[i] = args[i + 1];
                         } else {
                             _sawmill.Error($"Parsing verb args of type {argumentType} is unimplemented; ignoring command ({fullCommand})");
@@ -738,7 +738,7 @@ public interface IDreamInterfaceManager {
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
 
-    void Prompt(DMValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose);
+    void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose);
     void RunCommand(string fullCommand);
     void StartRepeatingCommand(string command);
     void StopRepeatingCommand(string command);

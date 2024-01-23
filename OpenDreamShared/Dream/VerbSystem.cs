@@ -66,7 +66,7 @@ public class VerbSystem : EntitySystem {
         /// <summary>
         /// Types the argument is allowed to be
         /// </summary>
-        public DMValueType Types;
+        public DreamValueType Types;
     }
 
     [Serializable, NetSerializable]

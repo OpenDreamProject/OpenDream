@@ -1,4 +1,5 @@
 ﻿using Lidgren.Network;
+using OpenDreamShared.Dream;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 

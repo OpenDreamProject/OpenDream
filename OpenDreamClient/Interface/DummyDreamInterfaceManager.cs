@@ -44,7 +44,7 @@ public sealed class DummyDreamInterfaceManager : IDreamInterfaceManager {
 
     }
 
-    public void Prompt(DMValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose) {
+    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose) {
 
     }
 

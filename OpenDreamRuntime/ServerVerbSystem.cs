@@ -1,8 +1,8 @@
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using Robust.Server.Player;
 using Robust.Shared.Enums;
 using Robust.Shared.Player;
@@ -107,10 +107,10 @@ public sealed class ServerVerbSystem : VerbSystem {
             var argType = verb.ArgumentTypes[i];
 
             arguments[i] = argType switch {
-                DMValueType.Null => DreamValue.Null,
-                DMValueType.Text or DMValueType.Message => new DreamValue((string)msg.Arguments[i]),
-                DMValueType.Num => new DreamValue((float)msg.Arguments[i]),
-                DMValueType.Color => new DreamValue(((Color)msg.Arguments[i]).ToHexNoAlpha()),
+                DreamValueType.Null => DreamValue.Null,
+                DreamValueType.Text or DreamValueType.Message => new DreamValue((string)msg.Arguments[i]),
+                DreamValueType.Num => new DreamValue((float)msg.Arguments[i]),
+                DreamValueType.Color => new DreamValue(((Color)msg.Arguments[i]).ToHexNoAlpha()),
                 _ => throw new Exception("Invalid prompt response '" + msg.Arguments[i] + "'")
             };
         }

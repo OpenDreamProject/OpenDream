@@ -5,16 +5,10 @@ using OpenDreamShared.Dream;
 
 namespace OpenDreamRuntime.Procs;
 
-public struct ProcDecoder {
-    public readonly IReadOnlyList<string> Strings;
-    public readonly byte[] Bytecode;
-    public int Offset;
-
-    public ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
-        Strings = strings;
-        Bytecode = bytecode;
-        Offset = 0;
-    }
+public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
+    public readonly IReadOnlyList<string> Strings = strings;
+    public readonly byte[] Bytecode = bytecode;
+    public int Offset = 0;
 
     public bool Remaining => Offset < Bytecode.Length;
 
@@ -32,8 +26,8 @@ public struct ProcDecoder {
         return value;
     }
 
-    public DMValueType ReadValueType() {
-        return (DMValueType) ReadInt();
+    public DreamValueType ReadValueType() {
+        return (DreamValueType) ReadInt();
     }
 
     public float ReadFloat() {

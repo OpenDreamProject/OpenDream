@@ -1,15 +1,13 @@
 using DMCompiler.Compiler.DMPreprocessor;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using String = System.String;
+using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
         private DreamPath _currentPath = DreamPath.Root;
-        private bool _allowVarDeclExpression = false;
+        private bool _allowVarDeclExpression;
 
         private static readonly TokenType[] AssignTypes = {
             TokenType.DM_Equals,

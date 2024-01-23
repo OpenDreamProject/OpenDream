@@ -1,15 +1,13 @@
-using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
-using OpenDreamShared.Dream;
 using System;
 using DMCompiler.DM.Expressions;
-using OpenDreamShared.Dream.Procs;
 using System.Diagnostics;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Visitors {
-    sealed class DMProcBuilder {
+    internal sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 

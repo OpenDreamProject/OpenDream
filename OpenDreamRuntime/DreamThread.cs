@@ -1,11 +1,11 @@
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime {
     public enum ProcStatus {
@@ -29,7 +29,7 @@ namespace OpenDreamRuntime {
 
         public readonly List<string>? ArgumentNames;
 
-        public readonly List<DMValueType>? ArgumentTypes;
+        public readonly List<DreamValueType>? ArgumentTypes;
 
         public string VerbName => _verbName ?? Name;
         public readonly string? VerbCategory = string.Empty;
@@ -38,7 +38,7 @@ namespace OpenDreamRuntime {
         private readonly string? _verbName;
         private readonly string? _verbDesc;
 
-        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DMValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
+        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
             Id = id;
             OwningType = owningType;
             Name = name;

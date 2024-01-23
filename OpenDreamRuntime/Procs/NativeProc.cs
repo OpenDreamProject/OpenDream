@@ -1,10 +1,9 @@
 using System.Reflection;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs;
 

@@ -1,5 +1,5 @@
-﻿using OpenDreamShared.Json;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using DMCompiler.Json;
 
 namespace DMDisassembler;
 

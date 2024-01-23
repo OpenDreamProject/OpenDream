@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 

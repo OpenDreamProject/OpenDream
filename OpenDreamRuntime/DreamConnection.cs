@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using System.Web;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -188,10 +189,10 @@ public sealed class DreamConnection {
         }
 
         DreamValue value = message.Type switch {
-            DMValueType.Null => DreamValue.Null,
-            DMValueType.Text or DMValueType.Message => new DreamValue((string)message.Value),
-            DMValueType.Num => new DreamValue((float)message.Value),
-            DMValueType.Color => new DreamValue(((Color)message.Value).ToHexNoAlpha()),
+            DreamValueType.Null => DreamValue.Null,
+            DreamValueType.Text or DreamValueType.Message => new DreamValue((string)message.Value),
+            DreamValueType.Num => new DreamValue((float)message.Value),
+            DreamValueType.Color => new DreamValue(((Color)message.Value).ToHexNoAlpha()),
             _ => throw new Exception("Invalid prompt response '" + message.Type + "'")
         };
 
@@ -290,7 +291,7 @@ public sealed class DreamConnection {
         }
     }
 
-    public Task<DreamValue> Prompt(DMValueType types, string title, string message, string defaultValue) {
+    public Task<DreamValue> Prompt(DreamValueType types, string title, string message, string defaultValue) {
         var task = MakePromptTask(out var promptId);
         var msg = new MsgPrompt {
             PromptId = promptId,
@@ -304,20 +305,18 @@ public sealed class DreamConnection {
         return task;
     }
 
-    public async Task<DreamValue> PromptList(DMValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
+    public async Task<DreamValue> PromptList(DreamValueType types, DreamList list, string title, string message, DreamValue defaultValue) {
         List<DreamValue> listValues = list.GetValues();
 
         List<string> promptValues = new(listValues.Count);
-        for (int i = 0; i < listValues.Count; i++) {
-            DreamValue value = listValues[i];
-
-            if (types.HasFlag(DMValueType.Obj) && !value.TryGetValueAsDreamObject<DreamObjectMovable>(out _))
+        foreach (var value in listValues) {
+            if (types.HasFlag(DreamValueType.Obj) && !value.TryGetValueAsDreamObject<DreamObjectMovable>(out _))
                 continue;
-            if (types.HasFlag(DMValueType.Mob) && !value.TryGetValueAsDreamObject<DreamObjectMob>(out _))
+            if (types.HasFlag(DreamValueType.Mob) && !value.TryGetValueAsDreamObject<DreamObjectMob>(out _))
                 continue;
-            if (types.HasFlag(DMValueType.Turf) && !value.TryGetValueAsDreamObject<DreamObjectTurf>(out _))
+            if (types.HasFlag(DreamValueType.Turf) && !value.TryGetValueAsDreamObject<DreamObjectTurf>(out _))
                 continue;
-            if (types.HasFlag(DMValueType.Area) && !value.TryGetValueAsDreamObject<DreamObjectArea>(out _))
+            if (types.HasFlag(DreamValueType.Area) && !value.TryGetValueAsDreamObject<DreamObjectArea>(out _))
                 continue;
 
             promptValues.Add(value.Stringify());
@@ -327,11 +326,11 @@ public sealed class DreamConnection {
             return DreamValue.Null;
 
         var task = MakePromptTask(out var promptId);
-        var msg = new MsgPromptList() {
+        var msg = new MsgPromptList {
             PromptId = promptId,
             Title = title,
             Message = message,
-            CanCancel = (types & DMValueType.Null) == DMValueType.Null,
+            CanCancel = (types & DreamValueType.Null) == DreamValueType.Null,
             DefaultValue = defaultValue.Stringify(),
             Values = promptValues.ToArray()
         };

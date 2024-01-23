@@ -2,7 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Robust.Shared.Utility;
 
 namespace DMCompiler;
 
@@ -100,7 +99,6 @@ internal static class Program {
                         Console.WriteLine("Compiler arg 'define' requires macro identifier for definition directive");
                         return false;
                     }
-                    DebugTools.Assert(parts is { Length: <= 2 });
                     settings.MacroDefines ??= new Dictionary<string, string>();
                     settings.MacroDefines[parts[0]] = parts.Length > 1 ? parts[1] : "";
                     break;

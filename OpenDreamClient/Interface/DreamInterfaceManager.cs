@@ -1,6 +1,5 @@
 ﻿using System.IO;
 using System.Text;
-using OpenDreamShared.Compiler;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
@@ -77,25 +76,15 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     public void LoadInterfaceFromSource(string source) {
         Reset();
 
-        DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
+        DMFLexer dmfLexer = new DMFLexer(source);
         DMFParser dmfParser = new DMFParser(dmfLexer, _serializationManager);
+        InterfaceDescriptor interfaceDescriptor = dmfParser.Interface();
 
-        InterfaceDescriptor? interfaceDescriptor = null;
-        try {
-            interfaceDescriptor = dmfParser.Interface();
-        } catch (CompileErrorException) { }
-
-        int errorCount = 0;
-        foreach (CompilerEmission warning in dmfParser.Emissions) {
-            if (warning.Level == ErrorLevel.Error) {
-                _sawmill.Error(warning.ToString());
-                errorCount++;
-            } else {
-                _sawmill.Warning(warning.ToString());
+        if (dmfParser.Errors.Count > 0) {
+            foreach (string error in dmfParser.Errors) {
+                _sawmill.Error(error);
             }
-        }
 
-        if (interfaceDescriptor == null || errorCount > 0) {
             // Open an error message that disconnects from the server once closed
             OpenAlert(
                 "Error",
@@ -168,7 +157,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             (responseType, response) => OnPromptFinished(message.PromptId, responseType, response));
     }
 
-    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DMValueType, object?>? onClose) {
+    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose) {
         var alert = new AlertWindow(
             title,
             message,
@@ -180,7 +169,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     private void RxPrompt(MsgPrompt pPrompt) {
-        void OnPromptClose(DMValueType responseType, object? response) {
+        void OnPromptClose(DreamValueType responseType, object? response) {
             OnPromptFinished(pPrompt.PromptId, responseType, response);
         }
 
@@ -251,7 +240,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         InterfaceElement? element = FindElementWithId(message.ControlId);
         MsgPromptResponse response = new() {
             PromptId = message.PromptId,
-            Type = DMValueType.Text,
+            Type = DreamValueType.Text,
             Value = element?.Type ?? string.Empty
         };
 
@@ -263,7 +252,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _timerManager.AddTimer(new Timer(100, false, () => {
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
-                Type = DMValueType.Text,
+                Type = DreamValueType.Text,
                 Value = WinGet(message.ControlId, message.QueryValue)
             };
 
@@ -391,7 +380,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
-    public void Prompt(DMValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose) {
+    public void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DMValueType, object?>? onClose) {
         PromptWindow? prompt = null;
         bool canCancel = (types & DMValueType.Null) == DMValueType.Null;
 
@@ -484,25 +473,18 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void WinSet(string? controlId, string winsetParams) {
-        DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
+        DMFLexer lexer = new DMFLexer(winsetParams);
         DMFParser parser = new DMFParser(lexer, _serializationManager);
 
         bool CheckParserErrors() {
-            if (parser.Emissions.Count > 0) {
-                bool hadError = false;
-                foreach (CompilerEmission emission in parser.Emissions) {
-                    if (emission.Level == ErrorLevel.Error) {
-                        _sawmill.Error(emission.ToString());
-                        hadError = true;
-                    } else {
-                        _sawmill.Warning(emission.ToString());
-                    }
-                }
+            if (parser.Errors.Count <= 0)
+                return false;
 
-                return hadError;
+            foreach (string error in parser.Errors) {
+                _sawmill.Error(error);
             }
 
-            return false;
+            return true;
         }
 
         if (string.IsNullOrEmpty(controlId)) {
@@ -729,7 +711,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    private void OnPromptFinished(int promptId, DMValueType responseType, object? response) {
+    private void OnPromptFinished(int promptId, DreamValueType responseType, object? response) {
         var msg = new MsgPromptResponse {
             PromptId = promptId,
             Type = responseType,

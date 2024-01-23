@@ -11,6 +11,7 @@ namespace OpenDreamRuntime;
 
 public sealed class ServerVerbSystem : VerbSystem {
     [Dependency] private readonly DreamManager _dreamManager = default!;
+    [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     private readonly List<VerbInfo> _verbs = new();
@@ -128,7 +129,19 @@ public sealed class ServerVerbSystem : VerbSystem {
     /// <param name="verb">The verb trying to be executed</param>
     /// <returns>True if the user is allowed to execute the verb in this way</returns>
     private bool CanExecute(DreamConnection connection, DreamObject src, DreamProc verb) {
-        // TODO (does src even have the verb? Does the "set src = ..." allow it? other things probably????)
+        if (verb.VerbId == null) // Not even a verb
+            return false;
+
+        if (src is DreamObjectClient client && !client.ClientVerbs.Verbs.Contains(verb)) { // Inside client.verbs?
+            return false;
+        } else if (src is DreamObjectAtom atom) {
+            var appearance = _atomManager.MustGetAppearance(atom);
+
+            if (appearance?.Verbs.Contains(verb.VerbId.Value) is not true) // Inside atom.verbs?
+                return false;
+        }
+
+        // TODO: Does "set src = ..." allow execution here?
         return true;
     }
 }

@@ -162,6 +162,8 @@ public sealed class DreamObjectTree {
             throw new Exception("Cannot create objects of type /client");
         if (type.ObjectDefinition.IsSubtypeOf(Turf))
             throw new Exception("New turfs must be created by the map manager");
+        if (type.ObjectDefinition.IsSubtypeOf(Exception))
+            return new DreamObjectException(type.ObjectDefinition);
 
         return new DreamObject(type.ObjectDefinition);
     }

@@ -43,13 +43,14 @@ namespace OpenDreamRuntime {
 
         // Global state that may not really (really really) belong here
         public DreamValue[] Globals { get; set; } = Array.Empty<DreamValue>();
-        public List<string> GlobalNames { get; private set; } = new List<string>();
+        public List<string> GlobalNames { get; private set; } = new();
         public Dictionary<DreamObject, int> ReferenceIDs { get; } = new();
         public Dictionary<int, DreamObject> ReferenceIDsToDreamObject { get; } = new();
         public HashSet<DreamObject> Clients { get; set; } = new();
         public HashSet<DreamObject> Datums { get; set; } = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
+        public DreamProc ImageConstructor, ImageFactoryProc;
         private int _dreamObjectRefIdCounter;
 
         private DreamCompiledJson _compiledJson;
@@ -125,8 +126,9 @@ namespace OpenDreamRuntime {
                 throw new FileNotFoundException("Interface DMF not found at "+Path.Join(rootPath,_compiledJson.Interface));
 
             _objectTree.LoadJson(json);
-
             DreamProcNative.SetupNativeProcs(_objectTree);
+            ImageConstructor = _objectTree.Image.ObjectDefinition.GetProc("New");
+            _objectTree.TryGetGlobalProc("image", out ImageFactoryProc!);
 
             _dreamMapManager.Initialize();
             WorldInstance = new DreamObjectWorld(_objectTree.World.ObjectDefinition);
@@ -318,9 +320,22 @@ namespace OpenDreamRuntime {
             return null;
         }
 
-        public void HandleException(Exception e) {
+        public void HandleException(Exception e, string msg = "", string file = "", int line = 0) {
+            if (string.IsNullOrEmpty(msg)) { // Just print the C# exception if we don't override the message
+                msg = e.Message;
+            }
+
             LastDMException = e;
             OnException?.Invoke(this, e);
+
+            // Invoke world.Error()
+            var obj =_objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
+            obj.Name = e.Message;
+            obj.Description = msg;
+            obj.Line = line;
+            obj.File = file;
+
+            WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
         }
     }
 

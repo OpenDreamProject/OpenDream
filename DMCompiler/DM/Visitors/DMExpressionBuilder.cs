@@ -248,7 +248,7 @@ internal static class DMExpressionBuilder {
             case DMASTInitial initial:
                 return new Initial(initial.Location, BuildExpression(initial.Expression, dmObject, proc, inferredPath));
             case DMASTNameof nameof:
-                return new Nameof(nameof.Location, BuildExpression(nameof.Expression, dmObject, proc, inferredPath));
+                return BuildNameof(nameof, dmObject, proc, inferredPath);
             case DMASTExpressionIn expressionIn:
                 return new In(expressionIn.Location,
                     BuildExpression(expressionIn.Value, dmObject, proc, inferredPath),
@@ -718,6 +718,17 @@ internal static class DMExpressionBuilder {
         }
 
         return new DimensionalList(list.Location, sizes);
+    }
+
+    // nameof(x)
+    private static DMExpression BuildNameof(DMASTNameof nameof, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
+        var expr = BuildExpression(nameof.Expression, dmObject, proc, inferredPath);
+        if (expr.GetNameof(dmObject, proc) is { } name) {
+            return new Expressions.String(nameof.Location, name);
+        }
+
+        DMCompiler.Emit(WarningCode.BadArgument, nameof.Location, "nameof() requires a var, proc reference, or type path");
+        return new Null(nameof.Location);
     }
 
     private static DMExpression BuildNewList(DMASTNewList newList, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {

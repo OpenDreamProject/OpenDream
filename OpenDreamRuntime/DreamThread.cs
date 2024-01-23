@@ -344,8 +344,7 @@ namespace OpenDreamRuntime {
             {
                 builder.Append("(init)...");
             }
-            else
-            {
+            else {
                 _current.AppendStackFrame(builder);
             }
             builder.AppendLine();
@@ -369,7 +368,7 @@ namespace OpenDreamRuntime {
             _current?.Cancel();
 
             var dreamMan = IoCManager.Resolve<DreamManager>();
-            dreamMan.HandleException(exception);
+
 
             StringBuilder builder = new();
             builder.AppendLine($"Exception occurred: {exception.Message}");
@@ -382,7 +381,20 @@ namespace OpenDreamRuntime {
             builder.AppendLine(exception.ToString());
             builder.AppendLine();
 
-            dreamMan.WriteWorldLog(builder.ToString(), LogLevel.Error);
+            var msg = builder.ToString();
+
+            // TODO: Defining world.Error() causes byond to no longer print exceptions to the log unless ..() is called
+            dreamMan.WriteWorldLog(msg, LogLevel.Error);
+
+            // Instantiate an /exception and invoke world.Error()
+            string file = string.Empty;
+            int line = 0;
+            if(_current is DMProcState dmProc) { // TODO: Cope with the other ProcStates
+                var source = dmProc.GetCurrentSource();
+                file = source.Item1;
+                line = source.Item2;
+            }
+            dreamMan.HandleException(exception, msg, file, line);
 
             IoCManager.Resolve<IDreamDebugManager>().HandleException(this, exception);
         }

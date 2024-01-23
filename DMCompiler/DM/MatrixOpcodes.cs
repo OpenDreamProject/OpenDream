@@ -1,4 +1,4 @@
-﻿namespace OpenDreamShared.Dream;
+﻿namespace DMCompiler.DM;
 
 /// <summary>
 /// These are the values associated with the wacky, undocumented /matrix() signatures. <br/>

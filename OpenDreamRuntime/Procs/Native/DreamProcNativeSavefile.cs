@@ -130,15 +130,17 @@ internal static class DreamProcNativeSavefile {
                 result += $"{new string('\t', indent)}{key} = {ExportTextInternalListFormat(listValue)}\n";
                 break;
             case DreamObjectSavefile.SFDreamDir jsonValue:
-                if(indent==0){ //root dir has a minor difference in formatting
-                    indent--;
+                if(key==".")
                     result += "\n";
-                } else
+                else
                     result += $"{new string('\t', indent)}{key}\n";
                 break;
             default:
                 throw new NotImplementedException($"Unhandled type {key} = {value} in ExportText()");
         }
+
+        if(string.IsNullOrEmpty(key) || key==".")
+            indent = -1; //don't indent the subdirs of directly accessed keys or root dir
 
         foreach (string subkey in savefile.CurrentDir.Keys) {
             savefile.CurrentPath = subkey;

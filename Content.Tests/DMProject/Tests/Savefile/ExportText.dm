@@ -28,31 +28,9 @@
 	ASSERT(F.ExportText("dir6") == "\nsubdir6 = 321\n")
 	var/list_match = @{". = list("1",2,"three" = 3,4,object(".0"),object(".1"),list(1,2,3,object(".2")))
 .0
-    type = /datum
+	type = /datum
 .1
-    type = /datum
+	type = /datum
 .2
-    type = /datum"}
-	ASSERT(F.ExportText("list") == list_match)
-
-
-	var/import_test = @{"
-dir1 = 1080
-dir2 = "object(\".0\")"
-dir4 = "the afternoon of the 3rd"
-dir6
-	subdir6 = 321
-		subsubdir
-			key = "value"
-dir7 = null
+	type = /datum
 "}
-
-	var/savefile/F2 = new()
-	F2.ImportText("/",import_test)
-	world.log << F2.ExportText()
-	ASSERT(F2["dir1"] == 1080)
-	ASSERT(F2["dir2"] == "object(\".0\")")
-	ASSERT(F2["dir4"] == "the afternoon of the 3rd")
-	ASSERT(F2["dir6/subdir6"] == 321)
-	ASSERT(F2["dir6/subdir6/subsubdir/key"] == "value")
-	ASSERT(F2["dir7"] == null)

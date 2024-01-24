@@ -116,7 +116,7 @@ internal static class DreamProcNativeSavefile {
                 result += $"ext={fileValue.Ext};";
                 result += $"length={fileValue.Length};";
                 result += $"crc32={fileValue.Crc32};"; //TODO crc32
-                result += $"encoding=base64\",{{\"{fileValue.Data}\"}}";
+                result += $"encoding=base64\",{{\"\n{fileValue.Data}\n\"}}";
                 //result += $"encoding=base64\",{{\"{Convert.ToBase64String(fileValue.Data)}\"}}";
                 result += ")\n";
                 break;

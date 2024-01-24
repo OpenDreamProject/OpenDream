@@ -408,6 +408,11 @@ public sealed class DreamObjectSavefile : DreamObject {
                             continue; //skip default values - equivalence check used for lists and objects
                         objectVars[key] = SerializeDreamValue(objectVarVal);
                     }
+
+                    //special handling for /icon since the icon var doesn't actually contain the icon data
+                    if(DreamResourceManager.TryLoadIcon(val, out var iconResource)) {
+                        objectVars["icon"] = new SFDreamFileValue(){Name="", Ext=".dmi", Length = iconResource.ResourceData!.Length, Data = Convert.ToBase64String(iconResource.ResourceData)};
+                    }
                     //Call the Write proc on the object - note that this is a weird one, it does not need to call parent to the native function to save the object
                     //dreamObject.SpawnProc("Write", null, [new DreamValue(this)]);
                     jsonEncodedObject[jsonEncodedObject.Path] = objectVars;

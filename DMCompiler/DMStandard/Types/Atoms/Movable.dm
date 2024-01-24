@@ -3,7 +3,7 @@
 
 	var/animate_movement = FORWARD_STEPS as opendream_unimplemented
 	var/list/locs = null as opendream_unimplemented
-	var/glide_size
+	var/glide_size = 0
 	var/step_size as opendream_unimplemented
 	var/tmp/bound_x as opendream_unimplemented
 	var/tmp/bound_y as opendream_unimplemented

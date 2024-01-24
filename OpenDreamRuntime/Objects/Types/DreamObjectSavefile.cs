@@ -299,27 +299,28 @@ public sealed class DreamObjectSavefile : DreamObject {
                     }
                 }
                 return new DreamValue(l);
-            case SFDreamObjectPathValue SFDreamObjectValue:
-                // todo DOV should store WHERE is the actual path for data (normaly its ../'.0')
-                if (!SFDreamObjectValue.TryGetValue(".0", out var saveData))
-                    break;
+            case SFDreamObjectPathValue SFDreamObjectPath:
+                SFDreamJsonValue storedObjectVars = SFDreamObjectPath;
+                SFDreamJsonValue searchDir = SFDreamObjectPath;
+                while(searchDir != _rootNode)
+                    if(!searchDir.TryGetValue(SFDreamObjectPath.Path, out storedObjectVars!))
+                        searchDir = SeekTo("..");
+                    else
+                        break;
 
-                if (saveData.TryGetValue("type", out var unserialType) && unserialType is SFDreamPrimitive primtype) {
-                    primtype.Value.MustGetValueAsType();
-                    var newObj = GetProc("New").Spawn(this, new DreamProcArguments(primtype.Value));
-                    var dObj = newObj.MustGetValueAsDreamObject()!;
-
-                    foreach (var key in dObj.ObjectDefinition.Variables.Keys) {
-                        DreamValue val = DreamValue.Null;
-                        if (saveData.TryGetValue(key, out var dreamObjVal)) {
-                            val = (dreamObjVal is SFDreamObjectPathValue) ? newObj : DeserializeJsonValue(dreamObjVal);
-                        }
-                        dObj.SetVariable(key, val);
+                if(storedObjectVars!.TryGetValue("type", out SFDreamJsonValue? storedObjectTypeJSON) && DeserializeJsonValue(storedObjectTypeJSON).TryGetValueAsType(out TreeEntry? objecTypeActual)) {
+                    DreamObject resultObj = _objectTree.CreateObject(objecTypeActual);
+                    foreach(string key in storedObjectVars.Keys){
+                        if(key == "type")
+                            continue;
+                        resultObj.SetVariable(key, DeserializeJsonValue(storedObjectVars[key]));
                     }
-
-                    return newObj;
-                }
-                break;
+                    resultObj.InitSpawn(new DreamProcArguments());
+                    resultObj.SpawnProc("New");
+                    resultObj.SpawnProc("Read");
+                    return new DreamValue(resultObj);
+                } else
+                    throw new InvalidDataException("Unable to deserialize object in savefile: " + ((storedObjectTypeJSON as SFDreamType) is null ? "no type specified (corrupted savefile?)" : "invalid type "+((SFDreamType)storedObjectTypeJSON!).TypePath));
             case SFDreamType SFDreamTypeValue:
                 if(_objectTree.TryGetTreeEntry(SFDreamTypeValue.TypePath, out var type)) {
                     return new DreamValue(type);

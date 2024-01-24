@@ -396,6 +396,17 @@ public sealed class DreamObjectSavefile : DreamObject {
 
                     return jsonEncodedList;
                 } else if( val.TryGetValueAsDreamObject(out var dreamObject) && !(dreamObject is null)) { //dreamobject can be null if it's disposed
+                    if(val.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile) && savefile != null) {
+                        //if this is a savefile, just return a filedata object with it encoded
+                        savefile.Flush(); //flush the savefile to make sure the backing resource is up to date
+                        return new SFDreamFileValue(){
+                            Name = savefile.Resource.ResourcePath,
+                            Ext = ".sav",
+                            Length = savefile.Resource.ResourceData!.Length,
+                            Data = Convert.ToBase64String(savefile.Resource.ResourceData)
+                        };
+                    }
+
                     SFDreamObjectPathValue jsonEncodedObject = new SFDreamObjectPathValue(){Path = $".{objectCount}"};
                     SFDreamDir objectVars = new SFDreamDir();
                     //special handling for type, because it's const but we need to save it anyway

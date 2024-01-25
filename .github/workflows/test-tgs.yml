@@ -14,6 +14,7 @@ env:
   OD_DOTNET_VERSION: 8
   TGS_DOTNET_VERSION: 8
   TGS_REFERENCE: dev
+  TGS_TEST_GITHUB_TOKEN: ${{ secrets.TGS_TEST_GITHUB_TOKEN }}
 
 jobs:
   build:

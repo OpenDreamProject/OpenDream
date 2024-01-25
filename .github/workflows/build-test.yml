@@ -48,7 +48,7 @@ jobs:
       run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output/
     - name: Publish DMCompiler
       if: github.event_name == 'push'
-      run: dotnet publish DMCompiler -c Release -o output/DMCompiler ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+      run: dotnet publish DMCompiler -c Release -o output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Gzip releases
       if: github.event_name == 'push'
       run: |

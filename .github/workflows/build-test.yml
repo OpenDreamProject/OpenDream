@@ -59,7 +59,7 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: build-${{ matrix.os }}
-        path: output/*/*.tar.gz
+        path: output/*.tar.gz
         retention-days: 1
 
   release:

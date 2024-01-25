@@ -43,27 +43,23 @@ jobs:
       run: |
         $env:COMPlus_gcServer=1
         dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
-    - name: Publish OpenDream win-x64
-      if: ${{ github.event_name == 'push' && matrix.os == 'windows-latest' }}
-      run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --platform win-x64 --output output-win-x64/
-    - name: Publish OpenDream linux-x64
-      if: ${{ github.event_name == 'push' && matrix.os == 'windows-latest' }}
-      run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --platform linux-x64 --output output-linux-x64/
+    - name: Publish OpenDream
+      if: github.event_name == 'push'
+      run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output/
     - name: Publish DMCompiler
-      if: ${{ github.event_name == 'push' && matrix.os == 'windows-latest' }}
-      run: dotnet publish DMCompiler -c Release -o output/DMCompiler
+      if: github.event_name == 'push'
+      run: dotnet publish DMCompiler -c Release -o output/DMCompiler ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Gzip releases
-      if: ${{ github.event_name == 'push' && matrix.os == 'windows-latest' }}
+      if: github.event_name == 'push'
       run: |
-        tar -czvf output/DMCompiler.tar.gz -C output DMCompiler
-        tar -czvf output/OpenDreamServer_win-x64.tar.gz -C output-win-x64 OpenDreamServer_win-x64
-        tar -czvf output/OpenDreamServer_linux-x64.tar.gz -C output-linux-x64 OpenDreamServer_linux-x64
+        tar -czvf output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Upload artifact
-      if: ${{ github.event_name == 'push' && matrix.os == 'windows-latest' }}
+      if: github.event_name == 'push'
       uses: actions/upload-artifact@v3
       with:
-        name: build
-        path: output/*.tar.gz
+        name: build-${{ matrix.os }}
+        path: output/*/*.tar.gz
         retention-days: 1
 
   release:

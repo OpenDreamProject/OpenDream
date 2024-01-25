@@ -10,3 +10,4 @@
 	var/regex/R = regex(@"\w+")
 	var/result = R.Replace("Hello, there", /proc/regex_callback)
 	ASSERT(result == "good, there")
+	ASSERT(R.next == 5)

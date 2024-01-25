@@ -6,7 +6,7 @@ public sealed class Variable {
     /**
      * The variable's name.
      */
-    [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("name")] public required string Name { get; set; }
 
     /**
      * The variable's value.
@@ -17,7 +17,7 @@ public sealed class Variable {
      * its children are not yet visible.
      * An empty string can be used if no value should be shown in the UI.
      */
-    [JsonPropertyName("value")] public string Value { get; set; }
+    [JsonPropertyName("value")] public required string Value { get; set; }
 
     /**
      * The type of the variable's value. Typically shown in the UI when hovering

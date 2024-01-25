@@ -1,10 +1,6 @@
-using System.Diagnostics;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
-using Robust.Server.Player;
-using Robust.Shared.IoC;
-using Robust.Shared.Network;
 
 namespace Content.IntegrationTests {
     [TestFixture]
@@ -17,7 +13,7 @@ namespace Content.IntegrationTests {
         public async Task NoRuntimesTest() {
             var (client, server) = await StartConnectedServerClientPair();
             await RunTicksSync(client, server, 1000);
-            Assert.IsTrue(server.IsAlive);
+            Assert.That(server.IsAlive);
             var manager = server.ResolveDependency<DreamManager>();
             if(manager.LastDMException is not null) {
                 Assert.Fail($"Runtime occurred on server boot: {manager.LastDMException}");

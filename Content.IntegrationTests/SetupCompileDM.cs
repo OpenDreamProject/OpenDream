@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using NUnit.Framework;
-using NUnit.Framework.Internal;
 
 // This it outside of any namespace so it affects the whole assembly.
 [SetUpFixture]
@@ -20,7 +19,7 @@ public sealed class SetupCompileDm {
             Files = new() { DmEnvironment }
         });
 
-        Assert.IsTrue(successfulCompile && File.Exists(CompiledProject), "Failed to compile DM test project!");
+        Assert.That(successfulCompile && File.Exists(CompiledProject), "Failed to compile DM test project!");
     }
 
     [OneTimeTearDown]

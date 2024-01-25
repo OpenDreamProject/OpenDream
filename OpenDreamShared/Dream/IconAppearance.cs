@@ -17,7 +17,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
         [ViewVariables] public byte Alpha = 255;
-        [ViewVariables] public byte GlideSize;
+        [ViewVariables] public float GlideSize;
         /// <summary>
         /// An appearance can gain a color matrix filter by two possible forces: <br/>
         /// 1. the /atom.color var is modified. <br/>

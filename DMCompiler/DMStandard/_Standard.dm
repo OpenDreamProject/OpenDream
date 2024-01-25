@@ -108,6 +108,7 @@ proc/view(Dist = 5, Center = usr)
 proc/viewers(Depth, Center = usr)
 proc/walk(Ref, Dir, Lag = 0, Speed = 0)
 proc/walk_to(Ref, Trg, Min = 0, Lag = 0, Speed = 0)
+proc/walk_towards(Ref,Trg,Lag=0,Speed=0)
 proc/winclone(player, window_name, clone_name)
 proc/winexists(player, control_id)
 proc/winget(player, control_id, params)
@@ -157,13 +158,13 @@ proc/replacetextEx_char(Haystack, Needle, Replacement, Start = 1, End = 0)
 	var/step_dir = get_dir(Ref, Trg)
 	step(Ref, step_dir, Speed)
 
-/proc/walk_towards(Ref,Trg,Lag=0,Speed=0)
-	set opendream_unimplemented = TRUE
-	CRASH("/walk_towards() is not implemented")
-
 /proc/get_step_to(Ref, Trg, Min=0)
 	set opendream_unimplemented = TRUE
 	CRASH("/get_step_to() is not implemented")
+
+/proc/get_steps_to(Ref, Trg, Min=0)
+	set opendream_unimplemented = TRUE
+	CRASH("/get_steps_to() is not implemented")
 
 /proc/walk_away(Ref,Trg,Max=5,Lag=0,Speed=0)
 	set opendream_unimplemented = TRUE

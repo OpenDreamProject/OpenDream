@@ -1,9 +1,6 @@
 ﻿using System.IO;
 using System.Text;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream.Procs;
 using OpenDreamShared.Network.Messages;
-using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
@@ -79,25 +76,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     private ViewRange _view = new(5);
 
     public void LoadInterfaceFromSource(string source) {
-        DMFLexer dmfLexer = new DMFLexer("interface.dmf", source);
+        Reset();
+
+        DMFLexer dmfLexer = new DMFLexer(source);
         DMFParser dmfParser = new DMFParser(dmfLexer, _serializationManager);
+        InterfaceDescriptor interfaceDescriptor = dmfParser.Interface();
 
-        InterfaceDescriptor? interfaceDescriptor = null;
-        try {
-            interfaceDescriptor = dmfParser.Interface();
-        } catch (CompileErrorException) { }
-
-        int errorCount = 0;
-        foreach (CompilerEmission warning in dmfParser.Emissions) {
-            if (warning.Level == ErrorLevel.Error) {
-                _sawmill.Error(warning.ToString());
-                errorCount++;
-            } else {
-                _sawmill.Warning(warning.ToString());
+        if (dmfParser.Errors.Count > 0) {
+            foreach (string error in dmfParser.Errors) {
+                _sawmill.Error(error);
             }
-        }
 
-        if (interfaceDescriptor == null || errorCount > 0) {
             // Open an error message that disconnects from the server once closed
             OpenAlert(
                 "Error",
@@ -112,14 +101,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void Initialize() {
-        _userInterfaceManager.MainViewport.Visible = false;
-
-        AvailableVerbs = Array.Empty<(string, string, string)>();
-        Windows.Clear();
-        Menus.Clear();
-        MacroSets.Clear();
-        _popupWindows.Clear();
-
         // Set up the middle-mouse button keybind
         _inputManager.Contexts.GetContext("common").AddFunction(OpenDreamKeyFunctions.MouseMiddle);
         _inputManager.RegisterBinding(new KeyBindingRegistration() {
@@ -198,7 +179,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             (responseType, response) => OnPromptFinished(message.PromptId, responseType, response));
     }
 
-    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DMValueType, object?>? onClose) {
+    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose) {
         var alert = new AlertWindow(
             title,
             message,
@@ -211,18 +192,20 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
     private void RxPrompt(MsgPrompt pPrompt) {
         PromptWindow? prompt = null;
-        bool canCancel = (pPrompt.Types & DMValueType.Null) == DMValueType.Null;
+        bool canCancel = (pPrompt.Types & DreamValueType.Null) == DreamValueType.Null;
 
-        void OnPromptClose(DMValueType responseType, object? response) {
+        void OnPromptClose(DreamValueType responseType, object? response) {
             OnPromptFinished(pPrompt.PromptId, responseType, response);
         }
 
-        if ((pPrompt.Types & DMValueType.Text) == DMValueType.Text) {
+        if ((pPrompt.Types & DreamValueType.Text) == DreamValueType.Text) {
             prompt = new TextPrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
-        } else if ((pPrompt.Types & DMValueType.Num) == DMValueType.Num) {
+        } else if ((pPrompt.Types & DreamValueType.Num) == DreamValueType.Num) {
             prompt = new NumberPrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
-        } else if ((pPrompt.Types & DMValueType.Message) == DMValueType.Message) {
+        } else if ((pPrompt.Types & DreamValueType.Message) == DreamValueType.Message) {
             prompt = new MessagePrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
+        } else if ((pPrompt.Types & DreamValueType.Color) == DreamValueType.Color) {
+            prompt = new ColorPrompt(pPrompt.Title, pPrompt.Message, pPrompt.DefaultValue, canCancel, OnPromptClose);
         }
 
         if (prompt != null) {
@@ -294,7 +277,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         InterfaceElement? element = FindElementWithId(message.ControlId);
         MsgPromptResponse response = new() {
             PromptId = message.PromptId,
-            Type = DMValueType.Text,
+            Type = DreamValueType.Text,
             Value = element?.Type ?? string.Empty
         };
 
@@ -306,7 +289,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _timerManager.AddTimer(new Timer(100, false, () => {
             MsgPromptResponse response = new() {
                 PromptId = message.PromptId,
-                Type = DMValueType.Text,
+                Type = DreamValueType.Text,
                 Value = WinGet(message.ControlId, message.QueryValue)
             };
 
@@ -376,7 +359,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             } else if (_popupWindows.TryGetValue(windowId, out var popup)) {
                 window = popup.WindowElement;
             } else if (Menus.TryGetValue(windowId, out var menu)) {
-                if(menu.MenuElements.TryGetValue(elementId, out var menuElement))
+                if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
                     return menuElement;
             }
 
@@ -434,67 +417,60 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         });
     }
 
-    public void RunCommand(string command){
+    public void RunCommand(string command) {
         switch (command) {
-                case string x when x.StartsWith(".quit"):
-                    IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
-                    break;
+            case string x when x.StartsWith(".quit"):
+                IoCManager.Resolve<IClientNetManager>().ClientDisconnect(".quit used");
+                break;
 
-                case string x when x.StartsWith(".screenshot"):
-                    string[] split = command.Split(" ");
-                    SaveScreenshot(split.Length == 1 || split[1] != "auto");
-                    break;
+            case string x when x.StartsWith(".screenshot"):
+                string[] split = command.Split(" ");
+                SaveScreenshot(split.Length == 1 || split[1] != "auto");
+                break;
 
-                case string x when x.StartsWith(".configure"):
-                    _sawmill.Warning(".configure command is not implemented");
-                    break;
+            case string x when x.StartsWith(".configure"):
+                _sawmill.Warning(".configure command is not implemented");
+                break;
 
-                case string x when x.StartsWith(".winset"):
-                    // Everything after .winset, excluding the space and quotes
-                    string winsetParams = command.Substring(7); //clip .winset
-                    winsetParams = winsetParams.Trim(); //clip space
-                    winsetParams = winsetParams.Trim('\"'); //clip quotes
+            case string x when x.StartsWith(".winset"):
+                // Everything after .winset, excluding the space and quotes
+                string winsetParams = command.Substring(7); //clip .winset
+                winsetParams = winsetParams.Trim(); //clip space
+                winsetParams = winsetParams.Trim('\"'); //clip quotes
 
-                    WinSet(null, winsetParams);
-                    break;
+                WinSet(null, winsetParams);
+                break;
 
-                default: {
-                    // Send the entire command to the server.
-                    // It has more info about argument types so it can parse it better than we can.
-                    _netManager.ClientSendMessage(new MsgCommand(){Command = command});
-                    break;
-                }
+            default: {
+                // Send the entire command to the server.
+                // It has more info about argument types so it can parse it better than we can.
+                _netManager.ClientSendMessage(new MsgCommand() { Command = command });
+                break;
             }
+        }
     }
 
     public void StartRepeatingCommand(string command) {
-        _netManager.ClientSendMessage(new MsgCommandRepeatStart(){Command = command});
+        _netManager.ClientSendMessage(new MsgCommandRepeatStart() { Command = command });
     }
 
     public void StopRepeatingCommand(string command) {
-        _netManager.ClientSendMessage(new MsgCommandRepeatStop(){Command = command});
+        _netManager.ClientSendMessage(new MsgCommandRepeatStop() { Command = command });
     }
 
     public void WinSet(string? controlId, string winsetParams) {
-        DMFLexer lexer = new DMFLexer($"winset({controlId}, \"{winsetParams}\")", winsetParams);
+        DMFLexer lexer = new DMFLexer(winsetParams);
         DMFParser parser = new DMFParser(lexer, _serializationManager);
 
         bool CheckParserErrors() {
-            if (parser.Emissions.Count > 0) {
-                bool hadError = false;
-                foreach (CompilerEmission emission in parser.Emissions) {
-                    if (emission.Level == ErrorLevel.Error) {
-                        _sawmill.Error(emission.ToString());
-                        hadError = true;
-                    } else {
-                        _sawmill.Warning(emission.ToString());
-                    }
-                }
+            if (parser.Errors.Count <= 0)
+                return false;
 
-                return hadError;
+            foreach (string error in parser.Errors) {
+                _sawmill.Error(error);
             }
 
-            return false;
+            return true;
         }
 
         if (string.IsNullOrEmpty(controlId)) {
@@ -623,7 +599,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         // that name already, we will create a new control of that type from scratch.
         if (elementDescriptor == null) {
             switch (controlId) {
-                case "window" :
+                case "window":
                     elementDescriptor = new WindowDescriptor(cloneId);
                     break;
                 case "menu":
@@ -644,9 +620,19 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
 
         LoadDescriptor(elementDescriptor);
-        if(elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)){
+        if (elementDescriptor is WindowDescriptor && Windows.TryGetValue(cloneId, out var window)) {
             window.CreateChildControls();
         }
+    }
+
+    private void Reset() {
+        _userInterfaceManager.MainViewport.Visible = false;
+
+        AvailableVerbs = Array.Empty<(string, string, string)>();
+        Windows.Clear();
+        Menus.Clear();
+        MacroSets.Clear();
+        _popupWindows.Clear();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {
@@ -683,7 +669,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         DefaultWindow.RegisterOnClydeWindow(_clyde.MainWindow);
         DefaultWindow.UIElement.Name = "MainWindow";
-
         LayoutContainer.SetAnchorRight(DefaultWindow.UIElement, 1);
         LayoutContainer.SetAnchorBottom(DefaultWindow.UIElement, 1);
 
@@ -713,8 +698,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
     }
 
-    private void OnPromptFinished(int promptId, DMValueType responseType, object? response) {
-        var msg = new MsgPromptResponse() {
+    private void OnPromptFinished(int promptId, DreamValueType responseType, object? response) {
+        var msg = new MsgPromptResponse {
             PromptId = promptId,
             Type = responseType,
             Value = response

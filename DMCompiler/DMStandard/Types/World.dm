@@ -10,7 +10,7 @@
 
 	var/name = "OpenDream World"
 	var/time
-	var/timezone = 0 as opendream_unimplemented
+	var/timezone = 0
 	var/timeofday
 	var/realtime
 	var/tick_lag = 1

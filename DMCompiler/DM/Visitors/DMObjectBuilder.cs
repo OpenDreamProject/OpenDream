@@ -1,7 +1,6 @@
-using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
 using System.Collections.Generic;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Visitors {
     internal static class DMObjectBuilder {
@@ -49,7 +48,7 @@ namespace DMCompiler.DM.Visitors {
                             continue;
 
                         try {
-                            DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.FirstPassStatic;
+                            DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.FirstPassStatic;
                             DMExpression expression = DMExpression.Create(procStatic.DMObject, procStatic.Proc,
                                 procStatic.VarDecl.Value, procStatic.VarDecl.Type);
 
@@ -60,7 +59,7 @@ namespace DMCompiler.DM.Visitors {
                         } catch (CompileErrorException e) {
                             DMCompiler.Emit(e.Error);
                         } finally {
-                            DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
+                            DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
                         }
                     }
                 }
@@ -111,7 +110,7 @@ namespace DMCompiler.DM.Visitors {
                     var varDecl = varDef.Item3;
 
                     try {
-                        DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Static;
+                        DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
                         DMExpression expression =
                             DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
 
@@ -122,7 +121,7 @@ namespace DMCompiler.DM.Visitors {
                     } catch (UnknownIdentifierException e) {
                         // Keep it in the list, try again after the rest have been processed
                     } finally {
-                        DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
+                        DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
                     }
                 }
             } while ((lateVarDefs.Count + lateProcVarDefs.Count) != lastLateVarDefCount); // As long as the lists are getting smaller, keep trying
@@ -257,7 +256,7 @@ namespace DMCompiler.DM.Visitors {
             DMExpression expression;
             try {
                 if (varDefinition.IsGlobal)
-                    DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Static; // FirstPassStatic is not used for object vars
+                    DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static; // FirstPassStatic is not used for object vars
 
                 expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
                     varDefinition.Value, varDefinition.Type);
@@ -267,7 +266,7 @@ namespace DMCompiler.DM.Visitors {
                 DMCompiler.Emit(e.Error);
                 return;
             } finally {
-                DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
+                DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
             }
 
             if (variable is null) {
@@ -459,12 +458,12 @@ namespace DMCompiler.DM.Visitors {
         private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value) {
             try {
                 if (variable.IsGlobal)
-                    DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Static;
+                    DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
 
                 DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
                 SetVariableValue(currentObject, ref variable, value.Location, expression);
             } finally {
-                DMVisitorExpression.CurrentScopeMode = DMVisitorExpression.ScopeMode.Normal;
+                DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
             }
         }
 

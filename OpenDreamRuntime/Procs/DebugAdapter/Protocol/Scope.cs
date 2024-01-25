@@ -7,7 +7,7 @@ public sealed class Scope {
      * Name of the scope such as 'Arguments', 'Locals', or 'Registers'. This
      * string is shown in the UI as is and can be translated.
      */
-    [JsonPropertyName("name")] public string Name { get; set; }
+    [JsonPropertyName("name")] public required string Name { get; set; }
 
     /**
      * A hint for how to present this scope in the UI. If this attribute is

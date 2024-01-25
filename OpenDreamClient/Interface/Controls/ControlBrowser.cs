@@ -46,7 +46,17 @@ internal sealed class ControlBrowser : InterfaceControl {
 
         _webView.AddResourceRequestHandler(RequestHandler);
         _webView.AddBeforeBrowseHandler(BeforeBrowseHandler);
-
+        _webView.OnVisibilityChanged += (args) => {
+            if (args.Visible) {
+                OnShowEvent();
+            } else {
+                OnHideEvent();
+            }
+        };
+        if(ControlDescriptor.IsVisible)
+            OnShowEvent();
+        else
+            OnHideEvent();
         return _webView;
     }
 
@@ -62,7 +72,7 @@ internal sealed class ControlBrowser : InterfaceControl {
     }
 
     public void SetFileSource(ResPath filepath, bool userData) {
-        _webView.Url = (userData ? "usr://_/" : "res://_/") + filepath;
+        _webView.Url = (userData ? "usr://127.0.0.1/" : "res://127.0.0.1/") + filepath; // hostname must be the localhost IP for TGUI to work properly
     }
 
     private void BeforeBrowseHandler(IBeforeBrowseContext context) {
@@ -145,6 +155,20 @@ internal sealed class ControlBrowser : InterfaceControl {
 
         // We can finally call winset
         _interfaceManager.WinSet(element, modifiedQuery);
+    }
+
+    public void OnShowEvent() {
+        ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
+        if (controlDescriptor.OnShowCommand != null) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        }
+    }
+
+    public void OnHideEvent() {
+        ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
+        if (controlDescriptor.OnHideCommand != null) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        }
     }
 }
 

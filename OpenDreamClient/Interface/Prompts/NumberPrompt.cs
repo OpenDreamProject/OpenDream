@@ -7,7 +7,7 @@ internal sealed class NumberPrompt : InputWindow {
     private readonly LineEdit _numberInput;
 
     public NumberPrompt(string title, string message, string defaultValue, bool canCancel,
-        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        Action<DreamValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _numberInput = new() {
             Text = defaultValue,
             VerticalAlignment = VAlignment.Top,
@@ -23,7 +23,7 @@ internal sealed class NumberPrompt : InputWindow {
             Logger.GetSawmill("opendream.prompt").Error($"Error while trying to convert {_numberInput.Text} to a number.");
         }
 
-        FinishPrompt(DMValueType.Num, num);
+        FinishPrompt(DreamValueType.Num, num);
     }
 
     private void NumberInput_TextEntered(LineEdit.LineEditEventArgs obj) {

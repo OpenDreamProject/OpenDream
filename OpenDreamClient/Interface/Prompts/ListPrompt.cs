@@ -9,7 +9,7 @@ internal sealed class ListPrompt : InputWindow {
     private readonly ItemList _itemList;
 
     public ListPrompt(string title, string message, string defaultValue, bool canCancel, string[] values,
-        Action<DMValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
+        Action<DreamValueType, object?>? onClose) : base(title, message, canCancel, onClose) {
         _itemList = new();
 
         bool foundDefault = false;
@@ -35,7 +35,7 @@ internal sealed class ListPrompt : InputWindow {
             if (!item.Selected)
                 continue;
 
-            FinishPrompt(DMValueType.Num, (float)_itemList.IndexOf(item));
+            FinishPrompt(DreamValueType.Num, (float)_itemList.IndexOf(item));
             return;
         }
 

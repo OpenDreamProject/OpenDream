@@ -1,13 +1,10 @@
 using System;
 using System.Collections.Generic;
-using JetBrains.Annotations;
 using System.Linq;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
+using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
-    public interface DMASTVisitor : ASTVisitor {
+    public interface DMASTVisitor {
         public void VisitFile(DMASTFile file) {
             throw new NotImplementedException();
         }
@@ -534,12 +531,8 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public abstract class DMASTNode : ASTNode<DMASTVisitor> {
-        protected DMASTNode(Location location) {
-            Location = location;
-        }
-
-        public readonly Location Location;
+    public abstract class DMASTNode(Location location) {
+        public readonly Location Location = location;
 
         public abstract void Visit(DMASTVisitor visitor);
     }
@@ -2695,34 +2688,42 @@ namespace DMCompiler.Compiler.DM {
 
 
     public sealed class DMASTDereference : DMASTExpression {
-        public enum OperationKind {
-            Invalid,
-
-            Field, // x.y
-            FieldSafe, // x?.y
-            FieldSearch, // x:y
-            FieldSafeSearch, // x?:y
-
-            Index, // x[y]
-            IndexSafe, // x?[y]
-
-            Call, // x.y()
-            CallSafe, // x?.y()
-            CallSearch, // x:y()
-            CallSafeSearch, // x?:y()
+        public abstract class Operation {
+            /// <summary>
+            /// The location of the operation.
+            /// </summary>
+            public required Location Location;
+            /// <summary>
+            /// Whether we should short circuit if the expression we are accessing is null.
+            /// </summary>
+            public required bool Safe; // x?.y, x?.y() etc
         }
 
-        public struct Operation {
-            public OperationKind Kind;
+        public abstract class NamedOperation : Operation {
+            /// <summary>
+            /// Name of the identifier.
+            /// </summary>
+            public required string Identifier;
+            /// <summary>
+            /// Whether we should check if the variable exists or not.
+            /// </summary>
+            public required bool NoSearch; // x:y, x:y()
+        }
 
-            // Field*, Call*
-            public DMASTIdentifier Identifier;
+        public sealed class FieldOperation : NamedOperation;
 
-            // Index*
-            public DMASTExpression Index;
+        public sealed class IndexOperation : Operation {
+            /// <summary>
+            /// The index expression that we use to index this expression (constant or otherwise).
+            /// </summary>
+            public required DMASTExpression Index; // x[y], x?[y]
+        }
 
-            // Call*
-            public DMASTCallParameter[] Parameters;
+        public sealed class CallOperation : NamedOperation {
+            /// <summary>
+            /// The parameters that we call this proc with.
+            /// </summary>
+            public required DMASTCallParameter[] Parameters; // x.y(),
         }
 
         public DMASTExpression Expression;

@@ -39,6 +39,14 @@ menu "menu"
 		name = "Quit"
 		command = ".quit"
 		category = "Menu"
+	elem
+		name = "Show Popup"
+		command = ".winset \"testwindow.is-visible=true\""
+		category = "Menu"
+	elem
+		name = "Hide Popup"
+		command = ".winset \"testwindow.is-visible=false\""
+		category = "Menu"		
 
 window "mapwindow"
 	elem "mapwindow"
@@ -123,3 +131,14 @@ window "mainwindow"
 		left = "mapwindow"
 		right = "infowindow"
 		is-vert = true
+
+window "testwindow"
+	elem "testwindow"
+		type = MAIN
+		size = 200x100
+		title = "popup"
+		is-visible = false
+	elem "testwindowlabel"
+		type = LABEL
+		text = "I am a test"
+

@@ -1,5 +1,4 @@
-﻿using OpenDreamClient.Input;
-using OpenDreamClient.Interface.Descriptors;
+﻿using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -7,6 +6,7 @@ using Robust.Client.UserInterface.Controls;
 namespace OpenDreamClient.Interface.Controls;
 
 public sealed class ControlWindow : InterfaceControl {
+    [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
@@ -24,7 +24,9 @@ public sealed class ControlWindow : InterfaceControl {
 
     private Control _menuContainer = default!;
     private LayoutContainer _canvas = default!;
-    private readonly List<(OSWindow? osWindow, IClydeWindow? clydeWindow)> _openWindows = new();
+
+    private (OSWindow? osWindow, IClydeWindow? clydeWindow) _myWindow;
+
 
     public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
         IoCManager.InjectDependencies(this);
@@ -41,9 +43,8 @@ public sealed class ControlWindow : InterfaceControl {
             _menuContainer.Visible = false;
         }
 
-        foreach (var window in _openWindows) {
-            UpdateWindowAttributes(window);
-        }
+        if(!WindowDescriptor.IsPane)
+            UpdateWindowAttributes(_myWindow);
 
         if (WindowDescriptor.IsDefault) {
             Macro.SetActive();
@@ -51,8 +52,12 @@ public sealed class ControlWindow : InterfaceControl {
     }
 
     public OSWindow CreateWindow() {
-        OSWindow window = new();
+        if(_myWindow.osWindow is not null)
+            return _myWindow.osWindow;
 
+        OSWindow window = new();
+        if(UIElement.Parent is not null)
+            UIElement.Orphan();
         window.Children.Add(UIElement);
         window.SetWidth = ControlDescriptor.Size?.X ?? 640;
         window.SetHeight = ControlDescriptor.Size?.Y ?? 440;
@@ -65,19 +70,24 @@ public sealed class ControlWindow : InterfaceControl {
             if (WindowDescriptor.OnClose != null) {
                 _interfaceManager.RunCommand(WindowDescriptor.OnClose);
             }
-
-            _openWindows.Remove((window, null));
+            _myWindow = (null, _myWindow.clydeWindow);
         };
+        window.StartupLocation = WindowStartupLocation.CenterOwner;
+        window.Owner = _clyde.MainWindow;
 
-        _openWindows.Add((window, null));
-        UpdateWindowAttributes((window, null));
+        _myWindow = (window, _myWindow.clydeWindow);
+        UpdateWindowAttributes(_myWindow);
         return window;
     }
 
     public void RegisterOnClydeWindow(IClydeWindow window) {
         // todo: listen for closed.
-        _openWindows.Add((null, window));
-        UpdateWindowAttributes((null, window));
+        if(_myWindow.osWindow is not null){
+            _myWindow.osWindow.Close();
+            UIElement.Orphan();
+        }
+        _myWindow = (null, window);
+        UpdateWindowAttributes(_myWindow);
     }
 
     public void UpdateAnchors() {
@@ -150,6 +160,18 @@ public sealed class ControlWindow : InterfaceControl {
     private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
         // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
         var (osWindow, clydeWindow) = windowRoot;
+        //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
+        if(osWindow == null && clydeWindow == null) {
+            if (WindowDescriptor.IsVisible) {
+                CreateWindow();
+                return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
+            }
+        }
+        if(osWindow != null && !osWindow.IsOpen) {
+            if (WindowDescriptor.IsVisible) {
+                osWindow.Show();
+            }
+        }
 
         var title = WindowDescriptor.Title ?? "OpenDream World";
         if (osWindow != null) osWindow.Title = title;
@@ -164,6 +186,13 @@ public sealed class ControlWindow : InterfaceControl {
         if (root != null) {
             root.BackgroundColor = WindowDescriptor.BackgroundColor;
         }
+
+        if (osWindow != null && osWindow.ClydeWindow != null) {
+            osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible;
+        } else if (clydeWindow != null) {
+            clydeWindow.IsVisible = WindowDescriptor.IsVisible;
+        }
+
     }
 
     public void CreateChildControls() {
@@ -189,6 +218,7 @@ public sealed class ControlWindow : InterfaceControl {
             ControlDescriptorLabel => new ControlLabel(controlDescriptor, this),
             ControlDescriptorGrid => new ControlGrid(controlDescriptor, this),
             ControlDescriptorTab => new ControlTab(controlDescriptor, this),
+            ControlDescriptorBar => new ControlBar(controlDescriptor, this),
             _ => throw new Exception($"Invalid descriptor {controlDescriptor.GetType()}")
         };
 

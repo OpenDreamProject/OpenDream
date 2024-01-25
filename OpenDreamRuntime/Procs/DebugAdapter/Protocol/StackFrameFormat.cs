@@ -1,7 +1,9 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
+[UsedImplicitly]
 public sealed class StackFrameFormat : ValueFormat {
     /**
      * Displays parameters for the stack frame.

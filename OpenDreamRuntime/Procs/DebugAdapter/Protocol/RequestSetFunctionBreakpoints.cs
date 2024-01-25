@@ -1,12 +1,15 @@
 using System.Text.Json.Serialization;
+using JetBrains.Annotations;
 
 namespace OpenDreamRuntime.Procs.DebugAdapter.Protocol;
 
+[UsedImplicitly]
 public sealed class RequestSetFunctionBreakpoints : Request {
-    [JsonPropertyName("arguments")] public RequestSetBreakpointsArguments Arguments { get; set; }
+    [JsonPropertyName("arguments")] public required RequestSetBreakpointsArguments Arguments { get; set; }
 
+    [UsedImplicitly]
     public sealed class RequestSetBreakpointsArguments {
-        [JsonPropertyName("breakpoints")] public FunctionBreakpoint[] Breakpoints { get; set; }
+        [JsonPropertyName("breakpoints")] public required FunctionBreakpoint[] Breakpoints { get; set; }
     }
 
     public void Respond(DebugAdapterClient client, Breakpoint[] breakpoints) {

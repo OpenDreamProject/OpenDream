@@ -37,12 +37,10 @@
 	New()
 		..()
 		loc = locate(5, 5, 1)
-		//color = rgb(rand(0,255), rand(0,255), rand(0,255))
 
 	Login()
 		world.log << "login ran"
 		src.client.screen += new /obj/order_test_item/plane_master //used for render tests
-		src.add_client_image()
 
 	verb/winget_test()
 		usr << "windows: [json_encode(winget(usr, null, "windows"))]"
@@ -178,12 +176,22 @@
 		i.override = 1
 		
 		src.client.images += i
-		world.log << "override added"
+		usr << "override added"
 		for(var/turf/T in range(src, 2))
 			var/image/turf_image = image(icon = 'icons/hanoi.dmi', loc=T, icon_state="1")
 			src.client.images += turf_image
+		spawn(25)
+			src << "changing image"
+			i.icon_state = "5"
 		spawn(50)
 			src.client.images.Cut()
+
+	verb/test_hide_main_window()
+		src << "hiding main window"
+		winset(src,"mainwindow","is-visible=false")
+		spawn(20)
+			src << "showing main window"
+			winset(src,"mainwindow","is-visible=true")
 
 /mob/Stat()
 	if (statpanel("Status"))

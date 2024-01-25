@@ -7,7 +7,7 @@ public sealed class DisassembledInstruction {
      * The address of the instruction. Treated as a hex value if prefixed with
      * `0x`, or as a decimal value otherwise.
      */
-    [JsonPropertyName("address")] public string Address { get; set; }
+    [JsonPropertyName("address")] public required string Address { get; set; }
 
     /**
      * Raw bytes representing the instruction and its operands, in an
@@ -19,7 +19,7 @@ public sealed class DisassembledInstruction {
      * Text representing the instruction and its operands, in an
      * implementation-defined format.
      */
-    [JsonPropertyName("instruction")] public string Instruction { get; set; }
+    [JsonPropertyName("instruction")] public required string Instruction { get; set; }
 
     /**
      * Name of the symbol that corresponds with the location of this instruction,

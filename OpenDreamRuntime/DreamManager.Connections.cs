@@ -6,10 +6,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
-using Robust.Server.Player;
 using Robust.Shared.Configuration;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
+using Robust.Shared.Player;
 
 namespace OpenDreamRuntime {
     public sealed partial class DreamManager {
@@ -40,6 +40,8 @@ namespace OpenDreamRuntime {
 
         private Task? _worldTopicListener;
         private CancellationTokenSource? _worldTopicCancellationToken;
+
+        private ulong _topicsProcessed;
 
         private void InitializeConnectionManager() {
             _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
@@ -85,84 +87,107 @@ namespace OpenDreamRuntime {
         }
 
         private async Task ConsumeAndHandleWorldTopicSocket(Socket remote, CancellationToken cancellationToken) {
+            var topicId = ++_topicsProcessed;
             try {
-                async Task<string?> ParseByondTopic(Socket from) {
-                    var buffer = new byte[2];
-                    await from.ReceiveAsync(buffer, cancellationToken);
-                    if (!buffer.SequenceEqual(ByondTopicHeaderRaw)) {
-                        if (buffer.SequenceEqual(ByondTopicHeaderEncrypted))
-                            _sawmill.Warning("Encrypted World Topic request is not implemented.");
-                        return null;
+                using (remote)
+                    try {
+                        async Task<string?> ParseByondTopic(Socket from) {
+                            var buffer = new byte[2];
+                            await from.ReceiveAsync(buffer, cancellationToken);
+                            if (!buffer.SequenceEqual(ByondTopicHeaderRaw)) {
+                                if (buffer.SequenceEqual(ByondTopicHeaderEncrypted))
+                                    _sawmill.Warning("Encrypted World Topic request is not implemented.");
+                                return null;
+                            }
+
+                            await from.ReceiveAsync(buffer, cancellationToken);
+                            if (BitConverter.IsLittleEndian)
+                                buffer = buffer.Reverse().ToArray();
+                            var length = BitConverter.ToUInt16(buffer);
+
+                            buffer = new byte[length];
+                            var totalRead = 0;
+                            do {
+                                var read = await from.ReceiveAsync(
+                                    new Memory<byte>(buffer, totalRead, length - totalRead),
+                                    cancellationToken);
+                                if(read == 0 && totalRead != length) {
+                                    _sawmill.Warning("failed to parse byond topic due to insufficient data read");
+                                    return null;
+                                }
+
+                                totalRead += read;
+                            } while (totalRead < length);
+
+                            return Encoding.ASCII.GetString(buffer[6..^1]);
+                        }
+
+                        var topic = await ParseByondTopic(remote);
+                        if (topic is null) {
+                            return;
+                        }
+
+                        var remoteAddress = (remote.RemoteEndPoint as IPEndPoint)!.Address.ToString();
+                        _sawmill.Debug($"World Topic #{topicId}: '{remoteAddress}' -> '{topic}'");
+                        var tcs = new TaskCompletionSource<DreamValue>();
+                        DreamThread.Run("Topic Handler", async state => {
+                            var topicProc = WorldInstance.GetProc("Topic");
+
+                            var result = await state.Call(topicProc, WorldInstance, null, new DreamValue(topic), new DreamValue(remoteAddress));
+                            tcs.SetResult(result);
+                            return result;
+                        });
+
+                        var topicResponse = await tcs.Task;
+                        if (topicResponse.IsNull) {
+                            return;
+                        }
+
+                        byte[] responseData;
+                        byte responseType;
+                        switch (topicResponse.Type) {
+                            case DreamValue.DreamValueType.Float:
+                                responseType = 0x2a;
+                                responseData = BitConverter.GetBytes(topicResponse.MustGetValueAsFloat());
+                                break;
+
+                            case DreamValue.DreamValueType.String:
+                                responseType = 0x06;
+                                responseData = Encoding.ASCII.GetBytes(topicResponse.MustGetValueAsString().Replace("\0", "")).Append((byte)0x00).ToArray();
+                                break;
+
+                            case DreamValue.DreamValueType.DreamResource:
+                            case DreamValue.DreamValueType.DreamObject:
+                            case DreamValue.DreamValueType.DreamType:
+                            case DreamValue.DreamValueType.DreamProc:
+                            case DreamValue.DreamValueType.Appearance:
+                            default:
+                                _sawmill.Warning($"Unimplemented /world/Topic response type: {topicResponse.Type}");
+                                return;
+                        }
+
+                        var totalLength = (ushort)(responseData.Length + 1);
+                        var lengthData = BitConverter.GetBytes(totalLength);
+                        if (BitConverter.IsLittleEndian)
+                            lengthData = lengthData.Reverse().ToArray();
+
+                        var responseBuffer = new List<byte>(ByondTopicHeaderRaw);
+                        responseBuffer.AddRange(lengthData);
+                        responseBuffer.Add(responseType);
+                        responseBuffer.AddRange(responseData);
+                        var responseActual = responseBuffer.ToArray();
+
+                        var sent = await remote.SendAsync(responseActual, cancellationToken);
+                        if (sent != responseActual.Length)
+                            _sawmill.Warning("Failed to reply to /world/Topic: response buffer not fully sent");
                     }
-
-                    await from.ReceiveAsync(buffer, cancellationToken);
-                    if (BitConverter.IsLittleEndian)
-                        buffer = buffer.Reverse().ToArray();
-                    var length = BitConverter.ToUInt16(buffer);
-
-                    buffer = new byte[length];
-                    var read = await from.ReceiveAsync(buffer, cancellationToken);
-                    if (read != buffer.Length) {
-                        _sawmill.Warning("failed to parse byond topic due to insufficient data read");
-                        return null;
+                    finally {
+                        await remote.DisconnectAsync(false, cancellationToken);
                     }
-
-                    return Encoding.ASCII.GetString(buffer[6..^1]);
-                }
-
-                var topic = await ParseByondTopic(remote);
-                if (topic is null) {
-                    return;
-                }
-
-                var remoteAddress = (remote.RemoteEndPoint as IPEndPoint)!.Address.ToString();
-                _sawmill.Debug($"World Topic: '{remoteAddress}' -> '{topic}'");
-                var topicResponse = WorldInstance.SpawnProc("Topic", null, new DreamValue(topic), new DreamValue(remoteAddress));
-                if (topicResponse.IsNull) {
-                    return;
-                }
-
-                byte[] responseData;
-                byte responseType;
-                switch (topicResponse.Type) {
-                    case DreamValue.DreamValueType.Float:
-                        responseType = 0x2a;
-                        responseData = BitConverter.GetBytes(topicResponse.MustGetValueAsFloat());
-                        break;
-
-                    case DreamValue.DreamValueType.String:
-                        responseType = 0x06;
-                        responseData = Encoding.ASCII.GetBytes(topicResponse.MustGetValueAsString().Replace("\0", "")).Append((byte)0x00).ToArray();
-                        break;
-
-                    case DreamValue.DreamValueType.DreamResource:
-                    case DreamValue.DreamValueType.DreamObject:
-                    case DreamValue.DreamValueType.DreamType:
-                    case DreamValue.DreamValueType.DreamProc:
-                    case DreamValue.DreamValueType.Appearance:
-                    default:
-                        _sawmill.Warning($"Unimplemented /world/Topic response type: {topicResponse.Type}");
-                        return;
-                }
-
-                var totalLength = (ushort)(responseData.Length + 1);
-                var lengthData = BitConverter.GetBytes(totalLength);
-                if (BitConverter.IsLittleEndian)
-                    lengthData = lengthData.Reverse().ToArray();
-
-                var responseBuffer = new List<byte>(ByondTopicHeaderRaw);
-                responseBuffer.AddRange(lengthData);
-                responseBuffer.Add(responseType);
-                responseBuffer.AddRange(responseData);
-                var responseActual = responseBuffer.ToArray();
-
-                var sent = await remote.SendAsync(responseActual, cancellationToken);
-                if (sent != responseActual.Length)
-                    _sawmill.Warning("Failed to reply to /world/Topic: response buffer not fully sent");
-
-            }
-            finally {
-                await remote.DisconnectAsync(false, cancellationToken);
+            } catch (Exception ex) {
+                _sawmill.Warning("Error processing topic #{0}: {1}", topicId, ex);
+            } finally {
+                _sawmill.Debug("Finished world topic #{0}", topicId);
             }
         }
 
@@ -197,7 +222,7 @@ namespace OpenDreamRuntime {
         private void RxAckLoadInterface(MsgAckLoadInterface message) {
             // Once the client loaded the interface, move them to in-game.
             var player = _playerManager.GetSessionByChannel(message.MsgChannel);
-            player.JoinGame();
+            _playerManager.JoinGame(player);
         }
 
         private DreamConnection ConnectionForChannel(INetChannel channel) {
@@ -244,7 +269,7 @@ namespace OpenDreamRuntime {
             }
         }
 
-        public DreamConnection GetConnectionBySession(IPlayerSession session) {
+        public DreamConnection GetConnectionBySession(ICommonSession session) {
             return _connections[session.UserId];
         }
     }

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.DM.Optimizer {
 

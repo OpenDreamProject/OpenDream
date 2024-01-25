@@ -25,7 +25,7 @@ namespace DMCompiler.DM {
             public readonly Expressions.Constant Value = value;
         }
 
-        private struct CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
+        internal struct CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
             public readonly string Identifier = identifier;
             public readonly string Placeholder = placeholder;
             public readonly Location Location = location;

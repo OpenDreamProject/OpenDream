@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Json;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM.Optimizer;
 

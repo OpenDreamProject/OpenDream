@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Json;
 
 namespace DMCompiler.DM.Optimizer;
 

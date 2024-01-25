@@ -2,8 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Optimizer {
 /*

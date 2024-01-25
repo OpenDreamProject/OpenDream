@@ -4,9 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM.Optimizer {
     public interface IAnnotatedBytecode {

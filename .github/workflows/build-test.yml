@@ -43,21 +43,21 @@ jobs:
       run: |
         $env:COMPlus_gcServer=1
         dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
+    - name: Publish OpenDream win-x64
+      if: github.event_name == 'push'
+      run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --skip-build --platform win-x64 --output output-win-x64/
+    - name: Publish OpenDream linux-x64
+      if: github.event_name == 'push'
+      run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --skip-build --platform linux-x64 --output output-linux-x64/
     - name: Publish DMCompiler
+      if: github.event_name == 'push'
       run: dotnet publish DMCompiler -c Release -o output/DMCompiler
-    - name: Publish OpenDreamServer
-      run: dotnet publish OpenDreamServer -c Release -o output/OpenDreamServer
-    - name: Publish OpenDreamClient
-      run: dotnet publish OpenDreamClient -c Release -o output/OpenDreamClient
-    - name: Publish DMDisassembler
-      run: dotnet publish DMDisassembler -c Release -o output/DMDisassembler
     - name: Gzip releases
       if: github.event_name == 'push'
       run: |
-        tar -czvf output/DMCompiler-${{ matrix.os }}.tar.gz -C output DMCompiler
-        tar -czvf output/OpenDreamServer-${{ matrix.os }}.tar.gz -C output OpenDreamServer
-        tar -czvf output/OpenDreamClient-${{ matrix.os }}.tar.gz -C output OpenDreamClient
-        tar -czvf output/DMDisassembler-${{ matrix.os }}.tar.gz -C output DMDisassembler
+        tar -czvf output/DMCompiler.tar.gz -C output DMCompiler
+        tar -czvf output/OpenDreamServer_win-x64.tar.gz -C output-win-x64 OpenDreamServer_win-x64
+        tar -czvf output/OpenDreamServer_linux-x64.tar.gz -C output-linux-x64 OpenDreamServer_linux-x64
     - name: Upload artifact
       if: github.event_name == 'push'
       uses: actions/upload-artifact@v3

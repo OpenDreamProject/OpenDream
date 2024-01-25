@@ -1,6 +1,9 @@
 ﻿using System;
 
-namespace OpenDreamShared.Dream;
+namespace DMCompiler.DM;
+
+// If you are modifying this, you must also modify OpenDreamShared.Dream.DreamValueType !!
+// Unfortunately the client needs this and it can't reference DMCompiler due to the sandbox
 
 ///<summary>
 ///Stores any explicit casting done via the "as" keyword. Also stores compiler hints for DMStandard.<br/>
@@ -22,6 +25,7 @@ public enum DMValueType {
     CommandText = 0x400,
     Sound = 0x800,
     Icon = 0x1000,
+
     //Byond here be dragons
     Unimplemented = 0x2000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
     CompiletimeReadonly = 0x4000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type

@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DM;
 
 public sealed class DMLexer : TokenLexer {
-    // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
-    public static readonly List<string> ValidEscapeSequences = new(38) {
+    public static readonly List<string> ValidEscapeSequences = [
         "icon",
         "Roman", "roman",
         "The", "the",
@@ -28,14 +26,14 @@ public sealed class DMLexer : TokenLexer {
         "bold", "b",
         "italic",
         "..."
-    };
+    ];
 
     private static readonly StringBuilder TokenTextBuilder = new();
 
-    private static readonly List<TokenType> ValidIdentifierComponents = new(2) {
+    private static readonly List<TokenType> ValidIdentifierComponents = [
         TokenType.DM_Preproc_Identifier,
         TokenType.DM_Preproc_Number
-    };
+    ];
 
     // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
     private static readonly Dictionary<string, TokenType> Keywords = new(25) {
@@ -267,10 +265,8 @@ public sealed class DMLexer : TokenLexer {
                             TokenTextBuilder.Append(GetCurrent().Text);
                         } while (ValidIdentifierComponents.Contains(Advance().Type) && !AtEndOfSource);
 
-                        string identifierText = TokenTextBuilder.ToString();
-                        var tokenType = Keywords.TryGetValue(identifierText, out TokenType keywordType)
-                            ? keywordType
-                            : TokenType.DM_Identifier;
+                        var identifierText = TokenTextBuilder.ToString();
+                        var tokenType = Keywords.GetValueOrDefault(identifierText, TokenType.DM_Identifier);
 
                         token = CreateToken(tokenType, identifierText);
                         break;
@@ -279,9 +275,9 @@ public sealed class DMLexer : TokenLexer {
                         Advance();
 
                         string text = preprocToken.Text;
-                        if (text == "1.#INF" || text == "1#INF") {
+                        if (text is "1.#INF" or "1#INF") {
                             token = CreateToken(TokenType.DM_Float, text, float.PositiveInfinity);
-                        } else if (text == "1.#IND" || text == "1#IND") {
+                        } else if (text is "1.#IND" or "1#IND") {
                             token = CreateToken(TokenType.DM_Float, text, float.NaN);
                         } else if (text.StartsWith("0x") && int.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
                             token = CreateToken(TokenType.DM_Integer, text, intValue);

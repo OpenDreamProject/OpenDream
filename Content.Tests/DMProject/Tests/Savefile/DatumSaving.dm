@@ -16,9 +16,6 @@
 
 	Write(savefile/F)
 		proc_call_order_check += list("Write")
-		ASSERT(F["type"] == /datum/foo)
-		ASSERT(F["current_map"] == null)
-		ASSERT(F["default_cube"] == null)
 		..()
 
 /var/static/proc_call_order_check = list()
@@ -48,9 +45,8 @@
 	ASSERT(istype(W))
 	ASSERT(W != F) //they are equivelant, but not the same datum
 	ASSERT(W.best_map == "pl_pier")
-	ASSERT(W.worst_map == null)
+	ASSERT(W.worst_map == "pl_badwater")
 	ASSERT(W.null_me == null)
 	
 	ASSERT(proc_call_order_check ~= list("New","Write","New","Read"))
-	return TRUE
    

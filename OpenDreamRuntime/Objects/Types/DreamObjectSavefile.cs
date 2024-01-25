@@ -64,7 +64,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     public string CurrentPath {
         get => _currentPath;
         set {
-            var tempDir = SeekTo(value);
+            var tempDir = SeekTo(value, true);
             if (tempDir != CurrentDir) {
                 CurrentDir = tempDir;
                 if(value.StartsWith("/")) //absolute path
@@ -229,7 +229,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Attempts to go to said path relative to CurrentPath (you still have to set CurrentDir)
     /// </summary>
-    private SFDreamJsonValue SeekTo(string to) {
+    private SFDreamJsonValue SeekTo(string to, bool createPath=false) {
         SFDreamJsonValue tempDir = _rootNode;
 
         var searchPath = new DreamPath(_currentPath).AddToPath(to).PathString; //relative path
@@ -240,7 +240,10 @@ public sealed class DreamObjectSavefile : DreamObject {
             if(path == string.Empty)
                 continue;
             if (!tempDir.TryGetValue(path, out var newDir)) {
-                newDir = tempDir[path] = new SFDreamDir();
+                if(createPath)
+                    newDir = tempDir[path] = new SFDreamDir();
+                else
+                    return tempDir;
             }
             tempDir = newDir;
         }
@@ -316,8 +319,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                         resultObj.SetVariable(key, DeserializeJsonValue(storedObjectVars[key]));
                     }
                     resultObj.InitSpawn(new DreamProcArguments());
-                    resultObj.SpawnProc("New");
-                    resultObj.SpawnProc("Read");
+                    resultObj.SpawnProc("Read", null, [new DreamValue(this)]);
                     return new DreamValue(resultObj);
                 } else
                     throw new InvalidDataException("Unable to deserialize object in savefile: " + ((storedObjectTypeJSON as SFDreamType) is null ? "no type specified (corrupted savefile?)" : "invalid type "+((SFDreamType)storedObjectTypeJSON!).TypePath));
@@ -426,7 +428,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                         objectVars["icon"] = new SFDreamFileValue(){Name="", Ext=".dmi", Length = iconResource.ResourceData!.Length, Data = Convert.ToBase64String(iconResource.ResourceData)};
                     }
                     //Call the Write proc on the object - note that this is a weird one, it does not need to call parent to the native function to save the object
-                    //dreamObject.SpawnProc("Write", null, [new DreamValue(this)]);
+                    dreamObject.SpawnProc("Write", null, [new DreamValue(this)]);
                     jsonEncodedObject[jsonEncodedObject.Path] = objectVars;
                     return jsonEncodedObject;
                 }

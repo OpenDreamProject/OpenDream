@@ -1,10 +1,9 @@
 using System;
 
-namespace OpenDreamShared.Dream.Procs;
+namespace DMCompiler.DM;
 
 [Flags]
-public enum ProcAttributes
-{
+public enum ProcAttributes {
     None = 1 << 0, // Internal
     IsOverride = 1 << 1, // Internal
     Unimplemented = 1 << 2,

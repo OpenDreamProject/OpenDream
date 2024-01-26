@@ -5,8 +5,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Compiler;
-using Robust.Shared.Utility;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
@@ -414,7 +412,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
 
         if (macroTokens.Count > 0 && macroTokens[^1].Type == TokenType.DM_Preproc_Whitespace) {
             //Remove trailing whitespace
-            macroTokens.Pop();
+            macroTokens.RemoveAt(macroTokens.Count - 1);
         }
 
         _defines[defineIdentifier.Text] = new DMMacro(parameters, macroTokens);
@@ -476,7 +474,9 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     /// <summary>If this <see cref="TokenType.DM_Preproc_Identifier"/> Token is a macro, pushes all of its tokens onto the queue.</summary>
     /// <returns>true if the Token ended up meaning a macro sequence.</returns>
     private bool TryMacro(Token token) {
-        DebugTools.Assert(token.Type == TokenType.DM_Preproc_Identifier); // Check this before passing anything to this function.
+        if (token.Type != TokenType.DM_Preproc_Identifier) // Check this before passing anything to this function.
+            throw new ArgumentException("Given token must be a DM_Preproc_Identifier", nameof(token));
+
         if (!_defines.TryGetValue(token.Text, out DMMacro? macro)) {
             return false;
         }
@@ -618,19 +618,21 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
         WarningCode warningCode;
         switch(warningNameToken.Type) {
             case TokenType.DM_Preproc_Identifier: {
-                if(!Enum.TryParse<WarningCode>(warningNameToken.Text, out warningCode)) {
+                if (!Enum.TryParse(warningNameToken.Text, out warningCode)) {
                     DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning '{warningNameToken.PrintableText}' does not exist");
                     GetLineOfTokens(); // consume what's on this line and leave
                     return;
                 }
+
                 break;
             }
             case TokenType.DM_Preproc_Number: {
-                if(!int.TryParse(warningNameToken.Text, out var intValue)) {
+                if (!int.TryParse(warningNameToken.Text, out var intValue)) {
                     DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning OD{warningNameToken.PrintableText} does not exist");
                     GetLineOfTokens();
                     return;
                 }
+
                 warningCode = (WarningCode)intValue;
                 break;
             }
@@ -640,7 +642,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
                 return;
             }
         }
-        DebugTools.AssertNotNull(warningCode);
+
         if((int)warningCode < 1000) {
             DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning OD{(int)warningCode:d4} cannot be set - it must always be an error");
             GetLineOfTokens();

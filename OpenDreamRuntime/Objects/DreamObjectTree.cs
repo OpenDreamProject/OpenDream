@@ -1,13 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
+using DMCompiler.Json;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
 using Robust.Server.Player;
@@ -162,6 +161,8 @@ public sealed class DreamObjectTree {
             throw new Exception("Cannot create objects of type /client");
         if (type.ObjectDefinition.IsSubtypeOf(Turf))
             throw new Exception("New turfs must be created by the map manager");
+        if (type.ObjectDefinition.IsSubtypeOf(Exception))
+            return new DreamObjectException(type.ObjectDefinition);
 
         return new DreamObject(type.ObjectDefinition);
     }

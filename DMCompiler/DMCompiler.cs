@@ -4,9 +4,6 @@ using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
 using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Json;
-using Robust.Shared.Utility;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -16,6 +13,8 @@ using System.Reflection;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler;
 
@@ -351,8 +350,9 @@ public static class DMCompiler {
     }
 
     public static ErrorLevel CodeToLevel(WarningCode code) {
-        bool didFind = Config.ErrorConfig.TryGetValue(code, out var ret);
-        DebugTools.Assert(didFind);
+        if (!Config.ErrorConfig.TryGetValue(code, out var ret))
+            throw new Exception($"Failed to find error level for code {code}");
+
         return ret;
     }
 }

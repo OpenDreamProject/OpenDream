@@ -1,4 +1,4 @@
-name: Build & Test
+name: Build, Test & Release
 
 on:
   push:
@@ -43,3 +43,40 @@ jobs:
       run: |
         $env:COMPlus_gcServer=1
         dotnet test --no-build Content.IntegrationTests/Content.IntegrationTests.csproj -v n
+    - name: Publish OpenDream
+      if: github.event_name == 'push'
+      run: dotnet run --project OpenDreamPackageTool --no-build --configuration Release -- --server --hybrid-acz --platform ${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --output output/
+    - name: Publish DMCompiler
+      if: github.event_name == 'push'
+      run: dotnet publish DMCompiler -c Release -o output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+    - name: Gzip releases
+      if: github.event_name == 'push'
+      run: |
+        tar -czvf output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        tar -czvf output/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+    - name: Upload artifact
+      if: github.event_name == 'push'
+      uses: actions/upload-artifact@v3
+      with:
+        name: build-${{ matrix.os }}
+        path: output/*.tar.gz
+        retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+    - name: Download artifacts
+      uses: actions/download-artifact@v3
+      with:
+        path: artifacts
+    - name: Publish latest release
+      uses: marvinpinto/action-automatic-releases@latest
+      with:
+        repo_token: "${{ secrets.GITHUB_TOKEN }}"
+        automatic_release_tag: "latest"
+        prerelease: true
+        title: "Development Build"
+        files: |
+          artifacts/*/*.tar.gz

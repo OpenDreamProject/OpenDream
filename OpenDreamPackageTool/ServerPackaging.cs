@@ -12,9 +12,9 @@ public static class ServerPackaging {
         new("win-x64", "Windows", true),
         new("linux-x64", "Linux", true),
         new("linux-arm64", "Linux", true),
-        new("osx-x64", "MacOS", true),
 
         // Non-default platforms (i.e. for Watchdog Git)
+        new("osx-x64", "MacOS", false), // macOS is not supported currently
         new("win-x86", "Windows", false),
         new("linux-x86", "Linux", false),
         new("linux-arm", "Linux", false),

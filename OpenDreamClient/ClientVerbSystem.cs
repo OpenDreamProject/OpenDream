@@ -35,6 +35,7 @@ public sealed class ClientVerbSystem : VerbSystem {
 
     public override void Shutdown() {
         _verbs.Clear();
+        _clientVerbs = null;
     }
 
     /// <summary>

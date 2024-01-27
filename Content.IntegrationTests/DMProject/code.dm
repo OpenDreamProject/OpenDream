@@ -29,4 +29,5 @@
 	test_block()
 	test_color_matrix()
 	test_range()
+	test_verb_duplicate()
 	world.log << "IntegrationTests successful, /world/New() exiting..."

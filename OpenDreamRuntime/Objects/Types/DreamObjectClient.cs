@@ -10,13 +10,13 @@ public sealed class DreamObjectClient : DreamObject {
     public readonly DreamConnection Connection;
     public readonly ClientScreenList Screen;
     public readonly ClientImagesList Images;
-    public readonly VerbsList Verbs;
+    public readonly ClientVerbsList ClientVerbs;
     public ViewRange View { get; private set; }
 
     public DreamObjectClient(DreamObjectDefinition objectDefinition, DreamConnection connection, ServerScreenOverlaySystem? screenOverlaySystem, ServerClientImagesSystem? clientImagesSystem) : base(objectDefinition) {
         Connection = connection;
         Screen = new(ObjectTree, screenOverlaySystem, Connection);
-        Verbs = new(ObjectTree, this);
+        ClientVerbs = new(ObjectTree, VerbSystem, this);
         Images = new(ObjectTree, clientImagesSystem, Connection);
 
         DreamManager.Clients.Add(this);
@@ -86,7 +86,7 @@ public sealed class DreamObjectClient : DreamObject {
                 value = new(Screen);
                 return true;
             case "verbs":
-                value = new(Verbs);
+                value = new(ClientVerbs);
                 return true;
             case "images":
                 value = new(Images);
@@ -150,6 +150,19 @@ public sealed class DreamObjectClient : DreamObject {
                     }
                 } else if (!value.IsNull) {
                     Images.AddValue(value);
+                }
+
+                break;
+            }
+            case "verbs": {
+                ClientVerbs.Cut();
+
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    foreach (DreamValue verbValue in valueList.GetValues()) {
+                        ClientVerbs.AddValue(verbValue);
+                    }
+                } else {
+                    ClientVerbs.AddValue(value);
                 }
 
                 break;

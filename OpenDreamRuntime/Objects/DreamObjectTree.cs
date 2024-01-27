@@ -64,6 +64,7 @@ public sealed class DreamObjectTree {
     private TransformSystem? _transformSystem;
     private PvsOverrideSystem? _pvsOverrideSystem;
     private MetaDataSystem? _metaDataSystem;
+    private ServerVerbSystem? _verbSystem;
 
     public void LoadJson(DreamCompiledJson json) {
         var types = json.Types ?? Array.Empty<DreamTypeJson>();
@@ -76,6 +77,7 @@ public sealed class DreamObjectTree {
         _entitySystemManager.TryGetEntitySystem(out _transformSystem);
         _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
         _entitySystemManager.TryGetEntitySystem(out _metaDataSystem);
+        _entitySystemManager.TryGetEntitySystem(out _verbSystem);
 
         Strings = json.Strings ?? new();
 
@@ -308,7 +310,7 @@ public sealed class DreamObjectTree {
         foreach (TreeEntry type in GetAllDescendants(Root)) {
             int typeId = type.Id;
             DreamTypeJson jsonType = types[typeId];
-            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, type);
+            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, _verbSystem, type);
 
             type.ObjectDefinition = definition;
             type.TreeIndex = treeIndex++;
@@ -396,8 +398,14 @@ public sealed class DreamObjectTree {
         if (jsonProcs != null) {
             Procs.EnsureCapacity(jsonProcs.Length);
 
-            foreach (var proc in jsonProcs) {
-                Procs.Add(LoadProcJson(Procs.Count, proc));
+            foreach (var procJson in jsonProcs) {
+                var proc = LoadProcJson(Procs.Count, procJson);
+
+                if (proc.IsVerb) {
+                    _verbSystem?.RegisterVerb(proc);
+                }
+
+                Procs.Add(proc);
             }
         }
 

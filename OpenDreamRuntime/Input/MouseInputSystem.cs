@@ -1,6 +1,5 @@
 ﻿using System.Collections.Specialized;
 using System.Web;
-using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamShared.Input;
 
@@ -20,23 +19,25 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     }
 
     private void OnAtomClicked(AtomClickedEvent e, EntitySessionEventArgs sessionEvent) {
-        var atom = _atomManager.GetAtom(e.Atom);
-        if (atom == null)
+        var connection = _dreamManager.GetConnectionBySession(sessionEvent.SenderSession);
+        var clicked = _dreamManager.GetFromClientReference(connection, e.ClickedAtom);
+        if (clicked is not DreamObjectAtom atom)
             return;
 
         HandleAtomClick(e, atom, sessionEvent);
     }
 
     private void OnAtomDragged(AtomDraggedEvent e, EntitySessionEventArgs sessionEvent) {
-        var src = _atomManager.GetAtom(e.SrcAtom);
-        if (src == null)
+        var connection = _dreamManager.GetConnectionBySession(sessionEvent.SenderSession);
+        var src = _dreamManager.GetFromClientReference(connection, e.SrcAtom);
+        if (src is not DreamObjectAtom srcAtom)
             return;
 
-        var over = (e.OverAtom != null) ? _atomManager.GetAtom(e.OverAtom.Value) : null;
-        var session = sessionEvent.SenderSession;
-        var connection = _dreamManager.GetConnectionBySession(session);
         var usr = connection.Mob;
-        var srcPos = _atomManager.GetAtomPosition(src);
+        var srcPos = _atomManager.GetAtomPosition(srcAtom);
+        var over = (e.OverAtom != null)
+            ? _dreamManager.GetFromClientReference(connection, e.OverAtom.Value) as DreamObjectAtom
+            : null;
 
         _mapManager.TryGetTurfAt((srcPos.X, srcPos.Y), srcPos.Z, out var srcLoc);
 
@@ -65,7 +66,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         HandleAtomClick(e, dreamObject, sessionEvent);
     }
 
-    private void HandleAtomClick(IAtomMouseEvent e, DreamObject atom, EntitySessionEventArgs sessionEvent) {
+    private void HandleAtomClick(IAtomMouseEvent e, DreamObjectAtom atom, EntitySessionEventArgs sessionEvent) {
         var session = sessionEvent.SenderSession;
         var connection = _dreamManager.GetConnectionBySession(session);
         var usr = connection.Mob;

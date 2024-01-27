@@ -21,8 +21,6 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         ObjectDefinition = objectDefinition;
         Variables?.Clear();
 
-        Verbs.Cut();
-
         Initialize(new());
     }
 

@@ -10,7 +10,6 @@ public class DreamObjectAtom : DreamObject {
     public readonly DreamOverlaysList Overlays;
     public readonly DreamOverlaysList Underlays;
     public readonly DreamVisContentsList VisContents;
-    public readonly VerbsList Verbs;
     public readonly DreamFilterList Filters;
     public DreamList? VisLocs; // TODO: Implement
 
@@ -18,7 +17,6 @@ public class DreamObjectAtom : DreamObject {
         Overlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
         Underlays = new(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
         VisContents = new(ObjectTree.List.ObjectDefinition, PvsOverrideSystem, this);
-        Verbs = new(ObjectTree, this);
         Filters = new(ObjectTree.List.ObjectDefinition, this);
 
         AtomManager.AddAtom(this);
@@ -65,7 +63,7 @@ public class DreamObjectAtom : DreamObject {
                 value = new(Underlays);
                 return true;
             case "verbs":
-                value = new(Verbs);
+                value = new(new VerbsList(ObjectTree, AtomManager, VerbSystem, this));
                 return true;
             case "filters":
                 value = new(Filters);
@@ -152,19 +150,6 @@ public class DreamObjectAtom : DreamObject {
                     }
                 } else if (!value.IsNull) {
                     VisContents.AddValue(value);
-                }
-
-                break;
-            }
-            case "verbs": {
-                Verbs.Cut();
-
-                if (value.TryGetValueAsDreamList(out var valueList)) {
-                    foreach (DreamValue verbValue in valueList.GetValues()) {
-                        Verbs.AddValue(verbValue);
-                    }
-                } else if (!value.IsNull) {
-                    Verbs.AddValue(value);
                 }
 
                 break;

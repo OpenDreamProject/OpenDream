@@ -1329,10 +1329,17 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public bool AllValuesConstant() {
-            return Values.All(value => value is {
-                Key: DMASTExpressionConstant,
-                Value: DMASTExpressionConstant
-            });
+            return Values.All(
+                value => (value is {
+                    Key: DMASTExpressionConstant,
+                    Value: DMASTExpressionConstant
+                })
+                ||
+                (value is {
+                    Key: DMASTExpressionConstant,
+                    Value: DMASTList
+                } && ((DMASTList) value.Value).AllValuesConstant())
+            );
         }
     }
 

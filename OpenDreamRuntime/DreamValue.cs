@@ -108,7 +108,7 @@ namespace OpenDreamRuntime {
 
         public bool IsNull {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Type == DreamValueType.DreamObject && (_refValue == null || ((DreamObject) _refValue).Deleted);
+            get => Type == DreamValueType.DreamObject && (_refValue == null || Unsafe.As<DreamObject>(_refValue).Deleted);
         }
 
         private DreamValue(DreamValueType type, object refValue) {

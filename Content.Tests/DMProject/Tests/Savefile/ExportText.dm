@@ -35,7 +35,7 @@
 .2
 	type = /datum
 "}
-	ASSERT(F.ExportText("list") ~= list_match)
+	ASSERT(F.ExportText("list") == list_match)
 
 	F.cd = "dir6"
 	F << "test"

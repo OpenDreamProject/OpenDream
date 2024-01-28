@@ -38,56 +38,6 @@ internal static class DreamProcNativeSavefile {
         return new DreamValue(result);
     }
 
-    [DreamProc("ImportText")]
-    [DreamProcParameter("path", Type = DreamValueTypeFlag.String)]
-    [DreamProcParameter("source", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamResource)]
-    public static DreamValue NativeProc_ImportText(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-
-        var savefile = (DreamObjectSavefile)src!;
-        DreamValue path = bundle.GetArgument(0, "path");
-        DreamValue source = bundle.GetArgument(1, "source");
-
-        if(!path.IsNull && path.TryGetValueAsString(out var pathStr)) { //invalid path values are just ignored in BYOND
-            savefile.CurrentPath = pathStr;
-        }
-        //if source is a file, read text from file and parse
-        //else if source is a string, parse string
-        //savefile.OperatorOutput(new DreamValue(source));
-        string sourceStr = "";
-        if (source.TryGetValueAsDreamResource(out var sourceResource)) {
-            sourceStr = sourceResource.ReadAsString() ?? "";
-        } else if (source.TryGetValueAsString(out var sourceString)) {
-            sourceStr = sourceString;
-        } else {
-            throw new ArgumentException($"Invalid source value {source}");
-        }
-
-        var lines = sourceStr.Split('\n');
-        var directoryStack = new Stack<string>();
-        foreach (var line in lines) {
-            var indentCount = line.TakeWhile(char.IsWhiteSpace).Count();
-            while (directoryStack.Count > indentCount) {
-                directoryStack.Pop();
-            }
-            var keyValue = line.Trim().Split(new[] { " = " }, StringSplitOptions.None);
-            if (keyValue.Length == 2) {
-                var key = keyValue[0].Trim();
-                var value = keyValue[1].Trim();
-                if (value.StartsWith("object(")) {
-                    directoryStack.Push(key);
-                    savefile.CurrentPath = string.Join("/", directoryStack.Reverse());
-                } else {
-                    savefile.OperatorIndexAssign(new DreamValue(key), new DreamValue(value));
-                }
-            } else {
-                throw new ArgumentException($"Invalid line {line}");
-            }
-        }
-
-        return DreamValue.Null;
-    }
-
-
     private static string ExportTextInternal(DreamObjectSavefile savefile, int indent = int.MinValue) {
         string result = "";
         var value = savefile.CurrentDir;

@@ -132,15 +132,8 @@ public sealed class DreamObjectSavefile : DreamObject {
                 value = new DreamValue(Resource.ResourcePath ?? "[no path]");
                 return true;
             case "dir":
-                DreamList dirList = ObjectTree.CreateList();
-                // TODO reimplement
-                // foreach (var dirPath in Directories.Keys) {
-                //     if (dirPath.StartsWith(_currentDirPath)) {
-                //         dirList.AddValue(new DreamValue(dirPath));
-                //     }
-                // }
-
-                //TODO: dirList.Add(), dirList.Remove() should affect the directories in a savefile
+                DreamList dirList = ObjectTree.CreateList([.. CurrentDir.Keys]);
+                 //TODO: dirList.Add(), dirList.Remove() should affect the directories in a savefile - needs a custom list type, save file backed (ew)
                 value = new DreamValue(dirList);
                 return true;
             default:

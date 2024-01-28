@@ -341,8 +341,10 @@ public sealed class DreamObjectSavefile : DreamObject {
             case DreamValue.DreamValueType.DreamResource:
                 var dreamResource = val.MustGetValueAsDreamResource();
                 return new SFDreamFileValue {
+                    Name = dreamResource.ResourcePath,
+                    Ext = dreamResource.ResourcePath!.Split('.').Last(),
                     Length = dreamResource.ResourceData!.Length,
-                    //Crc32 =  new System.IO.Hashing.Crc32().
+                    Crc32 = CalculateCRC32(dreamResource.ResourceData),
                     Data = Convert.ToBase64String(dreamResource.ResourceData)
                 };
             case DreamValue.DreamValueType.DreamObject:
@@ -399,6 +401,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                             Name = savefile.Resource.ResourcePath,
                             Ext = ".sav",
                             Length = savefile.Resource.ResourceData!.Length,
+                            Crc32 = CalculateCRC32(savefile.Resource.ResourceData),
                             Data = Convert.ToBase64String(savefile.Resource.ResourceData)
                         };
                     }
@@ -418,7 +421,11 @@ public sealed class DreamObjectSavefile : DreamObject {
 
                     //special handling for /icon since the icon var doesn't actually contain the icon data
                     if(DreamResourceManager.TryLoadIcon(val, out var iconResource)) {
-                        objectVars["icon"] = new SFDreamFileValue(){Name="", Ext=".dmi", Length = iconResource.ResourceData!.Length, Data = Convert.ToBase64String(iconResource.ResourceData)};
+                        objectVars["icon"] = new SFDreamFileValue(){
+                            Ext=".dmi",
+                            Length = iconResource.ResourceData!.Length,
+                            Crc32 = CalculateCRC32(iconResource.ResourceData),
+                            Data = Convert.ToBase64String(iconResource.ResourceData)};
                     }
                     //Call the Write proc on the object - note that this is a weird one, it does not need to call parent to the native function to save the object
                     dreamObject.SpawnProc("Write", null, [new DreamValue(this)]);
@@ -435,7 +442,24 @@ public sealed class DreamObjectSavefile : DreamObject {
         return new SFDreamPrimitive();
     }
 
+    private uint CalculateCRC32(byte[] data)
+    {
+        const uint polynomial = 0xEDB88320;
+        uint crc = 0xFFFFFFFF;
 
+        for (int i = 0; i < data.Length; i++)
+        {
+            crc ^= data[i];
+            for (int j = 0; j < 8; j++)
+            {
+                if ((crc & 1) == 1)
+                    crc = (crc >> 1) ^ polynomial;
+                else
+                    crc >>= 1;
+            }
+        }
+        return ~crc;
+    }
 
     #region JSON Savefile Types
 
@@ -516,7 +540,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         [JsonInclude]
         public required int Length;
         [JsonInclude]
-        public int Crc32 = 0x00000000;
+        public uint Crc32 = 0x00000000;
         [JsonInclude]
         public string Encoding = "base64";
         [JsonInclude]

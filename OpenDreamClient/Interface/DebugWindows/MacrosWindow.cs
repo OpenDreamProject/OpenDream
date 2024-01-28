@@ -9,8 +9,6 @@ namespace OpenDreamClient.Interface.DebugWindows;
 /// </summary>
 public sealed class MacrosWindow : OSWindow {
     [Dependency] private readonly IDreamInterfaceManager _interfaceManager = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-
 
     public MacrosWindow() {
         IoCManager.InjectDependencies(this);

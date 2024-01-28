@@ -7,7 +7,7 @@
             </Control>
             <ScrollContainer HScrollEnabled="False" ReturnMeasure="True">
                 <BoxContainer Name="VerbMenu" Orientation="Vertical">
-                    <!-- TODO: Fill with verbs -->
+                    <!-- Verb buttons go here -->
                 </BoxContainer>
             </ScrollContainer>
         </BoxContainer>

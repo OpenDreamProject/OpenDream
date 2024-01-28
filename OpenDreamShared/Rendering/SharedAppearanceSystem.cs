@@ -4,39 +4,25 @@ using Robust.Shared.Serialization;
 using System;
 using System.Collections.Generic;
 
-namespace OpenDreamShared.Rendering {
-    public abstract class SharedAppearanceSystem : EntitySystem {
-        [Serializable, NetSerializable]
-        public sealed class AllAppearancesEvent : EntityEventArgs {
-            public Dictionary<int, IconAppearance> Appearances = new();
+namespace OpenDreamShared.Rendering;
 
-            public AllAppearancesEvent(Dictionary<int, IconAppearance> appearances) {
-              Appearances = appearances;
-            }
-        }
+public abstract class SharedAppearanceSystem : EntitySystem {
+    [Serializable, NetSerializable]
+    public sealed class AllAppearancesEvent(Dictionary<int, IconAppearance> appearances) : EntityEventArgs {
+        public Dictionary<int, IconAppearance> Appearances = appearances;
+    }
 
-        [Serializable, NetSerializable]
-        public sealed class NewAppearanceEvent : EntityEventArgs {
-            public int AppearanceId { get; }
-            public IconAppearance Appearance { get; }
+    [Serializable, NetSerializable]
+    public sealed class NewAppearanceEvent(int appearanceId, IconAppearance appearance) : EntityEventArgs {
+        public int AppearanceId { get; } = appearanceId;
+        public IconAppearance Appearance { get; } = appearance;
+    }
 
-            public NewAppearanceEvent(int appearanceID, IconAppearance appearance) {
-                AppearanceId = appearanceID;
-                Appearance = appearance;
-            }
-        }
-
-        [Serializable, NetSerializable]
-        public sealed class AnimationEvent : EntityEventArgs {
-            public NetEntity Entity;
-            public int TargetAppearanceId;
-            public TimeSpan Duration;
-
-            public AnimationEvent(NetEntity entity, int targetAppearanceId, TimeSpan duration) {
-                Entity = entity;
-                TargetAppearanceId = targetAppearanceId;
-                Duration = duration;
-            }
-        }
+    [Serializable, NetSerializable]
+    public sealed class AnimationEvent(NetEntity entity, int targetAppearanceId, TimeSpan duration)
+        : EntityEventArgs {
+        public NetEntity Entity = entity;
+        public int TargetAppearanceId = targetAppearanceId;
+        public TimeSpan Duration = duration;
     }
 }

@@ -43,8 +43,7 @@ internal static class DreamProcNativeSavefile {
         var value = savefile.CurrentDir;
         var key = savefile.CurrentPath.Split('/').Last();
         if(indent == int.MinValue){
-            if(!string.IsNullOrEmpty(key)) //if this is is the start and not root dir, use . = value syntax
-                key = ".";
+            key = ".";
             indent = 0; //either way, set indent to 0 so we know we're not at the start anymore
         }
         switch(value) {

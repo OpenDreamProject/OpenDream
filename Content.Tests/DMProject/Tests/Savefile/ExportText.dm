@@ -35,3 +35,10 @@
 .2
 	type = /datum
 "}
+	ASSERT(F.ExportText("list") ~= list_match)
+
+	F.cd = "dir6"
+	F << "test"
+	F.cd = "/"
+	ASSERT(F.ExportText("dir6") == ". = \"test\"\nsubdir6 = 321\n")
+	ASSERT(F.ExportText("dir6/subdir6/") == ". = 321\n")

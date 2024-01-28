@@ -252,9 +252,18 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     public void SetSavefileValue(string? index, DreamValue value) {
-        // TODO reimplement nulling values when cd
         if (index == null) {
-            CurrentDir[$".{CurrentDir.Count}"] = SerializeDreamValue(value);
+            SFDreamJsonValue newCurrentDir = SerializeDreamValue(value);
+            foreach(var key in CurrentDir.Keys) {
+                newCurrentDir[key] = CurrentDir[key];
+            }
+
+            if(CurrentDir != _rootNode) {
+                SFDreamJsonValue parentDir = SeekTo("..");
+                parentDir[CurrentPath.Split("/").Last()] = newCurrentDir;
+            } else {
+                CurrentDir = _rootNode = newCurrentDir;
+            }
             _savefilesToFlush.Add(this);
             return;
         }

@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
-using DMCompiler.DM.Visitors;
 
 namespace DMCompiler.DM.Builders {
     internal static class DMObjectBuilder {

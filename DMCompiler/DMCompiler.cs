@@ -3,7 +3,6 @@ using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
-using DMCompiler.DM.Visitors;
 using System;
 using System.Collections.Generic;
 using System.Globalization;

@@ -1,7 +1,7 @@
 using System;
 using DMCompiler.Compiler.DM.AST;
 
-namespace DMCompiler.DM.Visitors;
+namespace DMCompiler.DM.Builders;
 
 // Takes in an AST node and attempts to fold what mathematical expressions it can
 // TODO: Constant folding should instead be done by either expression or bytecode generation
@@ -302,7 +302,7 @@ public class DMASTFolder {
                 DMASTConstantInteger? rhsInt = divide.RHS as DMASTConstantInteger;
                 DMASTConstantFloat? rhsFloat = divide.RHS as DMASTConstantFloat;
 
-                if (lhsInt != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, lhsInt.Value / rhsInt.Value);
+                if (lhsInt != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, (float)lhsInt.Value / rhsInt.Value);
                 if (lhsInt != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsInt.Value / rhsFloat.Value);
                 if (lhsFloat != null && rhsInt != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value / rhsInt.Value);
                 if (lhsFloat != null && rhsFloat != null) return new DMASTConstantFloat(expression.Location, lhsFloat.Value / rhsFloat.Value);

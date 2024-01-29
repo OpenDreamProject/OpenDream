@@ -1,12 +1,13 @@
-using DMCompiler.Compiler.DM;
-using System.Collections.Generic;
 using System;
-using DMCompiler.DM.Expressions;
+using System.Collections.Generic;
 using System.Diagnostics;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Expressions;
 
-namespace DMCompiler.DM.Visitors {
+namespace DMCompiler.DM.Builders {
     internal sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
@@ -408,7 +409,7 @@ namespace DMCompiler.DM.Visitors {
                     ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
                 } else {
                     switch (statementFor.Expression1) {
-                        case DMASTAssign {Expression: DMASTVarDeclExpression decl, Value: DMASTExpressionInRange range}: {
+                        case DMASTAssign {LHS: DMASTVarDeclExpression decl, RHS: DMASTExpressionInRange range}: {
                             var identifier = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
                             var outputVar = DMExpression.Create(_dmObject, _proc, identifier);
 
@@ -424,7 +425,7 @@ namespace DMCompiler.DM.Visitors {
                         case DMASTExpressionInRange exprRange: {
                             DMASTVarDeclExpression? decl = exprRange.Value as DMASTVarDeclExpression;
                             decl ??= exprRange.Value is DMASTAssign assign
-                                ? assign.Expression as DMASTVarDeclExpression
+                                ? assign.LHS as DMASTVarDeclExpression
                                 : null;
 
                             DMASTExpression outputExpr;
@@ -455,14 +456,14 @@ namespace DMCompiler.DM.Visitors {
                         }
                         case DMASTExpressionIn exprIn: {
                             DMASTExpression outputExpr;
-                            if (exprIn.Value is DMASTVarDeclExpression decl) {
+                            if (exprIn.LHS is DMASTVarDeclExpression decl) {
                                 outputExpr = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
                             } else {
-                                outputExpr = exprIn.Value;
+                                outputExpr = exprIn.LHS;
                             }
 
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
-                            var list = DMExpression.Create(_dmObject, _proc, exprIn.List);
+                            var list = DMExpression.Create(_dmObject, _proc, exprIn.RHS);
 
                             ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;

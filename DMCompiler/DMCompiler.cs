@@ -14,6 +14,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 
 namespace DMCompiler;
@@ -157,9 +159,9 @@ public static class DMCompiler {
             Emit(warning);
         }
 
-        DMASTSimplifier astSimplifier = new DMASTSimplifier();
+        DMASTFolder astSimplifier = new DMASTFolder();
         VerbosePrint("Constant folding");
-        astSimplifier.SimplifyAST(astFile);
+        astSimplifier.FoldAst(astFile);
 
         DMObjectBuilder.BuildObjectTree(astFile);
 

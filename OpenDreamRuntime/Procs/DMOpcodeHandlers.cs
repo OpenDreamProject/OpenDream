@@ -1930,8 +1930,7 @@ namespace OpenDreamRuntime.Procs {
                 DreamValue value = state.Pop();
                 if (!state.Pop().TryGetValueAsFloat(out var weight))
                 {
-                    // Breaking change, no clue what weight BYOND is giving to non-nums
-                    throw new Exception($"pick() weight '{weight}' is not a number");
+                    weight = 100;
                 }
 
                 totalWeight += weight;

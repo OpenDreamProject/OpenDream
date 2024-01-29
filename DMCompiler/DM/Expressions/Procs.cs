@@ -117,7 +117,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(dmObject);
-            DoCompiletimeLinting(procOwner, targetProc);
+            DoCompileTimeLinting(procOwner, targetProc);
             if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
                 DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
@@ -143,7 +143,7 @@ namespace DMCompiler.DM.Expressions {
         /// This is a good place to do some compile-time linting of any native procs that require it,
         /// such as native procs that check ahead of time if the number of arguments is correct (like matrix() or sin())
         /// </summary>
-        protected void DoCompiletimeLinting(DMObject? procOwner, DMProc? targetProc) {
+        private void DoCompileTimeLinting(DMObject? procOwner, DMProc? targetProc) {
             if(procOwner is null || procOwner.Path == DreamPath.Root) {
                 if (targetProc is null)
                     return;

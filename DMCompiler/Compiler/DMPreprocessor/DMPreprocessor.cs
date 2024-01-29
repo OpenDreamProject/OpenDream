@@ -467,13 +467,15 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
             return false;
         }
 
-        List<Token> expandedTokens = macro.Expand(token, parameters);
-        for (int i = expandedTokens.Count - 1; i >= 0; i--) {
-            Token expandedToken = expandedTokens[i];
-            expandedToken.Location = token.Location;
+        List<Token>? expandedTokens = macro.Expand(token, parameters);
+        if (expandedTokens != null) {
+            for (int i = expandedTokens.Count - 1; i >= 0; i--) {
+                Token expandedToken = expandedTokens[i];
+                expandedToken.Location = token.Location;
 
-            // These tokens are pushed so that nested macros get processed
-            PushToken(expandedToken);
+                // These tokens are pushed so that nested macros get processed
+                PushToken(expandedToken);
+            }
         }
 
         return true;

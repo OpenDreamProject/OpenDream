@@ -118,7 +118,7 @@ namespace DMCompiler.DM.Builders {
 
                         // Success! Remove this one from the list
                         lateProcVarDefs.RemoveAt(i--);
-                    } catch (UnknownIdentifierException e) {
+                    } catch (UnknownIdentifierException) {
                         // Keep it in the list, try again after the rest have been processed
                     } finally {
                         DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;

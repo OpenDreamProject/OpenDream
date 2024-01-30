@@ -1337,8 +1337,8 @@ namespace DMCompiler.Compiler.DM {
                 ||
                 (value is {
                     Key: DMASTExpressionConstant,
-                    Value: DMASTList
-                } && ((DMASTList) value.Value).AllValuesConstant())
+                    Value: DMASTList valueList
+                } && valueList.AllValuesConstant())
             );
         }
     }

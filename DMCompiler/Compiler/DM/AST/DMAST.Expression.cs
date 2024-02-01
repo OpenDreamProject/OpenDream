@@ -131,7 +131,7 @@ public sealed class DMASTNewPath(Location location, DMASTPath path, DMASTCallPar
 
 public sealed class DMASTNewExpr(Location location, DMASTExpression expression, DMASTCallParameter[]? parameters)
     : DMASTExpression(location) {
-    public DMASTExpression Expression = expression;
+    public readonly DMASTExpression Expression = expression;
     public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 
@@ -217,10 +217,10 @@ public sealed class DMASTDereference(
         public required DMASTCallParameter[] Parameters; // x.y(),
     }
 
-    public DMASTExpression Expression = expression;
+    public readonly DMASTExpression Expression = expression;
 
     // Always contains at least one operation
-    public Operation[] Operations = operations;
+    public readonly Operation[] Operations = operations;
 }
 
 public interface IDMASTCallable;
@@ -232,7 +232,3 @@ public sealed class DMASTCallableProcIdentifier(Location location, string identi
 public sealed class DMASTCallableSuper(Location location) : DMASTExpression(location), IDMASTCallable;
 
 public sealed class DMASTCallableSelf(Location location) : DMASTExpression(location), IDMASTCallable;
-
-public sealed class DMASTCallableGlobalProc(Location location, string identifier) : DMASTExpression(location), IDMASTCallable {
-    public readonly string Identifier = identifier;
-}

@@ -183,19 +183,19 @@ public sealed class DMASTProcStatementFtp(
     DMASTExpression receiver,
     DMASTExpression file,
     DMASTExpression name) : DMASTProcStatement(location) {
-    public DMASTExpression Receiver = receiver;
-    public DMASTExpression File = file;
-    public DMASTExpression Name = name;
+    public readonly DMASTExpression Receiver = receiver;
+    public readonly DMASTExpression File = file;
+    public readonly DMASTExpression Name = name;
 }
 
 public sealed class DMASTProcStatementOutput(Location location, DMASTExpression a, DMASTExpression b)
     : DMASTProcStatement(location) {
-    public DMASTExpression A = a, B = b;
+    public readonly DMASTExpression A = a, B = b;
 }
 
 public sealed class DMASTProcStatementInput(Location location, DMASTExpression a, DMASTExpression b)
     : DMASTProcStatement(location) {
-    public DMASTExpression A = a, B = b;
+    public readonly DMASTExpression A = a, B = b;
 }
 
 public sealed class DMASTProcStatementTryCatch(

@@ -26,7 +26,6 @@ internal static class DMExpressionBuilder {
             case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
-            case DMASTCallableGlobalProc globalProc: return new GlobalProc(expression.Location, globalProc.Identifier);
             case DMASTCallableProcIdentifier procIdentifier: return BuildCallableProcIdentifier(procIdentifier, dmObject);
             case DMASTProcCall procCall: return BuildProcCall(procCall, dmObject, proc, inferredPath);
             case DMASTAssign assign: return BuildAssign(assign, dmObject, proc, inferredPath);

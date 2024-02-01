@@ -39,10 +39,17 @@ public sealed class DMASTList(Location location, DMASTCallParameter[] values) : 
     public readonly DMASTCallParameter[] Values = values;
 
     public bool AllValuesConstant() {
-        return Values.All(value => value is {
-            Key: DMASTExpressionConstant,
-            Value: DMASTExpressionConstant
-        });
+        return Values.All(
+            value => (value is {
+                 Key: DMASTExpressionConstant,
+                 Value: DMASTExpressionConstant
+            })
+            ||
+            (value is {
+                Key: DMASTExpressionConstant,
+                Value: DMASTList valueList
+            } && valueList.AllValuesConstant())
+        );
     }
 }
 

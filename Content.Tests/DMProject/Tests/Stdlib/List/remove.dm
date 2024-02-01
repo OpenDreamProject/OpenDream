@@ -9,6 +9,4 @@
 	
 	L = list(1,2,3,2,1)
 	L.Remove(list(2))
-	ASSERT(L[2] == 2)
-	ASSERT(L[3] == 3)
-	ASSERT(L[4] == 1)
+	ASSERT(L ~= list(1,2,3,1))

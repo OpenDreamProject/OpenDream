@@ -324,6 +324,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             } else if (Menus.TryGetValue(windowId, out var menu)) {
                 if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
                     return menuElement;
+            } else if(MacroSets.TryGetValue(windowId, out var macroSet)) {
+                if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
+                    return macroElement;
             }
 
             if (window != null) {

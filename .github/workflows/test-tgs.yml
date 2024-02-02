@@ -5,6 +5,9 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  pull_request_target:
+    types: [ opened, reopened, labeled, synchronize ]
+    branches: [ master ]
 
 concurrency:
   group: "tgs-${{ github.head_ref || github.run_id }}-${{ github.event_name }}"
@@ -17,7 +20,56 @@ env:
   TGS_TEST_GITHUB_TOKEN: ${{ secrets.TGS_TEST_GITHUB_TOKEN }}
 
 jobs:
-  build:
+  security-checkpoint:
+    name: Check CI Clearance
+    runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
+    if: github.event_name == 'pull_request_target' && github.event.pull_request.head.repo.id != github.event.pull_request.base.repo.id && github.event.pull_request.state == 'open'
+    steps:
+    - name: Comment on new Fork PR
+      if: github.event.action == 'opened' && !contains(github.event.pull_request.labels.*.name, 'CI Cleared')
+      uses: thollander/actions-comment-pull-request@1d3973dc4b8e1399c0620d3f2b1aa5e795465308
+      with:
+        message: Thank you for contributing to ${{ github.event.pull_request.base.repo.name }}! The workflow '${{ github.workflow }}' requires repository secrets amd will not run without approval. Maintainers can add the `CI Cleared` label to allow the CI suite to run. Please note that any changes to the workflow file will not be reflected in the CI run.
+
+    - name: "Remove Stale 'CI Cleared' Label"
+      if: github.event.action == 'synchronize' || github.event.action == 'reopened'
+      uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+      with:
+        labels: CI Cleared
+
+    - name: "Add 'CI Approval Required' Label"
+      if: (github.event.action == 'synchronize' || github.event.action == 'reopened') || ((github.event.action == 'opened' || github.event.action == 'labeled') && !contains(github.event.pull_request.labels.*.name, 'CI Cleared'))
+      uses: actions-ecosystem/action-add-labels@bd52874380e3909a1ac983768df6976535ece7f8
+      with:
+        labels: CI Approval Required
+        github_token: ${{ github.token }}
+
+    - name: "Remove 'CI Approval Required' Label"
+      if: (github.event.action == 'synchronize' || github.event.action == 'reopened') || ((github.event.action == 'opened' || github.event.action == 'labeled') && !contains(github.event.pull_request.labels.*.name, 'CI Cleared'))
+      uses: actions-ecosystem/action-remove-labels@2ce5d41b4b6aa8503e285553f75ed56e0a40bae0
+      with:
+        labels: CI Approval Required
+
+    - name: Fail Clearance Check if PR has Unlabeled new Commits from Fork
+      if: (github.event.action == 'synchronize' || github.event.action == 'reopened') || ((github.event.action == 'opened' || github.event.action == 'labeled') && !contains(github.event.pull_request.labels.*.name, 'CI Cleared'))
+      run: exit 1
+
+  start-ci-run-gate:
+    name: CI Start Gate
+    needs: security-checkpoint
+    runs-on: ubuntu-latest
+    if: (!(cancelled() || failure()) && (needs.security-checkpoint.result == 'success' || (needs.security-checkpoint.result == 'skipped' && (github.event_name == 'push' || github.event_name == 'schedule' || (github.event.pull_request.head.repo.id == github.event.pull_request.base.repo.id && github.event_name != 'pull_request_target')))))
+    steps:
+    - name: Artificial Delay to Allow GitHub to get PR Mergability Status
+      if: github.event_name == 'pull_request_target' || github.event_name == 'pull_request'
+      run: sleep 10
+
+  tgs-test:
+    name: TGS Test
+    needs: start-ci-run-gate
+    if: (!(cancelled() || failure()) && needs.start-ci-run-gate.result == 'success')
     strategy:
       fail-fast: false
       matrix:
@@ -41,9 +93,19 @@ jobs:
           ${{ env.TGS_DOTNET_VERSION }}.0.x
           ${{ env.OD_DOTNET_VERSION }}.0.x
 
-    - name: Checkout OpenDream
+    - name: Checkout OpenDream (Branch)
       uses: actions/checkout@v4
+      if: github.event_name == 'push' || github.event_name == 'schedule'
       with:
+        fetch-depth: 0
+        fetch-tags: true
+        submodules: true
+
+    - name: Checkout OpenDream (PR Merge)
+      uses: actions/checkout@v4
+      if: github.event_name != 'push' && github.event_name != 'schedule'
+      with:
+        ref: ${{ github.event.pull_request.merge_commit_sha }}
         fetch-depth: 0
         fetch-tags: true
         submodules: true

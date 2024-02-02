@@ -78,3 +78,4 @@
 	catch(var/exception/e)
 		ASSERT(isnull(fail))
 	ASSERT(fail == null)
+	fdel("badsavefile.sav")

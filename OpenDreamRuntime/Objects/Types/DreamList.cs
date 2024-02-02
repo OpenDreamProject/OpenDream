@@ -1292,3 +1292,61 @@ sealed class ProcArgsList : DreamList {
         return _state.ArgumentCount;
     }
 }
+
+// Savefile Dir List - always sync'd with Savefiles currentDir. Only stores keys.
+sealed class SavefileDirList : DreamList {
+    private readonly DreamObjectSavefile _save;
+
+    public SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : base(listDef, 0) {
+        _save = backedSaveFile;
+    }
+
+    public override DreamValue GetValue(DreamValue key) {
+        if (!key.TryGetValueAsInteger(out var index))
+            throw new Exception($"Invalid index on savefile dir list: {key}");
+        if (index < 1 || index > _save.CurrentDir.Count)
+            throw new Exception($"Out of bounds index on savefile dir list: {index}");
+        return new DreamValue(_save.CurrentDir.Keys.ToArray()[index - 1]);
+    }
+
+    public override List<DreamValue> GetValues() {
+        List<DreamValue> values = new(_save.CurrentDir.Count);
+
+        foreach (string value in _save.CurrentDir.Keys) {
+            values.Add(new DreamValue(value));
+        }
+        return values;
+    }
+
+    public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
+        if (!key.TryGetValueAsInteger(out var index))
+            throw new Exception($"Invalid index on savefile dir list: {key}");
+        if (!value.TryGetValueAsString(out var valueStr))
+            throw new Exception($"Invalid value on savefile dir name: {value}");
+        if (index < 1 || index > _save.CurrentDir.Count)
+            throw new Exception($"Out of bounds index on savefile dir list: {index}");
+
+        _save.RenameAndNullSavefileValue(_save.CurrentDir.Keys.ToArray()[index - 1], valueStr);
+    }
+
+    public override void AddValue(DreamValue value) {
+        if (!value.TryGetValueAsString(out var valueStr))
+            throw new Exception($"Invalid value on savefile dir name: {value}");
+        _save.AddSavefileDir(valueStr);
+
+    }
+
+    public override void RemoveValue(DreamValue value) {
+        if (!value.TryGetValueAsString(out var valueStr))
+            throw new Exception($"Invalid value on savefile dir name: {value}");
+        _save.RemoveSavefileValue(valueStr);
+    }
+
+    public override void Cut(int start = 1, int end = 0) {
+        throw new Exception("Cannot cut savefile dir list"); //BYOND actually throws undefined proc for this
+    }
+
+    public override int GetLength() {
+        return _save.CurrentDir.Count;
+    }
+}

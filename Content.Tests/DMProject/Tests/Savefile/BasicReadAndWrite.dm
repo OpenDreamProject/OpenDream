@@ -17,6 +17,8 @@
 	S["DEF"] >> V
 	ASSERT(S["DEF"] == 10)
 	ASSERT(V == 10)
+	S["notakey"] >> V
+	ASSERT(V == null)
 	
 	// test path
 	S["pathymcpathface"] << /datum/foobar
@@ -33,6 +35,7 @@
 	// Shouldn't evaluate CRASH
 	S2?["ABC"] << CRASH("rhs should not evaluate due to null-conditional")
 
+	// Test EOF
 	S.cd = "DEF"
 	var/out
 	ASSERT(S.eof == 0)
@@ -42,5 +45,27 @@
 	S.eof = -1
 	S.cd = "/"
 	ASSERT(S["DEF"] == null)
+
+	//Test dir
+	S.cd = "/"
+	var/dir = S.dir
+	ASSERT(dir ~= list("ABC", "DEF", "pathymcpathface", "pie", "pie2"))
+
+	//test add
+	dir += "test/beep"
+	ASSERT(dir ~= list("ABC", "DEF", "pathymcpathface", "pie", "pie2", "test"))
+	ASSERT(S["test"] == null)
+	S.cd = "test"
+	ASSERT(dir ~= list("beep"))
+
+	//test del
+	S.cd = "/"
+	dir -= "test"
+	ASSERT(dir ~= list("ABC", "DEF", "pathymcpathface", "pie", "pie2"))
+
+	//test rename and null
+	dir[1] = "CBA"
+	ASSERT(dir ~= list("CBA", "DEF", "pathymcpathface", "pie", "pie2"))
+	ASSERT(S["CBA"] == null)
 
 	fdel("savefile.sav")

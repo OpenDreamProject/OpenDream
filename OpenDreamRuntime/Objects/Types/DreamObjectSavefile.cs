@@ -139,9 +139,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 value = new DreamValue(Resource.ResourcePath ?? "[no path]");
                 return true;
             case "dir":
-                DreamList dirList = ObjectTree.CreateList([.. CurrentDir.Keys]);
-                 //TODO: dirList.Add(), dirList.Remove() should affect the directories in a savefile - needs a custom list type, save file backed (ew)
-                value = new DreamValue(dirList);
+                value = new DreamValue(new SavefileDirList(ObjectTree.List.ObjectDefinition, this));
                 return true;
             default:
                 return base.TryGetVar(varName, out value);
@@ -280,6 +278,29 @@ public sealed class DreamObjectSavefile : DreamObject {
         }
 
         return DeserializeJsonValue(SeekTo(index));
+    }
+
+    public void RemoveSavefileValue(string index){
+        if(CurrentDir.TryGetValue(index, out var value)) {
+            CurrentDir.Remove(index);
+            _savefilesToFlush.Add(this);
+        }
+    }
+
+    public void RenameAndNullSavefileValue(string index, string newIndex){
+        if(CurrentDir.TryGetValue(index, out var value)) {
+            CurrentDir.Remove(index);
+            SFDreamDir newDir = new SFDreamDir();
+            foreach(var key in value.Keys) {
+                newDir[key] = value[key];
+            }
+            CurrentDir[newIndex] = newDir;
+            _savefilesToFlush.Add(this);
+        }
+    }
+
+    public void AddSavefileDir(string index){
+        SeekTo(index, true);
     }
 
     public void SetSavefileValue(string? index, DreamValue value) {
@@ -529,6 +550,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         [JsonIgnore]
         public int Count => nodes.Count;
         public void Clear() => nodes.Clear();
+        public bool Remove(string key) => nodes.Remove(key);
 
     }
 

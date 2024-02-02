@@ -2094,7 +2094,7 @@ namespace OpenDreamRuntime.Procs {
                 }
             } else if (state.GetReferenceValue(leftRef).TryGetValueAsDreamObject<DreamObjectSavefile>(out var SF)) {
                 // Savefiles get some special treatment.
-                // "savefile >> B" is the same as "B = savefile[current_dir++]"
+                // "savefile >> B" is the same as "B = savefile[current_dir]"
                 state.AssignReference(rightRef, SF.OperatorInput());
                 return ProcStatus.Continue;
             }

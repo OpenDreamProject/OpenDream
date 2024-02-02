@@ -51,7 +51,7 @@ public class VerbSystem : EntitySystem {
 
         // TODO: Hidden verbs probably shouldn't be sent to the client in the first place?
         public bool IsHidden(bool ignoreHiddenAttr, sbyte seeInvisibility) =>
-            (!ignoreHiddenAttr && HiddenAttribute) || Name.StartsWith('.') || seeInvisibility < Invisibility;
+            (!ignoreHiddenAttr && (HiddenAttribute || Name.StartsWith('.'))) || seeInvisibility < Invisibility;
 
         public override string ToString() => GetCommandName();
     }

@@ -1,0 +1,6 @@
+/proc/RunTest()
+	ASSERT(isnull(null))
+	var/obj/O = new()
+	ASSERT(!isnull(O))
+	del(O)
+	ASSERT(isnull(O))

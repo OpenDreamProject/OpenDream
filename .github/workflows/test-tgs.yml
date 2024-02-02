@@ -111,7 +111,7 @@ jobs:
         submodules: true
 
     - name: Pull engine updates
-      uses: space-wizards/submodule-dependency@v0.1.5
+      uses: space-wizards/submodule-dependency@c236e9954c5e8e0034d7d0ba16fbba23494ba557
 
     - name: Update Engine Submodules
       run: |

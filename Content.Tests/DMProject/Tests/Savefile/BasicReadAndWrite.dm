@@ -33,4 +33,14 @@
 	// Shouldn't evaluate CRASH
 	S2?["ABC"] << CRASH("rhs should not evaluate due to null-conditional")
 
+	S.cd = "DEF"
+	var/out
+	ASSERT(S.eof == 0)
+	S >> out
+	ASSERT(out == 10)
+	ASSERT(S.eof == 1)
+	S.eof = -1
+	S.cd = "/"
+	ASSERT(S["DEF"] == null)
+
 	fdel("savefile.sav")

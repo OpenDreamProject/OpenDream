@@ -56,6 +56,12 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// </summary>
     public SFDreamJsonValue CurrentDir;
 
+    /// <summary>
+    /// It's not *super* clear what this is supposed to indicate other than "this directory has been read with the >> operator"
+    /// It is reset when cd is set. When savefile.eof is set to -1, it deletes the current dir and sets eof to 0
+    /// </summary>
+    private bool _eof = false;
+
     private string _currentPath = "/";
 
     /// <summary>
@@ -67,6 +73,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             var tempDir = SeekTo(value, true);
             if (tempDir != CurrentDir) {
                 CurrentDir = tempDir;
+                _eof = false;
                 if(value.StartsWith("/")) //absolute path
                     _currentPath = value;
                 else //relative path
@@ -126,7 +133,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 value = new DreamValue(CurrentPath);
                 return true;
             case "eof":
-                value = new DreamValue(0); //TODO: What's a savefile buffer?
+                value = _eof ? DreamValue.True : DreamValue.False;
                 return true;
             case "name":
                 value = new DreamValue(Resource.ResourcePath ?? "[no path]");
@@ -149,7 +156,26 @@ public sealed class DreamObjectSavefile : DreamObject {
 
                 CurrentPath = cdTo;
                 break;
-            case "eof": // TODO: What's a savefile buffer?
+            case "eof":
+                if(value.TryGetValueAsInteger(out int intValue) && intValue != 0){
+                    if(intValue == -1) {
+                        if(CurrentDir != _rootNode) {
+                            SFDreamJsonValue parentDir = SeekTo("..");
+                            //wipe the value of the current dir but keep any subdirs
+                            SFDreamDir newCurrentDir = new SFDreamDir();
+                            foreach(var key in CurrentDir.Keys) {
+                                newCurrentDir[key] = CurrentDir[key];
+                            }
+                            CurrentDir.Clear();
+                            parentDir[CurrentPath.Split("/").Last()] = newCurrentDir;
+                        } else {
+                            CurrentDir.Clear();
+                        }
+                    }
+                    _eof = true;
+                } else {
+                    _eof = false;
+                }
                 break;
             default:
                 throw new Exception($"Cannot set var \"{varName}\" on savefiles");
@@ -177,6 +203,11 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public override void OperatorOutput(DreamValue value) {
         SetSavefileValue(null, value);
+    }
+
+    public DreamValue OperatorInput() {
+        _eof = true;
+        return GetSavefileValue(null);
     }
 
     /// <summary>

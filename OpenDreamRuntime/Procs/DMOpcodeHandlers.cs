@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DMCompiler;
 using DMCompiler.Bytecode;
+using JetBrains.FormatRipper.Sh;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -2091,6 +2092,11 @@ namespace OpenDreamRuntime.Procs {
                     state.GetReferenceValue(leftRef);
                     state.GetReferenceValue(rightRef);
                 }
+            } else if (state.GetReferenceValue(leftRef).TryGetValueAsDreamObject<DreamObjectSavefile>(out var SF)) {
+                // Savefiles get some special treatment.
+                // "savefile >> B" is the same as "B = savefile[current_dir++]"
+                state.AssignReference(rightRef, SF.OperatorInput());
+                return ProcStatus.Continue;
             }
 
             throw new NotImplementedException($"Input operation is unimplemented for {leftRef} and {rightRef}");

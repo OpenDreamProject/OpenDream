@@ -1473,14 +1473,19 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         private static DreamValue MinComparison(DreamValue min, DreamValue value) {
-            if (value.TryGetValueAsFloat(out var lFloat) && min.TryGetValueAsFloat(out var rFloat)) {
-                if (lFloat < rFloat)
+            if (value.TryGetValueAsFloat(out var lFloat)) {
+                if (min.IsNull && lFloat < 0)
                     min = value;
-            } else if (value.TryGetValueAsString(out var lString) && min.TryGetValueAsString(out var rString)) {
-                if (string.Compare(lString, rString, StringComparison.Ordinal) < 0)
+                else if (min.TryGetValueAsFloat(out var rFloat) && lFloat <= rFloat)
                     min = value;
             } else if (value.IsNull) {
-                min = value;
+                if (min.TryGetValueAsFloat(out var minFloat) && minFloat >= 0)
+                    min = value;
+            } else if (value.TryGetValueAsString(out var lString)) {
+                if (min.IsNull)
+                    min = value;
+                else if (min.TryGetValueAsString(out var rString) && string.Compare(lString, rString, StringComparison.Ordinal) <= 0)
+                    min = value;
             } else {
                 throw new Exception($"Cannot compare {min} and {value}");
             }

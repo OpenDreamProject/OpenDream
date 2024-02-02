@@ -69,3 +69,12 @@
 	ASSERT(S["CBA"] == null)
 
 	fdel("savefile.sav")
+
+	file("badsavefile.sav") << "hey wait, this isn't json! oh well, better fail miserably and die"
+	
+	var/savefile/fail
+	try
+		fail = new("badsavefile.sav")
+	catch(var/exception/e)
+		ASSERT(isnull(fail))
+	ASSERT(fail == null)

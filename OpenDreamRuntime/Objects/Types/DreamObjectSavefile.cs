@@ -106,7 +106,13 @@ public sealed class DreamObjectSavefile : DreamObject {
             var data = Resource.ReadAsString();
 
             if (!string.IsNullOrEmpty(data)) {
-                CurrentDir = _rootNode = JsonSerializer.Deserialize<SFDreamJsonValue>(data)!;
+                try{
+                    CurrentDir = _rootNode = JsonSerializer.Deserialize<SFDreamJsonValue>(data)!;
+                } catch (JsonException e) { //only catch JSON exceptions, other exceptions probably mean something else happened
+                     //fail safe, make this null if something goes super fucky. Prevents accidentally overwrite of non-savefile files.
+                    Resource = null;
+                    throw new InvalidDataException($"Error parsing savefile {filename}: Is the savefile corrupted or using a BYOND version? BYOND savefiles are not compatible with OpenDream. Details: {e}");
+                }
                 SavefileDirectories.Add(filename, _rootNode);
             } else {
                 //_rootNode is created in constructor

@@ -1,9 +1,7 @@
-using System;
-using DMCompiler.DM.Expressions;
-using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using Robust.Shared.Utility;
+using DMCompiler.DM.Expressions;
+using System;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Visitors;
 
@@ -248,7 +246,7 @@ internal static class DMExpressionBuilder {
             case DMASTInitial initial:
                 return new Initial(initial.Location, BuildExpression(initial.Expression, dmObject, proc, inferredPath));
             case DMASTNameof nameof:
-                return new Nameof(nameof.Location, BuildExpression(nameof.Expression, dmObject, proc, inferredPath));
+                return BuildNameof(nameof, dmObject, proc, inferredPath);
             case DMASTExpressionIn expressionIn:
                 return new In(expressionIn.Location,
                     BuildExpression(expressionIn.Value, dmObject, proc, inferredPath),
@@ -480,55 +478,50 @@ internal static class DMExpressionBuilder {
         var operations = new Dereference.Operation[deref.Operations.Length];
         int astOperationOffset = 0;
 
-        static bool IsFuzzy(DMExpression expr) {
-            switch (expr) {
-                case Dereference when expr.Path == null:
-                case ProcCall when expr.Path == null:
-                case New when expr.Path == null:
-                case List:
-                case Ternary:
-                case BinaryAnd:
-                case IsNull:
-                case Length:
-                case GetStep:
-                case GetDir:
-                    return true;
-                default: return false;
-            }
-        }
-
         // Path of the previous operation that was iterated over (starting as the base expression)
         DreamPath? prevPath = expr.Path;
-        bool pathIsFuzzy = IsFuzzy(expr);
+        var pathIsFuzzy = expr.PathIsFuzzy;
 
         // Special behaviour for `global.x`, `global.vars`, and `global.f()`
         if (expr is Global) {
-            ref DMASTDereference.Operation firstOperation = ref astOperations[0];
+            DMASTDereference.Operation firstOperation = astOperations[0];
 
-            if (firstOperation is { Kind: DMASTDereference.OperationKind.Field, Identifier.Identifier: "vars" }) {
-                // `global.vars`
-                expr = new GlobalVars(expr.Location);
-
-                var newOperationCount = operations.Length - 1;
-                if (newOperationCount == 0) {
-                    return  expr;
-                }
-
-                operations = new Dereference.Operation[newOperationCount];
-                astOperationOffset = 1;
-
+            if (firstOperation is DMASTDereference.NamedOperation namedOperation) {
                 prevPath = null;
                 pathIsFuzzy = true;
-            } else if (firstOperation.Kind == DMASTDereference.OperationKind.Field) {
-                // `global.x`
 
-                var globalId = dmObject.GetGlobalVariableId(firstOperation.Identifier.Identifier);
-                if (globalId == null) {
-                    throw new UnknownIdentifierException(deref.Location, $"global.{firstOperation.Identifier.Identifier}");
+                switch (namedOperation) {
+                    // global.f()
+                    case DMASTDereference.CallOperation callOperation:
+                        ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc,
+                            callOperation.Parameters);
+
+                        var globalProc = new GlobalProc(expr.Location, callOperation.Identifier);
+                        expr = new ProcCall(expr.Location, globalProc, argumentList);
+                        break;
+
+                    case DMASTDereference.FieldOperation:
+                        // global.vars
+                        if (namedOperation is { Identifier: "vars" }) {
+                            expr = new GlobalVars(expr.Location);
+                            break;
+                        }
+
+                        // global.variable
+                        var globalId = dmObject.GetGlobalVariableId(namedOperation.Identifier);
+                        if (globalId == null) {
+                            throw new UnknownIdentifierException(deref.Location, $"global.{namedOperation.Identifier}");
+                        }
+
+                        var property = DMObjectTree.Globals[globalId.Value];
+                        expr = new GlobalField(expr.Location, property.Type, globalId.Value);
+
+                        prevPath = property.Type;
+                        pathIsFuzzy = false;
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException($"Missing implementation for {namedOperation}");
                 }
-
-                var property = DMObjectTree.Globals[globalId.Value];
-                expr = new GlobalField(expr.Location, property.Type, globalId.Value);
 
                 var newOperationCount = operations.Length - 1;
                 if (newOperationCount == 0) {
@@ -537,173 +530,138 @@ internal static class DMExpressionBuilder {
 
                 operations = new Dereference.Operation[newOperationCount];
                 astOperationOffset = 1;
-
-                prevPath = property.Type;
-                pathIsFuzzy = false;
-            } else if (firstOperation.Kind == DMASTDereference.OperationKind.Call) {
-                // `global.f()`
-                ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc, firstOperation.Parameters);
-
-                var globalProc = new GlobalProc(expr.Location, firstOperation.Identifier.Identifier);
-                expr = new ProcCall(expr.Location, globalProc, argumentList);
-
-                var newOperationCount = operations.Length - 1;
-                if (newOperationCount == 0) {
-                    return expr;
-                }
-
-                operations = new Dereference.Operation[newOperationCount];
-                astOperationOffset = 1;
-
-                prevPath = null;
-                pathIsFuzzy = true;
             } else {
-                throw new CompileErrorException(deref.Location, $"Invalid dereference operation performed on `global`");
+                DMCompiler.Emit(WarningCode.BadExpression, firstOperation.Location,
+                    "Invalid dereference operation performed on global");
+                expr = new Null(firstOperation.Location);
             }
         }
 
         for (int i = 0; i < operations.Length; i++) {
-            ref DMASTDereference.Operation astOperation = ref astOperations[i + astOperationOffset];
-            ref Dereference.Operation operation = ref operations[i];
+            DMASTDereference.Operation astOperation = astOperations[i + astOperationOffset];
+            Dereference.Operation operation;
 
-            operation.Kind = astOperation.Kind;
+            switch (astOperation) {
+                case DMASTDereference.FieldOperation fieldOperation: {
+                    var field = fieldOperation.Identifier;
 
-            // If the last operation evaluated as an ambiguous type, we force the next operation to be a search
-            if (pathIsFuzzy) {
-                operation.Kind = operation.Kind switch {
-                    DMASTDereference.OperationKind.Invalid => throw new InvalidOperationException(),
+                    DMVariable? property = null;
 
-                    DMASTDereference.OperationKind.Field => DMASTDereference.OperationKind.FieldSearch,
-                    DMASTDereference.OperationKind.FieldSafe => DMASTDereference.OperationKind.FieldSafeSearch,
-                    DMASTDereference.OperationKind.FieldSearch => DMASTDereference.OperationKind.FieldSearch,
-                    DMASTDereference.OperationKind.FieldSafeSearch => DMASTDereference.OperationKind.FieldSafeSearch,
-                    DMASTDereference.OperationKind.Call => DMASTDereference.OperationKind.CallSearch,
-                    DMASTDereference.OperationKind.CallSafe => DMASTDereference.OperationKind.CallSafeSearch,
-                    DMASTDereference.OperationKind.CallSearch => DMASTDereference.OperationKind.CallSearch,
-                    DMASTDereference.OperationKind.CallSafeSearch => DMASTDereference.OperationKind.CallSafeSearch,
-
-                    // Indexes are always fuzzy anyway!
-                    DMASTDereference.OperationKind.Index => DMASTDereference.OperationKind.Index,
-                    DMASTDereference.OperationKind.IndexSafe => DMASTDereference.OperationKind.IndexSafe,
-
-                    _ => throw new InvalidOperationException(),
-                };
-            }
-            switch (operation.Kind) {
-                case DMASTDereference.OperationKind.Field:
-                case DMASTDereference.OperationKind.FieldSafe: {
-                    string field = astOperation.Identifier.Identifier;
-
-                    if (prevPath == null) {
-                        throw new UnknownIdentifierException(deref.Location, field);
-                    }
-
-                    DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
-                    if (fromObject == null) {
-                        throw new CompileErrorException(deref.Location, $"Type {prevPath.Value} does not exist");
-                    }
-
-                    DMVariable? property = fromObject.GetVariable(field);
-                    if (property != null) {
-                        operation.Identifier = field;
-                        operation.GlobalId = null;
-                        operation.Path = property.Type;
-                        if (operation.Kind == DMASTDereference.OperationKind.Field &&
-                            fromObject.IsSubtypeOf(DreamPath.Client)) {
-                            DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,"Unsafe \"client\" access. Use the \"?.\" operator instead");
+                    // If the last operation evaluated as an ambiguous type, we force the next operation to be a search
+                    if (!fieldOperation.NoSearch && !pathIsFuzzy) {
+                        if (prevPath == null) {
+                            throw new UnknownIdentifierException(deref.Location, field);
                         }
-                    } else {
-                        var globalId = fromObject.GetGlobalVariableId(field);
-                        if (globalId != null) {
-                            property = DMObjectTree.Globals[globalId.Value];
 
-                            expr = new GlobalField(expr.Location, property.Type, globalId.Value);
+                        DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
+                        if (fromObject == null) {
+                            DMCompiler.Emit(WarningCode.ItemDoesntExist, fieldOperation.Location,
+                                $"Type {prevPath.Value} does not exist");
+                            return new Null(deref.Location);
+                        }
+
+                        property = fromObject.GetVariable(field);
+                        if (!fieldOperation.Safe && fromObject.IsSubtypeOf(DreamPath.Client)) {
+                            DMCompiler.Emit(WarningCode.UnsafeClientAccess, deref.Location,
+                                "Unsafe \"client\" access. Use the \"?.\" operator instead");
+                        }
+
+                        if (property == null && fromObject.GetGlobalVariableId(field) is { } globalId) {
+                            property = DMObjectTree.Globals[globalId];
+
+                            expr = new GlobalField(expr.Location, property.Type, globalId);
 
                             var newOperationCount = operations.Length - i - 1;
                             if (newOperationCount == 0) {
                                 return expr;
                             }
 
+                            if (property == null) {
+                                throw new UnknownIdentifierException(deref.Location, field);
+                            }
+
+                            if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                                DMCompiler.UnimplementedWarning(deref.Location,
+                                    $"{prevPath}.{field} is not implemented and will have unexpected behavior");
+                            }
+
                             operations = new Dereference.Operation[newOperationCount];
                             astOperationOffset = i + 1;
                             i = -1;
+                            prevPath = property.Type;
+                            pathIsFuzzy = prevPath == null;
+                            continue;
+                        }
+
+                        if (property == null) {
+                            throw new UnknownIdentifierException(deref.Location, field);
                         }
                     }
 
-                    if (property == null) {
-                        throw new UnknownIdentifierException(deref.Location, field);
-                    }
+                    operation = new Dereference.FieldOperation {
+                        Safe = fieldOperation.Safe,
+                        Identifier = fieldOperation.Identifier,
+                        Path = property?.Type
+                    };
 
-                    if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
-                        DMCompiler.UnimplementedWarning(deref.Location, $"{prevPath}.{field} is not implemented and will have unexpected behavior");
-                    }
-
-                    prevPath = property.Type;
-                    pathIsFuzzy = false;
+                    prevPath = property?.Type;
+                    pathIsFuzzy = property == null;
+                    break;
                 }
-                    break;
 
-                case DMASTDereference.OperationKind.FieldSearch:
-                case DMASTDereference.OperationKind.FieldSafeSearch:
-                    // TODO: im pretty sure types should be inferred if a field with their name only exists in a single place, sounds cursed though
-                    operation.Identifier = astOperation.Identifier.Identifier;
-                    operation.GlobalId = null;
-                    operation.Path = null;
+                case DMASTDereference.IndexOperation indexOperation:
+                    operation = new Dereference.IndexOperation {
+                        // Passing the path here is cursed, but one of the tests seems to suggest we want that?
+                        Index = DMExpression.Create(dmObject, proc, indexOperation.Index, prevPath),
+                        Safe = indexOperation.Safe,
+                        Path = prevPath
+                    };
                     prevPath = null;
                     pathIsFuzzy = true;
                     break;
 
-                case DMASTDereference.OperationKind.Index:
-                case DMASTDereference.OperationKind.IndexSafe:
-                    // Passing the path here is cursed, but one of the tests seems to suggest we want that?
-                    operation.Index = DMExpression.Create(dmObject, proc, astOperation.Index, prevPath);
-                    operation.Path = prevPath;
-                    prevPath = null;
-                    pathIsFuzzy = true;
-                    break;
+                case DMASTDereference.CallOperation callOperation: {
+                    var field = callOperation.Identifier;
+                    ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc, callOperation.Parameters);
 
-                case DMASTDereference.OperationKind.Call:
-                case DMASTDereference.OperationKind.CallSafe: {
-                    string field = astOperation.Identifier.Identifier;
-                    ArgumentList argumentList = new(deref.Expression.Location, dmObject, proc, astOperation.Parameters);
+                    if (!callOperation.NoSearch && !pathIsFuzzy) {
+                        if (prevPath == null) {
+                            throw new UnknownIdentifierException(deref.Location, field);
+                        }
 
-                    if (prevPath == null) {
-                        throw new UnknownIdentifierException(deref.Location, field);
+                        DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
+                        if (fromObject == null) {
+                            DMCompiler.Emit(WarningCode.ItemDoesntExist, callOperation.Location,
+                                $"Type {prevPath.Value} does not exist");
+                            return new Null(deref.Location);
+                        }
+
+                        if (!fromObject.HasProc(field)) {
+                            DMCompiler.Emit(WarningCode.ItemDoesntExist, callOperation.Location,
+                                $"Type {prevPath.Value} does not have a proc named \"{field}\"");
+                            return new Null(deref.Location);
+                        }
                     }
 
-                    DMObject? fromObject = DMObjectTree.GetDMObject(prevPath.Value, false);
-                    if (fromObject == null) {
-                        throw new CompileErrorException(deref.Location, $"Type {prevPath.Value} does not exist");
-                    }
-
-                    if (!fromObject.HasProc(field)) {
-                        throw new CompileErrorException(deref.Location, $"Type {prevPath.Value} does not have a proc named \"{field}\"");
-                    }
-
-                    operation.Identifier = astOperation.Identifier.Identifier;
-                    operation.Parameters = argumentList;
-                    operation.Path = null;
+                    operation = new Dereference.CallOperation {
+                        Parameters = argumentList,
+                        Safe = callOperation.Safe,
+                        Identifier = field,
+                        Path = null
+                    };
                     prevPath = null;
                     pathIsFuzzy = true;
                     break;
                 }
-
-                case DMASTDereference.OperationKind.CallSearch:
-                case DMASTDereference.OperationKind.CallSafeSearch:
-                    operation.Identifier = astOperation.Identifier.Identifier;
-                    operation.Parameters = new ArgumentList(deref.Expression.Location, dmObject, proc, astOperation.Parameters);
-                    operation.Path = null;
-                    prevPath = null;
-                    pathIsFuzzy = true;
-                    break;
 
                 default:
                     throw new InvalidOperationException("unhandled deref operation kind");
             }
+
+            operations[i] = operation;
         }
 
         // The final value in prevPath is our expression's path!
-
         return new Dereference(deref.Location, prevPath, expr, operations);
     }
 
@@ -758,6 +716,17 @@ internal static class DMExpressionBuilder {
         }
 
         return new DimensionalList(list.Location, sizes);
+    }
+
+    // nameof(x)
+    private static DMExpression BuildNameof(DMASTNameof nameof, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
+        var expr = BuildExpression(nameof.Expression, dmObject, proc, inferredPath);
+        if (expr.GetNameof(dmObject, proc) is { } name) {
+            return new Expressions.String(nameof.Location, name);
+        }
+
+        DMCompiler.Emit(WarningCode.BadArgument, nameof.Location, "nameof() requires a var, proc reference, or type path");
+        return new Null(nameof.Location);
     }
 
     private static DMExpression BuildNewList(DMASTNewList newList, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
@@ -856,7 +825,6 @@ internal static class DMExpressionBuilder {
         switch (call.CallParameters.Length) {
             default:
                 DMCompiler.Emit(WarningCode.TooManyArguments, call.Location, "Too many arguments for call()");
-                DebugTools.Assert(call.CallParameters.Length > 2); // This feels paranoid but, whatever
                 goto case 2; // Fallthrough!
             case 2: {
                 var a = DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);

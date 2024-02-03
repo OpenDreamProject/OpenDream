@@ -1,10 +1,9 @@
-using OpenDreamShared.Compiler;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -47,6 +46,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class New : DMExpression {
         private readonly DMExpression _expr;
         private readonly ArgumentList _arguments;
+
+        public override bool PathIsFuzzy => Path == null;
 
         public New(Location location, DMExpression expr, ArgumentList arguments) : base(location) {
             _expr = expr;
@@ -345,6 +346,8 @@ namespace DMCompiler.DM.Expressions {
     internal sealed class IsNull : DMExpression {
         private readonly DMExpression _value;
 
+        public override bool PathIsFuzzy => true;
+
         public IsNull(Location location, DMExpression value) : base(location) {
             _value = value;
         }
@@ -358,6 +361,8 @@ namespace DMCompiler.DM.Expressions {
     // length(x)
     internal sealed class Length : DMExpression {
         private readonly DMExpression _value;
+
+        public override bool PathIsFuzzy => true;
 
         public Length(Location location, DMExpression value) : base(location) {
             _value = value;
@@ -373,6 +378,8 @@ namespace DMCompiler.DM.Expressions {
     internal sealed class GetStep : DMExpression {
         private readonly DMExpression _ref;
         private readonly DMExpression _dir;
+
+        public override bool PathIsFuzzy => true;
 
         public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
             _ref = refValue;
@@ -391,6 +398,8 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression _loc1;
         private readonly DMExpression _loc2;
 
+        public override bool PathIsFuzzy => true;
+
         public GetDir(Location location, DMExpression loc1, DMExpression loc2) : base(location) {
             _loc1 = loc1;
             _loc2 = loc2;
@@ -407,6 +416,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class List : DMExpression {
         private readonly (DMExpression? Key, DMExpression Value)[] _values;
         private readonly bool _isAssociative;
+
+        public override bool PathIsFuzzy => true;
 
         public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
             _values = values;
@@ -579,19 +590,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // nameof(x)
-    sealed class Nameof : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Nameof(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushString(_expr.GetNameof(dmObject, proc));
-        }
-    }
-
     // call(...)(...)
     sealed class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
@@ -632,6 +630,15 @@ namespace DMCompiler.DM.Expressions {
                 proc.PushType(dmObject.Id);
             }
         }
+
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            if (dmObject.Path.LastElement != null) {
+                return dmObject.Path.LastElement;
+            }
+
+            DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
+            return null;
+        }
     }
 
     // __PROC__
@@ -643,6 +650,8 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushProc(proc.Id);
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
     internal class Sin : DMExpression {

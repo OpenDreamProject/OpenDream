@@ -108,7 +108,7 @@ namespace OpenDreamRuntime {
 
         public bool IsNull {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => Type == DreamValueType.DreamObject && _refValue == null;
+            get => Type == DreamValueType.DreamObject && (_refValue == null || Unsafe.As<DreamObject>(_refValue).Deleted);
         }
 
         private DreamValue(DreamValueType type, object refValue) {
@@ -380,7 +380,7 @@ namespace OpenDreamRuntime {
                     return rscPath.ResourcePath;
                 case DreamValueType.DreamType:
                     TryGetValueAsType(out var type);
-                    return type.Path.PathString;
+                    return type.Path;
                 case DreamValueType.DreamProc:
                     var proc = MustGetValueAsProc();
 
@@ -460,7 +460,7 @@ namespace OpenDreamRuntime {
                     if (dreamObject == null) {
                         writer.WriteNull("Value");
                     } else {
-                        writer.WriteString("Value", dreamObject.ObjectDefinition.Type.PathString);
+                        writer.WriteString("Value", dreamObject.ObjectDefinition.Type);
 
                         if (dreamObject is not DreamObjectIcon icon) {
                             throw new NotImplementedException($"Json serialization for {value} is not implemented");
@@ -502,7 +502,7 @@ namespace OpenDreamRuntime {
                     if (objectTypePath == null) {
                         value = DreamValue.Null;
                     } else {
-                        var objectDef = _objectTree.GetTreeEntry(new DreamPath(objectTypePath)).ObjectDefinition;
+                        var objectDef = _objectTree.GetTreeEntry(objectTypePath).ObjectDefinition;
                         if (!objectDef.IsSubtypeOf(_objectTree.Icon)) {
                             throw new NotImplementedException($"Json deserialization for type {objectTypePath} is not implemented");
                         }

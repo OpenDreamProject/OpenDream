@@ -12,9 +12,9 @@ public static class ServerPackaging {
         new("win-x64", "Windows", true),
         new("linux-x64", "Linux", true),
         new("linux-arm64", "Linux", true),
-        new("osx-x64", "MacOS", true),
 
         // Non-default platforms (i.e. for Watchdog Git)
+        new("osx-x64", "MacOS", false), // macOS is not supported currently
         new("win-x86", "Windows", false),
         new("linux-x86", "Linux", false),
         new("linux-arm", "Linux", false),
@@ -33,8 +33,10 @@ public static class ServerPackaging {
         "OpenDreamServer",
         "OpenDreamShared",
         "OpenDreamRuntime",
+        "OpenDreamPackaging",
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
+        "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
         "DMCompiler"
     };
 
@@ -43,8 +45,10 @@ public static class ServerPackaging {
         "OpenDreamServer",
         "OpenDreamShared",
         "OpenDreamRuntime",
+        "OpenDreamPackaging",
         "Byond.TopicSender",
         "Microsoft.Extensions.Logging.Abstractions", // dep of Byond.TopicSender
+        "Microsoft.Extensions.DependencyInjection.Abstractions", // dep of above
         "DMCompiler"
     };
 
@@ -147,7 +151,7 @@ public static class ServerPackaging {
         CopyContentAssemblies(Path.Combine(releaseDir, "Resources", "Assemblies"));
         if (options.HybridAcz) {
             // Hybrid ACZ expects "Content.Client.zip" (as it's not OpenDream-specific)
-            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDreamClient"), Path.Combine(releaseDir, "Content.Client.Zip"));
+            ZipFile.CreateFromDirectory(Path.Combine(options.OutputDir, "OpenDreamClient"), Path.Combine(releaseDir, "Content.Client.zip"));
         }
     }
 

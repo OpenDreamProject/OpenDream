@@ -2,13 +2,11 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Text;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DM;
 
 public sealed class DMLexer : TokenLexer {
-    // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
-    public static readonly List<string> ValidEscapeSequences = new(38) {
+    public static readonly List<string> ValidEscapeSequences = [
         "icon",
         "Roman", "roman",
         "The", "the",
@@ -28,14 +26,14 @@ public sealed class DMLexer : TokenLexer {
         "bold", "b",
         "italic",
         "..."
-    };
+    ];
 
     private static readonly StringBuilder TokenTextBuilder = new();
 
-    private static readonly List<TokenType> ValidIdentifierComponents = new(2) {
+    private static readonly List<TokenType> ValidIdentifierComponents = [
         TokenType.DM_Preproc_Identifier,
         TokenType.DM_Preproc_Number
-    };
+    ];
 
     // NOTE: .NET still needs you to pass the capacity size to generate the most optimal code, so update it when you change these values
     private static readonly Dictionary<string, TokenType> Keywords = new(25) {
@@ -238,7 +236,7 @@ public sealed class DMLexer : TokenLexer {
                         string tokenText = preprocToken.Text;
                         switch (preprocToken.Text[0]) {
                             case '"':
-                            case '{': token = CreateToken(TokenType.DM_String, tokenText, preprocToken.Value); break;
+                            case '{': token = CreateToken(TokenType.DM_ConstantString, tokenText, preprocToken.Value); break;
                             case '\'': token = CreateToken(TokenType.DM_Resource, tokenText, preprocToken.Value); break;
                             case '@': token = CreateToken(TokenType.DM_RawString, tokenText, preprocToken.Value); break;
                             default: token = CreateToken(TokenType.Error, tokenText, "Invalid string"); break;
@@ -247,45 +245,18 @@ public sealed class DMLexer : TokenLexer {
                         Advance();
                         break;
                     }
-                    case TokenType.DM_Preproc_String: {
-                        string tokenText = preprocToken.Text;
-
-                        string? stringStart = null, stringEnd = null;
-                        switch (preprocToken.Text[0]) {
-                            case '"': stringStart = "\""; stringEnd = "\""; break;
-                            case '{': stringStart = "{\""; stringEnd = "\"}"; break;
-                        }
-
-                        if (stringStart != null && stringEnd != null) {
-                            TokenTextBuilder.Clear();
-                            TokenTextBuilder.Append(tokenText);
-
-                            int stringNesting = 1;
-                            while (!AtEndOfSource) {
-                                Token stringToken = Advance();
-
-                                TokenTextBuilder.Append(stringToken.Text);
-                                if (stringToken.Type == TokenType.DM_Preproc_String) {
-                                    if (stringToken.Text.StartsWith(stringStart)) {
-                                        stringNesting++;
-                                    } else if (stringToken.Text.EndsWith(stringEnd)) {
-                                        stringNesting--;
-
-                                        if (stringNesting == 0) break;
-                                    }
-                                }
-                            }
-
-                            string stringText = TokenTextBuilder.ToString();
-                            string stringValue = stringText.Substring(stringStart.Length, stringText.Length - stringStart.Length - stringEnd.Length);
-                            token = CreateToken(TokenType.DM_String, stringText, stringValue);
-                        } else {
-                            token = CreateToken(TokenType.Error, tokenText, "Invalid string");
-                        }
-
+                    case TokenType.DM_Preproc_StringBegin:
+                        token = CreateToken(TokenType.DM_StringBegin, preprocToken.Text, preprocToken.Value);
                         Advance();
                         break;
-                    }
+                    case TokenType.DM_Preproc_StringMiddle:
+                        token = CreateToken(TokenType.DM_StringMiddle, preprocToken.Text, preprocToken.Value);
+                        Advance();
+                        break;
+                    case TokenType.DM_Preproc_StringEnd:
+                        token = CreateToken(TokenType.DM_StringEnd, preprocToken.Text, preprocToken.Value);
+                        Advance();
+                        break;
                     case TokenType.DM_Preproc_Identifier: {
                         TokenTextBuilder.Clear();
 
@@ -295,10 +266,8 @@ public sealed class DMLexer : TokenLexer {
                             TokenTextBuilder.Append(GetCurrent().Text);
                         } while (ValidIdentifierComponents.Contains(Advance().Type) && !AtEndOfSource);
 
-                        string identifierText = TokenTextBuilder.ToString();
-                        var tokenType = Keywords.TryGetValue(identifierText, out TokenType keywordType)
-                            ? keywordType
-                            : TokenType.DM_Identifier;
+                        var identifierText = TokenTextBuilder.ToString();
+                        var tokenType = Keywords.GetValueOrDefault(identifierText, TokenType.DM_Identifier);
 
                         token = CreateToken(tokenType, identifierText);
                         break;
@@ -307,9 +276,9 @@ public sealed class DMLexer : TokenLexer {
                         Advance();
 
                         string text = preprocToken.Text;
-                        if (text == "1.#INF" || text == "1#INF") {
+                        if (text is "1.#INF" or "1#INF") {
                             token = CreateToken(TokenType.DM_Float, text, float.PositiveInfinity);
-                        } else if (text == "1.#IND" || text == "1#IND") {
+                        } else if (text is "1.#IND" or "1#IND") {
                             token = CreateToken(TokenType.DM_Float, text, float.NaN);
                         } else if (text.StartsWith("0x") && int.TryParse(text.Substring(2), NumberStyles.HexNumber, null, out int intValue)) {
                             token = CreateToken(TokenType.DM_Integer, text, intValue);

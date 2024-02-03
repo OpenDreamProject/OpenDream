@@ -1,4 +1,5 @@
 using DMCompiler.Compiler.DM;
+using DMCompiler.DM.Expressions;
 using System;
 
 namespace DMCompiler.DM.Visitors {
@@ -560,19 +561,19 @@ namespace DMCompiler.DM.Visitors {
                 }
             }
 
-            DMASTDereference deref = expression as DMASTDereference;
-            if (deref != null) {
+            if (expression is DMASTDereference deref) {
                 SimplifyExpression(ref deref.Expression);
 
-                foreach (ref var operation in deref.Operations.AsSpan()) {
-                    if (operation.Index != null) {
-                        SimplifyExpression(ref deref.Expression);
-                    }
-
-                    if (operation.Parameters != null) {
-                        foreach (DMASTCallParameter parameter in operation.Parameters) {
-                            SimplifyExpression(ref parameter.Value);
-                        }
+                foreach (var operation in deref.Operations) {
+                    switch (operation) {
+                        case DMASTDereference.IndexOperation indexOperation:
+                            SimplifyExpression(ref indexOperation.Index);
+                            break;
+                        case DMASTDereference.CallOperation callOperation:
+                            foreach (var param in callOperation.Parameters) {
+                                SimplifyExpression(ref param.Value);
+                            }
+                            break;
                     }
                 }
             }

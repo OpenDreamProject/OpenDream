@@ -1699,7 +1699,6 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
             state.Pop().TryGetValueAsFloat(out var delay);
-            int delayMilliseconds = (int)(delay * 100);
 
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
             // and have state.Spawn return a ProcState instead
@@ -2002,8 +2001,7 @@ namespace OpenDreamRuntime.Procs {
                 DreamValue value = state.Pop();
                 if (!state.Pop().TryGetValueAsFloat(out var weight))
                 {
-                    // Breaking change, no clue what weight BYOND is giving to non-nums
-                    throw new Exception($"pick() weight '{weight}' is not a number");
+                    weight = 100;
                 }
 
                 totalWeight += weight;
@@ -2268,7 +2266,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Prompt(DMProcState state) {
-            DMValueType types = (DMValueType)state.ReadInt();
+            DreamValueType types = (DreamValueType)state.ReadInt();
             DreamValue list = state.Pop();
             DreamValue message, title, defaultValue;
 

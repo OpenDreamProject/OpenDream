@@ -47,7 +47,6 @@ namespace OpenDreamRuntime {
             _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
 
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>();
-            _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>();
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
             _netManager.RegisterNetMessage<MsgOutput>();
             _netManager.RegisterNetMessage<MsgAlert>();
@@ -106,11 +105,18 @@ namespace OpenDreamRuntime {
                             var length = BitConverter.ToUInt16(buffer);
 
                             buffer = new byte[length];
-                            var read = await from.ReceiveAsync(buffer, cancellationToken);
-                            if (read != buffer.Length) {
-                                _sawmill.Warning("failed to parse byond topic due to insufficient data read");
-                                return null;
-                            }
+                            var totalRead = 0;
+                            do {
+                                var read = await from.ReceiveAsync(
+                                    new Memory<byte>(buffer, totalRead, length - totalRead),
+                                    cancellationToken);
+                                if(read == 0 && totalRead != length) {
+                                    _sawmill.Warning("failed to parse byond topic due to insufficient data read");
+                                    return null;
+                                }
+
+                                totalRead += read;
+                            } while (totalRead < length);
 
                             return Encoding.ASCII.GetString(buffer[6..^1]);
                         }
@@ -178,7 +184,7 @@ namespace OpenDreamRuntime {
                         await remote.DisconnectAsync(false, cancellationToken);
                     }
             } catch (Exception ex) {
-                _sawmill.Warning("Error processing topic: {0}", ex);
+                _sawmill.Warning("Error processing topic #{0}: {1}", topicId, ex);
             } finally {
                 _sawmill.Debug("Finished world topic #{0}", topicId);
             }

@@ -29,12 +29,13 @@ public sealed class AtomManager {
     private int _nextEmptyAreaSlot;
     private int _nextEmptyTurfSlot;
 
-    private readonly Dictionary<EntityUid, DreamObject> _entityToAtom = new();
+    private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
     private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+    private ServerVerbSystem VerbSystem => _verbSystem ??= _entitySystemManager.GetEntitySystem<ServerVerbSystem>();
     private ServerAppearanceSystem? _appearanceSystem;
-    private MetaDataSystem? _metaDataSystem;
+    private ServerVerbSystem? _verbSystem;
 
     // ReSharper disable ForCanBeConvertedToForeach (the collections could be added to)
     public IEnumerable<DreamObjectAtom> EnumerateAtoms(TreeEntry? filterType = null) {
@@ -192,18 +193,11 @@ public sealed class AtomManager {
         DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
         sprite.SetAppearance(GetAppearanceFromDefinition(movable.ObjectDefinition));
 
-        if (_entityManager.TryGetComponent(entity, out MetaDataComponent? metaData)) {
-            _metaDataSystem ??= _entitySystemManager.GetEntitySystem<MetaDataSystem>();
-
-            _metaDataSystem.SetEntityName(entity, movable.GetDisplayName(), metaData);
-            _metaDataSystem.SetEntityDescription(entity, movable.Desc ?? string.Empty, metaData);
-        }
-
         _entityToAtom.Add(entity, movable);
         return entity;
     }
 
-    public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObject? movable) {
+    public bool TryGetMovableFromEntity(EntityUid entity, [NotNullWhen(true)] out DreamObjectMovable? movable) {
         return _entityToAtom.TryGetValue(entity, out movable);
     }
 
@@ -232,6 +226,8 @@ public sealed class AtomManager {
             case "render_source":
             case "render_target":
             case "transform":
+            case "appearance":
+            case "verbs":
                 return true;
 
             // Get/SetAppearanceVar doesn't handle these
@@ -321,7 +317,7 @@ public sealed class AtomManager {
                 break;
             case "glide_size":
                 value.TryGetValueAsFloat(out float glideSize);
-                appearance.GlideSize = (byte) glideSize;
+                appearance.GlideSize = glideSize;
                 break;
             case "render_source":
                 value.TryGetValueAsString(out appearance.RenderSource);
@@ -336,6 +332,31 @@ public sealed class AtomManager {
 
                 appearance.Transform = transformArray;
                 break;
+            case "verbs":
+                appearance.Verbs.Clear();
+
+                if (value.TryGetValueAsDreamList(out var valueList)) {
+                    foreach (DreamValue verbValue in valueList.GetValues()) {
+                        if (!verbValue.TryGetValueAsProc(out var verb))
+                            continue;
+
+                        if (!verb.VerbId.HasValue)
+                            VerbSystem.RegisterVerb(verb);
+                        if (appearance.Verbs.Contains(verb.VerbId!.Value))
+                            continue;
+
+                        appearance.Verbs.Add(verb.VerbId.Value);
+                    }
+                } else if (value.TryGetValueAsProc(out var verb)) {
+                    if (!verb.VerbId.HasValue)
+                        VerbSystem.RegisterVerb(verb);
+
+                    appearance.Verbs.Add(verb.VerbId!.Value);
+                }
+
+                break;
+            case "appearance":
+                throw new Exception("Cannot assign the appearance var on an appearance");
             // TODO: overlays, underlays, filters
             //       Those are handled separately by whatever is calling SetAppearanceVar currently
             default:
@@ -409,6 +430,9 @@ public sealed class AtomManager {
                     transform[1], transform[3], transform[5]);
 
                 return new(matrix);
+            case "appearance":
+                IconAppearance appearanceCopy = new IconAppearance(appearance); // Return a copy
+                return new(appearanceCopy);
             // TODO: overlays, underlays, filters
             //       Those are handled separately by whatever is calling GetAppearanceVar currently
             default:
@@ -556,6 +580,14 @@ public sealed class AtomManager {
 
         if (def.TryGetVariable("transform", out var transformVar) && transformVar.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformMatrix)) {
             appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformMatrix);
+        }
+
+        if (def.Verbs != null) {
+            foreach (var verb in def.Verbs) {
+                var verbProc = _objectTree.Procs[verb];
+
+                appearance.Verbs.Add(verbProc.VerbId!.Value);
+            }
         }
 
         _definitionAppearanceCache.Add(def, appearance);

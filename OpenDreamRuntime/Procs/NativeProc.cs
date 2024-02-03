@@ -1,10 +1,9 @@
 using System.Reflection;
 using System.Diagnostics.Contracts;
 using System.Runtime.CompilerServices;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -83,7 +82,7 @@ public sealed unsafe class NativeProc : DreamProc {
     private readonly Dictionary<string, DreamValue>? _defaultArgumentValues;
     private readonly delegate*<Bundle, DreamObject?, DreamObject?, DreamValue> _handler;
 
-    public NativeProc(int id, DreamPath owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, WalkManager walkManager, DreamObjectTree objectTree)
+    public NativeProc(int id, TreeEntry owningType, string name, List<string> argumentNames, Dictionary<string, DreamValue> defaultArgumentValues, HandlerFn handler, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager mapManager, DreamResourceManager resourceManager, WalkManager walkManager, DreamObjectTree objectTree)
         : base(id, owningType, name, null, ProcAttributes.None, argumentNames, null, null, null, null, 0) {
         _defaultArgumentValues = defaultArgumentValues;
         _handler = (delegate*<Bundle, DreamObject?, DreamObject?, DreamValue>)handler.Method.MethodHandle.GetFunctionPointer();

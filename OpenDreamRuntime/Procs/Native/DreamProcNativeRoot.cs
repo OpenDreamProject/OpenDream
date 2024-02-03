@@ -15,6 +15,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
@@ -1110,7 +1111,7 @@ namespace OpenDreamRuntime.Procs.Native {
             } else if (value.TryGetValueAsString(out var text))
                 writer.WriteStringValue(text);
             else if (value.TryGetValueAsType(out var type))
-                writer.WriteStringValue(type.Path.PathString);
+                writer.WriteStringValue(type.Path);
             else if (value.TryGetValueAsProc(out var proc))
                 writer.WriteStringValue(proc.ToString());
             else if (value.TryGetValueAsDreamList(out var list)) {
@@ -2072,21 +2073,24 @@ namespace OpenDreamRuntime.Procs.Native {
             int sides;
             int modifier = 0;
             if (bundle.Arguments.Length == 1) {
-                if(!bundle.GetArgument(0, "ndice").TryGetValueAsString(out var diceInput)) {
-                    return new DreamValue(1);
-                }
+                var arg = bundle.GetArgument(0, "ndice");
+                if(arg.TryGetValueAsString(out var diceInput)) {
+                    string[] diceList = diceInput.Split('d');
+                    if (diceList.Length < 2) {
+                        if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception($"Invalid dice value: {diceInput}"); }
+                    } else {
+                        if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception($"Invalid dice value: {diceInput}"); }
+                        if (!Int32.TryParse(diceList[1], out sides)) {
+                            string[] sideList = diceList[1].Split('+');
 
-                string[] diceList = diceInput.Split('d');
-                if (diceList.Length < 2) {
-                    if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception($"Invalid dice value: {diceInput}"); }
-                } else {
-                    if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception($"Invalid dice value: {diceInput}"); }
-                    if (!Int32.TryParse(diceList[1], out sides)) {
-                        string[] sideList = diceList[1].Split('+');
-
-                        if (!Int32.TryParse(sideList[0], out sides) || !Int32.TryParse(sideList[1], out modifier))
-                            throw new Exception($"Invalid dice value: {diceInput}");
+                            if (!Int32.TryParse(sideList[0], out sides) || !Int32.TryParse(sideList[1], out modifier))
+                                throw new Exception($"Invalid dice value: {diceInput}");
+                        }
                     }
+                } else if (arg.IsNull) {
+                    return new DreamValue(1);
+                } else if (!arg.TryGetValueAsInteger(out sides)) {
+                    throw new Exception($"Invalid dice value: {arg}");
                 }
             } else if (!bundle.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !bundle.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
                 return new DreamValue(0);
@@ -2351,22 +2355,65 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("splittext")]
         [DreamProcParameter("Text", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("Delimiter", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
+        [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
+        [DreamProcParameter("include_delimiters", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
         public static DreamValue NativeProc_splittext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if (!bundle.GetArgument(0, "Text").TryGetValueAsString(out var text)) {
                 return new DreamValue(bundle.ObjectTree.CreateList());
             }
 
-            var arg2 = bundle.GetArgument(1, "Delimiter");
-            if (!arg2.TryGetValueAsString(out var delimiter)) {
-                if (!arg2.Equals(DreamValue.Null)) {
-                    return new DreamValue(bundle.ObjectTree.CreateList());
+            int start = 0;
+            int end = 0;
+            if(bundle.GetArgument(2, "Start").TryGetValueAsInteger(out start))
+                start -= 1; //1-indexed
+            if(bundle.GetArgument(3, "End").TryGetValueAsInteger(out end))
+                if(end == 0)
+                    end = text.Length;
+                else
+                    end -= 1; //1-indexed
+            bool includeDelimiters = false;
+            if(bundle.GetArgument(4, "include_delimiters").TryGetValueAsInteger(out var includeDelimitersInt))
+                includeDelimiters = includeDelimitersInt != 0; //idk why BYOND doesn't just use truthiness, but it doesn't, so...
+
+            if(start > 0 || end < text.Length)
+                text = text[Math.Max(start,0)..Math.Min(end, text.Length)];
+
+            var delim = bundle.GetArgument(1, "Delimiter"); //can either be a regex or string
+
+            if (delim.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
+                if(includeDelimiters) {
+                    var values = new List<string>();
+                    int pos = 0;
+                    foreach (Match m in regexObject.Regex.Matches(text)) {
+                        values.Add(text.Substring(pos, m.Index - pos));
+                        values.Add(m.Value);
+                        pos = m.Index + m.Length;
+                    }
+                    values.Add(text.Substring(pos));
+                    return new DreamValue(bundle.ObjectTree.CreateList(values.ToArray()));
+                } else {
+                    return new DreamValue(bundle.ObjectTree.CreateList(regexObject.Regex.Split(text)));
                 }
+            } else if (delim.TryGetValueAsString(out var delimiter)) {
+                string[] splitText;
+                if(includeDelimiters) {
+                    //basically split on delimeter, and then add the delimiter back in after each split (except the last one)
+                    splitText= text.Split(delimiter);
+                    string[] longerSplitText = new string[splitText.Length * 2 - 1];
+                    for(int i = 0; i < splitText.Length; i++) {
+                        longerSplitText[i * 2] = splitText[i];
+                        if(i < splitText.Length - 1)
+                            longerSplitText[i * 2 + 1] = delimiter;
+                    }
+                    splitText = longerSplitText;
+                } else {
+                    splitText = text.Split(delimiter);
+                }
+                return new DreamValue(bundle.ObjectTree.CreateList(splitText));
+            } else {
+                return new DreamValue(bundle.ObjectTree.CreateList());
             }
-
-            string[] splitText = text.Split(delimiter);
-            DreamList list = bundle.ObjectTree.CreateList(splitText);
-
-            return new DreamValue(list);
         }
 
         private static void OutputToStatPanel(DreamManager dreamManager, DreamConnection connection, DreamValue name, DreamValue value) {
@@ -2498,17 +2545,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("text2path")]
         [DreamProcParameter("T", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_text2path(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "T").TryGetValueAsString(out var text) || string.IsNullOrWhiteSpace(text)) {
+            if (!bundle.GetArgument(0, "T").TryGetValueAsString(out var path) || string.IsNullOrWhiteSpace(path)) {
                 return DreamValue.Null;
             }
 
-            DreamPath path = new DreamPath(text);
-
             bool isVerb = false;
 
-            int procElementIndex = path.FindElement("proc");
+            int procElementIndex = path.IndexOf("/proc/", StringComparison.Ordinal);
             if (procElementIndex == -1) {
-                procElementIndex = path.FindElement("verb");
+                procElementIndex = path.IndexOf("/verb/", StringComparison.Ordinal);
                 if (procElementIndex != -1)
                     isVerb = true;
             }
@@ -2517,17 +2562,17 @@ namespace OpenDreamRuntime.Procs.Native {
 
             string? procName = null;
             if (isProcPath) {
-                procName = path.LastElement;
+                procName = path.Substring(path.LastIndexOf('/') + 1);
 
                 if (procElementIndex == 0) { // global procs
-                    if (procName != null && bundle.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
+                    if (bundle.ObjectTree.TryGetGlobalProc(procName, out var globalProc) && globalProc.IsVerb == isVerb)
                         return new DreamValue(globalProc);
                     else
                         return DreamValue.Null;
                 }
             }
 
-            DreamPath typePath = isProcPath ? path.FromElements(0, procElementIndex) : path;
+            string typePath = isProcPath ? path.Substring(0, procElementIndex) : path;
 
             if (!bundle.ObjectTree.TryGetTreeEntry(typePath, out var type) || type == bundle.ObjectTree.Root)
                 return DreamValue.Null;
@@ -2714,16 +2759,14 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         type = typeObj.ObjectDefinition.TreeEntry;
                     } else if (typeValue.TryGetValueAsString(out var typeString)) {
-                        DreamPath path = new DreamPath(typeString);
-
-                        if (path.LastElement == "proc") {
-                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                        if (typeString.EndsWith("/proc")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
                             addingProcs = type.ObjectDefinition.Procs.Values;
-                        } else if (path.LastElement == "verb") {
-                            type = bundle.ObjectTree.GetTreeEntry(path.FromElements(0, -2));
+                        } else if (typeString.EndsWith("/verb")) {
+                            type = bundle.ObjectTree.GetTreeEntry(typeString.Substring(0, typeString.Length - 5));
                             addingProcs = type.ObjectDefinition.Verbs;
                         } else {
-                            type = bundle.ObjectTree.GetTreeEntry(path);
+                            type = bundle.ObjectTree.GetTreeEntry(typeString);
                         }
                     } else {
                         continue;

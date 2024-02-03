@@ -1,17 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Expressions {
-    abstract class BinaryOp : DMExpression {
-        protected DMExpression LHS { get; }
-        protected DMExpression RHS { get; }
-
-        protected BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : base(location) {
-            LHS = lhs;
-            RHS = rhs;
-        }
+    internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
+        protected DMExpression LHS { get; } = lhs;
+        protected DMExpression RHS { get; } = rhs;
     }
 
     #region Simple
@@ -215,6 +208,8 @@ namespace DMCompiler.DM.Expressions {
 
     // x & y
     sealed class BinaryAnd : BinaryOp {
+        public override bool PathIsFuzzy => true;
+
         public BinaryAnd(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
@@ -486,10 +481,8 @@ namespace DMCompiler.DM.Expressions {
     #endregion
 
     #region Compound Assignment
-    abstract class AssignmentBinaryOp : BinaryOp {
-        public AssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
-            : base(location, lhs, rhs) { }
-
+    internal abstract class AssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
+        : BinaryOp(location, lhs, rhs) {
         /// <summary>
         /// Generic interface for emitting the assignment operation. Has its conditionality and reference generation already handled.
         /// </summary>

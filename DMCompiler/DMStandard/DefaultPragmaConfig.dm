@@ -27,9 +27,10 @@
 #pragma DanglingVarType warning
 #pragma MissingInterpolatedExpression warning
 #pragma AmbiguousResourcePath warning
+#pragma SuspiciousSwitchCase warning
 
 //3000-3999
 #pragma EmptyBlock notice
 #pragma EmptyProc disabled // NOTE: If you enable this in OD's default pragma config file, it will emit for OD's DMStandard. Put it in your codebase's pragma config file.
 #pragma UnsafeClientAccess disabled // NOTE: Only checks for unsafe accesses like "client.foobar" and doesn't consider if the client was already null-checked earlier in the proc
-
+#pragma AssignmentInConditional warning 

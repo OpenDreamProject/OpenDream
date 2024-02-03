@@ -1,20 +1,12 @@
-using Robust.Client.Graphics;
+using Robust.Client.Audio;
+using Robust.Shared.Audio.Components;
 
 namespace OpenDreamClient.Audio;
 
-public sealed class DreamSoundChannel : IDisposable {
-    public IClydeAudioSource Source { get; }
-
-    public DreamSoundChannel(IClydeAudioSource source) {
-        Source = source;
-    }
+public sealed class DreamSoundChannel(AudioSystem audioSystem, (EntityUid Entity, AudioComponent Component) source) {
+    public readonly (EntityUid Entity, AudioComponent Component) Source = source;
 
     public void Stop() {
-        Source.StopPlaying();
-    }
-
-    public void Dispose() {
-        Stop();
-        Source.Dispose();
+        audioSystem.Stop(Source.Entity, Source.Component);
     }
 }

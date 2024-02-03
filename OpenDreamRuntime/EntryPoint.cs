@@ -21,14 +21,11 @@ namespace OpenDreamRuntime {
         [Dependency] private readonly IConfigurationManager _configManager = default!;
         [Dependency] private readonly IPrototypeManager _prototypeManager = default!;
         [Dependency] private readonly IDreamDebugManager _debugManager = default!;
+        [Dependency] private readonly ServerInfoManager _serverInfoManager = default!;
 
         private DreamCommandSystem? _commandSystem;
 
         public override void Init() {
-            IoCManager.Resolve<IStatusHost>().SetMagicAczProvider(new DefaultMagicAczProvider(
-                new DefaultMagicAczInfo("Content.Client", new[] {"OpenDreamClient", "OpenDreamShared"}),
-                IoCManager.Resolve<IDependencyCollection>()));
-
             IComponentFactory componentFactory = IoCManager.Resolve<IComponentFactory>();
             componentFactory.DoAutoRegistrations();
 
@@ -55,6 +52,8 @@ namespace OpenDreamRuntime {
                     }
 
             _prototypeManager.LoadDirectory(new ResPath("/Resources/Prototypes"));
+
+            _serverInfoManager.Initialize();
         }
 
         public override void PostInit() {
@@ -72,8 +71,12 @@ namespace OpenDreamRuntime {
 
         protected override void Dispose(bool disposing) {
             // Write every savefile to disk
-            foreach (var savefile in DreamObjectSavefile.Savefiles) {
-                savefile.Flush();
+            foreach (var savefile in DreamObjectSavefile.Savefiles.ToArray()) { //ToArray() to avoid modifying the collection while iterating over it
+                try {
+                    savefile.Close();
+                } catch (Exception e) {
+                    Logger.GetSawmill("opendream").Error($"Exception while flushing savefile '{savefile.Resource.ResourcePath}', data has been lost. {e}");
+                }
             }
 
             _dreamManager.Shutdown();

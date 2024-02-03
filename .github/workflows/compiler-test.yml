@@ -27,11 +27,11 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
       with:
-        dotnet-version: 7.0.101
+        dotnet-version: 8.0.100
     - name: Install dependencies
-      run: dotnet restore main/OpenDream.sln
+      run: dotnet restore main/DMCompiler/DMCompiler.csproj
     - name: Build
-      run: dotnet build main/OpenDream.sln --configuration Release --no-restore /m
+      run: dotnet build main/DMCompiler/DMCompiler.csproj --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
     - name: Checkout Modified /tg/station

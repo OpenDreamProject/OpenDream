@@ -29,9 +29,10 @@ public sealed class DreamObjectDefinition {
     public readonly TransformSystem? TransformSystem;
     public readonly PvsOverrideSystem? PvsOverrideSystem;
     public readonly MetaDataSystem? MetaDataSystem;
+    public readonly ServerVerbSystem? VerbSystem;
 
     public readonly TreeEntry TreeEntry;
-    public DreamPath Type => TreeEntry.Path;
+    public string Type => TreeEntry.Path;
     public DreamObjectDefinition? Parent => TreeEntry.ParentEntry?.ObjectDefinition;
     public int? InitializationProc;
     public bool NoConstructors {
@@ -72,6 +73,7 @@ public sealed class DreamObjectDefinition {
         TransformSystem = copyFrom.TransformSystem;
         PvsOverrideSystem = copyFrom.PvsOverrideSystem;
         MetaDataSystem = copyFrom.MetaDataSystem;
+        VerbSystem = copyFrom.VerbSystem;
 
         TreeEntry = copyFrom.TreeEntry;
         InitializationProc = copyFrom.InitializationProc;
@@ -86,7 +88,7 @@ public sealed class DreamObjectDefinition {
             Verbs = new List<int>(copyFrom.Verbs);
     }
 
-    public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, WalkManager walkManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem  pvsOverrideSystem, MetaDataSystem metaDataSystem, TreeEntry? treeEntry) {
+    public DreamObjectDefinition(DreamManager dreamManager, DreamObjectTree objectTree, AtomManager atomManager, IDreamMapManager dreamMapManager, IMapManager mapManager, DreamResourceManager dreamResourceManager, WalkManager walkManager, IEntityManager entityManager, IPlayerManager playerManager, ISerializationManager serializationManager, ServerAppearanceSystem? appearanceSystem, TransformSystem? transformSystem, PvsOverrideSystem? pvsOverrideSystem, MetaDataSystem? metaDataSystem, ServerVerbSystem? verbSystem, TreeEntry? treeEntry) {
         DreamManager = dreamManager;
         ObjectTree = objectTree;
         AtomManager = atomManager;
@@ -101,6 +103,7 @@ public sealed class DreamObjectDefinition {
         TransformSystem = transformSystem;
         PvsOverrideSystem = pvsOverrideSystem;
         MetaDataSystem = metaDataSystem;
+        VerbSystem = verbSystem;
 
         TreeEntry = treeEntry;
 

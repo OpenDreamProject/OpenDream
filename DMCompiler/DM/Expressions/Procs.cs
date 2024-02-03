@@ -1,9 +1,7 @@
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Dream.Procs;
 using System;
 using System.Linq;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
@@ -101,6 +99,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class ProcCall : DMExpression {
         private readonly DMExpression _target;
         private readonly ArgumentList _arguments;
+
+        public override bool PathIsFuzzy => Path == null;
 
         public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
             _target = target;

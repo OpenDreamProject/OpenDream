@@ -11,9 +11,10 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  OD_DOTNET_VERSION: 7
+  OD_DOTNET_VERSION: 8
   TGS_DOTNET_VERSION: 8
-  TGS_REFERENCE: V6 # This will break after the V6 branch gets deleted during the TGS6 release cycle. When it does, change this to `dev`
+  TGS_REFERENCE: dev
+  TGS_TEST_GITHUB_TOKEN: ${{ secrets.TGS_TEST_GITHUB_TOKEN }}
 
 jobs:
   build:
@@ -71,7 +72,7 @@ jobs:
         cd ../tgstation-server/tests/Tgstation.Server.Tests
         export TGS_TEST_OD_EXCLUSIVE=true
         export TGS_TEST_OD_ENGINE_VERSION=$GITHUB_SHA
-        export TGS_TEST_OD_GIT_DIRECTORY="../../../../../../OpenDream"
+        export TGS_TEST_OD_GIT_DIRECTORY="../../../../../../${{ github.event.repository.name }}"
         export TGS_TEST_DATABASE_TYPE=Sqlite
         export TGS_TEST_CONNECTION_STRING="Data Source=TGS.sqlite3;Mode=ReadWriteCreate"
         dotnet test -c ReleaseNoWindows --no-build --filter Name=TestOpenDreamExclusiveTgsOperation --logger "GitHubActions;summary.includePassedTests=true;summary.includeSkippedTests=true" --settings ../../build/ci.runsettings --results-directory ../../TestResults

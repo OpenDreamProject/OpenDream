@@ -436,7 +436,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return;
 
                 if (args.Length == 1) { // No args given; Let the verb system handle the possible prompting
-                    verbSystem.ExecuteVerb(ClientObjectReference.Client, verbId);
+                    verbSystem.ExecuteVerb(verbSrc, verbId);
                 } else { // Attempt to parse the given arguments
                     if (args.Length != verbInfo.Arguments.Length + 1) {
                         _sawmill.Error(
@@ -464,7 +464,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         }
                     }
 
-                    verbSystem.ExecuteVerb(ClientObjectReference.Client, verbId, arguments);
+                    verbSystem.ExecuteVerb(verbSrc, verbId, arguments);
                 }
 
                 break;

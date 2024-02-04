@@ -313,6 +313,8 @@ public sealed class DreamObjectSavefile : DreamObject {
         if (index == null) {
             SFDreamJsonValue newCurrentDir = SerializeDreamValue(value);
             foreach(var key in CurrentDir.Keys) {
+                if(newCurrentDir.ContainsKey(key)) //if the new dir has a key that overwrites the old one, skip it
+                    continue;
                 newCurrentDir[key] = CurrentDir[key];
             }
 
@@ -331,6 +333,8 @@ public sealed class DreamObjectSavefile : DreamObject {
             var newValue = SerializeDreamValue(value);
             if(CurrentDir.TryGetValue(index, out var oldValue)) {
                 foreach(var key in oldValue.Keys) {
+                    if(newValue.ContainsKey(key)) //if the new dir has a key that overwrites the old one, skip it
+                        continue;
                     newValue[key] = oldValue[key];
                 }
             }
@@ -557,6 +561,7 @@ public sealed class DreamObjectSavefile : DreamObject {
         public int Count => nodes.Count;
         public void Clear() => nodes.Clear();
         public bool Remove(string key) => nodes.Remove(key);
+        public bool ContainsKey(string key) => nodes.ContainsKey(key);
 
     }
 

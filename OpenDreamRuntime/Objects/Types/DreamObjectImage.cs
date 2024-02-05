@@ -37,14 +37,14 @@ public sealed class DreamObjectImage : DreamObject {
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
+        Appearance = AtomManager.GetAppearanceFromDefinition(ObjectDefinition);
 
         DreamValue icon = args.GetArgument(0);
-        if (!AtomManager.TryCreateAppearanceFrom(icon, out Appearance)) {
+        if (!icon.IsNull && !AtomManager.TryCreateAppearanceFrom(icon, out Appearance)) {
             // Use a default appearance, but log a warning about it if icon wasn't null
             Appearance = new IconAppearance();
-            if (!icon.IsNull)
-                Logger.GetSawmill("opendream.image")
-                    .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
+            Logger.GetSawmill("opendream.image")
+                .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
 
         int argIndex = 1;

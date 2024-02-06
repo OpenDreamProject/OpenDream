@@ -1736,7 +1736,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var dir = d.MustGetValueAsInteger();
+            var dir = d.IsNull ? 0 : d.MustGetValueAsInteger();
 
             state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;

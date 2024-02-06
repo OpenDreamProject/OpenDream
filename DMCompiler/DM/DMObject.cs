@@ -1,9 +1,8 @@
 ﻿using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM;
 

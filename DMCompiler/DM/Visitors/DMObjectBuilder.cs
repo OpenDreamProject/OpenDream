@@ -1,7 +1,6 @@
 using System.Collections.Generic;
+using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 
 namespace DMCompiler.DM.Visitors {
     internal static class DMObjectBuilder {

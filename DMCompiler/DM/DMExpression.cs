@@ -1,9 +1,9 @@
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Visitors;
-using OpenDreamShared.Compiler;
 using System;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM;
 

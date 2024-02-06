@@ -1,6 +1,8 @@
 using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Expressions;
 using System;
+using System.Collections.Generic;
+using DMCompiler.Compiler;
 using Resource = DMCompiler.DM.Expressions.Resource;
 
 namespace DMCompiler.DM.Visitors;

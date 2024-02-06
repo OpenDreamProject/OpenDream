@@ -17,7 +17,7 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public Vector2i PixelOffset;
         [ViewVariables] public Color Color = Color.White;
         [ViewVariables] public byte Alpha = 255;
-        [ViewVariables] public byte GlideSize;
+        [ViewVariables] public float GlideSize;
         /// <summary>
         /// An appearance can gain a color matrix filter by two possible forces: <br/>
         /// 1. the /atom.color var is modified. <br/>
@@ -44,10 +44,13 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public List<int> Underlays = new();
         [ViewVariables] public List<NetEntity> VisContents = new();
         [ViewVariables] public List<DreamFilter> Filters = new();
+        [ViewVariables] public List<int> Verbs = new();
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
-        [ViewVariables] public float[] Transform = new float[6] {   1, 0,   // a d
-                                                                    0, 1,   // b e
-                                                                    0, 0 }; // c f
+        [ViewVariables] public float[] Transform = [
+            1, 0,   // a d
+            0, 1,   // b e
+            0, 0    // c f
+        ];
 
         public IconAppearance() { }
 
@@ -70,10 +73,11 @@ namespace OpenDreamShared.Dream {
             Invisibility = appearance.Invisibility;
             Opacity = appearance.Opacity;
             MouseOpacity = appearance.MouseOpacity;
-            Overlays = new List<int>(appearance.Overlays);
-            Underlays = new List<int>(appearance.Underlays);
-            VisContents = new List<NetEntity>(appearance.VisContents);
-            Filters = new List<DreamFilter>(appearance.Filters);
+            Overlays = new(appearance.Overlays);
+            Underlays = new(appearance.Underlays);
+            VisContents = new(appearance.VisContents);
+            Filters = new(appearance.Filters);
+            Verbs = new(appearance.Verbs);
             Override = appearance.Override;
 
             for (int i = 0; i < 6; i++) {
@@ -108,6 +112,7 @@ namespace OpenDreamShared.Dream {
             if (appearance.Underlays.Count != Underlays.Count) return false;
             if (appearance.VisContents.Count != VisContents.Count) return false;
             if (appearance.Filters.Count != Filters.Count) return false;
+            if (appearance.Verbs.Count != Verbs.Count) return false;
             if (appearance.Override != Override) return false;
 
             for (int i = 0; i < Filters.Count; i++) {
@@ -124,6 +129,10 @@ namespace OpenDreamShared.Dream {
 
             for (int i = 0; i < VisContents.Count; i++) {
                 if (appearance.VisContents[i] != VisContents[i]) return false;
+            }
+
+            for (int i = 0; i < Verbs.Count; i++) {
+                if (appearance.Verbs[i] != Verbs[i]) return false;
             }
 
             for (int i = 0; i < 6; i++) {
@@ -197,6 +206,10 @@ namespace OpenDreamShared.Dream {
 
             foreach (DreamFilter filter in Filters) {
                 hashCode.Add(filter);
+            }
+
+            foreach (int verb in Verbs) {
+                hashCode.Add(verb);
             }
 
             for (int i = 0; i < 6; i++) {

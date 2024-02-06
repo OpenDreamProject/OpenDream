@@ -5,7 +5,7 @@ using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using SixLabors.ImageSharp;
-using SixLabors.ImageSharp.Formats.Png;
+using SixLabors.ImageSharp.Formats.Png.Chunks;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 using Color = Robust.Shared.Maths.Color;
@@ -83,6 +83,9 @@ public sealed class DreamIcon {
         if (_cachedDMI != null)
             return _cachedDMI;
 
+        if(Width == 0 && Height == 0)
+           Width = Height = 32; //TODO should be world.icon_size
+
         int frameCount = FrameCount;
 
         int frameWidth = Width, frameHeight = Height;
@@ -116,22 +119,21 @@ public sealed class DreamIcon {
             }
         }
 
-        Image<Rgba32> dmiImage = Image.LoadPixelData(pixels, span, frameHeight);
+        Image<Rgba32> dmiImage = Image.LoadPixelData<Rgba32>(pixels, span, frameHeight);
         ParsedDMIDescription newDescription = new() {Width = frameWidth, Height = frameHeight, States = dmiStates};
 
         PixelArrayPool.Return(pixels, clearArray: true);
 
-        using (MemoryStream dmiImageStream = new MemoryStream()) {
-            var pngTextData = new PngTextData("Description", newDescription.ExportAsText(), null, null);
-            var pngMetadata = dmiImage.Metadata.GetPngMetadata();
-            pngMetadata.TextData.Add(pngTextData);
+        using var dmiImageStream = new MemoryStream();
+        var pngTextData = new PngTextData("Description", newDescription.ExportAsText(), null, null);
+        var pngMetadata = dmiImage.Metadata.GetPngMetadata();
+        pngMetadata.TextData.Add(pngTextData);
 
-            dmiImage.SaveAsPng(dmiImageStream);
+        dmiImage.SaveAsPng(dmiImageStream);
 
-            IconResource newResource = _resourceManager.CreateIconResource(dmiImageStream.GetBuffer(), dmiImage, newDescription);
-            _cachedDMI = newResource;
-            return _cachedDMI;
-        }
+        IconResource newResource = _resourceManager.CreateIconResource(dmiImageStream.GetBuffer(), dmiImage, newDescription);
+        _cachedDMI = newResource;
+        return _cachedDMI;
     }
 
     public void ApplyOperation(IDreamIconOperation operation) {

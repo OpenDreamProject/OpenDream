@@ -15,6 +15,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
@@ -1565,7 +1566,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if(bundle.Arguments.Length == 3) {
-                var digits = Math.Max(bundle.GetArgument(1, "A").MustGetValueAsInteger(), 0);
+                var digits = Math.Max(bundle.GetArgument(1, "A").MustGetValueAsInteger(), 1);
                 var radix = bundle.GetArgument(2, "B").MustGetValueAsInteger();
                 var intNum = (int)floatNum;
 
@@ -2072,21 +2073,24 @@ namespace OpenDreamRuntime.Procs.Native {
             int sides;
             int modifier = 0;
             if (bundle.Arguments.Length == 1) {
-                if(!bundle.GetArgument(0, "ndice").TryGetValueAsString(out var diceInput)) {
-                    return new DreamValue(1);
-                }
+                var arg = bundle.GetArgument(0, "ndice");
+                if(arg.TryGetValueAsString(out var diceInput)) {
+                    string[] diceList = diceInput.Split('d');
+                    if (diceList.Length < 2) {
+                        if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception($"Invalid dice value: {diceInput}"); }
+                    } else {
+                        if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception($"Invalid dice value: {diceInput}"); }
+                        if (!Int32.TryParse(diceList[1], out sides)) {
+                            string[] sideList = diceList[1].Split('+');
 
-                string[] diceList = diceInput.Split('d');
-                if (diceList.Length < 2) {
-                    if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception($"Invalid dice value: {diceInput}"); }
-                } else {
-                    if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception($"Invalid dice value: {diceInput}"); }
-                    if (!Int32.TryParse(diceList[1], out sides)) {
-                        string[] sideList = diceList[1].Split('+');
-
-                        if (!Int32.TryParse(sideList[0], out sides) || !Int32.TryParse(sideList[1], out modifier))
-                            throw new Exception($"Invalid dice value: {diceInput}");
+                            if (!Int32.TryParse(sideList[0], out sides) || !Int32.TryParse(sideList[1], out modifier))
+                                throw new Exception($"Invalid dice value: {diceInput}");
+                        }
                     }
+                } else if (arg.IsNull) {
+                    return new DreamValue(1);
+                } else if (!arg.TryGetValueAsInteger(out sides)) {
+                    throw new Exception($"Invalid dice value: {arg}");
                 }
             } else if (!bundle.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !bundle.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
                 return new DreamValue(0);

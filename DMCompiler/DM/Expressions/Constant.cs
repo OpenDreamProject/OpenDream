@@ -1,10 +1,10 @@
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Json;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
     abstract class Constant : DMExpression {
@@ -525,9 +525,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return Value.LastElement;
-        }
+        public override string? GetNameof(DMObject dmObject, DMProc proc) => Value.LastElement;
 
         public override bool IsTruthy() => true;
 

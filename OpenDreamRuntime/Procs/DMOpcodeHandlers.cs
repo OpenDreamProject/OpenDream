@@ -1697,14 +1697,13 @@ namespace OpenDreamRuntime.Procs {
         public static ProcStatus Spawn(DMProcState state) {
             int jumpTo = state.ReadInt();
             state.Pop().TryGetValueAsFloat(out var delay);
-            int delayMilliseconds = (int)(delay * 100);
 
             // TODO: It'd be nicer if we could use something such as DreamThread.Spawn here
             // and have state.Spawn return a ProcState instead
             DreamThread newContext = state.Spawn();
 
             //Negative delays mean the spawned code runs immediately
-            if (delayMilliseconds < 0) {
+            if (delay < 0) {
                 newContext.Resume();
                 // TODO: Does the rest of the proc get scheduled?
                 // Does the value of the delay mean anything?
@@ -1736,7 +1735,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var dir = d.MustGetValueAsInteger();
+            var dir = d.IsNull ? 0 : d.MustGetValueAsInteger();
 
             state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;
@@ -1931,8 +1930,7 @@ namespace OpenDreamRuntime.Procs {
                 DreamValue value = state.Pop();
                 if (!state.Pop().TryGetValueAsFloat(out var weight))
                 {
-                    // Breaking change, no clue what weight BYOND is giving to non-nums
-                    throw new Exception($"pick() weight '{weight}' is not a number");
+                    weight = 100;
                 }
 
                 totalWeight += weight;
@@ -2197,7 +2195,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Prompt(DMProcState state) {
-            DMValueType types = (DMValueType)state.ReadInt();
+            DreamValueType types = (DreamValueType)state.ReadInt();
             DreamValue list = state.Pop();
             DreamValue message, title, defaultValue;
 

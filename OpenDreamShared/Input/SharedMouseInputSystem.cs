@@ -24,22 +24,22 @@ public class SharedMouseInputSystem : EntitySystem {
     }
 
     [Serializable, NetSerializable]
-    public sealed class AtomClickedEvent(AtomReference atom, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
-        public AtomReference Atom { get; } = atom;
+    public sealed class AtomClickedEvent(ClientObjectReference clickedAtom, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
+        public ClientObjectReference ClickedAtom { get; } = clickedAtom;
         public ClickParams Params { get; } = clickParams;
     }
 
     [Serializable, NetSerializable]
-    public sealed class AtomDraggedEvent(AtomReference src, AtomReference? over, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
-        public AtomReference SrcAtom { get; } = src;
-        public AtomReference? OverAtom { get; } = over;
+    public sealed class AtomDraggedEvent(ClientObjectReference srcAtom, ClientObjectReference? over, ClickParams clickParams) : EntityEventArgs, IAtomMouseEvent {
+        public ClientObjectReference SrcAtom { get; } = srcAtom;
+        public ClientObjectReference? OverAtom { get; } = over;
         public ClickParams Params { get; } = clickParams;
     }
 
     [Serializable, NetSerializable]
     public sealed class StatClickedEvent(string atomRef, bool middle, bool shift, bool ctrl, bool alt)
         : EntityEventArgs, IAtomMouseEvent {
-        public string AtomRef = atomRef;
+        public string AtomRef = atomRef; // TODO: Use ClientObjectReference
 
         // TODO: icon-x and icon-y
         // TODO: ScreenLoc doesn't appear at all in the click params

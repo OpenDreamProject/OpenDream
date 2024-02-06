@@ -2,5 +2,6 @@
 #include "Tests/block.dm"
 #include "Tests/color_matrix.dm"
 #include "Tests/range.dm"
+#include "Tests/verb_duplicate.dm"
 #include "map.dmm"
 #include "interface.dmf"

@@ -357,6 +357,7 @@ namespace OpenDreamRuntime.Procs {
             ArgumentCount = other.ArgumentCount;
             _pc = other._pc;
             _firstResume = false;
+            Result = other.Result;
 
             _stack = _dreamValuePool.Rent(other._stack.Length);
             _localVariables = _dreamValuePool.Rent(other._localVariables.Length);

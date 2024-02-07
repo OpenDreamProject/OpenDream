@@ -6,7 +6,6 @@ using System.Text;
 using System.Threading.Tasks;
 using DMCompiler;
 using DMCompiler.Bytecode;
-using JetBrains.FormatRipper.Sh;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;

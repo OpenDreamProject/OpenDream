@@ -83,6 +83,9 @@ public sealed class DreamIcon {
         if (_cachedDMI != null)
             return _cachedDMI;
 
+        if(Width == 0 && Height == 0)
+           Width = Height = 32; //TODO should be world.icon_size
+
         int frameCount = FrameCount;
 
         int frameWidth = Width, frameHeight = Height;

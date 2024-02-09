@@ -324,6 +324,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             } else if (Menus.TryGetValue(windowId, out var menu)) {
                 if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
                     return menuElement;
+            } else if(MacroSets.TryGetValue(windowId, out var macroSet)) {
+                if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
+                    return macroElement;
             }
 
             if (window != null) {
@@ -436,7 +439,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return;
 
                 if (args.Length == 1) { // No args given; Let the verb system handle the possible prompting
-                    verbSystem.ExecuteVerb(ClientObjectReference.Client, verbId);
+                    verbSystem.ExecuteVerb(verbSrc, verbId);
                 } else { // Attempt to parse the given arguments
                     if (args.Length != verbInfo.Arguments.Length + 1) {
                         _sawmill.Error(
@@ -464,7 +467,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         }
                     }
 
-                    verbSystem.ExecuteVerb(ClientObjectReference.Client, verbId, arguments);
+                    verbSystem.ExecuteVerb(verbSrc, verbId, arguments);
                 }
 
                 break;

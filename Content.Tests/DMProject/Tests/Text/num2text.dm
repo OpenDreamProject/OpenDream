@@ -20,3 +20,4 @@
 	// Zero/Negative MinDigits
 	ASSERT(num2text(1, 0, 10) == "1")
 	ASSERT(num2text(1, -1, 10) == "1")
+	ASSERT(num2text(0, 0, 16) == "0")

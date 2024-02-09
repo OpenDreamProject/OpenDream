@@ -47,7 +47,6 @@ namespace OpenDreamRuntime {
             _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
 
             _netManager.RegisterNetMessage<MsgUpdateStatPanels>();
-            _netManager.RegisterNetMessage<MsgUpdateAvailableVerbs>();
             _netManager.RegisterNetMessage<MsgSelectStatPanel>(RxSelectStatPanel);
             _netManager.RegisterNetMessage<MsgOutput>();
             _netManager.RegisterNetMessage<MsgAlert>();

@@ -1735,7 +1735,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var dir = d.MustGetValueAsInteger();
+            var dir = d.IsNull ? 0 : d.MustGetValueAsInteger();
 
             state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;
@@ -1930,8 +1930,7 @@ namespace OpenDreamRuntime.Procs {
                 DreamValue value = state.Pop();
                 if (!state.Pop().TryGetValueAsFloat(out var weight))
                 {
-                    // Breaking change, no clue what weight BYOND is giving to non-nums
-                    throw new Exception($"pick() weight '{weight}' is not a number");
+                    weight = 100;
                 }
 
                 totalWeight += weight;

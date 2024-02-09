@@ -8,4 +8,4 @@ labelPRBasedOnFilePath:
     - OpenDreamShared/**/*
   Compiler:
     - OpenDreamCompiler/**/*
-    - DMDissasmbler/**/*
+    - DMDissasembler/**/*

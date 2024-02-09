@@ -74,6 +74,17 @@ public sealed partial class ProcScheduler {
         }
     }
 
+    /// <summary>
+    /// Clears all ProcScheduler state
+    /// </summary>
+    public void ClearState() {
+        _current = null;
+        _deferredTasks.Clear();
+        _sleeping.Clear();
+        _scheduled.Clear();
+        _tickers.Clear();
+    }
+
     public IEnumerable<DreamThread> InspectThreads() {
         // TODO: We shouldn't need to check if Thread is null here
         //       I think we're keeping disposed states somewhere here

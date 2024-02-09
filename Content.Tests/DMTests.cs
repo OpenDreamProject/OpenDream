@@ -1,13 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Procs;
-using OpenDreamRuntime.Rendering;
-using OpenDreamShared.Rendering;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.IoC;
 using Robust.Shared.Timing;
@@ -74,6 +73,8 @@ public sealed class DMTests : ContentUnitTest {
                 return;
             }
 
+            _procScheduler.ClearState();
+
             Assert.That(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
             Assert.That(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
             _dreamMan.StartWorld();
@@ -98,6 +99,9 @@ public sealed class DMTests : ContentUnitTest {
             if (testFlags.HasFlag(DMTestFlags.ReturnTrue)) {
                 Assert.That(returned?.IsTruthy(), Is.True, "Test was expected to return TRUE");
             }
+
+            var threads = _procScheduler.InspectThreads().ToList();
+            Assert.That(threads.Count == 0 && !_procScheduler.HasProcsSleeping && !_procScheduler.HasProcsQueued, $"One or more threads did not finish!");
 
             Cleanup(compiledFile);
             TestContext.WriteLine($"--- PASS {sourceFile}");

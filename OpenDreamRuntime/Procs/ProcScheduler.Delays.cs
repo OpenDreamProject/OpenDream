@@ -6,7 +6,7 @@ namespace OpenDreamRuntime.Procs;
 // Handles delay processing for sleep() and spawn().
 
 public sealed partial class ProcScheduler {
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
+    [Dependency] private readonly IOpenDreamGameTiming _gameTiming = default!;
 
     private PriorityQueue<DelayTicker, uint> _tickers = new();
 

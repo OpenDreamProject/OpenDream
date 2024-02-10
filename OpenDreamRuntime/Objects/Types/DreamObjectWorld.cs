@@ -1,5 +1,7 @@
 ﻿using System.Net;
 using System.Net.Sockets;
+
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared;
@@ -8,7 +10,6 @@ using Robust.Server;
 using Robust.Shared;
 using Robust.Shared.Configuration;
 using Robust.Shared.Network;
-using Robust.Shared.Timing;
 
 namespace OpenDreamRuntime.Objects.Types;
 
@@ -16,7 +17,7 @@ public sealed class DreamObjectWorld : DreamObject {
     public override bool ShouldCallNew => false; // Gets called manually later
 
     [Dependency] private readonly IBaseServer _server = default!;
-    [Dependency] private readonly IGameTiming _gameTiming = default!;
+    [Dependency] private readonly IOpenDreamGameTiming _gameTiming = default!;
     [Dependency] private readonly INetManager _netManager = default!;
     [Dependency] private readonly IConfigurationManager _cfg = default!;
 

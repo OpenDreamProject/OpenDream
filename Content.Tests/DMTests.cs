@@ -19,10 +19,13 @@ public sealed class DMTests : ContentUnitTest {
     private const string InitializeEnvironment = "./environment.dme";
     private const string TestsDirectory = "Tests";
 
+    [Dependency] IOpenDreamGameTiming _gameTiming = default!;
     [Dependency] private readonly DreamManager _dreamMan = default!;
     [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly ProcScheduler _procScheduler = default!;
     [Dependency] private readonly ITaskManager _taskManager = default!;
+
+    DummyOpenDreamGameTiming GameTiming => (DummyOpenDreamGameTiming)_gameTiming;
 
     [Flags]
     public enum DMTestFlags {
@@ -74,6 +77,7 @@ public sealed class DMTests : ContentUnitTest {
             }
 
             _procScheduler.ClearState();
+            GameTiming.CurTick = GameTick.Zero;
 
             Assert.That(compiledFile is not null && File.Exists(compiledFile), "Failed to compile DM source file");
             Assert.That(_dreamMan.LoadJson(compiledFile), $"Failed to load {compiledFile}");
@@ -81,10 +85,13 @@ public sealed class DMTests : ContentUnitTest {
 
             (bool successfulRun, DreamValue? returned, Exception? exception) = RunTest();
 
+            int expectedThreads;
             if (testFlags.HasFlag(DMTestFlags.NoReturn)) {
                 Assert.That(returned.HasValue, Is.False, "proc returned unexpectedly");
+                expectedThreads = 1;
             } else {
                 Assert.That(returned.HasValue, "proc did not return (did it hit an exception?)");
+                expectedThreads = 0;
             }
 
             if (testFlags.HasFlag(DMTestFlags.RuntimeError)) {
@@ -101,7 +108,7 @@ public sealed class DMTests : ContentUnitTest {
             }
 
             var threads = _procScheduler.InspectThreads().ToList();
-            Assert.That(threads.Count == 0 && !_procScheduler.HasProcsSleeping && !_procScheduler.HasProcsQueued, $"One or more threads did not finish!");
+            Assert.That(threads.Count == expectedThreads && !_procScheduler.HasProcsSleeping && !_procScheduler.HasProcsQueued, $"One or more threads did not finish!");
 
             Cleanup(compiledFile);
             TestContext.WriteLine($"--- PASS {sourceFile}");
@@ -135,6 +142,8 @@ public sealed class DMTests : ContentUnitTest {
         while (!callTask.IsCompleted || _procScheduler.HasProcsQueued || _procScheduler.HasProcsSleeping) {
             _dreamMan.Update();
             _taskManager.ProcessPendingTasks();
+
+            GameTiming.CurTick = new GameTick(_gameTiming.CurTick.Value + 1);
 
             if (watch.Elapsed.TotalSeconds > 5) {
                 Assert.Fail("Test timed out");

@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using System.Reflection;
 using OpenDreamClient;
 using OpenDreamRuntime;
+using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
-using OpenDreamShared;
 using OpenDreamShared.Rendering;
 using Robust.Shared.Analyzers;
 using Robust.Shared.IoC;
@@ -23,11 +23,10 @@ public class ContentUnitTest : RobustUnitTest {
     protected override void OverrideIoC() {
         base.OverrideIoC();
 
-        SharedOpenDreamIoC.Register();
-
         if (Project == UnitTestProject.Server) {
             ServerContentIoC.Register(unitTests: true);
             IoCManager.Register<IDreamMapManager, DummyDreamMapManager>();
+            IoCManager.Register<IOpenDreamGameTiming, DummyOpenDreamGameTiming>();
         } else if (Project == UnitTestProject.Client) {
             ClientContentIoC.Register();
         }

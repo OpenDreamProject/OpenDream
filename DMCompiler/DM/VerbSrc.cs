@@ -6,6 +6,8 @@
 public enum VerbSrc {
     View,
     OView,
+    Range,
+    ORange,
     World,
     WorldContents,
     Usr,

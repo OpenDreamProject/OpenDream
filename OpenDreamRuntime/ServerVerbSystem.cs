@@ -47,8 +47,10 @@ public sealed class ServerVerbSystem : VerbSystem {
         }
 
         VerbAccessibility? verbAccessibility = verb.VerbSrc switch {
-            VerbSrc.View => VerbAccessibility.View, // TODO: Ranges on the view() types
+            VerbSrc.View => VerbAccessibility.View, // TODO: Ranges on the view()/range() types
             VerbSrc.OView => VerbAccessibility.OView,
+            VerbSrc.Range => VerbAccessibility.Range,
+            VerbSrc.ORange => VerbAccessibility.ORange,
             VerbSrc.World => VerbAccessibility.WorldContents,
             VerbSrc.WorldContents => VerbAccessibility.WorldContents,
             VerbSrc.Usr or VerbSrc.UsrContents => VerbAccessibility.UsrContents,

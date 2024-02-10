@@ -190,7 +190,7 @@ namespace DMCompiler.DM.Visitors {
                 // TODO: Would be much better if the parser was just more strict with the expression
                 switch (statementSet.Value) {
                     case DMASTIdentifier {Identifier: "usr"}:
-                        _proc.VerbSrc = VerbSrc.Usr;
+                        _proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.UsrContents : VerbSrc.Usr;
                         break;
                     case DMASTDereference {Expression: DMASTIdentifier{Identifier: "usr"}, Operations: var operations}:
                         if (operations is not [DMASTDereference.FieldOperation {Identifier: var deref}])
@@ -214,7 +214,7 @@ namespace DMCompiler.DM.Visitors {
 
                         break;
                     case DMASTIdentifier {Identifier: "world"}:
-                        _proc.VerbSrc = VerbSrc.World;
+                        _proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.WorldContents : VerbSrc.World;
                         DMCompiler.UnimplementedWarning(statementSet.Location,
                             "'set src = world' is unimplemented");
                         break;
@@ -228,6 +228,10 @@ namespace DMCompiler.DM.Visitors {
                         break;
                     case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("view" or "oview")}}:
                         _proc.VerbSrc = viewType == "view" ? VerbSrc.View : VerbSrc.OView; // TODO: Ranges
+                        break;
+                    // range() and orange() are undocumented, but they work
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("range" or "orange")}}:
+                        _proc.VerbSrc = viewType == "range" ? VerbSrc.Range : VerbSrc.ORange; // TODO: Ranges
                         break;
                     default:
                         DMCompiler.Emit(WarningCode.BadExpression, statementSet.Value.Location, "Invalid verb src");

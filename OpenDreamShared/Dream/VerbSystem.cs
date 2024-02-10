@@ -88,6 +88,8 @@ public class VerbSystem : EntitySystem {
     public enum VerbAccessibility : byte {
         View,
         OView,
+        Range,
+        ORange,
         WorldContents,
         UsrContents,
         Usr,

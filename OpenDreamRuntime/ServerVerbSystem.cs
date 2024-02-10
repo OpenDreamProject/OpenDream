@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics;
 using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
@@ -12,10 +12,13 @@ namespace OpenDreamRuntime;
 public sealed class ServerVerbSystem : VerbSystem {
     [Dependency] private readonly DreamManager _dreamManager = default!;
     [Dependency] private readonly AtomManager _atomManager = default!;
+    [Dependency] private readonly DreamObjectTree _objectTree = default!;
     [Dependency] private readonly IPlayerManager _playerManager = default!;
 
     private readonly List<VerbInfo> _verbs = new();
     private readonly Dictionary<int, DreamProc> _verbIdToProc = new();
+
+    private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.verbs");
 
     public override void Initialize() {
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
@@ -31,6 +34,45 @@ public sealed class ServerVerbSystem : VerbSystem {
         if (verb.VerbId != null) // Verb has already been registered
             return;
 
+        var verbArguments = Array.Empty<VerbArg>();
+        if (verb.ArgumentTypes != null) {
+            verbArguments = new VerbArg[verb.ArgumentTypes.Count];
+
+            for (int i = 0; i < verb.ArgumentTypes.Count; i++) {
+                verbArguments[i] = new VerbArg {
+                    Name = verb.ArgumentNames![i],
+                    Types = verb.ArgumentTypes[i]
+                };
+            }
+        }
+
+        VerbAccessibility? verbAccessibility = verb.VerbSrc switch {
+            VerbSrc.View => VerbAccessibility.View, // TODO: Ranges on the view() types
+            VerbSrc.OView => VerbAccessibility.OView,
+            VerbSrc.World => VerbAccessibility.WorldContents,
+            VerbSrc.WorldContents => VerbAccessibility.WorldContents,
+            VerbSrc.Usr or VerbSrc.UsrContents => VerbAccessibility.UsrContents,
+            VerbSrc.UsrLoc => VerbAccessibility.UsrLoc,
+            VerbSrc.UsrGroup => VerbAccessibility.UsrGroup,
+            null => null,
+            _ => throw new UnreachableException("All cases should be covered")
+        };
+
+        if (verbAccessibility == null) {
+            var def = verb.OwningType.ObjectDefinition;
+
+            // Assign a default based on the type this verb is defined on
+            if (def.IsSubtypeOf(_objectTree.Mob) || def.IsSubtypeOf(_objectTree.Obj)) {
+                // TODO: Mob is "= usr" and Obj is "in usr". There is a difference when it comes to the command line.
+                verbAccessibility = VerbAccessibility.Usr;
+            } else if (def.IsSubtypeOf(_objectTree.Turf) || def.IsSubtypeOf(_objectTree.Area)) {
+                verbAccessibility = VerbAccessibility.View; // TODO: Range of 0
+            } else {
+                _sawmill.Error($"Failed to determine the src property of {verb}, could not register it as a verb");
+                return;
+            }
+        }
+
         var verbInfo = new VerbInfo {
             Name = verb.VerbName,
 
@@ -40,19 +82,10 @@ public sealed class ServerVerbSystem : VerbSystem {
             Category = verb.VerbCategory ?? string.Empty,
 
             Invisibility = verb.Invisibility,
-            HiddenAttribute = (verb.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden
+            HiddenAttribute = (verb.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden,
+            Accessibility = verbAccessibility,
+            Arguments = verbArguments
         };
-
-        if (verb.ArgumentTypes != null) {
-            verbInfo.Arguments = new VerbArg[verb.ArgumentTypes.Count];
-
-            for (int i = 0; i < verb.ArgumentTypes.Count; i++) {
-                verbInfo.Arguments[i] = new VerbArg {
-                    Name = verb.ArgumentNames![i],
-                    Types = verb.ArgumentTypes[i]
-                };
-            }
-        }
 
         verb.VerbId = _verbs.Count;
         _verbs.Add(verbInfo);
@@ -62,10 +95,6 @@ public sealed class ServerVerbSystem : VerbSystem {
     }
 
     public DreamProc GetVerb(int verbId) => _verbIdToProc[verbId];
-
-    public bool TryGetVerb(int verbId, [NotNullWhen(true)] out DreamProc? verb) {
-        return _verbIdToProc.TryGetValue(verbId, out verb);
-    }
 
     /// <summary>
     /// Send a client an updated version of its /client's verbs
@@ -96,23 +125,24 @@ public sealed class ServerVerbSystem : VerbSystem {
     private void OnVerbExecuted(ExecuteVerbEvent msg, EntitySessionEventArgs args) {
         var connection = _dreamManager.GetConnectionBySession(args.SenderSession);
         var src = _dreamManager.GetFromClientReference(connection, msg.Src);
-        if (src == null || !TryGetVerb(msg.VerbId, out var verb) || !CanExecute(connection, src, verb))
+        if (src == null || !_verbIdToProc.TryGetValue(msg.VerbId, out var verb) || !CanExecute(connection, src, verb))
             return;
-        if (msg.Arguments.Length != verb.ArgumentTypes?.Count)
+        if (msg.Arguments.Length != verb.ArgumentTypes?.Count) {
+            _sawmill.Error(
+                $"User \"{args.SenderSession.Name}\" gave {msg.Arguments.Length} argument(s) to the \"{verb.Name}\" verb which only has {verb.ArgumentTypes?.Count} argument(s)");
             return;
+        }
 
         // Convert the values the client gave to DreamValues
         DreamValue[] arguments = new DreamValue[verb.ArgumentTypes.Count];
         for (int i = 0; i < verb.ArgumentTypes.Count; i++) {
             var argType = verb.ArgumentTypes[i];
 
-            arguments[i] = argType switch {
-                DreamValueType.Null => DreamValue.Null,
-                DreamValueType.Text or DreamValueType.Message => new DreamValue((string)msg.Arguments[i]),
-                DreamValueType.Num => new DreamValue((float)msg.Arguments[i]),
-                DreamValueType.Color => new DreamValue(((Color)msg.Arguments[i]).ToHexNoAlpha()),
-                _ => throw new Exception("Invalid prompt response '" + msg.Arguments[i] + "'")
-            };
+            if (!connection.TryConvertPromptResponse(argType, msg.Arguments[i], out arguments[i])) {
+                _sawmill.Error(
+                    $"User \"{args.SenderSession.Name}\" gave an invalid value for argument #{i + 1} of verb \"{verb.Name}\"");
+                return;
+            }
         }
 
         DreamThread.Run($"Execute {msg.VerbId} by {connection.Session!.Name}", async state => {
@@ -141,7 +171,15 @@ public sealed class ServerVerbSystem : VerbSystem {
                 return false;
         }
 
-        // TODO: Does "set src = ..." allow execution here?
-        return true;
+        var verbInfo = _verbs[verb.VerbId.Value];
+
+        // Check that "set src = ..." allows execution in this instance
+        switch (verbInfo.Accessibility) {
+            case VerbAccessibility.Usr:
+                return src == connection.Mob;
+            default:
+                // TODO: All the other kinds
+                return true;
+        }
     }
 }

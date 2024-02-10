@@ -186,9 +186,54 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
             var attribute = statementSet.Attribute.ToLower();
 
-            // TODO deal with "src"
             if(attribute == "src") {
-                DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
+                // TODO: Would be much better if the parser was just more strict with the expression
+                switch (statementSet.Value) {
+                    case DMASTIdentifier {Identifier: "usr"}:
+                        _proc.VerbSrc = VerbSrc.Usr;
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "usr"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: var deref}])
+                            goto default;
+
+                        if (deref == "contents") {
+                            _proc.VerbSrc = VerbSrc.UsrContents;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.contents' is unimplemented");
+                        }  else if (deref == "loc") {
+                            _proc.VerbSrc = VerbSrc.UsrLoc;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.loc' is unimplemented");
+                        } else if (deref == "group") {
+                            _proc.VerbSrc = VerbSrc.UsrGroup;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.group' is unimplemented");
+                        } else {
+                            goto default;
+                        }
+
+                        break;
+                    case DMASTIdentifier {Identifier: "world"}:
+                        _proc.VerbSrc = VerbSrc.World;
+                        DMCompiler.UnimplementedWarning(statementSet.Location,
+                            "'set src = world' is unimplemented");
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "world"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: "contents"}])
+                            goto default;
+
+                        _proc.VerbSrc = VerbSrc.WorldContents;
+                        DMCompiler.UnimplementedWarning(statementSet.Location,
+                            "'set src = world.contents' is unimplemented");
+                        break;
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("view" or "oview")}}:
+                        _proc.VerbSrc = viewType == "view" ? VerbSrc.View : VerbSrc.OView; // TODO: Ranges
+                        break;
+                    default:
+                        DMCompiler.Emit(WarningCode.BadExpression, statementSet.Value.Location, "Invalid verb src");
+                        break;
+                }
+
                 return;
             }
 

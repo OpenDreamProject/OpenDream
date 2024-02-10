@@ -346,13 +346,23 @@ public sealed class DreamObjectTree {
                 type.ParentEntry.ChildCount += type.ChildCount + 1;
         }
 
-        //Fifth pass: Set atom's name and text
+        // Fifth pass: Set atom's name and text
         foreach (TreeEntry type in GetAllDescendants(Atom)) {
             if (type.ObjectDefinition.Variables["name"].IsNull)
                 type.ObjectDefinition.Variables["name"] = new(type.Name.Replace("_", " "));
 
             if (type.ObjectDefinition.Variables["text"].IsNull && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name)) {
                 type.ObjectDefinition.Variables["text"] = new DreamValue(string.IsNullOrEmpty(name) ? string.Empty : name[..1]);
+            }
+        }
+
+        // Register verbs
+        if (_verbSystem != null) {
+            foreach (DreamProc proc in Procs) {
+                if (!proc.IsVerb)
+                    continue;
+
+                _verbSystem.RegisterVerb(proc);
             }
         }
     }
@@ -400,10 +410,6 @@ public sealed class DreamObjectTree {
 
             foreach (var procJson in jsonProcs) {
                 var proc = LoadProcJson(Procs.Count, procJson);
-
-                if (proc.IsVerb) {
-                    _verbSystem?.RegisterVerb(proc);
-                }
 
                 Procs.Add(proc);
             }

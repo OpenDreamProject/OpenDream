@@ -83,7 +83,7 @@ public sealed class ServerVerbSystem : VerbSystem {
 
             Invisibility = verb.Invisibility,
             HiddenAttribute = (verb.Attributes & ProcAttributes.Hidden) == ProcAttributes.Hidden,
-            Accessibility = verbAccessibility,
+            Accessibility = verbAccessibility.Value,
             Arguments = verbArguments
         };
 

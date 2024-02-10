@@ -48,12 +48,17 @@ public sealed class ServerVerbSystem : VerbSystem {
 
         VerbAccessibility? verbAccessibility = verb.VerbSrc switch {
             VerbSrc.View => VerbAccessibility.View, // TODO: Ranges on the view()/range() types
+            VerbSrc.InView => VerbAccessibility.InView,
             VerbSrc.OView => VerbAccessibility.OView,
+            VerbSrc.InOView => VerbAccessibility.InOView,
             VerbSrc.Range => VerbAccessibility.Range,
+            VerbSrc.InRange => VerbAccessibility.InRange,
             VerbSrc.ORange => VerbAccessibility.ORange,
-            VerbSrc.World => VerbAccessibility.WorldContents,
-            VerbSrc.WorldContents => VerbAccessibility.WorldContents,
-            VerbSrc.Usr or VerbSrc.UsrContents => VerbAccessibility.UsrContents,
+            VerbSrc.InORange => VerbAccessibility.InORange,
+            VerbSrc.World => VerbAccessibility.InWorld,
+            VerbSrc.InWorld => VerbAccessibility.InWorld,
+            VerbSrc.Usr => VerbAccessibility.Usr,
+            VerbSrc.InUsr => VerbAccessibility.InUsr,
             VerbSrc.UsrLoc => VerbAccessibility.UsrLoc,
             VerbSrc.UsrGroup => VerbAccessibility.UsrGroup,
             null => null,
@@ -64,15 +69,13 @@ public sealed class ServerVerbSystem : VerbSystem {
             var def = verb.OwningType.ObjectDefinition;
 
             // Assign a default based on the type this verb is defined on
-            if (def.IsSubtypeOf(_objectTree.Mob) || def.IsSubtypeOf(_objectTree.Client)) {
-                verbAccessibility = VerbAccessibility.Usr;
-            } else if (def.IsSubtypeOf(_objectTree.Obj)) {
-                verbAccessibility = VerbAccessibility.UsrContents;
+            if (def.IsSubtypeOf(_objectTree.Obj)) {
+                verbAccessibility = VerbAccessibility.InUsr;
             } else if (def.IsSubtypeOf(_objectTree.Turf) || def.IsSubtypeOf(_objectTree.Area)) {
                 verbAccessibility = VerbAccessibility.View; // TODO: Range of 0
             } else {
-                _sawmill.Error($"Failed to determine the src property of {verb}, could not register it as a verb");
-                return;
+                // The default for everything else (/mob especially)
+                verbAccessibility = VerbAccessibility.Usr;
             }
         }
 

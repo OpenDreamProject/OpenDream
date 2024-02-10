@@ -5,13 +5,17 @@
 /// </summary>
 public enum VerbSrc {
     View,
+    InView,
     OView,
+    InOView,
     Range,
+    InRange,
     ORange,
+    InORange,
     World,
-    WorldContents,
+    InWorld,
     Usr,
-    UsrContents,
+    InUsr,
     UsrLoc,
     UsrGroup
 }

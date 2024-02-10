@@ -134,8 +134,16 @@ public sealed class ClientVerbSystem : VerbSystem {
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(ClientObjectReference target) {
         foreach (var verb in GetExecutableVerbs()) {
             DreamValueType? targetType = verb.VerbInfo.GetTargetType();
-            if (targetType == null)
+            if (targetType == null) {
+                // Verbs without a target but an "in view()/range()" accessibility will still show
+                if (verb.Src.Equals(target) &&
+                    verb.VerbInfo.Accessibility
+                        is VerbAccessibility.InRange or VerbAccessibility.InORange
+                        or VerbAccessibility.InView or VerbAccessibility.InOView)
+                    yield return verb;
+
                 continue;
+            }
 
             switch (target.Type) {
                 case ClientObjectReference.RefType.Entity:

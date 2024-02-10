@@ -87,12 +87,16 @@ public class VerbSystem : EntitySystem {
     [Serializable, NetSerializable]
     public enum VerbAccessibility : byte {
         View,
+        InView,
         OView,
+        InOView,
         Range,
+        InRange,
         ORange,
-        WorldContents,
-        UsrContents,
+        InORange,
+        InWorld,
         Usr,
+        InUsr,
         UsrLoc,
         UsrGroup
     }

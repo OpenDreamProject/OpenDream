@@ -79,30 +79,13 @@ public sealed class ClientVerbSystem : VerbSystem {
             seeInvisibility = _sightQuery.GetComponent(_playerManager.LocalEntity.Value).SeeInvisibility;
         }
 
-        bool CanSee(VerbInfo verb, ClientObjectReference src) {
-            if (verb.IsHidden(ignoreHiddenAttr, seeInvisibility ?? 0))
-                return false; // TODO: How do invisible client verbs work when you don't have a mob?
-
-            // Check the verb's "set src" allows us to execute this
-            switch (verb.Accessibility) {
-                case VerbAccessibility.Usr:
-                    if (!src.Equals(ourMob))
-                        return false;
-
-                    return true;
-                default:
-                    // TODO: All the other kinds
-                    return true;
-            }
-        }
-
         // First, the verbs attached to our client
         if (_clientVerbs != null) {
             foreach (var verbId in _clientVerbs) {
                 if (!_verbs.TryGetValue(verbId, out var verb))
                     continue;
-                if (!CanSee(verb, ClientObjectReference.Client))
-                    continue;
+                if (verb.IsHidden(ignoreHiddenAttr, seeInvisibility ?? 0))
+                    continue; // TODO: How do invisible client verbs work when you don't have a mob?
 
                 yield return (verbId, ClientObjectReference.Client, verb);
             }
@@ -119,10 +102,22 @@ public sealed class ClientVerbSystem : VerbSystem {
             foreach (var verbId in appearance.Verbs) {
                 if (!_verbs.TryGetValue(verbId, out var verb))
                     continue;
+                if (verb.IsHidden(ignoreHiddenAttr, seeInvisibility!.Value))
+                    continue;
 
                 var src = new ClientObjectReference(_entityManager.GetNetEntity(entity));
-                if (!CanSee(verb, src))
-                    continue;
+
+                // Check the verb's "set src" allows us to execute this
+                switch (verb.Accessibility) {
+                    case VerbAccessibility.Usr:
+                        if (!src.Equals(ourMob))
+                            continue;
+
+                        break;
+                    default:
+                        // TODO: All the other kinds
+                        break;
+                }
 
                 yield return (verbId, src, verb);
             }
@@ -139,14 +134,8 @@ public sealed class ClientVerbSystem : VerbSystem {
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(ClientObjectReference target) {
         foreach (var verb in GetExecutableVerbs()) {
             DreamValueType? targetType = verb.VerbInfo.GetTargetType();
-
-            if (targetType == null) {
-                // TODO: Ignore the verb if "set src =" is used instead of "set src in"
-                if (verb.Src.Equals(target))
-                    yield return verb;
-
+            if (targetType == null)
                 continue;
-            }
 
             switch (target.Type) {
                 case ClientObjectReference.RefType.Entity:

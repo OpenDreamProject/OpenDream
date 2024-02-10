@@ -64,9 +64,10 @@ public sealed class ServerVerbSystem : VerbSystem {
             var def = verb.OwningType.ObjectDefinition;
 
             // Assign a default based on the type this verb is defined on
-            if (def.IsSubtypeOf(_objectTree.Mob) || def.IsSubtypeOf(_objectTree.Obj)) {
-                // TODO: Mob is "= usr" and Obj is "in usr". There is a difference when it comes to the command line.
+            if (def.IsSubtypeOf(_objectTree.Mob) || def.IsSubtypeOf(_objectTree.Client)) {
                 verbAccessibility = VerbAccessibility.Usr;
+            } else if (def.IsSubtypeOf(_objectTree.Obj)) {
+                verbAccessibility = VerbAccessibility.UsrContents;
             } else if (def.IsSubtypeOf(_objectTree.Turf) || def.IsSubtypeOf(_objectTree.Area)) {
                 verbAccessibility = VerbAccessibility.View; // TODO: Range of 0
             } else {
@@ -164,8 +165,13 @@ public sealed class ServerVerbSystem : VerbSystem {
         if (verb.VerbId == null) // Not even a verb
             return false;
 
-        if (src is DreamObjectClient client && !client.ClientVerbs.Verbs.Contains(verb)) { // Inside client.verbs?
-            return false;
+        if (src is DreamObjectClient client) {
+            if (!client.ClientVerbs.Verbs.Contains(verb))
+                return false; // Not inside client.verbs
+
+            // Client verbs ignore "set src" checks
+            // Deviates from BYOND, where anything but usr and world shows the verb in the statpanel but is not executable
+            return true;
         } else if (src is DreamObjectAtom atom) {
             var appearance = _atomManager.MustGetAppearance(atom);
 

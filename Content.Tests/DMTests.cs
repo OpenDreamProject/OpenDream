@@ -140,12 +140,11 @@ public sealed class DMTests : ContentUnitTest {
 
         // Tick until our inner call has finished
         while (!callTask.IsCompleted || _procScheduler.HasProcsQueued || _procScheduler.HasProcsSleeping) {
+            GameTiming.CurTick = new GameTick(_gameTiming.CurTick.Value + 1);
             _dreamMan.Update();
             _taskManager.ProcessPendingTasks();
 
-            GameTiming.CurTick = new GameTick(_gameTiming.CurTick.Value + 1);
-
-            if (watch.Elapsed.TotalSeconds > 5) {
+            if (GameTiming.CurTick.Value > 50000) {
                 Assert.Fail("Test timed out");
             }
         }

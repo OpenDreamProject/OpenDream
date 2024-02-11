@@ -1784,7 +1784,7 @@ namespace OpenDreamRuntime.Procs {
                         throw exception;
                     }
 
-                    return ProcStatus.Returned;
+                    return ProcStatus.Continue;
                 }
 
                 return Thread.HandleDefer();

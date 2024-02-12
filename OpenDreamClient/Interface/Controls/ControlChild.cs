@@ -4,11 +4,9 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls;
 
+// todo: robust needs GridSplitter.
+// and a non-shit grid control.
 internal sealed class ControlChild : InterfaceControl {
-    // todo: robust needs GridSplitter.
-    // and a non-shit grid control.
-
-
     private ControlDescriptorChild ChildDescriptor => (ControlDescriptorChild)ElementDescriptor;
 
     private SplitContainer _grid;

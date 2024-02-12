@@ -26,10 +26,11 @@ internal sealed class DreamViewOverlay : Overlay {
     public bool ScreenOverlayEnabled = true;
     public bool MouseMapRenderEnabled;
 
-    public ShaderInstance BlockColorInstance;
     public Texture? MouseMap => _mouseMapRenderTarget?.Texture;
+    public readonly ShaderInstance BlockColorInstance;
     public readonly Dictionary<Color, RendererMetaData> MouseMapLookup = new();
     public readonly Dictionary<string, IRenderTexture> RenderSourceLookup = new();
+    public readonly HashSet<EntityUid> EntitiesInView = new();
 
     private const LookupFlags MapLookupFlags = LookupFlags.Approximate | LookupFlags.Uncontained;
 
@@ -74,7 +75,6 @@ internal sealed class DreamViewOverlay : Overlay {
 
     // Defined here so it isn't recreated every frame
     private ViewAlgorithm.Tile?[,]? _tileInfo;
-    private readonly HashSet<EntityUid> _entities = new();
 
     public DreamViewOverlay(TransformSystem transformSystem, MapSystem mapSystem, EntityLookupSystem lookupSystem,
         ClientAppearanceSystem appearanceSystem, ClientScreenOverlaySystem screenOverlaySystem, ClientImagesSystem clientImagesSystem) {
@@ -150,15 +150,15 @@ internal sealed class DreamViewOverlay : Overlay {
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
             //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
-            _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB.Scale(1.2f), _entities, MapLookupFlags);
+            _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
         }
 
         var eyeTile = _mapSystem.GetTileRef(gridUid, grid, eyeCoords);
-        var tiles = CalculateTileVisibility(gridUid, grid, _entities, eyeTile, seeVis);
+        var tiles = CalculateTileVisibility(gridUid, grid, eyeTile, seeVis);
 
         RefreshRenderTargets(args.WorldHandle, viewportSize);
 
-        CollectVisibleSprites(tiles, gridUid, grid, eyeTile, _entities, seeVis, sight, args.WorldAABB);
+        CollectVisibleSprites(tiles, gridUid, grid, eyeTile, seeVis, sight, args.WorldAABB);
         ClearPlanes();
         ProcessSprites(worldHandle, viewportSize, args.WorldAABB);
 
@@ -576,7 +576,7 @@ internal sealed class DreamViewOverlay : Overlay {
         }
     }
 
-    private ViewAlgorithm.Tile?[,] CalculateTileVisibility(EntityUid gridUid, MapGridComponent grid, HashSet<EntityUid> entities, TileRef eyeTile, int seeVis) {
+    private ViewAlgorithm.Tile?[,] CalculateTileVisibility(EntityUid gridUid, MapGridComponent grid, TileRef eyeTile, int seeVis) {
         using var _ = _prof.Group("visible turfs");
 
         var viewRange = _interfaceManager.View;
@@ -613,7 +613,7 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         // Apply entities' opacity
-        foreach (EntityUid entity in entities) {
+        foreach (EntityUid entity in EntitiesInView) {
             // TODO use a sprite tree.
             if (!_spriteQuery.TryGetComponent(entity, out var sprite))
                 continue;
@@ -638,7 +638,7 @@ internal sealed class DreamViewOverlay : Overlay {
         return _tileInfo;
     }
 
-    private void CollectVisibleSprites(ViewAlgorithm.Tile?[,] tiles, EntityUid gridUid, MapGridComponent grid, TileRef eyeTile, HashSet<EntityUid> entities, int seeVis, SightFlags sight, Box2 worldAABB) {
+    private void CollectVisibleSprites(ViewAlgorithm.Tile?[,] tiles, EntityUid gridUid, MapGridComponent grid, TileRef eyeTile, int seeVis, SightFlags sight, Box2 worldAABB) {
         _spriteContainer.Clear();
 
         // This exists purely because the tiebreaker var needs to exist somewhere
@@ -664,7 +664,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         // Visible entities
         using (var _ = _prof.Group("process entities")) {
-            foreach (EntityUid entity in entities) {
+            foreach (EntityUid entity in EntitiesInView) {
                 // TODO use a sprite tree.
                 if (!_spriteQuery.TryGetComponent(entity, out var sprite))
                     continue;

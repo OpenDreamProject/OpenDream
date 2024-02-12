@@ -367,11 +367,7 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
 
-        public void CreateFilteredListEnumerator(DreamPath filterType) {
-            if (!DMObjectTree.TryGetTypeId(filterType, out var filterTypeId)) {
-                DMCompiler.ForcedError($"Cannot filter enumeration by type {filterType}");
-            }
-
+        public void CreateFilteredListEnumerator(int filterTypeId) {
             WriteOpcode(DreamProcOpcode.CreateFilteredListEnumerator);
             WriteInt(filterTypeId);
         }

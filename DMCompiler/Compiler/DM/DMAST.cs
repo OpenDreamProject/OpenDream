@@ -1769,10 +1769,10 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public sealed class DMASTNewPath : DMASTExpression {
-        public readonly DMASTPath Path;
+        public readonly DMASTConstantPath Path;
         public readonly DMASTCallParameter[] Parameters;
 
-        public DMASTNewPath(Location location, DMASTPath path, DMASTCallParameter[] parameters) : base(location) {
+        public DMASTNewPath(Location location, DMASTConstantPath path, DMASTCallParameter[] parameters) : base(location) {
             Path = path;
             Parameters = parameters;
         }

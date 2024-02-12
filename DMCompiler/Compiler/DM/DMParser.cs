@@ -2082,7 +2082,7 @@ namespace DMCompiler.Compiler.DM {
                 DMASTCallParameter[]? parameters = ProcCall();
 
                 DMASTExpression? newExpression = type switch {
-                    DMASTConstantPath path => new DMASTNewPath(loc, path.Value, parameters),
+                    DMASTConstantPath path => new DMASTNewPath(loc, path, parameters),
                     DMASTExpression expr => new DMASTNewExpr(loc, expr, parameters),
                     null => new DMASTNewInferred(loc, parameters),
                 };

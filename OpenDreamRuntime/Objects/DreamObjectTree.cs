@@ -82,7 +82,7 @@ public sealed class DreamObjectTree {
         Strings = json.Strings ?? new();
 
         if (json.GlobalInitProc is { } initProcDef) {
-            GlobalInitProc = new DMProc(0, Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
+            GlobalInitProc = new DMProc(0, Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler, _verbSystem);
         } else {
             GlobalInitProc = null;
         }
@@ -400,7 +400,7 @@ public sealed class DreamObjectTree {
     public DreamProc LoadProcJson(int id, ProcDefinitionJson procDefinition) {
         TreeEntry owningType = Types[procDefinition.OwningTypeId];
         return new DMProc(id, owningType, procDefinition, null, _dreamManager,
-            _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
+            _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler, _verbSystem);
     }
 
     private void LoadProcsFromJson(ProcDefinitionJson[]? jsonProcs, int[]? jsonGlobalProcs) {

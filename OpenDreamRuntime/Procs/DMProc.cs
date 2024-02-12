@@ -26,10 +26,11 @@ namespace OpenDreamRuntime.Procs {
         public readonly IDreamDebugManager DreamDebugManager;
         public readonly DreamResourceManager DreamResourceManager;
         public readonly DreamObjectTree ObjectTree;
+        public readonly ServerVerbSystem VerbSystem;
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
+        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem verbSystem)
             : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
@@ -39,11 +40,12 @@ namespace OpenDreamRuntime.Procs {
 
             AtomManager = atomManager;
             DreamManager = dreamManager;
+            ProcScheduler = procScheduler;
             DreamMapManager = dreamMapManager;
             DreamDebugManager = dreamDebugManager;
             DreamResourceManager = dreamResourceManager;
             ObjectTree = objectTree;
-            ProcScheduler = procScheduler;
+            VerbSystem = verbSystem;
         }
 
         public (string Source, int Line) GetSourceAtOffset(int offset) {

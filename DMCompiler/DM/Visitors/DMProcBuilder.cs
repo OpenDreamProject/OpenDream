@@ -112,6 +112,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatement(DMASTProcStatement statement) {
             switch (statement) {
+                case DMASTNullProcStatement: break;
                 case DMASTProcStatementExpression statementExpression: ProcessStatementExpression(statementExpression); break;
                 case DMASTProcStatementContinue statementContinue: ProcessStatementContinue(statementContinue); break;
                 case DMASTProcStatementGoto statementGoto: ProcessStatementGoto(statementGoto); break;

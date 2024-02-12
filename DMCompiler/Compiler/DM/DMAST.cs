@@ -37,6 +37,10 @@ namespace DMCompiler.Compiler.DM {
             throw new NotImplementedException();
         }
 
+        public void VisitNullProcStatement(DMASTNullProcStatement nullProcStatement) {
+            throw new NotImplementedException();
+        }
+
         public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) {
             throw new NotImplementedException();
         }
@@ -769,6 +773,14 @@ namespace DMCompiler.Compiler.DM {
 
         public override void Visit(DMASTVisitor visitor) {
             visitor.VisitObjectVarOverride(this);
+        }
+    }
+
+    /// Lone semicolon, analogous to null statements in C.
+    /// Main purpose is to suppress EmptyBlock emissions.
+    public sealed class DMASTNullProcStatement(Location location) : DMASTProcStatement(location) {
+        public override void Visit(DMASTVisitor visitor) {
+            visitor.VisitNullProcStatement(this);
         }
     }
 

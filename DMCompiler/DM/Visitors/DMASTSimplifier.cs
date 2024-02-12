@@ -53,6 +53,8 @@ namespace DMCompiler.DM.Visitors {
             }
         }
 
+        public void VisitNullProcStatement(DMASTNullProcStatement nullProcStatement) { }
+
         public void VisitProcStatementExpression(DMASTProcStatementExpression statementExpression) {
             SimplifyExpression(ref statementExpression.Expression);
         }

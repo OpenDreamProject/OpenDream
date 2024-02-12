@@ -75,8 +75,10 @@ public sealed class ClientVerbSystem : VerbSystem {
         ClientObjectReference? ourMob = null;
         sbyte? seeInvisibility = null;
         if (_playerManager.LocalEntity != null) {
+            _sightQuery.TryGetComponent(_playerManager.LocalEntity.Value, out var mobSight);
+
             ourMob = new ClientObjectReference(_entityManager.GetNetEntity(_playerManager.LocalEntity.Value));
-            seeInvisibility = _sightQuery.GetComponent(_playerManager.LocalEntity.Value).SeeInvisibility;
+            seeInvisibility = mobSight?.SeeInvisibility;
         }
 
         // First, the verbs attached to our client

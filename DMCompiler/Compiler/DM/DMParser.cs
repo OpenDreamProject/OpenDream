@@ -195,6 +195,7 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTStatement? Statement(bool requireDelimiter = true) {
             var loc = Current().Location;
+
             DMASTPath? path = Path();
             if (path is null)
                 return null;
@@ -619,6 +620,12 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTProcStatement? ProcStatement() {
             var loc = Current().Location;
+
+            if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
+                // Note that we do not consume the semicolon here
+                return new DMASTNullProcStatement(loc);
+            }
+
             var leadingColon = Check(TokenType.DM_Colon);
 
             DMASTExpression? expression = null;

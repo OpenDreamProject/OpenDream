@@ -139,7 +139,7 @@ public sealed class DreamConnection {
         _currentlyUpdatingStat = true;
         _statPanels.Clear();
 
-        DreamThread.Run("Stat", async (state) => {
+        DreamThread.Run("Stat", async state => {
             try {
                 var statProc = Client.GetProc("Stat");
 
@@ -188,13 +188,8 @@ public sealed class DreamConnection {
             return;
         }
 
-        DreamValue value = message.Type switch {
-            DreamValueType.Null => DreamValue.Null,
-            DreamValueType.Text or DreamValueType.Message => new DreamValue((string)message.Value),
-            DreamValueType.Num => new DreamValue((float)message.Value),
-            DreamValueType.Color => new DreamValue(((Color)message.Value).ToHexNoAlpha()),
-            _ => throw new Exception("Invalid prompt response '" + message.Type + "'")
-        };
+        if (!TryConvertPromptResponse(message.Type, message.Value, out var value))
+            throw new Exception($"Invalid prompt response '{value}'");
 
         promptEvent.Invoke(value);
         _promptEvents.Remove(message.PromptId);
@@ -471,5 +466,39 @@ public sealed class DreamConnection {
         };
 
         Session?.ConnectedClient.SendMessage(msg);
+    }
+
+    public bool TryConvertPromptResponse(DreamValueType type, object? value, out DreamValue converted) {
+        if (type.HasFlag(DreamValueType.Null) && value == null) {
+            converted = DreamValue.Null;
+            return true;
+        } else if (type.HasFlag(DreamValueType.Text) || type.HasFlag(DreamValueType.Message)) {
+            if (value is string strVal) {
+                converted = new(strVal);
+                return true;
+            }
+        } else if (type.HasFlag(DreamValueType.Num) && value is float numVal) {
+            converted = new DreamValue(numVal);
+            return true;
+        } else if (type.HasFlag(DreamValueType.Color) && value is Color colorVal) {
+            converted = new DreamValue(colorVal.ToHexNoAlpha());
+            return true;
+        } else if ((type & DreamValueType.AllAtomTypes) != 0x0 && value is ClientObjectReference clientRef) {
+            var atom = _dreamManager.GetFromClientReference(this, clientRef);
+
+            if (atom != null) {
+                if ((atom.IsSubtypeOf(_objectTree.Obj) && !type.HasFlag(DreamValueType.Obj)) ||
+                    (atom.IsSubtypeOf(_objectTree.Mob) && !type.HasFlag(DreamValueType.Mob))) {
+                    converted = default;
+                    return false;
+                }
+
+                converted = new(atom);
+                return true;
+            }
+        }
+
+        converted = default;
+        return false;
     }
 }

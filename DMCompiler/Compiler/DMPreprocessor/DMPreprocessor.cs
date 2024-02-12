@@ -12,7 +12,7 @@ namespace DMCompiler.Compiler.DMPreprocessor;
 /// The master class for handling DM preprocessing.
 /// This is an <see cref="IEnumerable"/>, and is usually accessed via its <see cref="Token"/> output in a for-loop.
 /// </summary>
-public sealed class DMPreprocessor : IEnumerable<Token> {
+public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
     public readonly List<string> IncludedMaps = new(8);
     public string? IncludedInterface;
 
@@ -24,7 +24,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     private bool _canUseDirective = true;
     private readonly HashSet<string> _includedFiles = new(5120); // Capacity Note: TG peaks at 4860 at time of writing
     private readonly Stack<Token> _unprocessedTokens = new(8192); // Capacity Note: TG peaks at 6802 at time of writing
-    private readonly bool _enableDirectives;
+
     private readonly Dictionary<string, DMMacro> _defines = new(12288) { // Capacity Note: TG peaks at 9827 at time of writing. Current value is arbitrarily 4096 * 3.
         { "__LINE__", new DMMacroLine() },
         { "__FILE__", new DMMacroFile() },
@@ -38,25 +38,6 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     /// </summary>
     private readonly Stack<bool?> _lastIfEvaluations = new(16);
     private Location _lastSeenIf = Location.Unknown; // used by the errors emitted for when the above var isn't empty at exit
-
-    private static readonly TokenType[] DirectiveTypes = {
-        TokenType.DM_Preproc_Include,
-        TokenType.DM_Preproc_Define,
-        TokenType.DM_Preproc_Undefine,
-        TokenType.DM_Preproc_If,
-        TokenType.DM_Preproc_Ifdef,
-        TokenType.DM_Preproc_Ifndef,
-        TokenType.DM_Preproc_Elif,
-        TokenType.DM_Preproc_Else,
-        TokenType.DM_Preproc_Warning,
-        TokenType.DM_Preproc_Error,
-        TokenType.DM_Preproc_EndIf,
-        TokenType.DM_Preproc_Pragma
-    };
-
-    public DMPreprocessor(bool enableDirectives) {
-        _enableDirectives = enableDirectives;
-    }
 
     public IEnumerator<Token> GetEnumerator() {
         while (_lexerStack.Count > 0) {
@@ -261,7 +242,7 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
     }
 
     private bool VerifyDirectiveUsage(Token token) {
-        if (!_enableDirectives) {
+        if (!enableDirectives) {
             DMCompiler.Emit(WarningCode.MisplacedDirective, token.Location, "Cannot use a preprocessor directive here");
             return false;
         }
@@ -486,13 +467,15 @@ public sealed class DMPreprocessor : IEnumerable<Token> {
             return false;
         }
 
-        List<Token> expandedTokens = macro.Expand(token, parameters);
-        for (int i = expandedTokens.Count - 1; i >= 0; i--) {
-            Token expandedToken = expandedTokens[i];
-            expandedToken.Location = token.Location;
+        List<Token>? expandedTokens = macro.Expand(token, parameters);
+        if (expandedTokens != null) {
+            for (int i = expandedTokens.Count - 1; i >= 0; i--) {
+                Token expandedToken = expandedTokens[i];
+                expandedToken.Location = token.Location;
 
-            // These tokens are pushed so that nested macros get processed
-            PushToken(expandedToken);
+                // These tokens are pushed so that nested macros get processed
+                PushToken(expandedToken);
+            }
         }
 
         return true;

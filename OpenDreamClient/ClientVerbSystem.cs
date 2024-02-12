@@ -3,6 +3,7 @@ using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
+using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Asynchronous;
 using Robust.Shared.Timing;
@@ -15,6 +16,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly ITaskManager _taskManager = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
+    [Dependency] private readonly IOverlayManager _overlayManager = default!;
 
     private EntityQuery<DMISpriteComponent> _spriteQuery;
     private EntityQuery<DreamMobSightComponent> _sightQuery;
@@ -68,13 +70,15 @@ public sealed class ClientVerbSystem : VerbSystem {
     /// Find all the verbs the client is currently capable of executing
     /// </summary>
     /// <param name="ignoreHiddenAttr">Whether to ignore "set hidden = TRUE"</param>
-    /// <returns>The ID, target, and information of every executable verb</returns>
+    /// <returns>The ID, src, and information of every executable verb</returns>
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(bool ignoreHiddenAttr = false) {
-        DMISpriteComponent? playerSprite = null;
+        ClientObjectReference? ourMob = null;
         sbyte? seeInvisibility = null;
         if (_playerManager.LocalEntity != null) {
-            playerSprite = _spriteQuery.GetComponent(_playerManager.LocalEntity.Value);
-            seeInvisibility = _sightQuery.GetComponent(_playerManager.LocalEntity.Value).SeeInvisibility;
+            _sightQuery.TryGetComponent(_playerManager.LocalEntity.Value, out var mobSight);
+
+            ourMob = new ClientObjectReference(_entityManager.GetNetEntity(_playerManager.LocalEntity.Value));
+            seeInvisibility = mobSight?.SeeInvisibility;
         }
 
         // First, the verbs attached to our client
@@ -89,25 +93,78 @@ public sealed class ClientVerbSystem : VerbSystem {
             }
         }
 
-        // Then, the verbs attached to our mob
-        if (playerSprite?.Icon.Appearance is { } playerAppearance) {
-            var playerNetEntity = _entityManager.GetNetEntity(_playerManager.LocalEntity);
+        // Then, the verbs on objects around us
+        var viewOverlay = _overlayManager.GetOverlay<DreamViewOverlay>();
+        foreach (var entity in viewOverlay.EntitiesInView) {
+            if (!_spriteQuery.TryGetComponent(entity, out var sprite))
+                continue;
+            if (sprite.Icon.Appearance is not { } appearance)
+                continue;
 
-            if (playerNetEntity != null) {
-                foreach (var verbId in playerAppearance.Verbs) {
-                    if (!_verbs.TryGetValue(verbId, out var verb))
-                        continue;
-                    if (verb.IsHidden(ignoreHiddenAttr, seeInvisibility!.Value))
-                        continue;
+            foreach (var verbId in appearance.Verbs) {
+                if (!_verbs.TryGetValue(verbId, out var verb))
+                    continue;
+                if (verb.IsHidden(ignoreHiddenAttr, seeInvisibility!.Value))
+                    continue;
 
-                    yield return (verbId, new(playerNetEntity.Value), verb);
+                var src = new ClientObjectReference(_entityManager.GetNetEntity(entity));
+
+                // Check the verb's "set src" allows us to execute this
+                switch (verb.Accessibility) {
+                    case VerbAccessibility.Usr:
+                        if (!src.Equals(ourMob))
+                            continue;
+
+                        break;
+                    default:
+                        // TODO: All the other kinds
+                        break;
                 }
+
+                yield return (verbId, src, verb);
             }
         }
+
+        // TODO: Turfs, Areas
     }
 
-    public bool TryGetVerbInfo(int verbId, out VerbInfo verbInfo) {
-        return _verbs.TryGetValue(verbId, out verbInfo);
+    /// <summary>
+    /// Find all the verbs the client is currently capable of executing on the given target
+    /// </summary>
+    /// <param name="target">The target of the verb</param>
+    /// <returns>The ID, src, and information of every executable verb</returns>
+    public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(ClientObjectReference target) {
+        foreach (var verb in GetExecutableVerbs()) {
+            DreamValueType? targetType = verb.VerbInfo.GetTargetType();
+            if (targetType == null) {
+                // Verbs without a target but an "in view()/range()" accessibility will still show
+                if (verb.Src.Equals(target) &&
+                    verb.VerbInfo.Accessibility
+                        is VerbAccessibility.InRange or VerbAccessibility.InORange
+                        or VerbAccessibility.InView or VerbAccessibility.InOView)
+                    yield return verb;
+
+                continue;
+            }
+
+            switch (target.Type) {
+                case ClientObjectReference.RefType.Entity:
+                    var entity = _entityManager.GetEntity(target.Entity);
+                    var isMob = _entityManager.HasComponent<DreamMobSightComponent>(entity);
+
+                    if ((targetType & DreamValueType.Mob) != 0x0 && isMob)
+                        yield return verb;
+                    if ((targetType & DreamValueType.Obj) != 0x0 && !isMob)
+                        yield return verb;
+
+                    break;
+                case ClientObjectReference.RefType.Turf:
+                    if ((targetType & DreamValueType.Turf) != 0x0)
+                        yield return verb;
+
+                    break;
+            }
+        }
     }
 
     /// <summary>

@@ -69,6 +69,7 @@ namespace DMCompiler.DM {
         public int Id;
         public Dictionary<string, int> GlobalVariables = new();
 
+        public VerbSrc? VerbSrc;
         public string? VerbName;
         public string? VerbCategory = string.Empty;
         public string? VerbDesc;
@@ -140,6 +141,7 @@ namespace DMCompiler.DM {
                 procDefinition.Attributes = Attributes;
             }
 
+            procDefinition.VerbSrc = VerbSrc;
             procDefinition.VerbName = VerbName;
             // Normally VerbCategory is "" by default and null to hide it, but we invert those during (de)serialization to reduce JSON size
             VerbCategory = VerbCategory switch {
@@ -365,11 +367,7 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
 
-        public void CreateFilteredListEnumerator(DreamPath filterType) {
-            if (!DMObjectTree.TryGetTypeId(filterType, out var filterTypeId)) {
-                DMCompiler.ForcedError($"Cannot filter enumeration by type {filterType}");
-            }
-
+        public void CreateFilteredListEnumerator(int filterTypeId) {
             WriteOpcode(DreamProcOpcode.CreateFilteredListEnumerator);
             WriteInt(filterTypeId);
         }

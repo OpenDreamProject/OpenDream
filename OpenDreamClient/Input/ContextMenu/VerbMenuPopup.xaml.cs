@@ -12,17 +12,15 @@ internal sealed partial class VerbMenuPopup : Popup {
 
     public VerbSelectedHandler? OnVerbSelected;
 
-    private readonly IEntityManager _entityManager;
     private readonly ClientVerbSystem? _verbSystem;
 
-    private readonly EntityUid _entity;
+    private readonly ClientObjectReference _target;
 
-    public VerbMenuPopup(IEntityManager entityManager, ClientVerbSystem? verbSystem, sbyte seeInvisible, EntityUid entity, MetaDataComponent? entityMetaData, DMISpriteComponent? entitySprite) {
+    public VerbMenuPopup(ClientVerbSystem? verbSystem, sbyte seeInvisible, ClientObjectReference target, MetaDataComponent? entityMetaData, DMISpriteComponent? entitySprite) {
         RobustXamlLoader.Load(this);
 
-        _entityManager = entityManager;
         _verbSystem = verbSystem;
-        _entity = entity;
+        _target = target;
 
         if (entityMetaData != null && !string.IsNullOrEmpty(entityMetaData.EntityDescription)) {
             DescLabel.Margin = new Thickness(4, 0, 4, 0);
@@ -31,26 +29,25 @@ internal sealed partial class VerbMenuPopup : Popup {
             Desc.Visible = false;
         }
 
-        if (verbSystem != null && entitySprite?.Icon.Appearance?.Verbs is { } verbIds) {
-            foreach (var verbId in verbIds) {
-                if (!verbSystem.TryGetVerbInfo(verbId, out var verbInfo))
-                    continue;
-                if (verbInfo.IsHidden(false, seeInvisible))
+        if (verbSystem != null) {
+            foreach (var verb in verbSystem.GetExecutableVerbs(_target)) {
+                if (verb.VerbInfo.IsHidden(false, seeInvisible))
                     continue;
 
-                AddVerb(verbId, verbInfo);
+                AddVerb(verb.Id, verb.Src, verb.VerbInfo);
             }
         }
     }
 
-    private void AddVerb(int verbId, VerbSystem.VerbInfo verbInfo) {
-        var netEntity = _entityManager.GetNetEntity(_entity);
+    private void AddVerb(int verbId, ClientObjectReference verbSrc, VerbSystem.VerbInfo verbInfo) {
         var button = new Button {
             Text = verbInfo.Name
         };
 
+        var takesTargetArg = verbInfo.GetTargetType() != null && !verbSrc.Equals(_target);
+
         button.OnPressed += _ => {
-            _verbSystem?.ExecuteVerb(new(netEntity), verbId);
+            _verbSystem?.ExecuteVerb(verbSrc, verbId, takesTargetArg ? [_target] : []);
             Close();
             OnVerbSelected?.Invoke();
         };

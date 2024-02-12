@@ -565,10 +565,20 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 return string.Empty;
             }
 
-            if (!element.TryGetProperty(queryValue, out var value))
-                _sawmill.Error($"Could not winget property {queryValue} on {element.Id}");
+            var multiQuery = queryValue.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if(multiQuery.Length > 1) {
+                var result = "";
+                foreach(var query in multiQuery) {
+                    if (!element.TryGetProperty(query, out var queryResult))
+                        _sawmill.Error($"Could not winget property {query} on {element.Id}");
+                    result += query+"="+queryResult + ";";
+                }
+                return result.TrimEnd(';');
+            } else if (element.TryGetProperty(queryValue, out var value))
+                return value;
 
-            return value;
+            _sawmill.Error($"Could not winget property {queryValue} on {element.Id}");
+            return string.Empty;
         }
 
         var elementIds = controlId.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);

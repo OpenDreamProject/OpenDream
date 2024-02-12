@@ -68,6 +68,9 @@ public abstract class InterfaceControl : InterfaceElement {
             case "is-disabled":
                 value = ControlDescriptor.IsDisabled.ToString();
                 return true;
+            case "pos":
+                value = $"{UIElement.Position.X},{UIElement.Position.Y}";
+                return true;
             default:
                 return base.TryGetProperty(property, out value);
         }

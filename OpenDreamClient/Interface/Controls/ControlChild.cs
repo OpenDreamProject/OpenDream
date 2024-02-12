@@ -87,4 +87,14 @@ internal sealed class ControlChild : InterfaceControl {
 
         _grid.SplitFraction = ChildDescriptor.Splitter / 100f;
     }
+
+        public override bool TryGetProperty(string property, out string value) {
+        switch (property) {
+            case "splitter":
+                value = $"{_grid.SplitFraction * 100}";
+                return true;
+            default:
+                return base.TryGetProperty(property, out value);
+        }
+    }
 }

@@ -123,9 +123,9 @@ public class DMASTVarDeclExpression(Location location, DMASTPath path) : DMASTEx
     public readonly DMASTPath DeclPath = path;
 }
 
-public sealed class DMASTNewPath(Location location, DMASTPath path, DMASTCallParameter[]? parameters)
+public sealed class DMASTNewPath(Location location, DMASTConstantPath path, DMASTCallParameter[]? parameters)
     : DMASTExpression(location) {
-    public readonly DMASTPath Path = path;
+    public readonly DMASTConstantPath Path = path;
     public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 

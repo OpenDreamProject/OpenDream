@@ -556,8 +556,14 @@ namespace DMCompiler.DM.Visitors {
 
             list.EmitPushValue(_dmObject, _proc);
             if (implicitTypeCheck != null) {
-                // Create an enumerator that will do the implicit istype() for us
-                _proc.CreateFilteredListEnumerator(implicitTypeCheck.Value);
+                if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
+                    // Create an enumerator that will do the implicit istype() for us
+                    _proc.CreateFilteredListEnumerator(filterTypeId);
+                } else {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
+                        $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");
+                    _proc.CreateListEnumerator();
+                }
             } else {
                 _proc.CreateListEnumerator();
             }

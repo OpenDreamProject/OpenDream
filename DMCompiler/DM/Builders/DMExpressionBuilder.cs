@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using DMCompiler.Compiler;
 using Resource = DMCompiler.DM.Expressions.Resource;
 using DMCompiler.Compiler.DM.AST;
@@ -193,7 +194,7 @@ internal static class DMExpressionBuilder {
                     BuildExpression(ternary.B, dmObject, proc, inferredPath),
                     BuildExpression(ternary.C ?? new DMASTConstantNull(ternary.Location), dmObject, proc, inferredPath));
             case DMASTNewPath newPath:
-                if (BuildExpression(newPath.Path, dmObject, proc, inferredPath) is not Path path) {
+                if (BuildExpression(newPath.Path, dmObject, proc, inferredPath) is not ConstantPath path) {
                     DMCompiler.Emit(WarningCode.BadExpression, newPath.Path.Location, "Expected a path expression");
                     return new Null(newPath.Location);
                 }
@@ -210,7 +211,7 @@ internal static class DMExpressionBuilder {
                     return new Null(newInferred.Location);
                 }
 
-                return new NewPath(newInferred.Location, new Path(newInferred.Location, dmObject, inferredPath.Value),
+                return new NewPath(newInferred.Location, new ConstantPath(newInferred.Location, dmObject, inferredPath.Value),
                     new ArgumentList(newInferred.Location, dmObject, proc, newInferred.Parameters, inferredPath));
             case DMASTPreIncrement preIncrement:
                 return new PreIncrement(preIncrement.Location, BuildExpression(preIncrement.Value, dmObject, proc, inferredPath));

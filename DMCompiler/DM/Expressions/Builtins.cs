@@ -63,7 +63,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    internal sealed class NewPath(Location location, Path targetPath, ArgumentList arguments) : DMExpression(location) {
+    internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
         public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -75,14 +75,14 @@ namespace DMCompiler.DM.Expressions {
             var argumentInfo = arguments.EmitArguments(dmObject, proc);
 
             switch (pathInfo.Value.Type) {
-                case Expressions.Path.PathType.TypeReference:
+                case ConstantPath.PathType.TypeReference:
                     proc.PushType(pathInfo.Value.Id);
                     break;
-                case Expressions.Path.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
                     proc.PushProc(pathInfo.Value.Id);
                     break;
-                case Expressions.Path.PathType.ProcStub:
-                case Expressions.Path.PathType.VerbStub:
+                case ConstantPath.PathType.ProcStub:
+                case ConstantPath.PathType.VerbStub:
                     DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
                     proc.PushNull();
                     return;

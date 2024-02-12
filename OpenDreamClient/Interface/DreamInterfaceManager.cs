@@ -759,6 +759,7 @@ public interface IDreamInterfaceManager {
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
 
+    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose);
     void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose);
     void RunCommand(string fullCommand);
     void StartRepeatingCommand(string command);

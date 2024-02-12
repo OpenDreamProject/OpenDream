@@ -569,9 +569,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             if(multiQuery.Length > 1) {
                 var result = "";
                 foreach(var query in multiQuery) {
-                    if (!element.TryGetProperty(query, out var queryresult))
+                    if (!element.TryGetProperty(query, out var queryResult))
                         _sawmill.Error($"Could not winget property {query} on {element.Id}");
-                    result += query+"="+queryresult + ";";
+                    result += query+"="+queryResult + ";";
                 }
                 return result.TrimEnd(';');
             } else if (element.TryGetProperty(queryValue, out var value))

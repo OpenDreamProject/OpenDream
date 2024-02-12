@@ -290,7 +290,7 @@ public sealed class ControlWindow : InterfaceControl {
                     return true;
                 }
             case "is-minimized":
-                if(_myWindow.osWindow is not null && _myWindow.osWindow.ClydeWindow is not null){
+                if(_myWindow.osWindow?.ClydeWindow != null){
                     value = _myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
                     return true;
                 } else if(_myWindow.clydeWindow is not null){
@@ -301,7 +301,7 @@ public sealed class ControlWindow : InterfaceControl {
                     return true;
                 }
             case "is-maximized": //TODO this is current "not isMinimised" because RT doesn't expose a maximised check
-                if(_myWindow.osWindow is not null && _myWindow.osWindow.ClydeWindow is not null){
+                if(_myWindow.osWindow?.ClydeWindow != null){
                     value = !_myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
                     return true;
                 } else if(_myWindow.clydeWindow is not null){

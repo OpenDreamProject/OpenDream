@@ -118,6 +118,7 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.PickWeighted:
             case DreamProcOpcode.PickUnweighted:
             case DreamProcOpcode.Spawn:
+            case DreamProcOpcode.Sleep:
             case DreamProcOpcode.BooleanOr:
             case DreamProcOpcode.BooleanAnd:
             case DreamProcOpcode.SwitchCase:

@@ -125,6 +125,7 @@ public enum TokenType : byte {
     DM_Slash,
     DM_SlashEquals,
     DM_Spawn,
+    DM_Sleep,
     DM_Star,
     DM_StarEquals,
     DM_StarStar,

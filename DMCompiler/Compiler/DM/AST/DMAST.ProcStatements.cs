@@ -14,6 +14,8 @@ public abstract class DMASTProcStatement(Location location) : DMASTNode(location
     }
 }
 
+public sealed class DMASTNullProcStatement(Location location) : DMASTProcStatement(location);
+
 public sealed class DMASTProcStatementExpression(Location location, DMASTExpression expression)
     : DMASTProcStatement(location) {
     public DMASTExpression Expression = expression;

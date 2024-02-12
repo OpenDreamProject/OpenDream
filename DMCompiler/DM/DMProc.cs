@@ -1,11 +1,11 @@
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler.DM;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DMCompiler.Compiler;
-using DMCompiler.DM.Visitors;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM {

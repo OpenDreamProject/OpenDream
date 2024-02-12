@@ -38,15 +38,9 @@ namespace DMCompiler.DM.Expressions {
     /// This doesn't actually contain the GlobalProc itself;
     /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
     /// </remarks>
-    sealed class GlobalProc : DMExpression {
-        private readonly string _name;
-
-        public GlobalProc(Location location, string name) : base(location) {
-            _name = name;
-        }
-
+    internal sealed class GlobalProc(Location location, string name) : DMExpression(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_name}\" as value");
+            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -55,8 +49,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public DMProc GetProc() {
-            if (!DMObjectTree.TryGetGlobalProc(_name, out var globalProc)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{_name}\"");
+            if (!DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
                 return DMObjectTree.GlobalInitProc; // Just give this, who cares
             }
 
@@ -117,7 +111,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             (DMObject? procOwner, DMProc? targetProc) = GetTargetProc(dmObject);
-            DoCompiletimeLinting(procOwner, targetProc);
+            DoCompileTimeLinting(procOwner, targetProc);
             if ((targetProc?.Attributes & ProcAttributes.Unimplemented) == ProcAttributes.Unimplemented) {
                 DMCompiler.UnimplementedWarning(Location, $"{procOwner?.Path.ToString() ?? "/"}.{targetProc.Name}() is not implemented");
             }
@@ -143,7 +137,7 @@ namespace DMCompiler.DM.Expressions {
         /// This is a good place to do some compile-time linting of any native procs that require it,
         /// such as native procs that check ahead of time if the number of arguments is correct (like matrix() or sin())
         /// </summary>
-        protected void DoCompiletimeLinting(DMObject? procOwner, DMProc? targetProc) {
+        private void DoCompileTimeLinting(DMObject? procOwner, DMProc? targetProc) {
             if(procOwner is null || procOwner.Path == DreamPath.Root) {
                 if (targetProc is null)
                     return;

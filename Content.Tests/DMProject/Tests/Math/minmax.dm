@@ -3,7 +3,8 @@
 	ASSERT(min(null, 1) == null)
 	ASSERT(min(null, -1) == -1)
 	ASSERT(min(1, null) == null)
-	ASSERT(min(0,null)==null)
+	ASSERT(min(0, null) == null)
+	ASSERT(min(null, 0) == 0)
 	ASSERT(min("a","b","c")=="a")
 	ASSERT(min("b","a","c")=="a")
 
@@ -11,6 +12,7 @@
 	ASSERT(max(null, 1) == 1)
 	ASSERT(max(null, -1) == null)
 	ASSERT(max(1, null) == 1)
-	ASSERT(max(0,null)==null)
+	ASSERT(max(0, null) == null)
+	ASSERT(max(null, 0) == 0)
 	ASSERT(max("a","b","c")=="c")
 	ASSERT(max("b","a","c")=="c")

@@ -50,6 +50,7 @@ public static class TgsPackaging {
     }
 
     private static void PublishCompiler(string platformRId, string targetOs) {
+        // TODO: Add a --compiler option to the package tool
         ProcessHelpers.RunCheck(new ProcessStartInfo {
             FileName = "dotnet",
             ArgumentList = {

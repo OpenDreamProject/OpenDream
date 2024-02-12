@@ -1,15 +1,13 @@
 using DMCompiler.Compiler.DMPreprocessor;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using String = System.String;
+using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
         private DreamPath _currentPath = DreamPath.Root;
-        private bool _allowVarDeclExpression = false;
+        private bool _allowVarDeclExpression;
 
         private static readonly TokenType[] AssignTypes = {
             TokenType.DM_Equals,
@@ -1656,6 +1654,11 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression? value = PathArray(ref path.Path);
                 DMASTExpression? possibleValues = null;
 
+                if (Check(TokenType.DM_DoubleSquareBracketEquals)) {
+                    Whitespace();
+                    value = Expression();
+                }
+
                 if (Check(TokenType.DM_Equals)) {
                     Whitespace();
                     value = Expression();
@@ -2079,7 +2082,7 @@ namespace DMCompiler.Compiler.DM {
                 DMASTCallParameter[]? parameters = ProcCall();
 
                 DMASTExpression? newExpression = type switch {
-                    DMASTConstantPath path => new DMASTNewPath(loc, path.Value, parameters),
+                    DMASTConstantPath path => new DMASTNewPath(loc, path, parameters),
                     DMASTExpression expr => new DMASTNewExpr(loc, expr, parameters),
                     null => new DMASTNewInferred(loc, parameters),
                 };

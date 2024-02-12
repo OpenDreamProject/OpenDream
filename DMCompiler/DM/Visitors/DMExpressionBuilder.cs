@@ -1,9 +1,7 @@
 using DMCompiler.Compiler.DM;
 using DMCompiler.DM.Expressions;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
-using Robust.Shared.Utility;
 using System;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Visitors;
 
@@ -195,18 +193,24 @@ internal static class DMExpressionBuilder {
                     BuildExpression(ternary.B, dmObject, proc, inferredPath),
                     BuildExpression(ternary.C ?? new DMASTConstantNull(ternary.Location), dmObject, proc, inferredPath));
             case DMASTNewPath newPath:
-                return new NewPath(newPath.Location,
-                    newPath.Path.Path,
+                if (BuildExpression(newPath.Path, dmObject, proc, inferredPath) is not Path path) {
+                    DMCompiler.Emit(WarningCode.BadExpression, newPath.Path.Location, "Expected a path expression");
+                    return new Null(newPath.Location);
+                }
+
+                return new NewPath(newPath.Location, path,
                     new ArgumentList(newPath.Location, dmObject, proc, newPath.Parameters, inferredPath));
             case DMASTNewExpr newExpr:
                 return new New(newExpr.Location,
                     BuildExpression(newExpr.Expression, dmObject, proc, inferredPath),
                     new ArgumentList(newExpr.Location, dmObject, proc, newExpr.Parameters, inferredPath));
             case DMASTNewInferred newInferred:
-                if (inferredPath is null)
-                    throw new CompileErrorException(newInferred.Location, "An inferred new requires a type!");
-                return new NewPath(newInferred.Location,
-                    inferredPath.Value,
+                if (inferredPath is null) {
+                    DMCompiler.Emit(WarningCode.BadExpression, newInferred.Location, "Could not infer a type");
+                    return new Null(newInferred.Location);
+                }
+
+                return new NewPath(newInferred.Location, new Path(newInferred.Location, dmObject, inferredPath.Value),
                     new ArgumentList(newInferred.Location, dmObject, proc, newInferred.Parameters, inferredPath));
             case DMASTPreIncrement preIncrement:
                 return new PreIncrement(preIncrement.Location, BuildExpression(preIncrement.Expression, dmObject, proc, inferredPath));
@@ -248,7 +252,7 @@ internal static class DMExpressionBuilder {
             case DMASTInitial initial:
                 return new Initial(initial.Location, BuildExpression(initial.Expression, dmObject, proc, inferredPath));
             case DMASTNameof nameof:
-                return new Nameof(nameof.Location, BuildExpression(nameof.Expression, dmObject, proc, inferredPath));
+                return BuildNameof(nameof, dmObject, proc, inferredPath);
             case DMASTExpressionIn expressionIn:
                 return new In(expressionIn.Location,
                     BuildExpression(expressionIn.Value, dmObject, proc, inferredPath),
@@ -720,6 +724,17 @@ internal static class DMExpressionBuilder {
         return new DimensionalList(list.Location, sizes);
     }
 
+    // nameof(x)
+    private static DMExpression BuildNameof(DMASTNameof nameof, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
+        var expr = BuildExpression(nameof.Expression, dmObject, proc, inferredPath);
+        if (expr.GetNameof(dmObject, proc) is { } name) {
+            return new Expressions.String(nameof.Location, name);
+        }
+
+        DMCompiler.Emit(WarningCode.BadArgument, nameof.Location, "nameof() requires a var, proc reference, or type path");
+        return new Null(nameof.Location);
+    }
+
     private static DMExpression BuildNewList(DMASTNewList newList, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
         DMExpression[] expressions = new DMExpression[newList.Parameters.Length];
 
@@ -816,7 +831,6 @@ internal static class DMExpressionBuilder {
         switch (call.CallParameters.Length) {
             default:
                 DMCompiler.Emit(WarningCode.TooManyArguments, call.Location, "Too many arguments for call()");
-                DebugTools.Assert(call.CallParameters.Length > 2); // This feels paranoid but, whatever
                 goto case 2; // Fallthrough!
             case 2: {
                 var a = DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);

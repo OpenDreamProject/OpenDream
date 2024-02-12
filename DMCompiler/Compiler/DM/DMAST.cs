@@ -1,11 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
+using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
-    public interface DMASTVisitor : ASTVisitor {
+    public interface DMASTVisitor {
         public void VisitFile(DMASTFile file) {
             throw new NotImplementedException();
         }
@@ -532,12 +531,8 @@ namespace DMCompiler.Compiler.DM {
         }
     }
 
-    public abstract class DMASTNode : ASTNode<DMASTVisitor> {
-        protected DMASTNode(Location location) {
-            Location = location;
-        }
-
-        public readonly Location Location;
+    public abstract class DMASTNode(Location location) {
+        public readonly Location Location = location;
 
         public abstract void Visit(DMASTVisitor visitor);
     }
@@ -1329,10 +1324,17 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public bool AllValuesConstant() {
-            return Values.All(value => value is {
-                Key: DMASTExpressionConstant,
-                Value: DMASTExpressionConstant
-            });
+            return Values.All(
+                value => (value is {
+                    Key: DMASTExpressionConstant,
+                    Value: DMASTExpressionConstant
+                })
+                ||
+                (value is {
+                    Key: DMASTExpressionConstant,
+                    Value: DMASTList valueList
+                } && valueList.AllValuesConstant())
+            );
         }
     }
 
@@ -1767,10 +1769,10 @@ namespace DMCompiler.Compiler.DM {
     }
 
     public sealed class DMASTNewPath : DMASTExpression {
-        public readonly DMASTPath Path;
+        public readonly DMASTConstantPath Path;
         public readonly DMASTCallParameter[] Parameters;
 
-        public DMASTNewPath(Location location, DMASTPath path, DMASTCallParameter[] parameters) : base(location) {
+        public DMASTNewPath(Location location, DMASTConstantPath path, DMASTCallParameter[] parameters) : base(location) {
             Path = path;
             Parameters = parameters;
         }

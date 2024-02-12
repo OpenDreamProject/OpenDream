@@ -1,15 +1,13 @@
-using OpenDreamShared.Compiler;
 using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
-using OpenDreamShared.Dream;
 using System;
 using DMCompiler.DM.Expressions;
-using OpenDreamShared.Dream.Procs;
 using System.Diagnostics;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Visitors {
-    sealed class DMProcBuilder {
+    internal sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
 
@@ -188,9 +186,73 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
             var attribute = statementSet.Attribute.ToLower();
 
-            // TODO deal with "src"
             if(attribute == "src") {
-                DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
+                // TODO: Would be much better if the parser was just more strict with the expression
+                switch (statementSet.Value) {
+                    case DMASTIdentifier {Identifier: "usr"}:
+                        _proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.InUsr : VerbSrc.Usr;
+                        if (statementSet.WasInKeyword)
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.contents' is unimplemented");
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "usr"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: var deref}])
+                            goto default;
+
+                        if (deref == "contents") {
+                            _proc.VerbSrc = VerbSrc.InUsr;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.contents' is unimplemented");
+                        }  else if (deref == "loc") {
+                            _proc.VerbSrc = VerbSrc.UsrLoc;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.loc' is unimplemented");
+                        } else if (deref == "group") {
+                            _proc.VerbSrc = VerbSrc.UsrGroup;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.group' is unimplemented");
+                        } else {
+                            goto default;
+                        }
+
+                        break;
+                    case DMASTIdentifier {Identifier: "world"}:
+                        _proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.InWorld : VerbSrc.World;
+                        if (statementSet.WasInKeyword)
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = world.contents' is unimplemented");
+                        else
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = world' is unimplemented");
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "world"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: "contents"}])
+                            goto default;
+
+                        _proc.VerbSrc = VerbSrc.InWorld;
+                        DMCompiler.UnimplementedWarning(statementSet.Location,
+                            "'set src = world.contents' is unimplemented");
+                        break;
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("view" or "oview")}}:
+                        // TODO: Ranges
+                        if (statementSet.WasInKeyword)
+                            _proc.VerbSrc = viewType == "view" ? VerbSrc.InView : VerbSrc.InOView;
+                        else
+                            _proc.VerbSrc = viewType == "view" ? VerbSrc.View : VerbSrc.OView;
+                        break;
+                    // range() and orange() are undocumented, but they work
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("range" or "orange")}}:
+                        // TODO: Ranges
+                        if (statementSet.WasInKeyword)
+                            _proc.VerbSrc = viewType == "range" ? VerbSrc.InRange : VerbSrc.InORange;
+                        else
+                            _proc.VerbSrc = viewType == "range" ? VerbSrc.Range : VerbSrc.ORange;
+                        break;
+                    default:
+                        DMCompiler.Emit(WarningCode.BadExpression, statementSet.Value.Location, "Invalid verb src");
+                        break;
+                }
+
                 return;
             }
 
@@ -556,8 +618,14 @@ namespace DMCompiler.DM.Visitors {
 
             list.EmitPushValue(_dmObject, _proc);
             if (implicitTypeCheck != null) {
-                // Create an enumerator that will do the implicit istype() for us
-                _proc.CreateFilteredListEnumerator(implicitTypeCheck.Value);
+                if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
+                    // Create an enumerator that will do the implicit istype() for us
+                    _proc.CreateFilteredListEnumerator(filterTypeId);
+                } else {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
+                        $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");
+                    _proc.CreateListEnumerator();
+                }
             } else {
                 _proc.CreateListEnumerator();
             }

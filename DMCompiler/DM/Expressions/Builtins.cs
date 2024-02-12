@@ -1,10 +1,9 @@
-using OpenDreamShared.Compiler;
+using DMCompiler.Bytecode;
 using DMCompiler.Compiler.DM;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
+using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
     // "abc[d]"
@@ -64,29 +63,33 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    sealed class NewPath : DMExpression {
-        private readonly DreamPath _targetPath;
-        private readonly ArgumentList _arguments;
-
-        public NewPath(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
-            _targetPath = targetPath;
-            _arguments = arguments;
-        }
+    internal sealed class NewPath(Location location, Path targetPath, ArgumentList arguments) : DMExpression(location) {
+        public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (!DMObjectTree.TryGetTypeId(_targetPath, out var typeId)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_targetPath} does not exist");
-
+            if (!targetPath.TryResolvePath(out var pathInfo)) {
+                proc.PushNull();
                 return;
             }
 
-            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+            var argumentInfo = arguments.EmitArguments(dmObject, proc);
 
-            proc.PushType(typeId);
+            switch (pathInfo.Value.Type) {
+                case Expressions.Path.PathType.TypeReference:
+                    proc.PushType(pathInfo.Value.Id);
+                    break;
+                case Expressions.Path.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                    proc.PushProc(pathInfo.Value.Id);
+                    break;
+                case Expressions.Path.PathType.ProcStub:
+                case Expressions.Path.PathType.VerbStub:
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
+                    proc.PushNull();
+                    return;
+            }
+
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
-
-        public override DreamPath? Path => _targetPath;
     }
 
     // locate()
@@ -591,19 +594,6 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    // nameof(x)
-    sealed class Nameof : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Nameof(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushString(_expr.GetNameof(dmObject, proc));
-        }
-    }
-
     // call(...)(...)
     sealed class CallStatement : DMExpression {
         private readonly DMExpression _a; // Procref, Object, LibName
@@ -644,6 +634,15 @@ namespace DMCompiler.DM.Expressions {
                 proc.PushType(dmObject.Id);
             }
         }
+
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            if (dmObject.Path.LastElement != null) {
+                return dmObject.Path.LastElement;
+            }
+
+            DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
+            return null;
+        }
     }
 
     // __PROC__
@@ -655,6 +654,8 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushProc(proc.Id);
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
     internal class Sin : DMExpression {

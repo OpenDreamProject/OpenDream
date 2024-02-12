@@ -155,11 +155,7 @@ internal struct ParsedKeybind {
     private static Dictionary<Key, string>? keyToKeyName;
 
     public static Key KeyNameToKey(string key) {
-        if (keyNameToKey.TryGetValue(key, out Key result)) {
-            return result;
-        } else {
-            return Keyboard.Key.Unknown;
-        }
+        return keyNameToKey.GetValueOrDefault(key, Keyboard.Key.Unknown);
     }
 
     public static string? KeyToKeyName(Key key) {
@@ -170,11 +166,7 @@ internal struct ParsedKeybind {
             }
         }
 
-        if (keyToKeyName.TryGetValue(key, out var result)) {
-            return result;
-        } else {
-            return null;
-        }
+        return keyToKeyName.GetValueOrDefault(key);
     }
 
     public static ParsedKeybind Parse(string keybind) {

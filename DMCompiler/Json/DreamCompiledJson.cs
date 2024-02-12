@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 
-namespace OpenDreamShared.Json;
+namespace DMCompiler.Json;
 
 public sealed class DreamCompiledJson {
     public DreamCompiledJsonMetadata Metadata { get; set; }
@@ -19,5 +19,5 @@ public sealed class DreamCompiledJsonMetadata {
     /// <summary>
     ///  Hash of all the <c>DreamProcOpcode</c>s
     /// </summary>
-    public string Version { get; set; }
+    public required string Version { get; set; }
 }

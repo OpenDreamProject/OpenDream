@@ -1,13 +1,12 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Threading.Tasks;
+using DMCompiler.Json;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Rendering;
 using OpenDreamRuntime.Resources;
-using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using Robust.Server.GameObjects;
 using Robust.Server.GameStates;
 using Robust.Server.Player;
@@ -65,6 +64,7 @@ public sealed class DreamObjectTree {
     private TransformSystem? _transformSystem;
     private PvsOverrideSystem? _pvsOverrideSystem;
     private MetaDataSystem? _metaDataSystem;
+    private ServerVerbSystem? _verbSystem;
 
     public void LoadJson(DreamCompiledJson json) {
         var types = json.Types ?? Array.Empty<DreamTypeJson>();
@@ -77,11 +77,12 @@ public sealed class DreamObjectTree {
         _entitySystemManager.TryGetEntitySystem(out _transformSystem);
         _entitySystemManager.TryGetEntitySystem(out _pvsOverrideSystem);
         _entitySystemManager.TryGetEntitySystem(out _metaDataSystem);
+        _entitySystemManager.TryGetEntitySystem(out _verbSystem);
 
         Strings = json.Strings ?? new();
 
         if (json.GlobalInitProc is { } initProcDef) {
-            GlobalInitProc = new DMProc(0, Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
+            GlobalInitProc = new DMProc(0, Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler, _verbSystem);
         } else {
             GlobalInitProc = null;
         }
@@ -162,6 +163,8 @@ public sealed class DreamObjectTree {
             throw new Exception("Cannot create objects of type /client");
         if (type.ObjectDefinition.IsSubtypeOf(Turf))
             throw new Exception("New turfs must be created by the map manager");
+        if (type.ObjectDefinition.IsSubtypeOf(Exception))
+            return new DreamObjectException(type.ObjectDefinition);
 
         return new DreamObject(type.ObjectDefinition);
     }
@@ -307,7 +310,7 @@ public sealed class DreamObjectTree {
         foreach (TreeEntry type in GetAllDescendants(Root)) {
             int typeId = type.Id;
             DreamTypeJson jsonType = types[typeId];
-            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, type);
+            var definition = new DreamObjectDefinition(_dreamManager, this, _atomManager, _dreamMapManager, _mapManager, _dreamResourceManager, _walkManager, _entityManager, _playerManager, _serializationManager, _appearanceSystem, _transformSystem, _pvsOverrideSystem, _metaDataSystem, _verbSystem, type);
 
             type.ObjectDefinition = definition;
             type.TreeIndex = treeIndex++;
@@ -343,13 +346,23 @@ public sealed class DreamObjectTree {
                 type.ParentEntry.ChildCount += type.ChildCount + 1;
         }
 
-        //Fifth pass: Set atom's name and text
+        // Fifth pass: Set atom's name and text
         foreach (TreeEntry type in GetAllDescendants(Atom)) {
             if (type.ObjectDefinition.Variables["name"].IsNull)
                 type.ObjectDefinition.Variables["name"] = new(type.Name.Replace("_", " "));
 
             if (type.ObjectDefinition.Variables["text"].IsNull && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name)) {
                 type.ObjectDefinition.Variables["text"] = new DreamValue(string.IsNullOrEmpty(name) ? string.Empty : name[..1]);
+            }
+        }
+
+        // Register verbs
+        if (_verbSystem != null) {
+            foreach (DreamProc proc in Procs) {
+                if (!proc.IsVerb)
+                    continue;
+
+                _verbSystem.RegisterVerb(proc);
             }
         }
     }
@@ -387,7 +400,7 @@ public sealed class DreamObjectTree {
     public DreamProc LoadProcJson(int id, ProcDefinitionJson procDefinition) {
         TreeEntry owningType = Types[procDefinition.OwningTypeId];
         return new DMProc(id, owningType, procDefinition, null, _dreamManager,
-            _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
+            _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler, _verbSystem);
     }
 
     private void LoadProcsFromJson(ProcDefinitionJson[]? jsonProcs, int[]? jsonGlobalProcs) {
@@ -395,8 +408,10 @@ public sealed class DreamObjectTree {
         if (jsonProcs != null) {
             Procs.EnsureCapacity(jsonProcs.Length);
 
-            foreach (var proc in jsonProcs) {
-                Procs.Add(LoadProcJson(Procs.Count, proc));
+            foreach (var procJson in jsonProcs) {
+                var proc = LoadProcJson(Procs.Count, procJson);
+
+                Procs.Add(proc);
             }
         }
 

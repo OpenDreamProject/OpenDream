@@ -1,9 +1,8 @@
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
-using OpenDreamShared.Dream;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x.y.z
@@ -239,6 +238,13 @@ namespace DMCompiler.DM.Expressions {
             }
 
             proc.AddLabel(endLabel);
+        }
+
+        // BYOND says the nameof is invalid if the chain is not purely field operations
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            return _operations.All(op => op is FieldOperation)
+                ? ((FieldOperation)_operations[^1]).Identifier
+                : null;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {

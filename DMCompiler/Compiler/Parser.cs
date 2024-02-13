@@ -3,15 +3,9 @@ using System.Collections.Generic;
 namespace DMCompiler.Compiler;
 
 public class Parser<SourceType> {
-    /// <summary> Includes errors and warnings accumulated by this parser. </summary>
-    /// <remarks> These initial capacities are arbitrary. We just assume there's a decent chance you'll get a handful of errors/warnings. </remarks>
-    public List<CompilerEmission> Emissions = new(8);
-
     protected Lexer<SourceType> _lexer;
     private Token _currentToken;
     private readonly Stack<Token> _tokenStack = new(1);
-    /// <summary>The maximum number of errors or warnings we'd ever place into <see cref="Emissions"/>.</summary>
-    protected const int MAX_EMISSIONS_RECORDED = 50_000_000;
 
     protected Parser(Lexer<SourceType> lexer) {
         _lexer = lexer;
@@ -95,12 +89,10 @@ public class Parser<SourceType> {
     /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
     /// </remarks>
     protected void Error(string message, bool throwException = true) {
-        CompilerEmission error = new CompilerEmission(ErrorLevel.Error, _currentToken.Location, message);
+        DMCompiler.ForcedError(_currentToken.Location, message);
 
-        if(Emissions.Count < MAX_EMISSIONS_RECORDED)
-            Emissions.Add(error);
         if (throwException)
-            throw new CompileErrorException(error);
+            throw new CompileErrorException(message);
     }
 
     /// <summary>
@@ -111,6 +103,6 @@ public class Parser<SourceType> {
     /// </remarks>
     protected void Warning(string message, Token? token = null) {
         token ??= _currentToken;
-        Emissions.Add(new CompilerEmission(ErrorLevel.Warning, token?.Location, message));
+        DMCompiler.ForcedWarning(token.Value.Location, message);
     }
 }

@@ -21,6 +21,9 @@ internal static class DMExpressionBuilder {
 
     public static DMExpression BuildExpression(DMASTExpression expression, DMObject dmObject, DMProc proc, DreamPath? inferredPath = null) {
         switch (expression) {
+            case DMASTInvalidExpression:
+                return new Null(expression.Location);
+
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
             case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
@@ -398,7 +401,7 @@ internal static class DMExpressionBuilder {
                     break;
                 default:
                     DMCompiler.Emit(
-                        WarningCode.TooManyArguments,
+                        WarningCode.InvalidArgumentCount,
                         procCall.Location,
                         $"arglist() given {procCall.Parameters.Length} arguments, expecting 1");
                     break;
@@ -738,7 +741,7 @@ internal static class DMExpressionBuilder {
         for (int i = 0; i < expArr.Length; i++) {
             DMASTCallParameter parameter = addText.Parameters[i];
             if(parameter.Key != null)
-                DMCompiler.Emit(WarningCode.TooManyArguments, parameter.Location, "addtext() does not take named arguments");
+                DMCompiler.Emit(WarningCode.InvalidArgumentKey, parameter.Location, "addtext() does not take named arguments");
 
             expArr[i] = DMExpression.Create(dmObject,proc, parameter.Value, inferredPath);
         }
@@ -812,7 +815,7 @@ internal static class DMExpressionBuilder {
 
         switch (call.CallParameters.Length) {
             default:
-                DMCompiler.Emit(WarningCode.TooManyArguments, call.Location, "Too many arguments for call()");
+                DMCompiler.Emit(WarningCode.InvalidArgumentCount, call.Location, "Too many arguments for call()");
                 goto case 2; // Fallthrough!
             case 2: {
                 var a = DMExpression.Create(dmObject, proc, call.CallParameters[0].Value, inferredPath);
@@ -824,7 +827,7 @@ internal static class DMExpressionBuilder {
                 return new CallStatement(call.Location, a, procArgs);
             }
             case 0:
-                DMCompiler.Emit(WarningCode.BadArgument, call.Location, "Not enough arguments for call()");
+                DMCompiler.Emit(WarningCode.InvalidArgumentCount, call.Location, "Not enough arguments for call()");
                 return new CallStatement(call.Location, new Null(Location.Internal), procArgs);
         }
     }

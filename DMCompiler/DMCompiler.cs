@@ -154,10 +154,6 @@ public static class DMCompiler {
         VerbosePrint("Parsing");
         DMASTFile astFile = dmParser.File();
 
-        foreach (CompilerEmission warning in dmParser.Emissions) {
-            Emit(warning);
-        }
-
         DMASTFolder astSimplifier = new DMASTFolder();
         VerbosePrint("Constant folding");
         astSimplifier.FoldAst(astFile);
@@ -249,21 +245,15 @@ public static class DMCompiler {
 
             DMLexer lexer = new DMLexer(mapPath, preprocessor);
             DMMParser parser = new DMMParser(lexer, zOffset);
-            DreamMapJson map = parser.ParseMap();
 
-            bool hadErrors = false;
-            if (parser.Emissions.Count > 0) {
-                foreach (CompilerEmission error in parser.Emissions) {
-                    if (error.Level == ErrorLevel.Error)
-                        hadErrors = true;
+            try {
+                DreamMapJson map = parser.ParseMap();
 
-                    Emit(error);
-                }
-            }
-
-            zOffset = Math.Max(zOffset + 1, map.MaxZ);
-            if (!hadErrors)
+                zOffset = Math.Max(zOffset + 1, map.MaxZ);
                 maps.Add(map);
+            } catch (CompileErrorException e) {
+                Emit(e.Error);
+            }
         }
 
         return maps;

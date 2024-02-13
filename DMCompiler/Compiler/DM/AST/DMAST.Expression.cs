@@ -18,6 +18,11 @@ public abstract class DMASTExpression(Location location) : DMASTNode(location) {
     }
 }
 
+/// <summary>
+/// Used when there was an error parsing an expression
+/// </summary>
+public sealed class DMASTInvalidExpression(Location location) : DMASTExpression(location);
+
 public sealed class DMASTVoid(Location location) : DMASTExpression(location);
 
 public sealed class DMASTIdentifier(Location location, string identifier) : DMASTExpression(location) {

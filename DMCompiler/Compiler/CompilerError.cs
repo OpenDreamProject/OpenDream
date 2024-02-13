@@ -12,6 +12,7 @@ public enum WarningCode {
     BadDirective = 10,
     BadExpression = 11,
     MissingExpression = 12,
+    InvalidArgumentCount = 13,
     BadLabel = 19,
     InvalidReference = 50,
     BadArgument = 100,
@@ -41,7 +42,6 @@ public enum WarningCode {
     SoftReservedKeyword = 2000, // For keywords that SHOULD be reserved, but don't have to be. 'null' and 'defined', for instance
     DuplicateVariable = 2100,
     DuplicateProcDefinition = 2101,
-    TooManyArguments = 2200,
     PointlessParentCall = 2205,
     PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
     SuspiciousMatrixCall = 2207, // Calling matrix() with seemingly the wrong arguments

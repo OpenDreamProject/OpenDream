@@ -274,7 +274,7 @@ namespace DMCompiler.Compiler.DM {
                             Whitespace();
                             value = Expression();
                             RequireExpression(ref value);
-                        } else {
+                        } else if (value == null) {
                             value = new DMASTConstantNull(loc);
                         }
 

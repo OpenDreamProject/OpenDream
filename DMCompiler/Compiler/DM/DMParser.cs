@@ -1813,7 +1813,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (b is DMASTVoid) b = new DMASTConstantNull(b.Location);
 
-                Consume(TokenType.DM_Colon, WarningCode.BadToken, "Expected ':'");
+                Consume(TokenType.DM_Colon, "Expected ':'");
                 Whitespace();
 
                 DMASTExpression? c = ExpressionTernary(isTernaryB);

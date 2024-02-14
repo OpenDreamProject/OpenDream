@@ -9,24 +9,10 @@ using DMCompiler.Compiler.DM.AST;
 namespace DMCompiler.Compiler.DM;
 
 public partial class DMParser {
-    /// <returns> True if this will raise an error, false if not. You can use this return value to help improve error emission around this (depending on how permissive we're being)</returns>
-    protected bool Emit(WarningCode code, Location location, string message) {
-        return DMCompiler.Emit(code, location, message);
-    }
-
-    protected bool Emit(WarningCode code, string message) {
-        return Emit(code, CurrentLoc, message);
-    }
-
     /// <inheritdoc cref="Parser{SourceType}.Error(string, bool)"/>
     [Obsolete("This is not a desirable way for DMParser to emit an error, as errors should emit an error code and not cause unnecessary throws. Use DMParser's overrides of this method, instead.")]
     protected new void Error(string message, bool throwException = true) {
         base.Error(message, throwException);
-    }
-
-    protected void Consume(TokenType type, WarningCode code, string message) {
-        if (!Check(type))
-            Emit(code, CurrentLoc, message);
     }
 
     /// <summary>

@@ -73,21 +73,19 @@ public class Parser<SourceType> {
         return false;
     }
 
-    [Obsolete("This throws, which is not a desirable way for the compiler to emit an error.")]
     protected void Consume(TokenType type, string errorMessage) {
         if (!Check(type)) {
-            Error(errorMessage);
+            Emit(WarningCode.BadToken, errorMessage);
         }
     }
 
     /// <returns>The <see cref="TokenType"/> that was found.</returns>
-    [Obsolete("This throws, which is not a desirable way for the compiler to emit an error.")]
     protected TokenType Consume(TokenType[] types, string errorMessage) {
         foreach (TokenType type in types) {
             if (Check(type)) return type;
         }
 
-        Error(errorMessage);
+        Emit(WarningCode.BadToken, errorMessage);
         return TokenType.Unknown;
     }
 
@@ -113,5 +111,14 @@ public class Parser<SourceType> {
     protected void Warning(string message, Token? token = null) {
         token ??= _currentToken;
         DMCompiler.ForcedWarning(token.Value.Location, message);
+    }
+
+    /// <returns> True if this will raise an error, false if not. You can use this return value to help improve error emission around this (depending on how permissive we're being)</returns>
+    protected bool Emit(WarningCode code, Location location, string message) {
+        return DMCompiler.Emit(code, location, message);
+    }
+
+    protected bool Emit(WarningCode code, string message) {
+        return Emit(code, Current().Location, message);
     }
 }

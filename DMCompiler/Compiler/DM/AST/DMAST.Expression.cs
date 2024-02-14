@@ -21,6 +21,7 @@ public abstract class DMASTExpression(Location location) : DMASTNode(location) {
 /// <summary>
 /// Used when there was an error parsing an expression
 /// </summary>
+/// <remarks>Emit an error code before creating!</remarks>
 public sealed class DMASTInvalidExpression(Location location) : DMASTExpression(location);
 
 public sealed class DMASTVoid(Location location) : DMASTExpression(location);

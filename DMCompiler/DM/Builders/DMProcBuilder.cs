@@ -105,6 +105,7 @@ namespace DMCompiler.DM.Builders {
 
         public void ProcessStatement(DMASTProcStatement statement) {
             switch (statement) {
+                case DMASTInvalidProcStatement: break;
                 case DMASTNullProcStatement: break;
                 case DMASTProcStatementExpression statementExpression: ProcessStatementExpression(statementExpression); break;
                 case DMASTProcStatementContinue statementContinue: ProcessStatementContinue(statementContinue); break;

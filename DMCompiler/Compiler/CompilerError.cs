@@ -13,6 +13,8 @@ public enum WarningCode {
     BadExpression = 11,
     MissingExpression = 12,
     InvalidArgumentCount = 13,
+    InvalidVarDefinition = 14,
+    MissingBody = 15,
     BadLabel = 19,
     InvalidReference = 50,
     BadArgument = 100,

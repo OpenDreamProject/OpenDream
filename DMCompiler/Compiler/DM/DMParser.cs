@@ -211,15 +211,16 @@ namespace DMCompiler.Compiler.DM {
                     BracketWhitespace();
                     var parameters = DefinitionParameters(out var wasIndeterminate);
 
-                    if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma &&
-                        !wasIndeterminate) {
+                    if (Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.DM_Comma && !wasIndeterminate) {
                         if (parameters.Count > 0) // Separate error handling mentions the missing right-paren
-                            Error($"error: {parameters.Last().Name}: missing comma ',' or right-paren ')'", false);
+                            Emit(WarningCode.BadToken, $"{parameters.Last().Name}: missing comma ',' or right-paren ')'");
+
                         parameters.AddRange(DefinitionParameters(out wasIndeterminate));
                     }
+
                     if (!wasIndeterminate && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                         // BYOND doesn't specify the arg
-                        Error($"error: bad argument definition '{Current().PrintableText}'", false);
+                        Emit(WarningCode.BadToken, $"Bad argument definition '{Current().PrintableText}'");
                         Advance();
                         BracketWhitespace();
                         Check(TokenType.DM_Comma);
@@ -279,10 +280,10 @@ namespace DMCompiler.Compiler.DM {
 
                             Whitespace();
                             value = Expression();
-                            if (value == null) Error("Expected an expression");
+                            RequireExpression(ref value);
+                        } else {
+                            value = new DMASTConstantNull(loc);
                         }
-
-                        value ??= new DMASTConstantNull(loc);
 
                         var valType = AsTypes() ?? DMValueType.Anything;
                         var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
@@ -291,8 +292,14 @@ namespace DMCompiler.Compiler.DM {
                         if (Check(TokenType.DM_Comma)) {
                             Whitespace();
                             DMASTPath? newVarPath = Path();
-                            if (newVarPath == null) Error("Expected a var definition");
-                            if (newVarPath.Path.Elements.Length > 1) Error("Invalid var name"); //TODO: This is valid DM
+
+                            if (newVarPath == null) {
+                                Emit(WarningCode.InvalidVarDefinition, "Expected a var definition");
+                                break;
+                            } else if (newVarPath.Path.Elements.Length > 1) { // TODO: This is valid DM
+                                Emit(WarningCode.BadToken, newVarPath.Location, "Invalid var name");
+                                break;
+                            }
 
                             varPath = _currentPath.AddToPath("../" + newVarPath.Path.PathString);
                         } else {
@@ -323,7 +330,7 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 if (requireDelimiter && !PeekDelimiter() && Current().Type != TokenType.DM_Dedent && Current().Type != TokenType.DM_RightCurlyBracket && Current().Type != TokenType.EndOfFile) {
-                    Error("Expected end of object statement");
+                    Emit(WarningCode.BadToken, "Expected end of object statement");
                 }
 
                 return statement;
@@ -572,7 +579,7 @@ namespace DMCompiler.Compiler.DM {
                         setStatements.AddRange(blockInner.setStatements);
 
                     if (!Check(TokenType.DM_Dedent)) {
-                        Error("Expected end of proc statement", throwException: false);
+                        Emit(WarningCode.BadToken, "Expected end of proc statement");
                         LocateNextStatement();
                         Delimiter();
                     } else {
@@ -633,7 +640,8 @@ namespace DMCompiler.Compiler.DM {
             }
 
             if (leadingColon && expression is not DMASTIdentifier) {
-                Error("Expected a label identifier");
+                Emit(WarningCode.BadToken, expression?.Location ?? CurrentLoc, "Expected a label identifier");
+                return new DMASTInvalidProcStatement(loc);
             }
 
             if (expression != null) {
@@ -663,8 +671,11 @@ namespace DMCompiler.Compiler.DM {
                         if (leftShift.RHS.GetUnwrapped() is DMASTProcCall {Callable: DMASTCallableProcIdentifier identifier} procCall) {
                             switch (identifier.Identifier) {
                                 case "browse": {
-                                    if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
-                                        Error("browse() requires 1 or 2 parameters");
+                                    if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) {
+                                        Emit(WarningCode.InvalidArgumentCount, procCall.Location,
+                                            "browse() requires 1 or 2 parameters");
+                                        return new DMASTInvalidProcStatement(procCall.Location);
+                                    }
 
                                     DMASTExpression body = procCall.Parameters[0].Value;
                                     DMASTExpression options = (procCall.Parameters.Length == 2)
@@ -673,8 +684,11 @@ namespace DMCompiler.Compiler.DM {
                                     return new DMASTProcStatementBrowse(loc, leftShift.LHS, body, options);
                                 }
                                 case "browse_rsc": {
-                                    if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2)
-                                        Error("browse_rsc() requires 1 or 2 parameters");
+                                    if (procCall.Parameters.Length != 1 && procCall.Parameters.Length != 2) {
+                                        Emit(WarningCode.InvalidArgumentCount, procCall.Location,
+                                            "browse_rsc() requires 1 or 2 parameters");
+                                        return new DMASTInvalidProcStatement(procCall.Location);
+                                    }
 
                                     DMASTExpression file = procCall.Parameters[0].Value;
                                     DMASTExpression filepath = (procCall.Parameters.Length == 2)
@@ -683,16 +697,22 @@ namespace DMCompiler.Compiler.DM {
                                     return new DMASTProcStatementBrowseResource(loc, leftShift.LHS, file, filepath);
                                 }
                                 case "output": {
-                                    if (procCall.Parameters.Length != 2)
-                                        Error("output() requires 2 parameters");
+                                    if (procCall.Parameters.Length != 2) {
+                                        Emit(WarningCode.InvalidArgumentCount, procCall.Location,
+                                            "output() requires 2 parameters");
+                                        return new DMASTInvalidProcStatement(procCall.Location);
+                                    }
 
                                     DMASTExpression msg = procCall.Parameters[0].Value;
                                     DMASTExpression control = procCall.Parameters[1].Value;
                                     return new DMASTProcStatementOutputControl(loc, leftShift.LHS, msg, control);
                                 }
                                 case "ftp": {
-                                    if (procCall.Parameters.Length is not 1 and not 2)
-                                        Error("ftp() requires 1 or 2 parameters");
+                                    if (procCall.Parameters.Length is not 1 and not 2) {
+                                        Emit(WarningCode.InvalidArgumentCount, procCall.Location,
+                                            "ftp() requires 1 or 2 parameters");
+                                        return new DMASTInvalidProcStatement(procCall.Location);
+                                    }
 
                                     DMASTExpression file = procCall.Parameters[0].Value;
                                     DMASTExpression name = (procCall.Parameters.Length == 2)
@@ -739,11 +759,18 @@ namespace DMCompiler.Compiler.DM {
             bool wasSlash = Check(TokenType.DM_Slash);
 
             if (Check(TokenType.DM_Var)) {
-                if (wasSlash) Error("Unsupported root variable declaration");
+                if (wasSlash) {
+                    Emit(WarningCode.InvalidVarDefinition, "Unsupported root variable declaration");
+                    // Go on to treat it as a normal var
+                }
 
                 Whitespace(); // We have to consume whitespace here since "var foo = 1" (for example) is valid DM code.
                 DMASTProcStatementVarDeclaration[]? vars = ProcVarEnd(allowMultiple);
-                if (vars == null) Error("Expected a var declaration");
+                if (vars == null) {
+                    Emit(WarningCode.InvalidVarDefinition, "Expected a var declaration");
+                    return new DMASTInvalidProcStatement(firstToken.Location);
+                }
+
                 if (vars.Length > 1)
                     return new DMASTAggregate<DMASTProcStatementVarDeclaration>(firstToken.Location, vars);
                 return vars[0];
@@ -767,9 +794,11 @@ namespace DMCompiler.Compiler.DM {
 
                 while (!Check(TokenType.DM_Dedent)) {
                     DMASTProcStatementVarDeclaration[]? varDecl = ProcVarEnd(true, path: varPath);
-                    if (varDecl == null) Error("Expected a var declaration");
-
-                    varDeclarations.AddRange(varDecl);
+                    if (varDecl != null) {
+                        varDeclarations.AddRange(varDecl);
+                    } else {
+                        Emit(WarningCode.InvalidVarDefinition, "Expected a var declaration");
+                    }
 
                     Whitespace();
                     Delimiter();
@@ -788,7 +817,10 @@ namespace DMCompiler.Compiler.DM {
                     DMASTProcStatementVarDeclaration[]? varDecl = ProcVarEnd(true, path: varPath);
                     Delimiter();
                     Whitespace();
-                    if (varDecl == null) Error("Expected a var declaration");
+                    if (varDecl == null) {
+                        Emit(WarningCode.InvalidVarDefinition, "Expected a var declaration");
+                        continue;
+                    }
 
                     varDeclarations.AddRange(varDecl);
                 }
@@ -827,8 +859,7 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(TokenType.DM_Equals)) {
                     Whitespace();
                     value = Expression();
-
-                    if (value == null) Error("Expected an expression");
+                    RequireExpression(ref value);
                 }
 
                 AsTypes();
@@ -837,7 +868,10 @@ namespace DMCompiler.Compiler.DM {
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
                     Whitespace();
                     varPath = Path();
-                    if (varPath == null) Error("Expected a var declaration");
+                    if (varPath == null) {
+                        Emit(WarningCode.InvalidVarDefinition, "Expected a var declaration");
+                        break;
+                    }
                 } else {
                     break;
                 }
@@ -912,15 +946,15 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 Token attributeToken = Current();
                 if(!Check(TokenType.DM_Identifier)) {
-                    Error("Expected an identifier for set declaration");
+                    Emit(WarningCode.BadToken, "Expected an identifier for set declaration");
                     return setDeclarations.ToArray();
                 }
                 Whitespace();
-                TokenType consumed = Consume(new TokenType[] { TokenType.DM_Equals, TokenType.DM_In },"Expected a 'in' or '=' for set declaration");
+                TokenType consumed = Consume(new[] { TokenType.DM_Equals, TokenType.DM_In },"Expected a 'in' or '=' for set declaration");
                 bool wasInKeyword = (consumed == TokenType.DM_In);
                 Whitespace();
                 DMASTExpression? value = Expression();
-                if (value == null) Error("Expected an expression");
+                RequireExpression(ref value);
                 //AsTypes(); // Intentionally not done because the 'as' keyword just kinda.. doesn't work here. I dunno.
 
                 setDeclarations.Add(new DMASTProcStatementSet(loc, attributeToken.Text, value, wasInKeyword));
@@ -995,7 +1029,7 @@ namespace DMCompiler.Compiler.DM {
                 bool hasParenthesis = Check(TokenType.DM_LeftParenthesis);
                 Whitespace();
                 DMASTExpression? value = Expression();
-                if (value == null) Error("Expected value to delete");
+                RequireExpression(ref value, "Expected value to delete");
                 if (hasParenthesis) ConsumeRightParenthesis();
 
                 return new DMASTProcStatementDel(loc, value);
@@ -1013,8 +1047,8 @@ namespace DMCompiler.Compiler.DM {
 
                 DMASTProcStatementSet[] sets = ProcSetEnd(true);
                 if (sets.Length == 0) {
-                    Error("Expected set declaration");
-                    return null;
+                    Emit(WarningCode.InvalidSetStatement, "Expected set declaration");
+                    return new DMASTInvalidProcStatement(loc);
                 }
 
                 if (sets.Length > 1)
@@ -1038,7 +1072,7 @@ namespace DMCompiler.Compiler.DM {
 
                     if (!Check(TokenType.DM_RightParenthesis)) {
                         delay = Expression();
-                        if (delay == null) Error("Expected an expression");
+                        RequireExpression(ref delay, "Expected a delay");
 
                         ConsumeRightParenthesis();
                     }
@@ -1138,11 +1172,11 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 _allowVarDeclExpression = false;
                 if (expr1 == null) {
-                    if (ForSeparatorTypes.Contains(Current().Type)) {
-                        expr1 = new DMASTConstantNull(loc);
-                    } else {
-                        Error("Expected 1st expression in for");
+                    if (!ForSeparatorTypes.Contains(Current().Type)) {
+                        Emit(WarningCode.BadExpression, "Expected 1st expression in for");
                     }
+
+                    expr1 = new DMASTConstantNull(loc);
                 }
 
                 if (Check(TokenType.DM_To)) {
@@ -1151,7 +1185,8 @@ namespace DMCompiler.Compiler.DM {
                         Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
                         return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody(loc));
                     } else {
-                        Error("Expected = before to in for");
+                        Emit(WarningCode.BadExpression, "Expected = before to in for");
+                        return new DMASTInvalidProcStatement(loc);
                     }
                 }
 
@@ -1175,11 +1210,11 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 DMASTExpression? expr2 = Expression();
                 if (expr2 == null) {
-                    if (ForSeparatorTypes.Contains(Current().Type)) {
-                        expr2 = new DMASTConstantInteger(loc, 1);
-                    } else {
-                        Error("Expected 2nd expression in for");
+                    if (!ForSeparatorTypes.Contains(Current().Type)) {
+                        Emit(WarningCode.BadExpression, "Expected 2nd expression in for");
                     }
+
+                    expr2 = new DMASTConstantInteger(loc, 1);
                 }
 
                 if (!Check(ForSeparatorTypes)) {
@@ -1194,11 +1229,11 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 DMASTExpression? expr3 = Expression();
                 if (expr3 == null) {
-                    if (Current().Type == TokenType.DM_RightParenthesis) {
-                        expr3 = new DMASTConstantNull(loc);
-                    } else {
-                        Error("Expected 3nd expression in for");
+                    if (Current().Type != TokenType.DM_RightParenthesis) {
+                        Emit(WarningCode.BadExpression, "Expected 3nd expression in for");
                     }
+
+                    expr3 = new DMASTConstantNull(loc);
                 }
 
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
@@ -1239,7 +1274,7 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
                 DMASTExpression? conditional = Expression();
-                if (conditional == null) Error("Expected conditional");
+                RequireExpression(ref conditional, "Expected a condition");
                 ConsumeRightParenthesis();
                 Check(TokenType.DM_Semicolon);
                 Whitespace();
@@ -1273,12 +1308,12 @@ namespace DMCompiler.Compiler.DM {
 
                 if (body == null) {
                     DMASTProcStatement? statement = ProcStatement();
-                    if (statement is null) {// This is consistently fatal in BYOND
-                        Error("Expected statement - do-while requires a non-empty block");
+                    if (statement is null) { // This is consistently fatal in BYOND
+                        Emit(WarningCode.MissingBody, "Expected statement - do-while requires a non-empty block");
                         //For the sake of argument, add a statement (avoids repetitive warning emissions down the line :^) )
-                        statement = new DMASTProcStatementContinue(loc);
+                        statement = new DMASTInvalidProcStatement(loc);
                     }
-                    body = new DMASTProcBlockInner(loc, new DMASTProcStatement[] { statement }, null);
+                    body = new DMASTProcBlockInner(loc, new[] { statement }, null);
                 }
 
                 Newline();
@@ -1288,7 +1323,7 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 Whitespace();
                 DMASTExpression? conditional = Expression();
-                if (conditional == null) Error("Expected conditional");
+                RequireExpression(ref conditional, "Expected a condition");
                 ConsumeRightParenthesis();
                 Whitespace();
 
@@ -1533,8 +1568,12 @@ namespace DMCompiler.Compiler.DM {
                 BracketWhitespace();
 
                 DMASTPick.PickValue? arg = PickArgument();
-                if (arg == null) Error("Expected a pick argument");
-                List<DMASTPick.PickValue> args = new() { arg.Value };
+                if (arg == null) {
+                    Emit(WarningCode.MissingExpression, "Expected a pick argument");
+                    arg = new(null, new DMASTInvalidExpression(CurrentLoc));
+                }
+
+                List<DMASTPick.PickValue> args = [arg.Value];
 
                 while (Check(TokenType.DM_Comma)) {
                     BracketWhitespace();
@@ -1545,7 +1584,7 @@ namespace DMCompiler.Compiler.DM {
                     } else {
                         //A comma at the end is allowed, but the call must immediately be closed
                         if (Current().Type != TokenType.DM_RightParenthesis) {
-                            Error("Expected a pick argument");
+                            Emit(WarningCode.MissingExpression, "Expected a pick argument");
                             break;
                         }
                     }
@@ -1565,7 +1604,7 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Semicolon)) {
                 Whitespace();
                 DMASTExpression? value = Expression();
-                if (value == null) Error("Expected an expression");
+                RequireExpression(ref value);
 
                 return new DMASTPick.PickValue(expression, value);
             } else if (expression != null) {
@@ -2128,7 +2167,7 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(TokenType.DM_Period)) {
                     DMASTPath? search = Path();
                     if (search == null) {
-                        Emit(WarningCode.MissingExpression, CurrentLoc, "Expected a path for an upward search");
+                        Emit(WarningCode.MissingExpression, "Expected a path for an upward search");
                         break;
                     }
 
@@ -2160,14 +2199,14 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 DMASTCallParameter[]? callParameters = ProcCall();
                 if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) {
-                    Emit(WarningCode.InvalidArgumentCount, CurrentLoc, "call()() must have 2 parameters");
+                    Emit(WarningCode.InvalidArgumentCount, "call()() must have 2 parameters");
                     return new DMASTInvalidExpression(loc);
                 }
 
                 Whitespace();
                 DMASTCallParameter[]? procParameters = ProcCall();
                 if (procParameters == null) {
-                    Emit(WarningCode.InvalidArgumentCount, CurrentLoc, "Expected proc parameters");
+                    Emit(WarningCode.InvalidArgumentCount, "Expected proc parameters");
                     procParameters = Array.Empty<DMASTCallParameter>();
                 }
 

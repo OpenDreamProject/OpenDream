@@ -72,19 +72,19 @@ public partial class DMParser {
     }
 
     private void ConsumeRightParenthesis() {
-        //A missing right parenthesis has to subtract 1 from the lexer's bracket nesting counter
-        //To keep indentation working correctly
+        // A missing right parenthesis has to subtract 1 from the lexer's bracket nesting counter
+        // To keep indentation working correctly
         if (!Check(TokenType.DM_RightParenthesis)) {
             ((DMLexer)_lexer).BracketNesting--;
-            Error("Expected ')'");
+            Emit(WarningCode.BadToken, "Expected ')'");
         }
     }
 
     private void ConsumeRightBracket() {
-        //Similar to ConsumeRightParenthesis()
+        // Similar to ConsumeRightParenthesis()
         if (!Check(TokenType.DM_RightBracket)) {
             ((DMLexer)_lexer).BracketNesting--;
-            Error("Expected ']'");
+            Emit(WarningCode.BadToken, "Expected ']'");
         }
     }
 
@@ -151,7 +151,8 @@ public partial class DMParser {
                         string escapeSequence = string.Empty;
 
                         if (i == tokenValue.Length - 1) {
-                            Error("Invalid escape sequence");
+                            Emit(WarningCode.BadToken, "Invalid escape sequence");
+                            break;
                         }
 
                         c = tokenValue[++i];
@@ -171,8 +172,10 @@ public partial class DMParser {
                             int utfCodeLength = Math.Min(utfCodeDigitsExpected.Value, tokenValue.Length - i);
                             var utfCode = tokenValue.AsSpan(i, utfCodeLength);
                             if (utfCodeLength < utfCodeDigitsExpected.Value || !TryConvertUtfCodeToString(utfCode, ref stringBuilder)) {
-                                Error($"Invalid Unicode macro \"\\{c}{utfCode}\"");
+                                Emit(WarningCode.BadToken, $"Invalid Unicode macro \"\\{c}{utfCode}\"");
+                                break;
                             }
+
                             i += utfCodeLength - 1; // -1, cause we have i++ in the current 'for' expression
                         } else if (char.IsLetter(c)) {
                             while (i < tokenValue.Length && char.IsLetter(tokenValue[i])) {
@@ -191,7 +194,8 @@ public partial class DMParser {
                                 case "proper":
                                 case "improper":
                                     if (stringBuilder.Length != 0) {
-                                        Error($"Escape sequence \"\\{escapeSequence}\" must come at the beginning of the string");
+                                        Emit(WarningCode.BadToken, $"Escape sequence \"\\{escapeSequence}\" must come at the beginning of the string");
+                                        break;
                                     }
 
                                     skipSpaces = true;
@@ -272,7 +276,7 @@ public partial class DMParser {
 
                                 case "Her":
                                 case "her":
-                                    Error("\"Her\" is a grammatically ambiguous pronoun. Use \\him or \\his instead");
+                                    Emit(WarningCode.BadToken, "\"Her\" is a grammatically ambiguous pronoun. Use \\him or \\his instead");
                                     break;
 
                                 case "himself":
@@ -308,7 +312,7 @@ public partial class DMParser {
                                         stringBuilder.Append('\t');
                                         stringBuilder.Append(escapeSequence.Skip(1).ToArray());
                                     } else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) { // This only exists to allow unimplements to fallthrough w/o a direct error
-                                        Error($"Invalid escape sequence \"\\{escapeSequence}\"");
+                                        Emit(WarningCode.BadToken, $"Invalid escape sequence \"\\{escapeSequence}\"");
                                     }
 
                                     break;
@@ -339,7 +343,7 @@ public partial class DMParser {
                                     stringBuilder.Append(escapeSequence);
                                     break;
                                 default: //Unimplemented escape sequence
-                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                    Emit(WarningCode.BadToken, "Invalid escape sequence \"\\" + escapeSequence + "\"");
                                     break;
                             }
                         }

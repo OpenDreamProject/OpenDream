@@ -33,6 +33,7 @@ public enum WarningCode {
     // 1000 - 1999 are reserved for preprocessor configuration.
     FileAlreadyIncluded = 1000,
     MissingIncludedFile = 1001,
+    InvalidWarningCode = 1002,
     MisplacedDirective = 1100,
     UndefineMissingDirective = 1101,
     DefinedMissingParen = 1150,

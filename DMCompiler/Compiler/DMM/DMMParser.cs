@@ -81,6 +81,7 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                             DMCompiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");
                         }
 
+                        CurrentPath = DreamPath.Root;
                         statement = Check(TokenType.DM_Semicolon) ? Statement() : null;
                     }
 

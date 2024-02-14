@@ -8,8 +8,8 @@ using DMCompiler.DM;
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser(DMLexer lexer) : Parser<Token>(lexer) {
         protected Location CurrentLoc => Current().Location;
+        protected DreamPath CurrentPath = DreamPath.Root;
 
-        private DreamPath _currentPath = DreamPath.Root;
         private bool _allowVarDeclExpression;
 
         private static readonly TokenType[] AssignTypes = [
@@ -167,10 +167,10 @@ namespace DMCompiler.Compiler.DM {
 
             do {
                 Whitespace();
-                DreamPath oldPath = _currentPath;
+                DreamPath oldPath = CurrentPath;
                 DMASTStatement? statement = Statement();
 
-                _currentPath = oldPath;
+                CurrentPath = oldPath;
 
                 if (statement != null) {
                     if (!PeekDelimiter() && Current().Type is not (TokenType.DM_Dedent or TokenType.DM_RightCurlyBracket or TokenType.EndOfFile)) {
@@ -195,11 +195,11 @@ namespace DMCompiler.Compiler.DM {
             if (path is null)
                 return null;
             Whitespace();
-            _currentPath = _currentPath.Combine(path.Path);
+            CurrentPath = CurrentPath.Combine(path.Path);
 
             //Proc definition
             if (Check(TokenType.DM_LeftParenthesis)) {
-                DMCompiler.VerbosePrint($"Parsing proc {_currentPath}()");
+                DMCompiler.VerbosePrint($"Parsing proc {CurrentPath}()");
                 BracketWhitespace();
                 var parameters = DefinitionParameters(out var wasIndeterminate);
 
@@ -245,18 +245,18 @@ namespace DMCompiler.Compiler.DM {
                     procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
                 }
 
-                return new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
+                return new DMASTProcDefinition(loc, CurrentPath, parameters.ToArray(), procBlock);
             }
 
             //Object definition
             if (Block() is { } block) {
-                DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
-                return new DMASTObjectDefinition(loc, _currentPath, block);
+                DMCompiler.VerbosePrint($"Parsed object {CurrentPath}");
+                return new DMASTObjectDefinition(loc, CurrentPath, block);
             }
 
             //Var definition(s)
-            if (_currentPath.FindElement("var") != -1) {
-                DreamPath varPath = _currentPath;
+            if (CurrentPath.FindElement("var") != -1) {
+                DreamPath varPath = CurrentPath;
                 List<DMASTObjectVarDefinition> varDefinitions = new();
 
                 while (true) {
@@ -290,7 +290,7 @@ namespace DMCompiler.Compiler.DM {
                             break;
                         }
 
-                        varPath = _currentPath.AddToPath("../" + newVarPath.Path.PathString);
+                        varPath = CurrentPath.AddToPath("../" + newVarPath.Path.PathString);
                     } else {
                         break;
                     }
@@ -307,12 +307,12 @@ namespace DMCompiler.Compiler.DM {
                 DMASTExpression? value = Expression();
                 RequireExpression(ref value);
 
-                return new DMASTObjectVarOverride(loc, _currentPath, value);
+                return new DMASTObjectVarOverride(loc, CurrentPath, value);
             }
 
             //Empty object definition
-            DMCompiler.VerbosePrint($"Parsed object {_currentPath}");
-            return new DMASTObjectDefinition(loc, _currentPath, null);
+            DMCompiler.VerbosePrint($"Parsed object {CurrentPath}");
+            return new DMASTObjectDefinition(loc, CurrentPath, null);
         }
 
         /// <summary>

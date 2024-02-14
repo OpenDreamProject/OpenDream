@@ -186,9 +186,6 @@ namespace DMCompiler.DM.Builders {
                 switch (statementSet.Value) {
                     case DMASTIdentifier {Identifier: "usr"}:
                         proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.InUsr : VerbSrc.Usr;
-                        if (statementSet.WasInKeyword)
-                            DMCompiler.UnimplementedWarning(statementSet.Location,
-                                "'set src = usr.contents' is unimplemented");
                         break;
                     case DMASTDereference {Expression: DMASTIdentifier{Identifier: "usr"}, Operations: var operations}:
                         if (operations is not [DMASTDereference.FieldOperation {Identifier: var deref}])
@@ -196,8 +193,6 @@ namespace DMCompiler.DM.Builders {
 
                         if (deref == "contents") {
                             proc.VerbSrc = VerbSrc.InUsr;
-                            DMCompiler.UnimplementedWarning(statementSet.Location,
-                                "'set src = usr.contents' is unimplemented");
                         }  else if (deref == "loc") {
                             proc.VerbSrc = VerbSrc.UsrLoc;
                             DMCompiler.UnimplementedWarning(statementSet.Location,

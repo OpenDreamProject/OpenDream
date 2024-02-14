@@ -12,7 +12,7 @@ namespace DMCompiler.Compiler.DM {
         private DreamPath _currentPath = DreamPath.Root;
         private bool _allowVarDeclExpression;
 
-        private static readonly TokenType[] AssignTypes = {
+        private static readonly TokenType[] AssignTypes = [
             TokenType.DM_Equals,
             TokenType.DM_PlusEquals,
             TokenType.DM_MinusEquals,
@@ -29,65 +29,61 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_ModulusEquals,
             TokenType.DM_ModulusModulusEquals,
             TokenType.DM_AssignInto
-        };
+        ];
 
         /// <remarks>This (and other similar TokenType[] sets here) is public because <see cref="DMPreprocessorParser"/> needs it.</remarks>
-        public static readonly TokenType[] ComparisonTypes = {
+        public static readonly TokenType[] ComparisonTypes = [
             TokenType.DM_EqualsEquals,
             TokenType.DM_ExclamationEquals,
             TokenType.DM_TildeEquals,
             TokenType.DM_TildeExclamation
-        };
+        ];
 
-        public static readonly TokenType[] LtGtComparisonTypes = {
+        public static readonly TokenType[] LtGtComparisonTypes = [
             TokenType.DM_LessThan,
             TokenType.DM_LessThanEquals,
             TokenType.DM_GreaterThan,
             TokenType.DM_GreaterThanEquals
-        };
+        ];
 
-        private static readonly TokenType[] ShiftTypes = {
+        private static readonly TokenType[] ShiftTypes = [
             TokenType.DM_LeftShift,
             TokenType.DM_RightShift
-        };
+        ];
 
-        public static readonly TokenType[] PlusMinusTypes = {
+        public static readonly TokenType[] PlusMinusTypes = [
             TokenType.DM_Plus,
-            TokenType.DM_Minus,
-        };
+            TokenType.DM_Minus
+        ];
 
-        public static readonly TokenType[] MulDivModTypes = {
+        public static readonly TokenType[] MulDivModTypes = [
             TokenType.DM_Star,
             TokenType.DM_Slash,
             TokenType.DM_Modulus,
             TokenType.DM_ModulusModulus
 
-        };
+        ];
 
-        private static readonly TokenType[] DereferenceTypes = {
+        private static readonly TokenType[] DereferenceTypes = [
             TokenType.DM_Period,
             TokenType.DM_Colon,
             TokenType.DM_QuestionPeriod,
             TokenType.DM_QuestionColon,
-            TokenType.DM_QuestionLeftBracket,
-        };
+            TokenType.DM_QuestionLeftBracket
+        ];
 
-        private static readonly TokenType[] WhitespacedDereferenceTypes = {
-            TokenType.DM_LeftBracket,
-        };
-
-        private static readonly TokenType[] WhitespaceTypes = {
+        private static readonly TokenType[] WhitespaceTypes = [
             TokenType.DM_Whitespace,
             TokenType.DM_Indent,
             TokenType.DM_Dedent
-        };
+        ];
 
-        private static readonly TokenType[] IdentifierTypes = {TokenType.DM_Identifier, TokenType.DM_Step};
+        private static readonly TokenType[] IdentifierTypes = [TokenType.DM_Identifier, TokenType.DM_Step];
 
         /// <summary>
         /// Used by <see cref="PathElement"/> to determine, keywords that may actually just be identifiers of a typename within a path, in a given context.
         /// </summary>
-        private static readonly TokenType[] ValidPathElementTokens = {
+        private static readonly TokenType[] ValidPathElementTokens = [
             TokenType.DM_Identifier,
             TokenType.DM_Var,
             TokenType.DM_Proc,
@@ -98,16 +94,16 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_Spawn,
             TokenType.DM_Do,
             TokenType.DM_While,
-            TokenType.DM_For,
+            TokenType.DM_For
             //BYOND fails on DM_In, don't include that
-        };
+        ];
 
-        private static readonly TokenType[] ForSeparatorTypes = {
+        private static readonly TokenType[] ForSeparatorTypes = [
             TokenType.DM_Semicolon,
             TokenType.DM_Comma
-        };
+        ];
 
-        private static readonly TokenType[] OperatorOverloadTypes = {
+        private static readonly TokenType[] OperatorOverloadTypes = [
             TokenType.DM_And,
             TokenType.DM_AndEquals,
             TokenType.DM_AssignInto,
@@ -142,8 +138,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_TildeEquals,
             TokenType.DM_TildeExclamation,
             TokenType.DM_Xor,
-            TokenType.DM_XorEquals,
-        };
+            TokenType.DM_XorEquals
+        ];
 
         public DMASTFile File() {
             var loc = Current().Location;
@@ -166,7 +162,7 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTFile(loc, new DMASTBlockInner(loc, statements.ToArray()));
         }
 
-        public List<DMASTStatement>? BlockInner() {
+        private List<DMASTStatement>? BlockInner() {
             List<DMASTStatement> statements = new();
 
             do {
@@ -192,7 +188,7 @@ namespace DMCompiler.Compiler.DM {
             return statements;
         }
 
-        public DMASTStatement? Statement() {
+        protected DMASTStatement? Statement() {
             var loc = CurrentLoc;
 
             DMASTPath? path = Path();
@@ -322,7 +318,7 @@ namespace DMCompiler.Compiler.DM {
         /// <summary>
         /// Tries to read in a path. Returns null if one cannot be constructed.
         /// </summary>
-        public DMASTPath? Path(bool expression = false) {
+        protected DMASTPath? Path(bool expression = false) {
             Token firstToken = Current();
             DreamPath.PathType pathType = DreamPath.PathType.Relative;
             bool hasPathTypeToken = true;
@@ -384,7 +380,7 @@ namespace DMCompiler.Compiler.DM {
         /// Extracts the text from this token if it is reasonable for it to appear as a typename in a path.
         /// </summary>
         /// <returns>The <see cref="Token.Text"/> if this is a valid path element, null otherwise.</returns>
-        public string? PathElement() {
+        private string? PathElement() {
             Token elementToken = Current();
             if (Check(ValidPathElementTokens)) {
                 return elementToken.Text;
@@ -393,7 +389,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTDimensionalList? PathArray(ref DreamPath path) {
+        private DMASTDimensionalList? PathArray(ref DreamPath path) {
             if (Current().Type == TokenType.DM_LeftBracket || Current().Type == TokenType.DM_DoubleSquareBracket) {
                 var loc = Current().Location;
 
@@ -430,7 +426,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public IDMASTCallable? Callable() {
+        private IDMASTCallable? Callable() {
             var loc = Current().Location;
             if (Check(TokenType.DM_SuperProc)) return new DMASTCallableSuper(loc);
             if (Check(TokenType.DM_Period)) return new DMASTCallableSelf(loc);
@@ -438,12 +434,12 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTIdentifier? Identifier() {
+        private DMASTIdentifier? Identifier() {
             Token token = Current();
             return Check(IdentifierTypes) ? new DMASTIdentifier(token.Location, token.Text) : null;
         }
 
-        public DMASTBlockInner? Block() {
+        private DMASTBlockInner? Block() {
             Token beforeBlockToken = Current();
             bool hasNewline = Newline();
 
@@ -457,7 +453,7 @@ namespace DMCompiler.Compiler.DM {
             return block;
         }
 
-        public DMASTBlockInner? BracedBlock() {
+        private DMASTBlockInner? BracedBlock() {
             var loc = Current().Location;
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 Whitespace();
@@ -474,7 +470,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTBlockInner? IndentedBlock() {
+        private DMASTBlockInner? IndentedBlock() {
             var loc = Current().Location;
             if (Check(TokenType.DM_Indent)) {
                 List<DMASTStatement>? blockInner = BlockInner();
@@ -490,7 +486,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcBlockInner? ProcBlock() {
+        private DMASTProcBlockInner? ProcBlock() {
             Token beforeBlockToken = Current();
             bool hasNewline = Newline();
 
@@ -504,7 +500,7 @@ namespace DMCompiler.Compiler.DM {
             return procBlock;
         }
 
-        public DMASTProcBlockInner? BracedProcBlock() {
+        private DMASTProcBlockInner? BracedProcBlock() {
             var loc = Current().Location;
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 DMASTProcBlockInner? block;
@@ -544,7 +540,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcBlockInner? IndentedProcBlock() {
+        private DMASTProcBlockInner? IndentedProcBlock() {
             var loc = Current().Location;
             if (Check(TokenType.DM_Indent)) {
                 List<DMASTProcStatement> statements = new();
@@ -572,7 +568,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public (List<DMASTProcStatement>?, List<DMASTProcStatement>?) ProcBlockInner() {
+        private (List<DMASTProcStatement>?, List<DMASTProcStatement>?) ProcBlockInner() {
             List<DMASTProcStatement> procStatements = new();
             List<DMASTProcStatement> setStatements = new(); // We have to store them separately because they're evaluated first
 
@@ -595,7 +591,7 @@ namespace DMCompiler.Compiler.DM {
             return (procStatements, setStatements);
         }
 
-        public DMASTProcStatement? ProcStatement() {
+        private DMASTProcStatement? ProcStatement() {
             var loc = Current().Location;
 
             if (Current().Type == TokenType.DM_Semicolon) { // A lone semicolon creates a "null statement" (like C)
@@ -724,7 +720,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatement? ProcVarDeclaration(bool allowMultiple = true) {
+        private DMASTProcStatement? ProcVarDeclaration(bool allowMultiple = true) {
             Token firstToken = Current();
             bool wasSlash = Check(TokenType.DM_Slash);
 
@@ -939,7 +935,7 @@ namespace DMCompiler.Compiler.DM {
             return setDeclarations.ToArray();
         }
 
-        public DMASTProcStatementReturn? Return() {
+        private DMASTProcStatementReturn? Return() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Return)) {
@@ -952,7 +948,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementBreak? Break() {
+        private DMASTProcStatementBreak? Break() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Break)) {
@@ -965,7 +961,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementContinue? Continue() {
+        private DMASTProcStatementContinue? Continue() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Continue)) {
@@ -978,7 +974,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatement? Goto() {
+        private DMASTProcStatement? Goto() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Goto)) {
@@ -996,7 +992,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementDel? Del() {
+        private DMASTProcStatementDel? Del() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Del)) {
@@ -1014,7 +1010,7 @@ namespace DMCompiler.Compiler.DM {
         }
 
         /// <returns>Either a <see cref="DMASTProcStatementSet"/> or a DMASTAggregate that acts as a container for them. May be null.</returns>
-        public DMASTProcStatement? Set() {
+        private DMASTProcStatement? Set() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Set)) {
@@ -1034,7 +1030,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementSpawn? Spawn() {
+        private DMASTProcStatementSpawn? Spawn() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Spawn)) {
@@ -1061,8 +1057,12 @@ namespace DMCompiler.Compiler.DM {
                 if (body == null) {
                     DMASTProcStatement? statement = ProcStatement();
 
-                    if (statement == null) Emit(WarningCode.BadExpression, "Expected body or statement");
-                    body = new DMASTProcBlockInner(loc, statement);
+                    if (statement != null) {
+                        body = new DMASTProcBlockInner(loc, statement);
+                    } else {
+                        Emit(WarningCode.BadExpression, "Expected body or statement");
+                        body = new DMASTProcBlockInner(loc);
+                    }
                 }
 
                 return new DMASTProcStatementSpawn(loc, delay ?? new DMASTConstantInteger(loc, 0), body);
@@ -1071,7 +1071,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementIf? If() {
+        private DMASTProcStatementIf? If() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_If)) {
@@ -1121,7 +1121,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatement? For() {
+        private DMASTProcStatement? For() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_For)) {
@@ -1233,7 +1233,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatement? While() {
+        private DMASTProcStatement? While() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_While)) {
@@ -1266,7 +1266,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementDoWhile? DoWhile() {
+        private DMASTProcStatementDoWhile? DoWhile() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Do)) {
@@ -1300,7 +1300,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementSwitch? Switch() {
+        private DMASTProcStatementSwitch? Switch() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Switch)) {
@@ -1320,7 +1320,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementSwitch.SwitchCase[]? SwitchCases() {
+        private DMASTProcStatementSwitch.SwitchCase[]? SwitchCases() {
             Token beforeSwitchBlock = Current();
             bool hasNewline = Newline();
 
@@ -1333,7 +1333,7 @@ namespace DMCompiler.Compiler.DM {
             return switchCases;
         }
 
-        public DMASTProcStatementSwitch.SwitchCase[]? BracedSwitchInner() {
+        private DMASTProcStatementSwitch.SwitchCase[]? BracedSwitchInner() {
             if (Check(TokenType.DM_LeftCurlyBracket)) {
                 Whitespace();
                 Newline();
@@ -1349,7 +1349,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementSwitch.SwitchCase[]? IndentedSwitchInner() {
+        private DMASTProcStatementSwitch.SwitchCase[]? IndentedSwitchInner() {
             if (Check(TokenType.DM_Indent)) {
                 DMASTProcStatementSwitch.SwitchCase[] switchInner = SwitchInner();
                 Consume(TokenType.DM_Dedent, "Expected \"if\" or \"else\"");
@@ -1360,7 +1360,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementSwitch.SwitchCase[] SwitchInner() {
+        private DMASTProcStatementSwitch.SwitchCase[] SwitchInner() {
             List<DMASTProcStatementSwitch.SwitchCase> switchCases = new();
             DMASTProcStatementSwitch.SwitchCase? switchCase = SwitchCase();
 
@@ -1374,7 +1374,7 @@ namespace DMCompiler.Compiler.DM {
             return switchCases.ToArray();
         }
 
-        public DMASTProcStatementSwitch.SwitchCase? SwitchCase() {
+        private DMASTProcStatementSwitch.SwitchCase? SwitchCase() {
             if (Check(TokenType.DM_If)) {
                 List<DMASTExpression> expressions = new();
 
@@ -1448,7 +1448,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementTryCatch? TryCatch() {
+        private DMASTProcStatementTryCatch? TryCatch() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Try)) {
@@ -1490,7 +1490,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTProcStatementThrow? Throw() {
+        private DMASTProcStatementThrow? Throw() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Throw)) {
@@ -1503,7 +1503,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementLabel Label(DMASTIdentifier expression) {
+        private DMASTProcStatementLabel Label(DMASTIdentifier expression) {
             Whitespace();
             Newline();
 
@@ -1512,7 +1512,7 @@ namespace DMCompiler.Compiler.DM {
             return new DMASTProcStatementLabel(expression.Location, expression.Identifier, body);
         }
 
-        public DMASTCallParameter[]? ProcCall() {
+        private DMASTCallParameter[]? ProcCall() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
 
@@ -1526,7 +1526,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTPick.PickValue[]? PickArguments() {
+        private DMASTPick.PickValue[]? PickArguments() {
             if (Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
 
@@ -1561,7 +1561,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTPick.PickValue? PickArgument() {
+        private DMASTPick.PickValue? PickArgument() {
             DMASTExpression? expression = Expression();
 
             if (Check(TokenType.DM_Semicolon)) {
@@ -1577,7 +1577,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTCallParameter[]? CallParameters() {
+        private DMASTCallParameter[]? CallParameters() {
             List<DMASTCallParameter> parameters = new();
             DMASTCallParameter? parameter = CallParameter();
             BracketWhitespace();
@@ -1601,7 +1601,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTCallParameter? CallParameter() {
+        private DMASTCallParameter? CallParameter() {
             DMASTExpression? expression = Expression();
             if (expression == null)
                 return null;
@@ -1620,7 +1620,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public List<DMASTDefinitionParameter> DefinitionParameters(out bool wasIndeterminate) {
+        private List<DMASTDefinitionParameter> DefinitionParameters(out bool wasIndeterminate) {
             List<DMASTDefinitionParameter> parameters = new();
             DMASTDefinitionParameter? parameter = DefinitionParameter(out wasIndeterminate);
 
@@ -1653,7 +1653,7 @@ namespace DMCompiler.Compiler.DM {
             return parameters;
         }
 
-        public DMASTDefinitionParameter? DefinitionParameter(out bool wasIndeterminate) {
+        private DMASTDefinitionParameter? DefinitionParameter(out bool wasIndeterminate) {
             DMASTPath? path = Path();
 
             if (path != null) {
@@ -1691,11 +1691,11 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTExpression? Expression() {
+        private DMASTExpression? Expression() {
             return ExpressionIn();
         }
 
-        public void ExpressionTo(out DMASTExpression endRange, out DMASTExpression? step) {
+        private void ExpressionTo(out DMASTExpression endRange, out DMASTExpression? step) {
             Whitespace();
             var endRangeExpr = ExpressionAssign();
             RequireExpression(ref endRangeExpr, "Missing end range");
@@ -1712,7 +1712,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTExpression? ExpressionIn() {
+        private DMASTExpression? ExpressionIn() {
             DMASTExpression? value = ExpressionAssign();
 
             if (value != null && Check(TokenType.DM_In)) {
@@ -1733,7 +1733,7 @@ namespace DMCompiler.Compiler.DM {
             return value;
         }
 
-        public DMASTExpression? ExpressionAssign() {
+        private DMASTExpression? ExpressionAssign() {
             DMASTExpression? expression = ExpressionTernary();
 
             if (expression != null) {
@@ -1766,7 +1766,7 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        public DMASTExpression? ExpressionTernary(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionTernary(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionOr(isTernaryB);
 
             if (a != null && Check(TokenType.DM_Question)) {
@@ -1788,7 +1788,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionOr(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionOr(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionAnd(isTernaryB);
             if (a != null) {
                 var loc = Current().Location;
@@ -1805,7 +1805,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionAnd(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionAnd(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionBinaryOr(isTernaryB);
 
             if (a != null) {
@@ -1823,7 +1823,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionBinaryOr(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionBinaryOr(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionBinaryXor(isTernaryB);
             if (a != null) {
                 var loc = Current().Location;
@@ -1840,7 +1840,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionBinaryXor(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionBinaryXor(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionBinaryAnd(isTernaryB);
             if (a != null) {
                 var loc = Current().Location;
@@ -1857,7 +1857,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionBinaryAnd(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionBinaryAnd(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionComparison(isTernaryB);
             if (a != null) {
                 var loc = Current().Location;
@@ -1874,7 +1874,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionComparison(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionComparison(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionBitShift(isTernaryB);
 
             if (a != null) {
@@ -1899,7 +1899,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionBitShift(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionBitShift(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionComparisonLtGt(isTernaryB);
 
             if (a != null) {
@@ -1922,7 +1922,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionComparisonLtGt(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionComparisonLtGt(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionAdditionSubtraction(isTernaryB);
 
             if (a != null) {
@@ -1947,7 +1947,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionAdditionSubtraction(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionAdditionSubtraction(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionMultiplicationDivisionModulus(isTernaryB);
 
             if (a != null) {
@@ -1970,7 +1970,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionMultiplicationDivisionModulus(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionMultiplicationDivisionModulus(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionPower(isTernaryB);
 
             if (a != null) {
@@ -1995,7 +1995,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionPower(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionPower(bool isTernaryB = false) {
             DMASTExpression? a = ExpressionUnary(isTernaryB);
 
             if (a != null) {
@@ -2013,7 +2013,7 @@ namespace DMCompiler.Compiler.DM {
             return a;
         }
 
-        public DMASTExpression? ExpressionUnary(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionUnary(bool isTernaryB = false) {
             var loc = CurrentLoc;
 
             if (Check(stackalloc[] {
@@ -2052,7 +2052,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTExpression? ExpressionSign(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionSign(bool isTernaryB = false) {
             Token token = Current();
 
             if (Check(PlusMinusTypes)) {
@@ -2077,7 +2077,7 @@ namespace DMCompiler.Compiler.DM {
             return ExpressionNew(isTernaryB);
         }
 
-        public DMASTExpression? ExpressionNew(bool isTernaryB = false) {
+        private DMASTExpression? ExpressionNew(bool isTernaryB = false) {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_New)) {
@@ -2099,7 +2099,7 @@ namespace DMCompiler.Compiler.DM {
             return ParseDereference(ExpressionPrimary(), true, isTernaryB);
         }
 
-        public DMASTExpression? ExpressionPrimary(bool allowParentheses = true) {
+        private DMASTExpression? ExpressionPrimary(bool allowParentheses = true) {
             var token = Current();
             var loc = token.Location;
 
@@ -2179,7 +2179,7 @@ namespace DMCompiler.Compiler.DM {
             return null;
         }
 
-        public DMASTExpression? Constant() {
+        protected DMASTExpression? Constant() {
             Token constantToken = Current();
 
             switch (constantToken.Type) {
@@ -2196,7 +2196,7 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        protected bool Newline() {
+        private bool Newline() {
             bool hasNewline = Check(TokenType.Newline);
 
             while (Check(TokenType.Newline)) {
@@ -2204,14 +2204,11 @@ namespace DMCompiler.Compiler.DM {
             return hasNewline;
         }
 
-        protected bool Whitespace(bool includeIndentation = false) {
+        private void Whitespace(bool includeIndentation = false) {
             if (includeIndentation) {
-                bool hadWhitespace = false;
-
-                while (Check(WhitespaceTypes)) hadWhitespace = true;
-                return hadWhitespace;
+                while (Check(WhitespaceTypes)) { }
             } else {
-                return Check(TokenType.DM_Whitespace);
+                Check(TokenType.DM_Whitespace);
             }
         }
 
@@ -2241,7 +2238,7 @@ namespace DMCompiler.Compiler.DM {
 
                         token = Current();
 
-                        if (!Check(WhitespacedDereferenceTypes)) {
+                        if (!Check(TokenType.DM_LeftBracket)) {
                             break;
                         }
                     }

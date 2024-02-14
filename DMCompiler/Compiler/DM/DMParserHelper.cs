@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
@@ -14,13 +15,31 @@ public partial class DMParser {
     }
 
     protected bool Emit(WarningCode code, string message) {
-        return Emit(code, Current().Location, message);
+        return Emit(code, CurrentLoc, message);
     }
 
     /// <inheritdoc cref="Parser{SourceType}.Error(string, bool)"/>
     [Obsolete("This is not a desirable way for DMParser to emit an error, as errors should emit an error code and not cause unnecessary throws. Use DMParser's overrides of this method, instead.")]
     protected new void Error(string message, bool throwException = true) {
         base.Error(message, throwException);
+    }
+
+    protected void Consume(TokenType type, WarningCode code, string message) {
+        if (!Check(type))
+            Emit(code, CurrentLoc, message);
+    }
+
+    /// <summary>
+    /// If the expression is null, emit an error and set it to a new <see cref="DMASTInvalidExpression" />
+    /// </summary>
+    /// <param name="expression">The expression that must have a value</param>
+    /// <param name="errorMessage">Message to error with if the expression is null</param>
+    protected void RequireExpression([NotNull] ref DMASTExpression? expression, string? errorMessage = null) {
+        if (expression != null)
+            return;
+
+        Emit(WarningCode.MissingExpression, CurrentLoc, errorMessage ?? "Expected an expression");
+        expression = new DMASTInvalidExpression(CurrentLoc);
     }
 
     protected bool PeekDelimiter() {

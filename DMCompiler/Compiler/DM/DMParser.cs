@@ -311,10 +311,7 @@ namespace DMCompiler.Compiler.DM {
                 if (statement == null && Check(TokenType.DM_Equals)) {
                     Whitespace();
                     DMASTExpression? value = Expression();
-                    if (value == null) {
-                        Emit(WarningCode.MissingExpression, CurrentLoc, "Expected an expression");
-                        value = new DMASTInvalidExpression(CurrentLoc);
-                    }
+                    RequireExpression(ref value);
 
                     statement = new DMASTObjectVarOverride(loc, _currentPath, value);
                 }
@@ -359,7 +356,7 @@ namespace DMCompiler.Compiler.DM {
 
             string? pathElement = PathElement();
             if (pathElement != null) {
-                List<string> pathElements = new() { pathElement };
+                List<string> pathElements = [pathElement];
                 bool operatorFlag = false;
                 while (pathElement != null && Check(TokenType.DM_Slash)) {
                     pathElement = PathElement();
@@ -1073,10 +1070,9 @@ namespace DMCompiler.Compiler.DM {
                 Consume(TokenType.DM_LeftParenthesis, "Expected '('");
                 BracketWhitespace();
                 DMASTExpression? condition = Expression();
-                if (condition == null) {
-                    Emit(WarningCode.MissingExpression, CurrentLoc, "Expected a condition");
-                    condition = new DMASTInvalidExpression(CurrentLoc);
-                } else if (condition is DMASTAssign) {
+                RequireExpression(ref condition, "Expected a condition");
+
+                if (condition is DMASTAssign) {
                     Emit(WarningCode.AssignmentInConditional, condition.Location, "Assignment in conditional");
                 }
 
@@ -1697,20 +1693,18 @@ namespace DMCompiler.Compiler.DM {
             return ExpressionIn();
         }
 
-        public void ExpressionTo(out DMASTExpression? endRange, out DMASTExpression? step) {
+        public void ExpressionTo(out DMASTExpression endRange, out DMASTExpression? step) {
             Whitespace();
-            endRange = ExpressionAssign();
+            var endRangeExpr = ExpressionAssign();
+            RequireExpression(ref endRangeExpr, "Missing end range");
             Whitespace();
 
-            if (endRange is null)
-                Error("Missing end range");
-
+            endRange = endRangeExpr;
             if (Check(TokenType.DM_Step)) {
                 Whitespace();
                 step = ExpressionAssign();
+                RequireExpression(ref step, "Missing step value");
                 Whitespace();
-                if (step is null)
-                    Error("Missing step value");
             } else {
                 step = null;
             }
@@ -1723,7 +1717,9 @@ namespace DMCompiler.Compiler.DM {
                 var loc = Current().Location;
                 Whitespace();
                 DMASTExpression? list = ExpressionAssign();
+                RequireExpression(ref list, "Expected a container to search in");
                 Whitespace();
+
                 if (Check(TokenType.DM_To)) {
                     ExpressionTo(out var endRange, out var step);
                     return new DMASTExpressionInRange(loc, value, list, endRange, step);
@@ -1743,27 +1739,24 @@ namespace DMCompiler.Compiler.DM {
                 if (Check(AssignTypes)) {
                     Whitespace();
                     DMASTExpression? value = ExpressionAssign();
+                    RequireExpression(ref value, "Expected a value");
 
-                    if (value != null) {
-                        switch (token.Type) {
-                            case TokenType.DM_Equals: return new DMASTAssign(token.Location, expression, value);
-                            case TokenType.DM_PlusEquals: return new DMASTAppend(token.Location, expression, value);
-                            case TokenType.DM_MinusEquals: return new DMASTRemove(token.Location, expression, value);
-                            case TokenType.DM_BarEquals: return new DMASTCombine(token.Location, expression, value);
-                            case TokenType.DM_BarBarEquals: return new DMASTLogicalOrAssign(token.Location, expression, value);
-                            case TokenType.DM_AndEquals: return new DMASTMask(token.Location, expression, value);
-                            case TokenType.DM_AndAndEquals: return new DMASTLogicalAndAssign(token.Location, expression, value);
-                            case TokenType.DM_StarEquals: return new DMASTMultiplyAssign(token.Location, expression, value);
-                            case TokenType.DM_SlashEquals: return new DMASTDivideAssign(token.Location, expression, value);
-                            case TokenType.DM_LeftShiftEquals: return new DMASTLeftShiftAssign(token.Location, expression, value);
-                            case TokenType.DM_RightShiftEquals: return new DMASTRightShiftAssign(token.Location, expression, value);
-                            case TokenType.DM_XorEquals: return new DMASTXorAssign(token.Location, expression, value);
-                            case TokenType.DM_ModulusEquals: return new DMASTModulusAssign(token.Location, expression, value);
-                            case TokenType.DM_ModulusModulusEquals: return new DMASTModulusModulusAssign(token.Location, expression, value);
-                            case TokenType.DM_AssignInto: return new DMASTAssignInto(token.Location, expression, value);
-                        }
-                    } else {
-                        Error("Expected a value");
+                    switch (token.Type) {
+                        case TokenType.DM_Equals: return new DMASTAssign(token.Location, expression, value);
+                        case TokenType.DM_PlusEquals: return new DMASTAppend(token.Location, expression, value);
+                        case TokenType.DM_MinusEquals: return new DMASTRemove(token.Location, expression, value);
+                        case TokenType.DM_BarEquals: return new DMASTCombine(token.Location, expression, value);
+                        case TokenType.DM_BarBarEquals: return new DMASTLogicalOrAssign(token.Location, expression, value);
+                        case TokenType.DM_AndEquals: return new DMASTMask(token.Location, expression, value);
+                        case TokenType.DM_AndAndEquals: return new DMASTLogicalAndAssign(token.Location, expression, value);
+                        case TokenType.DM_StarEquals: return new DMASTMultiplyAssign(token.Location, expression, value);
+                        case TokenType.DM_SlashEquals: return new DMASTDivideAssign(token.Location, expression, value);
+                        case TokenType.DM_LeftShiftEquals: return new DMASTLeftShiftAssign(token.Location, expression, value);
+                        case TokenType.DM_RightShiftEquals: return new DMASTRightShiftAssign(token.Location, expression, value);
+                        case TokenType.DM_XorEquals: return new DMASTXorAssign(token.Location, expression, value);
+                        case TokenType.DM_ModulusEquals: return new DMASTModulusAssign(token.Location, expression, value);
+                        case TokenType.DM_ModulusModulusEquals: return new DMASTModulusModulusAssign(token.Location, expression, value);
+                        case TokenType.DM_AssignInto: return new DMASTAssignInto(token.Location, expression, value);
                     }
                 }
             }
@@ -1772,19 +1765,18 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression? ExpressionTernary(bool isTernaryB = false) {
-            DMASTExpression a = ExpressionOr(isTernaryB);
+            DMASTExpression? a = ExpressionOr(isTernaryB);
 
             if (a != null && Check(TokenType.DM_Question)) {
                 Whitespace();
                 DMASTExpression? b = ExpressionTernary(isTernaryB: true);
+                RequireExpression(ref b);
+
                 if (b is DMASTVoid) b = new DMASTConstantNull(b.Location);
-                if (b == null) Error("Expected an expression");
 
-                if (!Check(TokenType.DM_Colon)) {
-                    Error("Expected ':'");
-                }
-
+                Consume(TokenType.DM_Colon, WarningCode.BadToken, "Expected ':'");
                 Whitespace();
+
                 DMASTExpression? c = ExpressionTernary(isTernaryB);
                 if (c is DMASTVoid) c = new DMASTConstantNull(c.Location);
 
@@ -1802,7 +1794,8 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(TokenType.DM_BarBar)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionAnd(isTernaryB);
-                    if (b == null) Error("Expected a second value");
+                    RequireExpression(ref b, "Expected a second value");
+
                     a = new DMASTOr(loc, a, b);
                 }
             }
@@ -1819,7 +1812,8 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(TokenType.DM_AndAnd)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionBinaryOr(isTernaryB);
-                    if (b == null) Error("Expected a second value");
+                    RequireExpression(ref b, "Expected a second value");
+
                     a = new DMASTAnd(loc, a, b);
                 }
             }
@@ -1828,14 +1822,15 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression? ExpressionBinaryOr(bool isTernaryB = false) {
-            DMASTExpression a = ExpressionBinaryXor(isTernaryB);
+            DMASTExpression? a = ExpressionBinaryXor(isTernaryB);
             if (a != null) {
                 var loc = Current().Location;
 
                 while (Check(TokenType.DM_Bar)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionBinaryXor(isTernaryB);
-                    if (b == null) Error("Expected an expression");
+                    RequireExpression(ref b);
+
                     a = new DMASTBinaryOr(loc, a, b);
                 }
             }
@@ -1851,7 +1846,8 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(TokenType.DM_Xor)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionBinaryAnd(isTernaryB);
-                    if (b == null) Error("Expected an expression");
+                    RequireExpression(ref b);
+
                     a = new DMASTBinaryXor(loc, a, b);
                 }
             }
@@ -1867,8 +1863,8 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(TokenType.DM_And)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionComparison(isTernaryB);
+                    RequireExpression(ref b);
 
-                    if (b == null) Error("Expected an expression");
                     a = new DMASTBinaryAnd(loc, a, b);
                 }
             }
@@ -1885,7 +1881,7 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(ComparisonTypes)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionBitShift(isTernaryB);
-                    if (b == null) Error("Expected an expression to compare to");
+                    RequireExpression(ref b, "Expected an expression to compare to");
 
                     switch (token.Type) {
                         case TokenType.DM_EqualsEquals: a = new DMASTEqual(token.Location, a, b); break;
@@ -1910,7 +1906,7 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(ShiftTypes)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionComparisonLtGt(isTernaryB);
-                    if (b == null) Error("Expected an expression");
+                    RequireExpression(ref b);
 
                     switch (token.Type) {
                         case TokenType.DM_LeftShift: a = new DMASTLeftShift(token.Location, a, b); break;
@@ -1933,7 +1929,7 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(LtGtComparisonTypes)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionAdditionSubtraction(isTernaryB);
-                    if (b == null) Error("Expected an expression");
+                    RequireExpression(ref b);
 
                     switch (token.Type) {
                         case TokenType.DM_LessThan: a = new DMASTLessThan(token.Location, a, b); break;
@@ -1958,7 +1954,7 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(PlusMinusTypes)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionMultiplicationDivisionModulus(isTernaryB);
-                    if (b == null) Error("Expected an expression");
+                    RequireExpression(ref b);
 
                     switch (token.Type) {
                         case TokenType.DM_Plus: a = new DMASTAdd(token.Location, a, b); break;
@@ -1981,7 +1977,7 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(MulDivModTypes)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionPower(isTernaryB);
-                    if (b == null) Error("Expected an expression");
+                    RequireExpression(ref b);
 
                     switch (token.Type) {
                         case TokenType.DM_Star: a = new DMASTMultiply(token.Location, a, b); break;
@@ -2006,7 +2002,8 @@ namespace DMCompiler.Compiler.DM {
                 while (Check(TokenType.DM_StarStar)) {
                     Whitespace();
                     DMASTExpression? b = ExpressionPower(isTernaryB);
-                    if (b == null) Error("Expected an expression");
+                    RequireExpression(ref b);
+
                     a = new DMASTPower(loc, a, b);
                 }
             }
@@ -2015,34 +2012,29 @@ namespace DMCompiler.Compiler.DM {
         }
 
         public DMASTExpression? ExpressionUnary(bool isTernaryB = false) {
-            var loc = Current().Location;
+            var loc = CurrentLoc;
 
-            if (Check(TokenType.DM_Exclamation)) {
+            if (Check(stackalloc[] {
+                    TokenType.DM_Exclamation,
+                    TokenType.DM_Tilde,
+                    TokenType.DM_PlusPlus,
+                    TokenType.DM_MinusMinus
+                }, out var unaryToken)) {
                 Whitespace();
                 DMASTExpression? expression = ExpressionUnary(isTernaryB);
-                if (expression == null) Error("Expected an expression");
+                RequireExpression(ref expression);
 
-                return new DMASTNot(loc, expression);
-            } else if (Check(TokenType.DM_Tilde)) {
-                Whitespace();
-                DMASTExpression? expression = ExpressionUnary(isTernaryB);
-                if (expression == null) Error("Expected an expression");
+                switch (unaryToken.Type) {
+                    case TokenType.DM_Exclamation: return new DMASTNot(loc, expression);
+                    case TokenType.DM_Tilde: return new DMASTBinaryNot(loc, expression);
+                    case TokenType.DM_PlusPlus: return new DMASTPreIncrement(loc, expression);
+                    case TokenType.DM_MinusMinus: return new DMASTPreDecrement(loc, expression);
+                }
 
-                return new DMASTBinaryNot(loc, expression);
-            } else if (Check(TokenType.DM_PlusPlus)) {
-                Whitespace();
-                DMASTExpression? expression = ExpressionSign(isTernaryB);
-                if (expression == null) Error("Expected an expression");
-
-                return new DMASTPreIncrement(loc, expression);
-            } else if (Check(TokenType.DM_MinusMinus)) {
-                Whitespace();
-                DMASTExpression? expression = ExpressionSign(isTernaryB);
-                if (expression == null) Error("Expected an expression");
-
-                return new DMASTPreDecrement(loc, expression);
+                Emit(WarningCode.BadToken, loc, $"Problem while handling unary '{unaryToken.PrintableText}'");
+                return new DMASTInvalidExpression(loc);
             } else {
-                DMASTExpression expression = ExpressionSign(isTernaryB);
+                DMASTExpression? expression = ExpressionSign(isTernaryB);
 
                 if (expression != null) {
                     if (Check(TokenType.DM_PlusPlus)) {
@@ -2064,8 +2056,8 @@ namespace DMCompiler.Compiler.DM {
             if (Check(PlusMinusTypes)) {
                 Whitespace();
                 DMASTExpression? expression = ExpressionSign();
+                RequireExpression(ref expression);
 
-                if (expression == null) Error("Expected an expression");
                 if (token.Type == TokenType.DM_Minus) {
                     switch (expression) {
                         case DMASTConstantInteger integer:
@@ -2107,6 +2099,8 @@ namespace DMCompiler.Compiler.DM {
 
         public DMASTExpression? ExpressionPrimary(bool allowParentheses = true) {
             var token = Current();
+            var loc = token.Location;
+
             if (allowParentheses && Check(TokenType.DM_LeftParenthesis)) {
                 BracketWhitespace();
                 DMASTExpression? inner = Expression();
@@ -2114,7 +2108,7 @@ namespace DMCompiler.Compiler.DM {
                 ConsumeRightParenthesis();
 
                 if (inner is null) {
-                    inner = new DMASTVoid(token.Location);
+                    inner = new DMASTVoid(loc);
                 } else {
                     inner = new DMASTExpressionWrapped(inner.Location, inner);
                 }
@@ -2122,61 +2116,65 @@ namespace DMCompiler.Compiler.DM {
                 return inner;
             }
 
-            var loc = token.Location;
-            if (token.Type == TokenType.DM_Var && _allowVarDeclExpression) {
+            if (token.Type == TokenType.DM_Var && _allowVarDeclExpression)
                 return new DMASTVarDeclExpression( loc, Path() );
-            }
 
-            DMASTExpression? primary = Constant();
-            if (primary == null) {
-                DMASTPath? path = Path(true);
+            if (Constant() is { } constant)
+                return constant;
 
-                if (path != null) {
-                    primary = new DMASTConstantPath(loc, path);
+            if (Path(true) is { } path) {
+                DMASTExpressionConstant pathConstant = new DMASTConstantPath(loc, path);
 
-                    while (Check(TokenType.DM_Period)) {
-                        DMASTPath? search = Path();
-                        if (search == null) Error("Expected a path for an upward search");
-
-                        primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
+                while (Check(TokenType.DM_Period)) {
+                    DMASTPath? search = Path();
+                    if (search == null) {
+                        Emit(WarningCode.MissingExpression, CurrentLoc, "Expected a path for an upward search");
+                        break;
                     }
 
-                    Whitespace(); // whitespace between path and modified type
-
-                    //TODO actual modified type support
-                    if (Check(TokenType.DM_LeftCurlyBracket)) {
-                        DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
-
-                        while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
-                        Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                        //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
-                        Check(TokenType.Newline);
-                    }
+                    pathConstant = new DMASTUpwardPathSearch(loc, pathConstant, search);
                 }
+
+                Whitespace(); // whitespace between path and modified type
+
+                //TODO actual modified type support
+                if (Check(TokenType.DM_LeftCurlyBracket)) {
+                    DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
+
+                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                    //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
+                    Check(TokenType.Newline);
+                }
+
+                return pathConstant;
             }
 
-            primary ??= Identifier();
+            if (Identifier() is { } identifier)
+                return identifier;
 
-            if (primary == null) {
-                primary = (DMASTExpression?)Callable();
+            if (ParseProcCall((DMASTExpression?)Callable()) is { } procCallOrCallable)
+                return procCallOrCallable;
 
-                if (primary != null) {
-                    primary = ParseProcCall(primary);
-                }
-            }
-
-            if (primary == null && Check(TokenType.DM_Call)) {
+            if (Check(TokenType.DM_Call)) {
                 Whitespace();
                 DMASTCallParameter[]? callParameters = ProcCall();
-                if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) Error("Call must have 2 parameters");
+                if (callParameters == null || callParameters.Length < 1 || callParameters.Length > 2) {
+                    Emit(WarningCode.InvalidArgumentCount, CurrentLoc, "call()() must have 2 parameters");
+                    return new DMASTInvalidExpression(loc);
+                }
+
                 Whitespace();
                 DMASTCallParameter[]? procParameters = ProcCall();
-                if (procParameters == null) Error("Expected proc parameters");
+                if (procParameters == null) {
+                    Emit(WarningCode.InvalidArgumentCount, CurrentLoc, "Expected proc parameters");
+                    procParameters = Array.Empty<DMASTCallParameter>();
+                }
 
-                primary = new DMASTCall(loc, callParameters, procParameters);
+                return new DMASTCall(loc, callParameters, procParameters);
             }
 
-            return primary;
+            return null;
         }
 
         public DMASTExpression? Constant() {
@@ -2555,11 +2553,7 @@ namespace DMCompiler.Compiler.DM {
                                 Whitespace();
 
                                 container = Expression();
-                                if (container == null) {
-                                    Emit(WarningCode.MissingExpression, CurrentLoc,
-                                        "Expected a container for locate()");
-                                    container = new DMASTInvalidExpression(CurrentLoc);
-                                }
+                                RequireExpression(ref container, "Expected a container for locate()");
                             }
 
                             DMASTExpression? type = null;
@@ -2616,7 +2610,9 @@ namespace DMCompiler.Compiler.DM {
                         case "icon": type |= DMValueType.Icon; break;
                         case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
                         case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
-                        default: Error("Invalid value type '" + typeToken.Text + "'"); break;
+                        default:
+                            Emit(WarningCode.BadToken, typeToken.Location, $"Invalid value type '{typeToken.Text}'");
+                            break;
                     }
 
                     Whitespace();

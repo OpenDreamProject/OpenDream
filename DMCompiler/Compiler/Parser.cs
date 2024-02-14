@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 
 namespace DMCompiler.Compiler;
@@ -53,19 +54,26 @@ public class Parser<SourceType> {
         return false;
     }
 
-    protected bool Check(TokenType[] types) {
+    protected bool Check(Span<TokenType> types) {
+        return Check(types, out _);
+    }
+
+    protected bool Check(Span<TokenType> types, out Token matchedToken) {
         TokenType currentType = Current().Type;
         foreach (TokenType type in types) {
             if (currentType == type) {
+                matchedToken = Current();
                 Advance();
 
                 return true;
             }
         }
 
+        matchedToken = default;
         return false;
     }
 
+    [Obsolete("This throws, which is not a desirable way for the compiler to emit an error.")]
     protected void Consume(TokenType type, string errorMessage) {
         if (!Check(type)) {
             Error(errorMessage);
@@ -73,6 +81,7 @@ public class Parser<SourceType> {
     }
 
     /// <returns>The <see cref="TokenType"/> that was found.</returns>
+    [Obsolete("This throws, which is not a desirable way for the compiler to emit an error.")]
     protected TokenType Consume(TokenType[] types, string errorMessage) {
         foreach (TokenType type in types) {
             if (Check(type)) return type;

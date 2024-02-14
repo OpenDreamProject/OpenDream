@@ -65,7 +65,7 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                 MapObjectJson mapObject = new MapObjectJson(typeId);
 
                 if (Check(TokenType.DM_LeftCurlyBracket)) {
-                    DMASTStatement? statement = Statement(requireDelimiter: false);
+                    DMASTStatement? statement = Statement();
 
                     while (statement != null) {
                         if (statement is not DMASTObjectVarOverride varOverride) {
@@ -81,11 +81,7 @@ internal sealed class DMMParser(DMLexer lexer, int zOffset) : DMParser(lexer) {
                             DMCompiler.ForcedWarning(statement.Location, $"Duplicate var override '{varOverride.VarName}' in DMM on type {objectType.Path}");
                         }
 
-                        if (Check(TokenType.DM_Semicolon)) {
-                            statement = Statement(requireDelimiter: false);
-                        } else {
-                            statement = null;
-                        }
+                        statement = Check(TokenType.DM_Semicolon) ? Statement() : null;
                     }
 
                     Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");

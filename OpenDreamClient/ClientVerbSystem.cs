@@ -3,6 +3,7 @@ using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Asynchronous;
@@ -17,6 +18,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     [Dependency] private readonly ITaskManager _taskManager = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
+    [Dependency] private readonly TransformSystem _transformSystem = default!;
 
     private EntityQuery<DMISpriteComponent> _spriteQuery;
     private EntityQuery<DreamMobSightComponent> _sightQuery;
@@ -72,12 +74,10 @@ public sealed class ClientVerbSystem : VerbSystem {
     /// <param name="ignoreHiddenAttr">Whether to ignore "set hidden = TRUE"</param>
     /// <returns>The ID, src, and information of every executable verb</returns>
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(bool ignoreHiddenAttr = false) {
-        ClientObjectReference? ourMob = null;
         sbyte? seeInvisibility = null;
         if (_playerManager.LocalEntity != null) {
             _sightQuery.TryGetComponent(_playerManager.LocalEntity.Value, out var mobSight);
 
-            ourMob = new ClientObjectReference(_entityManager.GetNetEntity(_playerManager.LocalEntity.Value));
             seeInvisibility = mobSight?.SeeInvisibility;
         }
 
@@ -112,7 +112,12 @@ public sealed class ClientVerbSystem : VerbSystem {
                 // Check the verb's "set src" allows us to execute this
                 switch (verb.Accessibility) {
                     case VerbAccessibility.Usr:
-                        if (!src.Equals(ourMob))
+                        if (entity != _playerManager.LocalEntity)
+                            continue;
+
+                        break;
+                    case VerbAccessibility.InUsr:
+                        if (_transformSystem.GetParentUid(entity) != _playerManager.LocalEntity)
                             continue;
 
                         break;

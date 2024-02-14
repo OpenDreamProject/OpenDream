@@ -188,6 +188,11 @@ public sealed class ServerVerbSystem : VerbSystem {
         switch (verbInfo.Accessibility) {
             case VerbAccessibility.Usr:
                 return src == connection.Mob;
+            case VerbAccessibility.InUsr:
+                if (src is not DreamObjectMovable srcMovable)
+                    return false;
+
+                return srcMovable.Loc == connection.Mob;
             default:
                 // TODO: All the other kinds
                 return true;

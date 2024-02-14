@@ -141,9 +141,9 @@ public sealed class DMASTNewExpr(Location location, DMASTExpression expression, 
     public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 
-public sealed class DMASTNewInferred(Location location, DMASTCallParameter[] parameters)
+public sealed class DMASTNewInferred(Location location, DMASTCallParameter[]? parameters)
     : DMASTExpression(location) {
-    public readonly DMASTCallParameter[] Parameters = parameters;
+    public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 
 public sealed class DMASTTernary(Location location, DMASTExpression a, DMASTExpression b, DMASTExpression c)

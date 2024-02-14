@@ -150,11 +150,9 @@ namespace DMCompiler.Compiler.DM {
             List<DMASTStatement> statements = new();
 
             while (Current().Type != TokenType.EndOfFile) {
-                try {
-                    List<DMASTStatement>? blockInner = BlockInner();
-
-                    if (blockInner != null) statements.AddRange(blockInner);
-                } catch (CompileErrorException) { }
+                List<DMASTStatement>? blockInner = BlockInner();
+                if (blockInner != null)
+                    statements.AddRange(blockInner);
 
                 if (Current().Type != TokenType.EndOfFile) {
                     Token skipFrom = Current();
@@ -173,18 +171,13 @@ namespace DMCompiler.Compiler.DM {
 
             do {
                 Whitespace();
+                DMASTStatement? statement = Statement();
 
-                try {
-                    DMASTStatement? statement = Statement();
-
-                    if (statement != null) {
-                        Whitespace();
-                        statements.Add(statement);
-                    } else {
-                        if (statements.Count == 0) return null;
-                    }
-                } catch (CompileErrorException) {
-                    LocateNextStatement();
+                if (statement != null) {
+                    Whitespace();
+                    statements.Add(statement);
+                } else {
+                    if (statements.Count == 0) return null;
                 }
             } while (Delimiter());
             Whitespace();
@@ -422,7 +415,7 @@ namespace DMCompiler.Compiler.DM {
                 if (!path.Elements[..^1].Contains("list")) {
                     var elements = path.Elements.ToList();
                     elements.Insert(elements.IndexOf("var") + 1, "list");
-                    path = new DreamPath("/" + String.Join("/", elements));
+                    path = new DreamPath("/" + string.Join("/", elements));
                 }
 
                 List<DMASTExpression> sizes = new(2); // Most common is 1D or 2D lists
@@ -597,25 +590,17 @@ namespace DMCompiler.Compiler.DM {
             List<DMASTProcStatement> procStatements = new();
             List<DMASTProcStatement> setStatements = new(); // We have to store them separately because they're evaluated first
 
-            DMASTProcStatement? statement = null;
+            DMASTProcStatement? statement;
             do {
                 Whitespace();
+                statement = ProcStatement();
 
-                try {
-                    statement = ProcStatement();
-                    if (statement is not null) {
-                        Whitespace();
-                        if(statement.IsAggregateOr<DMASTProcStatementSet>())
-                            setStatements.Add(statement);
-                        else
-                            procStatements.Add(statement);
-                    }
-                } catch (CompileErrorException) {
-                    LocateNextStatement();
-
-                    //LocateNextStatement() may have landed us on another indented/braced block
-                    DMASTProcBlockInner? blockInner = ProcBlock();
-                    if (blockInner != null) procStatements.AddRange(blockInner.Statements);
+                if (statement is not null) {
+                    Whitespace();
+                    if(statement.IsAggregateOr<DMASTProcStatementSet>())
+                        setStatements.Add(statement);
+                    else
+                        procStatements.Add(statement);
                 }
             } while (Delimiter() || statement is DMASTProcStatementLabel);
             Whitespace();
@@ -650,9 +635,8 @@ namespace DMCompiler.Compiler.DM {
                         // This could be a sleep without parentheses
                         if (!Check(TokenType.DM_Colon) && !leadingColon && identifier.Identifier == "sleep") {
                             var procIdentifier = new DMASTCallableProcIdentifier(expression.Location, "sleep");
-                            var sleepTime = Expression();
-                            if (sleepTime == null) // The argument is optional
-                                sleepTime = new DMASTConstantNull(Location.Internal);
+                            // The argument is optional
+                            var sleepTime = Expression() ?? new DMASTConstantNull(Location.Internal);
 
                             // TODO: Make sleep an opcode
                             expression = new DMASTProcCall(expression.Location, procIdentifier,
@@ -1008,12 +992,17 @@ namespace DMCompiler.Compiler.DM {
             }
         }
 
-        public DMASTProcStatementGoto? Goto() {
+        public DMASTProcStatement? Goto() {
             var loc = Current().Location;
 
             if (Check(TokenType.DM_Goto)) {
                 Whitespace();
                 DMASTIdentifier? label = Identifier();
+
+                if (label == null) {
+                    Emit(WarningCode.BadToken, "Expected a label");
+                    return new DMASTInvalidProcStatement(loc);
+                }
 
                 return new DMASTProcStatementGoto(loc, label);
             } else {
@@ -1117,15 +1106,10 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 DMASTProcStatement? procStatement = ProcStatement();
-                DMASTProcBlockInner? body;
                 DMASTProcBlockInner? elseBody = null;
-
-                if (procStatement != null) {
-                    body = new DMASTProcBlockInner(loc, procStatement);
-                } else {
-                    body = ProcBlock();
-                }
-
+                DMASTProcBlockInner? body = (procStatement != null)
+                    ? new DMASTProcBlockInner(loc, procStatement)
+                    : ProcBlock();
                 body ??= new DMASTProcBlockInner(loc);
 
                 Token afterIfBody = Current();
@@ -1137,12 +1121,9 @@ namespace DMCompiler.Compiler.DM {
                     Whitespace();
                     procStatement = ProcStatement();
 
-                    if (procStatement != null) {
-                        elseBody = new DMASTProcBlockInner(loc, procStatement);
-                    } else {
-                        elseBody = ProcBlock();
-                    }
-
+                    elseBody = (procStatement != null)
+                        ? new DMASTProcBlockInner(loc, procStatement)
+                        : ProcBlock();
                     elseBody ??= new DMASTProcBlockInner(loc);
                 } else if (newLineAfterIf) {
                     ReuseToken(afterIfBody);
@@ -1449,11 +1430,9 @@ namespace DMCompiler.Compiler.DM {
                 if (body == null) {
                     DMASTProcStatement? statement = ProcStatement();
 
-                    if (statement != null) {
-                        body = new DMASTProcBlockInner(statement.Location, statement);
-                    } else {
-                        body = new DMASTProcBlockInner(Current().Location);
-                    }
+                    body = (statement != null)
+                        ? new DMASTProcBlockInner(statement.Location, statement)
+                        : new DMASTProcBlockInner(CurrentLoc);
                 }
 
                 return new DMASTProcStatementSwitch.SwitchCaseValues(expressions.ToArray(), body);
@@ -1461,7 +1440,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
                 var loc = Current().Location;
                 if (Current().Type == TokenType.DM_If) {
-                    //From now on, all ifs/elseifs/elses are actually part of this if's chain, not the switch's.
+                    //From now on, all if/elseif/else are actually part of this if's chain, not the switch's.
                     //Ambiguous, but that is parity behaviour. Ergo, the following emission.
                     DMCompiler.Emit(WarningCode.SuspiciousSwitchCase, loc,
                         "Expected \"if\" or \"else\" - \"else if\" is ambiguous as a switch case and may cause unintended flow");
@@ -1472,11 +1451,9 @@ namespace DMCompiler.Compiler.DM {
                 if (body == null) {
                     DMASTProcStatement? statement = ProcStatement();
 
-                    if (statement != null) {
-                        body = new DMASTProcBlockInner(loc, statement);
-                    } else {
-                        body = new DMASTProcBlockInner(loc);
-                    }
+                    body = (statement != null)
+                        ? new DMASTProcBlockInner(loc, statement)
+                        : new DMASTProcBlockInner(loc);
                 }
 
                 return new DMASTProcStatementSwitch.SwitchCaseDefault(body);
@@ -2125,7 +2102,7 @@ namespace DMCompiler.Compiler.DM {
 
                 DMASTExpression? newExpression = type switch {
                     DMASTConstantPath path => new DMASTNewPath(loc, path, parameters),
-                    DMASTExpression expr => new DMASTNewExpr(loc, expr, parameters),
+                    not null => new DMASTNewExpr(loc, type, parameters),
                     null => new DMASTNewInferred(loc, parameters),
                 };
 

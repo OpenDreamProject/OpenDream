@@ -245,15 +245,10 @@ public static class DMCompiler {
 
             DMLexer lexer = new DMLexer(mapPath, preprocessor);
             DMMParser parser = new DMMParser(lexer, zOffset);
+            DreamMapJson map = parser.ParseMap();
 
-            try {
-                DreamMapJson map = parser.ParseMap();
-
-                zOffset = Math.Max(zOffset + 1, map.MaxZ);
-                maps.Add(map);
-            } catch (CompileErrorException e) {
-                Emit(e.Error);
-            }
+            zOffset = Math.Max(zOffset + 1, map.MaxZ);
+            maps.Add(map);
         }
 
         return maps;

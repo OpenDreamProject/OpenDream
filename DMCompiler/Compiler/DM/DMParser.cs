@@ -7,7 +7,7 @@ using DMCompiler.DM;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser(DMLexer lexer) : Parser<Token>(lexer) {
-        private Location CurrentLoc => Current().Location;
+        protected Location CurrentLoc => Current().Location;
 
         private DreamPath _currentPath = DreamPath.Root;
         private bool _allowVarDeclExpression;

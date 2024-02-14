@@ -28,7 +28,7 @@ public class Parser<SourceType> {
             _currentToken = _lexer.GetNextToken();
 
             if (_currentToken.Type == TokenType.Error) {
-                Error((string)_currentToken.Value!, throwException: false);
+                Emit(WarningCode.BadToken, (string)_currentToken.Value!);
                 Advance();
             } else if (_currentToken.Type == TokenType.Warning) {
                 Warning((string)_currentToken.Value!);
@@ -87,19 +87,6 @@ public class Parser<SourceType> {
 
         Emit(WarningCode.BadToken, errorMessage);
         return TokenType.Unknown;
-    }
-
-    /// <summary>
-    /// Emits an error discovered during parsing, optionally causing a throw.
-    /// </summary>
-    /// <remarks> This implementation on <see cref="Parser{SourceType}"/> does not make use of <see cref="WarningCode"/> <br/>
-    /// since there are some parsers that aren't always in the compilation context, like the ones for DMF and DMM. <br/>
-    /// </remarks>
-    protected void Error(string message, bool throwException = true) {
-        DMCompiler.ForcedError(_currentToken.Location, message);
-
-        if (throwException)
-            throw new CompileErrorException(message);
     }
 
     /// <summary>

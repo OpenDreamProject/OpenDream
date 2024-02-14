@@ -9,12 +9,6 @@ using DMCompiler.Compiler.DM.AST;
 namespace DMCompiler.Compiler.DM;
 
 public partial class DMParser {
-    /// <inheritdoc cref="Parser{SourceType}.Error(string, bool)"/>
-    [Obsolete("This is not a desirable way for DMParser to emit an error, as errors should emit an error code and not cause unnecessary throws. Use DMParser's overrides of this method, instead.")]
-    protected new void Error(string message, bool throwException = true) {
-        base.Error(message, throwException);
-    }
-
     /// <summary>
     /// If the expression is null, emit an error and set it to a new <see cref="DMASTInvalidExpression" />
     /// </summary>

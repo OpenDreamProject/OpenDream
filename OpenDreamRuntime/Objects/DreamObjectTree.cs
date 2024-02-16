@@ -82,7 +82,7 @@ public sealed class DreamObjectTree {
         Strings = json.Strings ?? new();
 
         if (json.GlobalInitProc is { } initProcDef) {
-            GlobalInitProc = new DMProc(0, Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
+            GlobalInitProc = new DMProc(0, Root, initProcDef, "<global init>", _dreamManager, _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler, _verbSystem);
         } else {
             GlobalInitProc = null;
         }
@@ -346,13 +346,23 @@ public sealed class DreamObjectTree {
                 type.ParentEntry.ChildCount += type.ChildCount + 1;
         }
 
-        //Fifth pass: Set atom's name and text
+        // Fifth pass: Set atom's name and text
         foreach (TreeEntry type in GetAllDescendants(Atom)) {
             if (type.ObjectDefinition.Variables["name"].IsNull)
                 type.ObjectDefinition.Variables["name"] = new(type.Name.Replace("_", " "));
 
             if (type.ObjectDefinition.Variables["text"].IsNull && type.ObjectDefinition.Variables["name"].TryGetValueAsString(out var name)) {
                 type.ObjectDefinition.Variables["text"] = new DreamValue(string.IsNullOrEmpty(name) ? string.Empty : name[..1]);
+            }
+        }
+
+        // Register verbs
+        if (_verbSystem != null) {
+            foreach (DreamProc proc in Procs) {
+                if (!proc.IsVerb)
+                    continue;
+
+                _verbSystem.RegisterVerb(proc);
             }
         }
     }
@@ -390,7 +400,7 @@ public sealed class DreamObjectTree {
     public DreamProc LoadProcJson(int id, ProcDefinitionJson procDefinition) {
         TreeEntry owningType = Types[procDefinition.OwningTypeId];
         return new DMProc(id, owningType, procDefinition, null, _dreamManager,
-            _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler);
+            _atomManager, _dreamMapManager, _dreamDebugManager, _dreamResourceManager, this, _procScheduler, _verbSystem);
     }
 
     private void LoadProcsFromJson(ProcDefinitionJson[]? jsonProcs, int[]? jsonGlobalProcs) {
@@ -400,10 +410,6 @@ public sealed class DreamObjectTree {
 
             foreach (var procJson in jsonProcs) {
                 var proc = LoadProcJson(Procs.Count, procJson);
-
-                if (proc.IsVerb) {
-                    _verbSystem?.RegisterVerb(proc);
-                }
 
                 Procs.Add(proc);
             }

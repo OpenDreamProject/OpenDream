@@ -49,7 +49,7 @@ internal sealed partial class ContextMenuPopup : Popup {
 
             var metadata = _entityManager.GetComponent<MetaDataComponent>(entity);
 
-            ContextMenu.AddChild(new ContextMenuItem(this, entity, metadata, sprite));
+            ContextMenu.AddChild(new ContextMenuItem(this, new(_entityManager.GetNetEntity(entity)), metadata, sprite));
         }
     }
 
@@ -59,7 +59,7 @@ internal sealed partial class ContextMenuPopup : Popup {
             _uiManager.ModalRoot.RemoveChild(_currentVerbMenu);
         }
 
-        _currentVerbMenu = new VerbMenuPopup(_entityManager, _verbSystem, GetSeeInvisible(), item.Entity, item.EntityMetaData, item.EntitySprite);
+        _currentVerbMenu = new VerbMenuPopup(_verbSystem, GetSeeInvisible(), item.Target, item.EntityMetaData, item.EntitySprite);
 
         _currentVerbMenu.OnVerbSelected += Close;
 

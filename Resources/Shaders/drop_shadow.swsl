@@ -8,24 +8,24 @@ uniform highp float y;
 uniform highp vec4 shadow_color;
 
 void fragment() {
-    highp float shadow_blur_samples = pow(size * 2 + 1, 2);
+    highp float shadow_blur_samples = pow((size * 2.0 + 1.0), 2.0);
     highp vec4 texture_color = zTexture(UV);
     highp vec2 ps = TEXTURE_PIXEL_SIZE;
     highp vec2 shadow_uv = UV - (ps * vec2(x, -y)); // Y is up
     
-    highp float sampled_shadow_alpha = 0;
+    highp float sampled_shadow_alpha = 0.0;
     for (highp float blur_x = -size; blur_x <= size; blur_x++) {
         for (highp float blur_y = -size; blur_y <= size; blur_y++) {
-            vec2 blur_uv = shadow_uv + ps * vec2(blur_x, blur_y);
+            highp vec2 blur_uv = shadow_uv + ps * vec2(blur_x, blur_y);
             
             sampled_shadow_alpha += zTexture(blur_uv).a / shadow_blur_samples;
         }
     }
     
-    vec4 final_shadow_color = vec4(shadow_color.rgb, shadow_color.a * sampled_shadow_alpha);
+    highp vec4 final_shadow_color = vec4(shadow_color.rgb, shadow_color.a * sampled_shadow_alpha);
     
     // Mix the shadow with the initial image based on the image's alpha
-    COLOR.rgb = final_shadow_color.rgb * (1 - texture_color.a) + (texture_color.rgb / texture_color.a); //texture color needs to be divided by alpha to account for alpha premultiplication in the overlay shader
-    COLOR.a = clamp(final_shadow_color.a + texture_color.a, 0, 1);
+    COLOR.rgb = final_shadow_color.rgb * (1.0 - texture_color.a) + (texture_color.rgb / texture_color.a); //texture color needs to be divided by alpha to account for alpha premultiplication in the overlay shader
+    COLOR.a = clamp(final_shadow_color.a + texture_color.a, 0.0, 1.0);
     COLOR.rgb *= COLOR.a;
 }

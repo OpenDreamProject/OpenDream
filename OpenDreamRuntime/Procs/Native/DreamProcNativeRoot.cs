@@ -1474,7 +1474,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
         private static DreamValue MinComparison(DreamValue min, DreamValue value) {
             if (value.TryGetValueAsFloat(out var lFloat)) {
-                if (min.IsNull && lFloat < 0)
+                if (min.IsNull && lFloat <= 0)
                     min = value;
                 else if (min.TryGetValueAsFloat(out var rFloat) && lFloat <= rFloat)
                     min = value;

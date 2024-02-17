@@ -4,11 +4,9 @@ using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls;
 
+// todo: robust needs GridSplitter.
+// and a non-shit grid control.
 internal sealed class ControlChild : InterfaceControl {
-    // todo: robust needs GridSplitter.
-    // and a non-shit grid control.
-
-
     private ControlDescriptorChild ChildDescriptor => (ControlDescriptorChild)ElementDescriptor;
 
     private SplitContainer _grid;
@@ -88,5 +86,15 @@ internal sealed class ControlChild : InterfaceControl {
             return;
 
         _grid.SplitFraction = ChildDescriptor.Splitter / 100f;
+    }
+
+        public override bool TryGetProperty(string property, out string value) {
+        switch (property) {
+            case "splitter":
+                value = $"{_grid.SplitFraction * 100}";
+                return true;
+            default:
+                return base.TryGetProperty(property, out value);
+        }
     }
 }

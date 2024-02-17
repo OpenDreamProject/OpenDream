@@ -14,8 +14,9 @@ public sealed class ProcDefinitionJson {
     public List<SourceInfoJson> SourceInfo { get; set; }
     public byte[]? Bytecode { get; set; }
 
+    public VerbSrc? VerbSrc { get; set; }
     public string? VerbName { get; set; }
-    public string? VerbCategory { get; set; } = null;
+    public string? VerbCategory { get; set; }
     public string? VerbDesc { get; set; }
     public sbyte Invisibility { get; set; }
 }

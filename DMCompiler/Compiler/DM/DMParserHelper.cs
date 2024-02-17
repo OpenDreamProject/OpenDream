@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler.DM.AST;
 
 namespace DMCompiler.Compiler.DM;
 

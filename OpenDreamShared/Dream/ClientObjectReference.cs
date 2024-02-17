@@ -1,4 +1,5 @@
 using System;
+using JetBrains.Annotations;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 using Robust.Shared.Serialization;
@@ -32,5 +33,30 @@ public struct ClientObjectReference {
     public ClientObjectReference(NetEntity entity) {
         Type = RefType.Entity;
         Entity = entity;
+    }
+
+    [Pure]
+    public bool Equals(ClientObjectReference other) {
+        if (Type != other.Type)
+            return false;
+
+        switch (Type) {
+            case RefType.Client:
+                return true;
+            case RefType.Entity:
+                return Entity == other.Entity;
+            case RefType.Turf:
+                return TurfX == other.TurfX && TurfY == other.TurfY && TurfZ == other.TurfZ;
+        }
+
+        return false;
+    }
+
+    [Pure]
+    public bool Equals(ClientObjectReference? other) {
+        if (other == null)
+            return false;
+
+        return Equals(other.Value);
     }
 }

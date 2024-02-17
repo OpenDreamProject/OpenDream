@@ -34,12 +34,13 @@ namespace OpenDreamRuntime {
         public int? VerbId = null; // Null until registered as a verb in ServerVerbSystem
         public string VerbName => _verbName ?? Name;
         public readonly string? VerbCategory = string.Empty;
+        public readonly VerbSrc? VerbSrc;
         public readonly sbyte Invisibility;
 
         private readonly string? _verbName;
         private readonly string? _verbDesc;
 
-        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
+        protected DreamProc(int id, TreeEntry owningType, string name, DreamProc? superProc, ProcAttributes attributes, List<string>? argumentNames, List<DreamValueType>? argumentTypes, VerbSrc? verbSrc, string? verbName, string? verbCategory, string? verbDesc, sbyte invisibility, bool isVerb = false) {
             Id = id;
             OwningType = owningType;
             Name = name;
@@ -49,6 +50,7 @@ namespace OpenDreamRuntime {
             ArgumentNames = argumentNames;
             ArgumentTypes = argumentTypes;
 
+            VerbSrc = verbSrc;
             _verbName = verbName;
             if (verbCategory is not null) {
                 // (de)serialization meme to reduce JSON size

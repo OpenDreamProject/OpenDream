@@ -37,7 +37,6 @@ public sealed class DreamObjectImage : DreamObject {
 
     public override void Initialize(DreamProcArguments args) {
         base.Initialize(args);
-        Appearance = AtomManager.GetAppearanceFromDefinition(ObjectDefinition);
 
         DreamValue icon = args.GetArgument(0);
         if (!icon.IsNull && !AtomManager.TryCreateAppearanceFrom(icon, out Appearance)) {
@@ -45,7 +44,12 @@ public sealed class DreamObjectImage : DreamObject {
             Appearance = new IconAppearance();
             Logger.GetSawmill("opendream.image")
                 .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
+        } else if(icon.IsNull) {//if (ObjectDefinition.TreeEntry != ObjectTree.Image) {
+            //creating an appearance from an icon overrides all subclass definitions, so only do this if needed
+            Appearance = AtomManager.GetAppearanceFromDefinition(ObjectDefinition);
+            //however,anything else that was set in the constructor should still be applied
         }
+
 
         int argIndex = 1;
         DreamValue loc = args.GetArgument(1);

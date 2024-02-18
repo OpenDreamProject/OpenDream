@@ -27,7 +27,7 @@ void fragment() {
     
     // The mask is the average of RGB multiplied by A
     // Haven't actually tested this in BYOND, but it does give us behavior seen in SS13
-    highp float mask = (mask_color.r + mask_color.g + mask_color.b) / 3 * mask_color.a;
+    highp float mask = (mask_color.r + mask_color.g + mask_color.b) / 3.0 * mask_color.a;
 
     if(mask_invert_flag){
         new_color.a *= 1.0-mask;

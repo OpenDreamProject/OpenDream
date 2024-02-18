@@ -37,6 +37,12 @@ public class VerbSystem : EntitySystem {
         public bool HiddenAttribute;
 
         /// <summary>
+        /// Where the verb's src must be for the client to be able to execute it.
+        /// <code>set src = usr</code>
+        /// </summary>
+        public VerbAccessibility Accessibility;
+
+        /// <summary>
         /// The arguments of this verb
         /// </summary>
         public VerbArg[] Arguments;
@@ -46,12 +52,21 @@ public class VerbSystem : EntitySystem {
         public string GetCommandName() =>
             Name.ToLowerInvariant().Replace(" ", "-"); // Case-insensitive, dashes instead of spaces
 
+        [Pure]
         public string GetCategoryOrDefault(string defaultCategory) =>
             string.IsNullOrWhiteSpace(Category) ? defaultCategory : Category;
 
         // TODO: Hidden verbs probably shouldn't be sent to the client in the first place?
+        [Pure]
         public bool IsHidden(bool ignoreHiddenAttr, sbyte seeInvisibility) =>
             (!ignoreHiddenAttr && (HiddenAttribute || Name.StartsWith('.'))) || seeInvisibility < Invisibility;
+
+        // If the verb's first argument is an atom type, it takes that type as a target
+        [Pure]
+        public DreamValueType? GetTargetType() =>
+            (Arguments.Length != 0 && (Arguments[0].Types & DreamValueType.AllAtomTypes) != 0x0)
+                ? Arguments[0].Types
+                : null;
 
         public override string ToString() => GetCommandName();
     }
@@ -67,6 +82,23 @@ public class VerbSystem : EntitySystem {
         /// Types the argument is allowed to be
         /// </summary>
         public DreamValueType Types;
+    }
+
+    [Serializable, NetSerializable]
+    public enum VerbAccessibility : byte {
+        View,
+        InView,
+        OView,
+        InOView,
+        Range,
+        InRange,
+        ORange,
+        InORange,
+        InWorld,
+        Usr,
+        InUsr,
+        UsrLoc,
+        UsrGroup
     }
 
     [Serializable, NetSerializable]

@@ -271,4 +271,16 @@ namespace OpenDreamShared.Dream {
         PassMouse = 1024,
         TileMover = 2048
     }
+
+    public enum AnimationEasing {
+        Linear = 0,
+        Sine = 1,
+        Circular = 2,
+        Cubic = 3,
+        Bounce = 4,
+        Elastic = 5,
+        Back = 6,
+        Quad = 7,
+        Jump = 8
+    }
 }

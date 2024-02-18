@@ -68,9 +68,9 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
-    public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration) {
+    public void Animate(NetEntity entity, IconAppearance targetAppearance, TimeSpan duration, AnimationEasing easing) {
         int appearanceId = AddAppearance(targetAppearance);
 
-        RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration));
+        RaiseNetworkEvent(new AnimationEvent(entity, appearanceId, duration, easing));
     }
 }

@@ -80,7 +80,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
             return;
 
         LoadAppearance(e.TargetAppearanceId, targetAppearance => {
-            sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration);
+            sprite.Icon.StartAppearanceAnimation(targetAppearance, e.Duration, e.Easing);
         });
     }
 

@@ -24,6 +24,7 @@ using Robust.Shared.Asynchronous;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Vector4 = Robust.Shared.Maths.Vector4;
+using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamRuntime.Procs.Native {
     /// <remarks>
@@ -31,6 +32,8 @@ namespace OpenDreamRuntime.Procs.Native {
     /// like filter(), matrix(), etc.
     /// </remarks>
     internal static class DreamProcNativeRoot {
+        private static readonly DreamResourceManager _resourceManager = IoCManager.Resolve<DreamResourceManager>();
+
         [DreamProc("alert")]
         [DreamProcParameter("Usr", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("Message", Type = DreamValueTypeFlag.String)]
@@ -73,6 +76,31 @@ namespace OpenDreamRuntime.Procs.Native {
             return await connection.Alert(title, message, button1, button2, button3);
         }
 
+    /* vars:
+
+    animate smoothly:
+
+    alpha
+    color
+    glide_size
+    infra_luminosity
+    layer
+    maptext_width, maptext_height, maptext_x, maptext_y
+    luminosity
+    pixel_x, pixel_y, pixel_w, pixel_z
+    transform
+
+    do not animate smoothly:
+
+    dir
+    icon
+    icon_state
+    invisibility
+    maptext
+    suffix
+
+    */
+
         [DreamProc("animate")]
         [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("time", Type = DreamValueTypeFlag.Float)]
@@ -82,31 +110,59 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("pixel_x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("pixel_z", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("maptext_width", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("maptext_height", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("maptext_x", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("maptext_y", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("dir", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("color", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("luminosity", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("infra_luminosity", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("layer", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("glide_size", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("icon", Type = DreamValueTypeFlag.String | DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("invisibility", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("suffix", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_animate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             // TODO: Leaving out the Object var adds a new step to the previous animation
             if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
                 return DreamValue.Null;
             // TODO: Is this the correct behavior for invalid time?
-            if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
+            if (!bundle.GetArgument(int.MaxValue, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
-            if (bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop))
+            if (bundle.GetArgument(int.MaxValue, "loop").TryGetValueAsInteger(out int loop))
                 return DreamValue.Null; // TODO: Looped animations are not implemented
-            if (bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing) && easing != 1) // LINEAR_EASING only
-                return DreamValue.Null; // TODO: Non-linear animation easing types are not implemented"
-            if (bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
+            if (bundle.GetArgument(int.MaxValue, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
                 return DreamValue.Null; // TODO: Animation flags are not implemented
 
-            var pixelX = bundle.GetArgument(5, "pixel_x");
-            var pixelY = bundle.GetArgument(6, "pixel_y");
-            var dir = bundle.GetArgument(7, "dir");
+            bundle.GetArgument(int.MaxValue, "easing").TryGetValueAsInteger(out int easing);
+            if(!Enum.IsDefined(typeof(AnimationEasing), easing))
+                throw new ArgumentOutOfRangeException("easing", easing, "Invalid easing value in animate()");
 
-            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), appearance => {
+
+            var pixelX = bundle.GetArgument(int.MaxValue, "pixel_x");
+            var pixelY = bundle.GetArgument(int.MaxValue, "pixel_y");
+            var pixelZ = bundle.GetArgument(int.MaxValue, "pixel_z");
+            var maptextX = bundle.GetArgument(int.MaxValue, "maptext_x");
+            var maptextY = bundle.GetArgument(int.MaxValue, "maptext_y");
+            var dir = bundle.GetArgument(int.MaxValue, "dir");
+            var alpha = bundle.GetArgument(int.MaxValue, "alpha");
+            var transform = bundle.GetArgument(int.MaxValue, "transform");
+            var color = bundle.GetArgument(int.MaxValue, "color");
+            var luminosity = bundle.GetArgument(int.MaxValue, "luminosity");
+            var infraLuminosity = bundle.GetArgument(int.MaxValue, "infra_luminosity");
+            var layer = bundle.GetArgument(int.MaxValue, "layer");
+            var glideSize = bundle.GetArgument(int.MaxValue, "glide_size");
+            var icon = bundle.GetArgument(int.MaxValue, "icon");
+            var iconState = bundle.GetArgument(int.MaxValue, "icon_state");
+            var invisibility = bundle.GetArgument(int.MaxValue, "invisibility");
+            var suffix = bundle.GetArgument(int.MaxValue, "suffix");
+
+            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, appearance => {
                 if (!pixelX.IsNull) {
                     obj.SetVariableValue("pixel_x", pixelX);
                     pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);
@@ -117,13 +173,99 @@ namespace OpenDreamRuntime.Procs.Native {
                     pixelY.TryGetValueAsInteger(out appearance.PixelOffset.Y);
                 }
 
-                if (!dir.IsNull) {
-                    obj.SetVariableValue("dir", dir);
-                    dir.TryGetValueAsInteger(out int dirValue);
-                    appearance.Direction = (AtomDirection)dirValue;
+                /* TODO world.map_format
+                if (!pixelZ.IsNull) {
+                    obj.SetVariableValue("pixel_z", pixelZ);
+                    pixelZ.TryGetValueAsInteger(out appearance.PixelOffset.Z);
+                }
+                */
+
+                /* TODO maptext
+                if (!maptextX.IsNull) {
+                    obj.SetVariableValue("maptext_x", maptextX);
+                    maptextX.TryGetValueAsInteger(out appearance.MapTextOffset.X);
                 }
 
-                // TODO: Rest of the animatable vars
+                if (!maptextY.IsNull) {
+                    obj.SetVariableValue("maptext_y", maptextY);
+                    maptextY.TryGetValueAsInteger(out appearance.MapTextOffset.Y);
+                }
+                */
+
+                if (!dir.IsNull) {
+                    obj.SetVariableValue("dir", dir);
+                    if(dir.TryGetValueAsInteger(out int dirValue))
+                        appearance.Direction = (AtomDirection)dirValue;
+                }
+
+                if (!alpha.IsNull) {
+                    obj.SetVariableValue("alpha", alpha);
+                    if(alpha.TryGetValueAsInteger(out var alphaInt))
+                        appearance.Alpha = (byte) Math.Clamp(alphaInt,0,255);
+                }
+
+                if (!transform.IsNull) {
+                    obj.SetVariableValue("transform", transform);
+                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformObj))
+                        appearance.Transform = DreamObjectMatrix.MatrixToTransformFloatArray(transformObj);
+                }
+
+                if (!color.IsNull) {
+                    obj.SetVariableValue("color", color);
+                    if(color.TryGetValueAsString(out var colorStr))
+                        Color.TryParse(colorStr, out var colorValue);
+                    else if (color.TryGetValueAsDreamList(out var colorList)) {
+                        if(DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var colorMatrix))
+                            appearance.ColorMatrix = colorMatrix;
+                    }
+                }
+
+                /* TODO luminosity
+                if (!luminosity.IsNull) {
+                    obj.SetVariableValue("luminosity", luminosity);
+                    luminosity.TryGetValueAsInteger(out appearance.Luminosity);
+                }
+                */
+
+                /* TODO infra_luminosity
+                if (!infraLuminosity.IsNull) {
+                    obj.SetVariableValue("infra_luminosity", infraLuminosity);
+                    infraLuminosity.TryGetValueAsInteger(out appearance.InfraLuminosity);
+                }
+                */
+
+                if (!layer.IsNull) {
+                    obj.SetVariableValue("layer", layer);
+                    layer.TryGetValueAsFloat(out appearance.Layer);
+                }
+
+                if (!glideSize.IsNull) {
+                    obj.SetVariableValue("glide_size", glideSize);
+                    glideSize.TryGetValueAsFloat(out appearance.GlideSize);
+                }
+
+                if (!icon.IsNull) {
+                    obj.SetVariableValue("icon", icon);
+                    if(_resourceManager.TryLoadIcon(icon, out var iconResource))
+                        appearance.Icon = iconResource.Id;
+                }
+
+                if (!iconState.IsNull) {
+                    obj.SetVariableValue("icon_state", iconState);
+                    iconState.TryGetValueAsString(out appearance.IconState);
+                }
+
+                if (!invisibility.IsNull) {
+                    obj.SetVariableValue("invisibility", invisibility);
+                    invisibility.TryGetValueAsInteger(out appearance.Invisibility);
+                }
+
+                /* TODO suffix
+                if (!suffix.IsNull) {
+                    obj.SetVariableValue("suffix", suffix);
+                    suffix.TryGetValueAsString(out appearance.Suffix);
+                }
+                */
             });
 
             return DreamValue.Null;

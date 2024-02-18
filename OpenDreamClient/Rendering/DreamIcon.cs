@@ -74,9 +74,9 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         });
     }
 
-    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration) {
+    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
-        _appearanceAnimation = new AppearanceAnimation(DateTime.Now, duration, endingAppearance);
+        _appearanceAnimation = new AppearanceAnimation(DateTime.Now, duration, endingAppearance, easing);
     }
 
     public void EndAppearanceAnimation() {
@@ -132,7 +132,49 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
 
         AppearanceAnimation animation = _appearanceAnimation.Value;
         IconAppearance appearance = new IconAppearance(_appearance);
-        float factor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
+        float timeFactor = Math.Clamp((DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
+        float factor = 0;
+        switch (animation.Easing) {
+            case AnimationEasing.Linear:
+                factor = timeFactor;
+                break;
+            case AnimationEasing.Sine:
+                factor = (float)Math.Sin(timeFactor * MathF.PI / 2);
+                break;
+            case AnimationEasing.Circular:
+                factor = (float)Math.Sqrt(1 - Math.Pow(1 - timeFactor, 2));
+                break;
+            case AnimationEasing.Cubic:
+                factor = (float)(1 - Math.Pow(1-timeFactor, 3));
+                break;
+            case AnimationEasing.Bounce:
+                float bounce = timeFactor*2.75f;
+                if(bounce<1)
+                    factor = bounce*bounce;
+                else if(bounce<2) {
+                    bounce -= 1.5f;
+                    factor = bounce*bounce + 0.75f;
+                } else if(bounce<2.5) {
+                    bounce -= 2.25f;
+                    factor = bounce*bounce + 0.9375f;
+                } else {
+                    bounce -= 2.625f;
+                    factor = bounce*bounce + 0.984375f;
+                }
+                break;
+            case AnimationEasing.Elastic:
+                factor = (float)(1.0 - Math.Pow(2, -10 * timeFactor) * Math.Cos(timeFactor*Math.PI/0.15));
+                break;
+            case AnimationEasing.Back:
+                factor = (float)(1 - Math.Pow(1 - timeFactor, 2)*((1.70158+1)*(1-timeFactor) - 1.70158));
+                break;
+            case AnimationEasing.Quad:
+                factor = (float) (1 - Math.Pow(1-timeFactor,2));
+                break;
+            case AnimationEasing.Jump:
+                factor = (timeFactor < 1) ? 0 : 1;
+                break;
+        }
         IconAppearance endAppearance = animation.EndAppearance;
 
         if (endAppearance.PixelOffset != _appearance.PixelOffset) {
@@ -142,8 +184,55 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             appearance.PixelOffset = (Vector2i)newPixelOffset;
         }
 
+        //non-smooth animations
+        /*
+        dir
+        icon
+        icon_state
+        invisibility
+        maptext
+        suffix
+        */
+
         if (endAppearance.Direction != _appearance.Direction) {
             appearance.Direction = endAppearance.Direction;
+        }
+        if (endAppearance.Icon != _appearance.Icon) {
+            appearance.Icon = endAppearance.Icon;
+        }
+        if (endAppearance.IconState != _appearance.IconState) {
+            appearance.IconState = endAppearance.IconState;
+        }
+        if (endAppearance.Invisibility != _appearance.Invisibility) {
+            appearance.Invisibility = endAppearance.Invisibility;
+        }
+        /* TODO maptext
+        if (endAppearance.MapText != _appearance.MapText) {
+            appearance.MapText = endAppearance.MapText;
+        }
+        */
+        /* TODO suffix
+        if (endAppearance.Suffix != _appearance.Suffix) {
+            appearance.Suffix = endAppearance.Suffix;
+        }
+        */
+
+        //smooth animation properties
+        /*
+        alpha
+        color
+        glide_size
+        infra_luminosity
+        layer
+        maptext_width, maptext_height, maptext_x, maptext_y
+        luminosity
+        pixel_x, pixel_y, pixel_w, pixel_z
+        transform
+        */
+
+
+        if (endAppearance.Alpha != _appearance.Alpha) {
+            appearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
         }
 
         // TODO: Other animatable properties
@@ -200,9 +289,10 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         }
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
         public readonly IconAppearance EndAppearance = endAppearance;
+        public readonly AnimationEasing Easing = easing;
     }
 }

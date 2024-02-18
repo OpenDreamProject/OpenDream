@@ -488,7 +488,7 @@ public sealed class AtomManager {
         }
     }
 
-    public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, Action<IconAppearance> animate) {
+    public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, AnimationEasing easing, Action<IconAppearance> animate) {
         if (atom is not DreamObjectMovable movable)
             return; //Animating non-movables is unimplemented
 
@@ -501,7 +501,7 @@ public sealed class AtomManager {
 
         NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
 
-        AppearanceSystem.Animate(ent, appearance, duration);
+        AppearanceSystem.Animate(ent, appearance, duration, easing);
     }
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {

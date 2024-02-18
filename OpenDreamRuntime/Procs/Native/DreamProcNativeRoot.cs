@@ -132,35 +132,38 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
                 return DreamValue.Null;
             // TODO: Is this the correct behavior for invalid time?
-            if (!bundle.GetArgument(int.MaxValue, "time").TryGetValueAsFloat(out float time))
+            if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
-            if (bundle.GetArgument(int.MaxValue, "loop").TryGetValueAsInteger(out int loop))
+            if (bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop))
                 return DreamValue.Null; // TODO: Looped animations are not implemented
-            if (bundle.GetArgument(int.MaxValue, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
+            if (bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
                 return DreamValue.Null; // TODO: Animation flags are not implemented
 
-            bundle.GetArgument(int.MaxValue, "easing").TryGetValueAsInteger(out int easing);
+            bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing);
             if(!Enum.IsDefined(typeof(AnimationEasing), easing))
                 throw new ArgumentOutOfRangeException("easing", easing, "Invalid easing value in animate()");
 
 
-            var pixelX = bundle.GetArgument(int.MaxValue, "pixel_x");
-            var pixelY = bundle.GetArgument(int.MaxValue, "pixel_y");
-            var pixelZ = bundle.GetArgument(int.MaxValue, "pixel_z");
-            var maptextX = bundle.GetArgument(int.MaxValue, "maptext_x");
-            var maptextY = bundle.GetArgument(int.MaxValue, "maptext_y");
-            var dir = bundle.GetArgument(int.MaxValue, "dir");
-            var alpha = bundle.GetArgument(int.MaxValue, "alpha");
-            var transform = bundle.GetArgument(int.MaxValue, "transform");
-            var color = bundle.GetArgument(int.MaxValue, "color");
-            var luminosity = bundle.GetArgument(int.MaxValue, "luminosity");
-            var infraLuminosity = bundle.GetArgument(int.MaxValue, "infra_luminosity");
-            var layer = bundle.GetArgument(int.MaxValue, "layer");
-            var glideSize = bundle.GetArgument(int.MaxValue, "glide_size");
-            var icon = bundle.GetArgument(int.MaxValue, "icon");
-            var iconState = bundle.GetArgument(int.MaxValue, "icon_state");
-            var invisibility = bundle.GetArgument(int.MaxValue, "invisibility");
-            var suffix = bundle.GetArgument(int.MaxValue, "suffix");
+            var pixelX = bundle.GetArgument(5, "pixel_x");
+            var pixelY = bundle.GetArgument(6, "pixel_y");
+            var pixelZ = bundle.GetArgument(7, "pixel_z");
+            var maptext = bundle.GetArgument(8, "maptext");
+            var maptextWidth = bundle.GetArgument(9, "maptext_width");
+            var maptextHeight = bundle.GetArgument(10, "maptext_height");
+            var maptextX = bundle.GetArgument(11, "maptext_x");
+            var maptextY = bundle.GetArgument(12, "maptext_y");
+            var dir = bundle.GetArgument(13, "dir");
+            var alpha = bundle.GetArgument(14, "alpha");
+            var transform = bundle.GetArgument(15, "transform");
+            var color = bundle.GetArgument(16, "color");
+            var luminosity = bundle.GetArgument(17, "luminosity");
+            var infraLuminosity = bundle.GetArgument(18, "infra_luminosity");
+            var layer = bundle.GetArgument(19, "layer");
+            var glideSize = bundle.GetArgument(20, "glide_size");
+            var icon = bundle.GetArgument(21, "icon");
+            var iconState = bundle.GetArgument(22, "icon_state");
+            var invisibility = bundle.GetArgument(23, "invisibility");
+            var suffix = bundle.GetArgument(24, "suffix");
 
             bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, appearance => {
                 if (!pixelX.IsNull) {

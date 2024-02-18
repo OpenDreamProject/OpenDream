@@ -7,7 +7,7 @@
 	var/appearance_flags = 0
 	var/blend_mode = 0
 	var/color = null
-	var/contents as opendream_unimplemented
+	var/list/contents as opendream_unimplemented
 	var/density = 0 as opendream_unimplemented
 	var/desc = null
 	var/gender = "neuter" as opendream_unimplemented
@@ -43,7 +43,7 @@
 	var/text = "i" as opendream_unimplemented
 	var/matrix/transform
 	var/list/underlays = null
-	var/verbs as opendream_unimplemented
+	var/list/verbs as opendream_unimplemented
 	var/visibility = 1 as opendream_unimplemented
 	var/vis_flags = 0 as opendream_unimplemented
 

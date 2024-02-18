@@ -136,7 +136,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!ascii.TryGetValueAsInteger(out int asciiValue))
                 throw new Exception($"{ascii} is not a number");
 
-            return new DreamValue(Convert.ToChar(asciiValue).ToString());
+            return new DreamValue(char.ConvertFromUtf32(asciiValue));
         }
 
         [DreamProc("block")]

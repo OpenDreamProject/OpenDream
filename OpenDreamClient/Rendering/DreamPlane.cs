@@ -70,6 +70,8 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
     /// Draws this plane's mouse map onto the current render target
     /// </summary>
     public void DrawMouseMap(DrawingHandleWorld handle, DreamViewOverlay overlay, Vector2i renderTargetSize, Box2 worldAABB) {
+        if (Master?.MouseOpacity == MouseOpacity.Transparent)
+            return;
         handle.UseShader(overlay.BlockColorInstance);
         foreach (var sprite in Sprites) {
             if (sprite.MouseOpacity == MouseOpacity.Transparent || sprite.ShouldPassMouse)

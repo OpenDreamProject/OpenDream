@@ -116,9 +116,7 @@ public sealed class ClientVerbSystem : VerbSystem {
                             continue;
 
                         break;
-                    default:
-                        // TODO: All the other kinds
-                        break;
+                    // TODO: All the other kinds
                 }
 
                 yield return (verbId, src, verb);
@@ -147,22 +145,26 @@ public sealed class ClientVerbSystem : VerbSystem {
                 continue;
             }
 
-            switch (target.Type) {
-                case ClientObjectReference.RefType.Entity:
-                    var entity = _entityManager.GetEntity(target.Entity);
-                    var isMob = _entityManager.HasComponent<DreamMobSightComponent>(entity);
+            if (targetType == DreamValueType.Anything) {
+                yield return verb;
+            } else {
+                switch (target.Type) {
+                    case ClientObjectReference.RefType.Entity:
+                        var entity = _entityManager.GetEntity(target.Entity);
+                        var isMob = _entityManager.HasComponent<DreamMobSightComponent>(entity);
 
-                    if ((targetType & DreamValueType.Mob) != 0x0 && isMob)
-                        yield return verb;
-                    if ((targetType & DreamValueType.Obj) != 0x0 && !isMob)
-                        yield return verb;
+                        if ((targetType & DreamValueType.Mob) != 0x0 && isMob)
+                            yield return verb;
+                        if ((targetType & DreamValueType.Obj) != 0x0 && !isMob)
+                            yield return verb;
 
-                    break;
-                case ClientObjectReference.RefType.Turf:
-                    if ((targetType & DreamValueType.Turf) != 0x0)
-                        yield return verb;
+                        break;
+                    case ClientObjectReference.RefType.Turf:
+                        if ((targetType & DreamValueType.Turf) != 0x0)
+                            yield return verb;
 
-                    break;
+                        break;
+                }
             }
         }
     }

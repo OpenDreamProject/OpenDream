@@ -26,5 +26,4 @@
 		"㊙" = 0x3299,
 	)
 	for(var/v in values)
-		log << "[v]([values[v]]) == [ascii2text(values[v])]\n"
 		ASSERT(ascii2text(values[v]) == v)

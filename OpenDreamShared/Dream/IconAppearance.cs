@@ -286,4 +286,14 @@ namespace OpenDreamShared.Dream {
         Ease_In = 64,
         Ease_Out = 128,
     }
+
+    [Flags]
+    public enum AnimationFlags {
+        ANIMATION_END_NOW,
+        ANIMATION_LINEAR_TRANSFORM,
+        ANIMATION_PARALLEL,
+        ANIMATION_RELATIVE,
+        ANIMATION_CONTINUE,
+        ANIMATION_SLICE
+    }
 }

@@ -100,6 +100,11 @@ namespace OpenDreamRuntime.Procs.Native {
     suffix
 
     */
+        /// <summary>
+        /// Stores the last object that was animated, so that animate() can be called without the object parameter
+        /// TODO move this to thread? or maybe proc? idk, it shouldn't be here
+        /// </summary>
+        private static DreamValue lastAnimationObject = DreamValue.Null;
 
         [DreamProc("animate")]
         [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
@@ -128,44 +133,47 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("invisibility", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("suffix", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_animate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            // TODO: Leaving out the Object var adds a new step to the previous animation
             if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
-                return DreamValue.Null;
+                if(lastAnimationObject.IsNull)
+                    throw new Exception("animate() called without an object and no previous object to animate");
+                else if(!lastAnimationObject.TryGetValueAsDreamObject<DreamObjectAtom>(out obj))
+                    return DreamValue.Null;
+            lastAnimationObject = new DreamValue(obj);
             // TODO: Is this the correct behavior for invalid time?
             if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;
-            if (bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop))
-                return DreamValue.Null; // TODO: Looped animations are not implemented
-            if (bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flags) && flags != 0)
-                return DreamValue.Null; // TODO: Animation flags are not implemented
 
+            bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop);
             bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing);
             if(!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.Ease_In | (int)AnimationEasing.Ease_Out)))
                 throw new ArgumentOutOfRangeException("easing", easing, "Invalid easing value in animate()");
+            bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flagsInt);
+            var flags = (AnimationFlags)flagsInt;
+            bundle.GetArgument(5, "delay").TryGetValueAsInteger(out int delay);
 
+            var pixelX = bundle.GetArgument(6, "pixel_x");
+            var pixelY = bundle.GetArgument(7, "pixel_y");
+            var pixelZ = bundle.GetArgument(8, "pixel_z");
+            var maptext = bundle.GetArgument(9, "maptext");
+            var maptextWidth = bundle.GetArgument(10, "maptext_width");
+            var maptextHeight = bundle.GetArgument(11, "maptext_height");
+            var maptextX = bundle.GetArgument(12, "maptext_x");
+            var maptextY = bundle.GetArgument(13, "maptext_y");
+            var dir = bundle.GetArgument(14, "dir");
+            var alpha = bundle.GetArgument(15, "alpha");
+            var transform = bundle.GetArgument(16, "transform");
+            var color = bundle.GetArgument(17, "color");
+            var luminosity = bundle.GetArgument(18, "luminosity");
+            var infraLuminosity = bundle.GetArgument(19, "infra_luminosity");
+            var layer = bundle.GetArgument(20, "layer");
+            var glideSize = bundle.GetArgument(21, "glide_size");
+            var icon = bundle.GetArgument(22, "icon");
+            var iconState = bundle.GetArgument(23, "icon_state");
+            var invisibility = bundle.GetArgument(24, "invisibility");
+            var suffix = bundle.GetArgument(25, "suffix");
 
-            var pixelX = bundle.GetArgument(5, "pixel_x");
-            var pixelY = bundle.GetArgument(6, "pixel_y");
-            var pixelZ = bundle.GetArgument(7, "pixel_z");
-            var maptext = bundle.GetArgument(8, "maptext");
-            var maptextWidth = bundle.GetArgument(9, "maptext_width");
-            var maptextHeight = bundle.GetArgument(10, "maptext_height");
-            var maptextX = bundle.GetArgument(11, "maptext_x");
-            var maptextY = bundle.GetArgument(12, "maptext_y");
-            var dir = bundle.GetArgument(13, "dir");
-            var alpha = bundle.GetArgument(14, "alpha");
-            var transform = bundle.GetArgument(15, "transform");
-            var color = bundle.GetArgument(16, "color");
-            var luminosity = bundle.GetArgument(17, "luminosity");
-            var infraLuminosity = bundle.GetArgument(18, "infra_luminosity");
-            var layer = bundle.GetArgument(19, "layer");
-            var glideSize = bundle.GetArgument(20, "glide_size");
-            var icon = bundle.GetArgument(21, "icon");
-            var iconState = bundle.GetArgument(22, "icon_state");
-            var invisibility = bundle.GetArgument(23, "invisibility");
-            var suffix = bundle.GetArgument(24, "suffix");
-
-            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, appearance => {
+            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay,
+            appearance => {
                 if (!pixelX.IsNull) {
                     obj.SetVariableValue("pixel_x", pixelX);
                     pixelX.TryGetValueAsInteger(out appearance.PixelOffset.X);

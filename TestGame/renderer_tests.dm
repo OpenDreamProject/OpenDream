@@ -281,6 +281,21 @@
 	push()
 		usr.color = rgb(rand(0,255), rand(0,255), rand(0,255))
 
+/obj/button/animation_test
+	name = "Animation Test"
+	desc = "Click me to get thouroughly animated!"
+
+	push()
+		//grow and fade
+		animate(usr, transform = matrix()*2, alpha = 0, time = 5)
+		animate(transform = matrix(), alpha = 255, time = 5)
+		//spin
+		animate(usr, transform = turn(matrix(), 120), time = 2, loop = 5)
+		animate(transform = turn(matrix(), 240), time = 2)
+		animate(transform = null, time = 2)
+
+/obj/plaque/animation_test 
+	data = "<h3>Animation Test</h3><p>Click the button to apply a series of animations to your mob</p>"
 
 //render order sanity checks
 /obj/order_test

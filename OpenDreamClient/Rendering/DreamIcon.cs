@@ -46,7 +46,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
 
     private int _animationFrame;
     private TimeSpan _animationFrameTime = gameTiming.CurTime;
-    private AppearanceAnimation? _appearanceAnimation;
+    private List<AppearanceAnimation>? _appearanceAnimations;
     private Box2? _cachedAABB;
 
     public DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem appearanceSystem, int appearanceId,
@@ -57,7 +57,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     public void SetAppearance(int? appearanceId, AtomDirection? parentDir = null) {
         // End any animations that are currently happening
         // Note that this isn't faithful to the original behavior
-        EndAppearanceAnimation();
+        EndAppearanceAnimation(null);
 
         if (appearanceId == null) {
             Appearance = null;
@@ -75,16 +75,29 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         });
     }
 
-    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing) {
+    //three things to do here, chained animations, loops and parallel animations
+    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
-        _appearanceAnimation = new AppearanceAnimation(DateTime.Now, duration, endingAppearance, easing);
+        _appearanceAnimations ??= new List<AppearanceAnimation>();
+        _appearanceAnimations.Add(new AppearanceAnimation(DateTime.Now, duration, endingAppearance, easing, loops, flags, delay));
     }
 
-    public void EndAppearanceAnimation() {
-        if (_appearanceAnimation != null)
-            _appearance = _appearanceAnimation.Value.EndAppearance;
-
-        _appearanceAnimation = null;
+    /// <summary>
+    /// Ends the target appearance animation. If appearanceAnimation is null, ends all animations.
+    /// </summary>
+    /// <param name="appearanceAnimation"></param>
+    private void EndAppearanceAnimation(AppearanceAnimation? appearanceAnimation) {
+        if (appearanceAnimation == null){
+            if(_appearanceAnimations != null && _appearanceAnimations.Count > 0) {
+                Appearance = _appearanceAnimations[^1].EndAppearance;
+                _appearanceAnimations.Clear();
+            }
+            return;
+        }
+        if (_appearanceAnimations != null && _appearanceAnimations.Contains(appearanceAnimation!.Value)) {
+            _appearance = appearanceAnimation!.Value.EndAppearance;
+            _appearanceAnimations.Remove(appearanceAnimation!.Value);
+        }
     }
 
     public void GetWorldAABB(Vector2 worldPos, ref Box2? aabb) {
@@ -128,208 +141,223 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     }
 
     private IconAppearance? CalculateAnimatedAppearance() {
-        if (_appearanceAnimation == null || _appearance == null)
+        if (_appearanceAnimations == null || _appearance == null)
             return _appearance;
-
-        AppearanceAnimation animation = _appearanceAnimation.Value;
         IconAppearance appearance = new IconAppearance(_appearance);
-        float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
-        float factor = 0;
-        if((animation.Easing & AnimationEasing.Ease_In) != 0)
-            timeFactor = 0.5f+timeFactor/2.0f;
-        if((animation.Easing & AnimationEasing.Ease_Out) != 0)
-            timeFactor = timeFactor/2.0f;
+        List<AppearanceAnimation>? toRemove = null;
+        for(int i = 0; i < _appearanceAnimations.Count; i++) {
+            AppearanceAnimation animation = _appearanceAnimations[i];
+            //if it's not the first one, and it's not parallel, break
+            if((animation.flags & AnimationFlags.ANIMATION_PARALLEL) == 0 && i != 0)
+                break;
 
-        switch (animation.Easing) {
-            case AnimationEasing.Linear:
-                factor = timeFactor;
-                break;
-            case AnimationEasing.Sine:
-                factor = (float)Math.Sin(timeFactor * MathF.PI / 2);
-                break;
-            case AnimationEasing.Circular:
-                factor = (float)Math.Sqrt(1 - Math.Pow(1 - timeFactor, 2));
-                break;
-            case AnimationEasing.Cubic:
-                factor = (float)(1 - Math.Pow(1-timeFactor, 3));
-                break;
-            case AnimationEasing.Bounce:
-                float bounce = timeFactor*2.75f;
-                if(bounce<1)
-                    factor = (float)Math.Pow(bounce, 2);
-                else if(bounce<2) {
-                    bounce -= 1.5f;
-                    factor = (float)Math.Pow(bounce, 2)+ 0.75f;
-                } else if(bounce<2.5) {
-                    bounce -= 2.25f;
-                    factor = (float)Math.Pow(bounce, 2) + 0.9375f;
-                } else {
-                    bounce -= 2.625f;
-                    factor = (float)Math.Pow(bounce, 2) + 0.984375f;
+
+            float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
+            float factor = 0;
+            if((animation.Easing & AnimationEasing.Ease_In) != 0)
+                timeFactor = 0.5f+timeFactor/2.0f;
+            if((animation.Easing & AnimationEasing.Ease_Out) != 0)
+                timeFactor = timeFactor/2.0f;
+
+            switch (animation.Easing) {
+                case AnimationEasing.Linear:
+                    factor = timeFactor;
+                    break;
+                case AnimationEasing.Sine:
+                    factor = (float)Math.Sin(timeFactor * MathF.PI / 2);
+                    break;
+                case AnimationEasing.Circular:
+                    factor = (float)Math.Sqrt(1 - Math.Pow(1 - timeFactor, 2));
+                    break;
+                case AnimationEasing.Cubic:
+                    factor = (float)(1 - Math.Pow(1-timeFactor, 3));
+                    break;
+                case AnimationEasing.Bounce:
+                    float bounce = timeFactor*2.75f;
+                    if(bounce<1)
+                        factor = (float)Math.Pow(bounce, 2);
+                    else if(bounce<2) {
+                        bounce -= 1.5f;
+                        factor = (float)Math.Pow(bounce, 2)+ 0.75f;
+                    } else if(bounce<2.5) {
+                        bounce -= 2.25f;
+                        factor = (float)Math.Pow(bounce, 2) + 0.9375f;
+                    } else {
+                        bounce -= 2.625f;
+                        factor = (float)Math.Pow(bounce, 2) + 0.984375f;
+                    }
+                    break;
+                case AnimationEasing.Elastic:
+                    factor = (float)(1.0 - Math.Pow(2, -10 * timeFactor) * Math.Cos(timeFactor*Math.PI/0.15));
+                    break;
+                case AnimationEasing.Back:
+                    factor = (float)(1 - Math.Pow(1 - timeFactor, 2)*((2.70158)*(1-timeFactor) - 1.70158));
+                    break;
+                case AnimationEasing.Quad:
+                    factor = (float) (1 - Math.Pow(1-timeFactor,2));
+                    break;
+                case AnimationEasing.Jump:
+                    factor = (timeFactor < 1) ? 0 : 1;
+                    break;
+            }
+
+            IconAppearance endAppearance = animation.EndAppearance;
+
+            //non-smooth animations
+            /*
+            dir
+            icon
+            icon_state
+            invisibility
+            maptext
+            suffix
+            */
+
+            if (endAppearance.Direction != _appearance.Direction) {
+                appearance.Direction = endAppearance.Direction;
+            }
+            if (endAppearance.Icon != _appearance.Icon) {
+                appearance.Icon = endAppearance.Icon;
+            }
+            if (endAppearance.IconState != _appearance.IconState) {
+                appearance.IconState = endAppearance.IconState;
+            }
+            if (endAppearance.Invisibility != _appearance.Invisibility) {
+                appearance.Invisibility = endAppearance.Invisibility;
+            }
+            /* TODO maptext
+            if (endAppearance.MapText != _appearance.MapText) {
+                appearance.MapText = endAppearance.MapText;
+            }
+            */
+            /* TODO suffix
+            if (endAppearance.Suffix != _appearance.Suffix) {
+                appearance.Suffix = endAppearance.Suffix;
+            }
+            */
+
+            //smooth animation properties
+            /*
+            alpha
+            color
+            glide_size
+            infra_luminosity
+            layer
+            maptext_width, maptext_height, maptext_x, maptext_y
+            luminosity
+            pixel_x, pixel_y, pixel_w, pixel_z
+            transform
+            */
+
+
+            if (endAppearance.Alpha != _appearance.Alpha) {
+                appearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
+            }
+
+            if (endAppearance.Color != _appearance.Color) {
+                appearance.Color = Color.FromSrgb(new Color(
+                    Math.Clamp(((1-factor) * _appearance.Color.R) + (factor * endAppearance.Color.R), 0, 1),
+                    Math.Clamp(((1-factor) * _appearance.Color.G) + (factor * endAppearance.Color.G), 0, 1),
+                    Math.Clamp(((1-factor) * _appearance.Color.B) + (factor * endAppearance.Color.B), 0, 1),
+                    Math.Clamp(((1-factor) * _appearance.Color.A) + (factor * endAppearance.Color.A), 0, 1)
+                ));
+            }
+
+            if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
+                appearance.ColorMatrix = new ColorMatrix(
+                    ((1-factor) * _appearance.ColorMatrix.c11) + (factor * endAppearance.ColorMatrix.c11),
+                    ((1-factor) * _appearance.ColorMatrix.c12) + (factor * endAppearance.ColorMatrix.c12),
+                    ((1-factor) * _appearance.ColorMatrix.c13) + (factor * endAppearance.ColorMatrix.c13),
+                    ((1-factor) * _appearance.ColorMatrix.c14) + (factor * endAppearance.ColorMatrix.c14),
+                    ((1-factor) * _appearance.ColorMatrix.c21) + (factor * endAppearance.ColorMatrix.c21),
+                    ((1-factor) * _appearance.ColorMatrix.c22) + (factor * endAppearance.ColorMatrix.c22),
+                    ((1-factor) * _appearance.ColorMatrix.c23) + (factor * endAppearance.ColorMatrix.c23),
+                    ((1-factor) * _appearance.ColorMatrix.c24) + (factor * endAppearance.ColorMatrix.c24),
+                    ((1-factor) * _appearance.ColorMatrix.c31) + (factor * endAppearance.ColorMatrix.c31),
+                    ((1-factor) * _appearance.ColorMatrix.c32) + (factor * endAppearance.ColorMatrix.c32),
+                    ((1-factor) * _appearance.ColorMatrix.c33) + (factor * endAppearance.ColorMatrix.c33),
+                    ((1-factor) * _appearance.ColorMatrix.c34) + (factor * endAppearance.ColorMatrix.c34),
+                    ((1-factor) * _appearance.ColorMatrix.c41) + (factor * endAppearance.ColorMatrix.c41),
+                    ((1-factor) * _appearance.ColorMatrix.c42) + (factor * endAppearance.ColorMatrix.c42),
+                    ((1-factor) * _appearance.ColorMatrix.c43) + (factor * endAppearance.ColorMatrix.c43),
+                    ((1-factor) * _appearance.ColorMatrix.c44) + (factor * endAppearance.ColorMatrix.c44),
+                    ((1-factor) * _appearance.ColorMatrix.c51) + (factor * endAppearance.ColorMatrix.c51),
+                    ((1-factor) * _appearance.ColorMatrix.c52) + (factor * endAppearance.ColorMatrix.c52),
+                    ((1-factor) * _appearance.ColorMatrix.c53) + (factor * endAppearance.ColorMatrix.c53),
+                    ((1-factor) * _appearance.ColorMatrix.c54) + (factor * endAppearance.ColorMatrix.c54)
+                );
+            }
+
+
+            if (endAppearance.GlideSize != _appearance.GlideSize) {
+                appearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
+            }
+
+            /* TODO infraluminosity
+            if (endAppearance.InfraLuminosity != _appearance.InfraLuminosity) {
+                appearance.InfraLuminosity = ((1-factor) * _appearance.InfraLuminosity) + (factor * endAppearance.InfraLuminosity);
+            }
+            */
+
+            if (endAppearance.Layer != _appearance.Layer) {
+                appearance.Layer = ((1-factor) * _appearance.Layer) + (factor * endAppearance.Layer);
+            }
+
+            /* TODO luminosity
+            if (endAppearance.Luminosity != _appearance.Luminosity) {
+                appearance.Luminosity = ((1-factor) * _appearance.Luminosity) + (factor * endAppearance.Luminosity);
+            }
+            */
+
+            /* TODO maptext
+            if (endAppearance.MapTextWidth != _appearance.MapTextWidth) {
+                appearance.MapTextWidth = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextWidth) + (factor * endAppearance.MapTextWidth), 0, 65535);
+            }
+
+            if (endAppearance.MapTextHeight != _appearance.MapTextHeight) {
+                appearance.MapTextHeight = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextHeight) + (factor * endAppearance.MapTextHeight), 0, 65535);
+            }
+
+            if (endAppearance.MapTextX != _appearance.MapTextX) {
+                appearance.MapTextX = (short)Math.Clamp(((1-factor) * _appearance.MapTextX) + (factor * endAppearance.MapTextX), -32768, 32767);
+            }
+
+            if (endAppearance.MapTextY != _appearance.MapTextY) {
+                appearance.MapTextY = (short)Math.Clamp(((1-factor) * _appearance.MapTextY) + (factor * endAppearance.MapTextY), -32768, 32767);
+            }
+            */
+
+            if (endAppearance.PixelOffset != _appearance.PixelOffset) {
+                Vector2 startingOffset = appearance.PixelOffset;
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
+
+                appearance.PixelOffset = (Vector2i)newPixelOffset;
+            }
+
+            if (endAppearance.Transform != _appearance.Transform) {
+                appearance.Transform = [
+                    (1-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]),
+                    (1-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]),
+                    (1-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]),
+                    (1-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]),
+                    (1-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]),
+                    (1-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5])
+                ];
+            }
+
+            if (timeFactor >= 1f) {
+                if(animation.loops > 0)
+                    animation.loops--;
+                if(animation.loops == 0){
+                    toRemove ??= new();
+                    toRemove!.Add(animation);
                 }
-                break;
-            case AnimationEasing.Elastic:
-                factor = (float)(1.0 - Math.Pow(2, -10 * timeFactor) * Math.Cos(timeFactor*Math.PI/0.15));
-                break;
-            case AnimationEasing.Back:
-                factor = (float)(1 - Math.Pow(1 - timeFactor, 2)*((2.70158)*(1-timeFactor) - 1.70158));
-                break;
-            case AnimationEasing.Quad:
-                factor = (float) (1 - Math.Pow(1-timeFactor,2));
-                break;
-            case AnimationEasing.Jump:
-                factor = (timeFactor < 1) ? 0 : 1;
-                break;
+            }
         }
-
-        IconAppearance endAppearance = animation.EndAppearance;
-
-        //non-smooth animations
-        /*
-        dir
-        icon
-        icon_state
-        invisibility
-        maptext
-        suffix
-        */
-
-        if (endAppearance.Direction != _appearance.Direction) {
-            appearance.Direction = endAppearance.Direction;
-        }
-        if (endAppearance.Icon != _appearance.Icon) {
-            appearance.Icon = endAppearance.Icon;
-        }
-        if (endAppearance.IconState != _appearance.IconState) {
-            appearance.IconState = endAppearance.IconState;
-        }
-        if (endAppearance.Invisibility != _appearance.Invisibility) {
-            appearance.Invisibility = endAppearance.Invisibility;
-        }
-        /* TODO maptext
-        if (endAppearance.MapText != _appearance.MapText) {
-            appearance.MapText = endAppearance.MapText;
-        }
-        */
-        /* TODO suffix
-        if (endAppearance.Suffix != _appearance.Suffix) {
-            appearance.Suffix = endAppearance.Suffix;
-        }
-        */
-
-        //smooth animation properties
-        /*
-        alpha
-        color
-        glide_size
-        infra_luminosity
-        layer
-        maptext_width, maptext_height, maptext_x, maptext_y
-        luminosity
-        pixel_x, pixel_y, pixel_w, pixel_z
-        transform
-        */
-
-
-        if (endAppearance.Alpha != _appearance.Alpha) {
-            appearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
-        }
-
-        if (endAppearance.Color != _appearance.Color) {
-            appearance.Color = Color.FromSrgb(new Color(
-                Math.Clamp(((1-factor) * _appearance.Color.R) + (factor * endAppearance.Color.R), 0, 1),
-                Math.Clamp(((1-factor) * _appearance.Color.G) + (factor * endAppearance.Color.G), 0, 1),
-                Math.Clamp(((1-factor) * _appearance.Color.B) + (factor * endAppearance.Color.B), 0, 1),
-                Math.Clamp(((1-factor) * _appearance.Color.A) + (factor * endAppearance.Color.A), 0, 1)
-            ));
-        }
-
-        if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
-            appearance.ColorMatrix = new ColorMatrix(
-                ((1-factor) * _appearance.ColorMatrix.c11) + (factor * endAppearance.ColorMatrix.c11),
-                ((1-factor) * _appearance.ColorMatrix.c12) + (factor * endAppearance.ColorMatrix.c12),
-                ((1-factor) * _appearance.ColorMatrix.c13) + (factor * endAppearance.ColorMatrix.c13),
-                ((1-factor) * _appearance.ColorMatrix.c14) + (factor * endAppearance.ColorMatrix.c14),
-                ((1-factor) * _appearance.ColorMatrix.c21) + (factor * endAppearance.ColorMatrix.c21),
-                ((1-factor) * _appearance.ColorMatrix.c22) + (factor * endAppearance.ColorMatrix.c22),
-                ((1-factor) * _appearance.ColorMatrix.c23) + (factor * endAppearance.ColorMatrix.c23),
-                ((1-factor) * _appearance.ColorMatrix.c24) + (factor * endAppearance.ColorMatrix.c24),
-                ((1-factor) * _appearance.ColorMatrix.c31) + (factor * endAppearance.ColorMatrix.c31),
-                ((1-factor) * _appearance.ColorMatrix.c32) + (factor * endAppearance.ColorMatrix.c32),
-                ((1-factor) * _appearance.ColorMatrix.c33) + (factor * endAppearance.ColorMatrix.c33),
-                ((1-factor) * _appearance.ColorMatrix.c34) + (factor * endAppearance.ColorMatrix.c34),
-                ((1-factor) * _appearance.ColorMatrix.c41) + (factor * endAppearance.ColorMatrix.c41),
-                ((1-factor) * _appearance.ColorMatrix.c42) + (factor * endAppearance.ColorMatrix.c42),
-                ((1-factor) * _appearance.ColorMatrix.c43) + (factor * endAppearance.ColorMatrix.c43),
-                ((1-factor) * _appearance.ColorMatrix.c44) + (factor * endAppearance.ColorMatrix.c44),
-                ((1-factor) * _appearance.ColorMatrix.c51) + (factor * endAppearance.ColorMatrix.c51),
-                ((1-factor) * _appearance.ColorMatrix.c52) + (factor * endAppearance.ColorMatrix.c52),
-                ((1-factor) * _appearance.ColorMatrix.c53) + (factor * endAppearance.ColorMatrix.c53),
-                ((1-factor) * _appearance.ColorMatrix.c54) + (factor * endAppearance.ColorMatrix.c54)
-            );
-        }
-
-
-        if (endAppearance.GlideSize != _appearance.GlideSize) {
-            appearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
-        }
-
-        /* TODO infraluminosity
-        if (endAppearance.InfraLuminosity != _appearance.InfraLuminosity) {
-            appearance.InfraLuminosity = ((1-factor) * _appearance.InfraLuminosity) + (factor * endAppearance.InfraLuminosity);
-        }
-        */
-
-        if (endAppearance.Layer != _appearance.Layer) {
-            appearance.Layer = ((1-factor) * _appearance.Layer) + (factor * endAppearance.Layer);
-        }
-
-        /* TODO luminosity
-        if (endAppearance.Luminosity != _appearance.Luminosity) {
-            appearance.Luminosity = ((1-factor) * _appearance.Luminosity) + (factor * endAppearance.Luminosity);
-        }
-        */
-
-        /* TODO maptext
-        if (endAppearance.MapTextWidth != _appearance.MapTextWidth) {
-            appearance.MapTextWidth = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextWidth) + (factor * endAppearance.MapTextWidth), 0, 65535);
-        }
-
-        if (endAppearance.MapTextHeight != _appearance.MapTextHeight) {
-            appearance.MapTextHeight = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextHeight) + (factor * endAppearance.MapTextHeight), 0, 65535);
-        }
-
-        if (endAppearance.MapTextX != _appearance.MapTextX) {
-            appearance.MapTextX = (short)Math.Clamp(((1-factor) * _appearance.MapTextX) + (factor * endAppearance.MapTextX), -32768, 32767);
-        }
-
-        if (endAppearance.MapTextY != _appearance.MapTextY) {
-            appearance.MapTextY = (short)Math.Clamp(((1-factor) * _appearance.MapTextY) + (factor * endAppearance.MapTextY), -32768, 32767);
-        }
-        */
-
-        if (endAppearance.PixelOffset != _appearance.PixelOffset) {
-            Vector2 startingOffset = appearance.PixelOffset;
-            Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
-
-            appearance.PixelOffset = (Vector2i)newPixelOffset;
-        }
-
-        if (endAppearance.Transform != _appearance.Transform) {
-            appearance.Transform = [
-                (1-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]),
-                (1-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]),
-                (1-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]),
-                (1-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]),
-                (1-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]),
-                (1-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5])
-            ];
-        }
-
-        if (timeFactor >= 1f) {
-            EndAppearanceAnimation();
-        }
-
+        if(toRemove != null)
+            foreach (AppearanceAnimation animation in toRemove!) {
+                EndAppearanceAnimation(animation);
+            }
         return appearance;
     }
 
@@ -378,10 +406,14 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         }
     }
 
-    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing) {
+    private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, int loops, AnimationFlags flags, int delay) {
         public readonly DateTime Start = start;
         public readonly TimeSpan Duration = duration;
         public readonly IconAppearance EndAppearance = endAppearance;
         public readonly AnimationEasing Easing = easing;
+        public int loops = loops;
+        public readonly AnimationFlags flags = flags;
+        public int delay = delay;
+
     }
 }

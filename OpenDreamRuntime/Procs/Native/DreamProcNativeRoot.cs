@@ -133,11 +133,14 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("invisibility", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("suffix", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_animate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj))
+            bool chainAnim = false;
+            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj)){
                 if(lastAnimationObject.IsNull)
                     throw new Exception("animate() called without an object and no previous object to animate");
                 else if(!lastAnimationObject.TryGetValueAsDreamObject<DreamObjectAtom>(out obj))
                     return DreamValue.Null;
+                chainAnim = true;
+            }
             lastAnimationObject = new DreamValue(obj);
             // TODO: Is this the correct behavior for invalid time?
             if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
@@ -149,6 +152,10 @@ namespace OpenDreamRuntime.Procs.Native {
                 throw new ArgumentOutOfRangeException("easing", easing, "Invalid easing value in animate()");
             bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flagsInt);
             var flags = (AnimationFlags)flagsInt;
+            if((flags & (AnimationFlags.ANIMATION_PARALLEL | AnimationFlags.ANIMATION_CONTINUE)) != 0)
+                chainAnim = true;
+            if((flags & AnimationFlags.ANIMATION_END_NOW) != 0)
+                chainAnim = false;
             bundle.GetArgument(5, "delay").TryGetValueAsInteger(out int delay);
 
             var pixelX = bundle.GetArgument(6, "pixel_x");
@@ -172,7 +179,7 @@ namespace OpenDreamRuntime.Procs.Native {
             var invisibility = bundle.GetArgument(24, "invisibility");
             var suffix = bundle.GetArgument(25, "suffix");
 
-            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay,
+            bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
             appearance => {
                 if (!pixelX.IsNull) {
                     obj.SetVariableValue("pixel_x", pixelX);

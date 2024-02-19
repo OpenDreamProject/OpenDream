@@ -289,6 +289,7 @@
 		//grow and fade
 		animate(usr, transform = matrix()*2, alpha = 0, time = 5)
 		animate(transform = matrix(), alpha = 255, time = 5)
+		sleep(5)
 		//spin
 		animate(usr, transform = turn(matrix(), 120), time = 2, loop = 5)
 		animate(transform = turn(matrix(), 240), time = 2)

@@ -76,8 +76,10 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     }
 
     //three things to do here, chained animations, loops and parallel animations
-    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay) {
+    public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
+        if(!chainAnim)
+            EndAppearanceAnimation(null);
         _appearanceAnimations ??= new List<AppearanceAnimation>();
         _appearanceAnimations.Add(new AppearanceAnimation(DateTime.Now, duration, endingAppearance, easing, loops, flags, delay));
     }
@@ -346,9 +348,13 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             }
 
             if (timeFactor >= 1f) {
-                if(animation.loops > 0)
-                    animation.loops--;
-                if(animation.loops == 0){
+                if (animation.loops > 0)
+                {
+                    var tempAnimation = _appearanceAnimations[i];
+                    tempAnimation.loops--;
+                    _appearanceAnimations[i] = tempAnimation;
+                }
+                if (animation.loops == 0) {
                     toRemove ??= new();
                     toRemove!.Add(animation);
                 }

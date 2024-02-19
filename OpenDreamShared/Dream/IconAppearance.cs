@@ -289,11 +289,12 @@ namespace OpenDreamShared.Dream {
 
     [Flags]
     public enum AnimationFlags {
-        ANIMATION_END_NOW,
-        ANIMATION_LINEAR_TRANSFORM,
-        ANIMATION_PARALLEL,
-        ANIMATION_RELATIVE,
-        ANIMATION_CONTINUE,
-        ANIMATION_SLICE
+        None = 0,
+        ANIMATION_END_NOW = 1,
+        ANIMATION_LINEAR_TRANSFORM = 2,
+        ANIMATION_PARALLEL = 4,
+        ANIMATION_RELATIVE = 256,
+        ANIMATION_CONTINUE = 512,
+        ANIMATION_SLICE = 8
     }
 }

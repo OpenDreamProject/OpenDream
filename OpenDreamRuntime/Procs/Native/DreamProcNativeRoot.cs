@@ -140,7 +140,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 return DreamValue.Null; // TODO: Animation flags are not implemented
 
             bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing);
-            if(!Enum.IsDefined(typeof(AnimationEasing), easing))
+            if(!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.Ease_In | (int)AnimationEasing.Ease_Out)))
                 throw new ArgumentOutOfRangeException("easing", easing, "Invalid easing value in animate()");
 
 

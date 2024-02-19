@@ -3,6 +3,7 @@ using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
+using Robust.Shared.Physics;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
@@ -132,8 +133,13 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
 
         AppearanceAnimation animation = _appearanceAnimation.Value;
         IconAppearance appearance = new IconAppearance(_appearance);
-        float timeFactor = Math.Clamp((DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
+        float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
         float factor = 0;
+        if((animation.Easing & AnimationEasing.Ease_In) != 0)
+            timeFactor = 0.5f+timeFactor/2.0f;
+        if((animation.Easing & AnimationEasing.Ease_Out) != 0)
+            timeFactor = timeFactor/2.0f;
+
         switch (animation.Easing) {
             case AnimationEasing.Linear:
                 factor = timeFactor;
@@ -150,23 +156,23 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             case AnimationEasing.Bounce:
                 float bounce = timeFactor*2.75f;
                 if(bounce<1)
-                    factor = bounce*bounce;
+                    factor = (float)Math.Pow(bounce, 2);
                 else if(bounce<2) {
                     bounce -= 1.5f;
-                    factor = bounce*bounce + 0.75f;
+                    factor = (float)Math.Pow(bounce, 2)+ 0.75f;
                 } else if(bounce<2.5) {
                     bounce -= 2.25f;
-                    factor = bounce*bounce + 0.9375f;
+                    factor = (float)Math.Pow(bounce, 2) + 0.9375f;
                 } else {
                     bounce -= 2.625f;
-                    factor = bounce*bounce + 0.984375f;
+                    factor = (float)Math.Pow(bounce, 2) + 0.984375f;
                 }
                 break;
             case AnimationEasing.Elastic:
                 factor = (float)(1.0 - Math.Pow(2, -10 * timeFactor) * Math.Cos(timeFactor*Math.PI/0.15));
                 break;
             case AnimationEasing.Back:
-                factor = (float)(1 - Math.Pow(1 - timeFactor, 2)*((1.70158+1)*(1-timeFactor) - 1.70158));
+                factor = (float)(1 - Math.Pow(1 - timeFactor, 2)*((2.70158)*(1-timeFactor) - 1.70158));
                 break;
             case AnimationEasing.Quad:
                 factor = (float) (1 - Math.Pow(1-timeFactor,2));
@@ -175,14 +181,8 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                 factor = (timeFactor < 1) ? 0 : 1;
                 break;
         }
+
         IconAppearance endAppearance = animation.EndAppearance;
-
-        if (endAppearance.PixelOffset != _appearance.PixelOffset) {
-            Vector2 startingOffset = appearance.PixelOffset;
-            Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
-
-            appearance.PixelOffset = (Vector2i)newPixelOffset;
-        }
 
         //non-smooth animations
         /*
@@ -235,9 +235,98 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             appearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
         }
 
-        // TODO: Other animatable properties
+        if (endAppearance.Color != _appearance.Color) {
+            appearance.Color = Color.FromSrgb(new Color(
+                Math.Clamp(((1-factor) * _appearance.Color.R) + (factor * endAppearance.Color.R), 0, 1),
+                Math.Clamp(((1-factor) * _appearance.Color.G) + (factor * endAppearance.Color.G), 0, 1),
+                Math.Clamp(((1-factor) * _appearance.Color.B) + (factor * endAppearance.Color.B), 0, 1),
+                Math.Clamp(((1-factor) * _appearance.Color.A) + (factor * endAppearance.Color.A), 0, 1)
+            ));
+        }
 
-        if (factor >= 1f) {
+        if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
+            appearance.ColorMatrix = new ColorMatrix(
+                ((1-factor) * _appearance.ColorMatrix.c11) + (factor * endAppearance.ColorMatrix.c11),
+                ((1-factor) * _appearance.ColorMatrix.c12) + (factor * endAppearance.ColorMatrix.c12),
+                ((1-factor) * _appearance.ColorMatrix.c13) + (factor * endAppearance.ColorMatrix.c13),
+                ((1-factor) * _appearance.ColorMatrix.c14) + (factor * endAppearance.ColorMatrix.c14),
+                ((1-factor) * _appearance.ColorMatrix.c21) + (factor * endAppearance.ColorMatrix.c21),
+                ((1-factor) * _appearance.ColorMatrix.c22) + (factor * endAppearance.ColorMatrix.c22),
+                ((1-factor) * _appearance.ColorMatrix.c23) + (factor * endAppearance.ColorMatrix.c23),
+                ((1-factor) * _appearance.ColorMatrix.c24) + (factor * endAppearance.ColorMatrix.c24),
+                ((1-factor) * _appearance.ColorMatrix.c31) + (factor * endAppearance.ColorMatrix.c31),
+                ((1-factor) * _appearance.ColorMatrix.c32) + (factor * endAppearance.ColorMatrix.c32),
+                ((1-factor) * _appearance.ColorMatrix.c33) + (factor * endAppearance.ColorMatrix.c33),
+                ((1-factor) * _appearance.ColorMatrix.c34) + (factor * endAppearance.ColorMatrix.c34),
+                ((1-factor) * _appearance.ColorMatrix.c41) + (factor * endAppearance.ColorMatrix.c41),
+                ((1-factor) * _appearance.ColorMatrix.c42) + (factor * endAppearance.ColorMatrix.c42),
+                ((1-factor) * _appearance.ColorMatrix.c43) + (factor * endAppearance.ColorMatrix.c43),
+                ((1-factor) * _appearance.ColorMatrix.c44) + (factor * endAppearance.ColorMatrix.c44),
+                ((1-factor) * _appearance.ColorMatrix.c51) + (factor * endAppearance.ColorMatrix.c51),
+                ((1-factor) * _appearance.ColorMatrix.c52) + (factor * endAppearance.ColorMatrix.c52),
+                ((1-factor) * _appearance.ColorMatrix.c53) + (factor * endAppearance.ColorMatrix.c53),
+                ((1-factor) * _appearance.ColorMatrix.c54) + (factor * endAppearance.ColorMatrix.c54)
+            );
+        }
+
+
+        if (endAppearance.GlideSize != _appearance.GlideSize) {
+            appearance.GlideSize = ((1-factor) * _appearance.GlideSize) + (factor * endAppearance.GlideSize);
+        }
+
+        /* TODO infraluminosity
+        if (endAppearance.InfraLuminosity != _appearance.InfraLuminosity) {
+            appearance.InfraLuminosity = ((1-factor) * _appearance.InfraLuminosity) + (factor * endAppearance.InfraLuminosity);
+        }
+        */
+
+        if (endAppearance.Layer != _appearance.Layer) {
+            appearance.Layer = ((1-factor) * _appearance.Layer) + (factor * endAppearance.Layer);
+        }
+
+        /* TODO luminosity
+        if (endAppearance.Luminosity != _appearance.Luminosity) {
+            appearance.Luminosity = ((1-factor) * _appearance.Luminosity) + (factor * endAppearance.Luminosity);
+        }
+        */
+
+        /* TODO maptext
+        if (endAppearance.MapTextWidth != _appearance.MapTextWidth) {
+            appearance.MapTextWidth = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextWidth) + (factor * endAppearance.MapTextWidth), 0, 65535);
+        }
+
+        if (endAppearance.MapTextHeight != _appearance.MapTextHeight) {
+            appearance.MapTextHeight = (ushort)Math.Clamp(((1-factor) * _appearance.MapTextHeight) + (factor * endAppearance.MapTextHeight), 0, 65535);
+        }
+
+        if (endAppearance.MapTextX != _appearance.MapTextX) {
+            appearance.MapTextX = (short)Math.Clamp(((1-factor) * _appearance.MapTextX) + (factor * endAppearance.MapTextX), -32768, 32767);
+        }
+
+        if (endAppearance.MapTextY != _appearance.MapTextY) {
+            appearance.MapTextY = (short)Math.Clamp(((1-factor) * _appearance.MapTextY) + (factor * endAppearance.MapTextY), -32768, 32767);
+        }
+        */
+
+        if (endAppearance.PixelOffset != _appearance.PixelOffset) {
+            Vector2 startingOffset = appearance.PixelOffset;
+            Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
+
+            appearance.PixelOffset = (Vector2i)newPixelOffset;
+        }
+
+        if (endAppearance.Transform != _appearance.Transform) {
+            appearance.Transform = [
+                (1-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]),
+                (1-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]),
+                (1-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]),
+                (1-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]),
+                (1-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]),
+                (1-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5])
+            ];
+        }
+
+        if (timeFactor >= 1f) {
             EndAppearanceAnimation();
         }
 

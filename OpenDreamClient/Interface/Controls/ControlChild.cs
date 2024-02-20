@@ -30,7 +30,7 @@ internal sealed class ControlChild : InterfaceControl {
             ? rightWindow.UIElement
             : null;
 
-        if (newLeftElement != _leftElement || _grid.ChildCount == 0) {
+        if (newLeftElement != _leftElement || _grid.ChildCount == 1) {
             if (_leftElement != null)
                 _grid.Children.Remove(_leftElement);
 
@@ -46,7 +46,7 @@ internal sealed class ControlChild : InterfaceControl {
             _grid.Children.Add(_leftElement);
         }
 
-        if (newRightElement != _rightElement || _grid.ChildCount == 1) {
+        if (newRightElement != _rightElement || _grid.ChildCount == 2) {
             if (_rightElement != null)
                 _grid.Children.Remove(_rightElement);
 

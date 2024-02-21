@@ -86,7 +86,8 @@ public sealed class DreamObjectWorld : DreamObject {
     }
 
     protected override void HandleDeletion() {
-        base.HandleDeletion();
+        // we're special snowflakes
+        // base.HandleDeletion();
 
         _server.Shutdown("world was deleted");
     }

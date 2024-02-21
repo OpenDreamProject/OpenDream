@@ -67,9 +67,10 @@ public sealed class ControlWindow : InterfaceControl {
             window.SetHeight = window.MaxHeight;
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
-            if (WindowDescriptor.OnClose != null) {
+            if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose)) {
                 _interfaceManager.RunCommand(WindowDescriptor.OnClose);
             }
+
             _myWindow = (null, _myWindow.clydeWindow);
         };
         window.StartupLocation = WindowStartupLocation.CenterOwner;
@@ -151,7 +152,6 @@ public sealed class ControlWindow : InterfaceControl {
                         element.SetWidth = Math.Max(width, 0);
                         element.SetHeight = Math.Max(height, 0);
                     }
-
                 }
             }
         }

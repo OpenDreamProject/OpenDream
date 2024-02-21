@@ -53,10 +53,12 @@ internal sealed class ControlBrowser : InterfaceControl {
                 OnHideEvent();
             }
         };
+
         if(ControlDescriptor.IsVisible)
             OnShowEvent();
         else
             OnHideEvent();
+
         return _webView;
     }
 
@@ -157,14 +159,14 @@ internal sealed class ControlBrowser : InterfaceControl {
         _interfaceManager.WinSet(element, modifiedQuery);
     }
 
-    public void OnShowEvent() {
+    private void OnShowEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
         }
     }
 
-    public void OnHideEvent() {
+    private void OnHideEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
         if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);

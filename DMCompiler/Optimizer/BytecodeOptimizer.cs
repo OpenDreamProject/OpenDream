@@ -126,13 +126,15 @@ public class BytecodeOptimizer {
 
 
     private static bool TryGetLabelName(AnnotatedBytecodeInstruction instruction, out string? labelName) {
-        object? result = instruction.GetArgs().Where(arg => arg is AnnotatedBytecodeLabel).FirstOrDefault();
-        if (result == null) {
-            labelName = null;
-            return false;
+        foreach (var arg in instruction.GetArgs()) {
+            if (arg is not AnnotatedBytecodeLabel label)
+                continue;
+
+            labelName = label.LabelName;
+            return true;
         }
 
-        labelName = ((AnnotatedBytecodeLabel)result).LabelName;
-        return true;
+        labelName = null;
+        return false;
     }
 }

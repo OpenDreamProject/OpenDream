@@ -1,8 +1,8 @@
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
@@ -63,29 +63,33 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    sealed class NewPath : DMExpression {
-        private readonly DreamPath _targetPath;
-        private readonly ArgumentList _arguments;
-
-        public NewPath(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
-            _targetPath = targetPath;
-            _arguments = arguments;
-        }
+    internal sealed class NewPath(Location location, Path targetPath, ArgumentList arguments) : DMExpression(location) {
+        public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (!DMObjectTree.TryGetTypeId(_targetPath, out var typeId)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_targetPath} does not exist");
-
+            if (!targetPath.TryResolvePath(out var pathInfo)) {
+                proc.PushNull();
                 return;
             }
 
-            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+            var argumentInfo = arguments.EmitArguments(dmObject, proc);
 
-            proc.PushType(typeId, _targetPath);
+            switch (pathInfo.Value.Type) {
+                case Expressions.Path.PathType.TypeReference:
+                    proc.PushType(pathInfo.Value.Id, _targetPath);
+                    break;
+                case Expressions.Path.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                    proc.PushProc(pathInfo.Value.Id);
+                    break;
+                case Expressions.Path.PathType.ProcStub:
+                case Expressions.Path.PathType.VerbStub:
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
+                    proc.PushNull();
+                    return;
+            }
+
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
-
-        public override DreamPath? Path => _targetPath;
     }
 
     // locate()

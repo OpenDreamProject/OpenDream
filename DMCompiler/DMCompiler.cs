@@ -3,7 +3,6 @@ using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
-using DMCompiler.DM.Visitors;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -15,6 +14,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DMCompiler.DM.Optimizer;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 
 namespace DMCompiler;
@@ -162,9 +163,9 @@ public static class DMCompiler {
             Emit(warning);
         }
 
-        DMASTSimplifier astSimplifier = new DMASTSimplifier();
+        DMASTFolder astSimplifier = new DMASTFolder();
         VerbosePrint("Constant folding");
-        astSimplifier.SimplifyAST(astFile);
+        astSimplifier.FoldAst(astFile);
 
         DMObjectBuilder.BuildObjectTree(astFile);
 

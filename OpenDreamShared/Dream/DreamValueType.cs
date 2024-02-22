@@ -11,6 +11,8 @@ namespace OpenDreamShared.Dream;
 /// </summary>
 [Flags]
 public enum DreamValueType {
+    AllAtomTypes = Obj | Mob | Turf | Area,
+
     Anything = 0x0,
     Null = 0x1,
     Text = 0x2,

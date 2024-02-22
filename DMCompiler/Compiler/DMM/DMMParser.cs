@@ -2,6 +2,7 @@
 using DMCompiler.DM;
 using System.Collections.Generic;
 using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.Compiler.DMM;

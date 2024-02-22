@@ -1,8 +1,8 @@
-using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
 
-namespace DMCompiler.DM.Visitors {
+namespace DMCompiler.DM.Builders {
     internal static class DMObjectBuilder {
         private static readonly List<(DMObject, DMASTObjectVarDefinition)> VarDefinitions = new();
         private static readonly List<(DMObject, DMASTObjectVarOverride)> VarOverrides = new();
@@ -118,7 +118,7 @@ namespace DMCompiler.DM.Visitors {
 
                         // Success! Remove this one from the list
                         lateProcVarDefs.RemoveAt(i--);
-                    } catch (UnknownIdentifierException e) {
+                    } catch (UnknownIdentifierException) {
                         // Keep it in the list, try again after the rest have been processed
                     } finally {
                         DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;

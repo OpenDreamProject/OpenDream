@@ -23,8 +23,8 @@ highp vec4 blur(sampler2D sp, highp vec2 uv, highp vec2 scale) {
     highp vec4 col = texture(sp, uv) * weight;
     highp float accum = weight;
     
-    for (highp int x = 0; x <= size*5; ++x) {
-        for (highp int y = 1; y <= size*5; ++y) {
+    for (highp int x = 0; x <= int(size)*5; ++x) {
+        for (highp int y = 1; y <= int(size)*5; ++y) {
             offset = vec2(x, y);
             weight = gaussian(offset);
             col += texture(sp, uv + scale * offset) * weight;
@@ -49,8 +49,8 @@ void vertex()
 {
     VERTEX = apply_mvp(VERTEX);
     pos = (VERTEX + vec2(1.0)) / 2.0;
-    sigma = float(size*5) * 0.25;
-    sigma2 = 2. * sigma * sigma;
+    sigma = float(size*5.0) * 0.25;
+    sigma2 = 2.0 * sigma * sigma;
     pisigma2 = pi * sigma2;
 }
 

@@ -1,9 +1,9 @@
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler.DM;
-using DMCompiler.DM.Visitors;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 
 namespace DMCompiler.DM;
 

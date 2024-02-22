@@ -315,7 +315,7 @@ public static class StringFormatEncoder {
     /// (DM uses this because it uses UTF8 and 0xFF is just an invalid character in that encoding, no biggie)<br/>
     /// See: "Halfwidth and Fullwidth Forms" on https://en.wikibooks.org/wiki/Unicode/Character_reference/F000-FFFF
     /// </remarks>
-    public static UInt16 FormatPrefix = 0xFF00;
+    public static ushort FormatPrefix = 0xFF00;
 
     /// <summary>
     /// The lower byte of the aforementioned formatting marker thingies we stuff into our UTF16 strings.<br/>
@@ -324,14 +324,14 @@ public static class StringFormatEncoder {
     /// <remarks>
     /// <see langword="DO NOT CAST TO CHAR!"/> This requires FormatPrefix to be added to it in order to be a useful formatting character!!
     /// </remarks>
-    public enum FormatSuffix : UInt16 {
+    public enum FormatSuffix : ushort {
         //States that Interpolated values can have (the [] thingies)
         StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary
         StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
         ReferenceOfValue = 0x2,        //\ref[]
 
         //States that macros can have
-        //(these can have any arbitrary value as long as compiler/server/cilent all agree)
+        //(these can have any arbitrary value as long as compiler/server/client all agree)
         //(Some of these values may not align with what they are internally in BYOND; too bad!!)
         UpperDefiniteArticle,     //The
         LowerDefiniteArticle,     //the
@@ -374,12 +374,12 @@ public static class StringFormatEncoder {
 
     /// <returns>The UTF16 character we should be actually storing to articulate this format marker.</returns>
     public static char Encode(FormatSuffix suffix) {
-        return (char)(FormatPrefix | ((UInt16)suffix));
+        return (char)(FormatPrefix | ((ushort)suffix));
     }
 
     /// <returns>true if the input character was actually a formatting codepoint. false if not.</returns>
     public static bool Decode(char c, [NotNullWhen(true)] out FormatSuffix? suffix) {
-        UInt16 bytes = c; // this is an implicit reinterpret_cast, in C++ lingo
+        ushort bytes = c; // this is an implicit reinterpret_cast, in C++ lingo
         suffix = null;
         if((bytes & FormatPrefix) != FormatPrefix)
             return false;
@@ -388,7 +388,7 @@ public static class StringFormatEncoder {
     }
 
     public static bool Decode(char c) {
-        UInt16 bytes = c;
+        ushort bytes = c;
         return (bytes & FormatPrefix) == FormatPrefix; // Could also check that the lower byte is a valid enum but... ehhhhh
     }
 
@@ -598,16 +598,10 @@ public enum OpcodeArgType {
 /// <summary>
 /// Miscellaneous metadata associated with individual <see cref="DreamProcOpcode"/> opcodes using the <see cref="OpcodeMetadataAttribute"/> attribute
 /// </summary>
-public struct OpcodeMetadata {
-    public readonly int StackDelta; // Net change in stack size caused by this opcode
-    public readonly List<OpcodeArgType> RequiredArgs; // The types of arguments this opcode requires
-    public readonly bool VariableArgs; // Whether this opcode takes a variable number of arguments
-
-    public OpcodeMetadata(int stackDelta = 0, bool variableArgs = false, params OpcodeArgType[] requiredArgs) {
-        StackDelta = stackDelta;
-        RequiredArgs = new List<OpcodeArgType>(requiredArgs);
-        VariableArgs = variableArgs;
-    }
+public struct OpcodeMetadata(int stackDelta = 0, bool variableArgs = false, params OpcodeArgType[] requiredArgs) {
+    public readonly int StackDelta = stackDelta; // Net change in stack size caused by this opcode
+    public readonly List<OpcodeArgType> RequiredArgs = [..requiredArgs]; // The types of arguments this opcode requires
+    public readonly bool VariableArgs = variableArgs; // Whether this opcode takes a variable number of arguments
 }
 
 /// <summary>
@@ -620,7 +614,7 @@ public static class OpcodeMetadataCache {
         foreach (DreamProcOpcode opcode in Enum.GetValues(typeof(DreamProcOpcode))) {
             var field = typeof(DreamProcOpcode).GetField(opcode.ToString());
             var attribute = Attribute.GetCustomAttribute(field!, typeof(OpcodeMetadataAttribute));
-            var metadataAttribute = (OpcodeMetadataAttribute)attribute;
+            var metadataAttribute = (OpcodeMetadataAttribute?)attribute;
             MetadataCache[(byte)opcode] = metadataAttribute?.Metadata ?? new OpcodeMetadata();
         }
     }

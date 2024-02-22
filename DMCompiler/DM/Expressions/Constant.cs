@@ -477,24 +477,19 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // /a/b/c
-    sealed class Path : Constant {
-        public DreamPath Value { get; }
+    internal sealed class Path(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
+        public DreamPath Value { get; } = value;
 
         /// <summary>
         /// The DMObject this expression resides in. Used for path searches.
         /// </summary>
-        private readonly DMObject _dmObject;
+        private readonly DMObject _dmObject = dmObject;
 
-        private enum PathType {
+        public enum PathType {
             TypeReference,
             ProcReference,
             ProcStub,
             VerbStub
-        }
-
-        public Path(Location location, DMObject dmObject, DreamPath value) : base(location) {
-            Value = value;
-            _dmObject = dmObject;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -554,7 +549,7 @@ namespace DMCompiler.DM.Expressions {
             return true;
         }
 
-        private bool TryResolvePath([NotNullWhen(true)] out (PathType Type, int Id)? pathInfo) {
+        public bool TryResolvePath([NotNullWhen(true)] out (PathType Type, int Id)? pathInfo) {
             DreamPath path = Value;
 
             // An upward search with no left-hand side

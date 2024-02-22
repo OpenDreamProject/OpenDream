@@ -316,14 +316,14 @@ public sealed class ControlInfo : InterfaceControl {
 
     public void OnShowEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (controlDescriptor.OnShowCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (controlDescriptor.OnHideCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
         }
     }

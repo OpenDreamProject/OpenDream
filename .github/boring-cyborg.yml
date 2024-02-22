@@ -1,0 +1,11 @@
+labelPRBasedOnFilePath:
+  Client:
+    - OpenDreamClient/**/*
+    - OpenDreamShared/**/*
+  Runtime:
+    - OpenDreamRuntime/**/*
+    - OpenDreamServer/**/*
+    - OpenDreamShared/**/*
+  Compiler:
+    - DMCompiler/**/*
+    - DMDisassembler/**/*

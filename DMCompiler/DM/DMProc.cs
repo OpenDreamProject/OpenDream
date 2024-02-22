@@ -327,7 +327,7 @@ namespace DMCompiler.DM {
             WriteOpcode(DreamProcOpcode.CreateListEnumerator);
         }
 
-        public void CreateFilteredListEnumerator(int filterTypeId) {
+        public void CreateFilteredListEnumerator(int filterTypeId, DreamPath filterType) {
             WriteOpcode(DreamProcOpcode.CreateFilteredListEnumerator);
             WriteFilterID(filterTypeId, filterType);
         }

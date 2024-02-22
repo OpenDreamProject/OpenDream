@@ -76,10 +76,10 @@ namespace DMCompiler.DM.Expressions {
 
             switch (pathInfo.Value.Type) {
                 case Expressions.Path.PathType.TypeReference:
-                    proc.PushType(pathInfo.Value.Id, _targetPath);
+                    proc.PushType(pathInfo.Value.Id, Path);
                     break;
                 case Expressions.Path.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
-                    proc.PushProc(pathInfo.Value.Id);
+                    proc.PushProc(pathInfo.Value.Id, Path);
                     break;
                 case Expressions.Path.PathType.ProcStub:
                 case Expressions.Path.PathType.VerbStub:

@@ -1,22 +1,18 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Optimizer {
-
     // Assign [ref]
     // Pop
     // -> AssignPop [ref]
-    internal class AssignPop : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class AssignPop : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.Assign,
                 DreamProcOpcode.Pop
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -32,16 +28,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushNull
     // AssignPop [ref]
     // -> AssignNull [ref]
-    internal class AssignNull : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class AssignNull : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushNull,
                 DreamProcOpcode.AssignPop
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -57,16 +49,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushReferenceValue [ref]
     // DereferenceField [field]
     // -> PushRefAndDereferenceField [ref, field]
-    internal class PushField : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class PushField : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushReferenceValue,
                 DreamProcOpcode.DereferenceField
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -83,16 +71,12 @@ namespace DMCompiler.DM.Optimizer {
     // BooleanNot
     // JumpIfFalse [label]
     // -> JumpIfTrue [label]
-    internal class BooleanNotJump : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class BooleanNotJump : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.BooleanNot,
                 DreamProcOpcode.JumpIfFalse
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -108,16 +92,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushReferenceValue [ref]
     // JumpIfFalse [label]
     // -> JumpIfReferenceFalse [ref] [label]
-    internal class JumpIfReferenceFalse : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class JumpIfReferenceFalse : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushReferenceValue,
                 DreamProcOpcode.JumpIfFalse
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -135,16 +115,12 @@ namespace DMCompiler.DM.Optimizer {
     // ...
     // PushString [string]
     // -> PushNStrings [count] [string] ... [string]
-    internal class PushNStrings : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class PushNStrings : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushString,
                 DreamProcOpcode.PushString
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -172,16 +148,12 @@ namespace DMCompiler.DM.Optimizer {
     // ...
     // PushFloat [float]
     // -> PushNFloats [count] [float] ... [float]
-    internal class PushNFloats : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class PushNFloats : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushFloat,
                 DreamProcOpcode.PushFloat
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -209,16 +181,12 @@ namespace DMCompiler.DM.Optimizer {
     // ...
     // PushReferenceValue [ref]
     // -> PushNRef [count] [ref] ... [ref]
-    internal class PushNRef : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class PushNRef : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushReferenceValue,
                 DreamProcOpcode.PushReferenceValue
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -246,16 +214,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushString [string]
     // PushFloat [float]
     // -> PushStringFloat [string] [float]
-    internal class PushStringFloat : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class PushStringFloat : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushString,
                 DreamProcOpcode.PushFloat
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -272,16 +236,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushFloat [float]
     // SwitchCase [label]
     // -> SwitchOnFloat [float] [label]
-    internal class SwitchOnFloat : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class SwitchOnFloat : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushFloat,
                 DreamProcOpcode.SwitchCase
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -298,16 +258,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushString [string]
     // SwitchCase [label]
     // -> SwitchOnString [string] [label]
-    internal class SwitchOnString : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class SwitchOnString : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushString,
                 DreamProcOpcode.SwitchCase
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -325,16 +281,12 @@ namespace DMCompiler.DM.Optimizer {
     // ...
     // PushStringFloat [string] [float]
     // -> PushArbitraryNOfStringFloat [count] [string] [float] ... [string] [float]
-    internal class PushNOfStringFloat : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class PushNOfStringFloat : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushStringFloat,
                 DreamProcOpcode.PushStringFloat
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -364,16 +316,12 @@ namespace DMCompiler.DM.Optimizer {
     // ...
     // PushResource [resource]
     // -> PushNResources [count] [resource] ... [resource]
-    internal class PushNResources : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class PushNResources : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushResource,
                 DreamProcOpcode.PushResource
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -400,16 +348,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushNFloats [count] [float] ... [float]
     // CreateList [count]
     // -> CreateListNFloats [count] [float] ... [float]
-    internal class CreateListNFloats : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class CreateListNFloats : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushNFloats,
                 DreamProcOpcode.CreateList
-            };
+            ];
         }
 
         public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
@@ -433,16 +377,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushNStrings [count] [string] ... [string]
     // CreateList [count]
     // -> CreateListNStrings [count] [string] ... [string]
-    internal class CreateListNStrings : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class CreateListNStrings : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushNStrings,
                 DreamProcOpcode.CreateList
-            };
+            ];
         }
 
         public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
@@ -466,16 +406,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushNResources [count] [resource] ... [resource]
     // CreateList [count]
     // -> CreateListNResources [count] [resource] ... [resource]
-    internal class CreateListNResources : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class CreateListNResources : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushNResources,
                 DreamProcOpcode.CreateList
-            };
+            ];
         }
 
         public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
@@ -499,16 +435,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushNRefs [count] [ref] ... [ref]
     // CreateList [count]
     // -> CreateListNRefs [count] [ref] ... [ref]
-    internal class CreateListNRefs : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class CreateListNRefs : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushNRefs,
                 DreamProcOpcode.CreateList
-            };
+            ];
         }
 
         public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
@@ -532,16 +464,12 @@ namespace DMCompiler.DM.Optimizer {
     // Jump [label1]
     // Jump [label2] <- Dead code
     // -> Jump [label1]
-    internal class RemoveJumpFollowedByJump : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class RemoveJumpFollowedByJump : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.Jump,
                 DreamProcOpcode.Jump
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {
@@ -552,16 +480,12 @@ namespace DMCompiler.DM.Optimizer {
     // PushType [type]
     // IsType
     // -> IsTypeDirect [type]
-    internal class IsTypeDirect : PeepholeOptimization {
-        public int GetLength() {
-            return 2;
-        }
-
-        public List<DreamProcOpcode> GetOpcodes() {
-            return new() {
+    internal class IsTypeDirect : IPeepholeOptimization {
+        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+            return [
                 DreamProcOpcode.PushType,
                 DreamProcOpcode.IsType
-            };
+            ];
         }
 
         public void Apply(List<IAnnotatedBytecode> input, int index) {

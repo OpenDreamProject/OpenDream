@@ -68,7 +68,6 @@ namespace DMCompiler.DM {
         }
 
         public List<string> Parameters = new();
-        public List<DMValueType> ParameterTypes = new();
         public Location Location;
         public ProcAttributes Attributes;
         public bool IsVerb = false;
@@ -238,6 +237,7 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
+                Parameters.Add(name);
                 _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
             }
         }
@@ -1124,12 +1124,13 @@ namespace DMCompiler.DM {
             bytecodeDumpWriter.Write($"Proc {pathString}/{(IsVerb ? "verb/" : "")}{Name}(");
             for (int i = 0; i < Parameters.Count; i++) {
                 string argumentName = Parameters[i];
-                DMValueType argumentType = ParameterTypes[i];
+                DMValueType? argumentType = _parameters[argumentName].ExplicitValueType;
 
-                bytecodeDumpWriter.Write($"{argumentName}: {argumentType}");
-                if (i < Parameters.Count - 1) {
+                bytecodeDumpWriter.Write(argumentName);
+                if (argumentType != null)
+                    bytecodeDumpWriter.Write($": {argumentType}");
+                if (i < Parameters.Count - 1)
                     bytecodeDumpWriter.Write(", ");
-                }
             }
 
             bytecodeDumpWriter.Write("):");

@@ -1,116 +1,103 @@
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using DMCompiler.Bytecode;
 
-namespace DMCompiler.DM.Optimizer {
-    internal interface PeepholeOptimization {
-        public int GetLength();
-        public List<DreamProcOpcode> GetOpcodes();
-        public void Apply(List<IAnnotatedBytecode> input, int index);
+namespace DMCompiler.DM.Optimizer;
 
-        public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
-            return true;
-        }
-        bool IsDisabled() {
-            return false;
+internal interface IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes();
+    public void Apply(List<IAnnotatedBytecode> input, int index);
+
+    public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
+        return true;
+    }
+}
+
+internal sealed class PeepholeOptimizer {
+    private class OptimizationTreeEntry {
+        public IPeepholeOptimization? Optimization;
+        public Dictionary<DreamProcOpcode, OptimizationTreeEntry>? Children;
+    }
+
+    /// <summary>
+    /// Trees matching chains of opcodes to peephole optimizations
+    /// </summary>
+    private static readonly Dictionary<DreamProcOpcode, OptimizationTreeEntry> OptimizationTrees = new();
+
+    /// Setup <see cref="OptimizationTrees"/>
+    static PeepholeOptimizer() {
+        var optimizationTypes =
+            typeof(PeepholeOptimizer).Assembly.GetTypes().Where(x => typeof(IPeepholeOptimization).IsAssignableFrom(x));
+
+        foreach (var optType in optimizationTypes) {
+            if (optType.IsInterface || optType.IsAbstract)
+                continue;
+
+            var opt = (IPeepholeOptimization)Activator.CreateInstance(optType)!;
+            var opcodes = opt.GetOpcodes();
+            if (opcodes.Length < 2)
+                throw new Exception($"Peephole optimization {optType} must have at least 2 opcodes");
+
+            if (!OptimizationTrees.TryGetValue(opcodes[0], out var treeEntry)) {
+                treeEntry = new() {
+                    Children = new()
+                };
+
+                OptimizationTrees.Add(opcodes[0], treeEntry);
+            }
+
+            for (int i = 1; i < opcodes.Length; i++) {
+                if (treeEntry.Children == null || !treeEntry.Children.TryGetValue(opcodes[i], out var child)) {
+                    child = new();
+
+                    treeEntry.Children ??= new();
+                    treeEntry.Children.Add(opcodes[i], child);
+                }
+
+                treeEntry = child;
+            }
+
+            // Final child in this path, assign the optimization to this entry
+            treeEntry.Optimization = opt;
         }
     }
 
-    class PeepholeOptimizer {
-        private static List<PeepholeOptimization> optimizations = typeof(PeepholeOptimizer).Assembly.GetTypes()
-            .Where(x => typeof(PeepholeOptimization).IsAssignableFrom(x) && !x.IsInterface && !x.IsAbstract)
-            .Select(x => (PeepholeOptimization)System.Activator.CreateInstance(x)).Where(x => !x.IsDisabled()).ToList();
+    public static void RunPeephole(List<IAnnotatedBytecode> input) {
+        OptimizationTreeEntry? currentOpt = null;
+        int optSize = 0;
 
-        public static void RunPeephole(List<IAnnotatedBytecode> input) {
-            int changes = 1;
-            while (changes > 0) {
-                changes = 0;
-                // Pass 1: Find all 5-byte sequences
-                for (int i = 0; i < input.Count; i++) {
-                    if (i > input.Count - 5) {
-                        break;
-                    }
-
-                    if (input.GetRange(i, 5).TrueForAll(x => x is AnnotatedBytecodeInstruction)) {
-                        var slice5 = input.GetRange(i, 5).Select(x => ((AnnotatedBytecodeInstruction)x).Opcode)
-                            .ToList();
-                        foreach (var opt in optimizations) {
-                            if (opt.GetLength() == 5 && opt.GetOpcodes().SequenceEqual(slice5) &&
-                                opt.CheckPreconditions(input, i)) {
-                                var startpoint = input.GetRange(i, 5).Where(x => x.GetLocation().Line != null ).FirstOrDefault() ?? input[i];
-                                changes++;
-                                opt.Apply(input, i);
-                                input[i].SetLocation(startpoint);
-                            }
-                        }
-                    }
-                }
-
-                // Pass 2: Find all 4-byte sequences
-                for (int i = 0; i < input.Count; i++) {
-                    if (i > input.Count - 4) {
-                        break;
-                    }
-
-                    if (input.GetRange(i, 4).TrueForAll(x => x is AnnotatedBytecodeInstruction)) {
-                        var slice4 = input.GetRange(i, 4).Select(x => ((AnnotatedBytecodeInstruction)x).Opcode)
-                            .ToList();
-                        foreach (var opt in optimizations) {
-                            if (opt.GetLength() == 4 && opt.GetOpcodes().SequenceEqual(slice4) &&
-                                opt.CheckPreconditions(input, i)) {
-                                var startpoint = input.GetRange(i, 4).Where(x => x.GetLocation().Line != null).FirstOrDefault() ?? input[i];
-                                changes++;
-                                opt.Apply(input, i);
-                                input[i].SetLocation(startpoint);
-                            }
-                        }
-                    }
-                }
-
-                // Pass 3: Find all 3-byte sequences
-                for (int i = 0; i < input.Count; i++) {
-                    if (i > input.Count - 3) {
-                        break;
-                    }
-
-                    if (input.GetRange(i, 3).TrueForAll(x => x is AnnotatedBytecodeInstruction)) {
-                        var slice3 = input.GetRange(i, 3).Select(x => ((AnnotatedBytecodeInstruction)x).Opcode)
-                            .ToList();
-                        var slice2 = input.GetRange(i, 2).Select(x => ((AnnotatedBytecodeInstruction)x).Opcode)
-                            .ToList();
-                        foreach (var opt in optimizations) {
-                            if (opt.GetLength() == 3 && opt.GetOpcodes().SequenceEqual(slice3) &&
-                                opt.CheckPreconditions(input, i)) {
-                                var startpoint = input.GetRange(i, 3).Where(x => x.GetLocation().Line != null).FirstOrDefault() ?? input[i];
-                                changes++;
-                                opt.Apply(input, i);
-                                input[i].SetLocation(startpoint);
-                            }
-                        }
-                    }
-                }
-
-                // Pass 4: Find all 2-byte sequences
-                for (int i = 0; i < input.Count; i++) {
-                    if (i > input.Count - 2) {
-                        break;
-                    }
-
-                    if (input.GetRange(i, 2).TrueForAll(x => x is AnnotatedBytecodeInstruction)) {
-                        var slice2 = input.GetRange(i, 2).Select(x => ((AnnotatedBytecodeInstruction)x).Opcode)
-                            .ToList();
-                        foreach (var opt in optimizations) {
-                            if (opt.GetLength() == 2 && opt.GetOpcodes().SequenceEqual(slice2) &&
-                                opt.CheckPreconditions(input, i)) {
-                                changes++;
-                                var startpoint = input.GetRange(i, 2).Where(x => x.GetLocation().Line != null).FirstOrDefault() ?? input[i];
-                                opt.Apply(input, i);
-                                input[i].SetLocation(startpoint);
-                            }
-                        }
-                    }
-                }
+        for (int i = 0; i < input.Count; i++) {
+            var bytecode = input[i];
+            if (bytecode is not AnnotatedBytecodeInstruction instruction) {
+                currentOpt = null;
+                continue;
             }
+
+            var opcode = instruction.Opcode;
+
+            if (currentOpt == null) {
+                optSize = 1;
+                OptimizationTrees.TryGetValue(opcode, out currentOpt);
+                continue;
+            }
+
+            if (currentOpt.Children?.TryGetValue(opcode, out var childOpt) is true) {
+                optSize++;
+                currentOpt = childOpt;
+                continue;
+            }
+
+            if (currentOpt.Optimization?.CheckPreconditions(input, i - optSize) is true) {
+                currentOpt.Optimization.Apply(input, i - optSize);
+                i -= (optSize + 1); // Run over the new opcodes for potential further optimization
+            } else {
+                // This chain of opcodes did not lead to a valid optimization.
+                // Start again from the opcode after the first.
+                i -= optSize;
+            }
+
+            currentOpt = null;
         }
     }
 }

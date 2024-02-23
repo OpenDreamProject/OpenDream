@@ -78,10 +78,18 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     //three things to do here, chained animations, loops and parallel animations
     public void StartAppearanceAnimation(IconAppearance endingAppearance, TimeSpan duration, AnimationEasing easing, int loops, AnimationFlags flags, int delay, bool chainAnim) {
         _appearance = CalculateAnimatedAppearance(); //Animation starts from the current animated appearance
+        DateTime start = DateTime.Now;
         if(!chainAnim)
             EndAppearanceAnimation(null);
+        else
+            foreach (AppearanceAnimation animation in _appearanceAnimations ??= new List<AppearanceAnimation>()) {
+                if((animation.flags & AnimationFlags.ANIMATION_PARALLEL) == 0) {
+                    start = animation.Start + animation.Duration;
+                    break;
+                }
+            }
         _appearanceAnimations ??= new List<AppearanceAnimation>();
-        _appearanceAnimations.Add(new AppearanceAnimation(DateTime.Now, duration, endingAppearance, easing, loops, flags, delay));
+        _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, loops, flags, delay));
     }
 
     /// <summary>

@@ -284,43 +284,59 @@
 /obj/button/animation_test
 	name = "Animation Test"
 	desc = "Click me to get thouroughly animated!"
+	var/i = 0
 
 	push()
-		//grow and fade
-		animate(usr, transform = matrix()*2, alpha = 0, time = 5)
-		animate(transform = matrix(), alpha = 255, time = 5)
-		sleep(5)
-		//spin
-		animate(usr, transform = turn(matrix(), 120), time = 2, loop = 5)
-		animate(transform = turn(matrix(), 240), time = 2)
-		animate(transform = null, time = 2)
-		//colour
-		sleep(14)
-		animate(usr, color="#ff0000", time=5)
-		animate(color="#00ff00", time=5)
-		animate(color="#0000ff", time=5)
-		animate(color="#ffffff", time=5)
-		sleep(20)
-		//colour matrix
-		animate(usr, color=list(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1, 0,0,0,0), time=5)
-		animate(color=list(0,1,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,1, 0,0,0,0), time=5)
-		animate(color=list(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1, 0,0,0,0), time=5)
-		sleep(15)
-		//parallel
-		animate(usr, color="#ff0000", time=4)
-		animate(usr, transform = turn(matrix(), 120), time = 2, flags=ANIMATION_PARALLEL)
-		animate(transform = turn(matrix(), 240), time = 2)
-		animate(color="#ffffff", transform = null, time = 2)
-		sleep(6)
-		//easings
-		animate(usr, transform = matrix()*2, time = 5, easing=BACK_EASING)
-		animate(transform = matrix(), time = 5, easing=BOUNCE_EASING)
-		animate(transform = matrix()*2, time = 5, easing=ELASTIC_EASING)
-		animate(transform = matrix(), time = 5, easing=QUAD_EASING)
-		animate(transform = matrix()*2, time = 5, easing=CUBIC_EASING)
-		animate(transform = matrix(), time = 5, easing=SINE_EASING)
-		animate(transform = matrix()*2, time = 5, easing=CIRCULAR_EASING)
-		animate(transform = matrix(), time = 5, easing=JUMP_EASING)
+		if(i==0)
+			//grow and fade
+			usr << "grow and fade"
+			animate(usr, transform = matrix()*2, alpha = 0, time = 5)
+			animate(transform = matrix(), alpha = 255, time = 5)
+			sleep(5)
+		if(i==1)
+			//spin
+			usr << "spin"
+			animate(usr, transform = turn(matrix(), 120), time = 2, loop = 5)
+			animate(transform = turn(matrix(), 240), time = 2)
+			animate(transform = null, time = 2)
+			sleep(14)
+		if(i==2)
+			//colour
+			usr << "colour"
+			animate(usr, color="#ff0000", time=5)
+			animate(color="#00ff00", time=5)
+			animate(color="#0000ff", time=5)
+			animate(color="#ffffff", time=5)
+			sleep(20)
+		if(i==3)
+			//colour matrix
+			usr << "colour matrix"
+			animate(usr, color=list(0,0,1,0, 1,0,0,0, 0,1,0,0, 0,0,0,1, 0,0,0,0), time=5)
+			animate(color=list(0,1,0,0, 0,0,1,0, 1,0,0,0, 0,0,0,1, 0,0,0,0), time=5)
+			animate(color=list(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1, 0,0,0,0), time=5)
+			sleep(15)
+		if(i==4)
+			//parallel
+			usr << "parallel"
+			animate(usr, color="#ff0000", time=4)
+			animate(usr, transform = turn(matrix(), 120), time = 2, flags=ANIMATION_PARALLEL)
+			animate(transform = turn(matrix(), 240), time = 2)
+			animate(color="#ffffff", transform = null, time = 2)
+			sleep(6)
+		if(i==5)
+			//easings
+			usr << "easings"
+			animate(usr, transform = matrix()*2, time = 5, easing=BACK_EASING)
+			animate(transform = matrix(), time = 5, easing=BOUNCE_EASING)
+			animate(transform = matrix()*2, time = 5, easing=ELASTIC_EASING)
+			animate(transform = matrix(), time = 5, easing=QUAD_EASING)
+			animate(transform = matrix()*2, time = 5, easing=CUBIC_EASING)
+			animate(transform = matrix(), time = 5, easing=SINE_EASING)
+			animate(transform = matrix()*2, time = 5, easing=CIRCULAR_EASING)
+			animate(transform = matrix(), time = 5, easing=JUMP_EASING)
+		i++
+		if(i>5)
+			i = 0
 /obj/plaque/animation_test 
 	data = "<h3>Animation Test</h3><p>Click the button to apply a series of animations to your mob</p>"
 

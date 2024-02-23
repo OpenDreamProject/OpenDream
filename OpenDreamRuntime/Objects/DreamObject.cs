@@ -12,7 +12,6 @@ using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
-using System.Linq;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]

@@ -3,8 +3,8 @@ using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
 using Robust.Client.Graphics;
-using Robust.Shared.Physics;
 using Robust.Shared.Timing;
+using System.Linq;
 
 namespace OpenDreamClient.Rendering;
 
@@ -344,15 +344,13 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                 appearance.PixelOffset = (Vector2i)newPixelOffset;
             }
 
-            if (endAppearance.Transform != _appearance.Transform) {
-                appearance.Transform = [
-                    (1-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]),
-                    (1-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]),
-                    (1-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]),
-                    (1-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]),
-                    (1-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]),
-                    (1-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5])
-                ];
+            if (!endAppearance.Transform.SequenceEqual(_appearance.Transform)) {
+                appearance.Transform[0] = (1.0f-factor)*_appearance.Transform[0] + (factor * endAppearance.Transform[0]);
+                appearance.Transform[1] = (1.0f-factor)*_appearance.Transform[1] + (factor * endAppearance.Transform[1]);
+                appearance.Transform[2] = (1.0f-factor)*_appearance.Transform[2] + (factor * endAppearance.Transform[2]);
+                appearance.Transform[3] = (1.0f-factor)*_appearance.Transform[3] + (factor * endAppearance.Transform[3]);
+                appearance.Transform[4] = (1.0f-factor)*_appearance.Transform[4] + (factor * endAppearance.Transform[4]);
+                appearance.Transform[5] = (1.0f-factor)*_appearance.Transform[5] + (factor * endAppearance.Transform[5]);
             }
 
             if (timeFactor >= 1f) {

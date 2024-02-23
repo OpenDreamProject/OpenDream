@@ -24,7 +24,6 @@ using Robust.Shared.Asynchronous;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Vector4 = Robust.Shared.Maths.Vector4;
-using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamRuntime.Procs.Native {
     /// <remarks>
@@ -232,7 +231,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (!color.IsNull) {
                     obj.SetVariableValue("color", color);
                     if(color.TryGetValueAsString(out var colorStr))
-                        Color.TryParse(colorStr, out var colorValue);
+                        Color.TryParse(colorStr, out appearance.Color);
                     else if (color.TryGetValueAsDreamList(out var colorList)) {
                         if(DreamProcNativeHelpers.TryParseColorMatrix(colorList, out var colorMatrix))
                             appearance.ColorMatrix = colorMatrix;

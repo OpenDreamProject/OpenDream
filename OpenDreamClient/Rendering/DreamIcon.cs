@@ -174,7 +174,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                 case AnimationEasing.Cubic:
                     factor = (float)(1 - Math.Pow(1-timeFactor, 3));
                     break;
-                case AnimationEasing.Bounce:
+                case AnimationEasing.Bounce: //https://stackoverflow.com/questions/25249829/bouncing-ease-equation-in-c-sharp great match for byond behaviour
                     float bounce = timeFactor*2.75f;
                     if(bounce<1)
                         factor = (float)Math.Pow(bounce, 2);
@@ -189,11 +189,11 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                         factor = (float)Math.Pow(bounce, 2) + 0.984375f;
                     }
                     break;
-                case AnimationEasing.Elastic:
-                    factor = (float)(1.0 - Math.Pow(2, -10 * timeFactor) * Math.Cos(timeFactor*Math.PI/0.15));
+                case AnimationEasing.Elastic: //http://www.java2s.com/example/csharp/system/easing-equation-function-for-an-elastic-exponentially-decaying-sine-w.html with d=1, s=pi/2, c=2, b = -1
+                    factor = (float) (Math.Pow(2, -10 * timeFactor) * Math.Sin((timeFactor - MathF.PI/2) * (2*Math.PI/0.3)) -1);
                     break;
-                case AnimationEasing.Back:
-                    factor = (float)(1 - Math.Pow(1 - timeFactor, 2)*((2.70158)*(1-timeFactor) - 1.70158));
+                case AnimationEasing.Back: //https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.animation.backease?view=windowsdesktop-8.0
+                    factor = (float)Math.Pow(timeFactor, 3) - timeFactor * MathF.Sin(timeFactor * MathF.PI);
                     break;
                 case AnimationEasing.Quad:
                     factor = (float) (1 - Math.Pow(1-timeFactor,2));

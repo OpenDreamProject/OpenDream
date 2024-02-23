@@ -12,6 +12,7 @@ using Robust.Server.Player;
 using Robust.Shared.Map;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Utility;
+using System.Linq;
 
 namespace OpenDreamRuntime.Objects {
     [Virtual]
@@ -41,6 +42,8 @@ namespace OpenDreamRuntime.Objects {
         protected ServerVerbSystem? VerbSystem => ObjectDefinition.VerbSystem;
 
         protected Dictionary<string, DreamValue>? Variables;
+        //handle to the list of vars on this object so that it's only created once and refs to object.vars are consistent
+        private DreamListVars? _varsList;
 
         private string? Tag {
             get => _tag;
@@ -165,13 +168,16 @@ namespace OpenDreamRuntime.Objects {
 
                     return true;
                 case "vars":
-                    value = new(new DreamListVars(ObjectTree.List.ObjectDefinition, this));
+                    _varsList ??= new DreamListVars(ObjectTree.List.ObjectDefinition, this);
+                    value = new(_varsList);
                     return true;
                 case "tag":
                     value = (Tag != null) ? new(Tag) : DreamValue.Null;
                     return true;
                 default:
-                    return (Variables?.TryGetValue(varName, out value) is true) || ObjectDefinition.Variables.TryGetValue(varName, out value);
+                    return (Variables?.TryGetValue(varName, out value) is true) ||
+                     (ObjectDefinition.Variables.TryGetValue(varName, out value) is true) ||
+                        (ObjectDefinition.GlobalVariables.TryGetValue(varName, out var globalIndex) is true) && ObjectDefinition.DreamManager.Globals.TryGetValue(globalIndex, out value);
             }
         }
 

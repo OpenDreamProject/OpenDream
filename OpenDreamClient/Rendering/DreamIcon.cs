@@ -190,7 +190,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                     }
                     break;
                 case AnimationEasing.Elastic: //http://www.java2s.com/example/csharp/system/easing-equation-function-for-an-elastic-exponentially-decaying-sine-w.html with d=1, s=pi/2, c=2, b = -1
-                    factor = (float) (Math.Pow(2, -10 * timeFactor) * Math.Sin((timeFactor - MathF.PI/2) * (2*Math.PI/0.3)) -1);
+                    factor = (float) (Math.Pow(2, -10 * timeFactor) * Math.Sin((timeFactor - MathF.PI/2) * (2*Math.PI/0.3)) + 1);
                     break;
                 case AnimationEasing.Back: //https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.animation.backease?view=windowsdesktop-8.0
                     factor = (float)Math.Pow(timeFactor, 3) - timeFactor * MathF.Sin(timeFactor * MathF.PI);

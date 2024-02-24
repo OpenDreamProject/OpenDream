@@ -1175,11 +1175,24 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("json_encode")]
         [DreamProcParameter("Value")]
+        [DreamProcParameter("flags")]
         public static DreamValue NativeProc_json_encode(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             using MemoryStream stream = new MemoryStream();
-            using Utf8JsonWriter jsonWriter = new(stream, new JsonWriterOptions {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // "\"" instead of "\u0022"
-            });
+            JsonWriterOptions options;
+
+            // 515 JSON_PRETTY_PRINT flag
+            if (bundle.GetArgument(1, "flags").TryGetValueAsInteger(out var prettyPrint) && prettyPrint == 1) {
+                options = new JsonWriterOptions {
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, // "\"" instead of "\u0022"
+                    Indented = true
+                };
+            } else {
+                options = new JsonWriterOptions {
+                    Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, // "\"" instead of "\u0022"
+                };
+            }
+
+            using Utf8JsonWriter jsonWriter = new(stream, options);
 
             JsonEncode(jsonWriter, bundle.GetArgument(0, "Value"));
             jsonWriter.Flush();

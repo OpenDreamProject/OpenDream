@@ -169,6 +169,10 @@ public sealed partial class ControlDescriptorGrid : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorTab : ControlDescriptor {
+    [DataField("tabs")]
+    public string? Tabs;
+    [DataField("current-tab")]
+    public string? CurrentTab;
 }
 
 

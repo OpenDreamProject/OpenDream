@@ -99,12 +99,6 @@ namespace OpenDreamRuntime.Procs.Native {
     suffix
 
     */
-        /// <summary>
-        /// Stores the last object that was animated, so that animate() can be called without the object parameter
-        /// TODO move this to thread? or maybe proc? idk, it shouldn't be here
-        /// </summary>
-        private static DreamValue lastAnimationObject = DreamValue.Null;
-
         [DreamProc("animate")]
         [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("time", Type = DreamValueTypeFlag.Float)]
@@ -134,14 +128,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("suffix", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_animate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             bool chainAnim = false;
+
             if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj)){
-                if(lastAnimationObject.IsNull)
+                if(bundle.LastAnimatedObject is null || bundle.LastAnimatedObject.Value.IsNull)
                     throw new Exception("animate() called without an object and no previous object to animate");
-                else if(!lastAnimationObject.TryGetValueAsDreamObject<DreamObjectAtom>(out obj))
+                else if(!bundle.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObjectAtom>(out obj))
                     return DreamValue.Null;
                 chainAnim = true;
             }
-            lastAnimationObject = new DreamValue(obj);
+            bundle.LastAnimatedObject = new DreamValue(obj);
             // TODO: Is this the correct behavior for invalid time?
             if (!bundle.GetArgument(1, "time").TryGetValueAsFloat(out float time))
                 return DreamValue.Null;

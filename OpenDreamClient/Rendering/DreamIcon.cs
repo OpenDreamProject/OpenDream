@@ -339,7 +339,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
 
             if (endAppearance.PixelOffset != _appearance.PixelOffset) {
                 Vector2 startingOffset = appearance.PixelOffset;
-                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, factor);
+                Vector2 newPixelOffset = Vector2.Lerp(startingOffset, endAppearance.PixelOffset, 1.0f-factor);
 
                 appearance.PixelOffset = (Vector2i)newPixelOffset;
             }

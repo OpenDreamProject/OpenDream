@@ -165,9 +165,9 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
             float factor = 0;
             if((animation.Easing & AnimationEasing.Ease_In) != 0)
-                timeFactor = 0.5f+timeFactor/2.0f;
-            if((animation.Easing & AnimationEasing.Ease_Out) != 0)
                 timeFactor = timeFactor/2.0f;
+            if((animation.Easing & AnimationEasing.Ease_Out) != 0)
+                timeFactor = 0.5f+timeFactor/2.0f;
 
             switch (animation.Easing) {
                 case AnimationEasing.Linear:

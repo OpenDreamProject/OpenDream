@@ -126,15 +126,38 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("icon_state", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("invisibility", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("suffix", Type = DreamValueTypeFlag.String)]
+        //filter args -dups commented out
+        [DreamProcParameter("size", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("x", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("y", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("offset", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("flags", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("border", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("render_source", Type = DreamValueTypeFlag.String)]
+        //[DreamProcParameter("icon", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("space", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("transform", Type = DreamValueTypeFlag.DreamObject)]
+        [DreamProcParameter("blend_mode", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("density", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("threshold", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("factor", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("repeat", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("radius", Type = DreamValueTypeFlag.Float)]
+        [DreamProcParameter("falloff", Type = DreamValueTypeFlag.Float)]
+        //[DreamProcParameter("alpha", Type = DreamValueTypeFlag.Float)]
         public static DreamValue NativeProc_animate(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             bool chainAnim = false;
 
-            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObjectAtom>(out var obj)){
+            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObject>(out var obj)){
                 if(bundle.LastAnimatedObject is null || bundle.LastAnimatedObject.Value.IsNull)
-                    throw new Exception("animate() called without an object and no previous object to animate");
-                else if(!bundle.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObjectAtom>(out obj))
+                    throw new Exception($"animate() called without an object and no previous object to animate {obj}");
+                else if(!bundle.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj))
                     return DreamValue.Null;
                 chainAnim = true;
+            }
+            if(obj.IsSubtypeOf(bundle.ObjectTree.Filter)) {//TODO animate filters
+                return DreamValue.Null;
             }
             bundle.LastAnimatedObject = new DreamValue(obj);
             // TODO: Is this the correct behavior for invalid time?

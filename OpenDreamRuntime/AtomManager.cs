@@ -488,9 +488,9 @@ public sealed class AtomManager {
         }
     }
 
-    public void AnimateAppearance(DreamObjectAtom atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<IconAppearance> animate) {
+    public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<IconAppearance> animate) {
         if (atom is not DreamObjectMovable movable)
-            return; //Animating non-movables is unimplemented
+            return; //Animating non-movables is unimplemented TODO: should handle images and maybe filters
 
         IconAppearance appearance = new IconAppearance(movable.SpriteComponent.Appearance);
 

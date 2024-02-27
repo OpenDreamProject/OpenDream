@@ -241,4 +241,6 @@ public sealed class DMASTScopeIdentifier(
     public readonly DMASTExpression? Expression = expression;
     public readonly string Identifier = identifier;
     public readonly DMASTCallParameter[]? CallArguments = callArguments;
+
+    public bool IsProcRef => CallArguments != null;
 }

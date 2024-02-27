@@ -3,6 +3,7 @@ using OpenDreamClient.Interface;
 using OpenDreamClient.Rendering;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Rendering;
+using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Player;
 using Robust.Shared.Asynchronous;
@@ -17,6 +18,7 @@ public sealed class ClientVerbSystem : VerbSystem {
     [Dependency] private readonly ITaskManager _taskManager = default!;
     [Dependency] private readonly ITimerManager _timerManager = default!;
     [Dependency] private readonly IOverlayManager _overlayManager = default!;
+    [Dependency] private readonly TransformSystem _transformSystem = default!;
 
     private EntityQuery<DMISpriteComponent> _spriteQuery;
     private EntityQuery<DreamMobSightComponent> _sightQuery;
@@ -72,12 +74,10 @@ public sealed class ClientVerbSystem : VerbSystem {
     /// <param name="ignoreHiddenAttr">Whether to ignore "set hidden = TRUE"</param>
     /// <returns>The ID, src, and information of every executable verb</returns>
     public IEnumerable<(int Id, ClientObjectReference Src, VerbInfo VerbInfo)> GetExecutableVerbs(bool ignoreHiddenAttr = false) {
-        ClientObjectReference? ourMob = null;
         sbyte? seeInvisibility = null;
         if (_playerManager.LocalEntity != null) {
             _sightQuery.TryGetComponent(_playerManager.LocalEntity.Value, out var mobSight);
 
-            ourMob = new ClientObjectReference(_entityManager.GetNetEntity(_playerManager.LocalEntity.Value));
             seeInvisibility = mobSight?.SeeInvisibility;
         }
 
@@ -112,13 +112,16 @@ public sealed class ClientVerbSystem : VerbSystem {
                 // Check the verb's "set src" allows us to execute this
                 switch (verb.Accessibility) {
                     case VerbAccessibility.Usr:
-                        if (!src.Equals(ourMob))
+                        if (entity != _playerManager.LocalEntity)
                             continue;
 
                         break;
-                    default:
-                        // TODO: All the other kinds
+                    case VerbAccessibility.InUsr:
+                        if (_transformSystem.GetParentUid(entity) != _playerManager.LocalEntity)
+                            continue;
+
                         break;
+                    // TODO: All the other kinds
                 }
 
                 yield return (verbId, src, verb);
@@ -147,22 +150,26 @@ public sealed class ClientVerbSystem : VerbSystem {
                 continue;
             }
 
-            switch (target.Type) {
-                case ClientObjectReference.RefType.Entity:
-                    var entity = _entityManager.GetEntity(target.Entity);
-                    var isMob = _entityManager.HasComponent<DreamMobSightComponent>(entity);
+            if (targetType == DreamValueType.Anything) {
+                yield return verb;
+            } else {
+                switch (target.Type) {
+                    case ClientObjectReference.RefType.Entity:
+                        var entity = _entityManager.GetEntity(target.Entity);
+                        var isMob = _entityManager.HasComponent<DreamMobSightComponent>(entity);
 
-                    if ((targetType & DreamValueType.Mob) != 0x0 && isMob)
-                        yield return verb;
-                    if ((targetType & DreamValueType.Obj) != 0x0 && !isMob)
-                        yield return verb;
+                        if ((targetType & DreamValueType.Mob) != 0x0 && isMob)
+                            yield return verb;
+                        if ((targetType & DreamValueType.Obj) != 0x0 && !isMob)
+                            yield return verb;
 
-                    break;
-                case ClientObjectReference.RefType.Turf:
-                    if ((targetType & DreamValueType.Turf) != 0x0)
-                        yield return verb;
+                        break;
+                    case ClientObjectReference.RefType.Turf:
+                        if ((targetType & DreamValueType.Turf) != 0x0)
+                            yield return verb;
 
-                    break;
+                        break;
+                }
             }
         }
     }

@@ -204,4 +204,15 @@ internal sealed class DMObject {
         if (Parent != null) return Parent.IsSubtypeOf(path);
         return false;
     }
+
+    public DMValueType GetDMValueType() {
+        if (IsSubtypeOf(DreamPath.Mob))
+            return DMValueType.Mob;
+        if (IsSubtypeOf(DreamPath.Obj))
+            return DMValueType.Obj;
+        if (IsSubtypeOf(DreamPath.Area))
+            return DMValueType.Area;
+
+        return DMValueType.Anything;
+    }
 }

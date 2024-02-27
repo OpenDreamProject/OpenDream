@@ -133,16 +133,18 @@ public sealed class ServerVerbSystem : VerbSystem {
         var src = _dreamManager.GetFromClientReference(connection, msg.Src);
         if (src == null || !_verbIdToProc.TryGetValue(msg.VerbId, out var verb) || !CanExecute(connection, src, verb))
             return;
-        if (msg.Arguments.Length != verb.ArgumentTypes?.Count) {
+
+        var argCount = verb.ArgumentTypes?.Count ?? 0;
+        if (msg.Arguments.Length != argCount) {
             _sawmill.Error(
-                $"User \"{args.SenderSession.Name}\" gave {msg.Arguments.Length} argument(s) to the \"{verb.Name}\" verb which only has {verb.ArgumentTypes?.Count} argument(s)");
+                $"User \"{args.SenderSession.Name}\" gave {msg.Arguments.Length} argument(s) to the \"{verb.Name}\" verb which only has {argCount} argument(s)");
             return;
         }
 
         // Convert the values the client gave to DreamValues
-        DreamValue[] arguments = new DreamValue[verb.ArgumentTypes.Count];
-        for (int i = 0; i < verb.ArgumentTypes.Count; i++) {
-            var argType = verb.ArgumentTypes[i];
+        DreamValue[] arguments = new DreamValue[argCount];
+        for (int i = 0; i < argCount; i++) {
+            var argType = verb.ArgumentTypes![i];
 
             if (!connection.TryConvertPromptResponse(argType, msg.Arguments[i], out arguments[i])) {
                 _sawmill.Error(
@@ -188,6 +190,11 @@ public sealed class ServerVerbSystem : VerbSystem {
         switch (verbInfo.Accessibility) {
             case VerbAccessibility.Usr:
                 return src == connection.Mob;
+            case VerbAccessibility.InUsr:
+                if (src is not DreamObjectMovable srcMovable)
+                    return false;
+
+                return srcMovable.Loc == connection.Mob;
             default:
                 // TODO: All the other kinds
                 return true;

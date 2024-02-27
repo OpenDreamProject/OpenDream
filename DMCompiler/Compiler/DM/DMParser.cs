@@ -1648,13 +1648,12 @@ namespace DMCompiler.Compiler.DM {
                 BracketWhitespace();
                 parameter = DefinitionParameter(out wasIndeterminate);
 
-                if (parameter != null)
-                {
+                if (parameter != null) {
                     parameters.Add(parameter);
                     BracketWhitespace();
-
                 }
-                if (Check(TokenType.DM_Null)){
+
+                if (Check(TokenType.DM_Null)) {
                     // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
                     if (Error(WarningCode.SoftReservedKeyword, "'null' is not a valid variable name")) { // If it's an error, skip over this var instantiation.
                         Advance();
@@ -1689,7 +1688,7 @@ namespace DMCompiler.Compiler.DM {
                     value = Expression();
                 }
 
-                var type = AsTypes() ?? DMValueType.Anything;
+                var type = AsTypes();
                 Whitespace();
 
                 if (Check(TokenType.DM_In)) {

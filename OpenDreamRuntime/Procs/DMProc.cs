@@ -134,9 +134,9 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static List<DreamValueType> GetArgumentTypes(ProcDefinitionJson json) {
+        private static List<DreamValueType>? GetArgumentTypes(ProcDefinitionJson json) {
             if (json.Arguments == null) {
-                return new();
+                return null;
             } else {
                 var argumentTypes = new List<DreamValueType>(json.Arguments.Count);
                 argumentTypes.AddRange(json.Arguments.Select(a => (DreamValueType)a.Type));

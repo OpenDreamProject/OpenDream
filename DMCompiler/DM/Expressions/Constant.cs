@@ -627,4 +627,27 @@ namespace DMCompiler.DM.Expressions {
             }
         }
     }
+
+    // TODO: Use this instead of ConstantPath for procs
+    /// <summary>
+    /// A reference to a proc
+    /// </summary>
+    internal sealed class ConstantProcReference(Location location, DMProc referencedProc) : Constant(location) {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.PushProc(referencedProc.Id);
+        }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => referencedProc.Name;
+
+        public override bool IsTruthy() => true;
+
+        public override bool TryAsJsonRepresentation(out object? json) {
+            json = new Dictionary<string, object> {
+                { "type", JsonVariableType.Proc },
+                { "value", referencedProc.Id }
+            };
+
+            return true;
+        }
+    }
 }

@@ -11,9 +11,9 @@ internal abstract class DMExpression(Location location) {
     public Location Location = location;
 
     // TODO: proc and dmObject can be null, address nullability contract
-        public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
-            return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
-        }
+    public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+        return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
+    }
 
     public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         var expr = Create(dmObject, proc, expression, inferredPath);

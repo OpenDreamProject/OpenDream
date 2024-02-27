@@ -16,10 +16,12 @@ internal static class DMExpressionBuilder {
         Static,
 
         /// Only global procs available
-        FirstPassStatic
+        FirstPassStatic,
     }
 
+    // TODO: Remove these terrible global flags
     public static ScopeMode CurrentScopeMode = ScopeMode.Normal;
+    public static bool ScopeOperatorEnabled = false; // Enabled once var overrides have been processed
 
     public static DMExpression BuildExpression(DMASTExpression expression, DMObject dmObject, DMProc proc, DreamPath? inferredPath = null) {
         switch (expression) {
@@ -350,7 +352,7 @@ internal static class DMExpressionBuilder {
             case "__TYPE__":
                 return new ProcOwnerType(identifier.Location);
             case "__PROC__": // The saner alternative to "....."
-                return new ProcType(identifier.Location, proc);
+                return new ConstantProcReference(identifier.Location, proc);
             case "global":
                 return new Global(identifier.Location);
             default: {
@@ -379,106 +381,108 @@ internal static class DMExpressionBuilder {
     }
 
     private static DMExpression BuildScopeIdentifier(
-        DMASTScopeIdentifier globalIdentifier,
+        DMASTScopeIdentifier scopeIdentifier,
         DMObject dmObject, DMProc proc,
         DreamPath? inferredPath) {
-        var name = globalIdentifier.Identifier;
-        var location = globalIdentifier.Expression?.Location ?? globalIdentifier.Location;
+        var location = scopeIdentifier.Location;
+        var bIdentifier = scopeIdentifier.Identifier;
+
+        if (scopeIdentifier.Expression == null) { // ::A, shorthand for global.A
+            if (scopeIdentifier.IsProcRef) { // ::A(), global proc ref
+                if (!DMObjectTree.TryGetGlobalProc(bIdentifier, out _)) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, location,
+                        $"No global proc named \"{bIdentifier}\" exists");
+
+                    return new Null(location);
+                }
+
+                var arguments = new ArgumentList(location, dmObject, proc, scopeIdentifier.CallArguments, inferredPath);
+                return new ProcCall(location, new GlobalProc(location, bIdentifier), arguments);
+            }
+
+            // ::vars, special case
+            if (bIdentifier == "vars")
+                return new GlobalVars(location);
+
+            // ::A, global var ref
+            var globalId = DMObjectTree.Root.GetGlobalVariableId(bIdentifier);
+            if (globalId == null)
+                throw new UnknownIdentifierException(location, bIdentifier);
+
+            return new GlobalField(location,
+                DMObjectTree.Globals[globalId.Value].Type,
+                globalId.Value);
+        }
+
+        // Other uses should wait until the scope operator pass
+        if (!ScopeOperatorEnabled)
+            throw new UnknownIdentifierException(location, bIdentifier);
 
         DMExpression? expression;
 
-        // "type" and "parent_type" cannot resolve in a static context, but it's still valid with scope identifiers
-        // TODO: this snowflake code sucks ass holy shit, redo the entire object variable system
-        if (globalIdentifier.Expression is DMASTIdentifier { Identifier: "type" or "parent_type" } identifier) {
-            if (CurrentScopeMode is not ScopeMode.Normal || proc == null) {
-                switch (identifier.Identifier) {
-                    case "type":
-                        // Necessary check to make sure we have the right value, not an overridden one
-                        // Overrides are not transitive, therefore we only need to check if this object has an override
-                        // Normal variables however are transitive, so we check to see if the variable was defined on the
-                        // current object
-                        if (dmObject.VariableOverrides.GetValueOrDefault(name) is null &&
-                            dmObject.Parent?.GetVariable(name) is not null) {
-                            throw new UnknownIdentifierException(location, name);
-                        }
-                        expression = new ConstantPath(location, dmObject, dmObject.Path);
-                        break;
-                    case "parent_type":
-                        expression = dmObject.Parent != null
-                            ? new ConstantPath(location, dmObject.Parent, dmObject.Parent.Path)
-                            : new Null(location);
-                        break;
-                    default:
-                        expression = null; // not possible
-                        break;
-                }
-            } else {
+        // "type" and "parent_type" cannot resolve in a static context but it's still valid with scope identifiers
+        if (scopeIdentifier.Expression is DMASTIdentifier { Identifier: "type" or "parent_type" } identifier) {
+            if (CurrentScopeMode is ScopeMode.Normal && proc != null) {
                 // This is the same behaviour as in BYOND, but BYOND simply raises an undefined var error.
                 // We want to give end users an explanation at least.
                 DMCompiler.Emit(WarningCode.BadExpression, identifier.Location,
                     "Use of \"type::\" and \"parent_type::\" outside of a static context is forbidden");
                 return new Null(location);
             }
-        } else if (globalIdentifier.Expression != null) {
-            expression = DMExpression.Create(dmObject, proc, globalIdentifier.Expression, inferredPath);
+
+            if (identifier.Identifier == "parent_type") {
+                if (dmObject.Parent == null) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, identifier.Location,
+                        $"Type {dmObject.Path} does not have a parent");
+                    return new Null(location);
+                }
+
+                expression = new ConstantPath(location, dmObject, dmObject.Parent.Path);
+            } else { // "type"
+                expression = new ConstantPath(location, dmObject, dmObject.Path);
+            }
         } else {
-            expression = null;
+            expression = DMExpression.Create(dmObject, proc, scopeIdentifier.Expression, inferredPath);
         }
 
-        switch (expression) {
-            case { Path: { } path }: {
-                var definition = DMObjectTree.GetDMObject(path, false);
-                if (definition == null) {
-                    throw new UnknownIdentifierException(location, name);
-                }
-
-                if (globalIdentifier.CallArguments is { } args) {
-                    // BYOND ignores this but we should clear misconceptions early on
-                    if (args.Length > 0) {
-                        DMCompiler.Emit(WarningCode.TooManyArguments, location, "Proc references do not take arguments");
-                    }
-
-                    if (definition.GetProcs(name) is { } procs) {
-                        return new ProcType(location, DMObjectTree.AllProcs[procs[^1]]);
-                    }
-
-                    throw new UnknownIdentifierException(location, name);
-                }
-
-                if (definition.GetGlobalVariableId(name) is { } globalId) {
-                    return new GlobalField(location, DMObjectTree.Globals[globalId].Type, globalId);
-                }
-
-                if ((definition.VariableOverrides.GetValueOrDefault(name) ?? definition.GetVariable(name)) is { } variable) {
-                    return new ScopeReference(location, expression, variable);
-                }
-
-                throw new UnknownIdentifierException(location, name);
-            }
-            case null: {
-                if (globalIdentifier.CallArguments != null) {
-                    if (DMObjectTree.TryGetGlobalProc(name, out _)) {
-                        return new ProcCall(location, new GlobalProc(location, globalIdentifier.Identifier),
-                            new ArgumentList(location, dmObject, proc, globalIdentifier.CallArguments, inferredPath));
-                    }
-                } else {
-                    var globalId = DMObjectTree.Root.GetGlobalVariableId(name);
-                    if (globalId != null) {
-                        return new GlobalField(location,
-                            DMObjectTree.Globals[globalId.Value].Type,
-                            globalId.Value);
-                    }
-
-                    if (name == "vars") {
-                        return new GlobalVars(location);
-                    }
-                }
-
-                break;
-            }
+        // A must have a type
+        if (expression.Path == null) {
+            DMCompiler.Emit(WarningCode.BadExpression, expression.Location,
+                $"Identifier \"{expression.GetNameof(dmObject, proc)}\" does not have a type");
+            return new Null(expression.Location);
         }
 
-        throw new UnknownIdentifierException(location, name);
+        var owner = DMObjectTree.GetDMObject(expression.Path.Value, createIfNonexistent: false);
+        if (owner == null) {
+            DMCompiler.Emit(WarningCode.ItemDoesntExist, expression.Location,
+                $"Type {expression.Path.Value} does not exist");
+            return new Null(expression.Location);
+        }
+
+        if (scopeIdentifier.IsProcRef) { // A::B()
+            var procs = owner.GetProcs(bIdentifier);
+            if (procs == null) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, location,
+                    $"Type {owner.Path} does not have a proc named \"{bIdentifier}\"");
+                return new Null(location);
+            }
+
+            var referencedProc = DMObjectTree.AllProcs[procs[^1]];
+            return new ConstantProcReference(location, referencedProc);
+        } else { // A::B
+            var globalVarId = owner.GetGlobalVariableId(bIdentifier);
+            if (globalVarId != null) {
+                // B is a static var.
+                // This is the only case a ScopeIdentifier can be an LValue.
+                return new GlobalField(location, DMObjectTree.Globals[globalVarId.Value].Type, globalVarId.Value);
+            }
+
+            var variable = owner.GetVariable(bIdentifier);
+            if (variable == null)
+                throw new UnknownIdentifierException(location, bIdentifier);
+
+            return new ScopeReference(location, expression, bIdentifier, variable);
+        }
     }
 
     private static DMExpression BuildCallableProcIdentifier(DMASTCallableProcIdentifier procIdentifier, DMObject dmObject) {

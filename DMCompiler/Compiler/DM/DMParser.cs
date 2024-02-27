@@ -462,8 +462,9 @@ namespace DMCompiler.Compiler.DM {
                     return null;
                 }
 
+                var location = expression?.Location ?? identifier.Location; // TODO: Should be on the :: token if expression is null
                 var parameters = ProcCall();
-                expression = new DMASTScopeIdentifier(identifier.Location, expression, identifier.Identifier, parameters);
+                expression = new DMASTScopeIdentifier(location, expression, identifier.Identifier, parameters);
             } while (Check(TokenType.DM_DoubleColon));
 
             return expression;

@@ -45,18 +45,18 @@ namespace DMCompiler.DM.Expressions {
             public required ArgumentList Parameters { get; init; }
         }
 
-        private readonly DMExpression _expression;
-        private readonly Operation[] _operations;
-
+        public readonly DMExpression Expression;
         public override DreamPath? Path { get; }
         public override DreamPath? NestedPath { get; }
         public override bool PathIsFuzzy => Path == null;
 
+        private readonly Operation[] _operations;
+
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
-            _expression = expression;
-            _operations = operations;
+            Expression = expression;
             Path = path;
+            _operations = operations;
 
             if (_operations.Length == 0) {
                 throw new InvalidOperationException("deref expression has no operations");
@@ -111,7 +111,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
-            _expression.EmitPushValue(dmObject, proc);
+            Expression.EmitPushValue(dmObject, proc);
 
             foreach (var operation in _operations) {
                 EmitOperation(dmObject, proc, operation, endLabel, ShortCircuitMode.KeepNull);
@@ -125,7 +125,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-            _expression.EmitPushValue(dmObject, proc);
+            Expression.EmitPushValue(dmObject, proc);
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
@@ -161,7 +161,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
-            _expression.EmitPushValue(dmObject, proc);
+            Expression.EmitPushValue(dmObject, proc);
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
@@ -202,7 +202,7 @@ namespace DMCompiler.DM.Expressions {
         public void EmitPushIsSaved(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
 
-            _expression.EmitPushValue(dmObject, proc);
+            Expression.EmitPushValue(dmObject, proc);
 
             // Perform all except for our last operation
             for (int i = 0; i < _operations.Length - 1; i++) {
@@ -248,7 +248,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            var prevPath = _operations.Length == 1 ? _expression.Path : _operations[^2].Path;
+            var prevPath = _operations.Length == 1 ? Expression.Path : _operations[^2].Path;
 
             var operation = _operations[^1];
 
@@ -271,31 +271,29 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // expression::identifier
-    internal sealed class ScopeReference : LValue {
-        private readonly DMExpression _expression;
-        private readonly DMVariable _variable;
+    // Same as initial(expression?.identifier) except this keeps its type
+    internal sealed class ScopeReference(Location location, DMExpression expression, string identifier, DMVariable dmVar)
+        : Initial(location, new Dereference(location, dmVar.Type, expression, // Just a little hacky
+            new Dereference.Operation[] {
+                new Dereference.FieldOperation {
+                    Identifier = identifier,
+                    Path = dmVar.Type,
+                    Safe = true
+                }
+            })
+        ) {
+        public override DreamPath? Path => Expression.Path;
 
-        public ScopeReference(Location location, DMExpression expression, DMVariable variable)
-            : base(location, variable.Type) {
-            _expression = expression;
-            _variable = variable;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            // This is a compiler developer error, scope references do not handle global variables. See GlobalField
-            if (_variable.IsGlobal) {
-                throw new InvalidOperationException($"Global variable {_variable.Name} is not allowed here");
-            }
-
-            _expression.EmitPushValue(dmObject, proc);
-            proc.PushString(_variable.Name);
-            proc.Initial();
-        }
-
-        public override string GetNameof(DMObject dmObject, DMProc proc) => _variable.Name;
+        public override string GetNameof(DMObject dmObject, DMProc proc) => dmVar.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            return _variable.Value.TryAsConstant(out constant);
+            if (expression is not ConstantPath || dmVar.Value is not Constant varValue) {
+                constant = null;
+                return false;
+            }
+
+            constant = varValue;
+            return true;
         }
     }
 }

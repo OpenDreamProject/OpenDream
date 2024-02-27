@@ -14,6 +14,7 @@ namespace DMCompiler.DM.Builders {
 
         public static void Reset() {
             DMObjectTree.Reset(); // Blank the object tree
+            DMExpressionBuilder.ScopeOperatorEnabled = false;
 
             VarDefinitions.Clear();
             VarOverrides.Clear();
@@ -54,7 +55,7 @@ namespace DMCompiler.DM.Builders {
 
                             DMObjectTree.AddGlobalInitAssign(procStatic.Id, expression);
                         } catch (UnknownIdentifierException e) {
-                            // For step 5
+                            // For step 6
                             lateProcVarDefs.Add((procStatic.DMObject, procStatic.Proc, procStatic.VarDecl, procStatic.Id, e));
                         } catch (CompileErrorException e) {
                             DMCompiler.Emit(e.Error);
@@ -72,7 +73,7 @@ namespace DMCompiler.DM.Builders {
                 try {
                     ProcessVarDefinition(objectStatic.DMObject, objectStatic.VarDecl);
                 } catch (UnknownIdentifierException e) {
-                    lateVarDefs.Add((objectStatic.DMObject, objectStatic.VarDecl, e)); // For step 5
+                    lateVarDefs.Add((objectStatic.DMObject, objectStatic.VarDecl, e)); // For step 6
                 }
             }
 
@@ -81,55 +82,23 @@ namespace DMCompiler.DM.Builders {
                 try {
                     ProcessVarDefinition(varDef.Item1, varDef.Item2);
                 } catch (UnknownIdentifierException e) {
-                    lateVarDefs.Add((varDef.Item1, varDef.Item2, e)); // For step 5
+                    lateVarDefs.Add((varDef.Item1, varDef.Item2, e)); // For step 6
                 }
             }
 
             // Step 5: Apply var overrides
+            List<(DMObject, DMASTObjectVarOverride, UnknownIdentifierException e)> lateOverrides = new();
             foreach (var varOverride in VarOverrides) {
-                ProcessVarOverride(varOverride.Item1, varOverride.Item2);
+                try {
+                    ProcessVarOverride(varOverride.Item1, varOverride.Item2);
+                } catch (UnknownIdentifierException e) {
+                    lateOverrides.Add((varOverride.Item1, varOverride.Item2, e)); // For step 7
+                }
             }
 
-            // Step 6: Attempt to resolve all vars that referenced other not-yet-existing vars
-            int lastLateVarDefCount;
-            do {
-                lastLateVarDefCount = lateVarDefs.Count + lateProcVarDefs.Count;
-
-                // Static vars outside of procs
-                for (int i = 0; i < lateVarDefs.Count; i++) {
-                    var varDef = lateVarDefs[i];
-
-                    try {
-                        ProcessVarDefinition(varDef.Item1, varDef.Item2);
-
-                        // Success! Remove this one from the list
-                        lateVarDefs.RemoveAt(i--);
-                    } catch (UnknownIdentifierException) {
-                        // Keep it in the list, try again after the rest have been processed
-                    }
-                }
-
-                // Static vars inside procs
-                for (int i = 0; i < lateProcVarDefs.Count; i++) {
-                    var varDef = lateProcVarDefs[i];
-                    var varDecl = varDef.Item3;
-
-                    try {
-                        DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
-                        DMExpression expression =
-                            DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
-
-                        DMObjectTree.AddGlobalInitAssign(varDef.Item4, expression);
-
-                        // Success! Remove this one from the list
-                        lateProcVarDefs.RemoveAt(i--);
-                    } catch (UnknownIdentifierException) {
-                        // Keep it in the list, try again after the rest have been processed
-                    } finally {
-                        DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
-                    }
-                }
-            } while ((lateVarDefs.Count + lateProcVarDefs.Count) != lastLateVarDefCount); // As long as the lists are getting smaller, keep trying
+            // Step 6: Attempt to resolve all vars that referenced other not-yet-existing or overridden vars
+            DMExpressionBuilder.ScopeOperatorEnabled = true;
+            ProcessLateVarDefs(lateVarDefs, lateProcVarDefs, lateOverrides);
 
             // The vars these reference were never found, emit their errors
             foreach (var lateVarDef in lateVarDefs) {
@@ -296,10 +265,12 @@ namespace DMCompiler.DM.Builders {
 
         private static void ProcessVarOverride(DMObject? varObject, DMASTObjectVarOverride? varOverride) {
             try {
-                switch (varOverride.VarName) { // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
+                switch (varOverride.VarName) {
+                    // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
                     case "tag": {
-                        if(varObject.IsSubtypeOf(DreamPath.Datum)) {
-                            throw new CompileErrorException(varOverride.Location, "var \"tag\" cannot be set to a value at compile-time");
+                        if (varObject.IsSubtypeOf(DreamPath.Datum)) {
+                            throw new CompileErrorException(varOverride.Location,
+                                "var \"tag\" cannot be set to a value at compile-time");
                         }
 
                         break;
@@ -319,6 +290,8 @@ namespace DMCompiler.DM.Builders {
 
                 OverrideVariableValue(varObject, ref variable, varOverride.Value);
                 varObject.VariableOverrides[variable.Name] = variable;
+            } catch (UnknownIdentifierException) {
+                throw; // Should be handled by calling code
             } catch (CompileErrorException e) {
                 DMCompiler.Emit(e.Error);
             }
@@ -448,20 +421,12 @@ namespace DMCompiler.DM.Builders {
                     $"Var {variable.Name} is a native read-only value which cannot be modified");
             }
 
-            SetVariableValue(currentObject, ref variable, value);
-        }
-
-        /// <summary>
-        /// Handles setting a variable to a value (when called by itself, this assumes the statement is a declaration and not a re-assignment)
-        /// </summary>
-        /// <param name="variable">This parameter may be modified if a new variable had to be instantiated in the case of an override.</param>
-        /// <exception cref="CompileErrorException" />
-        private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, DMASTExpression value) {
             try {
                 if (variable.IsGlobal)
                     DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
 
                 DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
+
                 SetVariableValue(currentObject, ref variable, value.Location, expression);
             } finally {
                 DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
@@ -533,6 +498,60 @@ namespace DMCompiler.DM.Builders {
 
                 currentObject.InitializationProcExpressions.Add(assign);
             }
+        }
+
+        private static void ProcessLateVarDefs(List<(DMObject, DMASTObjectVarDefinition, UnknownIdentifierException e)> lateVarDefs, List<(DMObject, DMProc, DMASTProcStatementVarDeclaration, int, UnknownIdentifierException e)> lateProcVarDefs, List<(DMObject, DMASTObjectVarOverride, UnknownIdentifierException e)> lateOverrides) {
+            int lastLateVarDefCount;
+            do {
+                lastLateVarDefCount = lateVarDefs.Count + lateProcVarDefs.Count + lateOverrides.Count;
+
+                // Vars outside of procs
+                for (int i = 0; i < lateVarDefs.Count; i++) {
+                    var varDef = lateVarDefs[i];
+
+                    try {
+                        ProcessVarDefinition(varDef.Item1, varDef.Item2);
+
+                        // Success! Remove this one from the list
+                        lateVarDefs.RemoveAt(i--);
+                    } catch (UnknownIdentifierException) {
+                        // Keep it in the list, try again after the rest have been processed
+                    }
+                }
+
+                // Static vars inside procs
+                for (int i = 0; i < lateProcVarDefs.Count; i++) {
+                    var varDef = lateProcVarDefs[i];
+                    var varDecl = varDef.Item3;
+
+                    try {
+                        DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Static;
+                        DMExpression expression =
+                            DMExpression.Create(varDef.Item1, varDef.Item2, varDecl.Value!, varDecl.Type);
+
+                        DMObjectTree.AddGlobalInitAssign(varDef.Item4, expression);
+
+                        // Success! Remove this one from the list
+                        lateProcVarDefs.RemoveAt(i--);
+                    } catch (UnknownIdentifierException e) {
+                        // Keep it in the list, try again after the rest have been processed
+                    } finally {
+                        DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
+                    }
+                }
+
+                // Overrides
+                for (int i = 0; i < lateOverrides.Count; i++) {
+                    try {
+                        ProcessVarOverride(lateOverrides[i].Item1, lateOverrides[i].Item2);
+
+                        // Success! Remove this one from the list
+                        lateOverrides.RemoveAt(i--);
+                    } catch (UnknownIdentifierException e) {
+                        // Keep it in the list, try again after the rest have been processed
+                    }
+                }
+            } while ((lateVarDefs.Count + lateProcVarDefs.Count + lateOverrides.Count) != lastLateVarDefCount); // As long as the lists are getting smaller, keep trying
         }
     }
 }

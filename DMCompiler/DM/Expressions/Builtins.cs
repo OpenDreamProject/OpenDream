@@ -577,20 +577,16 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // initial(x)
-    sealed class Initial : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Initial(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
+    internal class Initial(Location location, DMExpression expr) : DMExpression(location) {
+        protected DMExpression Expression = expr;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_expr is LValue lValue) {
+            if (Expression is LValue lValue) {
                 lValue.EmitPushInitial(dmObject, proc);
                 return;
             }
 
-            throw new CompileErrorException(Location, $"can't get initial value of {_expr}");
+            throw new CompileErrorException(Location, $"can't get initial value of {Expression}");
         }
     }
 
@@ -643,22 +639,6 @@ namespace DMCompiler.DM.Expressions {
             DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
             return null;
         }
-    }
-
-    // __PROC__, type::proc()
-    internal sealed class ProcType : DMExpression {
-        private readonly DMProc? _proc;
-
-        public ProcType(Location location, DMProc? proc)
-            : base(location) {
-            _proc = proc;
-        }
-
-        public override void EmitPushValue(DMObject dmObject, DMProc? proc) {
-            proc.PushProc(_proc.Id);
-        }
-
-        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
     internal class Sin : DMExpression {

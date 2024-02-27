@@ -47,9 +47,10 @@ internal sealed class DMObject {
     /// <see langword="TODO:"/> Make this (and other things) match the nomenclature of <see cref="HasLocalVariable"/>
     /// </remarks>
     public DMVariable? GetVariable(string name) {
-        if (Variables.TryGetValue(name, out var variable)) {
+        if (Variables.TryGetValue(name, out var variable))
             return variable;
-        }
+        if (VariableOverrides.TryGetValue(name, out variable))
+             return variable;
 
         return Parent?.GetVariable(name);
     }

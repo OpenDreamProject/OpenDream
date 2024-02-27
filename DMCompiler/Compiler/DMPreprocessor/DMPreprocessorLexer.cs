@@ -78,12 +78,16 @@ internal sealed class DMPreprocessorLexer {
             case ';': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c);
             case '.': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Period, c);
             case ':':
-                if (Advance() == '=') {
-                    Advance();
-                    return CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                switch (Advance()) {
+                    case '=':
+                        Advance();
+                        return CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                    case ':':
+                        Advance();
+                        return CreateToken(TokenType.DM_Preproc_Punctuator, "::");
+                    default:
+                        return CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
                 }
-
-                return CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
             case ',': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c);
             case '(': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c);
             case ')': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c);

@@ -65,6 +65,7 @@ namespace DMCompiler.Compiler.DM {
         private static readonly TokenType[] DereferenceTypes = {
             TokenType.DM_Period,
             TokenType.DM_Colon,
+            TokenType.DM_DoubleColon, // not a dereference, but shares the same precedence
             TokenType.DM_QuestionPeriod,
             TokenType.DM_QuestionColon,
             TokenType.DM_QuestionLeftBracket,
@@ -451,6 +452,22 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Period)) return new DMASTCallableSelf(loc);
 
             return null;
+        }
+
+        private DMASTExpression? ParseScopeIdentifier(DMASTExpression? expression) {
+            do {
+                var identifier = Identifier();
+                if (identifier == null) {
+                    DMCompiler.Emit(WarningCode.BadToken, Current().Location, "Identifier expected");
+                    return null;
+                }
+
+                var location = expression?.Location ?? identifier.Location; // TODO: Should be on the :: token if expression is null
+                var parameters = ProcCall();
+                expression = new DMASTScopeIdentifier(location, expression, identifier.Identifier, parameters);
+            } while (Check(TokenType.DM_DoubleColon));
+
+            return expression;
         }
 
         public DMASTIdentifier? Identifier() {
@@ -2124,41 +2141,39 @@ namespace DMCompiler.Compiler.DM {
             }
 
             DMASTExpression? primary = Constant();
-            if (primary == null) {
-                DMASTPath? path = Path(true);
+            if (primary == null && Path(true) is { } path) {
+                primary = new DMASTConstantPath(loc, path);
 
-                if (path != null) {
-                    primary = new DMASTConstantPath(loc, path);
+                while (Check(TokenType.DM_Period)) {
+                    DMASTPath? search = Path();
+                    if (search == null) Error("Expected a path for an upward search");
 
-                    while (Check(TokenType.DM_Period)) {
-                        DMASTPath? search = Path();
-                        if (search == null) Error("Expected a path for an upward search");
+                    primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
+                }
 
-                        primary = new DMASTUpwardPathSearch(loc, (DMASTExpressionConstant)primary, search);
-                    }
+                Whitespace(); // whitespace between path and modified type
 
-                    Whitespace(); // whitespace between path and modified type
+                //TODO actual modified type support
+                if (Check(TokenType.DM_LeftCurlyBracket)) {
+                    DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
 
-                    //TODO actual modified type support
-                    if (Check(TokenType.DM_LeftCurlyBracket)) {
-                        DMCompiler.UnimplementedWarning(path.Location, "Modified types are currently not supported and modified values will be ignored.");
-
-                        while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
-                        Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
-                        //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
-                        Check(TokenType.Newline);
-                    }
+                    while (Current().Type != TokenType.DM_RightCurlyBracket && !Check(TokenType.EndOfFile)) Advance();
+                    Consume(TokenType.DM_RightCurlyBracket, "Expected '}'");
+                    //The lexer tosses in a newline after '}', but we avoid Newline() because we only want to remove the extra newline, not all of them
+                    Check(TokenType.Newline);
                 }
             }
 
             primary ??= Identifier();
+            primary ??= (DMASTExpression?)Callable();
 
-            if (primary == null) {
-                primary = (DMASTExpression?)Callable();
+            if (Check(TokenType.DM_DoubleColon)) {
+                primary = ParseScopeIdentifier(primary);
+            }
 
-                if (primary != null) {
-                    primary = ParseProcCall(primary);
-                }
+            if (primary != null && allowParentheses) {
+                primary = ParseProcCall(primary);
+                return primary;
             }
 
             if (primary == null && Check(TokenType.DM_Call)) {
@@ -2290,6 +2305,15 @@ namespace DMCompiler.Compiler.DM {
                                 NoSearch = token.Type is TokenType.DM_Colon or TokenType.DM_QuestionColon
                             };
                             break;
+                        }
+
+                        case TokenType.DM_DoubleColon: {
+                            if (operations.Count != 0) {
+                                expression = new DMASTDereference(expression.Location, expression, operations.ToArray());
+                                operations.Clear();
+                            }
+                            expression = ParseScopeIdentifier(expression);
+                            continue;
                         }
 
                         case TokenType.DM_LeftBracket:

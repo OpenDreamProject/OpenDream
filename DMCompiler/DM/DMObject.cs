@@ -1,6 +1,6 @@
-﻿using System;
+﻿using DMCompiler.Bytecode;
+using System;
 using System.Collections.Generic;
-using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 using DMCompiler.Json;
 
@@ -47,9 +47,10 @@ internal sealed class DMObject {
     /// <see langword="TODO:"/> Make this (and other things) match the nomenclature of <see cref="HasLocalVariable"/>
     /// </remarks>
     public DMVariable? GetVariable(string name) {
-        if (Variables.TryGetValue(name, out var variable)) {
+        if (Variables.TryGetValue(name, out var variable))
             return variable;
-        }
+        if (VariableOverrides.TryGetValue(name, out variable))
+             return variable;
 
         return Parent?.GetVariable(name);
     }
@@ -92,7 +93,7 @@ internal sealed class DMObject {
     }
 
     public List<int>? GetProcs(string name) {
-        return Procs.GetValueOrDefault(name, Parent?.GetProcs(name) ?? null);
+        return Procs.GetValueOrDefault(name) ?? Parent?.GetProcs(name);
     }
 
     public void AddVerb(DMProc verb) {
@@ -119,7 +120,7 @@ internal sealed class DMObject {
         return Parent?.GetGlobalVariableId(name);
     }
 
-    public DMVariable GetGlobalVariable(string name) {
+    public DMVariable? GetGlobalVariable(string name) {
         int? id = GetGlobalVariableId(name);
 
         return (id == null) ? null : DMObjectTree.Globals[id.Value];

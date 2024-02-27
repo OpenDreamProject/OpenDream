@@ -232,3 +232,15 @@ public sealed class DMASTCallableProcIdentifier(Location location, string identi
 public sealed class DMASTCallableSuper(Location location) : DMASTExpression(location), IDMASTCallable;
 
 public sealed class DMASTCallableSelf(Location location) : DMASTExpression(location), IDMASTCallable;
+
+public sealed class DMASTScopeIdentifier(
+    Location location,
+    DMASTExpression? expression,
+    string identifier,
+    DMASTCallParameter[]? callArguments) : DMASTExpression(location), IDMASTCallable {
+    public readonly DMASTExpression? Expression = expression;
+    public readonly string Identifier = identifier;
+    public readonly DMASTCallParameter[]? CallArguments = callArguments;
+
+    public bool IsProcRef => CallArguments != null;
+}

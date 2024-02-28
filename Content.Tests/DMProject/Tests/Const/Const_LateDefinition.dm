@@ -9,7 +9,7 @@ var/const/late_defined_const = 1
 	var/const/const_var = 2
 
 /obj/TestObj/SubType
-	a = 4
+	a = 4 // Catches a regression introduced in #1550
 
 /proc/RunTest()
 	var/obj/TestObj/o = new

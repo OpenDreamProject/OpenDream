@@ -285,8 +285,7 @@ internal static class DMObjectBuilder {
                 variable = varObject.GetGlobalVariable(varOverride.VarName);
                 DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
             } else {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, varOverride.Location, $"var \"{varOverride.VarName}\" is not declared");
-                return;
+                throw new UnknownIdentifierException(varOverride.Location, varOverride.VarName);
             }
 
             OverrideVariableValue(varObject, ref variable, varOverride.Value);

@@ -244,11 +244,14 @@ public sealed class DreamMapManager : IDreamMapManager {
         Size = size;
 
         foreach (Level existingLevel in _levels) {
-            for (int x = oldSize.X; x <= Size.X; x++) {
-                for (int y = oldSize.Y; y <= Size.Y; y++) {
-                    if (x == oldSize.X && y == oldSize.Y) {
-                        continue;
-                    }
+            for (int x = oldSize.X + 1; x <= Size.X; x++) {
+                for (int y = 1; y <= Size.Y; y++) {
+                    SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
+                }
+            }
+
+            for (int y = oldSize.Y + 1; y <= Size.Y; y++) {
+                for (int x = 1; x <= Size.X; x++)  {
                     SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
                 }
             }

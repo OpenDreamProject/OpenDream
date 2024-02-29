@@ -218,36 +218,38 @@ public sealed class DreamMapManager : IDreamMapManager {
     }
 
     public void SetWorldSize(Vector2i size) {
-        if (size.X <= Size.X || size.Y <= Size.Y) {
+        if (size.X < Size.X || size.Y < Size.Y) {
             return;
         }
 
         DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
 
+        var cellsToInitialize = new List<(Vector2i, int)>();
+
         foreach (Level existingLevel in _levels) {
             Cell[,] newCells = new Cell[size.X, size.Y];
-
-            List<Vector2i> cellsToInitialize = [];
 
             for (int x = 1; x <= size.X; x++) {
                 for (int y = 1; y <= size.Y; y++) {
                     if (x <= Size.X && y <= Size.Y) {
-                        newCells[x, y] = existingLevel.Cells[x, y];
+                        newCells[x - 1, y - 1] = existingLevel.Cells[x - 1, y - 1];
                         continue;
                     }
-                    newCells[x, y] = new Cell(defaultArea);
-                    cellsToInitialize.Add(new Vector2i(x, y));
+                    newCells[x - 1, y - 1] = new Cell(defaultArea);
+                    cellsToInitialize.Add((new Vector2i(x, y), existingLevel.Z));
                 }
             }
 
             existingLevel.Cells = newCells;
-
-            foreach (Vector2i pos in cellsToInitialize) {
-                SetTurf(pos, existingLevel.Z, _defaultTurf.ObjectDefinition, new());
-            }
-
-
         }
+
+        Size = size;
+
+        foreach ((Vector2i, int) cell in cellsToInitialize) {
+            SetTurf(cell.Item1, cell.Item2, _defaultTurf.ObjectDefinition, new());
+        }
+
+
     }
 
     public void SetZLevels(int levels) {

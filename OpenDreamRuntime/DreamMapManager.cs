@@ -223,35 +223,21 @@ public sealed class DreamMapManager : IDreamMapManager {
         }
 
         DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
+        Vector2i oldSize = Size;
 
+        Size = size;
         foreach (Level existingLevel in _levels) {
-            Cell[,] newCells = new Cell[size.X, size.Y];
+            var oldCells = existingLevel.Cells;
 
+            existingLevel.Cells = new Cell[size.X, size.Y];
             for (int x = 1; x <= size.X; x++) {
                 for (int y = 1; y <= size.Y; y++) {
-                    if (x <= Size.X && y <= Size.Y) {
-                        newCells[x - 1, y - 1] = existingLevel.Cells[x - 1, y - 1];
+                    if (x <= oldSize.X && y <= oldSize.Y) {
+                        existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
                         continue;
                     }
-                    newCells[x - 1, y - 1] = new Cell(defaultArea);
-                }
-            }
 
-            existingLevel.Cells = newCells;
-        }
-
-        Vector2i oldSize = Size;
-        Size = size;
-
-        foreach (Level existingLevel in _levels) {
-            for (int x = oldSize.X + 1; x <= Size.X; x++) {
-                for (int y = 1; y <= Size.Y; y++) {
-                    SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
-                }
-            }
-
-            for (int y = oldSize.Y + 1; y <= Size.Y; y++) {
-                for (int x = 1; x <= Size.X; x++)  {
+                    existingLevel.Cells[x - 1, y - 1] = new Cell(defaultArea);
                     SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
                 }
             }

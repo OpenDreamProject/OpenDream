@@ -224,8 +224,6 @@ public sealed class DreamMapManager : IDreamMapManager {
 
         DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
 
-        var cellsToInitialize = new List<(Vector2i, int)>();
-
         foreach (Level existingLevel in _levels) {
             Cell[,] newCells = new Cell[size.X, size.Y];
 
@@ -236,19 +234,25 @@ public sealed class DreamMapManager : IDreamMapManager {
                         continue;
                     }
                     newCells[x - 1, y - 1] = new Cell(defaultArea);
-                    cellsToInitialize.Add((new Vector2i(x, y), existingLevel.Z));
                 }
             }
 
             existingLevel.Cells = newCells;
         }
 
+        Vector2i oldSize = Size;
         Size = size;
 
-        foreach ((Vector2i, int) cell in cellsToInitialize) {
-            SetTurf(cell.Item1, cell.Item2, _defaultTurf.ObjectDefinition, new());
+        foreach (Level existingLevel in _levels) {
+            for (int x = oldSize.X; x <= Size.X; x++) {
+                for (int y = oldSize.Y; y <= Size.Y; y++) {
+                    if (x == oldSize.X && y == oldSize.Y) {
+                        continue;
+                    }
+                    SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
+                }
+            }
         }
-
 
     }
 

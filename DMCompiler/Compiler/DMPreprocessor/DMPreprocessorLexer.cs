@@ -519,11 +519,11 @@ internal sealed class DMPreprocessorLexer {
             } else if (stringC == '\\') {
                 Advance();
 
-                if (AtLineEnd()) { //Line splice
+                if (HandleLineEnd()) { //Line splice
                     // Ignore newlines & all incoming whitespace
                     do {
                         Advance();
-                    } while (AtLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t');
+                    } while (HandleLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t');
                 } else {
                     textBuilder.Append(stringC);
                     textBuilder.Append(GetCurrent());

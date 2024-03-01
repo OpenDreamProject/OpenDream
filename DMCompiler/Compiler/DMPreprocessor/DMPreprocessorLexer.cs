@@ -521,7 +521,7 @@ internal sealed class DMPreprocessorLexer {
 
                 if (HandleLineEnd()) { //Line splice
                     // Ignore newlines & all incoming whitespace
-                    while (AtLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t') {
+                    while (AtLineEnd() || GetCurrent() is ' ' or '\t') {
                         if (!HandleLineEnd())
                             Advance(); // Was a space or tab so advance it
                     }

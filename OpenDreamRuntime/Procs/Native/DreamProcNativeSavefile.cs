@@ -115,7 +115,7 @@ internal static class DreamProcNativeSavefile {
             case DreamObjectSavefile.SFDreamListValue listValue:
                 string result = "list(";
 
-                   for(int i=0; i<listValue.AssocKeys.Count; i++){
+                for(int i=0; i<listValue.AssocKeys.Count; i++){
                     if(listValue.AssocData != null && listValue.AssocData[i] != null)
                         result += ExportTextInternalListFormat(listValue.AssocKeys[i])+" = "+ExportTextInternalListFormat(listValue.AssocData[i]!);
                     else

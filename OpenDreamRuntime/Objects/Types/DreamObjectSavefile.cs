@@ -285,7 +285,6 @@ public sealed class DreamObjectSavefile : DreamObject {
     public void RemoveSavefileValue(string index){
         if (CurrentDir.Remove(index)) {
             SavefilesToFlush.Add(this);
-            SavefilesToFlush.Add(this);
         }
     }
 

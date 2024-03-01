@@ -21,7 +21,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Savefiles that have been modified since the last flush, processed at the end of the tick
     /// </summary>
-    private static readonly HashSet<DreamObjectSavefile> _savefilesToFlush = new();
+    private static readonly HashSet<DreamObjectSavefile> SavefilesToFlush = new();
 
     private static ISawmill? _sawmill;
 
@@ -215,14 +215,14 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// </summary>
     public static void FlushAllUpdates() {
         _sawmill ??= Logger.GetSawmill("opendream.res");
-        foreach (DreamObjectSavefile savefile in _savefilesToFlush) {
+        foreach (DreamObjectSavefile savefile in SavefilesToFlush) {
             try {
                 savefile.Flush();
             } catch (Exception e) {
                 _sawmill.Error($"Error flushing savefile {savefile.Resource.ResourcePath}: {e}");
             }
         }
-        _savefilesToFlush.Clear();
+        SavefilesToFlush.Clear();
     }
 
     public void Close() {
@@ -284,8 +284,8 @@ public sealed class DreamObjectSavefile : DreamObject {
 
     public void RemoveSavefileValue(string index){
         if (CurrentDir.Remove(index)) {
-            _savefilesToFlush.Add(this);
-            _savefilesToFlush.Add(this);
+            SavefilesToFlush.Add(this);
+            SavefilesToFlush.Add(this);
         }
     }
 
@@ -297,7 +297,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 newDir[key] = value[key];
             }
             CurrentDir[newIndex] = newDir;
-            _savefilesToFlush.Add(this);
+            SavefilesToFlush.Add(this);
         }
     }
 
@@ -320,7 +320,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             } else {
                 CurrentDir = _rootNode = newCurrentDir;
             }
-            _savefilesToFlush.Add(this);
+            SavefilesToFlush.Add(this);
             return;
         }
 
@@ -341,7 +341,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             SetSavefileValue(pathArray[pathArray.Length - 1], value);
             CurrentPath = oldPath;
         }
-        _savefilesToFlush.Add(this);
+        SavefilesToFlush.Add(this);
     }
 
     /// <summary>
@@ -351,28 +351,26 @@ public sealed class DreamObjectSavefile : DreamObject {
         switch (value) {
             case SFDreamFileValue sfDreamFileValue:
                 return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(sfDreamFileValue.Data)));
-            case SFDreamListValue SFDreamListValue:
+            case SFDreamListValue sfDreamListValue:
                 var l = ObjectTree.CreateList();
-                if (SFDreamListValue.AssocKeys != null) {
-                    for(int i=0; i < SFDreamListValue.AssocKeys.Count; i++) {
-                        if(SFDreamListValue.AssocData?[i] != null) //note that null != DreamValue.Null
-                            l.SetValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]), DeserializeJsonValue(SFDreamListValue.AssocData[i]!));
-                        else
-                            l.AddValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]));
-                    }
+                for(int i=0; i < sfDreamListValue.AssocKeys.Count; i++) {
+                    if(sfDreamListValue.AssocData?[i] != null) //note that null != DreamValue.Null
+                        l.SetValue(DeserializeJsonValue(sfDreamListValue.AssocKeys[i]), DeserializeJsonValue(sfDreamListValue.AssocData[i]!));
+                    else
+                        l.AddValue(DeserializeJsonValue(sfDreamListValue.AssocKeys[i]));
                 }
                 return new DreamValue(l);
-            case SFDreamObjectPathValue SFDreamObjectPath:
-                SFDreamJsonValue storedObjectVars = SFDreamObjectPath;
-                SFDreamJsonValue searchDir = SFDreamObjectPath;
+            case SFDreamObjectPathValue sfDreamObjectPath:
+                SFDreamJsonValue storedObjectVars = sfDreamObjectPath;
+                SFDreamJsonValue searchDir = sfDreamObjectPath;
                 while(searchDir != _rootNode)
-                    if(!searchDir.TryGetValue(SFDreamObjectPath.Path, out storedObjectVars!))
+                    if(!searchDir.TryGetValue(sfDreamObjectPath.Path, out storedObjectVars!))
                         searchDir = SeekTo("..");
                     else
                         break;
 
-                if(storedObjectVars!.TryGetValue("type", out SFDreamJsonValue? storedObjectTypeJSON) && DeserializeJsonValue(storedObjectTypeJSON).TryGetValueAsType(out TreeEntry? objecTypeActual)) {
-                    DreamObject resultObj = _objectTree.CreateObject(objecTypeActual);
+                if(storedObjectVars!.TryGetValue("type", out SFDreamJsonValue? storedObjectTypeJson) && DeserializeJsonValue(storedObjectTypeJson).TryGetValueAsType(out TreeEntry? objectTypeActual)) {
+                    DreamObject resultObj = _objectTree.CreateObject(objectTypeActual);
                     foreach(string key in storedObjectVars.Keys){
                         if(key == "type")
                             continue;
@@ -382,7 +380,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     resultObj.SpawnProc("Read", null, [new DreamValue(this)]);
                     return new DreamValue(resultObj);
                 } else
-                    throw new InvalidDataException("Unable to deserialize object in savefile: " + ((storedObjectTypeJSON as SFDreamType) is null ? "no type specified (corrupted savefile?)" : "invalid type "+((SFDreamType)storedObjectTypeJSON!).TypePath));
+                    throw new InvalidDataException("Unable to deserialize object in savefile: " + ((storedObjectTypeJson as SFDreamType) is null ? "no type specified (corrupted savefile?)" : "invalid type "+((SFDreamType)storedObjectTypeJson!).TypePath));
             case SFDreamType sfDreamTypeValue:
                 if(_objectTree.TryGetTreeEntry(sfDreamTypeValue.TypePath, out var type)) {
                     return new DreamValue(type);
@@ -411,7 +409,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                     Name = dreamResource.ResourcePath,
                     Ext = dreamResource.ResourcePath!.Split('.').Last(),
                     Length = dreamResource.ResourceData!.Length,
-                    Crc32 = CalculateCRC32(dreamResource.ResourceData),
+                    Crc32 = CalculateCrc32(dreamResource.ResourceData),
                     Data = Convert.ToBase64String(dreamResource.ResourceData)
                 };
             case DreamValue.DreamValueType.DreamObject:
@@ -468,7 +466,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                             Name = savefile.Resource.ResourcePath,
                             Ext = ".sav",
                             Length = savefile.Resource.ResourceData!.Length,
-                            Crc32 = CalculateCRC32(savefile.Resource.ResourceData),
+                            Crc32 = CalculateCrc32(savefile.Resource.ResourceData),
                             Data = Convert.ToBase64String(savefile.Resource.ResourceData)
                         };
                     }
@@ -491,7 +489,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                         objectVars["icon"] = new SFDreamFileValue(){
                             Ext=".dmi",
                             Length = iconResource.ResourceData!.Length,
-                            Crc32 = CalculateCRC32(iconResource.ResourceData),
+                            Crc32 = CalculateCrc32(iconResource.ResourceData),
                             Data = Convert.ToBase64String(iconResource.ResourceData)};
                     }
                     //Call the Write proc on the object - note that this is a weird one, it does not need to call parent to the native function to save the object
@@ -509,16 +507,13 @@ public sealed class DreamObjectSavefile : DreamObject {
         return new SFDreamPrimitive();
     }
 
-    private uint CalculateCRC32(byte[] data)
-    {
+    private uint CalculateCrc32(byte[] data){
         const uint polynomial = 0xEDB88320;
         uint crc = 0xFFFFFFFF;
 
-        for (int i = 0; i < data.Length; i++)
-        {
+        for (int i = 0; i < data.Length; i++){
             crc ^= data[i];
-            for (int j = 0; j < 8; j++)
-            {
+            for (int j = 0; j < 8; j++){
                 if ((crc & 1) == 1)
                     crc = (crc >> 1) ^ polynomial;
                 else
@@ -543,21 +538,21 @@ public sealed class DreamObjectSavefile : DreamObject {
     public abstract class SFDreamJsonValue {
         //because dictionary implements its own serialization, we basically just store a dict internally and wrap the functions we need instead of inheriting from it
         [JsonInclude]
-        private Dictionary<string, SFDreamJsonValue> nodes = new();
+        private Dictionary<string, SFDreamJsonValue> _nodes = new();
 
         [JsonIgnore]
         public SFDreamJsonValue this[string key] {
-            get => nodes[key];
-            set => nodes[key] = value;
+            get => _nodes[key];
+            set => _nodes[key] = value;
         }
-        public bool TryGetValue(string key, [MaybeNullWhen(false)] out SFDreamJsonValue value) => nodes.TryGetValue(key, out value);
+        public bool TryGetValue(string key, [MaybeNullWhen(false)] out SFDreamJsonValue value) => _nodes.TryGetValue(key, out value);
         [JsonIgnore]
-        public Dictionary<string, SFDreamJsonValue>.KeyCollection Keys => nodes.Keys;
+        public Dictionary<string, SFDreamJsonValue>.KeyCollection Keys => _nodes.Keys;
         [JsonIgnore]
-        public int Count => nodes.Count;
-        public void Clear() => nodes.Clear();
-        public bool Remove(string key) => nodes.Remove(key);
-        public bool ContainsKey(string key) => nodes.ContainsKey(key);
+        public int Count => _nodes.Count;
+        public void Clear() => _nodes.Clear();
+        public bool Remove(string key) => _nodes.Remove(key);
+        public bool ContainsKey(string key) => _nodes.ContainsKey(key);
 
     }
 

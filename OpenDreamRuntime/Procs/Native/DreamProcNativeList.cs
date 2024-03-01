@@ -131,7 +131,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_RemoveAll(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
             var totalRemoved = 0;
-            var removed = 0;
+            int removed;
             do {
                 removed = ListRemove(list, bundle.Arguments);
                 totalRemoved += removed;

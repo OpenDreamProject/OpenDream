@@ -1,7 +1,9 @@
+using System.Linq;
 using OpenDreamShared.Network.Messages;
 using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
+using OpenDreamShared.Dream;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
@@ -35,7 +37,7 @@ internal sealed class StatPanel : InfoPanel {
             _owner = owner;
             _entitySystemManager = entitySystemManager;
 
-            // TODO: Change color when the mouse is hovering
+            // TODO: Change color when the mouse is hovering (if clickable)
             //       I couldn't find a way to do this without recreating the FormattedMessage
             ValueLabel.MouseFilter = MouseFilterMode.Stop;
             ValueLabel.OnKeyBindDown += OnKeyBindDown;
@@ -143,11 +145,16 @@ internal sealed class StatPanel : InfoPanel {
 }
 
 internal sealed class VerbPanel : InfoPanel {
-    [Dependency] private readonly IDreamInterfaceManager _dreamInterface = default!;
+    public static readonly string DefaultVerbPanel = "Verbs"; // TODO: default_verb_category
+
+    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
+    private readonly ClientVerbSystem? _verbSystem;
+
     private readonly VerbPanelGrid _grid;
 
     public VerbPanel(string name) : base(name) {
         IoCManager.InjectDependencies(this);
+        _entitySystemManager.TryGetEntitySystem(out _verbSystem);
 
         var scrollContainer = new ScrollContainer {
             HScrollEnabled = false
@@ -161,22 +168,22 @@ internal sealed class VerbPanel : InfoPanel {
         AddChild(scrollContainer);
     }
 
-    public void RefreshVerbs() {
+    public void RefreshVerbs(IEnumerable<(int, ClientObjectReference, VerbSystem.VerbInfo)> verbs) {
         _grid.Children.Clear();
 
-        foreach ((string verbName, string verbId, string verbCategory) in _dreamInterface.AvailableVerbs) {
-            if (verbCategory != PanelName)
+        foreach (var (verbId, src, verbInfo) in verbs.Order(VerbNameComparer.OrdinalInstance)) {
+            if (verbInfo.GetCategoryOrDefault(DefaultVerbPanel) != PanelName)
                 continue;
 
-            Button verbButton = new Button() {
+            Button verbButton = new Button {
                 Margin = new Thickness(2),
-                Text = verbName,
+                Text = verbInfo.Name,
                 TextAlign = Label.AlignMode.Center
             };
 
             verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
             verbButton.OnPressed += _ => {
-                _dreamInterface.RunCommand(verbId);
+                _verbSystem?.ExecuteVerb(src, verbId);
             };
 
             _grid.Children.Add(verbButton);
@@ -194,7 +201,7 @@ public sealed class ControlInfo : InterfaceControl {
     private readonly Dictionary<string, StatPanel> _statPanels = new();
     private readonly SortedDictionary<string, VerbPanel> _verbPanels = new();
 
-    private bool _defaultPanelSent = false;
+    private bool _defaultPanelSent;
 
     public ControlInfo(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) {
         IoCManager.InjectDependencies(this);
@@ -204,24 +211,35 @@ public sealed class ControlInfo : InterfaceControl {
         _tabControl = new TabContainer();
         _tabControl.OnTabChanged += OnSelectionChanged;
 
-        RefreshVerbs();
-        _tabControl.OnVisibilityChanged += (args) => {
+        _tabControl.OnVisibilityChanged += args => {
             if (args.Visible) {
                 OnShowEvent();
             } else {
                 OnHideEvent();
             }
         };
+
         if(ControlDescriptor.IsVisible)
             OnShowEvent();
         else
             OnHideEvent();
+
         return _tabControl;
     }
 
-    public void RefreshVerbs() {
+    public void RefreshVerbs(ClientVerbSystem verbSystem) {
+        IEnumerable<(int, ClientObjectReference, VerbSystem.VerbInfo)> verbs = verbSystem.GetExecutableVerbs();
+
+        foreach (var (_, _, verb) in verbs) {
+            var category = verb.GetCategoryOrDefault(VerbPanel.DefaultVerbPanel);
+
+            if (!HasVerbPanel(category)) {
+                CreateVerbPanel(category);
+            }
+        }
+
         foreach (var panel in _verbPanels) {
-            _verbPanels[panel.Key].RefreshVerbs();
+            _verbPanels[panel.Key].RefreshVerbs(verbs);
         }
     }
 
@@ -298,15 +316,27 @@ public sealed class ControlInfo : InterfaceControl {
 
     public void OnShowEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (controlDescriptor.OnShowCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorInfo controlDescriptor = (ControlDescriptorInfo)ControlDescriptor;
-        if (controlDescriptor.OnHideCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
         }
     }
+}
+
+internal sealed class VerbNameComparer(bool ordinal) : IComparer<(int, ClientObjectReference, VerbSystem.VerbInfo)> {
+    // Verbs are displayed alphabetically with uppercase coming first (BYOND behavior)
+    public static VerbNameComparer OrdinalInstance = new(true);
+
+    // Verbs are displayed alphabetically according to the user's culture
+    public static VerbNameComparer CultureInstance = new(false);
+
+    public int Compare((int, ClientObjectReference, VerbSystem.VerbInfo) a,
+        (int, ClientObjectReference, VerbSystem.VerbInfo) b) =>
+        string.Compare(a.Item3.Name, b.Item3.Name, ordinal ? StringComparison.Ordinal : StringComparison.CurrentCulture);
 }

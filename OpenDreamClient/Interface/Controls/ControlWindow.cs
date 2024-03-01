@@ -8,7 +8,6 @@ namespace OpenDreamClient.Interface.Controls;
 public sealed class ControlWindow : InterfaceControl {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
 
@@ -18,6 +17,7 @@ public sealed class ControlWindow : InterfaceControl {
 
     public readonly List<InterfaceControl> ChildControls = new();
 
+    public string Title => WindowDescriptor.Title ?? (WindowDescriptor.IsDefault ? "OpenDream World" : WindowDescriptor.Id);
     public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
@@ -67,9 +67,10 @@ public sealed class ControlWindow : InterfaceControl {
             window.SetHeight = window.MaxHeight;
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
-            if (WindowDescriptor.OnClose != null) {
+            if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose)) {
                 _interfaceManager.RunCommand(WindowDescriptor.OnClose);
             }
+
             _myWindow = (null, _myWindow.clydeWindow);
         };
         window.StartupLocation = WindowStartupLocation.CenterOwner;
@@ -151,7 +152,6 @@ public sealed class ControlWindow : InterfaceControl {
                         element.SetWidth = Math.Max(width, 0);
                         element.SetHeight = Math.Max(height, 0);
                     }
-
                 }
             }
         }
@@ -160,6 +160,7 @@ public sealed class ControlWindow : InterfaceControl {
     private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
         // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
         var (osWindow, clydeWindow) = windowRoot;
+
         //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
         if(osWindow == null && clydeWindow == null) {
             if (WindowDescriptor.IsVisible) {
@@ -167,15 +168,15 @@ public sealed class ControlWindow : InterfaceControl {
                 return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
             }
         }
+
         if(osWindow != null && !osWindow.IsOpen) {
             if (WindowDescriptor.IsVisible) {
                 osWindow.Show();
             }
         }
 
-        var title = WindowDescriptor.Title ?? "OpenDream World";
-        if (osWindow != null) osWindow.Title = title;
-        else if (clydeWindow != null) clydeWindow.Title = title;
+        if (osWindow != null) osWindow.Title = Title;
+        else if (clydeWindow != null) clydeWindow.Title = Title;
 
         WindowRoot? root = null;
         if (osWindow?.Window != null)
@@ -271,5 +272,48 @@ public sealed class ControlWindow : InterfaceControl {
 
     private void CanvasOnResized() {
         UpdateAnchors();
+    }
+
+    public override bool TryGetProperty(string property, out string value) {
+        switch (property) {
+            case "inner-size":
+                value = $"{_canvas.Width}x{_canvas.Height}";
+                return true;
+            case "outer-size":
+                if(_myWindow.osWindow is not null){
+                    value = $"{_myWindow.osWindow.Width}x{_myWindow.osWindow.Height}";
+                    return true;
+                } else if(_myWindow.clydeWindow is not null){
+                    value = $"{_myWindow.clydeWindow.Size.X}x{_myWindow.clydeWindow.Size.Y}";
+                    return true;
+                } else {
+                    value = $"{UIElement.Size.X}x{UIElement.Size.Y}";
+                    return true;
+                }
+            case "is-minimized":
+                if(_myWindow.osWindow?.ClydeWindow != null){
+                    value = _myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else if(_myWindow.clydeWindow is not null){
+                    value = _myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else {
+                    value = "false";
+                    return true;
+                }
+            case "is-maximized": //TODO this is current "not isMinimised" because RT doesn't expose a maximised check
+                if(_myWindow.osWindow?.ClydeWindow != null){
+                    value = !_myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else if(_myWindow.clydeWindow is not null){
+                    value = !_myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else {
+                    value = "false";
+                    return true;
+                }
+            default:
+                return base.TryGetProperty(property, out value);
+        }
     }
 }

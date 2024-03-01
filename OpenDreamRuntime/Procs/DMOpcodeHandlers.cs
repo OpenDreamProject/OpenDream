@@ -170,37 +170,50 @@ namespace OpenDreamRuntime.Procs {
                     if (!state.Proc.ObjectTree.TryGetTreeEntry(pathString, out objectType)) {
                         ThrowCannotCreateUnknownObject(val);
                     }
+                } else if (val.TryGetValueAsProc(out var proc)) { // new /proc/proc_name(Destination,Name,Desc)
+                    var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
+                    var destination = arguments.GetArgument(0);
+
+                    // TODO: Name and Desc arguments
+
+                    if (destination.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom)) {
+                        state.Proc.AtomManager.UpdateAppearance(atom, appearance => {
+                            state.Proc.VerbSystem.RegisterVerb(proc);
+
+                            appearance.Verbs.Add(proc.VerbId!.Value);
+                        });
+                    } else if (destination.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                        client.ClientVerbs.AddValue(val);
+                    }
+
+                    return ProcStatus.Continue;
                 } else {
                     ThrowCannotCreateObjectFromInvalid(val);
                 }
             }
 
             var objectDef = objectType.ObjectDefinition;
-            var proc = objectDef.GetProc("New");
-            var arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
+            var newProc = objectDef.GetProc("New");
+            var newArguments = state.PopProcArguments(newProc, argumentInfo.Type, argumentInfo.StackSize);
 
             if (objectDef.IsSubtypeOf(state.Proc.ObjectTree.Turf)) {
                 // Turfs are special. They're never created outside of map initialization
                 // So instead this will replace an existing turf's type and return that same turf
-                DreamValue loc = arguments.GetArgument(0);
+                DreamValue loc = newArguments.GetArgument(0);
                 if (!loc.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
                     ThrowInvalidTurfLoc(loc);
 
-                state.Proc.DreamMapManager.SetTurf(turf, objectDef, arguments);
+                state.Proc.DreamMapManager.SetTurf(turf, objectDef, newArguments);
 
                 state.Push(loc);
                 return ProcStatus.Continue;
             }
 
-            DreamObject newObject = state.Proc.ObjectTree.CreateObject(objectType);
-            var s = newObject.InitProc(state.Thread, state.Usr, arguments);
-            if (s is not null) {
-                state.Thread.PushProcState(s);
-                return ProcStatus.Called;
-            }
+            var newObject = state.Proc.ObjectTree.CreateObject(objectType);
+            var s = newObject.InitProc(state.Thread, state.Usr, newArguments);
 
-            state.Push(new DreamValue(newObject));
-            return ProcStatus.Continue;
+            state.Thread.PushProcState(s);
+            return ProcStatus.Called;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -1735,7 +1748,7 @@ namespace OpenDreamRuntime.Procs {
                 return ProcStatus.Continue;
             }
 
-            var dir = d.MustGetValueAsInteger();
+            var dir = d.IsNull ? 0 : d.MustGetValueAsInteger();
 
             state.Push(new(DreamProcNativeHelpers.GetStep(state.Proc.AtomManager, state.Proc.DreamMapManager, loc, (AtomDirection)dir)));
             return ProcStatus.Continue;
@@ -1930,8 +1943,7 @@ namespace OpenDreamRuntime.Procs {
                 DreamValue value = state.Pop();
                 if (!state.Pop().TryGetValueAsFloat(out var weight))
                 {
-                    // Breaking change, no clue what weight BYOND is giving to non-nums
-                    throw new Exception($"pick() weight '{weight}' is not a number");
+                    weight = 100;
                 }
 
                 totalWeight += weight;
@@ -2196,7 +2208,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public static ProcStatus Prompt(DMProcState state) {
-            DMValueType types = (DMValueType)state.ReadInt();
+            DreamValueType types = (DreamValueType)state.ReadInt();
             DreamValue list = state.Pop();
             DreamValue message, title, defaultValue;
 

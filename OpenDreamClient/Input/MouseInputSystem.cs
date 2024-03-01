@@ -27,8 +27,8 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     private ContextMenuPopup _contextMenu = default!;
     private EntityClickInformation? _selectedEntity;
 
-    private sealed class EntityClickInformation(AtomReference atom, ScreenCoordinates initialMousePos, ClickParams clickParams) {
-        public readonly AtomReference Atom = atom;
+    private sealed class EntityClickInformation(ClientObjectReference atom, ScreenCoordinates initialMousePos, ClickParams clickParams) {
+        public readonly ClientObjectReference Atom = atom;
         public readonly ScreenCoordinates InitialMousePos = initialMousePos;
         public readonly ClickParams ClickParams = clickParams;
         public bool IsDrag; // If the current click is considered a drag (if the mouse has moved after the click)
@@ -73,7 +73,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
         RaiseNetworkEvent(new StatClickedEvent(atomRef, isMiddle, shift, ctrl, alt));
     }
 
-    private (AtomReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
+    private (ClientObjectReference Atom, Vector2i IconPosition)? GetAtomUnderMouse(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
         _dreamViewOverlay ??= _overlayManager.GetOverlay<DreamViewOverlay>();
         if(_dreamViewOverlay.MouseMap == null)
             return null;

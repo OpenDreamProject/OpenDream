@@ -1,11 +1,11 @@
 ﻿using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
+using DMCompiler.Json;
 using OpenDreamRuntime;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamShared.Dream;
-using OpenDreamShared.Json;
 using Robust.Shared.GameObjects;
 using Robust.Shared.Maths;
 
@@ -48,6 +48,8 @@ namespace Content.Tests {
         }
 
         public void SetZLevels(int levels) { }
+
+        public void SetWorldSize(Vector2i size) { }
 
         public EntityUid GetZLevelEntity(int z) {
             return EntityUid.Invalid;

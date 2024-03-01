@@ -15,6 +15,7 @@ using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Web;
+using DMCompiler.DM;
 using OpenDreamRuntime.Objects.Types;
 using DreamValueType = OpenDreamRuntime.DreamValue.DreamValueType;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
@@ -135,7 +136,7 @@ namespace OpenDreamRuntime.Procs.Native {
             if (!ascii.TryGetValueAsInteger(out int asciiValue))
                 throw new Exception($"{ascii} is not a number");
 
-            return new DreamValue(Convert.ToChar(asciiValue).ToString());
+            return new DreamValue(char.ConvertFromUtf32(asciiValue));
         }
 
         [DreamProc("block")]
@@ -1174,11 +1175,18 @@ namespace OpenDreamRuntime.Procs.Native {
 
         [DreamProc("json_encode")]
         [DreamProcParameter("Value")]
+        [DreamProcParameter("flags")]
         public static DreamValue NativeProc_json_encode(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             using MemoryStream stream = new MemoryStream();
-            using Utf8JsonWriter jsonWriter = new(stream, new JsonWriterOptions {
-                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping // "\"" instead of "\u0022"
-            });
+            // 515 JSON_PRETTY_PRINT flag
+            bundle.GetArgument(1, "flags").TryGetValueAsInteger(out var prettyPrint);
+            
+            JsonWriterOptions options = new JsonWriterOptions {
+                Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, // "\"" instead of "\u0022"
+                Indented = (prettyPrint == 1)
+            };
+
+            using Utf8JsonWriter jsonWriter = new(stream, options);
 
             JsonEncode(jsonWriter, bundle.GetArgument(0, "Value"));
             jsonWriter.Flush();
@@ -1472,14 +1480,19 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         private static DreamValue MinComparison(DreamValue min, DreamValue value) {
-            if (value.TryGetValueAsFloat(out var lFloat) && min.TryGetValueAsFloat(out var rFloat)) {
-                if (lFloat < rFloat)
+            if (value.TryGetValueAsFloat(out var lFloat)) {
+                if (min.IsNull && lFloat <= 0)
                     min = value;
-            } else if (value.TryGetValueAsString(out var lString) && min.TryGetValueAsString(out var rString)) {
-                if (string.Compare(lString, rString, StringComparison.Ordinal) < 0)
+                else if (min.TryGetValueAsFloat(out var rFloat) && lFloat <= rFloat)
                     min = value;
             } else if (value.IsNull) {
-                min = value;
+                if (min.TryGetValueAsFloat(out var minFloat) && minFloat >= 0)
+                    min = value;
+            } else if (value.TryGetValueAsString(out var lString)) {
+                if (min.IsNull)
+                    min = value;
+                else if (min.TryGetValueAsString(out var rString) && string.Compare(lString, rString, StringComparison.Ordinal) <= 0)
+                    min = value;
             } else {
                 throw new Exception($"Cannot compare {min} and {value}");
             }
@@ -1565,7 +1578,7 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             if(bundle.Arguments.Length == 3) {
-                var digits = Math.Max(bundle.GetArgument(1, "A").MustGetValueAsInteger(), 0);
+                var digits = Math.Max(bundle.GetArgument(1, "A").MustGetValueAsInteger(), 1);
                 var radix = bundle.GetArgument(2, "B").MustGetValueAsInteger();
                 var intNum = (int)floatNum;
 
@@ -2072,21 +2085,24 @@ namespace OpenDreamRuntime.Procs.Native {
             int sides;
             int modifier = 0;
             if (bundle.Arguments.Length == 1) {
-                if(!bundle.GetArgument(0, "ndice").TryGetValueAsString(out var diceInput)) {
-                    return new DreamValue(1);
-                }
+                var arg = bundle.GetArgument(0, "ndice");
+                if(arg.TryGetValueAsString(out var diceInput)) {
+                    string[] diceList = diceInput.Split('d');
+                    if (diceList.Length < 2) {
+                        if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception($"Invalid dice value: {diceInput}"); }
+                    } else {
+                        if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception($"Invalid dice value: {diceInput}"); }
+                        if (!Int32.TryParse(diceList[1], out sides)) {
+                            string[] sideList = diceList[1].Split('+');
 
-                string[] diceList = diceInput.Split('d');
-                if (diceList.Length < 2) {
-                    if (!Int32.TryParse(diceList[0], out sides)) { throw new Exception($"Invalid dice value: {diceInput}"); }
-                } else {
-                    if (!Int32.TryParse(diceList[0], out dice)) { throw new Exception($"Invalid dice value: {diceInput}"); }
-                    if (!Int32.TryParse(diceList[1], out sides)) {
-                        string[] sideList = diceList[1].Split('+');
-
-                        if (!Int32.TryParse(sideList[0], out sides) || !Int32.TryParse(sideList[1], out modifier))
-                            throw new Exception($"Invalid dice value: {diceInput}");
+                            if (!Int32.TryParse(sideList[0], out sides) || !Int32.TryParse(sideList[1], out modifier))
+                                throw new Exception($"Invalid dice value: {diceInput}");
+                        }
                     }
+                } else if (arg.IsNull) {
+                    return new DreamValue(1);
+                } else if (!arg.TryGetValueAsInteger(out sides)) {
+                    throw new Exception($"Invalid dice value: {arg}");
                 }
             } else if (!bundle.GetArgument(0, "ndice").TryGetValueAsInteger(out dice) || !bundle.GetArgument(1, "sides").TryGetValueAsInteger(out sides)) {
                 return new DreamValue(0);

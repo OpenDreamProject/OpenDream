@@ -13,7 +13,6 @@ internal sealed class DreamCommandSystem : EntitySystem{
     private readonly HashSet<(string Command, ICommonSession session)> _repeatingCommands = new();
 
     public override void Initialize() {
-        _netManager.RegisterNetMessage<MsgCommand>(OnCommandEvent);
         _netManager.RegisterNetMessage<MsgCommandRepeatStart>(OnRepeatCommandEvent);
         _netManager.RegisterNetMessage<MsgCommandRepeatStop>(OnStopRepeatCommandEvent);
     }
@@ -22,10 +21,6 @@ internal sealed class DreamCommandSystem : EntitySystem{
         foreach (var (command, session) in _repeatingCommands) {
             RunCommand(command, session);
         }
-    }
-
-    private void OnCommandEvent(MsgCommand message) {
-        RunCommand(message.Command, _playerManager.GetSessionByChannel(message.MsgChannel));
     }
 
     private void OnRepeatCommandEvent(MsgCommandRepeatStart message) {

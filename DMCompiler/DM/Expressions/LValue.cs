@@ -1,6 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
-using OpenDreamShared.Compiler;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     abstract class LValue : DMExpression {
@@ -26,11 +26,10 @@ namespace DMCompiler.DM.Expressions {
 
     // global
     class Global : LValue {
-        public Global(Location location)
-            : base(location, null) { }
+        public Global(Location location) : base(location, null) { }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            throw new CompileErrorException(Location, $"attempt to use `global` as a reference");
+            throw new CompileErrorException(Location, "attempt to use `global` as a reference");
         }
     }
 
@@ -44,9 +43,7 @@ namespace DMCompiler.DM.Expressions {
             return DMReference.Src;
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return "src";
-        }
+        public override string GetNameof(DMObject dmObject, DMProc proc) => "src";
     }
 
     // usr
@@ -58,6 +55,8 @@ namespace DMCompiler.DM.Expressions {
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Usr;
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => "usr";
     }
 
     // args
@@ -69,6 +68,8 @@ namespace DMCompiler.DM.Expressions {
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Args;
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => "args";
     }
 
     // Identifier of local variable
@@ -104,9 +105,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
-            return LocalVar.IsParameter ? proc.Parameters[LocalVar.Id] : proc.GetLocalVarName(LocalVar.Id);
-        }
+        public override string GetNameof(DMObject dmObject, DMProc proc) => LocalVar.Name;
     }
 
     // Identifier of field
@@ -133,6 +132,8 @@ namespace DMCompiler.DM.Expressions {
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.CreateSrcField(Variable.Name);
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => Variable.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (Variable.IsConst && Variable.Value != null) {
@@ -191,5 +192,7 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushGlobalVars();
         }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => "vars";
     }
 }

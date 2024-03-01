@@ -68,14 +68,14 @@ public sealed class ControlMap : InterfaceControl {
 
     public void OnShowEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
-        if (controlDescriptor.OnShowCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
-        if (controlDescriptor.OnHideCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
         }
     }

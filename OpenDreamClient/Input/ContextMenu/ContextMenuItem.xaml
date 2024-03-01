@@ -1,6 +1,6 @@
 <PanelContainer xmlns="https://spacestation14.io" MouseFilter="Stop">
     <BoxContainer Orientation="Horizontal">
-        <TextureRect Name="Icon" CanShrink="True" Stretch="KeepAspect" SetWidth="32" SetHeight="32" />
+        <TextureRect Name="Icon" CanShrink="True" Stretch="KeepAspect" SetWidth="32" SetHeight="32" Margin="2"/>
         <Label Name="NameLabel" />
     </BoxContainer>
 </PanelContainer>

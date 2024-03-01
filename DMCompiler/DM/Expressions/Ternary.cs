@@ -1,61 +1,44 @@
 using System.Diagnostics.CodeAnalysis;
-using OpenDreamShared.Compiler;
 
-namespace DMCompiler.DM.Expressions {
-    // x ? y : z
-    sealed class Ternary : DMExpression {
-        private readonly DMExpression _a, _b, _c;
+namespace DMCompiler.DM.Expressions;
 
-        public override bool PathIsFuzzy => true;
+// x ? y : z
+internal sealed class Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : DMExpression(location) {
+    public override bool PathIsFuzzy => true;
 
-        public Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : base(location) {
-            _a = a;
-            _b = b;
-            _c = c;
+    public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
+        if (!a.TryAsConstant(out var constant1)) {
+            constant = null;
+            return false;
         }
 
-        public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (!_a.TryAsConstant(out var a)) {
-                constant = null;
-                return false;
-            }
-
-            if (a.IsTruthy()) {
-                return _b.TryAsConstant(out constant);
-            }
-
-            return _c.TryAsConstant(out constant);
+        if (constant1.IsTruthy()) {
+            return b.TryAsConstant(out constant);
         }
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            string cLabel = proc.NewLabelName();
-            string endLabel = proc.NewLabelName();
-
-            _a.EmitPushValue(dmObject, proc);
-            proc.JumpIfFalse(cLabel);
-            _b.EmitPushValue(dmObject, proc);
-            proc.Jump(endLabel);
-            proc.AddLabel(cLabel);
-            _c.EmitPushValue(dmObject, proc);
-            proc.AddLabel(endLabel);
-        }
+        return c.TryAsConstant(out constant);
     }
 
-    // var in x to y
-    sealed class InRange : DMExpression {
-        private readonly DMExpression _var, _start, _end;
+    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+        string cLabel = proc.NewLabelName();
+        string endLabel = proc.NewLabelName();
 
-        public InRange(Location location, DMExpression var, DMExpression start, DMExpression end) : base(location) {
-            _var = var;
-            _start = start;
-            _end = end;
-        }
+        a.EmitPushValue(dmObject, proc);
+        proc.JumpIfFalse(cLabel);
+        b.EmitPushValue(dmObject, proc);
+        proc.Jump(endLabel);
+        proc.AddLabel(cLabel);
+        c.EmitPushValue(dmObject, proc);
+        proc.AddLabel(endLabel);
+    }
+}
 
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            _var.EmitPushValue(dmObject, proc);
-            _start.EmitPushValue(dmObject, proc);
-            _end.EmitPushValue(dmObject, proc);
-            proc.IsInRange();
-        }
+// var in x to y
+internal sealed class InRange(Location location, DMExpression var, DMExpression start, DMExpression end) : DMExpression(location) {
+    public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+        var.EmitPushValue(dmObject, proc);
+        start.EmitPushValue(dmObject, proc);
+        end.EmitPushValue(dmObject, proc);
+        proc.IsInRange();
     }
 }

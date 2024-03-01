@@ -3,7 +3,6 @@ using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Runtime.CompilerServices;
 using System.Text;
-using OpenDreamShared.Compiler;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
@@ -79,12 +78,16 @@ internal sealed class DMPreprocessorLexer {
             case ';': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Semicolon, c);
             case '.': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Period, c);
             case ':':
-                if (Advance() == '=') {
-                    Advance();
-                    return CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                switch (Advance()) {
+                    case '=':
+                        Advance();
+                        return CreateToken(TokenType.DM_Preproc_Punctuator, ":=");
+                    case ':':
+                        Advance();
+                        return CreateToken(TokenType.DM_Preproc_Punctuator, "::");
+                    default:
+                        return CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
                 }
-
-                return CreateToken(TokenType.DM_Preproc_Punctuator_Colon, c);
             case ',': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_Comma, c);
             case '(': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_LeftParenthesis, c);
             case ')': Advance(); return CreateToken(TokenType.DM_Preproc_Punctuator_RightParenthesis, c);
@@ -516,11 +519,12 @@ internal sealed class DMPreprocessorLexer {
             } else if (stringC == '\\') {
                 Advance();
 
-                if (AtLineEnd()) { //Line splice
+                if (HandleLineEnd()) { //Line splice
                     // Ignore newlines & all incoming whitespace
-                    do {
-                        Advance();
-                    } while (AtLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t');
+                    while (AtLineEnd() || GetCurrent() is ' ' or '\t') {
+                        if (!HandleLineEnd())
+                            Advance(); // Was a space or tab so advance it
+                    }
                 } else {
                     textBuilder.Append(stringC);
                     textBuilder.Append(GetCurrent());

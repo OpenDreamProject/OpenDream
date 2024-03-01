@@ -142,6 +142,7 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_TildeExclamation,
             TokenType.DM_Xor,
             TokenType.DM_XorEquals,
+            TokenType.DM_ConstantString
         };
 
         public DMParser(DMLexer lexer) : base(lexer) {
@@ -219,6 +220,7 @@ namespace DMCompiler.Compiler.DM {
                             Error($"error: {parameters.Last().Name}: missing comma ',' or right-paren ')'", false);
                         parameters.AddRange(DefinitionParameters(out wasIndeterminate));
                     }
+
                     if (!wasIndeterminate && Current().Type != TokenType.DM_RightParenthesis && Current().Type != TokenType.EndOfFile) {
                         // BYOND doesn't specify the arg
                         Error($"error: bad argument definition '{Current().PrintableText}'", false);
@@ -241,6 +243,7 @@ namespace DMCompiler.Compiler.DM {
                             procBlock = new DMASTProcBlockInner(loc, procStatement);
                         }
                     }
+
                     if(path.IsOperator) {
                         DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
 
@@ -251,8 +254,8 @@ namespace DMCompiler.Compiler.DM {
                         procStatements.Insert(0, assignEqSrc);
 
                         procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
-
                     }
+
                     statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
                 }
 
@@ -377,11 +380,17 @@ namespace DMCompiler.Compiler.DM {
                                     ReuseToken(operatorToken);
                                     Error(WarningCode.SoftReservedKeyword, "Using \"operator\" as a path element is ambiguous");
                                 }
-                            } else if(Check(OperatorOverloadTypes)) {
+                            } else if (Check(OperatorOverloadTypes)) {
+                                if (operatorToken is { Type: TokenType.DM_ConstantString, Value: not "" }) {
+                                    DMCompiler.Emit(WarningCode.BadToken, operatorToken.Location,
+                                        "The quotes in a stringify overload must be empty");
+                                }
+
                                 operatorFlag = true;
-                                pathElement+=operatorToken.PrintableText;
+                                pathElement += operatorToken.PrintableText;
                             }
                         }
+
                         pathElements.Add(pathElement);
                     }
                 }

@@ -279,7 +279,7 @@ public sealed class DreamObjectSavefile : DreamObject {
             return DeserializeJsonValue(CurrentDir);
         }
 
-        return DeserializeJsonValue(SeekTo(index));
+        return DeserializeJsonValue(SeekTo(index, true)); //should create the path if it doesn't exist
     }
 
     public void RemoveSavefileValue(string index){
@@ -372,7 +372,7 @@ public sealed class DreamObjectSavefile : DreamObject {
                 if(storedObjectVars!.TryGetValue("type", out SFDreamJsonValue? storedObjectTypeJson) && DeserializeJsonValue(storedObjectTypeJson).TryGetValueAsType(out TreeEntry? objectTypeActual)) {
                     DreamObject resultObj = _objectTree.CreateObject(objectTypeActual);
                     foreach(string key in storedObjectVars.Keys){
-                        if(key == "type")
+                        if(key == "type" || storedObjectVars[key] is SFDreamDir) //is type or a non-valued dir
                             continue;
                         resultObj.SetVariable(key, DeserializeJsonValue(storedObjectVars[key]));
                     }

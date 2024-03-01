@@ -19,6 +19,7 @@ binds: # These are all the current engine keybinds.
   canFocus: true
 - function: ShowDebugMonitors
   type: Toggle
+  mod1: Shift  
   key: F3
 - function: HideUI
   type: Toggle
@@ -67,6 +68,7 @@ binds: # These are all the current engine keybinds.
   canFocus: true
 - function: ShowDebugConsole
   type: State
+  mod1: Shift  
   key: Tilde
 - function: TextCursorLeft
   type: State

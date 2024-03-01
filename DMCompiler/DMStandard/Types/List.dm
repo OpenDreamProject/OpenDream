@@ -11,6 +11,7 @@
 	proc/Insert(Index, Item1)
 	proc/Join(Glue, Start = 1, End = 0)
 	proc/Remove(Item1)
+	proc/RemoveAll(Item1)
 	proc/Swap(Index1, Index2)
 
 	proc/Splice(Start=1,End=0, ...)

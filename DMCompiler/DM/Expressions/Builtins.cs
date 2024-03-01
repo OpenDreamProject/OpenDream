@@ -63,7 +63,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    internal sealed class NewPath(Location location, Path targetPath, ArgumentList arguments) : DMExpression(location) {
+    internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
         public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -75,14 +75,14 @@ namespace DMCompiler.DM.Expressions {
             var argumentInfo = arguments.EmitArguments(dmObject, proc);
 
             switch (pathInfo.Value.Type) {
-                case Expressions.Path.PathType.TypeReference:
+                case ConstantPath.PathType.TypeReference:
                     proc.PushType(pathInfo.Value.Id);
                     break;
-                case Expressions.Path.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
                     proc.PushProc(pathInfo.Value.Id);
                     break;
-                case Expressions.Path.PathType.ProcStub:
-                case Expressions.Path.PathType.VerbStub:
+                case ConstantPath.PathType.ProcStub:
+                case ConstantPath.PathType.VerbStub:
                     DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
                     proc.PushNull();
                     return;
@@ -577,20 +577,16 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // initial(x)
-    sealed class Initial : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Initial(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
+    internal class Initial(Location location, DMExpression expr) : DMExpression(location) {
+        protected DMExpression Expression = expr;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_expr is LValue lValue) {
+            if (Expression is LValue lValue) {
                 lValue.EmitPushInitial(dmObject, proc);
                 return;
             }
 
-            throw new CompileErrorException(Location, $"can't get initial value of {_expr}");
+            throw new CompileErrorException(Location, $"can't get initial value of {Expression}");
         }
     }
 
@@ -643,19 +639,6 @@ namespace DMCompiler.DM.Expressions {
             DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
             return null;
         }
-    }
-
-    // __PROC__
-    sealed class ProcType : DMExpression {
-        public ProcType(Location location)
-            : base(location)
-        {}
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushProc(proc.Id);
-        }
-
-        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
     internal class Sin : DMExpression {

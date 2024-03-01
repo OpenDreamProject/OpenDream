@@ -10,6 +10,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class DMProc : DreamProc {
@@ -554,6 +555,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public void PopDrop() {
+            DebugTools.Assert(_stackIndex > 0, "Attempted to PopDrop with a stack index of (or below?) 0");
             _stackIndex -= 1;
         }
 

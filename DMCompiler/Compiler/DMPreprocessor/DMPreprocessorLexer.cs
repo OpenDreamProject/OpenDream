@@ -521,9 +521,10 @@ internal sealed class DMPreprocessorLexer {
 
                 if (HandleLineEnd()) { //Line splice
                     // Ignore newlines & all incoming whitespace
-                    do {
-                        Advance();
-                    } while (HandleLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t');
+                    while (AtLineEnd() || GetCurrent() == ' ' || GetCurrent() == '\t') {
+                        if (!HandleLineEnd())
+                            Advance(); // Was a space or tab so advance it
+                    }
                 } else {
                     textBuilder.Append(stringC);
                     textBuilder.Append(GetCurrent());

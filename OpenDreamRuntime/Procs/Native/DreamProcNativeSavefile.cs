@@ -1,10 +1,8 @@
 ﻿using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
-using OpenDreamRuntime.Resources;
 using DreamValueTypeFlag = OpenDreamRuntime.DreamValue.DreamValueTypeFlag;
 using System.IO;
 using System.Linq;
-using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamRuntime.Procs.Native;
 
@@ -77,7 +75,7 @@ internal static class DreamProcNativeSavefile {
             case DreamObjectSavefile.SFDreamListValue listValue:
                 result += $"{new string('\t', indent)}{key} = {ExportTextInternalListFormat(listValue)}\n";
                 break;
-            case DreamObjectSavefile.SFDreamDir jsonValue:
+            case DreamObjectSavefile.SFDreamDir:
                 if(key==".")
                     result += "\n";
                 else
@@ -90,8 +88,8 @@ internal static class DreamProcNativeSavefile {
         if(string.IsNullOrEmpty(key) || key==".")
             indent = -1; //don't indent the subdirs of directly accessed keys or root dir
 
-        foreach (string subkey in savefile.CurrentDir.Keys) {
-            savefile.CurrentPath = subkey;
+        foreach (string subKey in savefile.CurrentDir.Keys) {
+            savefile.CurrentPath = subKey;
             result += ExportTextInternal(savefile, indent + 1);
             savefile.CurrentPath = "../";
         }
@@ -117,13 +115,13 @@ internal static class DreamProcNativeSavefile {
             case DreamObjectSavefile.SFDreamListValue listValue:
                 string result = "list(";
 
-                    for(int i=0; i<listValue.AssocKeys.Count; i++){
-                        if(listValue.AssocData != null && listValue.AssocData[i] != null)
-                            result += ExportTextInternalListFormat(listValue.AssocKeys[i])+" = "+ExportTextInternalListFormat(listValue.AssocData[i]!);
-                        else
-                            result += ExportTextInternalListFormat(listValue.AssocKeys[i]);
-                        result += ",";
-                    }
+                   for(int i=0; i<listValue.AssocKeys.Count; i++){
+                    if(listValue.AssocData != null && listValue.AssocData[i] != null)
+                        result += ExportTextInternalListFormat(listValue.AssocKeys[i])+" = "+ExportTextInternalListFormat(listValue.AssocData[i]!);
+                    else
+                        result += ExportTextInternalListFormat(listValue.AssocKeys[i]);
+                    result += ",";
+                }
                 result = result.TrimEnd(',');
                 result += ")";
                 return result;

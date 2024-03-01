@@ -43,7 +43,7 @@
 	
 	// load test
 	ASSERT(istype(W))
-	ASSERT(W != F) //they are equivelant, but not the same datum
+	ASSERT(W != F) //they are equivalent, but not the same datum
 	ASSERT(W.best_map == "pl_pier")
 	ASSERT(W.worst_map == "pl_badwater")
 	ASSERT(W.null_me == null)

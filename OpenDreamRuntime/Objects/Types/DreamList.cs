@@ -1294,7 +1294,7 @@ sealed class ProcArgsList : DreamList {
 }
 
 // Savefile Dir List - always sync'd with Savefiles currentDir. Only stores keys.
-sealed class SavefileDirList : DreamList {
+internal sealed class SavefileDirList : DreamList {
     private readonly DreamObjectSavefile _save;
 
     public SavefileDirList(DreamObjectDefinition listDef, DreamObjectSavefile backedSaveFile) : base(listDef, 0) {
@@ -1306,7 +1306,7 @@ sealed class SavefileDirList : DreamList {
             throw new Exception($"Invalid index on savefile dir list: {key}");
         if (index < 1 || index > _save.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
-        return new DreamValue(_save.CurrentDir.Keys.ToArray()[index - 1]);
+        return new DreamValue(_save.CurrentDir.Keys.ElementAt(index - 1));
     }
 
     public override List<DreamValue> GetValues() {
@@ -1326,7 +1326,7 @@ sealed class SavefileDirList : DreamList {
         if (index < 1 || index > _save.CurrentDir.Count)
             throw new Exception($"Out of bounds index on savefile dir list: {index}");
 
-        _save.RenameAndNullSavefileValue(_save.CurrentDir.Keys.ToArray()[index - 1], valueStr);
+        _save.RenameAndNullSavefileValue(_save.CurrentDir.Keys.ElementAt(index - 1), valueStr);
     }
 
     public override void AddValue(DreamValue value) {

@@ -2104,10 +2104,10 @@ namespace OpenDreamRuntime.Procs {
                     state.GetReferenceValue(leftRef);
                     state.GetReferenceValue(rightRef);
                 }
-            } else if (state.GetReferenceValue(leftRef).TryGetValueAsDreamObject<DreamObjectSavefile>(out var SF)) {
+            } else if (state.GetReferenceValue(leftRef).TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
                 // Savefiles get some special treatment.
                 // "savefile >> B" is the same as "B = savefile[current_dir]"
-                state.AssignReference(rightRef, SF.OperatorInput());
+                state.AssignReference(rightRef, savefile.OperatorInput());
                 return ProcStatus.Continue;
             }
 

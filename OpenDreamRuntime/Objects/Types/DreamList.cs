@@ -1312,9 +1312,8 @@ internal sealed class SavefileDirList : DreamList {
     public override List<DreamValue> GetValues() {
         List<DreamValue> values = new(_save.CurrentDir.Count);
 
-        foreach (string value in _save.CurrentDir.Keys) {
+        foreach (string value in _save.CurrentDir.Keys.OrderBy(x => x))
             values.Add(new DreamValue(value));
-        }
         return values;
     }
 

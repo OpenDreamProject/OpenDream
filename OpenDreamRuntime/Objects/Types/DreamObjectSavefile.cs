@@ -1,10 +1,6 @@
-﻿using System.Collections.ObjectModel;
-using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
-using System.Runtime.Serialization;
-using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DMCompiler;
@@ -49,7 +45,7 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// The current savefile data holder - the root of the savefile tree
     /// </summary>
-    private SFDreamJsonValue _rootNode = default!;
+    private SFDreamJsonValue _rootNode;
 
     /// <summary>
     /// The current savefile' working dir. This could be a generic primitive
@@ -287,8 +283,8 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     public void RemoveSavefileValue(string index){
-        if(CurrentDir.TryGetValue(index, out var value)) {
-            CurrentDir.Remove(index);
+        if (CurrentDir.Remove(index)) {
+            _savefilesToFlush.Add(this);
             _savefilesToFlush.Add(this);
         }
     }
@@ -349,17 +345,17 @@ public sealed class DreamObjectSavefile : DreamObject {
     }
 
     /// <summary>
-    /// Turn the json magic value into real byond values
+    /// Turn the json magic value into real DM values
     /// </summary>
     public DreamValue DeserializeJsonValue(SFDreamJsonValue value) {
         switch (value) {
-            case SFDreamFileValue SFDreamFileValue:
-                return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(SFDreamFileValue.Data)));
+            case SFDreamFileValue sfDreamFileValue:
+                return new DreamValue(DreamResourceManager.CreateResource(Convert.FromBase64String(sfDreamFileValue.Data)));
             case SFDreamListValue SFDreamListValue:
                 var l = ObjectTree.CreateList();
                 if (SFDreamListValue.AssocKeys != null) {
                     for(int i=0; i < SFDreamListValue.AssocKeys.Count; i++) {
-                        if(SFDreamListValue.AssocData != null && SFDreamListValue.AssocData[i] != null) //note that null != DreamValue.Null
+                        if(SFDreamListValue.AssocData?[i] != null) //note that null != DreamValue.Null
                             l.SetValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]), DeserializeJsonValue(SFDreamListValue.AssocData[i]!));
                         else
                             l.AddValue(DeserializeJsonValue(SFDreamListValue.AssocKeys[i]));
@@ -387,20 +383,20 @@ public sealed class DreamObjectSavefile : DreamObject {
                     return new DreamValue(resultObj);
                 } else
                     throw new InvalidDataException("Unable to deserialize object in savefile: " + ((storedObjectTypeJSON as SFDreamType) is null ? "no type specified (corrupted savefile?)" : "invalid type "+((SFDreamType)storedObjectTypeJSON!).TypePath));
-            case SFDreamType SFDreamTypeValue:
-                if(_objectTree.TryGetTreeEntry(SFDreamTypeValue.TypePath, out var type)) {
+            case SFDreamType sfDreamTypeValue:
+                if(_objectTree.TryGetTreeEntry(sfDreamTypeValue.TypePath, out var type)) {
                     return new DreamValue(type);
                 } else {
                     return DreamValue.Null;
                 }
-            case SFDreamPrimitive SFDreamPrimitive:
-                return SFDreamPrimitive.Value;
+            case SFDreamPrimitive sfDreamPrimitive:
+                return sfDreamPrimitive.Value;
         }
         return DreamValue.Null;
     }
 
     /// <summary>
-    /// Serialize byond values/objects into savefile data
+    /// Serialize DM values/objects into savefile data
     /// </summary>
     public SFDreamJsonValue SerializeDreamValue(DreamValue val, int objectCount = 0) {
         switch (val.Type) {
@@ -465,7 +461,7 @@ public sealed class DreamObjectSavefile : DreamObject {
 
                     return jsonEncodedList;
                 } else if( val.TryGetValueAsDreamObject(out var dreamObject) && !(dreamObject is null)) { //dreamobject can be null if it's disposed
-                    if(val.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile) && savefile != null) {
+                    if(val.TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
                         //if this is a savefile, just return a filedata object with it encoded
                         savefile.Flush(); //flush the savefile to make sure the backing resource is up to date
                         return new SFDreamFileValue(){
@@ -568,16 +564,16 @@ public sealed class DreamObjectSavefile : DreamObject {
     /// <summary>
     /// Dummy type for directories
     /// </summary>
-    public sealed class SFDreamDir : SFDreamJsonValue { }
+    public sealed class SFDreamDir : SFDreamJsonValue;
     /// <summary>
-    /// Standard byond types except objects and type paths
+    /// Standard DM types except objects and type paths
     /// </summary>
     public sealed class SFDreamPrimitive : SFDreamJsonValue {
         [JsonInclude]
         public DreamValue Value = DreamValue.Null;
     }
     /// <summary>
-    /// Standard byond type paths
+    /// Standard DM type paths
     /// </summary>
     public sealed class SFDreamType : SFDreamJsonValue {
         [JsonInclude]

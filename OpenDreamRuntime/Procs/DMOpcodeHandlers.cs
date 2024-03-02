@@ -11,6 +11,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Shared.Containers;
 using Robust.Shared.Random;
 using Vector4 = Robust.Shared.Maths.Vector4;
 
@@ -1887,7 +1888,18 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (value.TryGetValueAsString(out var refString)) {
-                state.Push(state.DreamManager.LocateRef(refString));
+                var refValue = state.DreamManager.LocateRef(refString);
+                if(container is not DreamObjectWorld && containerList is not null) { //if it's a valid ref, it's in world, we don't need to check
+                    foreach (var containerItem in containerList.GetValues()) {
+                        if (IsEqual(containerItem, refValue)) {
+                            state.Push(refValue);
+                            return ProcStatus.Continue;
+                        }
+                    }
+                    state.Push(DreamValue.Null);
+                    return ProcStatus.Continue;
+                } else
+                    state.Push(refValue);
             } else if (value.TryGetValueAsType(out var ancestor)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);

@@ -34,13 +34,22 @@ jobs:
       run: dotnet build main/DMCompiler/DMCompiler.csproj --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
-    - name: Checkout Modified /tg/station
+    - name: Checkout /tg/station 0792800
       uses: actions/checkout@v2
       with:
-        repository: wixoaGit/tgstation
+        repository: tgstation/tgstation
+        ref: 07928006665e320b5546de04c6368c3a9d01ec12
         path: tg
-    - name: Compile Modified /tg/station
-      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme 
+    - name: Compile /tg/station 0792800
+      run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme
+    - name: Checkout Goonstation c478a52
+      uses: actions/checkout@v2
+      with:
+        repository: goonstation/goonstation
+        ref: c478a521a6c75668e2ae04b4baa791c061c4987c
+        path: goon
+    - name: Compile Goonstation c478a52
+      run: main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme
     - name: Checkout 64-bit Paradise
       uses: actions/checkout@v2
       with:

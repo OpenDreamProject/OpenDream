@@ -237,7 +237,7 @@ namespace DMCompiler.Compiler.DM {
 
                     // Proc return type
                     // TODO: Currently we parse it but don't do anything with this information
-                    AsTypes(out _);
+                    AsTypes(out _, true);
 
                     DMASTProcBlockInner? procBlock = ProcBlock();
                     if (procBlock is null) {
@@ -2601,7 +2601,7 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMValueType? AsTypes(out DMASTPath? path) {
+        private DMValueType? AsTypes(out DMASTPath? path, bool allowPath = false) {
             path = null;
             if (Check(TokenType.DM_As)) {
                 DMValueType type = DMValueType.Anything;
@@ -2622,11 +2622,15 @@ namespace DMCompiler.Compiler.DM {
 
                     if (!Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
                         // Proc return types
-                        path = Path();
-                        if (path is null) {
-                            DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
+                        if (allowPath) {
+                            path = Path();
+                            if (path is null) {
+                                DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
+                            }
+                            type |= DMValueType.Path;
+                        } else {
+                            DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type");
                         }
-                        type |= DMValueType.Path;
                     } else {
                         switch (typeToken.Text) {
                             case "anything": type |= DMValueType.Anything; break;

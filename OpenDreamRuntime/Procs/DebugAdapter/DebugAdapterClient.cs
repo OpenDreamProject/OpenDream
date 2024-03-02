@@ -34,19 +34,18 @@ public sealed class DebugAdapterClient {
     public void HandleMessages() {
         // `_netStream.DataAvailable` goes to false as soon as there is one Read call.
         // `_client` and `_netReader` each keep buffers and we have to loop until they are all drained.
-        while (_client.Connected && (_netStream.DataAvailable || _client.Available > 0 || _netReader.Peek() != -1)) {
-            ProtocolMessage? message = ReadRequest();
-            if (message == null)
-                continue;
-
-            _sawmill.Log(LogLevel.Verbose, $"Parsed {message}");
-            _seqCounter = message.Seq + 1;
-            switch (message) {
-                case Request req:
-                    OnRequest?.Invoke(this, req);
-                    break;
+        try {
+            _netReader.BaseStream.ReadTimeout = 1; //1ms is lowest possible value
+            while (_client.Connected && (_netStream.DataAvailable || _client.Available > 0) &&  ReadRequest() is { } message) {
+                _sawmill.Log(LogLevel.Verbose, $"Parsed {message}");
+                _seqCounter = message.Seq + 1;
+                switch (message) {
+                    case Request req:
+                        OnRequest?.Invoke(this, req);
+                        break;
+                }
             }
-        }
+        } catch (IOException) {} //ignore timeouts
     }
 
     public void Close() {

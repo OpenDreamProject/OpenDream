@@ -1,26 +1,25 @@
 ﻿using OpenDreamClient.Input;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamShared.Dream;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
 
 namespace OpenDreamClient.Interface.Controls;
 
-public sealed class ControlMap : InterfaceControl {
+public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
     public ScalingViewport Viewport { get; private set; }
 
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
-    private MouseInputSystem _mouseInput;
+    private MouseInputSystem? _mouseInput;
 
-    public ControlMap(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+    private ControlDescriptorMap MapDescriptor => (ControlDescriptorMap)ElementDescriptor;
 
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        ControlDescriptorMap mapDescriptor = (ControlDescriptorMap)ElementDescriptor;
-
-        Viewport.StretchMode = mapDescriptor.ZoomMode switch {
+        Viewport.StretchMode = MapDescriptor.ZoomMode switch {
             "blur" => ScalingViewportStretchMode.Bilinear,
             "distort" => ScalingViewportStretchMode.Nearest,
 
@@ -28,10 +27,23 @@ public sealed class ControlMap : InterfaceControl {
             //          but will adjust to non-integer zooms (like 1.1x) by blending neighboring pixels"
             "normal" or _ => ScalingViewportStretchMode.Nearest
         };
+
+        UpdateViewRange(_interfaceManager.View);
     }
 
     public void UpdateViewRange(ViewRange view) {
-        Viewport.ViewportSize = (Math.Max(view.Width, 1) * 32, Math.Max(view.Height, 1) * 32);
+        var viewWidth = Math.Max(view.Width, 1);
+        var viewHeight = Math.Max(view.Height, 1);
+
+        Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * EyeManager.PixelsPerMeter;
+        if (MapDescriptor.IconSize != 0) {
+            Viewport.SetWidth = MapDescriptor.IconSize * viewWidth;
+            Viewport.SetHeight = MapDescriptor.IconSize * viewHeight;
+        } else {
+            // icon-size of 0 means stretch to fit the available space
+            Viewport.SetWidth = float.NaN;
+            Viewport.SetHeight = float.NaN;
+        }
     }
 
     protected override Control CreateUIElement() {

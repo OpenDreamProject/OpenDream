@@ -326,6 +326,19 @@ internal static class DMObjectBuilder {
                     }
                 }
             } else {
+                if (procDefinition.IsOverride) {
+                    var procId = dmObject.GetProcs(procName)?[^1];
+                    var parentProc = procId is null ? null : DMObjectTree.AllProcs[procId.Value];
+                    if (procDefinition.ReturnTypes == DMValueType.Anything)
+                    {
+                        procDefinition.ReturnTypes = parentProc.ReturnTypes;
+                    }
+                    if (parentProc.ReturnTypes != procDefinition.ReturnTypes)
+                    {
+                        // TODO: Make this a unique pragma?
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, procDefinition.Location, $"{procDefinition.ObjectPath}.{procName}() cannot override return type {parentProc.ReturnTypes} of parent proc {parentProc.Name}()");
+                    }
+                }
                 dmObject.AddProc(procName, proc);
             }
 
@@ -427,13 +440,17 @@ internal static class DMObjectBuilder {
 
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
 
-            SetVariableValue(currentObject, ref variable, value.Location, expression);
+            SetVariableValue(currentObject, ref variable, value.Location, expression, true);
         } finally {
             DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
         }
     }
 
-    private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression) {
+    private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression, bool isOverride = false) {
+        // TODO Clean this up?
+        if (variable.ValType != DMValueType.Anything && variable.ValType != DMValueType.Unimplemented && variable.ValType != DMValueType.CompiletimeReadonly && !variable.ValType.HasFlag(expression.ValType)) {
+            DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type {expression.ValType}, expected {variable.ValType}");
+        }
         if (expression.TryAsConstant(out var constant)) {
             variable = variable.WriteToValue(constant);
             return;

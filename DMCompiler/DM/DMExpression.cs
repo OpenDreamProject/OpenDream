@@ -10,14 +10,17 @@ namespace DMCompiler.DM;
 internal abstract class DMExpression(Location location) {
     public Location Location = location;
 
+    public DMValueType ValType = DMValueType.Anything;
+
     // TODO: proc and dmObject can be null, address nullability contract
     public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
     }
 
-    public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+    public static DMExpression Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         var expr = Create(dmObject, proc, expression, inferredPath);
         expr.EmitPushValue(dmObject, proc);
+        return expr;
     }
 
     public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {
@@ -130,7 +133,7 @@ sealed class ArgumentList {
         }
     }
 
-    public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc) {
+    public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc, DMProc? targetProc = null) {
         if (Expressions.Length == 0) {
             return (DMCallArgumentsType.None, 0);
         }
@@ -145,7 +148,15 @@ sealed class ArgumentList {
 
         // TODO: Named arguments must come after all ordered arguments
         int stackCount = 0;
-        foreach ((string name, DMExpression expr) in Expressions) {
+        var procParams = targetProc?.GetDefParams();
+        for (var index = 0; index < Expressions.Length; index++) {
+            (string name, DMExpression expr) = Expressions[index];
+            // TODO: See if the static typechecking can be improved
+            // Also right now we don't care if the arg is Anything
+            // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
+            if (targetProc is not null && index < procParams.Length && expr.ValType != DMValueType.Anything && procParams[index].Type != DMValueType.Anything && (expr.ValType & procParams[index].Type) == 0) {
+                DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location, $"{dmObject.Path.ToString()}.{name}: Invalid var value type {expr.ValType}, expected {procParams[index].Type}");
+            }
             if (_isKeyed) {
                 if (name != null) {
                     proc.PushString(name);

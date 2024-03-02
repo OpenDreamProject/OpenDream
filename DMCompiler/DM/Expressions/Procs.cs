@@ -32,6 +32,11 @@ namespace DMCompiler.DM.Expressions {
             var procId = dmObject.GetProcs(_identifier)?[^1];
             return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
+
+        public DMValueType GetReturnType(DMObject dmObject)
+        {
+            return dmObject.GetReturnType(_identifier);
+        }
     }
 
     /// <remarks>
@@ -56,6 +61,11 @@ namespace DMCompiler.DM.Expressions {
 
             return globalProc;
         }
+
+        public DMValueType GetReturnType()
+        {
+            return GetProc().ReturnTypes;
+        }
     }
 
     /// <summary>
@@ -64,8 +74,9 @@ namespace DMCompiler.DM.Expressions {
     /// </summary>
     sealed class ProcSelf : LValue {
         public ProcSelf(Location location)
-            : base(location, null)
-        {}
+            : base(location, null) {
+            ValType = DMValueType.Anything; //TODO: figure out how to deal with procself static typing
+        }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Self;
@@ -99,14 +110,23 @@ namespace DMCompiler.DM.Expressions {
         public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
             _target = target;
             _arguments = arguments;
+            ValType = _target.ValType;
         }
 
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
-            return _target switch {
-                Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
-                GlobalProc procTarget => (null, procTarget.GetProc()),
-                _ => (null, null)
-            };
+            switch (_target) {
+                case Proc procTarget: {
+                    ValType = procTarget.GetReturnType(dmObject);
+                    return (dmObject, procTarget.GetProc(dmObject));
+                }
+
+                case GlobalProc procTarget: {
+                    ValType = procTarget.GetReturnType();
+                    return (null, procTarget.GetProc());
+                }
+                default:
+                    return (null, null);
+            }
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -124,7 +144,7 @@ namespace DMCompiler.DM.Expressions {
                 argumentsType = DMCallArgumentsType.FromProcArguments;
                 argumentStackSize = 0;
             } else {
-                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc);
+                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc, targetProc);
             }
 
             DMReference procRef = _target.EmitReference(dmObject, proc, endLabel);

@@ -28,6 +28,9 @@
 #pragma MissingInterpolatedExpression warning
 #pragma AmbiguousResourcePath warning
 #pragma SuspiciousSwitchCase warning
+#pragma UnsupportedTypeCheck warning
+#pragma InvalidReturnType warning
+#pragma InvalidVarType warning
 
 //3000-3999
 #pragma EmptyBlock notice

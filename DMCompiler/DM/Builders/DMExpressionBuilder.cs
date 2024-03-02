@@ -344,7 +344,9 @@ internal static class DMExpressionBuilder {
 
         switch (name) {
             case "src":
-                return new Src(identifier.Location, dmObject.Path);
+                var src = new Src(identifier.Location, dmObject.Path);
+                src.ValType = src.ValType == DMValueType.Anything ? GetATOMType(dmObject.Path) : src.ValType;
+                return src;
             case "usr":
                 return new Usr(identifier.Location);
             case "args":
@@ -362,21 +364,53 @@ internal static class DMExpressionBuilder {
                         return new Local(identifier.Location, localVar);
 
                     var field = dmObject?.GetVariable(name);
-                    if (field != null)
-                        return new Field(identifier.Location, field);
+                    if (field != null) {
+                        var fieldexpr = new Field(identifier.Location, field);
+                        fieldexpr.ValType = field.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.ValType;
+                        return fieldexpr;
+                    }
+
                 }
 
                 if (CurrentScopeMode != ScopeMode.FirstPassStatic) {
                     var globalId = proc?.GetGlobalVariableId(name) ?? dmObject?.GetGlobalVariableId(name);
 
                     if (globalId != null) {
-                        var global = new GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value);
+                        var globalVar = DMObjectTree.Globals[globalId.Value];
+                        var global = new GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value, globalVar.ValType);
                         return global;
                     }
                 }
 
                 throw new UnknownIdentifierException(identifier.Location, name);
             }
+        }
+
+        DMValueType GetATOMType(DreamPath? type)
+        {
+            if (type is null)
+            {
+                return DMValueType.Anything;
+            }
+            var dmType = DMObjectTree.GetDMObject(type.Value, false);
+            if (dmType.IsSubtypeOf(DreamPath.Obj))
+            {
+                return DMValueType.Obj;
+            }
+            if (dmType.IsSubtypeOf(DreamPath.Mob))
+            {
+                return DMValueType.Mob;
+            }
+            if (dmType.IsSubtypeOf(DreamPath.Turf))
+            {
+                return DMValueType.Turf;
+            }
+            if (dmType.IsSubtypeOf(DreamPath.Area))
+            {
+                return DMValueType.Area;
+            }
+
+            return DMValueType.Anything;
         }
     }
 
@@ -409,9 +443,11 @@ internal static class DMExpressionBuilder {
             if (globalId == null)
                 throw new UnknownIdentifierException(location, bIdentifier);
 
+            var globalVar = DMObjectTree.Globals[globalId.Value];
             return new GlobalField(location,
                 DMObjectTree.Globals[globalId.Value].Type,
-                globalId.Value);
+                globalId.Value,
+                globalVar.ValType);
         }
 
         // Other uses should wait until the scope operator pass
@@ -474,7 +510,8 @@ internal static class DMExpressionBuilder {
             if (globalVarId != null) {
                 // B is a static var.
                 // This is the only case a ScopeIdentifier can be an LValue.
-                return new GlobalField(location, DMObjectTree.Globals[globalVarId.Value].Type, globalVarId.Value);
+                var globalVar = DMObjectTree.Globals[globalVarId.Value];
+                return new GlobalField(location, DMObjectTree.Globals[globalVarId.Value].Type, globalVarId.Value, globalVar.ValType);
             }
 
             var variable = owner.GetVariable(bIdentifier);
@@ -611,7 +648,7 @@ internal static class DMExpressionBuilder {
                         }
 
                         var property = DMObjectTree.Globals[globalId.Value];
-                        expr = new GlobalField(expr.Location, property.Type, globalId.Value);
+                        expr = new GlobalField(expr.Location, property.Type, globalId.Value, property.ValType);
 
                         prevPath = property.Type;
                         pathIsFuzzy = false;
@@ -666,7 +703,7 @@ internal static class DMExpressionBuilder {
                         if (property == null && fromObject.GetGlobalVariableId(field) is { } globalId) {
                             property = DMObjectTree.Globals[globalId];
 
-                            expr = new GlobalField(expr.Location, property.Type, globalId);
+                            expr = new GlobalField(expr.Location, property.Type, globalId, property.ValType);
 
                             var newOperationCount = operations.Length - i - 1;
                             if (newOperationCount == 0) {

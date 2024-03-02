@@ -14,6 +14,7 @@ namespace DMCompiler.DM.Expressions {
         public StringFormat(Location location, string value, DMExpression[] expressions) : base(location) {
             Value = value;
             Expressions = expressions;
+            ValType = DMValueType.Text;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

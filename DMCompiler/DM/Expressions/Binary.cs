@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
@@ -497,6 +498,15 @@ namespace DMCompiler.DM.Expressions {
             EmitOp(dmObject, proc, reference, endLabel);
 
             proc.AddLabel(endLabel);
+
+            LHS.ValType = RHS.ValType;
+            if (LHS is ProcSelf self)
+            {
+                if (proc.ReturnTypes != DMValueType.Anything && (proc.ReturnTypes & self.ValType) == 0)
+                {
+                    DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{proc.Name}(): Invalid implicit return type {self.ValType}, expected {proc.ReturnTypes}");
+                }
+            }
         }
     }
 

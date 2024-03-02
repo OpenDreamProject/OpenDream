@@ -24,7 +24,7 @@ namespace DMCompiler.DM {
         }
 
         public sealed class LocalConstVariable(string name, int id, DreamPath? type, Expressions.Constant value)
-                : LocalVariable(name, id, false, type, null) {
+                : LocalVariable(name, id, false, type, value.ValType) {
             public readonly Expressions.Constant Value = value;
         }
 
@@ -99,6 +99,9 @@ namespace DMCompiler.DM {
         private readonly List<SourceInfoJson> _sourceInfo = new();
         private string? _lastSourceFile;
 
+        public DMValueType ReturnTypes;
+        public DMASTPath ReturnPath; // If the proc return type is a path, this is that path
+
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
             return _localVariableIdCounter++;
@@ -115,6 +118,7 @@ namespace DMCompiler.DM {
             Id = id;
             _dmObject = dmObject;
             _astDefinition = astDefinition;
+            ReturnTypes |= _astDefinition?.ReturnTypes ?? DMValueType.Anything;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
@@ -130,6 +134,29 @@ namespace DMCompiler.DM {
                 }
 
                 new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
+            }
+        }
+
+        public void ValidateReturnType(DMValueType type)
+        {
+            if (ReturnTypes == DMValueType.Anything)
+            {
+                return;
+            }
+
+            if ((ReturnTypes & DMValueType.Color) != 0 || (ReturnTypes & DMValueType.File) != 0 || (ReturnTypes & DMValueType.Message) != 0)
+            {
+                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "Color, Message, and File return types are currently unsupported.");
+                return;
+            }
+
+            if (type == DMValueType.Anything)
+            {
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub.");
+            }
+            else if ((ReturnTypes & type) == 0)
+            {
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }
 
@@ -305,12 +332,12 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public bool TryAddLocalVariable(string name, DreamPath? type) {
+        public bool TryAddLocalVariable(string name, DreamPath? type, DMValueType valType) {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, null));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, valType));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {
@@ -610,6 +637,10 @@ namespace DMCompiler.DM {
         public void EndScope() {
             DMProcScope destroyedScope = _scopes.Pop();
             DeallocLocalVariables(destroyedScope.LocalVariables.Count);
+        }
+
+        public DMASTDefinitionParameter[] GetDefParams() {
+            return _astDefinition.Parameters;
         }
 
         public void Jump(string label) {

@@ -236,8 +236,7 @@ namespace DMCompiler.Compiler.DM {
                     Whitespace();
 
                     // Proc return type
-                    // TODO: Currently we parse it but don't do anything with this information
-                    AsTypes(out _, true);
+                    var types = AsTypes(out var returnPath, true);
 
                     DMASTProcBlockInner? procBlock = ProcBlock();
                     if (procBlock is null) {
@@ -260,7 +259,7 @@ namespace DMCompiler.Compiler.DM {
                         procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
                     }
 
-                    statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
+                    statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock, types ?? DMValueType.Anything, returnPath);
                 }
 
                 //Object definition
@@ -862,9 +861,9 @@ namespace DMCompiler.Compiler.DM {
                     if (value == null) Error("Expected an expression");
                 }
 
-                AsTypes(out _);
+                var valType = AsTypes(out _);
 
-                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value));
+                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType ?? DMValueType.Anything));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
                     Whitespace();
                     varPath = Path();

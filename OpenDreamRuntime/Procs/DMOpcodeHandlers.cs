@@ -11,7 +11,6 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
-using Robust.Shared.Containers;
 using Robust.Shared.Random;
 using Vector4 = Robust.Shared.Maths.Vector4;
 

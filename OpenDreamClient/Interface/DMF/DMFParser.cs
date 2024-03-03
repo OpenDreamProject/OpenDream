@@ -187,11 +187,9 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
 
     private bool TryGetAttribute([NotNullWhen(true)] out DMFWinSet? winSet) {
         string? element = null;
-        string? key = null;
-        string? token = null;
         winSet = null;
-        DMFWinSet? condition = null;
-        DMFWinSet? elseValue = null;
+        DMFWinSet? condition;
+        DMFWinSet? elseValue;
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {

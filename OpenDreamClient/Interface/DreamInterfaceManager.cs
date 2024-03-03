@@ -23,6 +23,7 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
+using System.Text.RegularExpressions;
 
 namespace OpenDreamClient.Interface;
 
@@ -505,6 +506,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             return true;
         }
 
+        string HandleEmbeddedWinget(string? controlId, string value) {
+            string pattern = @"\[\[.*\]\]";
+            string result = value;
+            foreach (Match match in Regex.Matches(value, pattern)) {
+                string innerResult = WinGet(controlId ?? "", match.Value[2..^2]);
+                result = result.Replace(match.Value, innerResult);
+            }
+            return result;
+        }
+
         if (string.IsNullOrEmpty(controlId)) {
             List<DMFWinSet> winSets = parser.GlobalWinSet();
 
@@ -515,14 +526,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             string? elementOverride = null;
             foreach(var winSet in winSets)
                 if(winSet.Attribute == "id" && winSet.Element == null)
-                    elementOverride = winSet.Value;
+                    elementOverride = HandleEmbeddedWinget(controlId, winSet.Value);
 
             foreach (DMFWinSet winSet in winSets) {
                 string? elementId = winSet.Element ?? elementOverride;
 
                 if (elementId == null) {
                     if (winSet.Attribute == "command") {
-                        RunCommand(winSet.Value);
+                        RunCommand(HandleEmbeddedWinget(controlId, winSet.Value));
                     } else {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
@@ -538,7 +549,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     InterfaceElement? IfElement = FindElementWithId(IfElementId);
                                     if(IfElement is not null) {
                                         MappingDataNode node = new() {
-                                            {IfValue.Attribute, IfValue.Value}
+                                            {IfValue.Attribute, HandleEmbeddedWinget(controlId, IfValue.Value)}
                                         };
                                         IfElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
@@ -551,7 +562,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     InterfaceElement? ElseElement = FindElementWithId(ElseElementId);
                                     if(ElseElement is not null) {
                                         MappingDataNode node = new() {
-                                            {ElseValue.Attribute, ElseValue.Value}
+                                            {ElseValue.Attribute, HandleEmbeddedWinget(controlId, ElseValue.Value)}
                                         };
                                         ElseElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
@@ -562,7 +573,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     } else {
                         InterfaceElement? element = FindElementWithId(elementId);
                         MappingDataNode node = new() {
-                            {winSet.Attribute, winSet.Value}
+                            {winSet.Attribute, HandleEmbeddedWinget(controlId, winSet.Value)}
                         };
 
                         if (element != null) {

@@ -228,7 +228,6 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                 else
                     Error($"Invalid attribute value ({valueText})");
             else if (Check(TokenType.Ternary)) {
-                condition = new DMFWinSet(element, attributeToken.Text, valueText);
                 List<DMFWinSet> ifValues = new();
                 List<DMFWinSet> elseValues = new();
                 while(TryGetAttribute(out var ifValue)){

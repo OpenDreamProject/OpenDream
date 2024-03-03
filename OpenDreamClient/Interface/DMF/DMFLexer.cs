@@ -104,14 +104,14 @@ public sealed class DMFLexer(string source) {
                 if(GetCurrent() != '[') //must be [[
                     throw new Exception("Expected '['");
 
-                StringBuilder textBuilder = new StringBuilder(c.ToString());
+                StringBuilder textBuilder = new StringBuilder("[[");
 
                 while (Advance() != ']' && !AtEndOfSource) {
                     textBuilder.Append(GetCurrent());
                 }
                 if (GetCurrent() != ']') throw new Exception("Expected ']'");
                 Advance();
-
+                textBuilder.Append("]]");
                 return new(TokenType.Lookup, textBuilder.ToString());
             }
             default: {

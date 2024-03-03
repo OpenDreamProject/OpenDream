@@ -4,14 +4,14 @@ public sealed class DMFWinSet {
     public readonly string? Element;
     public readonly string Attribute;
     public readonly string Value;
-    public DMFWinSet? Condition;
-    public DMFWinSet? ElseValue;
+    public List<DMFWinSet>? IfValues;
+    public List<DMFWinSet>? ElseValues;
 
-    public DMFWinSet(string? element, string attribute, string value, DMFWinSet? condition = null, DMFWinSet? elseValue = null) {
+    public DMFWinSet(string? element, string attribute, string value, List<DMFWinSet>? ifValue = null, List<DMFWinSet>? elseValue = null) {
         Element = element;
         Attribute = attribute;
         Value = value;
-        Condition = condition;
-        ElseValue = elseValue;
+        IfValues = ifValue;
+        ElseValues = elseValue;
     }
 }

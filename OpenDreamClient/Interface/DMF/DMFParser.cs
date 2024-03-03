@@ -3,6 +3,7 @@ using System.Linq;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
+using YamlDotNet.Core.Tokens;
 using Token = OpenDreamClient.Interface.DMF.DMFLexer.Token;
 using TokenType = OpenDreamClient.Interface.DMF.DMFLexer.TokenType;
 
@@ -228,12 +229,17 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                     Error($"Invalid attribute value ({valueText})");
             else if (Check(TokenType.Ternary)) {
                 condition = new DMFWinSet(element, attributeToken.Text, valueText);
-                if (!(TryGetAttribute(out winSet) && Check(TokenType.Colon)) || !TryGetAttribute(out elseValue)) {
-                    Error("Badly formatted ternary!");
-                    return false;
+                List<DMFWinSet> ifValues = new();
+                List<DMFWinSet> elseValues = new();
+                while(TryGetAttribute(out var ifValue)){
+                    ifValues.Add(ifValue);
                 }
-                winSet.Condition = condition;
-                winSet.ElseValue = elseValue;
+                if(Check(TokenType.Colon)){ //not all ternarys have an else
+                    while(TryGetAttribute(out elseValue)) {
+                        elseValues.Add(elseValue);
+                    }
+                }
+                winSet = new DMFWinSet(element, attributeToken.Text, valueText, ifValues, elseValues);
                 return true;
             }
 

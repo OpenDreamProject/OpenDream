@@ -16,7 +16,10 @@ public sealed class DMFLexer(string source) {
         Macro,
         Menu,
         Window,
-        Attribute
+        Attribute,
+        Ternary,
+        Colon,
+        Lookup,
     }
 
     public struct Token(TokenType type, string text) {
@@ -79,7 +82,7 @@ public sealed class DMFLexer(string source) {
                         textBuilder.Append(GetCurrent());
                     }
                 }
-                if (GetCurrent() != c) throw new Exception($"Expected '{c}'");
+                if (GetCurrent() != c) throw new Exception($"Expected '{c}' got '{GetCurrent()}'");
                 textBuilder.Append(c);
                 Advance();
 
@@ -87,6 +90,29 @@ public sealed class DMFLexer(string source) {
 
                 // Strings are treated the same un-quoted values except they can use escape codes
                 return new(TokenType.Value, text.Substring(1, text.Length - 2));
+            }
+            case '?':{
+                Advance();
+                return new(TokenType.Ternary, c);
+            }
+            case ':':{
+                Advance();
+                return new(TokenType.Colon, c);
+            }
+            case '[': {
+                Advance();
+                if(GetCurrent() != '[') //must be [[
+                    throw new Exception("Expected '['");
+
+                StringBuilder textBuilder = new StringBuilder(c.ToString());
+
+                while (Advance() != ']' && !AtEndOfSource) {
+                    textBuilder.Append(GetCurrent());
+                }
+                if (GetCurrent() != ']') throw new Exception("Expected ']'");
+                Advance();
+
+                return new(TokenType.Lookup, textBuilder.ToString());
             }
             default: {
                 if (!char.IsAscii(c)) {
@@ -96,7 +122,7 @@ public sealed class DMFLexer(string source) {
 
                 string text = c.ToString();
 
-                while (!char.IsWhiteSpace(Advance()) && GetCurrent() is not ';' and not '=' and not '.' && !AtEndOfSource)
+                while (!char.IsWhiteSpace(Advance()) && GetCurrent() is not ';' and not '=' and not '.' and not '?' and not ':' && !AtEndOfSource)
                     text += GetCurrent();
 
                 TokenType tokenType;

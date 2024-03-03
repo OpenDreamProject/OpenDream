@@ -46,7 +46,11 @@ menu "menu"
 	elem
 		name = "Hide Popup"
 		command = ".winset \"testwindow.is-visible=false\""
-		category = "Menu"		
+		category = "Menu"
+	elem
+		name = "Toggle Popup"
+		command = ".winset \"testwindow.is-visible=false?testwindow.is-visible=true:testwindow.is-visible=false\""	
+		category = "Menu"
 
 window "mapwindow"
 	elem "mapwindow"

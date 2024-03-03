@@ -27,8 +27,8 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
     public List<DMFWinSet> GlobalWinSet() {
         List<DMFWinSet> winSets = new();
 
-        while (TryGetAttribute(out var element, out var key, out var attribute)) {
-            winSets.Add(new(element, key, attribute));
+        while (TryGetAttribute(out var winset)) {
+            winSets.Add(winset);
         }
 
         return winSets;
@@ -185,10 +185,13 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
         return false;
     }
 
-    private bool TryGetAttribute(out string? element, [NotNullWhen(true)] out string? key, [NotNullWhen(true)] out string? token) {
-        element = null;
-        key = null;
-        token = null;
+    private bool TryGetAttribute([NotNullWhen(true)] out DMFWinSet? winSet) {
+        string? element = null;
+        string? key = null;
+        string? token = null;
+        winSet = null;
+        DMFWinSet? condition = null;
+        DMFWinSet? elseValue = null;
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {
@@ -225,10 +228,19 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                     valueText = "";
                 else
                     Error($"Invalid attribute value ({valueText})");
+            else if (Check(TokenType.Ternary)) {
+                condition = new DMFWinSet(element, attributeToken.Text, valueText);
+                if (!(TryGetAttribute(out winSet) && Check(TokenType.Colon)) || !TryGetAttribute(out elseValue)) {
+                    Error("Badly formatted ternary!");
+                    return false;
+                }
+                winSet.Condition = condition;
+                winSet.ElseValue = elseValue;
+                return true;
+            }
 
             Newline();
-            key = attributeToken.Text;
-            token = valueText;
+            winSet = new DMFWinSet(element, attributeToken.Text, valueText);
             return true;
         }
 
@@ -238,16 +250,17 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
     public MappingDataNode Attributes() {
         var node = new MappingDataNode();
 
-        while (TryGetAttribute(out var element, out var key, out var value)) {
-            if (element != null) {
-                Error($"Element id \"{element}\" is not valid here");
+        while (TryGetAttribute(out var winset)) {
+            if (winset.Element != null) {
+                Error($"Element id \"{winset.Element}\" is not valid here");
                 continue;
             }
 
-            if (value == "none")
+            //TODO implement the conditional check
+            if (winset.Value == "none")
                 continue;
 
-            node.Add(key, value);
+            node.Add(winset.Attribute, winset.Value);
         }
 
         return node;

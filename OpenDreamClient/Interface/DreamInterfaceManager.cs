@@ -484,8 +484,15 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void WinSet(string? controlId, string winsetParams) {
-        DMFLexer lexer = new DMFLexer(winsetParams);
-        DMFParser parser = new DMFParser(lexer, _serializationManager);
+        DMFLexer lexer;
+        DMFParser parser;
+        try{
+            lexer = new DMFLexer(winsetParams);
+            parser = new DMFParser(lexer, _serializationManager);
+        } catch (Exception e) {
+            _sawmill.Error($"Error parsing winset: {e}");
+            return;
+        }
 
         bool CheckParserErrors() {
             if (parser.Errors.Count <= 0)
@@ -505,7 +512,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 return;
 
             // id=abc overrides the elements of other winsets without an element
-            string? elementOverride = winSets.FirstOrNull(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
+            string? elementOverride = null;
+            if(winSets.Count > 0 && winSets[0].Attribute == "id" && winSets[0].Element == null)
+                elementOverride = winSets[0].Value;
 
             foreach (DMFWinSet winSet in winSets) {
                 string? elementId = winSet.Element ?? elementOverride;
@@ -518,14 +527,44 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     }
                 } else {
                     InterfaceElement? element = FindElementWithId(elementId);
-                    MappingDataNode node = new() {
-                        {winSet.Attribute, winSet.Value}
-                    };
+                    if(winSet.Condition is not null) {
+                        string conditionalElementId = winSet.Condition.Element ?? elementId;
+                        InterfaceElement? conditionalElement = FindElementWithId(conditionalElementId);
+                        if(conditionalElement is null)
+                            _sawmill.Error($"Invalid element on ternary condition \"{conditionalElementId}\"");
+                        else
+                            if(conditionalElement.TryGetProperty(winSet.Condition.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Condition.Value, StringComparison.InvariantCultureIgnoreCase)) {
+                                MappingDataNode node = new() {
+                                    {winSet.Attribute, winSet.Value}
+                                };
 
-                    if (element != null) {
-                        element.PopulateElementDescriptor(node, _serializationManager);
+                                if (element != null) {
+                                    element.PopulateElementDescriptor(node, _serializationManager);
+                                } else {
+                                    _sawmill.Error($"Invalid element on ternary \"{elementId}\"");
+                                }
+                            } else if (winSet.ElseValue is not null){
+                                string elseElementId = winSet.ElseValue.Element ?? elementId;
+                                InterfaceElement? elseElement = FindElementWithId(elseElementId);
+                                if(elseElement is not null) {
+                                    MappingDataNode node = new() {
+                                        {winSet.ElseValue.Attribute, winSet.ElseValue.Value}
+                                    };
+                                    elseElement.PopulateElementDescriptor(node, _serializationManager);
+                                } else {
+                                    _sawmill.Error($"Invalid element on ternary else \"{elseElementId}\"");
+                                }
+                            }
                     } else {
-                        _sawmill.Error($"Invalid element \"{elementId}\"");
+                        MappingDataNode node = new() {
+                            {winSet.Attribute, winSet.Value}
+                        };
+
+                        if (element != null) {
+                            element.PopulateElementDescriptor(node, _serializationManager);
+                        } else {
+                            _sawmill.Error($"Invalid element \"{elementId}\"");
+                        }
                     }
                 }
             }

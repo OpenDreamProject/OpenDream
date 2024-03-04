@@ -2633,8 +2633,8 @@ namespace DMCompiler.Compiler.DM {
 
                     if (!Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
                         // Proc return types
+                        path = Path();
                         if (allowPath) {
-                            path = Path();
                             if (path is null) {
                                 DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
                             }

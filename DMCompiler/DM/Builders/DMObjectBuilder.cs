@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Expressions;
 
 namespace DMCompiler.DM.Builders;
 
@@ -435,9 +436,13 @@ internal static class DMObjectBuilder {
     }
 
     private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression, bool isOverride = false) {
-        // TODO Clean this up?
+        // Typechecking
         if (variable.ValType != DMValueType.Anything && variable.ValType != DMValueType.Unimplemented && variable.ValType != DMValueType.CompiletimeReadonly && !variable.ValType.HasFlag(expression.ValType)) {
-            DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type {expression.ValType}, expected {variable.ValType}");
+            if (expression is Null) {
+                DMCompiler.Emit(WarningCode.ImplicitNullType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\"");
+            } else {
+                DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type \"{expression.ValType.ToString().ToLower()}\", expected \"{variable.ValType.ToString().ToLower()}\"");
+            }
         }
         if (expression.TryAsConstant(out var constant)) {
             variable = variable.WriteToValue(constant);

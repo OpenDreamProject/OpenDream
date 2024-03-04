@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
+using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
@@ -1701,6 +1702,10 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 var type = AsTypes(out _);
+                if (type is not null && type != DMValueType.Anything && value is DMASTConstantNull) {
+                    DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"{_currentPath}: Variable \"{path.Path}\" is null but not explicitly typed as nullable, append \"|null\" to \"as\"");
+                    type |= DMValueType.Null;
+                }
                 Whitespace();
 
                 if (Check(TokenType.DM_In)) {

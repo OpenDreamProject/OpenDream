@@ -420,13 +420,15 @@ namespace DMCompiler.DM.Builders {
             if (statement.Value != null) {
                 var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
                 if (_proc.TypeChecked) {
-                    if (_proc.ReturnTypes == DMValueType.Path && expr.Path != _proc.ReturnPath.Path) {
-                        if (_proc.ReturnPath.Path == DreamPath.List) {
-                            if(expr is not List)
-                                DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{_proc.Name}(): Invalid return type /list, expected {_proc.ReturnPath.Path}");
-                        }
-                        else {
-                            DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{_proc.Name}(): Invalid return type {expr.Path}, expected {_proc.ReturnPath.Path}");
+                    if (_proc.ReturnTypes == DMValueType.Path) {
+                        if (expr.Path != _proc.ReturnPath.Path) {
+                            if (_proc.ReturnPath.Path == DreamPath.List) {
+                                if(expr is not List)
+                                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{_proc.Name}(): Invalid return type /list, expected {_proc.ReturnPath.Path}");
+                            }
+                            else {
+                                DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{_proc.Name}(): Invalid return type {expr.Path}, expected {_proc.ReturnPath.Path}");
+                            }
                         }
                     }
                     else

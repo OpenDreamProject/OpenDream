@@ -154,16 +154,18 @@ namespace DMCompiler.DM {
         {
             if ((ReturnTypes & DMValueType.Color) != 0 || (ReturnTypes & DMValueType.File) != 0 || (ReturnTypes & DMValueType.Message) != 0)
             {
-                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "Color, Message, and File return types are currently unsupported.");
+                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "color, message, and file return types are currently unsupported.");
                 return;
             }
+
+            var splitter = _astDefinition?.IsOverride ?? false ? "/" : "/proc/";
             if (type == DMValueType.Anything)
             {
-                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub.");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type, expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this (with source code) on GitHub.");
             }
             else if ((ReturnTypes & type) == 0)
             {
-                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Invalid return type {type}, expected {ReturnTypes}");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type \"{type.ToString().ToLower()}\", expected \"{ReturnTypes.ToString().ToLower()}\"");
             }
         }
 

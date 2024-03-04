@@ -155,7 +155,8 @@ sealed class ArgumentList {
             // Also right now we don't care if the arg is Anything
             // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
             if (targetProc is not null && index < procParams.Length && expr.ValType != DMValueType.Anything && procParams[index].Type != DMValueType.Anything && (expr.ValType & procParams[index].Type) == 0) {
-                DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location, $"{dmObject.Path.ToString()}.{name}: Invalid var value type {expr.ValType}, expected {procParams[index].Type}");
+                var printName = name ?? procParams[index].Name;
+                DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location, $"{targetProc.Name}(...) argument \"{printName}\": Invalid var value type \"{expr.ValType.ToString().ToLower()}\", expected \"{procParams[index].Type.ToString().ToLower()}\"");
             }
             if (_isKeyed) {
                 if (name != null) {

@@ -56,6 +56,7 @@ public enum WarningCode {
     UnsupportedTypeCheck = 2700,
     InvalidReturnType = 2701, // Proc static typing
     InvalidVarType = 2702, // Var static typing
+    ImplicitNullType = 2703, //  Raised when a null variable isn't explicitly statically typed as nullable
 
     // 3000 - 3999 are reserved for stylistic configuration.
     EmptyBlock = 3100,

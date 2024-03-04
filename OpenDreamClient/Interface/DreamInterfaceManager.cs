@@ -23,7 +23,6 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
-using System.Text.RegularExpressions;
 
 namespace OpenDreamClient.Interface;
 

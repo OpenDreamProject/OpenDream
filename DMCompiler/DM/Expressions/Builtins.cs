@@ -371,6 +371,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Length(Location location, DMExpression value) : base(location) {
             _value = value;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

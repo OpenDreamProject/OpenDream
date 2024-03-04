@@ -419,11 +419,12 @@ namespace DMCompiler.DM.Builders {
         public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
                 var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
-                if (_proc.TypeChecked) {
+                // Don't typecheck unimplementeds
+                if (_proc.TypeChecked && (_proc.Attributes & ProcAttributes.Unimplemented) == 0) {
                     if (_proc.ReturnTypes == DMValueType.Path) {
                         if (expr.Path != _proc.ReturnPath.Path) {
                             if (_proc.ReturnPath.Path == DreamPath.List) {
-                                if(expr is not List)
+                                if(expr is not List && (expr is not Dereference deref || deref.Expression.NestedPath != DreamPath.List))
                                     DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{_proc.Name}(): Invalid return type /list, expected {_proc.ReturnPath.Path}");
                             }
                             else {

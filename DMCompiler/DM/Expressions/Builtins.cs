@@ -64,7 +64,18 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
+    internal sealed class NewPath : DMExpression {
+
+        private readonly ConstantPath targetPath;
+        private readonly ArgumentList arguments;
+
+        public NewPath(Location location, ConstantPath targetPath, ArgumentList arguments)
+            : base(location) {
+            this.targetPath = targetPath;
+            this.arguments = arguments;
+            ValType = DMValueType.Path;
+        }
+
         public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

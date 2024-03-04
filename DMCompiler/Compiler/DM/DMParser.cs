@@ -1701,11 +1701,6 @@ namespace DMCompiler.Compiler.DM {
                     value = Expression();
                 }
 
-                if (_currentPath == new DreamPath("/proc/do")) {
-                    Console.WriteLine("e");
-                }
-
-
                 var type = AsTypes(out _);
                 // TODO: Figure out a clean way to do this only if "path.Path" is a subtype of datum/ instead of a var/. IsDescendentOf() is insufficient
                 /*if (type is not null && type != DMValueType.Anything && (value is null || value is DMASTConstantNull)) {

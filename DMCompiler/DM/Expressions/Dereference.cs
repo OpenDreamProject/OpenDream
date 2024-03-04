@@ -81,6 +81,7 @@ namespace DMCompiler.DM.Expressions {
         private void EmitOperation(DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
             switch (operation) {
                 case FieldOperation fieldOperation:
+                    ValType = dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything;
                     if (fieldOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }

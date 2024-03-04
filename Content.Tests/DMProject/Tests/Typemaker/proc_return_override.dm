@@ -1,3 +1,5 @@
+// COMPILE ERROR
+#pragma InvalidReturnType error
 /datum/proc/foo() as num
 	return 5
 

@@ -223,7 +223,7 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                 if (!Check(TokenType.Value) && !Check(TokenType.Attribute))
                     Error($"Invalid attribute value ({valueText})");
             } else if (!Check(TokenType.Value))
-                if(Check(TokenType.Semicolon)) //thing.attribute=; means thing.attribute=empty string
+                if(Check(TokenType.Semicolon) || Check(TokenType.EndOfFile)) //thing.attribute=; means thing.attribute=empty string
                     valueText = "";
                 else
                     Error($"Invalid attribute value ({valueText})");

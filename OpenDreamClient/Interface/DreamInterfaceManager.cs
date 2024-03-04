@@ -507,11 +507,15 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         }
 
         string HandleEmbeddedWinget(string? controlId, string value) {
-            string pattern = @"\[\[.*\]\]";
             string result = value;
-            foreach (Match match in Regex.Matches(value, pattern)) {
-                string innerResult = WinGet(controlId ?? "", match.Value[2..^2]);
-                result = result.Replace(match.Value, innerResult);
+            int startPos = result.IndexOf("[[");
+            while(startPos > -1){
+                int endPos = result.IndexOf("]]", startPos);
+                if(endPos == -1)
+                    break;
+                string innerResult = WinGet(controlId ?? "", result.Substring(startPos+2, endPos-startPos-2));
+                result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
+                startPos = result.IndexOf("[[");
             }
             return result;
         }

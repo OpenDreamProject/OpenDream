@@ -513,7 +513,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 int endPos = result.IndexOf("]]", startPos);
                 if(endPos == -1)
                     break;
-                string innerResult = WinGet(controlId ?? "", result.Substring(startPos+2, endPos-startPos-2));
+                string inner = result.Substring(startPos+2, endPos-startPos-2);
+                string[] elementSplit = inner.Split('.');
+                string innerControlId = controlId ?? "";
+                if(elementSplit.Length > 1){
+                    innerControlId = (string.IsNullOrEmpty(innerControlId) ? "" : innerControlId+".")+string.Join(".", elementSplit[..^1]);
+                    inner = elementSplit[^1];
+                }
+                string innerResult = WinGet(innerControlId, inner);
                 result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
                 startPos = result.IndexOf("[[");
             }
@@ -553,7 +560,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     InterfaceElement? IfElement = FindElementWithId(IfElementId);
                                     if(IfElement is not null) {
                                         MappingDataNode node = new() {
-                                            {IfValue.Attribute, HandleEmbeddedWinget(controlId, IfValue.Value)}
+                                            {IfValue.Attribute, HandleEmbeddedWinget(IfElementId, IfValue.Value)}
                                         };
                                         IfElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
@@ -566,7 +573,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                                     InterfaceElement? ElseElement = FindElementWithId(ElseElementId);
                                     if(ElseElement is not null) {
                                         MappingDataNode node = new() {
-                                            {ElseValue.Attribute, HandleEmbeddedWinget(controlId, ElseValue.Value)}
+                                            {ElseValue.Attribute, HandleEmbeddedWinget(ElseElementId, ElseValue.Value)}
                                         };
                                         ElseElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
@@ -577,7 +584,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     } else {
                         InterfaceElement? element = FindElementWithId(elementId);
                         MappingDataNode node = new() {
-                            {winSet.Attribute, HandleEmbeddedWinget(controlId, winSet.Value)}
+                            {winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value)}
                         };
 
                         if (element != null) {
@@ -617,6 +624,52 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public string WinGet(string controlId, string queryValue) {
+        bool ParseAndTryGet(InterfaceElement element, string query, out string result) {
+            //parse "as blah" from query if it's there
+            string[] querySplit = query.Split(" as ");
+            if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
+                return element.TryGetProperty(query, out result);
+            else{
+                if(!element.TryGetProperty(querySplit[0], out result))
+                    return false;
+/*
+arg
+    Value is formatted as if it's an argument on a command line. Numbers are left alone; booleans are 0 or 1; size and position have their X and Y values separated by a space; pretty much everything else is DM-escaped and enclosed in quotes.
+escaped
+    DM-escape the value as if it's in a quoted string but do not include the quotes. Size and position values both use , to separate their X and Y values.
+string
+    Value is formatted as a DM-escaped string with surrounding quotes.
+params
+    Format value for a URL-encoded parameter list (see list2params), escaping characters as needed.
+json
+    JSON formatting. Numbers are left unchanged; size or position values are turned into objects with x and y items; boolean values are true or false.
+json-dm
+    JSON formatting, but DM-escaped so it can be included in a quoted string. Quotes are not included.
+raw
+    Does not change the value's text representation in any way; assumes it's already formatted correctly for the purpose. This is similar to as arg but does no escaping and no quotes.
+*/
+                switch(querySplit[1]){ //TODO: Implement these
+                    case "arg":
+                        break;
+                    case "escaped":
+                        break;
+                    case "string":
+                        break;
+                    case "params":
+                        break;
+                    case "json":
+                        break;
+                    case "json-dm":
+                        break;
+                    case "raw":
+                        break;
+                    default:
+                        _sawmill.Error($"Invalid winget query function \"{querySplit[1]}\" in \"{query}\"");
+                        return false;
+                }
+                return true;
+            }
+        }
         string GetProperty(string elementId) {
             var element = FindElementWithId(elementId);
             if (element == null) {
@@ -628,12 +681,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             if(multiQuery.Length > 1) {
                 var result = "";
                 foreach(var query in multiQuery) {
-                    if (!element.TryGetProperty(query, out var queryResult))
+                    if (!ParseAndTryGet(element, query, out var queryResult))
                         _sawmill.Error($"Could not winget property {query} on {element.Id}");
                     result += query+"="+queryResult + ";";
                 }
                 return result.TrimEnd(';');
-            } else if (element.TryGetProperty(queryValue, out var value))
+            } else if (ParseAndTryGet(element, queryValue, out var value))
                 return value;
 
             _sawmill.Error($"Could not winget property {queryValue} on {element.Id}");

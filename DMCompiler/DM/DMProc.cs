@@ -164,6 +164,7 @@ namespace DMCompiler.DM {
             }
 
             var splitter = _astDefinition?.IsOverride ?? false ? "/" : "/proc/";
+            // We couldn't determine the expression's return type for whatever reason
             if (type == DMValueType.Anything) {
                 switch (expr)
                 {
@@ -174,10 +175,11 @@ namespace DMCompiler.DM {
                         DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected \"{ReturnTypes.ToString().ToLower()}\". Consider making this variable constant.");
                         break;
                     default:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this as a bug on OpenDream's GitHub.");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this as a bug on OpenDream's GitHub.");
                         break;
                 }
             }
+            // We could determine the return types but they don't match
             else if ((ReturnTypes & type) == 0)
             {
                 DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type \"{type.ToString().ToLower()}\", expected \"{ReturnTypes.ToString().ToLower()}\"");

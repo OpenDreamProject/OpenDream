@@ -3,7 +3,6 @@ using System.Linq;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
-using YamlDotNet.Core.Tokens;
 using Token = OpenDreamClient.Interface.DMF.DMFLexer.Token;
 using TokenType = OpenDreamClient.Interface.DMF.DMFLexer.TokenType;
 

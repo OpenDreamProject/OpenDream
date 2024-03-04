@@ -431,9 +431,12 @@ namespace DMCompiler.DM.Builders {
                             }
                         }
                     }
-                    else
-                    {
-                        _proc.ValidateReturnType(expr.ValType);
+                    else {
+                        if (expr.TryAsConstant(out var exprConst)) {
+                            _proc.ValidateReturnType(exprConst);
+                        } else {
+                            _proc.ValidateReturnType(expr);
+                        }
                     }
                 }
 

@@ -6,6 +6,7 @@ using System.Linq;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
+using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM {
@@ -150,8 +151,8 @@ namespace DMCompiler.DM {
             return _dmObject.Parent;
         }
 
-        public void ValidateReturnType(DMValueType type)
-        {
+        public void ValidateReturnType(DMExpression expr) {
+            DMValueType type = expr.ValType;
             if ((ReturnTypes & DMValueType.Color) != 0 || (ReturnTypes & DMValueType.File) != 0 || (ReturnTypes & DMValueType.Message) != 0)
             {
                 DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "color, message, and file return types are currently unsupported.");
@@ -159,9 +160,19 @@ namespace DMCompiler.DM {
             }
 
             var splitter = _astDefinition?.IsOverride ?? false ? "/" : "/proc/";
-            if (type == DMValueType.Anything)
-            {
-                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type, expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this (with source code) on GitHub.");
+            if (type == DMValueType.Anything) {
+                switch (expr)
+                {
+                    case ProcCall:
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected \"{ReturnTypes.ToString().ToLower()}\".");
+                        break;
+                    case Local:
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected \"{ReturnTypes.ToString().ToLower()}\". Consider making this variable constant.");
+                        break;
+                    default:
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this as a bug on OpenDream's GitHub.");
+                        break;
+                }
             }
             else if ((ReturnTypes & type) == 0)
             {

@@ -1701,11 +1701,18 @@ namespace DMCompiler.Compiler.DM {
                     value = Expression();
                 }
 
-                var type = AsTypes(out _);
-                if (type is not null && type != DMValueType.Anything && value is DMASTConstantNull) {
-                    DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"{_currentPath}: Variable \"{path.Path}\" is null but not explicitly typed as nullable, append \"|null\" to \"as\"");
-                    type |= DMValueType.Null;
+                if (_currentPath == new DreamPath("/proc/do")) {
+                    Console.WriteLine("e");
                 }
+
+
+                var type = AsTypes(out _);
+                // TODO: Figure out a clean way to do this only if "path.Path" is a subtype of datum/ instead of a var/. IsDescendentOf() is insufficient
+                /*if (type is not null && type != DMValueType.Anything && (value is null || value is DMASTConstantNull)) {
+                    DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"{_currentPath}: Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
+                    type |= DMValueType.Null;
+                }*/
+
                 Whitespace();
 
                 if (Check(TokenType.DM_In)) {

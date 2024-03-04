@@ -25,8 +25,9 @@ public enum DMValueType {
     CommandText = 0x400,
     Sound = 0x800,
     Icon = 0x1000,
+    Path = 0x2000, // For proc return types
 
     //Byond here be dragons
-    Unimplemented = 0x2000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
-    CompiletimeReadonly = 0x4000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
+    Unimplemented = 0x4000, // Marks that a method or property is not implemented. Throws a compiler warning if accessed.
+    CompiletimeReadonly = 0x8000, // Marks that a property can only ever be read from, never written to. This is a const-ier version of const, for certain standard values like list.type
 }

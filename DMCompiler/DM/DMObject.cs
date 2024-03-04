@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM;
@@ -109,17 +110,20 @@ internal sealed class DMObject {
         return proc;
     }
 
-    public DMValueType? GetParentProcType(string name) {
+    public DMValueType? GetParentProcType(string name, out DMASTPath? path) {
         var parent = Parent?.GetProcs(name);
-
+        path = null;
+        var returnType = DMValueType.Anything;
         while (parent is not null) {
 
             var parentProc = DMObjectTree.AllProcs[parent[^1]];
             if (parentProc.ReturnTypes != DMValueType.Anything) {
+                path = parentProc.ReturnPath;
                 return parentProc.ReturnTypes;
             }
             parent = parentProc.GetParentObj()?.GetProcs(name) ?? null;
             if (parent is null) {
+                path = parentProc.ReturnPath;
                 return parentProc?.ReturnTypes ?? null;
             }
         }

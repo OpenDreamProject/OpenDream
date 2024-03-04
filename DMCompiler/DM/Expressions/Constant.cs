@@ -348,6 +348,10 @@ namespace DMCompiler.DM.Expressions {
 
             return new String(Location, Value + rhsString.Value);
         }
+
+        public override string ToString() {
+            return Value;
+        }
     }
 
     // '[resource_path]'

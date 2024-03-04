@@ -137,10 +137,14 @@ namespace DMCompiler.DM {
                 }
 
                 // Typechecking
-                var parent = _dmObject?.GetParentProcType(_astDefinition.Name);
+                DMASTPath? parentPath = null;
+                var parent = _dmObject?.GetParentProcType(_astDefinition.Name, out parentPath);
                 if (parent is not null && parent != DMValueType.Anything) {
                     ReturnTypes = parent.Value;
                     TypeChecked = true;
+                    if ((ReturnTypes & DMValueType.Path) == DMValueType.Path && parentPath != null) {
+                        ReturnPath = parentPath;
+                    }
                 }
 
                 new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);

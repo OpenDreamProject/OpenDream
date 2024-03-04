@@ -101,6 +101,7 @@ namespace DMCompiler.DM {
 
         public DMValueType ReturnTypes;
         public DMASTPath ReturnPath; // If the proc return type is a path, this is that path
+        public bool TypeChecked = false;
 
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
@@ -119,6 +120,7 @@ namespace DMCompiler.DM {
             _dmObject = dmObject;
             _astDefinition = astDefinition;
             ReturnTypes |= _astDefinition?.ReturnTypes ?? DMValueType.Anything;
+            ReturnPath = _astDefinition?.ReturnPath;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
@@ -133,23 +135,28 @@ namespace DMCompiler.DM {
                     AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
                 }
 
+                // Typechecking
+                var parent = _dmObject?.GetParentProcType(_astDefinition.Name);
+                if (parent is not null && parent != DMValueType.Anything) {
+                    ReturnTypes = parent.Value;
+                    TypeChecked = true;
+                }
+
                 new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
             }
         }
 
+        public DMObject? GetParentObj() {
+            return _dmObject.Parent;
+        }
+
         public void ValidateReturnType(DMValueType type)
         {
-            if (ReturnTypes == DMValueType.Anything)
-            {
-                return;
-            }
-
             if ((ReturnTypes & DMValueType.Color) != 0 || (ReturnTypes & DMValueType.File) != 0 || (ReturnTypes & DMValueType.Message) != 0)
             {
                 DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "Color, Message, and File return types are currently unsupported.");
                 return;
             }
-
             if (type == DMValueType.Anything)
             {
                 DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type, expected {ReturnTypes}. Consider reporting this (with source code) on GitHub.");

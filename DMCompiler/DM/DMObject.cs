@@ -96,6 +96,36 @@ internal sealed class DMObject {
         return Procs.GetValueOrDefault(name) ?? Parent?.GetProcs(name);
     }
 
+    public List<int>? GetParentProc(string name) {
+        var proc = Procs.GetValueOrDefault(name);
+        var parent = Parent?.GetProcs(name);
+        while (parent is not null) {
+            proc = parent;
+            parent = Parent?.GetProcs(name);
+            if (parent is null || parent[^1] == proc[^1]) {
+                break;
+            }
+        }
+        return proc;
+    }
+
+    public DMValueType? GetParentProcType(string name) {
+        var parent = Parent?.GetProcs(name);
+
+        while (parent is not null) {
+
+            var parentProc = DMObjectTree.AllProcs[parent[^1]];
+            if (parentProc.ReturnTypes != DMValueType.Anything) {
+                return parentProc.ReturnTypes;
+            }
+            parent = parentProc.GetParentObj()?.GetProcs(name) ?? null;
+            if (parent is null) {
+                return parentProc?.ReturnTypes ?? null;
+            }
+        }
+        return null;
+    }
+
     public void AddVerb(DMProc verb) {
         _verbs ??= new();
         _verbs.Add(verb);
@@ -130,6 +160,11 @@ internal sealed class DMObject {
     {
         var procId = GetProcs(name)?[^1];
         return procId is null ? DMValueType.Anything : DMObjectTree.AllProcs[procId.Value].ReturnTypes;
+    }
+
+    public DMValueType GetReturnType(int procId)
+    {
+        return DMObjectTree.AllProcs[procId].ReturnTypes;
     }
 
     public void CreateInitializationProc() {

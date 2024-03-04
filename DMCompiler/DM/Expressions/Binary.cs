@@ -3,16 +3,24 @@ using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
-    internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
-        protected DMExpression LHS { get; } = lhs;
-        protected DMExpression RHS { get; } = rhs;
+    internal abstract class BinaryOp : DMExpression {
+        protected DMExpression LHS { get; }
+        protected DMExpression RHS { get; }
+
+        protected BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : base(location) {
+            LHS = lhs;
+            RHS = rhs;
+            ValType |= lhs.ValType;
+            ValType |= rhs.ValType;
+        }
     }
 
     #region Simple
     // x + y
     sealed class Add : BinaryOp {
         public Add(Location location, DMExpression lhs, DMExpression rhs)
-            : base(location, lhs, rhs) { }
+            : base(location, lhs, rhs) {
+        }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {

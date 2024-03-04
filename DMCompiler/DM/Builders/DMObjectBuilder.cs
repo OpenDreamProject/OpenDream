@@ -312,6 +312,7 @@ internal static class DMObjectBuilder {
 
             DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
             proc.IsVerb = procDefinition.IsVerb;
+            proc.TypeChecked = proc.ReturnTypes != DMValueType.Anything;
 
             if (procDefinition.ObjectPath == DreamPath.Root) {
                 if(procDefinition.IsOverride) {
@@ -326,19 +327,6 @@ internal static class DMObjectBuilder {
                     }
                 }
             } else {
-                if (procDefinition.IsOverride) {
-                    var procId = dmObject.GetProcs(procName)?[^1];
-                    var parentProc = procId is null ? null : DMObjectTree.AllProcs[procId.Value];
-                    if (procDefinition.ReturnTypes == DMValueType.Anything)
-                    {
-                        procDefinition.ReturnTypes = parentProc.ReturnTypes;
-                    }
-                    if (parentProc.ReturnTypes != procDefinition.ReturnTypes)
-                    {
-                        // TODO: Make this a unique pragma?
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, procDefinition.Location, $"{procDefinition.ObjectPath}.{procName}() cannot override return type {parentProc.ReturnTypes} of parent proc {parentProc.Name}()");
-                    }
-                }
                 dmObject.AddProc(procName, proc);
             }
 

@@ -438,8 +438,9 @@ internal static class DMObjectBuilder {
     private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression, bool isOverride = false) {
         // Typechecking
         if (variable.ValType != DMValueType.Anything && variable.ValType != DMValueType.Unimplemented && variable.ValType != DMValueType.CompiletimeReadonly && !variable.ValType.HasFlag(expression.ValType)) {
-            if (expression is Null) {
-                DMCompiler.Emit(WarningCode.ImplicitNullType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\"");
+            if (expression is Null && !isOverride) {
+                DMCompiler.Emit(WarningCode.ImplicitNullType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
+                variable.ValType |= DMValueType.Null;
             } else {
                 DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type \"{expression.ValType.ToString().ToLower()}\", expected \"{variable.ValType.ToString().ToLower()}\"");
             }

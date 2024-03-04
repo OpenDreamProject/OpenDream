@@ -487,14 +487,17 @@ namespace DMCompiler.DM.Expressions {
 
     // /a/b/c
     // no, this can't be called "Path" because of CS0542
-    internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
-        public DreamPath Value { get; } = value;
+    internal sealed class ConstantPath : Constant {
+        public DreamPath Value { get; }
         public override DreamPath? Path => Value;
+        private readonly DMObject _dmObject;
 
-        /// <summary>
-        /// The DMObject this expression resides in. Used for path searches.
-        /// </summary>
-        private readonly DMObject _dmObject = dmObject;
+        public ConstantPath(Location location, DMObject dmObject, DreamPath value)
+            : base(location) {
+            _dmObject = dmObject;
+            Value = value;
+            ValType = DMValueType.Path;
+        }
 
         public enum PathType {
             TypeReference,

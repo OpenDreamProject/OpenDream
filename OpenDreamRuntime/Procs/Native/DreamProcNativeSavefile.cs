@@ -218,8 +218,8 @@ internal static class DreamProcNativeSavefile {
             }
 
             if(!foundEquals && (foundValue == "")) {
-                //todo: sort out the difference between "key = null" and "key"
-                savefile.SetSavefileValue(foundIndex, DreamValue.Null);
+                // GetSavefileValue creates the index in the savefile if it doesn't exist while not needing a value
+                savefile.GetSavefileValue(foundIndex);
             }
 
             if((foundValue != "") && (foundIndex != "")) {

@@ -370,8 +370,8 @@ public struct DMCompilerSettings {
     public string? PragmaFileOverride = null;
 
     // These are the default DM_VERSION and DM_BUILD values. They're strings because that's what the preprocessor expects (seriously)
-    public string DMVersion = "514";
-    public string DMBuild = "1584";
+    public string DMVersion = "515";
+    public string DMBuild = "1633";
 
     public DMCompilerSettings() {
     }

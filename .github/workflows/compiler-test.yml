@@ -40,7 +40,7 @@ jobs:
         repository: tgstation/tgstation
         ref: 88bdabe53bb85f2a7f54e479f6c4a243650043d5
         path: tg
-    - name: Compile /tg/station 0792800
+    - name: Compile /tg/station 88bdabe
       run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme
     - name: Checkout Goonstation 8c8b527
       uses: actions/checkout@v2
@@ -48,7 +48,7 @@ jobs:
         repository: goonstation/goonstation
         ref: 8c8b5276f231ae42b3b2390d837cab68af138fa6
         path: goon
-    - name: Compile Goonstation c478a52
+    - name: Compile Goonstation 8c8b527
       run: |
         New-Item goon\+secret\__secret.dme -type file
         main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --version=514.1584

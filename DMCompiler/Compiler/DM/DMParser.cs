@@ -235,6 +235,10 @@ namespace DMCompiler.Compiler.DM {
                     ConsumeRightParenthesis();
                     Whitespace();
 
+                    // Proc return type
+                    // TODO: Currently we parse it but don't do anything with this information
+                    AsTypes(out _, true);
+
                     DMASTProcBlockInner? procBlock = ProcBlock();
                     if (procBlock is null) {
                         DMASTProcStatement? procStatement = ProcStatement();
@@ -289,7 +293,7 @@ namespace DMCompiler.Compiler.DM {
 
                         value ??= new DMASTConstantNull(loc);
 
-                        var valType = AsTypes() ?? DMValueType.Anything;
+                        var valType = AsTypes(out _) ?? DMValueType.Anything;
                         var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                         varDefinitions.Add(varDef);
@@ -858,7 +862,7 @@ namespace DMCompiler.Compiler.DM {
                     if (value == null) Error("Expected an expression");
                 }
 
-                AsTypes();
+                AsTypes(out _);
 
                 varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
@@ -1161,7 +1165,7 @@ namespace DMCompiler.Compiler.DM {
 
                 _allowVarDeclExpression = true;
                 DMASTExpression? expr1 = Expression();
-                DMValueType? dmTypes = AsTypes();
+                DMValueType? dmTypes = AsTypes(out _);
                 Whitespace();
                 _allowVarDeclExpression = false;
                 if (expr1 == null) {
@@ -1697,7 +1701,7 @@ namespace DMCompiler.Compiler.DM {
                     value = Expression();
                 }
 
-                var type = AsTypes();
+                var type = AsTypes(out _);
                 Whitespace();
 
                 if (Check(TokenType.DM_In)) {
@@ -2427,7 +2431,7 @@ namespace DMCompiler.Compiler.DM {
                         return new DMASTProb(identifier.Location, callParameters[0].Value);
                     case "input": {
                         Whitespace();
-                        DMValueType? types = AsTypes();
+                        DMValueType? types = AsTypes(out _);
                         Whitespace();
                         DMASTExpression? list = null;
 
@@ -2597,7 +2601,8 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMValueType? AsTypes() {
+        private DMValueType? AsTypes(out DMASTPath? path, bool allowPath = false) {
+            path = null;
             if (Check(TokenType.DM_As)) {
                 DMValueType type = DMValueType.Anything;
 
@@ -2614,27 +2619,39 @@ namespace DMCompiler.Compiler.DM {
                         if (closed) break;
                     }
 
-                    Consume(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null }, "Expected value type");
-                    switch (typeToken.Text) {
-                        case "anything": type |= DMValueType.Anything; break;
-                        case "null": type |= DMValueType.Null; break;
-                        case "text": type |= DMValueType.Text; break;
-                        case "obj": type |= DMValueType.Obj; break;
-                        case "mob": type |= DMValueType.Mob; break;
-                        case "turf": type |= DMValueType.Turf; break;
-                        case "num": type |= DMValueType.Num; break;
-                        case "message": type |= DMValueType.Message; break;
-                        case "area": type |= DMValueType.Area; break;
-                        case "color": type |= DMValueType.Color; break;
-                        case "file": type |= DMValueType.File; break;
-                        case "command_text": type |= DMValueType.CommandText; break;
-                        case "sound": type |= DMValueType.Sound; break;
-                        case "icon": type |= DMValueType.Icon; break;
-                        case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
-                        case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
-                        default: Error("Invalid value type '" + typeToken.Text + "'"); break;
-                    }
 
+                    if (!Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
+                        // Proc return types
+                        path = Path();
+                        if (allowPath) {
+                            if (path is null) {
+                                DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
+                            }
+                            type |= DMValueType.Path;
+                        } else {
+                            DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type");
+                        }
+                    } else {
+                        switch (typeToken.Text) {
+                            case "anything": type |= DMValueType.Anything; break;
+                            case "null": type |= DMValueType.Null; break;
+                            case "text": type |= DMValueType.Text; break;
+                            case "obj": type |= DMValueType.Obj; break;
+                            case "mob": type |= DMValueType.Mob; break;
+                            case "turf": type |= DMValueType.Turf; break;
+                            case "num": type |= DMValueType.Num; break;
+                            case "message": type |= DMValueType.Message; break;
+                            case "area": type |= DMValueType.Area; break;
+                            case "color": type |= DMValueType.Color; break;
+                            case "file": type |= DMValueType.File; break;
+                            case "command_text": type |= DMValueType.CommandText; break;
+                            case "sound": type |= DMValueType.Sound; break;
+                            case "icon": type |= DMValueType.Icon; break;
+                            case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
+                            case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
+                            default: Error("Invalid value type '" + typeToken.Text + "'"); break;
+                        }
+                    }
                     Whitespace();
                 } while (Check(TokenType.DM_Bar));
 

@@ -1887,7 +1887,12 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (value.TryGetValueAsString(out var refString)) {
-                state.Push(state.DreamManager.LocateRef(refString));
+                var refValue = state.DreamManager.LocateRef(refString);
+                if(container is not DreamObjectWorld && containerList is not null) { //if it's a valid ref, it's in world, we don't need to check
+                    state.Push(containerList.ContainsValue(refValue) ? refValue : DreamValue.Null);
+                    return ProcStatus.Continue;
+                } else
+                    state.Push(refValue);
             } else if (value.TryGetValueAsType(out var ancestor)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);
@@ -1919,16 +1924,8 @@ namespace OpenDreamRuntime.Procs {
 
                     return ProcStatus.Continue;
                 }
-
-                foreach (DreamValue containerItem in containerList.GetValues()) {
-                    if (IsEqual(containerItem, value)) {
-                        state.Push(containerItem);
-
-                        return ProcStatus.Continue;
-                    }
-                }
-
-                state.Push(DreamValue.Null);
+                state.Push(containerList.ContainsValue(value) ? value : DreamValue.Null);
+                return ProcStatus.Continue;
             }
 
             return ProcStatus.Continue;

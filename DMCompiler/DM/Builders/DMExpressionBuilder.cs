@@ -360,7 +360,13 @@ internal static class DMExpressionBuilder {
             case "__TYPE__":
                 return new ProcOwnerType(identifier.Location);
             case "__IMPLIED_TYPE__":
-                return new ConstantPath(identifier.Location, dmObject, inferredPath.GetValueOrDefault());
+                if (inferredPath == null) {
+                    DMCompiler.Emit(WarningCode.BadExpression, identifier.Location,
+                        "__IMPLIED_TYPE__ cannot be used here, there is no type being implied");
+                    return new Null(identifier.Location);
+                }
+                
+                return new ConstantPath(identifier.Location, dmObject, inferredPath.Value);
             case "__PROC__": // The saner alternative to "....."
                 return new ConstantProcReference(identifier.Location, proc);
             case "global":

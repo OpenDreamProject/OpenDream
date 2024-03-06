@@ -233,10 +233,18 @@ internal static class DMExpressionBuilder {
                     BuildExpression(locateCoordinates.Z, dmObject, proc, inferredPath));
             case DMASTIsSaved isSaved:
                 return new IsSaved(isSaved.Location, BuildExpression(isSaved.Value, dmObject, proc, inferredPath));
-            case DMASTIsType isType:
+            case DMASTIsType isType: {
+                if (isType.RHS is DMASTIdentifier ident && ident.Identifier == "__IMPLIED_TYPE__") {
+                    var expr = DMExpression.Create(dmObject, proc, isType.LHS, inferredPath);
+                    if (expr.Path is null)
+                        throw new CompileErrorException(isType.Location,"An inferred istype requires a type!");
+                    return new IsTypeInferred(isType.Location, expr, expr.Path.Value);
+                }
                 return new IsType(isType.Location,
                     BuildExpression(isType.LHS, dmObject, proc, inferredPath),
                     BuildExpression(isType.RHS, dmObject, proc, inferredPath));
+            }
+
             case DMASTIsNull isNull:
                 return new IsNull(isNull.Location, BuildExpression(isNull.Value, dmObject, proc, inferredPath));
             case DMASTLength length:
@@ -352,7 +360,7 @@ internal static class DMExpressionBuilder {
             case "__TYPE__":
                 return new ProcOwnerType(identifier.Location);
             case "__IMPLIED_TYPE__":
-                return new ConstantPath(identifier.Location, dmObject, inferredPath.Value);
+                return new ConstantPath(identifier.Location, dmObject, inferredPath.GetValueOrDefault());
             case "__PROC__": // The saner alternative to "....."
                 return new ConstantProcReference(identifier.Location, proc);
             case "global":

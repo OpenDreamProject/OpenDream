@@ -23,7 +23,6 @@ internal sealed partial class VerbMenuPopup : Popup {
 
         _verbSystem = verbSystem;
         _target = target;
-        Desc.Visible = false;
 
         if (verbSystem != null) {
             var sorted = verbSystem.GetExecutableVerbs(_target).Order(VerbNameComparer.OrdinalInstance);

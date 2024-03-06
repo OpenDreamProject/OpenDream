@@ -188,10 +188,14 @@ internal static class DreamProcNativeSavefile {
             // We cannot split by " = " or similar because we cannot guarantee there will be only one = or that there is consistent spacing
             string[] spaceSplit = savefileEntry.Split(" ");
             bool foundEquals = false;
+            bool firstEntryIsEquals = false;
             string foundValue = "";
             string foundIndex = "";
             for(int i = 0; i < spaceSplit.Length; i++) {
                 if(i == 0) {
+                    if(spaceSplit[i] == "=") {
+                        firstEntryIsEquals = true;
+                    }
                     foundIndex = spaceSplit[i];
                     continue;
                 }
@@ -227,10 +231,10 @@ internal static class DreamProcNativeSavefile {
                 // DM implicitly converts values to numbers if possible
                 if (canConvert) {
                     DreamValue value = new(possibleNumber);
-                    savefile.SetSavefileValue(foundIndex, value);
+                    savefile.SetSavefileValue(!firstEntryIsEquals ? foundIndex : null, value);
                 } else {
                     DreamValue value = new(foundValue);
-                    savefile.SetSavefileValue(foundIndex, value);
+                    savefile.SetSavefileValue(!firstEntryIsEquals ? foundIndex : null, value);
                 }
             }
 

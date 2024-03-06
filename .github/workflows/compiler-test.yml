@@ -50,7 +50,7 @@ jobs:
         path: goon
     - name: Compile Goonstation c478a52
       run: |
-        copy NUL goon\+secret\__secret.dme
+        echo. > goon\+secret\__secret.dme
         main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --version=514.1584
     - name: Checkout 64-bit Paradise
       uses: actions/checkout@v2

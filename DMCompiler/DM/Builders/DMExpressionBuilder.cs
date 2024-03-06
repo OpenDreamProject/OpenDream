@@ -27,7 +27,7 @@ internal static class DMExpressionBuilder {
         switch (expression) {
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
-            case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
+            case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc, inferredPath);
             case DMASTScopeIdentifier globalIdentifier: return BuildScopeIdentifier(globalIdentifier, dmObject, proc, inferredPath);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
@@ -339,7 +339,7 @@ internal static class DMExpressionBuilder {
         return new StringFormat(stringFormat.Location, stringFormat.Value, expressions);
     }
 
-    private static DMExpression BuildIdentifier(DMASTIdentifier identifier, DMObject dmObject, DMProc proc) {
+    private static DMExpression BuildIdentifier(DMASTIdentifier identifier, DMObject dmObject, DMProc proc, DreamPath? inferredPath = null) {
         var name = identifier.Identifier;
 
         switch (name) {
@@ -351,6 +351,8 @@ internal static class DMExpressionBuilder {
                 return new Args(identifier.Location);
             case "__TYPE__":
                 return new ProcOwnerType(identifier.Location);
+            case "__IMPLIED_TYPE__":
+                return new ImpliedType(identifier.Location, inferredPath);
             case "__PROC__": // The saner alternative to "....."
                 return new ConstantProcReference(identifier.Location, proc);
             case "global":

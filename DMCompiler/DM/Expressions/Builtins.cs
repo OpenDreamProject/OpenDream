@@ -1,3 +1,4 @@
+using System;
 using DMCompiler.Bytecode;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -637,6 +638,31 @@ namespace DMCompiler.DM.Expressions {
             }
 
             DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
+            return null;
+        }
+    }
+
+    sealed class ImpliedType(Location location, DreamPath? inferredPath) : DMExpression(location) {
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            if (inferredPath is null) { // This shouldn't happen
+                // TODO istype(foo, __IMPLIED_TYPE__) is not implemented.
+                DMCompiler.Emit(WarningCode.BadArgument, Location, "Failed to get path for __IMPLIED_TYPE__");
+                proc.PushNull();
+            } else {
+                if (!DMObjectTree.TryGetTypeId(inferredPath.Value, out var id)) {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {inferredPath.Value} does not exist");
+                }
+                proc.PushType(id);
+            }
+        }
+
+        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+            if (inferredPath is not null && inferredPath.Value.LastElement != null) {
+                return inferredPath.Value.LastElement;
+            }
+
+            DMCompiler.Emit(WarningCode.BadArgument, Location, "Failed to get path for __IMPLIED_TYPE__");
             return null;
         }
     }

@@ -49,7 +49,9 @@ jobs:
         ref: 8c8b5276f231ae42b3b2390d837cab68af138fa6
         path: goon
     - name: Compile Goonstation c478a52
-      run: main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme
+      run: |
+        copy NUL goon\+secret\__secret.dme
+        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --version=514.1584
     - name: Checkout 64-bit Paradise
       uses: actions/checkout@v2
       with:

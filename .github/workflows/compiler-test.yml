@@ -34,7 +34,7 @@ jobs:
       run: dotnet build main/DMCompiler/DMCompiler.csproj --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
-    - name: Checkout /tg/station 0792800
+    - name: Checkout /tg/station 88bdabe
       uses: actions/checkout@v2
       with:
         repository: tgstation/tgstation
@@ -42,7 +42,7 @@ jobs:
         path: tg
     - name: Compile /tg/station 0792800
       run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme
-    - name: Checkout Goonstation c478a52
+    - name: Checkout Goonstation 8c8b527
       uses: actions/checkout@v2
       with:
         repository: goonstation/goonstation

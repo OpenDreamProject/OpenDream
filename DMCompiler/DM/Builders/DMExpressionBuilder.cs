@@ -352,7 +352,7 @@ internal static class DMExpressionBuilder {
             case "__TYPE__":
                 return new ProcOwnerType(identifier.Location);
             case "__IMPLIED_TYPE__":
-                return new ImpliedType(identifier.Location, inferredPath);
+                return new ConstantPath(identifier.Location, dmObject, inferredPath.Value);
             case "__PROC__": // The saner alternative to "....."
                 return new ConstantProcReference(identifier.Location, proc);
             case "global":

@@ -868,7 +868,7 @@ namespace OpenDreamRuntime.Procs {
                     ThrowInvalidAppearanceVar(field);
 
                 return Proc.AtomManager.GetAppearanceVar(appearance, field);
-            } else if (owner.TryGetValueAsType(out var ownerType) && ownerType != null && ownerType.ObjectDefinition.Variables.TryGetValue(field, out var val)) {
+            } else if (owner.TryGetValueAsType(out var ownerType) && ownerType.ObjectDefinition.Variables.TryGetValue(field, out var val)) {
                 return val; // equivalent to initial()
             }
 

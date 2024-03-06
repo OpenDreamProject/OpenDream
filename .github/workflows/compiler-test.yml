@@ -38,7 +38,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: tgstation/tgstation
-        ref: 07928006665e320b5546de04c6368c3a9d01ec12
+        ref: 88bdabe53bb85f2a7f54e479f6c4a243650043d5
         path: tg
     - name: Compile /tg/station 0792800
       run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme
@@ -46,7 +46,7 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: goonstation/goonstation
-        ref: c478a521a6c75668e2ae04b4baa791c061c4987c
+        ref: 8c8b5276f231ae42b3b2390d837cab68af138fa6
         path: goon
     - name: Compile Goonstation c478a52
       run: main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme

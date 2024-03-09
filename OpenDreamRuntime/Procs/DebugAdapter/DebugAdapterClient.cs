@@ -36,15 +36,16 @@ public sealed class DebugAdapterClient {
         // `_client` and `_netReader` each keep buffers and we have to loop until they are all drained.
         try {
             _netReader.BaseStream.ReadTimeout = 1; //1ms is lowest possible value
-            while (_client.Connected && (_netStream.DataAvailable || _client.Available > 0) &&  ReadRequest() is { } message) {
-                _sawmill.Log(LogLevel.Verbose, $"Parsed {message}");
-                _seqCounter = message.Seq + 1;
-                switch (message) {
-                    case Request req:
-                        OnRequest?.Invoke(this, req);
-                        break;
+            if(_client.Connected && (_netStream.DataAvailable || _client.Available > 0)) //check for buffered messages only once per tick
+                while (ReadRequest() is { } message) { //then process each message sequentially until there are none left
+                    _sawmill.Log(LogLevel.Verbose, $"Parsed {message}");
+                    _seqCounter = message.Seq + 1;
+                    switch (message) {
+                        case Request req:
+                            OnRequest?.Invoke(this, req);
+                            break;
+                    }
                 }
-            }
         } catch (IOException) {} //ignore timeouts
     }
 

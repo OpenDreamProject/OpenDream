@@ -24,13 +24,6 @@ internal sealed partial class VerbMenuPopup : Popup {
         _verbSystem = verbSystem;
         _target = target;
 
-        if (entityMetaData != null && !string.IsNullOrEmpty(entityMetaData.EntityDescription)) {
-            DescLabel.Margin = new Thickness(4, 0, 4, 0);
-            DescLabel.Text = entityMetaData.EntityDescription;
-        } else {
-            Desc.Visible = false;
-        }
-
         if (verbSystem != null) {
             var sorted = verbSystem.GetExecutableVerbs(_target).Order(VerbNameComparer.OrdinalInstance);
 

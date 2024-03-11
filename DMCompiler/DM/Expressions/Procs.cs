@@ -61,8 +61,7 @@ namespace DMCompiler.DM.Expressions {
             return globalProc;
         }
 
-        public DMValueType GetReturnType()
-        {
+        public DMValueType GetReturnType() {
             return GetProc().ReturnTypes;
         }
     }

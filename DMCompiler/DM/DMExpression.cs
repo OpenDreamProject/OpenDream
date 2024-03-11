@@ -150,7 +150,7 @@ sealed class ArgumentList {
         int stackCount = 0;
         var procParams = targetProc?.GetDefParams();
         for (var index = 0; index < Expressions.Length; index++) {
-            (string name, DMExpression expr) = Expressions[index];
+            (string? name, DMExpression expr) = Expressions[index];
             // TODO: See if the static typechecking can be improved
             // Also right now we don't care if the arg is Anything
             // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything

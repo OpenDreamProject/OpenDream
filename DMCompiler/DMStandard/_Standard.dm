@@ -18,7 +18,7 @@ proc/fcopy_rsc(File) as num|null
 proc/fdel(File) as num
 proc/fexists(File) as num
 proc/file(Path)
-proc/file2text(File) as text
+proc/file2text(File) as text|null
 proc/filter(type, ...)
 proc/findtext(Haystack, Needle, Start = 1, End = 0) as num
 proc/findtextEx(Haystack, Needle, Start = 1, End = 0) as num

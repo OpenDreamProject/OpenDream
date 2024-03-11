@@ -10,7 +10,7 @@ proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as num
 proc/cmptext(T1) as num
-proc/copytext(T, Start = 1, End = 0) as text
+proc/copytext(T, Start = 1, End = 0) as text|null
 proc/copytext_char(T,Start=1,End=0) as text
 proc/CRASH(msg) as null
 proc/fcopy(Src, Dst) as num

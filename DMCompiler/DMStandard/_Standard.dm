@@ -33,7 +33,7 @@ proc/gradient(A, index)
 proc/hascall(Object, ProcName) as num
 proc/html_decode(HtmlText) as text
 proc/html_encode(PlainText) as text
-proc/icon_states(Icon, mode = 0) as text
+proc/icon_states(Icon, mode = 0) as text|null
 proc/image(icon, loc, icon_state, layer, dir, pixel_x, pixel_y)
 proc/isarea(Loc1) as num
 proc/isfile(File) as num

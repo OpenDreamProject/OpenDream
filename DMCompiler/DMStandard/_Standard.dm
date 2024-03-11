@@ -6,7 +6,7 @@ proc/animate(Object, time, loop, easing, flags) as null
 proc/ascii2text(N) as text
 proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list
 proc/ceil(A) as num
-proc/ckey(Key) as text
+proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text
 proc/clamp(Value, Low, High) as num
 proc/cmptext(T1) as num

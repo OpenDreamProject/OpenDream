@@ -377,7 +377,7 @@ internal static class DMExpressionBuilder {
 
                     if (globalId != null) {
                         var globalVar = DMObjectTree.Globals[globalId.Value];
-                        var global = new GlobalField(identifier.Location, DMObjectTree.Globals[globalId.Value].Type, globalId.Value, globalVar.ValType);
+                        var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
                         return global;
                     }
                 }

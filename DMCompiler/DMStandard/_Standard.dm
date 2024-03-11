@@ -56,7 +56,7 @@ proc/length_char(E) as num
 proc/list2params(List) as text
 proc/lowertext(T) as text
 proc/max(A) as num|text|null
-proc/md5(T) as text
+proc/md5(T) as text|null
 proc/min(A) as num
 proc/nonspantext(Haystack, Needles, Start = 1) as num
 proc/num2text(N, A, B) as text

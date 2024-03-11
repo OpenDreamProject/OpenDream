@@ -433,8 +433,7 @@ namespace DMCompiler.DM.Builders {
                                 DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{_proc.Name}(): Invalid return type \"{exprName}\", expected \"{_proc.ReturnPath.Path}\"");
                             }
                         }
-                    }
-                    else {
+                    } else {
                         if (expr.TryAsConstant(out var exprConst)) {
                             _proc.ValidateReturnType(exprConst);
                         } else {

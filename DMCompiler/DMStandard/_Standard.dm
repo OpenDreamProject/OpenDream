@@ -94,7 +94,7 @@ proc/statpanel(Panel, Name, Value)
 proc/text2ascii(T, pos = 1) as text
 proc/text2ascii_char(T, pos = 1) as text
 proc/text2file(Text, File)
-proc/text2num(T, radix = 10) as num
+proc/text2num(T, radix = 10) as num|null
 proc/text2path(T)
 proc/time2text(timestamp, format) as text
 proc/trimtext(Text) as text|null

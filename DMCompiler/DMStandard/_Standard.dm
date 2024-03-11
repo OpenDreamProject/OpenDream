@@ -65,7 +65,7 @@ proc/oview(Dist = 5, Center = usr) as /list
 proc/oviewers(Depth = 5, Center = usr) as /list
 proc/params2list(Params) as /list
 proc/rand(L, H) as num
-proc/rand_seed(Seed) as num
+proc/rand_seed(Seed) as null
 proc/range(Dist, Center) as /list
 proc/ref(Object) as text
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text

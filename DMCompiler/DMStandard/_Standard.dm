@@ -55,7 +55,7 @@ proc/json_encode(Value, flags)
 proc/length_char(E) as num
 proc/list2params(List) as text
 proc/lowertext(T) as text
-proc/max(A) as num
+proc/max(A) as num|text|null
 proc/md5(T) as text
 proc/min(A) as num
 proc/nonspantext(Haystack, Needles, Start = 1) as num

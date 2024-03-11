@@ -115,7 +115,6 @@ internal sealed class DMObject {
         path = null;
         var returnType = DMValueType.Anything;
         while (parent is not null) {
-
             var parentProc = DMObjectTree.AllProcs[parent[^1]];
             if (parentProc.ReturnTypes != DMValueType.Anything) {
                 path = parentProc.ReturnPath;

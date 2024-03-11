@@ -165,8 +165,7 @@ namespace DMCompiler.DM {
             var splitter = _astDefinition?.IsOverride ?? false ? "/" : "/proc/";
             // We couldn't determine the expression's return type for whatever reason
             if (type == DMValueType.Anything) {
-                switch (expr)
-                {
+                switch (expr) {
                     case ProcCall:
                         DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected \"{ReturnTypes.ToString().ToLower()}\".");
                         break;

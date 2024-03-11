@@ -441,7 +441,6 @@ namespace DMCompiler.DM.Builders {
                         }
                     }
                 }
-
             } else {
                 _proc.PushReferenceValue(DMReference.Self); //Default return value
             }

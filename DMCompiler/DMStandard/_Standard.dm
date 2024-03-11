@@ -87,7 +87,7 @@ proc/sound(file, repeat = 0, wait, channel, volume)
 proc/spantext(Haystack,Needles,Start=1) as num
 proc/spantext_char(Haystack,Needles,Start=1) as num
 proc/splicetext(Text, Start = 1, End = 0, Insert = "") as text
-proc/splicetext_char(Text, Start = 1, End = 0, Insert = "") as text
+proc/splicetext_char(Text, Start = 1, End = 0, Insert = "") as text|null
 proc/splittext(Text, Delimiter) as /list
 proc/stat(Name, Value)
 proc/statpanel(Panel, Name, Value)

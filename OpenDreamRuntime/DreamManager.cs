@@ -330,10 +330,13 @@ namespace OpenDreamRuntime {
 
             // Invoke world.Error()
             var obj =_objectTree.CreateObject<DreamObjectException>(_objectTree.Exception);
-            obj.Name = e.Message;
-            obj.Description = msg;
-            obj.Line = line;
-            obj.File = file;
+            if(e is DMThrowException throwException)
+                obj.Name = throwException.Value;
+            else
+                obj.Name = new DreamValue(e.Message);
+            obj.Desc =  new DreamValue(msg);
+            obj.Line = new DreamValue(line);
+            obj.File = new DreamValue(file);
 
             WorldInstance.SpawnProc("Error", usr: null, new DreamValue(obj));
         }

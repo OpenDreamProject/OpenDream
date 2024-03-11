@@ -511,7 +511,7 @@ internal static class DMExpressionBuilder {
                 // B is a static var.
                 // This is the only case a ScopeIdentifier can be an LValue.
                 var globalVar = DMObjectTree.Globals[globalVarId.Value];
-                return new GlobalField(location, DMObjectTree.Globals[globalVarId.Value].Type, globalVarId.Value, globalVar.ValType);
+                return new GlobalField(location, globalVar.Type, globalVarId.Value, globalVar.ValType);
             }
 
             var variable = owner.GetVariable(bIdentifier);

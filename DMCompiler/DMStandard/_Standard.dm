@@ -7,7 +7,7 @@ proc/ascii2text(N) as text
 proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list
 proc/ceil(A) as num
 proc/ckey(Key) as text|null
-proc/ckeyEx(Text) as text
+proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as num
 proc/cmptext(T1) as num
 proc/copytext(T, Start = 1, End = 0) as text

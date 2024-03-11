@@ -369,7 +369,6 @@ internal static class DMExpressionBuilder {
                         fieldexpr.ValType = field.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.ValType;
                         return fieldexpr;
                     }
-
                 }
 
                 if (CurrentScopeMode != ScopeMode.FirstPassStatic) {

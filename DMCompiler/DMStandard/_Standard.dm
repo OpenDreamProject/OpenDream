@@ -70,7 +70,7 @@ proc/range(Dist, Center) as /list
 proc/ref(Object) as text
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text
-proc/rgb(R, G, B, A) as text
+proc/rgb(R, G, B, A) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as num
 proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num

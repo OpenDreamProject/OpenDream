@@ -427,8 +427,7 @@ namespace DMCompiler.DM.Builders {
                             if (_proc.ReturnPath.Path == DreamPath.List) {
                                 if(expr is not List && (expr is not Dereference deref || deref.Expression.NestedPath != DreamPath.List))
                                     DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{_proc.Name}(): Invalid return type \"/list\", expected \"{_proc.ReturnPath.Path}\"");
-                            }
-                            else {
+                            } else {
                                 var exprName = expr.Path?.ToString() ?? expr.ToString();
 
                                 DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{_proc.Name}(): Invalid return type \"{exprName}\", expected \"{_proc.ReturnPath.Path}\"");

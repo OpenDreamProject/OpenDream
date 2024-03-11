@@ -57,7 +57,7 @@ proc/list2params(List) as text
 proc/lowertext(T) as text
 proc/max(A) as num|text|null
 proc/md5(T) as text|null
-proc/min(A) as num
+proc/min(A) as num|text|null
 proc/nonspantext(Haystack, Needles, Start = 1) as num
 proc/num2text(N, A, B) as text
 proc/orange(Dist = 5, Center = usr) as /list

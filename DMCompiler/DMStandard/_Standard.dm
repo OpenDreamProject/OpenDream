@@ -74,7 +74,7 @@ proc/rgb(R, G, B, A) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
 proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num
-proc/sha1(input) as text
+proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
 proc/sleep(Delay)
 proc/sorttext(T1, T2) as num

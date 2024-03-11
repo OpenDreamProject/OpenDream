@@ -1,7 +1,6 @@
 /var/world/world = null
 
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
-proc/addtext(...) as text
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags) as null
 proc/ascii2text(N) as text

@@ -157,8 +157,7 @@ namespace DMCompiler.DM {
 
         public void ValidateReturnType(DMExpression expr) {
             DMValueType type = expr.ValType;
-            if ((ReturnTypes & DMValueType.Color) != 0 || (ReturnTypes & DMValueType.File) != 0 || (ReturnTypes & DMValueType.Message) != 0)
-            {
+            if ((ReturnTypes & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
                 DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "color, message, and file return types are currently unsupported.");
                 return;
             }

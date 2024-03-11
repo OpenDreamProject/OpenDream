@@ -384,7 +384,7 @@ namespace DMCompiler.DM.Builders {
                 try {
                     value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
                     if (varDeclaration.ValType != DMValueType.Anything && !varDeclaration.ValType.HasFlag(value.ValType)) {
-                        DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
+                        DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location, $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
                     }
                 } catch (CompileErrorException e) {
                     DMCompiler.Emit(e.Error);

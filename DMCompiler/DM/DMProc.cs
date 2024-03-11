@@ -178,8 +178,7 @@ namespace DMCompiler.DM {
                 }
             }
             // We could determine the return types but they don't match
-            else if ((ReturnTypes & type) == 0)
-            {
+            else if ((ReturnTypes & type) == 0) {
                 DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type \"{type.ToString().ToLower()}\", expected \"{ReturnTypes.ToString().ToLower()}\"");
             }
         }

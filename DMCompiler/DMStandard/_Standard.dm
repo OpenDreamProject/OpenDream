@@ -52,7 +52,6 @@ proc/istext(Val) as num
 proc/isturf(Loc1) as num
 proc/json_decode(JSON)
 proc/json_encode(Value, flags)
-proc/length(E) as num
 proc/length_char(E) as num
 proc/list2params(List) as text
 proc/lowertext(T) as text

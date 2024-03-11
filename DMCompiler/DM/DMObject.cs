@@ -159,8 +159,7 @@ internal sealed class DMObject {
         return (id == null) ? null : DMObjectTree.Globals[id.Value];
     }
 
-    public DMValueType GetReturnType(string name)
-    {
+    public DMValueType GetReturnType(string name) {
         var procId = GetProcs(name)?[^1];
         return procId is null ? DMValueType.Anything : DMObjectTree.AllProcs[procId.Value].ReturnTypes;
     }

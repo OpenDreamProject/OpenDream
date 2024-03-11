@@ -68,7 +68,7 @@ proc/rand(L, H) as num
 proc/rand_seed(Seed) as null
 proc/range(Dist, Center) as /list
 proc/ref(Object) as text
-proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text
+proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text
 proc/rgb(R, G, B, A) as text
 proc/rgb2num(color, space = COLORSPACE_RGB) as num

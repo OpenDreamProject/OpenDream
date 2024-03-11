@@ -29,7 +29,6 @@ proc/flist(Path) as /list
 proc/floor(A) as num
 proc/fract(n) as num
 proc/ftime(File, IsCreationTime = 0) as num
-proc/get_step(atom/Ref, Dir) as num
 proc/gradient(A, index)
 proc/hascall(Object, ProcName) as num
 proc/html_decode(HtmlText) as text

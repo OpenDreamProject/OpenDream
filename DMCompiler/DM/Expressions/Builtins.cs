@@ -65,7 +65,6 @@ namespace DMCompiler.DM.Expressions {
 
     // new /x/y/z (...)
     internal sealed class NewPath : DMExpression {
-
         private readonly ConstantPath targetPath;
         private readonly ArgumentList arguments;
 

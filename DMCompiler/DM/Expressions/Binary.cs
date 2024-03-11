@@ -508,10 +508,8 @@ namespace DMCompiler.DM.Expressions {
             proc.AddLabel(endLabel);
 
             LHS.ValType = RHS.ValType;
-            if (LHS is ProcSelf self)
-            {
-                if (proc.ReturnTypes != DMValueType.Anything && (proc.ReturnTypes & self.ValType) == 0)
-                {
+            if (LHS is ProcSelf self) {
+                if (proc.ReturnTypes != DMValueType.Anything && (proc.ReturnTypes & self.ValType) == 0) {
                     DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{proc.Name}(): Invalid implicit return type {self.ValType}, expected {proc.ReturnTypes}");
                 }
             }

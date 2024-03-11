@@ -33,8 +33,7 @@ namespace DMCompiler.DM.Expressions {
             return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
 
-        public DMValueType GetReturnType(DMObject dmObject)
-        {
+        public DMValueType GetReturnType(DMObject dmObject) {
             return dmObject.GetReturnType(_identifier);
         }
     }

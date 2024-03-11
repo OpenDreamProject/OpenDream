@@ -14,7 +14,7 @@ proc/copytext(T, Start = 1, End = 0) as text|null
 proc/copytext_char(T,Start=1,End=0) as text|null
 proc/CRASH(msg) as null
 proc/fcopy(Src, Dst) as num
-proc/fcopy_rsc(File) as num
+proc/fcopy_rsc(File) as num|null
 proc/fdel(File) as num
 proc/fexists(File) as num
 proc/file(Path)

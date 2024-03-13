@@ -943,7 +943,6 @@ namespace DMCompiler.DM.Builders {
             _proc.Input(leftRef, rightRef);
 
             _proc.AddLabel(leftEndLabel);
-            _proc.PopReference(rightRef);
             _proc.AddLabel(rightEndLabel);
         }
 

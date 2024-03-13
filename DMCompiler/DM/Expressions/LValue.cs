@@ -29,7 +29,7 @@ namespace DMCompiler.DM.Expressions {
         public Global(Location location) : base(location, null) { }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            throw new CompileErrorException(Location, $"attempt to use `global` as a reference");
+            throw new CompileErrorException(Location, "attempt to use `global` as a reference");
         }
     }
 

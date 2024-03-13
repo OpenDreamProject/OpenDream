@@ -123,27 +123,44 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Item1")]
         public static DreamValue NativeProc_Remove(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             DreamList list = (DreamList)src!;
-            bool itemRemoved = false;
+            return new DreamValue(ListRemove(list, bundle.Arguments) > 0 ? 1 : 0);
+        }
 
-            foreach (var argument in bundle.Arguments) {
+        [DreamProc("RemoveAll")]
+        [DreamProcParameter("Item1")]
+        public static DreamValue NativeProc_RemoveAll(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+            DreamList list = (DreamList)src!;
+            var totalRemoved = 0;
+            int removed;
+            do {
+                removed = ListRemove(list, bundle.Arguments);
+                totalRemoved += removed;
+            } while (removed > 0);
+
+            return new DreamValue(totalRemoved);
+        }
+
+        private static int ListRemove(DreamList list, ReadOnlySpan<DreamValue> args) {
+            var itemRemoved = 0;
+            foreach (var argument in args) {
                 if (argument.TryGetValueAsDreamList(out var argumentList)) {
                     foreach (DreamValue value in argumentList.GetValues()) {
                         if (list.ContainsValue(value)) {
                             list.RemoveValue(value);
 
-                            itemRemoved = true;
+                            itemRemoved++;
                         }
                     }
                 } else {
                     if (list.ContainsValue(argument)) {
                         list.RemoveValue(argument);
 
-                        itemRemoved = true;
+                        itemRemoved++;
                     }
                 }
             }
 
-            return new DreamValue(itemRemoved ? 1 : 0);
+            return itemRemoved;
         }
 
         [DreamProc("Swap")]

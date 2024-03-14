@@ -4,6 +4,7 @@ using DMCompiler.Compiler;
 using Resource = DMCompiler.DM.Expressions.Resource;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Expressions;
+using String = DMCompiler.DM.Expressions.String;
 
 namespace DMCompiler.DM.Builders;
 
@@ -365,7 +366,7 @@ internal static class DMExpressionBuilder {
                         "__IMPLIED_TYPE__ cannot be used here, there is no type being implied");
                     return new Null(identifier.Location);
                 }
-                
+
                 return new ConstantPath(identifier.Location, dmObject, inferredPath.Value);
             case "__PROC__": // The saner alternative to "....."
                 return new ConstantProcReference(identifier.Location, proc);
@@ -470,6 +471,15 @@ internal static class DMExpressionBuilder {
 
         var owner = DMObjectTree.GetDMObject(expression.Path.Value, createIfNonexistent: false);
         if (owner == null) {
+            if (expression is ConstantPath path && path.TryResolvePath(out var pathInfo) &&
+                pathInfo.Value.Type == ConstantPath.PathType.ProcReference) {
+                if (bIdentifier == "name") {
+                    return new String(expression.Location, path.Path!.Value.LastElement!);
+                } else {
+                    DMCompiler.Emit(WarningCode.PointlessScopeOperator, expression.Location, "scope operator returns null on proc variables other than \"name\"");
+                    return new Null(expression.Location);
+                }
+            }
             DMCompiler.Emit(WarningCode.ItemDoesntExist, expression.Location,
                 $"Type {expression.Path.Value} does not exist");
             return new Null(expression.Location);

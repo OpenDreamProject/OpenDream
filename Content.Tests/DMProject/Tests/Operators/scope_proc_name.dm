@@ -1,4 +1,5 @@
 /datum/proc/foo()
+	set name = "abc"
 	return
 
 /proc/RunTest()

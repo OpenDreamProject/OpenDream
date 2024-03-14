@@ -2,6 +2,7 @@
 #pragma PointlessScopeOperator error
 
 /datum/proc/foo()
+	set desc = "abc"
 	return
 
 /proc/RunTest()

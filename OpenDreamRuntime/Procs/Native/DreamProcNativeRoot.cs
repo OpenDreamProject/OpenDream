@@ -1123,7 +1123,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
                         if (list.ContainsKey(listValue)) {
                             var subValue = list.GetValue(listValue);
-                            if(subValue.TryGetValueAsDreamList(out var subList) && subList.GetType() == typeof(DreamListVars)) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
+                            if(subValue.TryGetValueAsDreamList(out var subList) && subList is DreamListVars) //BYOND parity, do not print vars["vars"] - note that this is *not* a generic infinite loop protection on purpose
                                 continue;
                             writer.WritePropertyName(key);
                             JsonEncode(writer, subValue);

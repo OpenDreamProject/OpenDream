@@ -248,6 +248,10 @@ namespace DMCompiler.Compiler.DM {
                         }
                     }
 
+                    if (procBlock?.Statements.Length is 0 or null) {
+                        DMCompiler.Emit(WarningCode.EmptyProc, loc, "Empty proc detected - add an explicit \"return\" statement");
+                    }
+
                     if(path.IsOperator) {
                         DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
 

@@ -227,8 +227,10 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 // Proc return type
-                    // TODO: Currently we parse it but don't do anything with this information
-                    AsTypes(out _, true);DMASTProcBlockInner? procBlock = ProcBlock();
+                // TODO: Currently we parse it but don't do anything with this information
+                AsTypes(out _, true);
+
+                DMASTProcBlockInner? procBlock = ProcBlock();
                 if (procBlock is null) {
                     DMASTProcStatement? procStatement = ProcStatement();
 
@@ -237,15 +239,21 @@ namespace DMCompiler.Compiler.DM {
                     }
                 }
 
-if (procBlock?.Statements.Length is 0 or null) {
-                        DMCompiler.Emit(WarningCode.EmptyProc, loc, "Empty proc detected - add an explicit \"return\" statement");
-                    }                if(path.IsOperator) {
-                    DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
+                if (procBlock?.Statements.Length is 0 or null) {
+                    DMCompiler.Emit(WarningCode.EmptyProc, loc,
+                        "Empty proc detected - add an explicit \"return\" statement");
+                }
+
+                if (path.IsOperator) {
+                    DMCompiler.UnimplementedWarning(procBlock.Location,
+                        "Operator overloads are not implemented. They will be defined but never called.");
 
                     List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                     Location tokenLoc = procBlock.Location;
                     //add ". = src" as the first expression in the operator
-                    DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc, new DMASTAssign(tokenLoc,new DMASTCallableSelf(tokenLoc), new DMASTIdentifier(tokenLoc, "src")));
+                    DMASTProcStatementExpression assignEqSrc = new DMASTProcStatementExpression(tokenLoc,
+                        new DMASTAssign(tokenLoc, new DMASTCallableSelf(tokenLoc),
+                            new DMASTIdentifier(tokenLoc, "src")));
                     procStatements.Insert(0, assignEqSrc);
 
                     procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
@@ -2179,15 +2187,14 @@ if (procBlock?.Statements.Length is 0 or null) {
                 return pathConstant;
             }
 
-            if (Identifier() is { } identifier) {
-                if (Check(TokenType.DM_DoubleColon))
-                    return ParseScopeIdentifier(identifier);
-
+            if (Identifier() is { } identifier)
                 return identifier;
-            }
 
-            if (ParseProcCall((DMASTExpression?)Callable()) is { } procCallOrCallable)
-                return procCallOrCallable;
+            if ((DMASTExpression?)Callable() is { } callable)
+                return callable;
+
+            if (Check(TokenType.DM_DoubleColon))
+                return ParseScopeIdentifier(null);
 
             if (Check(TokenType.DM_Call)) {
                 Whitespace();

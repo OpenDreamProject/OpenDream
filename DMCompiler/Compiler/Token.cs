@@ -69,6 +69,7 @@ public enum TokenType : byte {
     DM_Dedent,
     DM_Del,
     DM_Do,
+    DM_DoubleColon,
     DM_DoubleSquareBracket,
     DM_DoubleSquareBracketEquals,
     DM_Else,

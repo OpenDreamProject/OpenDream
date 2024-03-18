@@ -64,9 +64,7 @@ public class VerbSystem : EntitySystem {
         // If the verb's first argument is an atom type, it takes that type as a target
         [Pure]
         public DreamValueType? GetTargetType() =>
-            (Arguments.Length != 0 && (Arguments[0].Types & DreamValueType.AllAtomTypes) != 0x0)
-                ? Arguments[0].Types
-                : null;
+            (Arguments.Length != 0) ? Arguments[0].Types : null;
 
         public override string ToString() => GetCommandName();
     }

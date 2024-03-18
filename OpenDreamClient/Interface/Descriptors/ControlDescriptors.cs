@@ -151,6 +151,8 @@ public sealed partial class ControlDescriptorMap : ControlDescriptor {
     public string? OnHideCommand;
     [DataField("zoom-mode")]
     public string ZoomMode = "normal";
+    [DataField("icon-size")]
+    public int IconSize;
 }
 
 public sealed partial class ControlDescriptorBrowser : ControlDescriptor {
@@ -169,6 +171,10 @@ public sealed partial class ControlDescriptorGrid : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorTab : ControlDescriptor {
+    [DataField("tabs")]
+    public string? Tabs;
+    [DataField("current-tab")]
+    public string? CurrentTab;
 }
 
 

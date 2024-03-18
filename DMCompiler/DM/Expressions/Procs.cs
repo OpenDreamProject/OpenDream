@@ -83,7 +83,11 @@ namespace DMCompiler.DM.Expressions {
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride)
             {
-                DMCompiler.Emit(WarningCode.PointlessParentCall, Location, "Calling parents via ..() in a proc definition does nothing");
+                // Don't emit if lateral proc overrides exist
+                if (dmObject.GetProcs(proc.Name)!.Count == 1) {
+                    DMCompiler.Emit(WarningCode.PointlessParentCall, Location, "Calling parents via ..() in a proc definition does nothing");
+                }
+
             }
             return DMReference.SuperProc;
         }

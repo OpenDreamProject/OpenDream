@@ -47,10 +47,6 @@ namespace DMCompiler.DM.Builders {
                 }
             }
 
-            if (procDefinition.Body.Statements.Length == 0) {
-                DMCompiler.Emit(WarningCode.EmptyProc, proc.Location,"Empty proc detected - add an explicit \"return\" statement");
-            }
-
             ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
             proc.ResolveLabels();
         }
@@ -936,7 +932,6 @@ namespace DMCompiler.DM.Builders {
             proc.Input(leftRef, rightRef);
 
             proc.AddLabel(leftEndLabel);
-            proc.PopReference(rightRef);
             proc.AddLabel(rightEndLabel);
         }
 

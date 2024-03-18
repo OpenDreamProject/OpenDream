@@ -10,23 +10,22 @@ using DMCompiler.Json;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
-        public class LocalVariable(string name, int id, bool isParameter, DreamPath? type) {
+        public class LocalVariable(string name, int id, bool isParameter, DreamPath? type, DMValueType? explicitValueType) {
             public readonly string Name = name;
             public readonly int Id = id;
-            public bool IsParameter = isParameter;
+            public readonly bool IsParameter = isParameter;
             public DreamPath? Type = type;
+
+            /// <summary>
+            /// The explicit <see cref="DMValueType"/> for this variable
+            /// <code>var/parameter as mob</code>
+            /// </summary>
+            public DMValueType? ExplicitValueType = explicitValueType;
         }
 
         public sealed class LocalConstVariable(string name, int id, DreamPath? type, Expressions.Constant value)
-                : LocalVariable(name, id, false, type) {
+                : LocalVariable(name, id, false, type, null) {
             public readonly Expressions.Constant Value = value;
-        }
-
-        private struct CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
-            public readonly string Identifier = identifier;
-            public readonly string Placeholder = placeholder;
-            public readonly Location Location = location;
-            public readonly DMProcScope Scope = scope;
         }
 
         public class CodeLabel {
@@ -47,6 +46,13 @@ namespace DMCompiler.DM {
             }
         }
 
+        private struct CodeLabelReference(string identifier, string placeholder, Location location, DMProcScope scope) {
+            public readonly string Identifier = identifier;
+            public readonly string Placeholder = placeholder;
+            public readonly Location Location = location;
+            public readonly DMProcScope Scope = scope;
+        }
+
         private class DMProcScope {
             public readonly Dictionary<string, LocalVariable> LocalVariables = new();
             public readonly Dictionary<string, CodeLabel> LocalCodeLabels = new();
@@ -59,15 +65,13 @@ namespace DMCompiler.DM {
             }
         }
 
-        public MemoryStream Bytecode = new();
-        public List<string> Parameters = new();
-        public List<DMValueType> ParameterTypes = new();
+        public readonly MemoryStream Bytecode = new();
         public Location Location;
         public ProcAttributes Attributes;
         public bool IsVerb = false;
         public string Name => _astDefinition?.Name ?? "<init>";
-        public int Id;
-        public Dictionary<string, int> GlobalVariables = new();
+        public readonly int Id;
+        public readonly Dictionary<string, int> GlobalVariables = new();
 
         public VerbSrc? VerbSrc;
         public string? VerbName;
@@ -75,21 +79,21 @@ namespace DMCompiler.DM {
         public string? VerbDesc;
         public sbyte Invisibility;
 
-        private DMObject _dmObject;
-        private DMASTProcDefinition? _astDefinition;
-        private BinaryWriter _bytecodeWriter;
-        private Stack<CodeLabelReference> _pendingLabelReferences = new();
-        private Dictionary<string, long> _labels = new();
-        private List<(long Position, string LabelName)> _unresolvedLabels = new();
-        private Stack<string>? _loopStack = null;
-        private Stack<DMProcScope> _scopes = new();
-        private Dictionary<string, LocalVariable> _parameters = new();
+        private readonly DMObject _dmObject;
+        private readonly DMASTProcDefinition? _astDefinition;
+        private readonly BinaryWriter _bytecodeWriter;
+        private readonly Stack<CodeLabelReference> _pendingLabelReferences = new();
+        private readonly Dictionary<string, long> _labels = new();
+        private readonly List<(long Position, string LabelName)> _unresolvedLabels = new();
+        private Stack<string>? _loopStack;
+        private readonly Stack<DMProcScope> _scopes = new();
+        private readonly Dictionary<string, LocalVariable> _parameters = new();
         private int _labelIdCounter;
         private int _maxStackSize;
         private int _currentStackSize;
         private bool _negativeStackSizeError;
 
-        private List<LocalVariableJson> _localVariableNames = new();
+        private readonly List<LocalVariableJson> _localVariableNames = new();
         private int _localVariableIdCounter;
 
         private readonly List<SourceInfoJson> _sourceInfo = new();
@@ -156,15 +160,23 @@ namespace DMCompiler.DM {
             procDefinition.MaxStackSize = _maxStackSize;
 
             if (Bytecode.Length > 0) procDefinition.Bytecode = Bytecode.ToArray();
-            if (Parameters.Count > 0) {
+            if (_parameters.Count > 0) {
                 procDefinition.Arguments = new List<ProcArgumentJson>();
 
-                for (int i = 0; i < Parameters.Count; i++) {
-                    string argumentName = Parameters[i];
-                    DMValueType argumentType = ParameterTypes[i];
+                foreach (var parameter in _parameters.Values) {
+                    if (parameter.ExplicitValueType is not { } argumentType) {
+                        // If no "as" was used then we assume its type based on the type hint
+                        if (parameter.Type is not { } typePath) {
+                            argumentType = DMValueType.Anything;
+                        } else {
+                            var type = DMObjectTree.GetDMObject(typePath, false);
 
-                    procDefinition.Arguments.Add(new ProcArgumentJson() {
-                        Name = argumentName,
+                            argumentType = type?.GetDMValueType() ?? DMValueType.Anything;
+                        }
+                    }
+
+                    procDefinition.Arguments.Add(new ProcArgumentJson {
+                        Name = parameter.Name,
                         Type = argumentType
                     });
                 }
@@ -201,14 +213,11 @@ namespace DMCompiler.DM {
             return null;
         }
 
-        public void AddParameter(string name, DMValueType valueType, DreamPath? type) {
-            Parameters.Add(name);
-            ParameterTypes.Add(valueType);
-
+        public void AddParameter(string name, DMValueType? valueType, DreamPath? type) {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
-                _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type));
+                _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
             }
         }
 
@@ -301,7 +310,7 @@ namespace DMCompiler.DM {
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, null));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {

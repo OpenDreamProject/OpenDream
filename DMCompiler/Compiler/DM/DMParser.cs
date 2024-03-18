@@ -67,6 +67,7 @@ namespace DMCompiler.Compiler.DM {
         private static readonly TokenType[] DereferenceTypes = [
             TokenType.DM_Period,
             TokenType.DM_Colon,
+            TokenType.DM_DoubleColon, // not a dereference, but shares the same precedence
             TokenType.DM_QuestionPeriod,
             TokenType.DM_QuestionColon,
             TokenType.DM_QuestionLeftBracket
@@ -138,7 +139,8 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_TildeEquals,
             TokenType.DM_TildeExclamation,
             TokenType.DM_Xor,
-            TokenType.DM_XorEquals
+            TokenType.DM_XorEquals,
+            TokenType.DM_ConstantString
         ];
 
         public DMASTFile File() {
@@ -224,7 +226,9 @@ namespace DMCompiler.Compiler.DM {
                 ConsumeRightParenthesis();
                 Whitespace();
 
-                DMASTProcBlockInner? procBlock = ProcBlock();
+                // Proc return type
+                    // TODO: Currently we parse it but don't do anything with this information
+                    AsTypes(out _, true);DMASTProcBlockInner? procBlock = ProcBlock();
                 if (procBlock is null) {
                     DMASTProcStatement? procStatement = ProcStatement();
 
@@ -233,7 +237,9 @@ namespace DMCompiler.Compiler.DM {
                     }
                 }
 
-                if(path.IsOperator) {
+if (procBlock?.Statements.Length is 0 or null) {
+                        DMCompiler.Emit(WarningCode.EmptyProc, loc, "Empty proc detected - add an explicit \"return\" statement");
+                    }                if(path.IsOperator) {
                     DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
 
                     List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
@@ -274,7 +280,7 @@ namespace DMCompiler.Compiler.DM {
                         value = new DMASTConstantNull(loc);
                     }
 
-                    var valType = AsTypes() ?? DMValueType.Anything;
+                    var valType = AsTypes(out _) ?? DMValueType.Anything;
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
@@ -357,11 +363,17 @@ namespace DMCompiler.Compiler.DM {
                                     ReuseToken(operatorToken);
                                     Emit(WarningCode.SoftReservedKeyword, "Using \"operator\" as a path element is ambiguous");
                                 }
-                            } else if(Check(OperatorOverloadTypes)) {
+                            } else if (Check(OperatorOverloadTypes)) {
+                                if (operatorToken is { Type: TokenType.DM_ConstantString, Value: not "" }) {
+                                    DMCompiler.Emit(WarningCode.BadToken, operatorToken.Location,
+                                        "The quotes in a stringify overload must be empty");
+                                }
+
                                 operatorFlag = true;
-                                pathElement+=operatorToken.PrintableText;
+                                pathElement += operatorToken.PrintableText;
                             }
                         }
+
                         pathElements.Add(pathElement);
                     }
                 }
@@ -432,6 +444,22 @@ namespace DMCompiler.Compiler.DM {
             if (Check(TokenType.DM_Period)) return new DMASTCallableSelf(loc);
 
             return null;
+        }
+
+        private DMASTExpression? ParseScopeIdentifier(DMASTExpression? expression) {
+            do {
+                var identifier = Identifier();
+                if (identifier == null) {
+                    DMCompiler.Emit(WarningCode.BadToken, Current().Location, "Identifier expected");
+                    return null;
+                }
+
+                var location = expression?.Location ?? identifier.Location; // TODO: Should be on the :: token if expression is null
+                var parameters = ProcCall();
+                expression = new DMASTScopeIdentifier(location, expression, identifier.Identifier, parameters);
+            } while (Check(TokenType.DM_DoubleColon));
+
+            return expression;
         }
 
         private DMASTIdentifier? Identifier() {
@@ -828,7 +856,7 @@ namespace DMCompiler.Compiler.DM {
                     RequireExpression(ref value);
                 }
 
-                AsTypes();
+                AsTypes(out _);
 
                 varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
@@ -1135,7 +1163,7 @@ namespace DMCompiler.Compiler.DM {
 
                 _allowVarDeclExpression = true;
                 DMASTExpression? expr1 = Expression();
-                DMValueType? dmTypes = AsTypes();
+                DMValueType? dmTypes = AsTypes(out _);
                 Whitespace();
                 _allowVarDeclExpression = false;
                 if (expr1 == null) {
@@ -1632,13 +1660,12 @@ namespace DMCompiler.Compiler.DM {
                 BracketWhitespace();
                 parameter = DefinitionParameter(out wasIndeterminate);
 
-                if (parameter != null)
-                {
+                if (parameter != null) {
                     parameters.Add(parameter);
                     BracketWhitespace();
-
                 }
-                if (Check(TokenType.DM_Null)){
+
+                if (Check(TokenType.DM_Null)) {
                     // Breaking change - BYOND creates a var named null that overrides the keyword. No error.
                     if (Emit(WarningCode.SoftReservedKeyword, "'null' is not a valid variable name")) { // If it's an error, skip over this var instantiation.
                         Advance();
@@ -1673,7 +1700,7 @@ namespace DMCompiler.Compiler.DM {
                     value = Expression();
                 }
 
-                var type = AsTypes() ?? DMValueType.Anything;
+                var type = AsTypes(out _);
                 Whitespace();
 
                 if (Check(TokenType.DM_In)) {
@@ -2152,8 +2179,12 @@ namespace DMCompiler.Compiler.DM {
                 return pathConstant;
             }
 
-            if (Identifier() is { } identifier)
+            if (Identifier() is { } identifier) {
+                if (Check(TokenType.DM_DoubleColon))
+                    return ParseScopeIdentifier(identifier);
+
                 return identifier;
+            }
 
             if (ParseProcCall((DMASTExpression?)Callable()) is { } procCallOrCallable)
                 return procCallOrCallable;
@@ -2291,6 +2322,15 @@ namespace DMCompiler.Compiler.DM {
                                 NoSearch = token.Type is TokenType.DM_Colon or TokenType.DM_QuestionColon
                             };
                             break;
+                        }
+
+                        case TokenType.DM_DoubleColon: {
+                            if (operations.Count != 0) {
+                                expression = new DMASTDereference(expression.Location, expression, operations.ToArray());
+                                operations.Clear();
+                            }
+                            expression = ParseScopeIdentifier(expression);
+                            continue;
                         }
 
                         case TokenType.DM_LeftBracket:
@@ -2455,7 +2495,7 @@ namespace DMCompiler.Compiler.DM {
 
                     case "input": {
                         Whitespace();
-                        DMValueType? types = AsTypes();
+                        DMValueType? types = AsTypes(out _);
                         Whitespace();
                         DMASTExpression? list = null;
 
@@ -2574,7 +2614,8 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMValueType? AsTypes() {
+        private DMValueType? AsTypes(out DMASTPath? path, bool allowPath = false) {
+            path = null;
             if (Check(TokenType.DM_As)) {
                 DMValueType type = DMValueType.Anything;
 
@@ -2591,29 +2632,41 @@ namespace DMCompiler.Compiler.DM {
                         if (closed) break;
                     }
 
-                    Consume(new[] { TokenType.DM_Identifier, TokenType.DM_Null }, "Expected value type");
-                    switch (typeToken.Text) {
-                        case "anything": type |= DMValueType.Anything; break;
-                        case "null": type |= DMValueType.Null; break;
-                        case "text": type |= DMValueType.Text; break;
-                        case "obj": type |= DMValueType.Obj; break;
-                        case "mob": type |= DMValueType.Mob; break;
-                        case "turf": type |= DMValueType.Turf; break;
-                        case "num": type |= DMValueType.Num; break;
-                        case "message": type |= DMValueType.Message; break;
-                        case "area": type |= DMValueType.Area; break;
-                        case "color": type |= DMValueType.Color; break;
-                        case "file": type |= DMValueType.File; break;
-                        case "command_text": type |= DMValueType.CommandText; break;
-                        case "sound": type |= DMValueType.Sound; break;
-                        case "icon": type |= DMValueType.Icon; break;
-                        case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
-                        case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
-                        default:
+
+                    if (!Check(new[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
+                        // Proc return types
+                        path = Path();
+                        if (allowPath) {
+                            if (path is null) {
+                                DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
+                            }
+                            type |= DMValueType.Path;
+                        } else {
+                            DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type");
+                        }
+                    } else {
+                        switch (typeToken.Text) {
+                            case "anything": type |= DMValueType.Anything; break;
+                            case "null": type |= DMValueType.Null; break;
+                            case "text": type |= DMValueType.Text; break;
+                            case "obj": type |= DMValueType.Obj; break;
+                            case "mob": type |= DMValueType.Mob; break;
+                            case "turf": type |= DMValueType.Turf; break;
+                            case "num": type |= DMValueType.Num; break;
+                            case "message": type |= DMValueType.Message; break;
+                            case "area": type |= DMValueType.Area; break;
+                            case "color": type |= DMValueType.Color; break;
+                            case "file": type |= DMValueType.File; break;
+                            case "command_text": type |= DMValueType.CommandText; break;
+                            case "sound": type |= DMValueType.Sound; break;
+                            case "icon": type |= DMValueType.Icon; break;
+                            case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
+                            case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
+                            default:
                             Emit(WarningCode.BadToken, typeToken.Location, $"Invalid value type '{typeToken.Text}'");
                             break;
+                        }
                     }
-
                     Whitespace();
                 } while (Check(TokenType.DM_Bar));
 

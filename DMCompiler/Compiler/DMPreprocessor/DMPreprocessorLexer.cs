@@ -313,14 +313,16 @@ internal sealed class DMPreprocessorLexer {
 
                         if(nextCharCanTerm && c == '}')
                             break;
-                        else {
+
+                        if (HandleLineEnd()) {
+                            TokenTextBuilder.Append('\n');
+                        } else {
                             TokenTextBuilder.Append(c);
                             nextCharCanTerm = false;
                         }
 
                         if (c == '"')
                             nextCharCanTerm = true;
-
                     } while (!AtEndOfSource());
                 } else {
                     while (c != delimiter && !AtLineEnd() && !AtEndOfSource()) {
@@ -492,7 +494,9 @@ internal sealed class DMPreprocessorLexer {
         while (!(!isLong && AtLineEnd()) && !AtEndOfSource()) {
             char stringC = GetCurrent();
 
-            if (stringC == '[') {
+            if (HandleLineEnd()) {
+                textBuilder.Append('\n');
+            } else if (stringC == '[') {
                 textBuilder.Append(stringC);
                 stringTokens.Enqueue(isConstant // First case of '['
                     ? CreateToken(TokenType.DM_Preproc_StringBegin, tokenTextStart + textBuilder, textBuilder.ToString())

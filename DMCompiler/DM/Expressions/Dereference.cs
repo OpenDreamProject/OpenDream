@@ -100,7 +100,7 @@ namespace DMCompiler.DM.Expressions {
                     if (callOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
-                    ValType = proc.ReturnTypes;
+                    ,ValType = proc.ReturnTypes;
                     var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc);
                     proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                     break;

@@ -3,16 +3,10 @@ using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
-    internal abstract class BinaryOp : DMExpression {
+    internal abstract class BinaryOp(Location location, DMExpression LHS, DMExpression RHS) : DMExpression(location) {
         protected DMExpression LHS { get; }
         protected DMExpression RHS { get; }
-
-        protected BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : base(location) {
-            LHS = lhs;
-            RHS = rhs;
-            ValType |= lhs.ValType;
-            ValType |= rhs.ValType;
-        }
+        public override DMValueType ValType => LHS.ValType;
     }
 
     #region Simple
@@ -492,6 +486,7 @@ namespace DMCompiler.DM.Expressions {
     #region Compound Assignment
     internal abstract class AssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
         : BinaryOp(location, lhs, rhs) {
+
         /// <summary>
         /// Generic interface for emitting the assignment operation. Has its conditionality and reference generation already handled.
         /// </summary>
@@ -507,7 +502,10 @@ namespace DMCompiler.DM.Expressions {
 
             proc.AddLabel(endLabel);
 
-            LHS.ValType = RHS.ValType;
+            if (LHS.ValType != RHS.ValType) {
+                DMCompiler.Emit(WarningCode.InvalidVarType, Location, $"Invalid var type {RHS.ValType}, expected {LHS}");
+            }
+
             if (LHS is ProcSelf self) {
                 if (proc.ReturnTypes != DMValueType.Anything && (proc.ReturnTypes & self.ValType) == 0) {
                     DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{proc.Name}(): Invalid implicit return type {self.ValType}, expected {proc.ReturnTypes}");

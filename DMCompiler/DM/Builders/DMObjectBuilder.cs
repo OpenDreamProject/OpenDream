@@ -504,7 +504,7 @@ internal static class DMObjectBuilder {
             DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
         } else {
             var initLoc = expression.Location;
-            Expressions.Field field = new Expressions.Field(initLoc, variable);
+            Expressions.Field field = new Expressions.Field(initLoc, variable, variable.ValType);
             Expressions.Assignment assign = new Expressions.Assignment(initLoc, field, expression);
 
             currentObject.InitializationProcExpressions.Add(assign);

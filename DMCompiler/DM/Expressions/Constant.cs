@@ -100,10 +100,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // null
-    sealed class Null : Constant {
-        public Null(Location location) : base(location) {
-            ValType = DMValueType.Null;
-        }
+    sealed class Null(Location location) : Constant(location) {
+        public override DMValueType ValType => DMValueType.Null;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
@@ -148,15 +146,14 @@ namespace DMCompiler.DM.Expressions {
     // 4.0, -4.0
     sealed class Number : Constant {
         public float Value { get; }
+        public override DMValueType ValType => DMValueType.Num;
 
         public Number(Location location, int value) : base(location) {
             Value = value;
-            ValType = DMValueType.Num;
         }
 
         public Number(Location location, float value) : base(location) {
             Value = value;
-            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -324,10 +321,10 @@ namespace DMCompiler.DM.Expressions {
     // "abc"
     sealed class String : Constant {
         public string Value { get; }
+        public override DMValueType ValType => DMValueType.Text;
 
         public String(Location location, string value) : base(location) {
             Value = value;
-            ValType = DMValueType.Text;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -491,12 +488,12 @@ namespace DMCompiler.DM.Expressions {
         public DreamPath Value { get; }
         public override DreamPath? Path => Value;
         private readonly DMObject _dmObject;
+        public override DMValueType ValType => DMValueType.Path;
 
         public ConstantPath(Location location, DMObject dmObject, DreamPath value)
             : base(location) {
             _dmObject = dmObject;
             Value = value;
-            ValType = DMValueType.Path;
         }
 
         public enum PathType {

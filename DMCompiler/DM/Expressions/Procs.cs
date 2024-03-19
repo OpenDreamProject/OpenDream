@@ -71,10 +71,10 @@ namespace DMCompiler.DM.Expressions {
     /// This is an LValue _and_ a proc!
     /// </summary>
     sealed class ProcSelf : LValue {
+        public override DMValueType ValType => DMValueType.Anything; //TODO: figure out how to deal with procself static typing
+
         public ProcSelf(Location location)
-            : base(location, null) {
-            ValType = DMValueType.Anything; //TODO: figure out how to deal with procself static typing
-        }
+            : base(location, null) {}
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Self;
@@ -99,27 +99,17 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x(y, z, ...)
-    sealed class ProcCall : DMExpression {
-        private readonly DMExpression _target;
-        private readonly ArgumentList _arguments;
-
+    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments) : DMExpression(location) {
         public override bool PathIsFuzzy => Path == null;
-
-        public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
-            _target = target;
-            _arguments = arguments;
-            ValType = _target.ValType;
-        }
+        public override DMValueType ValType => target.ValType;
 
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
-            switch (_target) {
+            switch (target) {
                 case Proc procTarget: {
-                    ValType = procTarget.GetReturnType(dmObject);
                     return (dmObject, procTarget.GetProc(dmObject));
                 }
 
                 case GlobalProc procTarget: {
-                    ValType = procTarget.GetReturnType();
                     return (null, procTarget.GetProc());
                 }
                 default:
@@ -138,14 +128,14 @@ namespace DMCompiler.DM.Expressions {
 
             DMCallArgumentsType argumentsType;
             int argumentStackSize;
-            if (_arguments.Length == 0 && _target is ProcSuper) {
+            if (arguments.Length == 0 && target is ProcSuper) {
                 argumentsType = DMCallArgumentsType.FromProcArguments;
                 argumentStackSize = 0;
             } else {
-                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc, targetProc);
+                (argumentsType, argumentStackSize) = arguments.EmitArguments(dmObject, proc, targetProc);
             }
 
-            DMReference procRef = _target.EmitReference(dmObject, proc, endLabel);
+            DMReference procRef = target.EmitReference(dmObject, proc, endLabel);
 
             proc.Call(procRef, argumentsType, argumentStackSize);
             proc.AddLabel(endLabel);
@@ -160,7 +150,7 @@ namespace DMCompiler.DM.Expressions {
                 if (targetProc is null)
                     return;
                 if(targetProc.Name == "matrix") {
-                    switch(_arguments.Length) {
+                    switch(arguments.Length) {
                         case 0:
                         case 1: // NOTE: 'case 1' also ends up referring to the arglist situation. FIXME: Make this lint work for that, too?
                         case 6:
@@ -168,10 +158,10 @@ namespace DMCompiler.DM.Expressions {
                         case 2:
                         case 3: // These imply that they're trying to use the undocumented matrix signatures.
                         case 4: // The lint is to just check that the last argument is a numeric constant that is a valid matrix "opcode."
-                            var lastArg = _arguments.Expressions.Last().Expr;
+                            var lastArg = arguments.Expressions.Last().Expr;
                             if(lastArg.TryAsConstant(out var constant)) {
                                 if(constant is not Number opcodeNumber) {
-                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                                     break;
                                 }
@@ -183,18 +173,18 @@ namespace DMCompiler.DM.Expressions {
                                     //NOTE: This still does let some certain weird opcodes through,
                                     //like a MODIFY with no other operation present.
                                     //Not sure if that is a parity behaviour or not!
-                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                                 }
                             }
                             break;
                         case 5: // BYOND always runtimes but DOES compile, here
-                            DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                            DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                 $"Calling matrix() with 5 arguments will always error when called at runtime");
                             break;
                         default: // BYOND always compiletimes here
-                            DMCompiler.Emit(WarningCode.TooManyArguments, _arguments.Location,
-                                $"Too many arguments to matrix() - got {_arguments.Length} arguments, expecting 6 or less");
+                            DMCompiler.Emit(WarningCode.TooManyArguments, arguments.Location,
+                                $"Too many arguments to matrix() - got {arguments.Length} arguments, expecting 6 or less");
                             break;
 
                     }

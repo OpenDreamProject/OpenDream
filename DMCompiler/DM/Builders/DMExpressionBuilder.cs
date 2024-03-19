@@ -344,8 +344,7 @@ internal static class DMExpressionBuilder {
 
         switch (name) {
             case "src":
-                var src = new Src(identifier.Location, dmObject.Path);
-                src.ValType = src.ValType == DMValueType.Anything ? GetATOMType(dmObject.Path) : src.ValType;
+                var src = new Src(identifier.Location, dmObject.Path, GetATOMType(dmObject.Path));
                 return src;
             case "usr":
                 return new Usr(identifier.Location);
@@ -365,8 +364,8 @@ internal static class DMExpressionBuilder {
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
-                        var fieldexpr = new Field(identifier.Location, field);
-                        fieldexpr.ValType = field.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.ValType;
+                        var valType = field.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.ValType;
+                        var fieldexpr = new Field(identifier.Location, field, valType);
                         return fieldexpr;
                     }
                 }

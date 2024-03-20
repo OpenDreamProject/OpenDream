@@ -1860,6 +1860,79 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus Rgb(DMProcState state) {
+            var argumentInfo = state.ReadProcArguments();
+            var argumentValues = state.PopCount(argumentInfo.StackSize);
+            var arguments = state.CollectProcArguments(argumentValues, argumentInfo.Type, argumentInfo.StackSize);
+
+            DreamValue r = default;
+            DreamValue g = default;
+            DreamValue b = default;
+            DreamValue a = default;
+            DreamValue space = default;
+
+            if (arguments.Item1 != null) {
+                if (arguments.Item1.Length is < 3 or > 5)
+                    throw new Exception("Expected 3 to 5 arguments for rgb()");
+
+                r = arguments.Item1[0];
+                g = arguments.Item1[1];
+                b = arguments.Item1[2];
+                a = (arguments.Item1.Length >= 4) ? arguments.Item1[3] : DreamValue.Null;
+                space = (arguments.Item1.Length >= 5) ? arguments.Item1[4] : DreamValue.Null;
+            } else if (arguments.Item2 != null) {
+                foreach (var arg in arguments.Item2) {
+                    if (arg.Key.TryGetValueAsInteger(out var position)) {
+                        switch (position) {
+                            case 1: r = arg.Value; break;
+                            case 2: g = arg.Value; break;
+                            case 3: b = arg.Value; break;
+                            case 4: a = arg.Value; break;
+                            case 5: space = arg.Value; break;
+                            default: throw new Exception($"Invalid argument key {position}");
+                        }
+                    } else {
+                        var name = arg.Key.MustGetValueAsString();
+
+                        if (name.StartsWith("r", StringComparison.InvariantCultureIgnoreCase) && r == default)
+                            r = arg.Value;
+                        else if (name.StartsWith("g", StringComparison.InvariantCultureIgnoreCase) && g == default)
+                            g = arg.Value;
+                        else if (name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase) && b == default)
+                            b = arg.Value;
+                        else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a == default)
+                            a = arg.Value;
+                        else if (name == "space" && space == default)
+                            space = arg.Value;
+                        else
+                            throw new Exception($"Invalid or double arg \"{name}\"");
+                    }
+                }
+
+                if (r == default || g == default || b == default)
+                    throw new Exception("Missing R, G, or B component");
+            } else {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            int rValue = Math.Clamp((int)r.UnsafeGetValueAsFloat(), 0, 255);
+            int gValue = Math.Clamp((int)g.UnsafeGetValueAsFloat(), 0, 255);
+            int bValue = Math.Clamp((int)b.UnsafeGetValueAsFloat(), 0, 255);
+
+            // TODO: There is a difference between passing null and not passing a fourth arg at all
+            if (a.IsNull) {
+                state.Push(new DreamValue($"#{rValue:X2}{gValue:X2}{bValue:X2}"));
+            } else {
+                int aValue = Math.Clamp((int)a.UnsafeGetValueAsFloat(), 0, 255);
+
+                state.Push(new DreamValue($"#{rValue:X2}{gValue:X2}{bValue:X2}{aValue:X2}"));
+            }
+
+            // TODO: space isn't being used
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus LocateCoord(DMProcState state) {
             var z = (int)state.Pop().UnsafeGetValueAsFloat();
             var y = (int)state.Pop().UnsafeGetValueAsFloat();

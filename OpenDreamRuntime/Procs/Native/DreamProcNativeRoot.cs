@@ -1183,7 +1183,7 @@ namespace OpenDreamRuntime.Procs.Native {
             using MemoryStream stream = new MemoryStream();
             // 515 JSON_PRETTY_PRINT flag
             bundle.GetArgument(1, "flags").TryGetValueAsInteger(out var prettyPrint);
-            
+
             JsonWriterOptions options = new JsonWriterOptions {
                 Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping, // "\"" instead of "\u0022"
                 Indented = (prettyPrint == 1)
@@ -1965,35 +1965,6 @@ namespace OpenDreamRuntime.Procs.Native {
             }
 
             return new DreamValue(text.Substring(start - 1, end - start).Replace(needle, replacement, StringComparison.Ordinal));
-        }
-
-        [DreamProc("rgb")]
-        [DreamProcParameter("R", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("G", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("B", Type = DreamValueTypeFlag.Float)]
-        [DreamProcParameter("A", Type = DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_rgb(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            // TODO: accept lowercase named arguments here too
-            // NOTE(moony): This only actually checks for the first character of it's parameter's names, rgb(RaUNCHY=1, bAd=2, gIrLs=3) is a valid rgb call.
-            bundle.GetArgument(0, "R").TryGetValueAsInteger(out var r);
-            bundle.GetArgument(1, "G").TryGetValueAsInteger(out var g);
-            bundle.GetArgument(2, "B").TryGetValueAsInteger(out var b);
-            DreamValue aValue = bundle.GetArgument(3, "A");
-
-            r = Math.Clamp(r, 0, 255);
-            g = Math.Clamp(g, 0, 255);
-            b = Math.Clamp(b, 0, 255);
-
-            // TODO: There is a difference between passing null and not passing a fourth arg at all
-            // Likely a compile-time difference
-            if (aValue.IsNull) {
-                return new DreamValue($"#{r:X2}{g:X2}{b:X2}");
-            } else {
-                aValue.TryGetValueAsInteger(out var a);
-                a = Math.Clamp(a, 0, 255);
-
-                return new DreamValue($"#{r:X2}{g:X2}{b:X2}{a:X2}");
-            }
         }
 
         [DreamProc("rgb2num")]

@@ -1949,6 +1949,7 @@ namespace OpenDreamRuntime.Procs {
                     break;
                 }
                 case ColorHelpers.ColorSpace.HSV: {
+                    // TODO: Going beyond the max defined in the docs returns a different value. Don't know why.
                     float h = Math.Clamp(color1Value, 0, 360) / 360f;
                     float s = Math.Clamp(color2Value, 0, 100) / 100f;
                     float v = Math.Clamp(color3Value, 0, 100) / 100f;

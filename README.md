@@ -30,7 +30,10 @@ To do this, simply run `git submodule update --init --recursive` in git bash and
 
 **OpenDream requires .NET 8.** You can check your version by running `dotnet --version`. It should be at least `8.0.0`.
 
-To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution.
+To build, one can use a C# compiler (such as MSBuild) to compile the various projects described in the solution. To us MSBuild, simply run `dotnet msbuild` in the OpenDream directory. This will build all of the solutions and put the resultant binaries in `bin`
+
+## Testing
+OpenDream makes use of a unit testing framework. You can run these unit tests by running `dotnet test` in the OpenDream directory. This will run all of the RobustToolbox tests, as well as the DM language tests which can be found under `Content.Tests/DMProject/Tests/`. To add to the unit tests, simply create a `.dm` file under the Tests directory with `/proc/RunTest()` as the entry point. Optionally you can also add flags to the test, such as `// COMPILE ERROR` to mark that this test should cause a compile error.
 
 ## Screenshots
 The following screenshots are taken from a version of Paradise Station with a recompiled 64-bit rustg DLL. This branch of Paradise is available [here](https://github.com/ike709/Paradise/tree/rustg_64).

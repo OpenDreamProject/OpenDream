@@ -14,6 +14,7 @@ namespace DMCompiler.DM.Expressions {
         public StringFormat(Location location, string value, DMExpression[] expressions) : base(location) {
             Value = value;
             Expressions = expressions;
+            ValType = DMValueType.Text;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -63,7 +64,17 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
+    internal sealed class NewPath : DMExpression {
+        private readonly ConstantPath targetPath;
+        private readonly ArgumentList arguments;
+
+        public NewPath(Location location, ConstantPath targetPath, ArgumentList arguments)
+            : base(location) {
+            this.targetPath = targetPath;
+            this.arguments = arguments;
+            ValType = DMValueType.Path;
+        }
+
         public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -100,6 +111,7 @@ namespace DMCompiler.DM.Expressions {
         public LocateInferred(Location location, DreamPath path, DMExpression? container) : base(location) {
             _path = path;
             _container = container;
+            ValType = DMValueType.Path;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -162,6 +174,7 @@ namespace DMCompiler.DM.Expressions {
             _x = x;
             _y = y;
             _z = z;
+            ValType = DMValueType.Turf;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -253,6 +266,7 @@ namespace DMCompiler.DM.Expressions {
 
         public AddText(Location location, DMExpression[] paras) : base(location) {
             _parameters = paras;
+            ValType = DMValueType.Text;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -273,6 +287,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Prob(Location location, DMExpression p) : base(location) {
             P = p;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -287,6 +302,7 @@ namespace DMCompiler.DM.Expressions {
 
         public IsSaved(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -314,6 +330,7 @@ namespace DMCompiler.DM.Expressions {
         public IsType(Location location, DMExpression expr, DMExpression path) : base(location) {
             _expr = expr;
             _path = path;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -331,6 +348,7 @@ namespace DMCompiler.DM.Expressions {
         public IsTypeInferred(Location location, DMExpression expr, DreamPath path) : base(location) {
             _expr = expr;
             _path = path;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -354,6 +372,7 @@ namespace DMCompiler.DM.Expressions {
 
         public IsNull(Location location, DMExpression value) : base(location) {
             _value = value;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -370,6 +389,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Length(Location location, DMExpression value) : base(location) {
             _value = value;
+            ValType = DMValueType.Num;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -425,6 +445,7 @@ namespace DMCompiler.DM.Expressions {
 
         public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
             _values = values;
+            ValType = DMValueType.Path;
 
             _isAssociative = false;
             foreach (var value in values) {
@@ -520,6 +541,7 @@ namespace DMCompiler.DM.Expressions {
 
         public NewList(Location location, DMExpression[] parameters) : base(location) {
             _parameters = parameters;
+            ValType = DMValueType.Path;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -553,6 +575,7 @@ namespace DMCompiler.DM.Expressions {
             _arguments = arguments;
             _types = types;
             _list = list;
+            ValType = types;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -619,8 +642,10 @@ namespace DMCompiler.DM.Expressions {
     // __TYPE__
     sealed class ProcOwnerType : DMExpression {
         public ProcOwnerType(Location location)
-            : base(location)
-        {}
+            : base(location) {
+            ValType |= DMValueType.Null;
+            ValType |= DMValueType.Path;
+        }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             // BYOND returns null if this is called in a global proc
@@ -646,6 +671,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Sin(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -675,6 +701,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Cos(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -704,6 +731,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Tan(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -733,6 +761,7 @@ namespace DMCompiler.DM.Expressions {
 
         public ArcSin(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -767,6 +796,7 @@ namespace DMCompiler.DM.Expressions {
 
         public ArcCos(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -801,6 +831,7 @@ namespace DMCompiler.DM.Expressions {
 
         public ArcTan(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -832,6 +863,7 @@ namespace DMCompiler.DM.Expressions {
         public ArcTan2(Location location, DMExpression xExpr, DMExpression yExpr) : base(location) {
             _xExpr = xExpr;
             _yExpr = yExpr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -866,6 +898,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Sqrt(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -902,6 +935,7 @@ namespace DMCompiler.DM.Expressions {
         public Log(Location location, DMExpression expr, DMExpression? baseExpr) : base(location) {
             _expr = expr;
             _baseExpr = baseExpr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
@@ -952,6 +986,7 @@ namespace DMCompiler.DM.Expressions {
 
         public Abs(Location location, DMExpression expr) : base(location) {
             _expr = expr;
+            ValType = DMValueType.Num;
         }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {

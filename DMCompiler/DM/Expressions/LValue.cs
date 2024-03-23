@@ -49,8 +49,9 @@ namespace DMCompiler.DM.Expressions {
     // usr
     sealed class Usr : LValue {
         public Usr(Location location)
-            : base(location, DreamPath.Mob)
-        {}
+            : base(location, DreamPath.Mob) {
+            ValType = DMValueType.Mob; //According to the docs, Usr is a mob
+        }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Usr;
@@ -79,6 +80,7 @@ namespace DMCompiler.DM.Expressions {
         public Local(Location location, DMProc.LocalVariable localVar)
             : base(location, localVar.Type) {
             LocalVar = localVar;
+            ValType = LocalVar.ExplicitValueType ?? DMValueType.Anything; // TODO: Var static typing
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -115,6 +117,7 @@ namespace DMCompiler.DM.Expressions {
         public Field(Location location, DMVariable variable)
             : base(location, variable.Type) {
             Variable = variable;
+            ValType = variable.ValType;
         }
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
@@ -143,15 +146,20 @@ namespace DMCompiler.DM.Expressions {
             constant = null;
             return false;
         }
+
+        public override string ToString() {
+            return Variable.Name;
+        }
     }
 
     // Id of global field
     sealed class GlobalField : LValue {
         int Id { get; }
 
-        public GlobalField(Location location, DreamPath? path, int id)
+        public GlobalField(Location location, DreamPath? path, int id, DMValueType valType)
             : base(location, path) {
             Id = id;
+            ValType = valType;
         }
 
         public void EmitPushIsSaved(DMProc proc) {

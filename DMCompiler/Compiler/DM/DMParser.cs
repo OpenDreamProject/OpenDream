@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM;
+using String = System.String;
 
 namespace DMCompiler.Compiler.DM {
     public partial class DMParser : Parser<Token> {
@@ -236,8 +237,7 @@ namespace DMCompiler.Compiler.DM {
                     Whitespace();
 
                     // Proc return type
-                    // TODO: Currently we parse it but don't do anything with this information
-                    AsTypes(out _, true);
+                    var types = AsTypes(out var returnPath, true);
 
                     DMASTProcBlockInner? procBlock = ProcBlock();
                     if (procBlock is null) {
@@ -264,7 +264,7 @@ namespace DMCompiler.Compiler.DM {
                         procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
                     }
 
-                    statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock);
+                    statement = new DMASTProcDefinition(loc, _currentPath, parameters.ToArray(), procBlock, types ?? DMValueType.Anything, returnPath);
                 }
 
                 //Object definition
@@ -866,9 +866,9 @@ namespace DMCompiler.Compiler.DM {
                     if (value == null) Error("Expected an expression");
                 }
 
-                AsTypes(out _);
+                var valType = AsTypes(out _);
 
-                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value));
+                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType ?? DMValueType.Anything));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
                     Whitespace();
                     varPath = Path();
@@ -1706,6 +1706,12 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 var type = AsTypes(out _);
+                // TODO: Figure out a clean way to do this only if "path.Path" is a subtype of datum/ instead of a var/. IsDescendentOf() is insufficient
+                /*if (type is not null && type != DMValueType.Anything && (value is null || value is DMASTConstantNull)) {
+                    DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"{_currentPath}: Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
+                    type |= DMValueType.Null;
+                }*/
+
                 Whitespace();
 
                 if (Check(TokenType.DM_In)) {

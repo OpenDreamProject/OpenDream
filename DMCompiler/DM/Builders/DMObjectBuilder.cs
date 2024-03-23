@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Expressions;
 
 namespace DMCompiler.DM.Builders;
 
@@ -312,6 +313,7 @@ internal static class DMObjectBuilder {
 
             DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
             proc.IsVerb = procDefinition.IsVerb;
+            proc.TypeChecked = proc.ReturnTypes != DMValueType.Anything;
 
             if (procDefinition.ObjectPath == DreamPath.Root) {
                 if(procDefinition.IsOverride) {
@@ -427,13 +429,22 @@ internal static class DMObjectBuilder {
 
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
 
-            SetVariableValue(currentObject, ref variable, value.Location, expression);
+            SetVariableValue(currentObject, ref variable, value.Location, expression, true);
         } finally {
             DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
         }
     }
 
-    private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression) {
+    private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression, bool isOverride = false) {
+        // Typechecking
+        if (variable.ValType != DMValueType.Anything && variable.ValType != DMValueType.Unimplemented && variable.ValType != DMValueType.CompiletimeReadonly && !variable.ValType.HasFlag(expression.ValType)) {
+            if (expression is Null && !isOverride) {
+                DMCompiler.Emit(WarningCode.ImplicitNullType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
+                variable.ValType |= DMValueType.Null;
+            } else {
+                DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type \"{expression.ValType.ToString().ToLower()}\", expected \"{variable.ValType.ToString().ToLower()}\"");
+            }
+        }
         if (expression.TryAsConstant(out var constant)) {
             variable = variable.WriteToValue(constant);
             return;

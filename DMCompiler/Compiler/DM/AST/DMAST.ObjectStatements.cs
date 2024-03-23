@@ -25,9 +25,11 @@ public sealed class DMASTProcDefinition : DMASTStatement {
     public readonly bool IsVerb;
     public readonly DMASTDefinitionParameter[] Parameters;
     public readonly DMASTProcBlockInner? Body;
+    public DMValueType ReturnTypes;
+    public DMASTPath? ReturnPath;
 
     public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters,
-        DMASTProcBlockInner? body) : base(location) {
+        DMASTProcBlockInner? body, DMValueType returnType, DMASTPath? returnPath) : base(location) {
         int procElementIndex = path.FindElement("proc");
 
         if (procElementIndex == -1) {
@@ -43,6 +45,8 @@ public sealed class DMASTProcDefinition : DMASTStatement {
         Name = path.LastElement;
         Parameters = parameters;
         Body = body;
+        ReturnTypes = returnType;
+        ReturnPath = returnPath;
     }
 }
 

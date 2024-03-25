@@ -6,6 +6,7 @@ public static class Program {
     public class Options {
         public string OutputDir = "release/";
         public bool SkipBuild;
+        public string BuildConfiguration = "Release";
     }
 
     public class ServerOptions : Options {
@@ -96,6 +97,9 @@ public static class Program {
                     case "--skip-build":
                         serverOptions.SkipBuild = true;
                         break;
+                    case "--debug":
+                        serverOptions.BuildConfiguration = "Debug";
+                        break;
                     case "--platform":
                     case "-p":
                         if (i + 1 >= args.Length) {
@@ -132,6 +136,9 @@ public static class Program {
                     case "--skip-build":
                         clientOptions.SkipBuild = true;
                         break;
+                    case "--debug":
+                        clientOptions.BuildConfiguration = "Debug";
+                        break;
                     default:
                         Console.Error.WriteLine($"Invalid argument '{arg}'");
                         return false;
@@ -155,6 +162,9 @@ public static class Program {
                         break;
                     case "--skip-build":
                         tgsOptions.SkipBuild = true;
+                        break;
+                    case "--debug":
+                        tgsOptions.BuildConfiguration = "Debug";
                         break;
                     default:
                         Console.Error.WriteLine($"Invalid argument '{arg}'");

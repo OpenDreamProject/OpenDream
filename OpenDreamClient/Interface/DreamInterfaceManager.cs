@@ -553,29 +553,29 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                             _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
                         else
                             if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value, StringComparison.InvariantCultureIgnoreCase)) {
-                                foreach(DMFWinSet IfValue in winSet.IfValues) {
-                                    string? IfElementId = IfValue.Element ?? elementId;
-                                    InterfaceElement? IfElement = FindElementWithId(IfElementId);
-                                    if(IfElement is not null) {
+                                foreach(DMFWinSet ifValue in winSet.IfValues) {
+                                    string? ifElementId = ifValue.Element ?? elementId;
+                                    InterfaceElement? ifElement = FindElementWithId(ifElementId);
+                                    if(ifElement is not null) {
                                         MappingDataNode node = new() {
-                                            {IfValue.Attribute, HandleEmbeddedWinget(IfElementId, IfValue.Value)}
+                                            {ifValue.Attribute, HandleEmbeddedWinget(ifElementId, ifValue.Value)}
                                         };
-                                        IfElement.PopulateElementDescriptor(node, _serializationManager);
+                                        ifElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
-                                        _sawmill.Error($"Invalid element on ternary \"{IfElementId}\"");
+                                        _sawmill.Error($"Invalid element on ternary \"{ifElementId}\"");
                                     }
                                 }
                             } else if (winSet.ElseValues is not null){
-                                foreach(DMFWinSet ElseValue in winSet.ElseValues) {
-                                    string? ElseElementId = ElseValue.Element ?? elementId;
-                                    InterfaceElement? ElseElement = FindElementWithId(ElseElementId);
-                                    if(ElseElement is not null) {
+                                foreach(DMFWinSet elseValue in winSet.ElseValues) {
+                                    string? elseElementId = elseValue.Element ?? elementId;
+                                    InterfaceElement? elseElement = FindElementWithId(elseElementId);
+                                    if(elseElement is not null) {
                                         MappingDataNode node = new() {
-                                            {ElseValue.Attribute, HandleEmbeddedWinget(ElseElementId, ElseValue.Value)}
+                                            {elseValue.Attribute, HandleEmbeddedWinget(elseElementId, elseValue.Value)}
                                         };
-                                        ElseElement.PopulateElementDescriptor(node, _serializationManager);
+                                        elseElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
-                                        _sawmill.Error($"Invalid element on ternary \"{ElseElementId}\"");
+                                        _sawmill.Error($"Invalid element on ternary \"{elseElementId}\"");
                                     }
                                 }
                             }

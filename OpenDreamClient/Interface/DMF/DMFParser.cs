@@ -188,8 +188,6 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
     private bool TryGetAttribute([NotNullWhen(true)] out DMFWinSet? winSet) {
         string? element = null;
         winSet = null;
-        DMFWinSet? condition;
-        DMFWinSet? elseValue;
         Token attributeToken = Current();
 
         if (Check(_attributeTokenTypes)) {
@@ -233,7 +231,7 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                     ifValues.Add(ifValue);
                 }
                 if(Check(TokenType.Colon)){ //not all ternarys have an else
-                    while(TryGetAttribute(out elseValue)) {
+                    while(TryGetAttribute(out var elseValue)) {
                         elseValues.Add(elseValue);
                     }
                 }

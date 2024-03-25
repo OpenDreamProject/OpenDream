@@ -435,10 +435,13 @@ namespace OpenDreamRuntime.Procs {
             }
 
             builder.Append(Proc.Name);
-            builder.Append(':');
 
             // Subtract 1 because _pc may have been advanced to the next line
-            builder.Append(Proc.GetSourceAtOffset(_pc - 1).Line);
+            var location = Proc.GetSourceAtOffset(_pc - 1);
+            builder.Append(' ');
+            builder.Append(location.Source);
+            builder.Append(':');
+            builder.Append(location.Line);
         }
 
         public (string, int) GetCurrentSource() {

@@ -484,10 +484,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void WinSet(string? controlId, string winsetParams) {
-        DMFLexer lexer;
         DMFParser parser;
         try{
-            lexer = new DMFLexer(winsetParams);
+            var lexer = new DMFLexer(winsetParams);
             parser = new DMFParser(lexer, _serializationManager);
         } catch (Exception e) {
             _sawmill.Error($"Error parsing winset: {e}");
@@ -507,9 +506,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         string HandleEmbeddedWinget(string? controlId, string value) {
             string result = value;
-            int startPos = result.IndexOf("[[");
+            int startPos = result.IndexOf("[[", StringComparison.Ordinal);
             while(startPos > -1){
-                int endPos = result.IndexOf("]]", startPos);
+                int endPos = result.IndexOf("]]", startPos, StringComparison.Ordinal);
                 if(endPos == -1)
                     break;
                 string inner = result.Substring(startPos+2, endPos-startPos-2);
@@ -521,7 +520,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 }
                 string innerResult = WinGet(innerControlId, inner);
                 result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
-                startPos = result.IndexOf("[[");
+                startPos = result.IndexOf("[[", StringComparison.Ordinal);
             }
             return result;
         }

@@ -227,6 +227,8 @@ internal static class DMExpressionBuilder {
             case DMASTGradient gradient:
                 return new Gradient(gradient.Location,
                     new ArgumentList(gradient.Location, dmObject, proc, gradient.Parameters));
+            case DMASTRgb rgb:
+                return new Rgb(rgb.Location, new ArgumentList(rgb.Location, dmObject, proc, rgb.Parameters));
             case DMASTLocateCoordinates locateCoordinates:
                 return new LocateCoordinates(locateCoordinates.Location,
                     BuildExpression(locateCoordinates.X, dmObject, proc, inferredPath),

@@ -179,7 +179,7 @@ namespace DMCompiler.DM.Expressions {
                                 $"Calling matrix() with 5 arguments will always error when called at runtime");
                             break;
                         default: // BYOND always compiletimes here
-                            DMCompiler.Emit(WarningCode.TooManyArguments, _arguments.Location,
+                            DMCompiler.Emit(WarningCode.InvalidArgumentCount, _arguments.Location,
                                 $"Too many arguments to matrix() - got {_arguments.Length} arguments, expecting 6 or less");
                             break;
 

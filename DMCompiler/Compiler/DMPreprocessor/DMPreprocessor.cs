@@ -111,17 +111,17 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
                     if (wasTruthy.Value)
                         SkipIfBody(true);
                     else
-                        _lastIfEvaluations.Push((bool?)null);
+                        _lastIfEvaluations.Push(null);
                     break;
                 case TokenType.DM_Preproc_Warning:
                 case TokenType.DM_Preproc_Error:
                     HandleErrorOrWarningDirective(token);
                     break;
                 case TokenType.DM_Preproc_Pragma:
-                    HandlePragmaDirective(token);
+                    HandlePragmaDirective();
                     break;
                 case TokenType.DM_Preproc_EndIf:
-                    if (!_lastIfEvaluations.TryPop(out var _))
+                    if (!_lastIfEvaluations.TryPop(out _))
                         DMCompiler.Emit(WarningCode.BadDirective, token.Location, "Unexpected #endif");
                     break;
                 case TokenType.DM_Preproc_Identifier: {
@@ -596,13 +596,13 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
         }
     }
 
-    private void HandlePragmaDirective(Token pragmaDirective) {
+    private void HandlePragmaDirective() {
         Token warningNameToken = GetNextToken(true);
         WarningCode warningCode;
         switch(warningNameToken.Type) {
             case TokenType.DM_Preproc_Identifier: {
                 if (!Enum.TryParse(warningNameToken.Text, out warningCode)) {
-                    DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning '{warningNameToken.PrintableText}' does not exist");
+                    DMCompiler.Emit(WarningCode.InvalidWarningCode, warningNameToken.Location, $"Warning '{warningNameToken.PrintableText}' does not exist");
                     GetLineOfTokens(); // consume what's on this line and leave
                     return;
                 }
@@ -611,7 +611,7 @@ public sealed class DMPreprocessor(bool enableDirectives) : IEnumerable<Token> {
             }
             case TokenType.DM_Preproc_Number: {
                 if (!int.TryParse(warningNameToken.Text, out var intValue)) {
-                    DMCompiler.Emit(WarningCode.BadDirective, warningNameToken.Location, $"Warning OD{warningNameToken.PrintableText} does not exist");
+                    DMCompiler.Emit(WarningCode.InvalidWarningCode, warningNameToken.Location, $"Warning OD{warningNameToken.PrintableText} does not exist");
                     GetLineOfTokens();
                     return;
                 }

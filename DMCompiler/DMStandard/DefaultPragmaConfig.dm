@@ -4,6 +4,7 @@
 //1000-1999
 #pragma FileAlreadyIncluded warning
 #pragma MissingIncludedFile error
+#pragma InvalidWarningCode warning
 #pragma MisplacedDirective error
 #pragma UndefineMissingDirective warning
 #pragma DefinedMissingParen error
@@ -15,7 +16,6 @@
 #pragma SoftReservedKeyword error
 #pragma DuplicateVariable error
 #pragma DuplicateProcDefinition error
-#pragma TooManyArguments error
 #pragma PointlessParentCall warning
 #pragma PointlessBuiltinCall warning
 #pragma SuspiciousMatrixCall warning

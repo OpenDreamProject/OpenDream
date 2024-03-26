@@ -359,6 +359,10 @@ namespace DMCompiler.DM {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
+            if (name == "M") {
+                Console.WriteLine("foo");
+            }
+
             int localVarId = AllocLocalVariable(name);
             return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, valType));
         }

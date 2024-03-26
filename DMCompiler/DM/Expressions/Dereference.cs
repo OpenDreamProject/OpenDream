@@ -51,6 +51,28 @@ namespace DMCompiler.DM.Expressions {
         public override bool PathIsFuzzy => Path == null;
 
         private readonly Operation[] _operations;
+        private DMValueType? _valType;
+
+        public override DMValueType ValType {
+            get => _valType ?? DMValueType.Anything;
+            /*init {
+                foreach (var operation in _operations) {
+                    switch (operation) {
+                        case FieldOperation fieldOperation:
+                            ValType = dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything;
+                            break;
+
+                        case CallOperation callOperation:
+                            if (callOperation.Safe) {
+                                ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                            }
+
+                            ValType |= proc.ReturnTypes;
+                            break;
+                    }
+                }
+            }*/
+        }
 
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
@@ -81,7 +103,10 @@ namespace DMCompiler.DM.Expressions {
         private void EmitOperation(DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
             switch (operation) {
                 case FieldOperation fieldOperation:
-                    ValType = dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything;
+                    var valType = dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything;
+                    if (valType != DMValueType.Anything) {
+                        Console.WriteLine("foo");
+                    }
                     if (fieldOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
@@ -100,7 +125,7 @@ namespace DMCompiler.DM.Expressions {
                     if (callOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
-                    ,ValType = proc.ReturnTypes;
+                    //ValType = proc.ReturnTypes;
                     var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc);
                     proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                     break;

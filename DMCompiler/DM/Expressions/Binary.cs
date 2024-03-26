@@ -3,9 +3,9 @@ using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
-    internal abstract class BinaryOp(Location location, DMExpression LHS, DMExpression RHS) : DMExpression(location) {
-        protected DMExpression LHS { get; }
-        protected DMExpression RHS { get; }
+    internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
+        protected DMExpression LHS { get; } = lhs;
+        protected DMExpression RHS { get; } = rhs;
         public override DMValueType ValType => LHS.ValType;
     }
 
@@ -502,10 +502,6 @@ namespace DMCompiler.DM.Expressions {
 
             proc.AddLabel(endLabel);
 
-            if (LHS.ValType != RHS.ValType) {
-                DMCompiler.Emit(WarningCode.InvalidVarType, Location, $"Invalid var type {RHS.ValType}, expected {LHS}");
-            }
-
             if (LHS is ProcSelf self) {
                 if (proc.ReturnTypes != DMValueType.Anything && (proc.ReturnTypes & self.ValType) == 0) {
                     DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{proc.Name}(): Invalid implicit return type {self.ValType}, expected {proc.ReturnTypes}");
@@ -524,6 +520,10 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
+
+            if (LHS.ValType != RHS.ValType && LHS.ValType != DMValueType.Anything && LHS.ValType != DMValueType.Unimplemented) {
+                DMCompiler.Emit(WarningCode.InvalidVarType, Location, $"Invalid var type {RHS.ValType}, expected {LHS.ValType}");
+            }
         }
     }
     // x := y

@@ -109,7 +109,7 @@ namespace DMCompiler.DM.Expressions {
 
     // Identifier of field
     sealed class Field(Location location, DMVariable variable, DMValueType valType) : LValue(location, variable.Type) {
-        public readonly DMVariable Variable;
+        private readonly DMVariable Variable = variable;
 
         public override DMValueType ValType => valType;
 

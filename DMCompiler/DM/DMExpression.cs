@@ -10,7 +10,10 @@ namespace DMCompiler.DM;
 internal abstract class DMExpression(Location location) {
     public Location Location = location;
 
-    public virtual DMValueType ValType => DMValueType.Anything;
+    public virtual DMValueType ValType {
+        get { return DMValueType.Anything; }
+        init => value = DMValueType.Anything;
+    }
 
     // TODO: proc and dmObject can be null, address nullability contract
     public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {

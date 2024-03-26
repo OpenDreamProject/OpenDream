@@ -225,17 +225,17 @@ public sealed class DMFParser(DMFLexer lexer, ISerializationManager serializatio
                 else
                     Error($"Invalid attribute value ({valueText})");
             else if (Check(TokenType.Ternary)) {
-                List<DMFWinSet> ifValues = new();
-                List<DMFWinSet> elseValues = new();
-                while(TryGetAttribute(out var ifValue)){
-                    ifValues.Add(ifValue);
+                List<DMFWinSet> trueStatements = new();
+                List<DMFWinSet> falseStatements = new();
+                while(TryGetAttribute(out var statement)){
+                    trueStatements.Add(statement);
                 }
                 if(Check(TokenType.Colon)){ //not all ternarys have an else
-                    while(TryGetAttribute(out var elseValue)) {
-                        elseValues.Add(elseValue);
+                    while(TryGetAttribute(out var statement)){
+                        falseStatements.Add(statement);
                     }
                 }
-                winSet = new DMFWinSet(element, attributeToken.Text, valueText, ifValues, elseValues);
+                winSet = new DMFWinSet(element, attributeToken.Text, valueText, trueStatements, falseStatements);
                 return true;
             }
 

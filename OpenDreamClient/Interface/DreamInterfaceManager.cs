@@ -547,35 +547,35 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
                 } else {
-                    if(winSet.IfValues is not null) {
+                    if(winSet.TrueStatements is not null) {
                         InterfaceElement? conditionalElement = FindElementWithId(elementId);
                         if(conditionalElement is null)
                             _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
                         else
                             if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value, StringComparison.InvariantCultureIgnoreCase)) {
-                                foreach(DMFWinSet ifValue in winSet.IfValues) {
-                                    string? ifElementId = ifValue.Element ?? elementId;
-                                    InterfaceElement? ifElement = FindElementWithId(ifElementId);
-                                    if(ifElement is not null) {
+                                foreach(DMFWinSet statement in winSet.TrueStatements) {
+                                    string? statementElementId = statement.Element ?? elementId;
+                                    InterfaceElement? statementElement = FindElementWithId(statementElementId);
+                                    if(statementElement is not null) {
                                         MappingDataNode node = new() {
-                                            {ifValue.Attribute, HandleEmbeddedWinget(ifElementId, ifValue.Value)}
+                                            {statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value)}
                                         };
-                                        ifElement.PopulateElementDescriptor(node, _serializationManager);
+                                        statementElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
-                                        _sawmill.Error($"Invalid element on ternary \"{ifElementId}\"");
+                                        _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
                                 }
-                            } else if (winSet.ElseValues is not null){
-                                foreach(DMFWinSet elseValue in winSet.ElseValues) {
-                                    string? elseElementId = elseValue.Element ?? elementId;
-                                    InterfaceElement? elseElement = FindElementWithId(elseElementId);
-                                    if(elseElement is not null) {
+                            } else if (winSet.FalseStatements is not null){
+                                foreach(DMFWinSet statement in winSet.FalseStatements) {
+                                    string? statementElementId = statement.Element ?? elementId;
+                                    InterfaceElement? statementElement = FindElementWithId(statementElementId);
+                                    if(statementElement is not null) {
                                         MappingDataNode node = new() {
-                                            {elseValue.Attribute, HandleEmbeddedWinget(elseElementId, elseValue.Value)}
+                                            {statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value)}
                                         };
-                                        elseElement.PopulateElementDescriptor(node, _serializationManager);
+                                        statementElement.PopulateElementDescriptor(node, _serializationManager);
                                     } else {
-                                        _sawmill.Error($"Invalid element on ternary \"{elseElementId}\"");
+                                        _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
                                     }
                                 }
                             }

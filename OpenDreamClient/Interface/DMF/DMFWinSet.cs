@@ -4,14 +4,16 @@ public sealed class DMFWinSet {
     public readonly string? Element;
     public readonly string Attribute;
     public readonly string Value;
-    public List<DMFWinSet>? IfValues;
-    public List<DMFWinSet>? ElseValues;
+    /// Winsets that are evaluated if Element.Attribute == Value
+    public List<DMFWinSet>? TrueStatements;
+    /// Winsets that are evaluated if Element.Attribute != Value
+    public List<DMFWinSet>? FalseStatements;
 
-    public DMFWinSet(string? element, string attribute, string value, List<DMFWinSet>? ifValue = null, List<DMFWinSet>? elseValue = null) {
+    public DMFWinSet(string? element, string attribute, string value, List<DMFWinSet>? trueStatements = null, List<DMFWinSet>? falseStatements = null) {
         Element = element;
         Attribute = attribute;
         Value = value;
-        IfValues = ifValue;
-        ElseValues = elseValue;
+        TrueStatements = trueStatements;
+        FalseStatements = falseStatements;
     }
 }

@@ -1,0 +1,12 @@
+<Control xmlns="https://spacestation14.io">
+    <LayoutContainer>
+        <BoxContainer Name="WipBox" MinWidth="100" Orientation="Vertical">
+            <Label Text="Work In Progress"
+                   StyleClasses="od-wip"/>
+            <Label Name="DebugWarningLabel"
+                   Text="{Loc 'main-menu-debug-warning'}"
+                   StyleClasses="od-important"
+                   Visible="False" />
+        </BoxContainer>
+    </LayoutContainer>
+</Control>

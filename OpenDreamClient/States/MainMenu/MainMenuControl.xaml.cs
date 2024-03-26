@@ -18,9 +18,7 @@ public sealed partial class MainMenuControl : Control {
 
     public MainMenuControl(IResourceCache resCache, IConfigurationManager configMan) {
         RobustXamlLoader.Load(this);
-
-        Panel.PanelOverride = new StyleBoxFlat(Color.Black);
-        WIPLabel.FontOverride = new VectorFont(resCache.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf"), 32);
+        InfoTexts.PanelOverride = new StyleBoxFlat(Color.Gray);
 
         LayoutContainer.SetAnchorPreset(this, LayoutContainer.LayoutPreset.Wide);
 
@@ -33,11 +31,5 @@ public sealed partial class MainMenuControl : Control {
 
         var currentUserName = configMan.GetCVar(CVars.PlayerName);
         UserNameBox.Text = currentUserName;
-
-        AddressBoxProtected.Text = "127.0.0.1:1212";
-
-#if DEBUG
-        DebugWarningLabel.Visible = true;
-#endif
     }
 }

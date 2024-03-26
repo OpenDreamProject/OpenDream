@@ -532,10 +532,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 return;
 
             // id=abc overrides the elements of other winsets without an element
-            string? elementOverride = null;
-            foreach(var winSet in winSets)
-                if(winSet.Attribute == "id" && winSet.Element == null)
-                    elementOverride = HandleEmbeddedWinget(controlId, winSet.Value);
+            string? elementOverride = winSets.FirstOrDefault(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
 
             foreach (DMFWinSet winSet in winSets) {
                 string? elementId = winSet.Element ?? elementOverride;

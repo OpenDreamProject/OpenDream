@@ -103,6 +103,10 @@ public sealed class DMASTGradient(Location location, DMASTCallParameter[] parame
     public readonly DMASTCallParameter[] Parameters = parameters;
 }
 
+public sealed class DMASTRgb(Location location, DMASTCallParameter[] parameters) : DMASTExpression(location) {
+    public readonly DMASTCallParameter[] Parameters = parameters;
+}
+
 public sealed class DMASTPick(Location location, DMASTPick.PickValue[] values) : DMASTExpression(location) {
     public struct PickValue(DMASTExpression? weight, DMASTExpression value) {
         public readonly DMASTExpression? Weight = weight;

@@ -45,7 +45,7 @@ public static class ClientPackaging {
                 ArgumentList = {
                     "build",
                     "OpenDreamClient/OpenDreamClient.csproj",
-                    "-c", "Release",
+                    "-c", options.BuildConfiguration,
                     "--nologo",
                     "/v:m",
                     "/t:Rebuild",

@@ -92,23 +92,30 @@ public sealed class ControlWindow : InterfaceControl {
     }
 
     public void UpdateAnchors() {
-        var windowSize = Size.GetValueOrDefault();
+        var windowSize = Size;
         if (windowSize.X == 0)
-            windowSize.X = 640;
+            windowSize.X = _canvas.PixelWidth;
         if (windowSize.Y == 0)
-            windowSize.Y = 440;
+            windowSize.Y = _canvas.PixelHeight;
+
+        ChildControls.Sort((a, b) => { //need a resort if size and pos have changed
+            if(a.Pos.X <= b.Pos.X || a.Pos.Y <= b.Pos.Y)
+                return 1;
+            else
+                return -1;
+        });
 
         for (int i = 0; i < ChildControls.Count; i++) {
             InterfaceControl control = ChildControls[i];
             var element = control.UIElement;
-            var elementPos = control.Pos.GetValueOrDefault();
-            var elementSize = control.Size.GetValueOrDefault();
+            var elementPos = control.Pos;
+            var elementSize = control.Size;
 
-            if (control.Size?.Y == 0) {
+            if (control.Size.Y == 0) {
                 elementSize.Y = (windowSize.Y - elementPos.Y);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
+                    if (ChildControls[i + 1].UIElement.Visible) {
+                        var nextElementPos = ChildControls[i + 1].Pos;
                         elementSize.Y = nextElementPos.Y - elementPos.Y;
                     }
                 }
@@ -116,11 +123,11 @@ public sealed class ControlWindow : InterfaceControl {
                 element.SetHeight = ((float)elementSize.Y / windowSize.Y) * _canvas.Height;
             }
 
-            if (control.Size?.X == 0) {
+            if (control.Size.X == 0) {
                 elementSize.X = (windowSize.X - elementPos.X);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
+                    if (ChildControls[i + 1].UIElement.Visible) {
+                        var nextElementPos = ChildControls[i + 1].Pos;
                         if (nextElementPos.X < (elementSize.X + elementPos.X) &&
                             nextElementPos.Y < (elementSize.Y + elementPos.Y))
                             elementSize.X = nextElementPos.X - elementPos.X;
@@ -225,8 +232,8 @@ public sealed class ControlWindow : InterfaceControl {
 
         // Can't have out-of-order components, so make sure they're ordered properly
         if (ChildControls.Count > 0) {
-            var prevPos = ChildControls[^1].Pos.GetValueOrDefault();
-            var curPos = control.Pos.GetValueOrDefault();
+            var prevPos = ChildControls[^1].Pos;
+            var curPos = control.Pos;
             if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                 ChildControls.Add(control);
             else {
@@ -235,7 +242,7 @@ public sealed class ControlWindow : InterfaceControl {
 
                 int i = 0;
                 while (i < ChildControls.Count) {
-                    prevPos = ChildControls[i].Pos.GetValueOrDefault();
+                    prevPos = ChildControls[i].Pos;
                     if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                         i++;
                     else

@@ -2613,6 +2613,12 @@ namespace DMCompiler.Compiler.DM {
                             return new DMASTLocate(callLoc, type, container);
                         }
                     }
+                    case "rgb": {
+                        if (callParameters.Length is < 3 or > 5)
+                            Error("Expected 3 to 5 arguments for rgb()");
+
+                        return new DMASTRgb(identifier.Location, callParameters);
+                    }
                     default:
                         return new DMASTProcCall(callLoc, new DMASTCallableProcIdentifier(callLoc, identifier.Identifier), callParameters);
                 }

@@ -19,4 +19,20 @@ internal sealed class ControlInput : InterfaceControl {
         _interfaceManager.RunCommand(_textBox.Text);
         _textBox.Clear();
     }
+
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+        ControlDescriptorInput inputDescriptor = (ControlDescriptorInput)ElementDescriptor;
+        _textBox.Text = inputDescriptor.Text ?? "";
+    }
+
+    public override bool TryGetProperty(string property, out string value) {
+        switch (property) {
+            case "text":
+                value = _textBox.Text;
+                return true;
+            default:
+                return base.TryGetProperty(property, out value);
+        }
+    }
 }

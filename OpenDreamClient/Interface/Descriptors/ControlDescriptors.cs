@@ -26,6 +26,8 @@ public partial class ControlDescriptor : ElementDescriptor {
     public bool IsDefault;
     [DataField("is-disabled")]
     public bool IsDisabled;
+    [DataField("saved-params")]
+    public string? SavedParams;
 }
 
 public sealed partial class WindowDescriptor : ControlDescriptor {
@@ -123,6 +125,8 @@ public sealed partial class ControlDescriptorChild : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorInput : ControlDescriptor {
+    [DataField("text")]
+    public string? Text;
 }
 
 public sealed partial class ControlDescriptorButton : ControlDescriptor {

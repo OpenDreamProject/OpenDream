@@ -477,8 +477,10 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // /a/b/c
-    internal sealed class Path(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
+    // no, this can't be called "Path" because of CS0542
+    internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
         public DreamPath Value { get; } = value;
+        public override DreamPath? Path => Value;
 
         /// <summary>
         /// The DMObject this expression resides in. Used for path searches.
@@ -623,6 +625,29 @@ namespace DMCompiler.DM.Expressions {
                 pathInfo = null;
                 return false;
             }
+        }
+    }
+
+    // TODO: Use this instead of ConstantPath for procs
+    /// <summary>
+    /// A reference to a proc
+    /// </summary>
+    internal sealed class ConstantProcReference(Location location, DMProc referencedProc) : Constant(location) {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.PushProc(referencedProc.Id);
+        }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => referencedProc.Name;
+
+        public override bool IsTruthy() => true;
+
+        public override bool TryAsJsonRepresentation(out object? json) {
+            json = new Dictionary<string, object> {
+                { "type", JsonVariableType.Proc },
+                { "value", referencedProc.Id }
+            };
+
+            return true;
         }
     }
 }

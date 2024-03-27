@@ -204,7 +204,7 @@ namespace OpenDreamRuntime.Resources {
         public bool CopyFile(DreamResource sourceFile, string destinationFilePath) {
             try {
                 var dir = Path.GetDirectoryName(destinationFilePath);
-                if (dir != null)
+                if (!string.IsNullOrEmpty(dir))
                     Directory.CreateDirectory(dir);
 
                 if (sourceFile.ResourceData == null)

@@ -11,6 +11,7 @@ public class InterfaceElement {
 
     public ElementDescriptor ElementDescriptor;
     [Dependency] protected readonly IDreamInterfaceManager _interfaceManager = default!;
+    [Dependency] private readonly ISerializationManager _serializationManager = default!;
     protected InterfaceElement(ElementDescriptor elementDescriptor) {
         ElementDescriptor = elementDescriptor;
         IoCManager.InjectDependencies(this);
@@ -36,8 +37,15 @@ public class InterfaceElement {
     /// Attempt to get a DMF property
     /// </summary>
     public virtual bool TryGetProperty(string property, out string value) {
-        value = string.Empty;
-        return false;
+        MappingDataNode original = (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
+        original.TryGet(property, out var valueNode);
+        if (valueNode != null) {
+            value = valueNode.ToString();
+            return true;
+        }else {
+            value = string.Empty;
+            return false;
+        }
     }
 
     protected virtual void UpdateElementDescriptor() {

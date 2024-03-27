@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using System.Web;
-using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -469,26 +468,26 @@ public sealed class DreamConnection {
     }
 
     public bool TryConvertPromptResponse(DreamValueType type, object? value, out DreamValue converted) {
-        if (type.HasFlag(DreamValueType.Null) && value == null) {
+        bool CanBe(DreamValueType canBeType) => (type == DreamValueType.Anything) || ((type & canBeType) != 0x0);
+
+        if (CanBe(DreamValueType.Null) && value == null) {
             converted = DreamValue.Null;
             return true;
-        } else if (type.HasFlag(DreamValueType.Text) || type.HasFlag(DreamValueType.Message)) {
-            if (value is string strVal) {
-                converted = new(strVal);
-                return true;
-            }
-        } else if (type.HasFlag(DreamValueType.Num) && value is float numVal) {
+        } else if (CanBe(DreamValueType.Text | DreamValueType.Message) && value is string strVal) {
+            converted = new(strVal);
+            return true;
+        } else if (CanBe(DreamValueType.Num) && value is float numVal) {
             converted = new DreamValue(numVal);
             return true;
-        } else if (type.HasFlag(DreamValueType.Color) && value is Color colorVal) {
+        } else if (CanBe(DreamValueType.Color) && value is Color colorVal) {
             converted = new DreamValue(colorVal.ToHexNoAlpha());
             return true;
-        } else if ((type & DreamValueType.AllAtomTypes) != 0x0 && value is ClientObjectReference clientRef) {
+        } else if (CanBe(type & DreamValueType.AllAtomTypes) && value is ClientObjectReference clientRef) {
             var atom = _dreamManager.GetFromClientReference(this, clientRef);
 
             if (atom != null) {
-                if ((atom.IsSubtypeOf(_objectTree.Obj) && !type.HasFlag(DreamValueType.Obj)) ||
-                    (atom.IsSubtypeOf(_objectTree.Mob) && !type.HasFlag(DreamValueType.Mob))) {
+                if ((atom.IsSubtypeOf(_objectTree.Obj) && !CanBe(DreamValueType.Obj)) ||
+                    (atom.IsSubtypeOf(_objectTree.Mob) && !CanBe(DreamValueType.Mob))) {
                     converted = default;
                     return false;
                 }

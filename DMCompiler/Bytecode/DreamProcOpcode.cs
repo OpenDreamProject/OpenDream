@@ -12,9 +12,9 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(stackDelta: 1)] PushType = 0x2,
     [OpcodeMetadata(stackDelta: 1)] PushString = 0x3,
     FormatString = 0x4,
-    [OpcodeMetadata(stackDelta: -2)]SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.
+    [OpcodeMetadata(stackDelta: -2)] SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.
     [OpcodeMetadata(stackDelta: 1)] PushReferenceValue = 0x6, // TODO: Local refs should be pure, and other refs that aren't modified
-    //0x7
+    Rgb = 0x7,
     [OpcodeMetadata(stackDelta: -1)] Add = 0x8,
     Assign = 0x9,
     Call = 0xA,

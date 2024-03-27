@@ -97,6 +97,10 @@ public sealed class DMASTGradient(Location location, DMASTCallParameter[] parame
     public readonly DMASTCallParameter[] Parameters = parameters;
 }
 
+public sealed class DMASTRgb(Location location, DMASTCallParameter[] parameters) : DMASTExpression(location) {
+    public readonly DMASTCallParameter[] Parameters = parameters;
+}
+
 public sealed class DMASTPick(Location location, DMASTPick.PickValue[] values) : DMASTExpression(location) {
     public struct PickValue(DMASTExpression? weight, DMASTExpression value) {
         public readonly DMASTExpression? Weight = weight;
@@ -232,3 +236,15 @@ public sealed class DMASTCallableProcIdentifier(Location location, string identi
 public sealed class DMASTCallableSuper(Location location) : DMASTExpression(location), IDMASTCallable;
 
 public sealed class DMASTCallableSelf(Location location) : DMASTExpression(location), IDMASTCallable;
+
+public sealed class DMASTScopeIdentifier(
+    Location location,
+    DMASTExpression? expression,
+    string identifier,
+    DMASTCallParameter[]? callArguments) : DMASTExpression(location), IDMASTCallable {
+    public readonly DMASTExpression? Expression = expression;
+    public readonly string Identifier = identifier;
+    public readonly DMASTCallParameter[]? CallArguments = callArguments;
+
+    public bool IsProcRef => CallArguments != null;
+}

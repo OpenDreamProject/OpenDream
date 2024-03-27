@@ -271,4 +271,30 @@ namespace OpenDreamShared.Dream {
         PassMouse = 1024,
         TileMover = 2048
     }
+
+    [Flags] //kinda, but only EASE_IN and EASE_OUT are used as bitflags, everything else is an enum
+    public enum AnimationEasing {
+        Linear = 0,
+        Sine = 1,
+        Circular = 2,
+        Cubic = 3,
+        Bounce = 4,
+        Elastic = 5,
+        Back = 6,
+        Quad = 7,
+        Jump = 8,
+        Ease_In = 64,
+        Ease_Out = 128,
+    }
+
+    [Flags]
+    public enum AnimationFlags {
+        None = 0,
+        ANIMATION_END_NOW = 1,
+        ANIMATION_LINEAR_TRANSFORM = 2,
+        ANIMATION_PARALLEL = 4,
+        ANIMATION_RELATIVE = 256,
+        ANIMATION_CONTINUE = 512,
+        ANIMATION_SLICE = 8
+    }
 }

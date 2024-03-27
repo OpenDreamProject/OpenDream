@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Resources;
+using System.Threading;
 
 namespace OpenDreamRuntime.Procs;
 
@@ -58,10 +59,16 @@ public sealed unsafe class NativeProc : DreamProc {
         public DreamResourceManager ResourceManager => Proc._resourceManager;
         public WalkManager WalkManager => Proc._walkManager;
         public DreamObjectTree ObjectTree => Proc._objectTree;
+        private readonly DreamThread _thread;
+        public DreamValue? LastAnimatedObject {
+            get => _thread.LastAnimatedObject;
+            set => _thread.LastAnimatedObject = value;
+        }
 
-        public Bundle(NativeProc proc, DreamProcArguments arguments) {
+        public Bundle(NativeProc proc, DreamThread thread, DreamProcArguments arguments) {
             Proc = proc;
             Arguments = arguments.Values;
+            _thread = thread;
         }
 
         [Pure]
@@ -101,7 +108,7 @@ public sealed unsafe class NativeProc : DreamProc {
     }
 
     public DreamValue Call(DreamThread thread, DreamObject? src, DreamObject? usr, DreamProcArguments arguments) {
-        var bundle = new Bundle(this, arguments);
+        var bundle = new Bundle(this, thread, arguments);
 
         // TODO: Include this call in the thread's stack in error traces
         return _handler(bundle, src, usr);

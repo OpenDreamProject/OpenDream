@@ -191,6 +191,11 @@ namespace OpenDreamRuntime {
         // The amount of stack frames containing `WaitFor = false`
         private int _syncCount = 0;
 
+        /// <summary>
+        /// Stores the last object that was animated, so that animate() can be called without the object parameter. Does not need to be passed to spawn calls, only current execution context.
+        /// </summary>
+        public DreamValue? LastAnimatedObject = null;
+
         public string Name { get; }
 
         internal DreamDebugManager.ThreadStepMode? StepMode { get; set; }

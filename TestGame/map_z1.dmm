@@ -36,13 +36,15 @@
 "J" = (/obj/order_test_target,/turf,/area)
 "K" = (/obj/complex_overlay_test,/turf,/area)
 "L" = (/obj/float_layer_test,/turf,/area)
+"O" = (/obj/plaque/animation_test,/turf,/area)
+"Z" = (/obj/button/animation_test,/turf,/area)
 
 (1,1,1) = {"
 bbbbbbbbbbbbbbbbbbbbbb
 bedciklwopsuaaaaaaaaab
 bfghjmnxqrtvaaaaaaaaab
-byADFGaaaaaaaaaaaaaaab
-bzBEHIaaaaaaaaaaaaaaab
+byADFGZaaaaaaaaaaaaaab
+bzBEHIOaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab
 baaaaaaaaaaaaaaaaaaaab

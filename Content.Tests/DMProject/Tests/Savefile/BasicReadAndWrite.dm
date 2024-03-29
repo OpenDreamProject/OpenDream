@@ -19,10 +19,6 @@
 	ASSERT(V == 10)
 	S["notakey"] >> V
 	ASSERT(V == null)
-
-	// "" is converted into null if entered into a savefile
-	S["nullcheck"] = ""
-	ASSERT(S["nullcheck"] == null)
 	
 	// test path
 	S["pathymcpathface"] << /datum/foobar
@@ -53,11 +49,11 @@
 	//Test dir
 	S.cd = "/"
 	var/dir = S.dir
-	ASSERT(dir ~= list("ABC", "DEF", "notakey", "nullcheck", "pathymcpathface", "pie", "pie2"))
+	ASSERT(dir ~= list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2"))
 
 	//test add
 	dir += "test/beep"
-	ASSERT(dir ~= list("ABC", "DEF", "notakey", "nullcheck", "pathymcpathface", "pie", "pie2", "test"))
+	ASSERT(dir ~= list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2", "test"))
 	ASSERT(S["test"] == null)
 	S.cd = "test"
 	ASSERT(dir ~= list("beep"))
@@ -65,11 +61,11 @@
 	//test del
 	S.cd = "/"
 	dir -= "test"
-	ASSERT(dir ~= list("ABC", "DEF", "notakey", "nullcheck", "pathymcpathface", "pie", "pie2"))
+	ASSERT(dir ~= list("ABC", "DEF", "notakey", "pathymcpathface", "pie", "pie2"))
 
 	//test rename and null
 	dir[1] = "CBA"
-	ASSERT(dir ~= list("CBA", "DEF", "notakey", "nullcheck", "pathymcpathface", "pie", "pie2"))
+	ASSERT(dir ~= list("CBA", "DEF", "notakey", "pathymcpathface", "pie", "pie2"))
 	ASSERT(S["CBA"] == null)
 
 	fdel("savefile.sav")

@@ -126,7 +126,7 @@ public static class ServerPackaging {
                 ArgumentList = {
                     "build",
                     "OpenDreamServer/OpenDreamServer.csproj",
-                    "-c", "Release",
+                    "-c", options.BuildConfiguration,
                     "--nologo",
                     "/v:m",
                     $"/p:TargetOS={platform.TargetOs}",
@@ -137,7 +137,7 @@ public static class ServerPackaging {
                 }
             }).Wait();
 
-            PublishClientServer(platform.RId, platform.TargetOs);
+            PublishClientServer(platform.RId, platform.TargetOs, options.BuildConfiguration);
         }
 
         string releaseDir = options.OutputDir;
@@ -155,7 +155,7 @@ public static class ServerPackaging {
         }
     }
 
-    private static void PublishClientServer(string platformRId, string targetOs) {
+    private static void PublishClientServer(string platformRId, string targetOs, string buildConfig) {
         ProcessHelpers.RunCheck(new ProcessStartInfo {
             FileName = "dotnet",
             ArgumentList = {
@@ -163,7 +163,7 @@ public static class ServerPackaging {
                 "RobustToolbox/Robust.Server/Robust.Server.csproj",
                 "--runtime", platformRId,
                 "--no-self-contained",
-                "-c", "Release",
+                "-c", buildConfig,
                 $"/p:TargetOS={targetOs}",
                 "/p:FullRelease=True",
                 "/m"

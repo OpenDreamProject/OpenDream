@@ -53,10 +53,12 @@ internal sealed class ControlBrowser : InterfaceControl {
                 OnHideEvent();
             }
         };
+
         if(ControlDescriptor.IsVisible)
             OnShowEvent();
         else
             OnHideEvent();
+
         return _webView;
     }
 
@@ -64,11 +66,14 @@ internal sealed class ControlBrowser : InterfaceControl {
         if (jsFunction == null) return;
 
         // Prepare the argument to be used in JS
-        value = HttpUtility.UrlDecode(value);
-        value = HttpUtility.JavaScriptStringEncode(value);
-
+        //output is formatted by list2params sometimes, which means raw strings are url encoded, but the message contains & chars which are not encoded that are the params
+        //so we split on &, url decode the parts, and then join them back together with , as the separator for the JS params
+        var parts = value.Split('&');
+        for (var i = 0; i < parts.Length; i++) {
+            parts[i] = "\""+HttpUtility.JavaScriptStringEncode(HttpUtility.UrlDecode(parts[i]))+"\""; //wrap in quotes and encode for JS
+        }
         // Insert the values directly into JS and execute it (what could go wrong??)
-        _webView.ExecuteJavaScript($"{jsFunction}(\"{value}\")");
+        _webView.ExecuteJavaScript($"{jsFunction}({string.Join(",", parts)})");
     }
 
     public void SetFileSource(ResPath filepath, bool userData) {
@@ -157,16 +162,16 @@ internal sealed class ControlBrowser : InterfaceControl {
         _interfaceManager.WinSet(element, modifiedQuery);
     }
 
-    public void OnShowEvent() {
+    private void OnShowEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (controlDescriptor.OnShowCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
         }
     }
 
-    public void OnHideEvent() {
+    private void OnHideEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (controlDescriptor.OnHideCommand != null) {
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
             _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
         }
     }

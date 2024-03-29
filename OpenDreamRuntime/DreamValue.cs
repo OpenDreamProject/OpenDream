@@ -111,11 +111,6 @@ namespace OpenDreamRuntime {
             get => Type == DreamValueType.DreamObject && (_refValue == null || Unsafe.As<DreamObject>(_refValue).Deleted);
         }
 
-        private DreamValue(DreamValueType type, object refValue) {
-            Type = type;
-            _refValue = refValue;
-        }
-
         public override string ToString() {
             if (Type == DreamValueType.Float)
                 return _floatValue.ToString();

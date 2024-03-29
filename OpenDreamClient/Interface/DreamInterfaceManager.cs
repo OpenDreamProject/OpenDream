@@ -484,8 +484,14 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public void WinSet(string? controlId, string winsetParams) {
-        DMFLexer lexer = new DMFLexer(winsetParams);
-        DMFParser parser = new DMFParser(lexer, _serializationManager);
+        DMFParser parser;
+        try{
+            var lexer = new DMFLexer(winsetParams);
+            parser = new DMFParser(lexer, _serializationManager);
+        } catch (Exception e) {
+            _sawmill.Error($"Error parsing winset: {e}");
+            return;
+        }
 
         bool CheckParserErrors() {
             if (parser.Errors.Count <= 0)
@@ -498,6 +504,27 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             return true;
         }
 
+        string HandleEmbeddedWinget(string? controlId, string value) {
+            string result = value;
+            int startPos = result.IndexOf("[[", StringComparison.Ordinal);
+            while(startPos > -1){
+                int endPos = result.IndexOf("]]", startPos, StringComparison.Ordinal);
+                if(endPos == -1)
+                    break;
+                string inner = result.Substring(startPos+2, endPos-startPos-2);
+                string[] elementSplit = inner.Split('.');
+                string innerControlId = controlId ?? "";
+                if(elementSplit.Length > 1){
+                    innerControlId = (string.IsNullOrEmpty(innerControlId) ? "" : innerControlId+".")+string.Join(".", elementSplit[..^1]);
+                    inner = elementSplit[^1];
+                }
+                string innerResult = WinGet(innerControlId, inner);
+                result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
+                startPos = result.IndexOf("[[", StringComparison.Ordinal);
+            }
+            return result;
+        }
+
         if (string.IsNullOrEmpty(controlId)) {
             List<DMFWinSet> winSets = parser.GlobalWinSet();
 
@@ -505,27 +532,61 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 return;
 
             // id=abc overrides the elements of other winsets without an element
-            string? elementOverride = winSets.FirstOrNull(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
+            string? elementOverride = winSets.FirstOrDefault(winSet => winSet.Element == null && winSet.Attribute == "id")?.Value;
 
             foreach (DMFWinSet winSet in winSets) {
                 string? elementId = winSet.Element ?? elementOverride;
 
                 if (elementId == null) {
                     if (winSet.Attribute == "command") {
-                        RunCommand(winSet.Value);
+                        RunCommand(HandleEmbeddedWinget(controlId, winSet.Value));
                     } else {
                         _sawmill.Error($"Invalid global winset \"{winsetParams}\"");
                     }
                 } else {
-                    InterfaceElement? element = FindElementWithId(elementId);
-                    MappingDataNode node = new() {
-                        {winSet.Attribute, winSet.Value}
-                    };
-
-                    if (element != null) {
-                        element.PopulateElementDescriptor(node, _serializationManager);
+                    if(winSet.TrueStatements is not null) {
+                        InterfaceElement? conditionalElement = FindElementWithId(elementId);
+                        if(conditionalElement is null)
+                            _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
+                        else
+                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value, StringComparison.InvariantCultureIgnoreCase)) {
+                                foreach(DMFWinSet statement in winSet.TrueStatements) {
+                                    string? statementElementId = statement.Element ?? elementId;
+                                    InterfaceElement? statementElement = FindElementWithId(statementElementId);
+                                    if(statementElement is not null) {
+                                        MappingDataNode node = new() {
+                                            {statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value)}
+                                        };
+                                        statementElement.PopulateElementDescriptor(node, _serializationManager);
+                                    } else {
+                                        _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
+                                    }
+                                }
+                            } else if (winSet.FalseStatements is not null){
+                                foreach(DMFWinSet statement in winSet.FalseStatements) {
+                                    string? statementElementId = statement.Element ?? elementId;
+                                    InterfaceElement? statementElement = FindElementWithId(statementElementId);
+                                    if(statementElement is not null) {
+                                        MappingDataNode node = new() {
+                                            {statement.Attribute, HandleEmbeddedWinget(statementElementId, statement.Value)}
+                                        };
+                                        statementElement.PopulateElementDescriptor(node, _serializationManager);
+                                    } else {
+                                        _sawmill.Error($"Invalid element on ternary \"{statementElementId}\"");
+                                    }
+                                }
+                            }
                     } else {
-                        _sawmill.Error($"Invalid element \"{elementId}\"");
+                        InterfaceElement? element = FindElementWithId(elementId);
+                        MappingDataNode node = new() {
+                            {winSet.Attribute, HandleEmbeddedWinget(elementId, winSet.Value)}
+                        };
+
+                        if (element != null) {
+                            element.PopulateElementDescriptor(node, _serializationManager);
+                        } else {
+                            _sawmill.Error($"Invalid element \"{elementId}\"");
+                        }
                     }
                 }
             }
@@ -558,6 +619,52 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
     }
 
     public string WinGet(string controlId, string queryValue) {
+        bool ParseAndTryGet(InterfaceElement element, string query, out string result) {
+            //parse "as blah" from query if it's there
+            string[] querySplit = query.Split(" as ");
+            if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
+                return element.TryGetProperty(query, out result);
+            else{
+                if(!element.TryGetProperty(querySplit[0], out result))
+                    return false;
+/*
+arg
+    Value is formatted as if it's an argument on a command line. Numbers are left alone; booleans are 0 or 1; size and position have their X and Y values separated by a space; pretty much everything else is DM-escaped and enclosed in quotes.
+escaped
+    DM-escape the value as if it's in a quoted string but do not include the quotes. Size and position values both use , to separate their X and Y values.
+string
+    Value is formatted as a DM-escaped string with surrounding quotes.
+params
+    Format value for a URL-encoded parameter list (see list2params), escaping characters as needed.
+json
+    JSON formatting. Numbers are left unchanged; size or position values are turned into objects with x and y items; boolean values are true or false.
+json-dm
+    JSON formatting, but DM-escaped so it can be included in a quoted string. Quotes are not included.
+raw
+    Does not change the value's text representation in any way; assumes it's already formatted correctly for the purpose. This is similar to as arg but does no escaping and no quotes.
+*/
+                switch(querySplit[1]){ //TODO: Implement these
+                    case "arg":
+                        break;
+                    case "escaped":
+                        break;
+                    case "string":
+                        break;
+                    case "params":
+                        break;
+                    case "json":
+                        break;
+                    case "json-dm":
+                        break;
+                    case "raw":
+                        break;
+                    default:
+                        _sawmill.Error($"Invalid winget query function \"{querySplit[1]}\" in \"{query}\"");
+                        return false;
+                }
+                return true;
+            }
+        }
         string GetProperty(string elementId) {
             var element = FindElementWithId(elementId);
             if (element == null) {
@@ -565,10 +672,20 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 return string.Empty;
             }
 
-            if (!element.TryGetProperty(queryValue, out var value))
-                _sawmill.Error($"Could not winget property {queryValue} on {element.Id}");
+            var multiQuery = queryValue.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+            if(multiQuery.Length > 1) {
+                var result = "";
+                foreach(var query in multiQuery) {
+                    if (!ParseAndTryGet(element, query, out var queryResult))
+                        _sawmill.Error($"Could not winget property {query} on {element.Id}");
+                    result += query+"="+queryResult + ";";
+                }
+                return result.TrimEnd(';');
+            } else if (ParseAndTryGet(element, queryValue, out var value))
+                return value;
 
-            return value;
+            _sawmill.Error($"Could not winget property {queryValue} on {element.Id}");
+            return string.Empty;
         }
 
         var elementIds = controlId.Split(';', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
@@ -749,6 +866,7 @@ public interface IDreamInterfaceManager {
     void SaveScreenshot(bool openDialog);
     void LoadInterfaceFromSource(string source);
 
+    public void OpenAlert(string title, string message, string button1, string? button2, string? button3, Action<DreamValueType, object?>? onClose);
     void Prompt(DreamValueType types, string title, string message, string defaultValue, Action<DreamValueType, object?>? onClose);
     void RunCommand(string fullCommand);
     void StartRepeatingCommand(string command);

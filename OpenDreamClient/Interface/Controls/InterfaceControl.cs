@@ -9,8 +9,8 @@ namespace OpenDreamClient.Interface.Controls;
 public abstract class InterfaceControl : InterfaceElement {
     public readonly Control UIElement;
     public bool IsDefault => ControlDescriptor.IsDefault;
-    public Vector2i? Size => ControlDescriptor.Size;
-    public Vector2i? Pos => ControlDescriptor.Pos;
+    public Vector2i Size => ControlDescriptor.Size.GetValueOrDefault();
+    public Vector2i Pos => ControlDescriptor.Pos.GetValueOrDefault();
     public Vector2i? Anchor1 => ControlDescriptor.Anchor1;
     public Vector2i? Anchor2 => ControlDescriptor.Anchor2;
 
@@ -67,6 +67,9 @@ public abstract class InterfaceControl : InterfaceElement {
                 return true;
             case "is-disabled":
                 value = ControlDescriptor.IsDisabled.ToString();
+                return true;
+            case "pos":
+                value = $"{UIElement.Position.X},{UIElement.Position.Y}";
                 return true;
             default:
                 return base.TryGetProperty(property, out value);

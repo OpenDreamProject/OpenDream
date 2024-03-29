@@ -8,7 +8,6 @@ namespace OpenDreamClient.Interface.Controls;
 public sealed class ControlWindow : InterfaceControl {
     [Dependency] private readonly IClyde _clyde = default!;
     [Dependency] private readonly IUserInterfaceManager _uiMgr = default!;
-    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
     private readonly ISawmill _sawmill = Logger.GetSawmill("opendream.window");
 
@@ -18,6 +17,7 @@ public sealed class ControlWindow : InterfaceControl {
 
     public readonly List<InterfaceControl> ChildControls = new();
 
+    public string Title => WindowDescriptor.Title ?? (WindowDescriptor.IsDefault ? "OpenDream World" : WindowDescriptor.Id);
     public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
@@ -67,9 +67,10 @@ public sealed class ControlWindow : InterfaceControl {
             window.SetHeight = window.MaxHeight;
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
-            if (WindowDescriptor.OnClose != null) {
+            if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose)) {
                 _interfaceManager.RunCommand(WindowDescriptor.OnClose);
             }
+
             _myWindow = (null, _myWindow.clydeWindow);
         };
         window.StartupLocation = WindowStartupLocation.CenterOwner;
@@ -91,23 +92,30 @@ public sealed class ControlWindow : InterfaceControl {
     }
 
     public void UpdateAnchors() {
-        var windowSize = Size.GetValueOrDefault();
+        var windowSize = Size;
         if (windowSize.X == 0)
-            windowSize.X = 640;
+            windowSize.X = _canvas.PixelWidth;
         if (windowSize.Y == 0)
-            windowSize.Y = 440;
+            windowSize.Y = _canvas.PixelHeight;
+
+        ChildControls.Sort((a, b) => { //need a resort if size and pos have changed
+            if(a.Pos.X <= b.Pos.X || a.Pos.Y <= b.Pos.Y)
+                return 1;
+            else
+                return -1;
+        });
 
         for (int i = 0; i < ChildControls.Count; i++) {
             InterfaceControl control = ChildControls[i];
             var element = control.UIElement;
-            var elementPos = control.Pos.GetValueOrDefault();
-            var elementSize = control.Size.GetValueOrDefault();
+            var elementPos = control.Pos;
+            var elementSize = control.Size;
 
-            if (control.Size?.Y == 0) {
+            if (control.Size.Y == 0) {
                 elementSize.Y = (windowSize.Y - elementPos.Y);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
+                    if (ChildControls[i + 1].UIElement.Visible) {
+                        var nextElementPos = ChildControls[i + 1].Pos;
                         elementSize.Y = nextElementPos.Y - elementPos.Y;
                     }
                 }
@@ -115,11 +123,11 @@ public sealed class ControlWindow : InterfaceControl {
                 element.SetHeight = ((float)elementSize.Y / windowSize.Y) * _canvas.Height;
             }
 
-            if (control.Size?.X == 0) {
+            if (control.Size.X == 0) {
                 elementSize.X = (windowSize.X - elementPos.X);
                 if (ChildControls.Count - 1 > i) {
-                    if (ChildControls[i + 1].Pos != null && ChildControls[i + 1].UIElement.Visible) {
-                        var nextElementPos = ChildControls[i + 1].Pos.GetValueOrDefault();
+                    if (ChildControls[i + 1].UIElement.Visible) {
+                        var nextElementPos = ChildControls[i + 1].Pos;
                         if (nextElementPos.X < (elementSize.X + elementPos.X) &&
                             nextElementPos.Y < (elementSize.Y + elementPos.Y))
                             elementSize.X = nextElementPos.X - elementPos.X;
@@ -151,7 +159,6 @@ public sealed class ControlWindow : InterfaceControl {
                         element.SetWidth = Math.Max(width, 0);
                         element.SetHeight = Math.Max(height, 0);
                     }
-
                 }
             }
         }
@@ -160,6 +167,7 @@ public sealed class ControlWindow : InterfaceControl {
     private void UpdateWindowAttributes((OSWindow? osWindow, IClydeWindow? clydeWindow) windowRoot) {
         // TODO: this would probably be cleaner if an OSWindow for MainWindow was available.
         var (osWindow, clydeWindow) = windowRoot;
+
         //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
         if(osWindow == null && clydeWindow == null) {
             if (WindowDescriptor.IsVisible) {
@@ -167,15 +175,15 @@ public sealed class ControlWindow : InterfaceControl {
                 return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
             }
         }
+
         if(osWindow != null && !osWindow.IsOpen) {
             if (WindowDescriptor.IsVisible) {
                 osWindow.Show();
             }
         }
 
-        var title = WindowDescriptor.Title ?? "OpenDream World";
-        if (osWindow != null) osWindow.Title = title;
-        else if (clydeWindow != null) clydeWindow.Title = title;
+        if (osWindow != null) osWindow.Title = Title;
+        else if (clydeWindow != null) clydeWindow.Title = Title;
 
         WindowRoot? root = null;
         if (osWindow?.Window != null)
@@ -224,8 +232,8 @@ public sealed class ControlWindow : InterfaceControl {
 
         // Can't have out-of-order components, so make sure they're ordered properly
         if (ChildControls.Count > 0) {
-            var prevPos = ChildControls[^1].Pos.GetValueOrDefault();
-            var curPos = control.Pos.GetValueOrDefault();
+            var prevPos = ChildControls[^1].Pos;
+            var curPos = control.Pos;
             if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                 ChildControls.Add(control);
             else {
@@ -234,7 +242,7 @@ public sealed class ControlWindow : InterfaceControl {
 
                 int i = 0;
                 while (i < ChildControls.Count) {
-                    prevPos = ChildControls[i].Pos.GetValueOrDefault();
+                    prevPos = ChildControls[i].Pos;
                     if (prevPos.X <= curPos.X && prevPos.Y <= curPos.Y)
                         i++;
                     else
@@ -271,5 +279,48 @@ public sealed class ControlWindow : InterfaceControl {
 
     private void CanvasOnResized() {
         UpdateAnchors();
+    }
+
+    public override bool TryGetProperty(string property, out string value) {
+        switch (property) {
+            case "inner-size":
+                value = $"{_canvas.Width}x{_canvas.Height}";
+                return true;
+            case "outer-size":
+                if(_myWindow.osWindow is not null){
+                    value = $"{_myWindow.osWindow.Width}x{_myWindow.osWindow.Height}";
+                    return true;
+                } else if(_myWindow.clydeWindow is not null){
+                    value = $"{_myWindow.clydeWindow.Size.X}x{_myWindow.clydeWindow.Size.Y}";
+                    return true;
+                } else {
+                    value = $"{UIElement.Size.X}x{UIElement.Size.Y}";
+                    return true;
+                }
+            case "is-minimized":
+                if(_myWindow.osWindow?.ClydeWindow != null){
+                    value = _myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else if(_myWindow.clydeWindow is not null){
+                    value = _myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else {
+                    value = "false";
+                    return true;
+                }
+            case "is-maximized": //TODO this is currently "not isMinimised" because RT doesn't expose a maximised check
+                if(_myWindow.osWindow?.ClydeWindow != null){
+                    value = !_myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else if(_myWindow.clydeWindow is not null){
+                    value = !_myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                    return true;
+                } else {
+                    value = "false";
+                    return true;
+                }
+            default:
+                return base.TryGetProperty(property, out value);
+        }
     }
 }

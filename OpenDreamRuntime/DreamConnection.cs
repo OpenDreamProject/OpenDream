@@ -1,6 +1,5 @@
 using System.Threading.Tasks;
 using System.Web;
-using DMCompiler.DM;
 using OpenDreamRuntime.Objects;
 using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.Native;
@@ -139,7 +138,7 @@ public sealed class DreamConnection {
         _currentlyUpdatingStat = true;
         _statPanels.Clear();
 
-        DreamThread.Run("Stat", async (state) => {
+        DreamThread.Run("Stat", async state => {
             try {
                 var statProc = Client.GetProc("Stat");
 
@@ -188,13 +187,8 @@ public sealed class DreamConnection {
             return;
         }
 
-        DreamValue value = message.Type switch {
-            DreamValueType.Null => DreamValue.Null,
-            DreamValueType.Text or DreamValueType.Message => new DreamValue((string)message.Value),
-            DreamValueType.Num => new DreamValue((float)message.Value),
-            DreamValueType.Color => new DreamValue(((Color)message.Value).ToHexNoAlpha()),
-            _ => throw new Exception("Invalid prompt response '" + message.Type + "'")
-        };
+        if (!TryConvertPromptResponse(message.Type, message.Value, out var value))
+            throw new Exception($"Invalid prompt response '{value}'");
 
         promptEvent.Invoke(value);
         _promptEvents.Remove(message.PromptId);
@@ -471,5 +465,39 @@ public sealed class DreamConnection {
         };
 
         Session?.ConnectedClient.SendMessage(msg);
+    }
+
+    public bool TryConvertPromptResponse(DreamValueType type, object? value, out DreamValue converted) {
+        bool CanBe(DreamValueType canBeType) => (type == DreamValueType.Anything) || ((type & canBeType) != 0x0);
+
+        if (CanBe(DreamValueType.Null) && value == null) {
+            converted = DreamValue.Null;
+            return true;
+        } else if (CanBe(DreamValueType.Text | DreamValueType.Message) && value is string strVal) {
+            converted = new(strVal);
+            return true;
+        } else if (CanBe(DreamValueType.Num) && value is float numVal) {
+            converted = new DreamValue(numVal);
+            return true;
+        } else if (CanBe(DreamValueType.Color) && value is Color colorVal) {
+            converted = new DreamValue(colorVal.ToHexNoAlpha());
+            return true;
+        } else if (CanBe(type & DreamValueType.AllAtomTypes) && value is ClientObjectReference clientRef) {
+            var atom = _dreamManager.GetFromClientReference(this, clientRef);
+
+            if (atom != null) {
+                if ((atom.IsSubtypeOf(_objectTree.Obj) && !CanBe(DreamValueType.Obj)) ||
+                    (atom.IsSubtypeOf(_objectTree.Mob) && !CanBe(DreamValueType.Mob))) {
+                    converted = default;
+                    return false;
+                }
+
+                converted = new(atom);
+                return true;
+            }
+        }
+
+        converted = default;
+        return false;
     }
 }

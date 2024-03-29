@@ -172,37 +172,50 @@ namespace OpenDreamRuntime.Procs {
                     if (!state.Proc.ObjectTree.TryGetTreeEntry(pathString, out objectType)) {
                         ThrowCannotCreateUnknownObject(val);
                     }
+                } else if (val.TryGetValueAsProc(out var proc)) { // new /proc/proc_name(Destination,Name,Desc)
+                    var arguments = state.PopProcArguments(null, argumentInfo.Type, argumentInfo.StackSize);
+                    var destination = arguments.GetArgument(0);
+
+                    // TODO: Name and Desc arguments
+
+                    if (destination.TryGetValueAsDreamObject<DreamObjectAtom>(out var atom)) {
+                        state.Proc.AtomManager.UpdateAppearance(atom, appearance => {
+                            state.Proc.VerbSystem.RegisterVerb(proc);
+
+                            appearance.Verbs.Add(proc.VerbId!.Value);
+                        });
+                    } else if (destination.TryGetValueAsDreamObject<DreamObjectClient>(out var client)) {
+                        client.ClientVerbs.AddValue(val);
+                    }
+
+                    return ProcStatus.Continue;
                 } else {
                     ThrowCannotCreateObjectFromInvalid(val);
                 }
             }
 
             var objectDef = objectType.ObjectDefinition;
-            var proc = objectDef.GetProc("New");
-            var arguments = state.PopProcArguments(proc, argumentInfo.Type, argumentInfo.StackSize);
+            var newProc = objectDef.GetProc("New");
+            var newArguments = state.PopProcArguments(newProc, argumentInfo.Type, argumentInfo.StackSize);
 
             if (objectDef.IsSubtypeOf(state.Proc.ObjectTree.Turf)) {
                 // Turfs are special. They're never created outside of map initialization
                 // So instead this will replace an existing turf's type and return that same turf
-                DreamValue loc = arguments.GetArgument(0);
+                DreamValue loc = newArguments.GetArgument(0);
                 if (!loc.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf))
                     ThrowInvalidTurfLoc(loc);
 
-                state.Proc.DreamMapManager.SetTurf(turf, objectDef, arguments);
+                state.Proc.DreamMapManager.SetTurf(turf, objectDef, newArguments);
 
                 state.Push(loc);
                 return ProcStatus.Continue;
             }
 
-            DreamObject newObject = state.Proc.ObjectTree.CreateObject(objectType);
-            var s = newObject.InitProc(state.Thread, state.Usr, arguments);
-            if (s is not null) {
-                state.Thread.PushProcState(s);
-                return ProcStatus.Called;
-            }
+            var newObject = state.Proc.ObjectTree.CreateObject(objectType);
+            var s = newObject.InitProc(state.Thread, state.Usr, newArguments);
 
-            state.Push(new DreamValue(newObject));
-            return ProcStatus.Continue;
+            state.Thread.PushProcState(s);
+            return ProcStatus.Called;
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -1918,6 +1931,117 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
+        public static ProcStatus Rgb(DMProcState state) {
+            var argumentInfo = state.ReadProcArguments();
+            var argumentValues = state.PopCount(argumentInfo.StackSize);
+            var arguments = state.CollectProcArguments(argumentValues, argumentInfo.Type, argumentInfo.StackSize);
+
+            DreamValue color1 = default;
+            DreamValue color2 = default;
+            DreamValue color3 = default;
+            DreamValue a = default;
+            ColorHelpers.ColorSpace space = ColorHelpers.ColorSpace.RGB;
+
+            if (arguments.Item1 != null) {
+                if (arguments.Item1.Length is < 3 or > 5)
+                    throw new Exception("Expected 3 to 5 arguments for rgb()");
+
+                color1 = arguments.Item1[0];
+                color2 = arguments.Item1[1];
+                color3 = arguments.Item1[2];
+                a = (arguments.Item1.Length >= 4) ? arguments.Item1[3] : DreamValue.Null;
+                if (arguments.Item1.Length == 5)
+                    space = (ColorHelpers.ColorSpace)(int)arguments.Item1[4].UnsafeGetValueAsFloat();
+            } else if (arguments.Item2 != null) {
+                foreach (var arg in arguments.Item2) {
+                    if (arg.Key.TryGetValueAsInteger(out var position)) {
+                        switch (position) {
+                            case 1: color1 = arg.Value; break;
+                            case 2: color2 = arg.Value; break;
+                            case 3: color3 = arg.Value; break;
+                            case 4: a = arg.Value; break;
+                            case 5: space = (ColorHelpers.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat(); break;
+                            default: throw new Exception($"Invalid argument key {position}");
+                        }
+                    } else {
+                        var name = arg.Key.MustGetValueAsString();
+
+                        if (name.StartsWith("r", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
+                            color1 = arg.Value;
+                            space = ColorHelpers.ColorSpace.RGB;
+                        } else if (name.StartsWith("g", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
+                            color2 = arg.Value;
+                            space = ColorHelpers.ColorSpace.RGB;
+                        } else if (name.StartsWith("b", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
+                            color3 = arg.Value;
+                            space = ColorHelpers.ColorSpace.RGB;
+                        } else if (name.StartsWith("h", StringComparison.InvariantCultureIgnoreCase) && color1 == default) {
+                            color1 = arg.Value;
+                            space = ColorHelpers.ColorSpace.HSV;
+                        } else if (name.StartsWith("s", StringComparison.InvariantCultureIgnoreCase) && color2 == default) {
+                            color2 = arg.Value;
+                            space = ColorHelpers.ColorSpace.HSV;
+                        } else if (name.StartsWith("v", StringComparison.InvariantCultureIgnoreCase) && color3 == default) {
+                            color3 = arg.Value;
+                            space = ColorHelpers.ColorSpace.HSV;
+                        } else if (name.StartsWith("a", StringComparison.InvariantCultureIgnoreCase) && a == default)
+                            a = arg.Value;
+                        else if (name == "space" && space == default)
+                            space = (ColorHelpers.ColorSpace)(int)arg.Value.UnsafeGetValueAsFloat();
+                        else
+                            throw new Exception($"Invalid or double arg \"{name}\"");
+                    }
+                }
+
+                if (color1 == default)
+                    throw new Exception("Missing first component");
+                if (color2 == default)
+                    throw new Exception("Missing second color component");
+                if (color3 == default)
+                    throw new Exception("Missing third color component");
+            } else {
+                state.Push(DreamValue.Null);
+                return ProcStatus.Continue;
+            }
+
+            int color1Value = (int)color1.UnsafeGetValueAsFloat();
+            int color2Value = (int)color2.UnsafeGetValueAsFloat();
+            int color3Value = (int)color3.UnsafeGetValueAsFloat();
+            byte aValue = (byte)Math.Clamp((int)a.UnsafeGetValueAsFloat(), 0, 255);
+            Color color;
+
+            switch (space) {
+                case ColorHelpers.ColorSpace.RGB: {
+                    byte r = (byte)Math.Clamp(color1Value, 0, 255);
+                    byte g = (byte)Math.Clamp(color2Value, 0, 255);
+                    byte b = (byte)Math.Clamp(color3Value, 0, 255);
+
+                    color = new Color(r, g, b, aValue);
+                    break;
+                }
+                case ColorHelpers.ColorSpace.HSV: {
+                    // TODO: Going beyond the max defined in the docs returns a different value. Don't know why.
+                    float h = Math.Clamp(color1Value, 0, 360) / 360f;
+                    float s = Math.Clamp(color2Value, 0, 100) / 100f;
+                    float v = Math.Clamp(color3Value, 0, 100) / 100f;
+
+                    color = Color.FromHsv((h, s, v, aValue / 255f));
+                    break;
+                }
+                default:
+                    throw new Exception($"Unimplemented color space {space}");
+            }
+
+            // TODO: There is a difference between passing null and not passing a fourth arg at all
+            if (a.IsNull) {
+                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}"));
+            } else {
+                state.Push(new DreamValue($"#{color.RByte:X2}{color.GByte:X2}{color.BByte:X2}{color.AByte:X2}"));
+            }
+
+            return ProcStatus.Continue;
+        }
+
         public static ProcStatus LocateCoord(DMProcState state) {
             var z = (int)state.Pop().UnsafeGetValueAsFloat();
             var y = (int)state.Pop().UnsafeGetValueAsFloat();
@@ -1945,7 +2069,12 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (value.TryGetValueAsString(out var refString)) {
-                state.Push(state.DreamManager.LocateRef(refString));
+                var refValue = state.DreamManager.LocateRef(refString);
+                if(container is not DreamObjectWorld && containerList is not null) { //if it's a valid ref, it's in world, we don't need to check
+                    state.Push(containerList.ContainsValue(refValue) ? refValue : DreamValue.Null);
+                    return ProcStatus.Continue;
+                } else
+                    state.Push(refValue);
             } else if (value.TryGetValueAsType(out var ancestor)) {
                 if (containerList == null) {
                     state.Push(DreamValue.Null);
@@ -1977,16 +2106,8 @@ namespace OpenDreamRuntime.Procs {
 
                     return ProcStatus.Continue;
                 }
-
-                foreach (DreamValue containerItem in containerList.GetValues()) {
-                    if (IsEqual(containerItem, value)) {
-                        state.Push(containerItem);
-
-                        return ProcStatus.Continue;
-                    }
-                }
-
-                state.Push(DreamValue.Null);
+                state.Push(containerList.ContainsValue(value) ? value : DreamValue.Null);
+                return ProcStatus.Continue;
             }
 
             return ProcStatus.Continue;
@@ -2162,6 +2283,11 @@ namespace OpenDreamRuntime.Procs {
                     state.GetReferenceValue(leftRef);
                     state.GetReferenceValue(rightRef);
                 }
+            } else if (state.GetReferenceValue(leftRef).TryGetValueAsDreamObject<DreamObjectSavefile>(out var savefile)) {
+                // Savefiles get some special treatment.
+                // "savefile >> B" is the same as "B = savefile[current_dir]"
+                state.AssignReference(rightRef, savefile.OperatorInput());
+                return ProcStatus.Continue;
             }
 
             throw new NotImplementedException($"Input operation is unimplemented for {leftRef} and {rightRef}");

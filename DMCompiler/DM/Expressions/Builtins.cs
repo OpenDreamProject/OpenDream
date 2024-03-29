@@ -1,8 +1,8 @@
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler.DM;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
@@ -63,29 +63,33 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    sealed class NewPath : DMExpression {
-        private readonly DreamPath _targetPath;
-        private readonly ArgumentList _arguments;
-
-        public NewPath(Location location, DreamPath targetPath, ArgumentList arguments) : base(location) {
-            _targetPath = targetPath;
-            _arguments = arguments;
-        }
+    internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
+        public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (!DMObjectTree.TryGetTypeId(_targetPath, out var typeId)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {_targetPath} does not exist");
-
+            if (!targetPath.TryResolvePath(out var pathInfo)) {
+                proc.PushNull();
                 return;
             }
 
-            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+            var argumentInfo = arguments.EmitArguments(dmObject, proc);
 
-            proc.PushType(typeId);
+            switch (pathInfo.Value.Type) {
+                case ConstantPath.PathType.TypeReference:
+                    proc.PushType(pathInfo.Value.Id);
+                    break;
+                case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                    proc.PushProc(pathInfo.Value.Id);
+                    break;
+                case ConstantPath.PathType.ProcStub:
+                case ConstantPath.PathType.VerbStub:
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
+                    proc.PushNull();
+                    return;
+            }
+
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
         }
-
-        public override DreamPath? Path => _targetPath;
     }
 
     // locate()
@@ -181,6 +185,18 @@ namespace DMCompiler.DM.Expressions {
             var argInfo = _arguments.EmitArguments(dmObject, proc);
 
             proc.Gradient(argInfo.Type, argInfo.StackSize);
+        }
+    }
+
+    /// rgb(R, G, B)
+    /// rgb(R, G, B, A)
+    /// rgb(x, y, z, space)
+    /// rgb(x, y, z, a, space)
+    internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            var argInfo = arguments.EmitArguments(dmObject, proc);
+
+            proc.Rgb(argInfo.Type, argInfo.StackSize);
         }
     }
 
@@ -573,20 +589,16 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // initial(x)
-    sealed class Initial : DMExpression {
-        private readonly DMExpression _expr;
-
-        public Initial(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
+    internal class Initial(Location location, DMExpression expr) : DMExpression(location) {
+        protected DMExpression Expression = expr;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            if (_expr is LValue lValue) {
+            if (Expression is LValue lValue) {
                 lValue.EmitPushInitial(dmObject, proc);
                 return;
             }
 
-            throw new CompileErrorException(Location, $"can't get initial value of {_expr}");
+            throw new CompileErrorException(Location, $"can't get initial value of {Expression}");
         }
     }
 
@@ -639,19 +651,6 @@ namespace DMCompiler.DM.Expressions {
             DMCompiler.Emit(WarningCode.BadArgument, Location, "Attempt to get nameof(__TYPE__) in global proc");
             return null;
         }
-    }
-
-    // __PROC__
-    sealed class ProcType : DMExpression {
-        public ProcType(Location location)
-            : base(location)
-        {}
-
-        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushProc(proc.Id);
-        }
-
-        public override string GetNameof(DMObject dmObject, DMProc proc) => proc.Name;
     }
 
     internal class Sin : DMExpression {

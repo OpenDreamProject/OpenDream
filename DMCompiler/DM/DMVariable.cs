@@ -11,7 +11,7 @@ internal sealed class DMVariable {
     /// </remarks>
     public bool IsConst;
     public bool IsTmp;
-    public DMExpression Value;
+    public DMExpression? Value;
     public DMValueType ValType;
 
     public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMValueType valType = DMValueType.Anything) {

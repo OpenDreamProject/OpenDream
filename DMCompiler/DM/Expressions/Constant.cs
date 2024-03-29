@@ -477,24 +477,21 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // /a/b/c
-    sealed class Path : Constant {
-        public DreamPath Value { get; }
+    // no, this can't be called "Path" because of CS0542
+    internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
+        public DreamPath Value { get; } = value;
+        public override DreamPath? Path => Value;
 
         /// <summary>
         /// The DMObject this expression resides in. Used for path searches.
         /// </summary>
-        private readonly DMObject _dmObject;
+        private readonly DMObject _dmObject = dmObject;
 
-        private enum PathType {
+        public enum PathType {
             TypeReference,
             ProcReference,
             ProcStub,
             VerbStub
-        }
-
-        public Path(Location location, DMObject dmObject, DreamPath value) : base(location) {
-            Value = value;
-            _dmObject = dmObject;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -554,7 +551,7 @@ namespace DMCompiler.DM.Expressions {
             return true;
         }
 
-        private bool TryResolvePath([NotNullWhen(true)] out (PathType Type, int Id)? pathInfo) {
+        public bool TryResolvePath([NotNullWhen(true)] out (PathType Type, int Id)? pathInfo) {
             DreamPath path = Value;
 
             // An upward search with no left-hand side
@@ -628,6 +625,29 @@ namespace DMCompiler.DM.Expressions {
                 pathInfo = null;
                 return false;
             }
+        }
+    }
+
+    // TODO: Use this instead of ConstantPath for procs
+    /// <summary>
+    /// A reference to a proc
+    /// </summary>
+    internal sealed class ConstantProcReference(Location location, DMProc referencedProc) : Constant(location) {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            proc.PushProc(referencedProc.Id);
+        }
+
+        public override string GetNameof(DMObject dmObject, DMProc proc) => referencedProc.Name;
+
+        public override bool IsTruthy() => true;
+
+        public override bool TryAsJsonRepresentation(out object? json) {
+            json = new Dictionary<string, object> {
+                { "type", JsonVariableType.Proc },
+                { "value", referencedProc.Id }
+            };
+
+            return true;
         }
     }
 }

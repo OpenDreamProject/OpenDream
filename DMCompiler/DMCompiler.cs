@@ -3,7 +3,6 @@ using DMCompiler.Compiler.DM;
 using DMCompiler.Compiler.DMM;
 using DMCompiler.Compiler.DMPreprocessor;
 using DMCompiler.DM;
-using DMCompiler.DM.Visitors;
 using System;
 using System.Collections.Generic;
 using System.Globalization;
@@ -14,6 +13,8 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 using DMCompiler.Json;
 
 namespace DMCompiler;
@@ -157,9 +158,9 @@ public static class DMCompiler {
             Emit(warning);
         }
 
-        DMASTSimplifier astSimplifier = new DMASTSimplifier();
+        DMASTFolder astSimplifier = new DMASTFolder();
         VerbosePrint("Constant folding");
-        astSimplifier.SimplifyAST(astFile);
+        astSimplifier.FoldAst(astFile);
 
         DMObjectBuilder.BuildObjectTree(astFile);
 
@@ -369,8 +370,8 @@ public struct DMCompilerSettings {
     public string? PragmaFileOverride = null;
 
     // These are the default DM_VERSION and DM_BUILD values. They're strings because that's what the preprocessor expects (seriously)
-    public string DMVersion = "514";
-    public string DMBuild = "1584";
+    public string DMVersion = "515";
+    public string DMBuild = "1633";
 
     public DMCompilerSettings() {
     }

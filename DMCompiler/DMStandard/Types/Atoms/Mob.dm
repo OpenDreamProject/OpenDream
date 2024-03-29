@@ -3,9 +3,9 @@
 
 	var/client/client
 	var/key
-	var/ckey
+	var/tmp/ckey
 
-	var/list/group as opendream_unimplemented
+	var/tmp/list/group as opendream_unimplemented
 
 	var/see_invisible = 0
 	var/see_infrared = 0 as opendream_unimplemented

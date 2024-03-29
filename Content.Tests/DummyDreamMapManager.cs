@@ -49,6 +49,8 @@ namespace Content.Tests {
 
         public void SetZLevels(int levels) { }
 
+        public void SetWorldSize(Vector2i size) { }
+
         public EntityUid GetZLevelEntity(int z) {
             return EntityUid.Invalid;
         }

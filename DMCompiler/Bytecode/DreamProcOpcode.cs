@@ -12,9 +12,9 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(stackDelta: 1)] PushType = 0x2,
     [OpcodeMetadata(stackDelta: 1)] PushString = 0x3,
     FormatString = 0x4,
-    [OpcodeMetadata(stackDelta: -2)]SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.
+    [OpcodeMetadata(stackDelta: -2)] SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.
     [OpcodeMetadata(stackDelta: 1)] PushReferenceValue = 0x6, // TODO: Local refs should be pure, and other refs that aren't modified
-    //0x7
+    Rgb = 0x7,
     [OpcodeMetadata(stackDelta: -1)] Add = 0x8,
     Assign = 0x9,
     Call = 0xA,
@@ -157,7 +157,7 @@ public static class StringFormatEncoder {
     /// (DM uses this because it uses UTF8 and 0xFF is just an invalid character in that encoding, no biggie)<br/>
     /// See: "Halfwidth and Fullwidth Forms" on https://en.wikibooks.org/wiki/Unicode/Character_reference/F000-FFFF
     /// </remarks>
-    public static UInt16 FormatPrefix = 0xFF00;
+    public static ushort FormatPrefix = 0xFF00;
 
     /// <summary>
     /// The lower byte of the aforementioned formatting marker thingies we stuff into our UTF16 strings.<br/>
@@ -166,14 +166,14 @@ public static class StringFormatEncoder {
     /// <remarks>
     /// <see langword="DO NOT CAST TO CHAR!"/> This requires FormatPrefix to be added to it in order to be a useful formatting character!!
     /// </remarks>
-    public enum FormatSuffix : UInt16 {
+    public enum FormatSuffix : ushort {
         //States that Interpolated values can have (the [] thingies)
         StringifyWithArticle = 0x0,    //[] and we include an appropriate article for the resulting value, if necessary
         StringifyNoArticle = 0x1,      //[] and we never include an article (because it's elsewhere)
         ReferenceOfValue = 0x2,        //\ref[]
 
         //States that macros can have
-        //(these can have any arbitrary value as long as compiler/server/cilent all agree)
+        //(these can have any arbitrary value as long as compiler/server/client all agree)
         //(Some of these values may not align with what they are internally in BYOND; too bad!!)
         UpperDefiniteArticle,     //The
         LowerDefiniteArticle,     //the
@@ -216,12 +216,12 @@ public static class StringFormatEncoder {
 
     /// <returns>The UTF16 character we should be actually storing to articulate this format marker.</returns>
     public static char Encode(FormatSuffix suffix) {
-        return (char)(FormatPrefix | ((UInt16)suffix));
+        return (char)(FormatPrefix | ((ushort)suffix));
     }
 
     /// <returns>true if the input character was actually a formatting codepoint. false if not.</returns>
     public static bool Decode(char c, [NotNullWhen(true)] out FormatSuffix? suffix) {
-        UInt16 bytes = c; // this is an implicit reinterpret_cast, in C++ lingo
+        ushort bytes = c; // this is an implicit reinterpret_cast, in C++ lingo
         suffix = null;
         if((bytes & FormatPrefix) != FormatPrefix)
             return false;
@@ -230,7 +230,7 @@ public static class StringFormatEncoder {
     }
 
     public static bool Decode(char c) {
-        UInt16 bytes = c;
+        ushort bytes = c;
         return (bytes & FormatPrefix) == FormatPrefix; // Could also check that the lower byte is a valid enum but... ehhhhh
     }
 
@@ -388,23 +388,15 @@ public static class OpcodeVerifier {
 /// Custom attribute for declaring <see cref="OpcodeMetadata"/> metadata for individual opcodes
 /// </summary>
 [AttributeUsage(AttributeTargets.Field, Inherited = false, AllowMultiple = false)]
-internal sealed class OpcodeMetadataAttribute : Attribute {
-    public OpcodeMetadata Metadata;
-
-    public OpcodeMetadataAttribute(int stackDelta = 0) {
-        Metadata = new OpcodeMetadata(stackDelta);
-    }
+internal sealed class OpcodeMetadataAttribute(int stackDelta = 0) : Attribute {
+    public OpcodeMetadata Metadata = new(stackDelta);
 }
 
 /// <summary>
 /// Miscellaneous metadata associated with individual <see cref="DreamProcOpcode"/> opcodes using the <see cref="OpcodeMetadataAttribute"/> attribute
 /// </summary>
-public struct OpcodeMetadata {
-    public readonly int StackDelta; // Net change in stack size caused by this opcode
-
-    public OpcodeMetadata(int stackDelta = 0) {
-        StackDelta = stackDelta;
-    }
+public struct OpcodeMetadata(int stackDelta = 0) {
+    public readonly int StackDelta = stackDelta; // Net change in stack size caused by this opcode
 }
 
 /// <summary>
@@ -417,7 +409,7 @@ public static class OpcodeMetadataCache {
         foreach (DreamProcOpcode opcode in Enum.GetValues(typeof(DreamProcOpcode))) {
             var field = typeof(DreamProcOpcode).GetField(opcode.ToString());
             var attribute = Attribute.GetCustomAttribute(field!, typeof(OpcodeMetadataAttribute));
-            var metadataAttribute = (OpcodeMetadataAttribute)attribute;
+            var metadataAttribute = (OpcodeMetadataAttribute?)attribute;
             MetadataCache[(byte)opcode] = metadataAttribute?.Metadata ?? new OpcodeMetadata();
         }
     }

@@ -217,6 +217,34 @@ public sealed class DreamMapManager : IDreamMapManager {
         return area;
     }
 
+    public void SetWorldSize(Vector2i size) {
+        if (size.X < Size.X || size.Y < Size.Y) {
+            return;
+        }
+
+        DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
+        Vector2i oldSize = Size;
+
+        Size = size;
+        foreach (Level existingLevel in _levels) {
+            var oldCells = existingLevel.Cells;
+
+            existingLevel.Cells = new Cell[size.X, size.Y];
+            for (int x = 1; x <= size.X; x++) {
+                for (int y = 1; y <= size.Y; y++) {
+                    if (x <= oldSize.X && y <= oldSize.Y) {
+                        existingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
+                        continue;
+                    }
+
+                    existingLevel.Cells[x - 1, y - 1] = new Cell(defaultArea);
+                    SetTurf(new Vector2i(x, y), existingLevel.Z, _defaultTurf.ObjectDefinition, new());
+                }
+            }
+        }
+
+    }
+
     public void SetZLevels(int levels) {
         if (levels > Levels) {
             DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
@@ -337,7 +365,7 @@ public interface IDreamMapManager {
     public sealed class Level {
         public readonly int Z;
         public readonly MapGridComponent Grid;
-        public readonly Cell[,] Cells;
+        public Cell[,] Cells;
         public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
 
         public Level(int z, MapGridComponent grid, DreamObjectArea area, Vector2i size) {
@@ -376,5 +404,6 @@ public interface IDreamMapManager {
     public bool TryGetCellAt(Vector2i pos, int z, [NotNullWhen(true)] out Cell? cell);
     public bool TryGetTurfAt(Vector2i pos, int z, [NotNullWhen(true)] out DreamObjectTurf? turf);
     public void SetZLevels(int levels);
+    public void SetWorldSize(Vector2i size);
     public EntityUid GetZLevelEntity(int z);
 }

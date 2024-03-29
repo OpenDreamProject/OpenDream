@@ -232,8 +232,6 @@ public sealed class DreamObjectWorld : DreamObject {
             case "game_state":
             case "hub":
             case "hub_password":
-            case "maxx":
-            case "maxy":
             case "mob":
             case "name":
             case "sleep_offline":
@@ -270,6 +268,18 @@ public sealed class DreamObjectWorld : DreamObject {
 
             case "log":
                 SetLog(value);
+                break;
+
+            case "maxx":
+                value.TryGetValueAsInteger(out var maxx);
+
+                DreamMapManager.SetWorldSize(new Vector2i(maxx, DreamMapManager.Size.Y));
+                break;
+
+            case "maxy":
+                value.TryGetValueAsInteger(out var maxy);
+
+                DreamMapManager.SetWorldSize(new Vector2i(DreamMapManager.Size.X, maxy));
                 break;
 
             default:

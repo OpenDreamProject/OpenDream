@@ -1,15 +1,16 @@
 using DMCompiler.Bytecode;
-using DMCompiler.Compiler.DM;
-using DMCompiler.DM.Visitors;
 using System;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Builders;
 
 namespace DMCompiler.DM;
 
 internal abstract class DMExpression(Location location) {
     public Location Location = location;
 
+    // TODO: proc and dmObject can be null, address nullability contract
     public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
     }
@@ -109,7 +110,7 @@ sealed class ArgumentList {
                     argIndex = (int)keyNum.Value;
                     break;
                 case Expressions.Resource _:
-                case Expressions.Path _:
+                case Expressions.ConstantPath _:
                     //The key becomes the value
                     value = key;
                     break;

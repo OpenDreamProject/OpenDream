@@ -1,26 +1,47 @@
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectException(DreamObjectDefinition objectDefinition) : DreamObject(objectDefinition) {
-    public string Name = string.Empty;
-    public string Description = string.Empty;
-    public string File = string.Empty;
-    public int Line = 0;
+    public DreamValue Name = DreamValue.Null;
+    public DreamValue Desc = DreamValue.Null;
+    public DreamValue File = DreamValue.Null;
+    public DreamValue Line = DreamValue.False;
 
     //TODO: Match the format of BYOND exceptions since SS13 does splittext and other things to extract data from exceptions
+
+    protected override void SetVar(string varName, DreamValue value) {
+        switch (varName) {
+            case "name":
+                Name = value;
+                return;
+            case "desc":
+                Desc = value;
+                return;
+            case "file":
+                File = value;
+                return;
+            case "line":
+                Line = value;
+                return;
+            default:
+                base.SetVar(varName, value);
+                return;
+        }
+
+    }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
         switch (varName) {
             case "name":
-                value = new DreamValue(Name);
+                value = Name;
                 return true;
             case "desc":
-                value = new DreamValue(Description);
+                value = Desc;
                 return true;
             case "file":
-                value = new DreamValue(File);
+                value = File;
                 return true;
             case "line":
-                value = new DreamValue(Line);
+                value = Line;
                 return true;
             default:
                 return base.TryGetVar(varName, out value);

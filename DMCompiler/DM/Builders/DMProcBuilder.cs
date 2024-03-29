@@ -1,12 +1,13 @@
-using DMCompiler.Compiler.DM;
-using System.Collections.Generic;
 using System;
-using DMCompiler.DM.Expressions;
+using System.Collections.Generic;
 using System.Diagnostics;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
+using DMCompiler.Compiler.DM;
+using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Expressions;
 
-namespace DMCompiler.DM.Visitors {
+namespace DMCompiler.DM.Builders {
     internal sealed class DMProcBuilder {
         private readonly DMObject _dmObject;
         private readonly DMProc _proc;
@@ -52,10 +53,6 @@ namespace DMCompiler.DM.Visitors {
 
                     _proc.AddLabel(afterDefaultValueCheck);
                 }
-            }
-
-            if (procDefinition.Body.Statements.Length == 0) {
-                DMCompiler.Emit(WarningCode.EmptyProc, _proc.Location,"Empty proc detected - add an explicit \"return\" statement");
             }
 
             ProcessBlockInner(procDefinition.Body, silenceEmptyBlockWarning : true);
@@ -112,6 +109,7 @@ namespace DMCompiler.DM.Visitors {
 
         public void ProcessStatement(DMASTProcStatement statement) {
             switch (statement) {
+                case DMASTNullProcStatement: break;
                 case DMASTProcStatementExpression statementExpression: ProcessStatementExpression(statementExpression); break;
                 case DMASTProcStatementContinue statementContinue: ProcessStatementContinue(statementContinue); break;
                 case DMASTProcStatementGoto statementGoto: ProcessStatementGoto(statementGoto); break;
@@ -187,9 +185,68 @@ namespace DMCompiler.DM.Visitors {
         public void ProcessStatementSet(DMASTProcStatementSet statementSet) {
             var attribute = statementSet.Attribute.ToLower();
 
-            // TODO deal with "src"
             if(attribute == "src") {
-                DMCompiler.UnimplementedWarning(statementSet.Location, "'set src' is unimplemented");
+                // TODO: Would be much better if the parser was just more strict with the expression
+                switch (statementSet.Value) {
+                    case DMASTIdentifier {Identifier: "usr"}:
+                        _proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.InUsr : VerbSrc.Usr;
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "usr"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: var deref}])
+                            goto default;
+
+                        if (deref == "contents") {
+                            _proc.VerbSrc = VerbSrc.InUsr;
+                        }  else if (deref == "loc") {
+                            _proc.VerbSrc = VerbSrc.UsrLoc;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.loc' is unimplemented");
+                        } else if (deref == "group") {
+                            _proc.VerbSrc = VerbSrc.UsrGroup;
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = usr.group' is unimplemented");
+                        } else {
+                            goto default;
+                        }
+
+                        break;
+                    case DMASTIdentifier {Identifier: "world"}:
+                        _proc.VerbSrc = statementSet.WasInKeyword ? VerbSrc.InWorld : VerbSrc.World;
+                        if (statementSet.WasInKeyword)
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = world.contents' is unimplemented");
+                        else
+                            DMCompiler.UnimplementedWarning(statementSet.Location,
+                                "'set src = world' is unimplemented");
+                        break;
+                    case DMASTDereference {Expression: DMASTIdentifier{Identifier: "world"}, Operations: var operations}:
+                        if (operations is not [DMASTDereference.FieldOperation {Identifier: "contents"}])
+                            goto default;
+
+                        _proc.VerbSrc = VerbSrc.InWorld;
+                        DMCompiler.UnimplementedWarning(statementSet.Location,
+                            "'set src = world.contents' is unimplemented");
+                        break;
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("view" or "oview")}}:
+                        // TODO: Ranges
+                        if (statementSet.WasInKeyword)
+                            _proc.VerbSrc = viewType == "view" ? VerbSrc.InView : VerbSrc.InOView;
+                        else
+                            _proc.VerbSrc = viewType == "view" ? VerbSrc.View : VerbSrc.OView;
+                        break;
+                    // range() and orange() are undocumented, but they work
+                    case DMASTProcCall {Callable: DMASTCallableProcIdentifier {Identifier: { } viewType and ("range" or "orange")}}:
+                        // TODO: Ranges
+                        if (statementSet.WasInKeyword)
+                            _proc.VerbSrc = viewType == "range" ? VerbSrc.InRange : VerbSrc.InORange;
+                        else
+                            _proc.VerbSrc = viewType == "range" ? VerbSrc.Range : VerbSrc.ORange;
+                        break;
+                    default:
+                        DMCompiler.Emit(WarningCode.BadExpression, statementSet.Value.Location, "Invalid verb src");
+                        break;
+                }
+
                 return;
             }
 
@@ -424,7 +481,7 @@ namespace DMCompiler.DM.Visitors {
                     ProcessStatementForStandard(initializer, comparator, incrementor, statementFor.Body);
                 } else {
                     switch (statementFor.Expression1) {
-                        case DMASTAssign {Expression: DMASTVarDeclExpression decl, Value: DMASTExpressionInRange range}: {
+                        case DMASTAssign {LHS: DMASTVarDeclExpression decl, RHS: DMASTExpressionInRange range}: {
                             var identifier = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
                             var outputVar = DMExpression.Create(_dmObject, _proc, identifier);
 
@@ -440,7 +497,7 @@ namespace DMCompiler.DM.Visitors {
                         case DMASTExpressionInRange exprRange: {
                             DMASTVarDeclExpression? decl = exprRange.Value as DMASTVarDeclExpression;
                             decl ??= exprRange.Value is DMASTAssign assign
-                                ? assign.Expression as DMASTVarDeclExpression
+                                ? assign.LHS as DMASTVarDeclExpression
                                 : null;
 
                             DMASTExpression outputExpr;
@@ -471,14 +528,14 @@ namespace DMCompiler.DM.Visitors {
                         }
                         case DMASTExpressionIn exprIn: {
                             DMASTExpression outputExpr;
-                            if (exprIn.Value is DMASTVarDeclExpression decl) {
+                            if (exprIn.LHS is DMASTVarDeclExpression decl) {
                                 outputExpr = new DMASTIdentifier(decl.Location, decl.DeclPath.Path.LastElement);
                             } else {
-                                outputExpr = exprIn.Value;
+                                outputExpr = exprIn.LHS;
                             }
 
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
-                            var list = DMExpression.Create(_dmObject, _proc, exprIn.List);
+                            var list = DMExpression.Create(_dmObject, _proc, exprIn.RHS);
 
                             ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;
@@ -570,8 +627,14 @@ namespace DMCompiler.DM.Visitors {
 
             list.EmitPushValue(_dmObject, _proc);
             if (implicitTypeCheck != null) {
-                // Create an enumerator that will do the implicit istype() for us
-                _proc.CreateFilteredListEnumerator(implicitTypeCheck.Value);
+                if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
+                    // Create an enumerator that will do the implicit istype() for us
+                    _proc.CreateFilteredListEnumerator(filterTypeId);
+                } else {
+                    DMCompiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
+                        $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");
+                    _proc.CreateListEnumerator();
+                }
             } else {
                 _proc.CreateListEnumerator();
             }
@@ -892,7 +955,6 @@ namespace DMCompiler.DM.Visitors {
             _proc.Input(leftRef, rightRef);
 
             _proc.AddLabel(leftEndLabel);
-            _proc.PopReference(rightRef);
             _proc.AddLabel(rightEndLabel);
         }
 

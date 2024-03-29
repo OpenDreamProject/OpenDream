@@ -10,6 +10,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs.DebugAdapter;
 using OpenDreamRuntime.Resources;
 using OpenDreamShared.Dream;
+using Robust.Shared.Utility;
 
 namespace OpenDreamRuntime.Procs {
     public sealed class DMProc : DreamProc {
@@ -26,11 +27,12 @@ namespace OpenDreamRuntime.Procs {
         public readonly IDreamDebugManager DreamDebugManager;
         public readonly DreamResourceManager DreamResourceManager;
         public readonly DreamObjectTree ObjectTree;
+        public readonly ServerVerbSystem VerbSystem;
 
         private readonly int _maxStackSize;
 
-        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler)
-            : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
+        public DMProc(int id, TreeEntry owningType, ProcDefinitionJson json, string? name, DreamManager dreamManager, AtomManager atomManager, IDreamMapManager dreamMapManager, IDreamDebugManager dreamDebugManager, DreamResourceManager dreamResourceManager, DreamObjectTree objectTree, ProcScheduler procScheduler, ServerVerbSystem verbSystem)
+            : base(id, owningType, name ?? json.Name, null, json.Attributes, GetArgumentNames(json), GetArgumentTypes(json), json.VerbSrc, json.VerbName, json.VerbCategory, json.VerbDesc, json.Invisibility, json.IsVerb) {
             Bytecode = json.Bytecode ?? Array.Empty<byte>();
             LocalNames = json.Locals;
             SourceInfo = json.SourceInfo;
@@ -39,11 +41,12 @@ namespace OpenDreamRuntime.Procs {
 
             AtomManager = atomManager;
             DreamManager = dreamManager;
+            ProcScheduler = procScheduler;
             DreamMapManager = dreamMapManager;
             DreamDebugManager = dreamDebugManager;
             DreamResourceManager = dreamResourceManager;
             ObjectTree = objectTree;
-            ProcScheduler = procScheduler;
+            VerbSystem = verbSystem;
         }
 
         public (string Source, int Line) GetSourceAtOffset(int offset) {
@@ -132,9 +135,9 @@ namespace OpenDreamRuntime.Procs {
             }
         }
 
-        private static List<DreamValueType> GetArgumentTypes(ProcDefinitionJson json) {
+        private static List<DreamValueType>? GetArgumentTypes(ProcDefinitionJson json) {
             if (json.Arguments == null) {
-                return new();
+                return null;
             } else {
                 var argumentTypes = new List<DreamValueType>(json.Arguments.Count);
                 argumentTypes.AddRange(json.Arguments.Select(a => (DreamValueType)a.Type));
@@ -300,7 +303,8 @@ namespace OpenDreamRuntime.Procs {
             {DreamProcOpcode.GetStep, DMOpcodeHandlers.GetStep},
             {DreamProcOpcode.Length, DMOpcodeHandlers.Length},
             {DreamProcOpcode.GetDir, DMOpcodeHandlers.GetDir},
-            {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint}
+            {DreamProcOpcode.DebuggerBreakpoint, DMOpcodeHandlers.DebuggerBreakpoint},
+            {DreamProcOpcode.Rgb, DMOpcodeHandlers.Rgb}
         };
 
         public static readonly unsafe delegate*<DMProcState, ProcStatus>[] OpcodeHandlers;
@@ -433,10 +437,13 @@ namespace OpenDreamRuntime.Procs {
             }
 
             builder.Append(Proc.Name);
-            builder.Append(':');
 
             // Subtract 1 because _pc may have been advanced to the next line
-            builder.Append(Proc.GetSourceAtOffset(_pc - 1).Line);
+            var location = Proc.GetSourceAtOffset(_pc - 1);
+            builder.Append(' ');
+            builder.Append(location.Source);
+            builder.Append(':');
+            builder.Append(location.Line);
         }
 
         public (string, int) GetCurrentSource() {
@@ -554,6 +561,7 @@ namespace OpenDreamRuntime.Procs {
         }
 
         public void PopDrop() {
+            DebugTools.Assert(_stackIndex > 0, "Attempted to PopDrop with a stack index of (or below?) 0");
             _stackIndex -= 1;
         }
 
@@ -866,6 +874,8 @@ namespace OpenDreamRuntime.Procs {
                     ThrowInvalidAppearanceVar(field);
 
                 return Proc.AtomManager.GetAppearanceVar(appearance, field);
+            } else if (owner.TryGetValueAsType(out var ownerType) && ownerType.ObjectDefinition.Variables.TryGetValue(field, out var val)) {
+                return val; // equivalent to initial()
             }
 
             ThrowCannotGetFieldFromOwner(owner, field);
@@ -1053,6 +1063,64 @@ namespace OpenDreamRuntime.Procs {
                     }
 
                     return new DreamProcArguments(arguments);
+                }
+                default:
+                    throw new Exception($"Invalid arguments type {argumentsType}");
+            }
+        }
+
+        public (DreamValue[]?, Dictionary<DreamValue, DreamValue>?) CollectProcArguments(ReadOnlySpan<DreamValue> values, DMCallArgumentsType argumentsType, int argumentStackSize) {
+            switch (argumentsType) {
+                case DMCallArgumentsType.None:
+                    return (Array.Empty<DreamValue>(), null);
+                case DMCallArgumentsType.FromStack:
+                    return (values.ToArray(), null);
+                case DMCallArgumentsType.FromProcArguments:
+                    return (GetArguments().ToArray(), null);
+                case DMCallArgumentsType.FromStackKeyed: {
+                    if (argumentStackSize % 2 != 0)
+                        throw new ArgumentException("Argument stack size must be even", nameof(argumentStackSize));
+
+                    var argumentCount = argumentStackSize / 2;
+                    var arguments = new Dictionary<DreamValue, DreamValue>(argumentCount);
+
+                    for (int i = 0; i < argumentCount; i++) {
+                        var key = values[i*2];
+                        var value = values[i*2+1];
+
+                        if (key.IsNull) {
+                            arguments[new(i + 1)] = value;
+                        } else {
+                            string argumentName = key.MustGetValueAsString();
+
+                            arguments[new(argumentName)] = value;
+                        }
+                    }
+
+                    return (null, arguments);
+                }
+                case DMCallArgumentsType.FromArgumentList: {
+                    if (!values[0].TryGetValueAsDreamList(out var argList))
+                        return (Array.Empty<DreamValue>(), null); // Using a non-list gives you no arguments
+
+                    var listValues = argList.GetValues();
+                    var arguments = new Dictionary<DreamValue, DreamValue>();
+
+                    for (int i = 0; i < listValues.Count; i++) {
+                        var value = listValues[i];
+
+                        if (argList.ContainsKey(value)) { //Named argument
+                            if (!value.TryGetValueAsString(out var argumentName))
+                                throw new Exception("List contains a non-string key, and cannot be used as an arglist");
+
+                            arguments[new(argumentName)] = argList.GetValue(value);
+                        } else { //Ordered argument
+                            // TODO: Verify ordered args precede all named args
+                            arguments[new(i + 1)] = value;
+                        }
+                    }
+
+                    return (null, arguments);
                 }
                 default:
                     throw new Exception($"Invalid arguments type {argumentsType}");

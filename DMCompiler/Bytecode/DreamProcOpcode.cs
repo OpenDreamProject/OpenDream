@@ -139,6 +139,8 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(stackDelta: -1)] Log = 0x81,
     LogE = 0x82,
     Abs = 0x83,
+    [OpcodeMetadata(stackDelta: -1)] Sleep = 0x84,
+    BackgroundSleep = 0x85,
 }
 
 /// <summary>

@@ -97,6 +97,10 @@ public class DMASTFolder {
                 FoldAst(statementSpawn.Body);
 
                 break;
+            case DMASTProcStatementSleep statementSleep:
+                statementSleep.Delay = FoldExpression(statementSleep.Delay);
+
+                break;
             case DMASTProcStatementBrowse statementBrowse:
                 statementBrowse.Receiver = FoldExpression(statementBrowse.Receiver);
                 statementBrowse.Body = FoldExpression(statementBrowse.Body);

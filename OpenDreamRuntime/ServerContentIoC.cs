@@ -22,6 +22,7 @@ namespace OpenDreamRuntime {
             if (!unitTests) {
                 // Unit tests use their own version
                 IoCManager.Register<IDreamMapManager, DreamMapManager>();
+                IoCManager.Register<IOpenDreamGameTiming, OpenDreamGameTiming>();
             }
         }
     }

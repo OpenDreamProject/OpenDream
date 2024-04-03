@@ -52,6 +52,10 @@ namespace DMCompiler.DM.Expressions {
             ValType = GetReturnType();
         }
 
+        public override string ToString() {
+            return $"{_name}()";
+        }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_name}\" as value");
         }
@@ -124,6 +128,10 @@ namespace DMCompiler.DM.Expressions {
                 default:
                     return (null, null);
             }
+        }
+
+        public override string ToString() {
+            return target.ToString()!;
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {

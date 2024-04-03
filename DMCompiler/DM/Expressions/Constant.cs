@@ -487,6 +487,9 @@ namespace DMCompiler.DM.Expressions {
     internal sealed class ConstantPath : Constant {
         public DreamPath Value { get; }
         public override DreamPath? Path => Value;
+        /// <summary>
+        /// The DMObject this expression resides in. Used for path searches.
+        /// </summary>
         private readonly DMObject _dmObject;
         public override DMValueType ValType => DMValueType.Path;
 

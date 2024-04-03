@@ -161,11 +161,10 @@ internal sealed class DMObject {
 
     public DMValueType GetReturnType(string name) {
         var procId = GetProcs(name)?[^1];
-        return procId is null ? DMValueType.Anything : DMObjectTree.AllProcs[procId.Value].ReturnTypes;
+        return procId is null ? DMValueType.Anything : GetReturnType(procId.Value);
     }
 
-    public DMValueType GetReturnType(int procId)
-    {
+    public DMValueType GetReturnType(int procId) {
         return DMObjectTree.AllProcs[procId].ReturnTypes;
     }
 

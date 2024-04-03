@@ -1,10 +1,10 @@
 #pragma InvalidReturnType error
 /datum/foo
 /datum/proc/meep() as /datum/foo
-	return new /datum/foo
+	return /datum/foo
 
 /datum/foobar/meep()
-	return new /datum/foo
+	return /datum/foo
 
 /proc/RunTest()
 	return

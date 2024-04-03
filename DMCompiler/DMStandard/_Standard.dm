@@ -8,7 +8,7 @@ proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /
 proc/ceil(A) as num
 proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
-proc/clamp(Value, Low, High) as num
+proc/clamp(Value, Low, High) as /list|num|null
 proc/cmptext(T1) as num
 proc/copytext(T, Start = 1, End = 0) as text|null
 proc/copytext_char(T,Start=1,End=0) as text|null
@@ -54,19 +54,19 @@ proc/json_decode(JSON)
 proc/json_encode(Value, flags)
 proc/length_char(E) as num
 proc/list2params(List) as text
-proc/lowertext(T) as text
+proc/lowertext(T as text) as text
 proc/max(A) as num|text|null
 proc/md5(T) as text|null
 proc/min(A) as num|text|null
 proc/nonspantext(Haystack, Needles, Start = 1) as num
 proc/num2text(N, A, B) as text
-proc/orange(Dist = 5, Center = usr) as /list
+proc/orange(Dist = 5, Center = usr) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/oview(Dist = 5, Center = usr) as /list
 proc/oviewers(Depth = 5, Center = usr) as /list
 proc/params2list(Params) as /list
 proc/rand(L, H) as num
 proc/rand_seed(Seed) as null
-proc/range(Dist, Center) as /list
+proc/range(Dist, Center) as /list|null // NOTE: Not sure if return types have BYOND parity
 proc/ref(Object) as text
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
@@ -95,9 +95,9 @@ proc/text2path(T)
 proc/time2text(timestamp, format) as text
 proc/trimtext(Text) as text|null
 proc/trunc(n) as num
-proc/turn(Dir, Angle) as num
+proc/turn(Dir, Angle)
 proc/typesof(Item1) as /list
-proc/uppertext(T) as text
+proc/uppertext(T as text) as text
 proc/url_decode(UrlText) as text
 proc/url_encode(PlainText, format = 0) as text
 proc/view(Dist = 5, Center = usr) as /list

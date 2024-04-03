@@ -364,8 +364,7 @@ internal static class DMExpressionBuilder {
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
-                        var fieldexpr = new Field(identifier.Location, field, field.ValType);
-                        return fieldexpr;
+                        return new Field(identifier.Location, field, field.ValType);
                     }
                 }
 
@@ -386,27 +385,21 @@ internal static class DMExpressionBuilder {
 
     }
 
-    public static DMValueType GetATOMType(DreamPath? type)
-    {
-        if (type is null)
-        {
+    public static DMValueType GetATOMType(DreamPath? type) {
+        if (type is null) {
             return DMValueType.Anything;
         }
         var dmType = DMObjectTree.GetDMObject(type.Value, false);
-        if (dmType.IsSubtypeOf(DreamPath.Obj))
-        {
+        if (dmType.IsSubtypeOf(DreamPath.Obj)) {
             return DMValueType.Obj;
         }
-        if (dmType.IsSubtypeOf(DreamPath.Mob))
-        {
+        if (dmType.IsSubtypeOf(DreamPath.Mob)) {
             return DMValueType.Mob;
         }
-        if (dmType.IsSubtypeOf(DreamPath.Turf))
-        {
+        if (dmType.IsSubtypeOf(DreamPath.Turf)) {
             return DMValueType.Turf;
         }
-        if (dmType.IsSubtypeOf(DreamPath.Area))
-        {
+        if (dmType.IsSubtypeOf(DreamPath.Area)) {
             return DMValueType.Area;
         }
 

@@ -9,8 +9,8 @@ namespace OpenDreamClient.Interface.Controls;
 public abstract class InterfaceControl : InterfaceElement {
     public readonly Control UIElement;
     public bool IsDefault => ControlDescriptor.IsDefault;
-    public Vector2i? Size => ControlDescriptor.Size;
-    public Vector2i? Pos => ControlDescriptor.Pos;
+    public Vector2i Size => ControlDescriptor.Size.GetValueOrDefault();
+    public Vector2i Pos => ControlDescriptor.Pos.GetValueOrDefault();
     public Vector2i? Anchor1 => ControlDescriptor.Anchor1;
     public Vector2i? Anchor2 => ControlDescriptor.Anchor2;
 

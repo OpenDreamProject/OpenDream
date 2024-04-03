@@ -201,6 +201,18 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
+    /// rgb(R, G, B)
+    /// rgb(R, G, B, A)
+    /// rgb(x, y, z, space)
+    /// rgb(x, y, z, a, space)
+    internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            var argInfo = arguments.EmitArguments(dmObject, proc);
+
+            proc.Rgb(argInfo.Type, argInfo.StackSize);
+        }
+    }
+
     // pick(prob(50);x, prob(200);y)
     // pick(50;x, 200;y)
     // pick(x, y)

@@ -112,7 +112,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     private bool OnPress(ScalingViewport viewport, GUIBoundKeyEventArgs args) {
         if (args.Function == EngineKeyFunctions.UIRightClick) { //either turf or atom was clicked, and it was a right-click
             var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
-            var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f);
+            var entities = _lookupSystem.GetEntitiesInRange(mapCoords, 0.01f, LookupFlags.Uncontained | LookupFlags.Approximate);
 
             //TODO filter entities by the valid verbs that exist on them
             //they should only show up if there is a verb attached to usr which matches the filter in world syntax

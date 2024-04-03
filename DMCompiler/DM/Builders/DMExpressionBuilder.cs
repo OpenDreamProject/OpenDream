@@ -4,6 +4,7 @@ using DMCompiler.Compiler;
 using Resource = DMCompiler.DM.Expressions.Resource;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Expressions;
+using String = DMCompiler.DM.Expressions.String;
 
 namespace DMCompiler.DM.Builders;
 
@@ -27,7 +28,7 @@ internal static class DMExpressionBuilder {
         switch (expression) {
             case DMASTExpressionConstant constant: return BuildConstant(constant, dmObject, proc);
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
-            case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc);
+            case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc, inferredPath);
             case DMASTScopeIdentifier globalIdentifier: return BuildScopeIdentifier(globalIdentifier, dmObject, proc, inferredPath);
             case DMASTCallableSelf: return new ProcSelf(expression.Location);
             case DMASTCallableSuper: return new ProcSuper(expression.Location);
@@ -226,6 +227,8 @@ internal static class DMExpressionBuilder {
             case DMASTGradient gradient:
                 return new Gradient(gradient.Location,
                     new ArgumentList(gradient.Location, dmObject, proc, gradient.Parameters));
+            case DMASTRgb rgb:
+                return new Rgb(rgb.Location, new ArgumentList(rgb.Location, dmObject, proc, rgb.Parameters));
             case DMASTLocateCoordinates locateCoordinates:
                 return new LocateCoordinates(locateCoordinates.Location,
                     BuildExpression(locateCoordinates.X, dmObject, proc, inferredPath),
@@ -233,10 +236,18 @@ internal static class DMExpressionBuilder {
                     BuildExpression(locateCoordinates.Z, dmObject, proc, inferredPath));
             case DMASTIsSaved isSaved:
                 return new IsSaved(isSaved.Location, BuildExpression(isSaved.Value, dmObject, proc, inferredPath));
-            case DMASTIsType isType:
+            case DMASTIsType isType: {
+                if (isType.RHS is DMASTIdentifier ident && ident.Identifier == "__IMPLIED_TYPE__") {
+                    var expr = DMExpression.Create(dmObject, proc, isType.LHS, inferredPath);
+                    if (expr.Path is null)
+                        throw new CompileErrorException(isType.Location,"An inferred istype requires a type!");
+                    return new IsTypeInferred(isType.Location, expr, expr.Path.Value);
+                }
                 return new IsType(isType.Location,
                     BuildExpression(isType.LHS, dmObject, proc, inferredPath),
                     BuildExpression(isType.RHS, dmObject, proc, inferredPath));
+            }
+
             case DMASTIsNull isNull:
                 return new IsNull(isNull.Location, BuildExpression(isNull.Value, dmObject, proc, inferredPath));
             case DMASTLength length:
@@ -339,7 +350,7 @@ internal static class DMExpressionBuilder {
         return new StringFormat(stringFormat.Location, stringFormat.Value, expressions);
     }
 
-    private static DMExpression BuildIdentifier(DMASTIdentifier identifier, DMObject dmObject, DMProc proc) {
+    private static DMExpression BuildIdentifier(DMASTIdentifier identifier, DMObject dmObject, DMProc proc, DreamPath? inferredPath = null) {
         var name = identifier.Identifier;
 
         switch (name) {
@@ -352,6 +363,14 @@ internal static class DMExpressionBuilder {
                 return new Args(identifier.Location);
             case "__TYPE__":
                 return new ProcOwnerType(identifier.Location);
+            case "__IMPLIED_TYPE__":
+                if (inferredPath == null) {
+                    DMCompiler.Emit(WarningCode.BadExpression, identifier.Location,
+                        "__IMPLIED_TYPE__ cannot be used here, there is no type being implied");
+                    return new Null(identifier.Location);
+                }
+
+                return new ConstantPath(identifier.Location, dmObject, inferredPath.Value);
             case "__PROC__": // The saner alternative to "....."
                 return new ConstantProcReference(identifier.Location, proc);
             case "global":
@@ -482,6 +501,15 @@ internal static class DMExpressionBuilder {
 
         var owner = DMObjectTree.GetDMObject(expression.Path.Value, createIfNonexistent: false);
         if (owner == null) {
+            if (expression is ConstantPath path && path.TryResolvePath(out var pathInfo) &&
+                pathInfo.Value.Type == ConstantPath.PathType.ProcReference) {
+                if (bIdentifier == "name") {
+                    return new String(expression.Location, path.Path!.Value.LastElement!);
+                } else {
+                    DMCompiler.Emit(WarningCode.PointlessScopeOperator, expression.Location, "scope operator returns null on proc variables other than \"name\"");
+                    return new Null(expression.Location);
+                }
+            }
             DMCompiler.Emit(WarningCode.ItemDoesntExist, expression.Location,
                 $"Type {expression.Path.Value} does not exist");
             return new Null(expression.Location);

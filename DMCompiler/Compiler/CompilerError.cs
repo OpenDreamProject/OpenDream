@@ -46,6 +46,7 @@ public enum WarningCode {
     PointlessBuiltinCall = 2206, // For pointless calls to issaved() or initial()
     SuspiciousMatrixCall = 2207, // Calling matrix() with seemingly the wrong arguments
     FallbackBuiltinArgument = 2208, // A builtin (sin(), cos(), etc) with an invalid/fallback argument
+    PointlessScopeOperator = 2209,
     MalformedRange = 2300,
     InvalidRange = 2301,
     InvalidSetStatement = 2302,

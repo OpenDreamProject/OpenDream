@@ -1075,6 +1075,13 @@ namespace DMCompiler.DM {
             WriteInt(argumentStackSize);
         }
 
+        public void Rgb(DMCallArgumentsType argumentsType, int argumentStackSize) {
+            ResizeStack(-(argumentStackSize - 1)); // Pops arguments, pushes rgb result
+            WriteOpcode(DreamProcOpcode.Rgb);
+            WriteByte((byte)argumentsType);
+            WriteInt(argumentStackSize);
+        }
+
         public void PickWeighted(int count) {
             ResizeStack(-(count * 2 - 1));
             WriteOpcode(DreamProcOpcode.PickWeighted);

@@ -475,7 +475,6 @@ internal static class DMObjectBuilder {
         return expression switch {
             //TODO: A better way of handling procs evaluated at compile time
             Expressions.ProcCall procCall => procCall.GetTargetProc(currentObject).Proc?.Name switch {
-                "rgb" => true,
                 "generator" => true,
                 "matrix" => true,
                 "icon" => true,
@@ -489,6 +488,7 @@ internal static class DMObjectBuilder {
             Expressions.DimensionalList => true,
             Expressions.NewList => true,
             Expressions.NewPath => true,
+            Expressions.Rgb => true,
             // TODO: Check for circular reference loops here
             // (Note that we do accidentally support global-field access somewhat when it gets const-folded by TryAsConstant before we get here)
             Expressions.GlobalField => false,

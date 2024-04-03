@@ -248,6 +248,10 @@ namespace DMCompiler.Compiler.DM {
                         }
                     }
 
+                    if (procBlock?.Statements.Length is 0 or null) {
+                        DMCompiler.Emit(WarningCode.EmptyProc, loc, "Empty proc detected - add an explicit \"return\" statement");
+                    }
+
                     if(path.IsOperator) {
                         DMCompiler.UnimplementedWarning(procBlock.Location, "Operator overloads are not implemented. They will be defined but never called.");
 
@@ -2599,6 +2603,12 @@ namespace DMCompiler.Compiler.DM {
                     }
                     case "gradient": {
                         return new DMASTGradient(identifier.Location, callParameters);
+                    }
+                    case "rgb": {
+                        if (callParameters.Length is < 3 or > 5)
+                            Error("Expected 3 to 5 arguments for rgb()");
+
+                        return new DMASTRgb(identifier.Location, callParameters);
                     }
                     default: return new DMASTProcCall(identifier.Location, new DMASTCallableProcIdentifier(identifier.Location, identifier.Identifier), callParameters);
                 }

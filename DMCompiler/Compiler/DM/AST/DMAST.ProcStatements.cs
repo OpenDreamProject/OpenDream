@@ -28,40 +28,13 @@ public sealed class DMASTProcStatementVarDeclaration(Location location, DMASTPat
 
     public DreamPath? Type => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath;
 
-    public DMValueType ValType => valType == DMValueType.Anything ? GetATOMType(Type) : valType;
+    public DMValueType ValType => valType;
 
     public string Name => _varDecl.VarName;
     public bool IsGlobal => _varDecl.IsStatic;
     public bool IsConst => _varDecl.IsConst;
 
     private readonly ProcVarDeclInfo _varDecl = new(path.Path);
-
-    private DMValueType GetATOMType(DreamPath? type)
-    {
-        if (type is null)
-        {
-            return DMValueType.Anything;
-        }
-        var dmType = DMObjectTree.GetDMObject(type.Value, false);
-        if (dmType.IsSubtypeOf(DreamPath.Obj))
-        {
-            return DMValueType.Obj;
-        }
-        if (dmType.IsSubtypeOf(DreamPath.Mob))
-        {
-            return DMValueType.Mob;
-        }
-        if (dmType.IsSubtypeOf(DreamPath.Turf))
-        {
-            return DMValueType.Turf;
-        }
-        if (dmType.IsSubtypeOf(DreamPath.Area))
-        {
-            return DMValueType.Area;
-        }
-
-        return DMValueType.Anything;
-    }
 }
 
 /// <summary>

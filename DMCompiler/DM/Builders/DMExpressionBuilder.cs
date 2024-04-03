@@ -364,8 +364,7 @@ internal static class DMExpressionBuilder {
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
-                        var valType = field.ValType == DMValueType.Anything ? GetATOMType(field.Type) : field.ValType;
-                        var fieldexpr = new Field(identifier.Location, field, valType);
+                        var fieldexpr = new Field(identifier.Location, field, field.ValType);
                         return fieldexpr;
                     }
                 }
@@ -556,6 +555,11 @@ internal static class DMExpressionBuilder {
 
         var target = DMExpression.Create(dmObject, proc, (DMASTExpression)procCall.Callable, inferredPath);
         var args = new ArgumentList(procCall.Location, dmObject, proc, procCall.Parameters);
+        if (target is Proc targetProc) { // GlobalProc handles returnType itself
+            var returnType = targetProc.GetReturnType(dmObject);
+            return new ProcCall(procCall.Location, target, args, returnType);
+        }
+
         return new ProcCall(procCall.Location, target, args);
     }
 

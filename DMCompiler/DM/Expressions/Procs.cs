@@ -42,9 +42,18 @@ namespace DMCompiler.DM.Expressions {
     /// This doesn't actually contain the GlobalProc itself;
     /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
     /// </remarks>
-    internal sealed class GlobalProc(Location location, string name) : DMExpression(location) {
+    internal sealed class GlobalProc : DMExpression {
+        private readonly string _name;
+        public override DMValueType ValType { get; init; }
+
+
+        public GlobalProc(Location location, string name) : base(location) {
+            _name = name;
+            ValType = GetReturnType();
+        }
+
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
+            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_name}\" as value");
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -53,8 +62,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public DMProc GetProc() {
-            if (!DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
+            if (!DMObjectTree.TryGetGlobalProc(_name, out var globalProc)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{_name}\"");
                 return DMObjectTree.GlobalInitProc; // Just give this, who cares
             }
 
@@ -99,9 +108,9 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x(y, z, ...)
-    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments) : DMExpression(location) {
+    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMValueType valType = DMValueType.Anything) : DMExpression(location) {
         public override bool PathIsFuzzy => Path == null;
-        public override DMValueType ValType => target.ValType;
+        public override DMValueType ValType => valType == DMValueType.Anything ? target.ValType : valType;
 
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
             switch (target) {

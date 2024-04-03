@@ -108,32 +108,31 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Identifier of field
-    sealed class Field(Location location, DMVariable variable, DMValueType valType) : LValue(location, variable.Type) {
-        private readonly DMVariable Variable = variable;
-
+    sealed class Field(Location location, DMVariable variable, DMValueType valType)
+        : LValue(location, variable.Type) {
         public override DMValueType ValType => valType;
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
+            proc.PushString(variable.Name);
             proc.Initial();
         }
 
         public void EmitPushIsSaved(DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
+            proc.PushString(variable.Name);
             proc.IsSaved();
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.CreateSrcField(Variable.Name);
+            return DMReference.CreateSrcField(variable.Name);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => Variable.Name;
+        public override string GetNameof(DMObject dmObject, DMProc proc) => variable.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (Variable.IsConst && Variable.Value != null) {
-                return Variable.Value.TryAsConstant(out constant);
+            if (variable.IsConst && variable.Value != null) {
+                return variable.Value.TryAsConstant(out constant);
             }
 
             constant = null;
@@ -141,7 +140,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override string ToString() {
-            return Variable.Name;
+            return variable.Name;
         }
     }
 

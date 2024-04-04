@@ -521,7 +521,7 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
 
-            if (LHS.ValType != RHS.ValType && LHS.ValType != DMValueType.Anything && LHS.ValType != DMValueType.Unimplemented) {
+            if ((LHS.ValType & RHS.ValType) == 0 && LHS.ValType != DMValueType.Anything && LHS.ValType != DMValueType.Unimplemented) {
                 if (DMCompiler.Settings.SkipAnythingTypecheck && RHS.ValType == DMValueType.Anything) return;
                 DMCompiler.Emit(WarningCode.InvalidVarType, Location, $"Invalid var type \"{RHS.ValType.ToString().ToLower()}\", expected \"{LHS.ValType.ToString().ToLower()}\"");
             }

@@ -208,7 +208,7 @@ proc/step_rand(atom/movable/Ref, Speed=0)
 	var/target = get_step_rand(Ref)
 	return Ref.Move(target, get_dir(Ref, target))
 
-proc/jointext(list/List, Glue, Start = 1, End = 0) as /list
+proc/jointext(list/List, Glue, Start = 1, End = 0)
 	if(islist(List))
 		return List.Join(Glue, Start, End)
 	if(istext(List))

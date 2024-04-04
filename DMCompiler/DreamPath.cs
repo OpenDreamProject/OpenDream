@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json.Serialization;
+using DMCompiler.DM;
 
 namespace DMCompiler;
 
@@ -90,6 +91,25 @@ public struct DreamPath {
         _pathString = null;
 
         Normalize(true);
+    }
+
+    public DMValueType GetATOMType() {
+        var dmType = DMObjectTree.GetDMObject(this, false);
+        if (dmType is null) return DMValueType.Anything;
+        if (dmType.IsSubtypeOf(DreamPath.Obj)) {
+            return DMValueType.Obj;
+        }
+        if (dmType.IsSubtypeOf(DreamPath.Mob)) {
+            return DMValueType.Mob;
+        }
+        if (dmType.IsSubtypeOf(DreamPath.Turf)) {
+            return DMValueType.Turf;
+        }
+        if (dmType.IsSubtypeOf(DreamPath.Area)) {
+            return DMValueType.Area;
+        }
+
+        return DMValueType.Anything;
     }
 
     public void SetFromString(string rawPath) {

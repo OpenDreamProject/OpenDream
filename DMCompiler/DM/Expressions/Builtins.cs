@@ -67,7 +67,7 @@ namespace DMCompiler.DM.Expressions {
     internal sealed class NewPath : DMExpression {
         private readonly ConstantPath targetPath;
         private readonly ArgumentList arguments;
-        public override DMValueType ValType => DMValueType.Path;
+        public override DMValueType ValType => targetPath.Value.GetATOMType();
 
         public NewPath(Location location, ConstantPath targetPath, ArgumentList arguments)
             : base(location) {

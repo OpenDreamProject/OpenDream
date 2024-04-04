@@ -35,7 +35,7 @@ namespace DMCompiler.DM.Expressions {
 
     // src
     sealed class Src(Location location, DreamPath? path, DMValueType valType) : LValue(location, path) {
-        public override DMValueType ValType => valType;
+        public override DMValueType ValType => (valType|DMValueType.Null); // src can and will get set to null by coders so del() doesn't kill an executing proc
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Src;
@@ -46,7 +46,7 @@ namespace DMCompiler.DM.Expressions {
 
     // usr
     sealed class Usr : LValue {
-        public override DMValueType ValType => DMValueType.Mob; //According to the docs, Usr is a mob
+        public override DMValueType ValType => (DMValueType.Mob|DMValueType.Null); //According to the docs, Usr is a mob. But it will get set to null by coders to clear refs.
         public Usr(Location location)
             : base(location, DreamPath.Mob) { }
 

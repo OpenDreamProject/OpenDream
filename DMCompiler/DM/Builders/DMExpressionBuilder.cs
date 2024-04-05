@@ -30,8 +30,8 @@ internal static class DMExpressionBuilder {
             case DMASTStringFormat stringFormat: return BuildStringFormat(stringFormat, dmObject, proc, inferredPath);
             case DMASTIdentifier identifier: return BuildIdentifier(identifier, dmObject, proc, inferredPath);
             case DMASTScopeIdentifier globalIdentifier: return BuildScopeIdentifier(globalIdentifier, dmObject, proc, inferredPath);
-            case DMASTCallableSelf: return new ProcSelf(expression.Location);
-            case DMASTCallableSuper: return new ProcSuper(expression.Location);
+            case DMASTCallableSelf: return new ProcSelf(expression.Location, inferredPath, proc);
+            case DMASTCallableSuper: return new ProcSuper(expression.Location, dmObject, proc);
             case DMASTCallableProcIdentifier procIdentifier: return BuildCallableProcIdentifier(procIdentifier, dmObject);
             case DMASTProcCall procCall: return BuildProcCall(procCall, dmObject, proc, inferredPath);
             case DMASTAssign assign: return BuildAssign(assign, dmObject, proc, inferredPath);

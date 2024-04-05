@@ -355,7 +355,7 @@ internal static class DMExpressionBuilder {
 
         switch (name) {
             case "src":
-                var src = new Src(identifier.Location, dmObject.Path, dmObject.Path.GetATOMType());
+                var src = new Src(identifier.Location, dmObject.Path);
                 return src;
             case "usr":
                 return new Usr(identifier.Location);

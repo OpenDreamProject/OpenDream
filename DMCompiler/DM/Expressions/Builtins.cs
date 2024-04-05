@@ -47,6 +47,7 @@ namespace DMCompiler.DM.Expressions {
     sealed class New : DMExpression {
         private readonly DMExpression _expr;
         private readonly ArgumentList _arguments;
+        public override DMValueType ValType => Path?.GetATOMType() ?? DMValueType.Anything;
 
         public override bool PathIsFuzzy => Path == null;
 

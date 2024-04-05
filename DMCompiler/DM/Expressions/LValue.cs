@@ -34,8 +34,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // src
-    sealed class Src(Location location, DreamPath? path, DMValueType valType) : LValue(location, path) {
-        public override DMValueType ValType => (valType|DMValueType.Null); // src can and will get set to null by coders so del() doesn't kill an executing proc
+    sealed class Src(Location location, DreamPath? path) : LValue(location, path) {
+        public override DMValueType ValType => DMValueType.Anything; 
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Src;

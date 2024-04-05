@@ -158,7 +158,7 @@ namespace DMCompiler.DM {
         public void ValidateReturnType(DMExpression expr) {
             DMValueType type = expr.ValType;
             if ((ReturnTypes & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
-                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, Location, "color, message, and file return types are currently unsupported.");
+                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, expr.Location, "color, message, and file return types are currently unsupported.");
                 return;
             }
 
@@ -168,19 +168,19 @@ namespace DMCompiler.DM {
                 if (DMCompiler.Settings.SkipAnythingTypecheck) return;
                 switch (expr) {
                     case ProcCall:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected \"{ReturnTypes.ToString().ToLower()}\".");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected \"{ReturnTypes.ToString().ToLower()}\".");
                         break;
                     case Local:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected \"{ReturnTypes.ToString().ToLower()}\". Consider making this variable constant or adding an explicit \"as {ReturnTypes.ToString().ToLower()}\"");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected \"{ReturnTypes.ToString().ToLower()}\". Consider making this variable constant or adding an explicit \"as {ReturnTypes.ToString().ToLower()}\"");
                         break;
                     default:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this as a bug on OpenDream's GitHub.");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this as a bug on OpenDream's GitHub.");
                         break;
                 }
             }
             // We could determine the return types but they don't match
             else if ((ReturnTypes & type) == 0) {
-                DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type \"{type.ToString().ToLower()}\", expected \"{ReturnTypes.ToString().ToLower()}\"");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type \"{type.ToString().ToLower()}\", expected \"{ReturnTypes.ToString().ToLower()}\"");
             }
         }
 

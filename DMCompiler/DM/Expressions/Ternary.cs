@@ -5,6 +5,7 @@ namespace DMCompiler.DM.Expressions;
 // x ? y : z
 internal sealed class Ternary(Location location, DMExpression a, DMExpression b, DMExpression c) : DMExpression(location) {
     public override bool PathIsFuzzy => true;
+    public override DMValueType ValType => b.ValType | c.ValType;
 
     public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
         if (!a.TryAsConstant(out var constant1)) {

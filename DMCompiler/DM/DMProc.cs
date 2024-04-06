@@ -11,7 +11,7 @@ using DMCompiler.Json;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
-        public class LocalVariable(string name, int id, bool isParameter, DreamPath? type, DMValueType? explicitValueType) {
+        public class LocalVariable(string name, int id, bool isParameter, DreamPath? type, DMValueType? explicitValueType, DreamPath? explicitValuePath) {
             public readonly string Name = name;
             public readonly int Id = id;
             public readonly bool IsParameter = isParameter;
@@ -22,10 +22,11 @@ namespace DMCompiler.DM {
             /// <code>var/parameter as mob</code>
             /// </summary>
             public DMValueType? ExplicitValueType = explicitValueType;
+            public DreamPath? ExplicitValuePath = explicitValuePath;
         }
 
         public sealed class LocalConstVariable(string name, int id, DreamPath? type, Expressions.Constant value)
-                : LocalVariable(name, id, false, type, value.ValType) {
+                : LocalVariable(name, id, false, type, value.ValType, value.ValPath) {
             public readonly Expressions.Constant Value = value;
         }
 
@@ -101,7 +102,7 @@ namespace DMCompiler.DM {
         private string? _lastSourceFile;
 
         public DMValueType ReturnTypes;
-        public DMASTPath ReturnPath; // If the proc return type is a path, this is that path
+        public DreamPath? ReturnPath; // If the proc return type is a path, this is that path
         public bool TypeChecked = false;
 
         private int AllocLocalVariable(string name) {
@@ -133,11 +134,11 @@ namespace DMCompiler.DM {
 
             if (_astDefinition is not null) { // It's null for initialization procs
                 foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType, parameter.ReturnPath);
                 }
 
                 // Typechecking
-                DMASTPath? parentPath = null;
+                DreamPath? parentPath = null;
                 var parent = _dmObject?.GetParentProcType(_astDefinition.Name, out parentPath);
                 if (parent is not null && parent != DMValueType.Anything) {
                     ReturnTypes = parent.Value;
@@ -264,11 +265,11 @@ namespace DMCompiler.DM {
             return null;
         }
 
-        public void AddParameter(string name, DMValueType? valueType, DreamPath? type) {
+        public void AddParameter(string name, DMValueType? valueType, DreamPath? type, DreamPath? returnPath) {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
-                _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
+                _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType, returnPath));
             }
         }
 
@@ -356,12 +357,12 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public bool TryAddLocalVariable(string name, DreamPath? type, DMValueType valType) {
+        public bool TryAddLocalVariable(string name, DreamPath? type, DMValueType valType, DreamPath? valPath) {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, valType));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, valType, valPath));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {

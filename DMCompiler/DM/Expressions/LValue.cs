@@ -72,8 +72,9 @@ namespace DMCompiler.DM.Expressions {
 
     // Identifier of local variable
     sealed class Local : LValue {
-        DMProc.LocalVariable LocalVar { get; }
+        public DMProc.LocalVariable LocalVar { get; }
         public override DMValueType ValType => LocalVar.ExplicitValueType ?? DMValueType.Anything; // TODO: non-const local var static typing
+        public override DreamPath? ValPath => LocalVar.ExplicitValuePath;
 
         public Local(Location location, DMProc.LocalVariable localVar)
             : base(location, localVar.Type) {
@@ -108,9 +109,10 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Identifier of field
-    sealed class Field(Location location, DMVariable variable, DMValueType valType)
+    sealed class Field(Location location, DMVariable variable, DMValueType valType, DreamPath? valPath)
         : LValue(location, variable.Type) {
         public override DMValueType ValType => valType;
+        public override DreamPath? ValPath => valPath;
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
@@ -145,9 +147,10 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Id of global field
-    sealed class GlobalField(Location location, DreamPath? path, int id, DMValueType valType) : LValue(location, path) {
+    sealed class GlobalField(Location location, DreamPath? path, int id, DMValueType valType, DreamPath? valPath) : LValue(location, path) {
         private int Id { get; } = id;
         public override DMValueType ValType => valType;
+        public override DreamPath? ValPath => valPath;
 
         public void EmitPushIsSaved(DMProc proc) {
             throw new CompileErrorException(Location, "issaved() on globals is unimplemented");

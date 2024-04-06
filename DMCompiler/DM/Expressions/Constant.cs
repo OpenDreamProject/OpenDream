@@ -492,6 +492,7 @@ namespace DMCompiler.DM.Expressions {
         /// </summary>
         private readonly DMObject _dmObject;
         public override DMValueType ValType => DMValueType.Path;
+        public override DreamPath? ValPath => Path;
 
         public ConstantPath(Location location, DMObject dmObject, DreamPath value)
             : base(location) {

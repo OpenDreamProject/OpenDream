@@ -297,8 +297,8 @@ namespace DMCompiler.Compiler.DM {
 
                         value ??= new DMASTConstantNull(loc);
 
-                        var valType = AsTypes(out _) ?? DMValueType.Anything;
-                        var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
+                        var valType = AsTypes(out var valPath, true) ?? DMValueType.Anything;
+                        var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType, valPath);
 
                         varDefinitions.Add(varDef);
                         if (Check(TokenType.DM_Comma)) {
@@ -866,9 +866,9 @@ namespace DMCompiler.Compiler.DM {
                     if (value == null) Error("Expected an expression");
                 }
 
-                var valType = AsTypes(out _);
+                var valType = AsTypes(out var valPath, true);
 
-                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType ?? DMValueType.Anything));
+                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType ?? DMValueType.Anything, valPath));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
                     Whitespace();
                     varPath = Path();
@@ -1169,7 +1169,7 @@ namespace DMCompiler.Compiler.DM {
 
                 _allowVarDeclExpression = true;
                 DMASTExpression? expr1 = Expression();
-                DMValueType? dmTypes = AsTypes(out _);
+                DMValueType? dmTypes = AsTypes(out var dmPath, true);
                 Whitespace();
                 _allowVarDeclExpression = false;
                 if (expr1 == null) {
@@ -1184,7 +1184,7 @@ namespace DMCompiler.Compiler.DM {
                     if (expr1 is DMASTAssign assign) {
                         ExpressionTo(out var endRange, out var step);
                         Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after to expression");
-                        return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, GetForBody(loc));
+                        return new DMASTProcStatementFor(loc, new DMASTExpressionInRange(loc, assign.LHS, assign.RHS, endRange, step), null, null, dmTypes, dmPath, GetForBody(loc));
                     } else {
                         Error("Expected = before to in for");
                     }
@@ -1195,16 +1195,16 @@ namespace DMCompiler.Compiler.DM {
                     DMASTExpression? listExpr = Expression();
                     Whitespace();
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, GetForBody(loc));
+                    return new DMASTProcStatementFor(loc, new DMASTExpressionIn(loc, expr1, listExpr), null, null, dmTypes, dmPath, GetForBody(loc));
                 }
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 1");
-                    return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
+                    return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, dmPath, GetForBody(loc));
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, GetForBody(loc));
+                    return new DMASTProcStatementFor(loc, expr1, null, null, dmTypes, dmPath, GetForBody(loc));
                 }
 
                 Whitespace();
@@ -1219,11 +1219,11 @@ namespace DMCompiler.Compiler.DM {
 
                 if (!Check(ForSeparatorTypes)) {
                     Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 2");
-                    return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
+                    return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, dmPath, GetForBody(loc));
                 }
 
                 if (Check(TokenType.DM_RightParenthesis)) {
-                    return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, GetForBody(loc));
+                    return new DMASTProcStatementFor(loc, expr1, expr2, null, dmTypes, dmPath, GetForBody(loc));
                 }
 
                 Whitespace();
@@ -1237,7 +1237,7 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 Consume(TokenType.DM_RightParenthesis, "Expected ')' in for after expression 3");
-                return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, GetForBody(loc));
+                return new DMASTProcStatementFor(loc, expr1, expr2, expr3, dmTypes, dmPath, GetForBody(loc));
             }
 
             return null;
@@ -1705,12 +1705,13 @@ namespace DMCompiler.Compiler.DM {
                     value = Expression();
                 }
 
-                var type = AsTypes(out _);
+                var type = AsTypes(out DreamPath? valPath, true);
+                var dmType = DMObjectTree.GetDMObject(path.Path, false);
                 // TODO: Figure out a clean way to do this only if "path.Path" is a subtype of datum/ instead of a var/. IsDescendentOf() is insufficient
-                /*if (type is not null && type != DMValueType.Anything && (value is null || value is DMASTConstantNull)) {
+                if (type is not null && type != DMValueType.Anything && (value is null || value is DMASTConstantNull) && (dmType?.IsSubtypeOf(DreamPath.Datum) ?? false)) {
                     DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"{_currentPath}: Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
                     type |= DMValueType.Null;
-                }*/
+                }
 
                 Whitespace();
 
@@ -1721,7 +1722,7 @@ namespace DMCompiler.Compiler.DM {
 
                 wasIndeterminate = false;
 
-                return new DMASTDefinitionParameter(loc, path, value, type, possibleValues);
+                return new DMASTDefinitionParameter(loc, path, value, type, valPath, possibleValues);
             }
 
             wasIndeterminate = Check(TokenType.DM_IndeterminateArgs);
@@ -2617,7 +2618,7 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMValueType? AsTypes(out DMASTPath? path, bool allowPath = false) {
+        private DMValueType? AsTypes(out DreamPath? path, bool allowPath = false) {
             path = null;
             if (Check(TokenType.DM_As)) {
                 DMValueType type = DMValueType.Anything;
@@ -2638,7 +2639,7 @@ namespace DMCompiler.Compiler.DM {
 
                     if (!Check(new TokenType[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
                         // Proc return types
-                        path = Path();
+                        path = Path()?.Path;
                         if (allowPath) {
                             if (path is null) {
                                 DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");

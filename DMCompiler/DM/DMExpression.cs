@@ -15,6 +15,9 @@ internal abstract class DMExpression(Location location) {
         init => value = DMValueType.Anything;
     }
 
+    private DreamPath? _valPath;
+    public virtual DreamPath? ValPath => _valPath;
+
     // TODO: proc and dmObject can be null, address nullability contract
     public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);

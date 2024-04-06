@@ -13,8 +13,9 @@ internal sealed class DMVariable {
     public bool IsTmp;
     public DMExpression? Value;
     public DMValueType ValType;
+    public DreamPath? ValPath;
 
-    public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMValueType valType = DMValueType.Anything) {
+    public DMVariable(DreamPath? type, string name, bool isGlobal, bool isConst, bool isTmp, DMValueType valType = DMValueType.Anything, DreamPath? valPath = null) {
         Type = type;
         Name = name;
         IsGlobal = isGlobal;
@@ -22,6 +23,7 @@ internal sealed class DMVariable {
         IsTmp = isTmp;
         Value = null;
         ValType = valType;
+        ValPath = valPath;
     }
 
     /// <summary>
@@ -35,7 +37,7 @@ internal sealed class DMVariable {
             return this;
         }
 
-        DMVariable clone = new DMVariable(Type, Name, IsGlobal, IsConst, IsTmp, ValType);
+        DMVariable clone = new DMVariable(Type, Name, IsGlobal, IsConst, IsTmp, ValType, ValPath);
         clone.Value = value;
         return clone;
     }

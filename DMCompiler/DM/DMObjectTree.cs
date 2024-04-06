@@ -176,10 +176,10 @@ internal static class DMObjectTree {
         return null;
     }
 
-    public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
+    public static int CreateGlobal(out DMVariable global, DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything, DreamPath? valPath = null) {
         int id = Globals.Count;
 
-        global = new DMVariable(type, name, true, isConst, false, valType);
+        global = new DMVariable(type, name, true, isConst, false, valType, valPath);
         Globals.Add(global);
         return id;
     }

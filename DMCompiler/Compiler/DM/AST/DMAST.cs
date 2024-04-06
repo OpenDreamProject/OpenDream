@@ -67,11 +67,13 @@ public sealed class DMASTDefinitionParameter(
     DMASTPath astPath,
     DMASTExpression? value,
     DMValueType? type,
+    DreamPath? retPath,
     DMASTExpression possibleValues) : DMASTNode(location) {
     public DreamPath? ObjectType => _paramDecl.IsList ? DreamPath.List : _paramDecl.TypePath;
     public string Name => _paramDecl.VarName;
     public DMASTExpression? Value = value;
     public readonly DMValueType? Type = type;
+    public readonly DreamPath? ReturnPath = retPath;
     public DMASTExpression PossibleValues = possibleValues;
 
     private readonly ProcParameterDeclInfo _paramDecl = new(astPath.Path);

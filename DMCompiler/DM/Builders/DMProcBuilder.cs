@@ -379,8 +379,15 @@ namespace DMCompiler.DM.Builders {
             if (varDeclaration.Value != null) {
                 try {
                     value = DMExpression.Create(_dmObject, _proc, varDeclaration.Value, varDeclaration.Type);
-                    if (varDeclaration.ValType != DMValueType.Anything && !varDeclaration.ValType.HasFlag(value.ValType)) {
-                        DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location, $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
+                    if (varDeclaration.ValType != DMValueType.Anything) {
+                        if (!varDeclaration.ValType.HasFlag(value.ValType)) {
+                            DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location, $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
+                        }
+                        // Allow subtypes
+                        else if (value.ValType.HasFlag(DMValueType.Path) && !varDeclaration.ValPath.Value.IsDescendantOf(value.ValPath ?? DreamPath.Root)) {
+                            var exprName = value.ValPath?.ToString() ?? value.Path.ToString();
+                            DMCompiler.Emit(WarningCode.InvalidReturnType, varDeclaration.Location, $"var {varDeclaration.Name.ToString() ?? "Unknown"}: Invalid return type \"{exprName}\", expected \"{(varDeclaration.ValPath is null ? "path" : varDeclaration.ValPath)}\"");
+                        }
                     }
                 } catch (CompileErrorException e) {
                     DMCompiler.Emit(e.Error);
@@ -399,7 +406,7 @@ namespace DMCompiler.DM.Builders {
 
                 successful = _proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
-                successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType);
+                successful = _proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType, varDeclaration.ValPath);
             }
 
             if (!successful) {
@@ -417,17 +424,17 @@ namespace DMCompiler.DM.Builders {
                 var expr = DMExpression.Emit(_dmObject, _proc, statement.Value);
                 // Don't typecheck unimplementeds
                 if (_proc.TypeChecked && (_proc.Attributes & ProcAttributes.Unimplemented) == 0) {
-                    if (_proc.ReturnTypes == DMValueType.Path) {
-                        if (expr.Path != _proc.ReturnPath.Path) {
+                    if (_proc.ReturnTypes.HasFlag(DMValueType.Path)) {
+                        if (expr.Path != _proc.ReturnPath) {
                             var splitter = ((_proc.Attributes & ProcAttributes.IsOverride) == ProcAttributes.IsOverride) ? "/" : "/proc/";
-                            if (_proc.ReturnPath.Path == DreamPath.List) {
+                            if (_proc.ReturnPath == DreamPath.List) {
                                 if(expr is not List && (expr is not Dereference deref || deref.Expression.NestedPath != DreamPath.List))
                                     DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{_proc.Name}(): Invalid return type \"{expr}\", expected \"/list\"");
                             } else {
                                 var exprName = expr.Path?.ToString() ?? expr.ToString();
                                 // Allow subtypes
-                                if (expr.Path is null || !expr.Path.Value.IsDescendantOf(_proc.ReturnPath.Path)) {
-                                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{_proc.Name}(): Invalid return type \"{exprName}\", expected \"{_proc.ReturnPath.Path}\"");
+                                if (expr.Path is null || !expr.Path.Value.IsDescendantOf(_proc.ReturnPath ?? DreamPath.Root)) {
+                                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{_proc.Name}(): Invalid return type \"{exprName}\", expected \"{(_proc.ReturnPath is null ? "path" : _proc.ReturnPath)}\"");
                                 }
                             }
                         }
@@ -480,7 +487,7 @@ namespace DMCompiler.DM.Builders {
             _proc.StartScope();
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
-                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything, null));
                 }
 
                 var initializer = statementFor.Expression1 != null ? DMExpression.Create(_dmObject, _proc, statementFor.Expression1) : null;
@@ -546,9 +553,13 @@ namespace DMCompiler.DM.Builders {
                             }
 
                             var outputVar = DMExpression.Create(_dmObject, _proc, outputExpr);
+                            if(outputVar is Local outputLocal) {
+                                outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                                outputLocal.LocalVar.ExplicitValuePath = statementFor.DMPaths;
+                            }
                             var list = DMExpression.Create(_dmObject, _proc, exprIn.RHS);
 
-                            ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
+                            ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.DMPaths, statementFor.Body);
                             break;
                         }
                         default:
@@ -619,7 +630,7 @@ namespace DMCompiler.DM.Builders {
             }
         }
 
-        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DreamPath? dmPath, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                 lValue = null;
@@ -630,6 +641,8 @@ namespace DMCompiler.DM.Builders {
             if (dmTypes == null) {
                 // No "as" means the var's type will be used
                 implicitTypeCheck = lValue?.Path;
+            } else if (dmTypes?.HasFlag(DMValueType.Path) ?? false) {
+                implicitTypeCheck = dmPath;
             } else if (dmTypes != DMValueType.Anything) {
                 // "as anything" performs no check. Other values are unimplemented.
                 DMCompiler.UnimplementedWarning(outputVar.Location,
@@ -976,7 +989,7 @@ namespace DMCompiler.DM.Builders {
             if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
 
-                if (!_proc.TryAddLocalVariable(param.Name, param.Type, param.ValType)) {
+                if (!_proc.TryAddLocalVariable(param.Name, param.Type, param.ValType, param.ValPath)) {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
 

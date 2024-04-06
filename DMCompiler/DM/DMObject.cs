@@ -110,7 +110,7 @@ internal sealed class DMObject {
         return proc;
     }
 
-    public DMValueType? GetParentProcType(string name, out DMASTPath? path) {
+    public DMValueType? GetParentProcType(string name, out DreamPath? path) {
         var parent = Parent?.GetProcs(name);
         path = null;
         var returnType = DMValueType.Anything;
@@ -134,8 +134,8 @@ internal sealed class DMObject {
         _verbs.Add(verb);
     }
 
-    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
-        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType);
+    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything, DreamPath? valPath = null) {
+        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType, valPath);
 
         GlobalVariables[name] = id;
         return global;

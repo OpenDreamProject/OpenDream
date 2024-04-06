@@ -83,11 +83,8 @@ namespace DMCompiler.DM.Expressions {
     /// . <br/>
     /// This is an LValue _and_ a proc!
     /// </summary>
-    sealed class ProcSelf : LValue {
-        public override DMValueType ValType => DMValueType.Anything; //TODO: figure out how to deal with procself static typing
-
-        public ProcSelf(Location location)
-            : base(location, null) {}
+    sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) : LValue(location, path) {
+        public override DMValueType ValType => proc.ReturnTypes;
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Self;
@@ -95,8 +92,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // ..
-    sealed class ProcSuper : DMExpression {
-        public ProcSuper(Location location) : base(location) { }
+    sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _proc) : DMExpression(location) {
+        public override DMValueType ValType => _dmObject?.GetParentProcType(_proc.Name, out _) ?? DMValueType.Anything;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");

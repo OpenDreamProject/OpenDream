@@ -418,6 +418,7 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression _dir;
 
         public override bool PathIsFuzzy => true;
+        public override DMValueType ValType => DMValueType.Turf | DMValueType.Null;
 
         public GetStep(Location location, DMExpression refValue, DMExpression dir) : base(location) {
             _ref = refValue;

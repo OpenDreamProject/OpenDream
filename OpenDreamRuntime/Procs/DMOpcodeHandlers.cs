@@ -1477,16 +1477,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus JumpIfTrue(DMProcState state) {
-            int position = state.ReadInt();
-            DreamValue value = state.Pop();
-
-            if (value.IsTruthy()) {
-                state.Jump(position);
-            }
-
-            return ProcStatus.Continue;
-        }
         public static ProcStatus JumpIfNull(DMProcState state) {
             int position = state.ReadInt();
 
@@ -1502,18 +1492,6 @@ namespace OpenDreamRuntime.Procs {
             int position = state.ReadInt();
 
             if (state.Peek().IsNull) {
-                state.Jump(position);
-            }
-
-            return ProcStatus.Continue;
-        }
-
-        public static ProcStatus JumpIfNullDereference(DMProcState state) {
-            DreamReference reference = state.ReadReference();
-            int position = state.ReadInt();
-
-            if (state.IsNullDereference(reference)) {
-                state.Push(DreamValue.Null);
                 state.Jump(position);
             }
 

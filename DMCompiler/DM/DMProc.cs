@@ -233,10 +233,11 @@ namespace DMCompiler.DM {
                         reference.Location,
                         $"Label \"{reference.Identifier}\" unreachable from scope or does not exist"
                     );
+
                     // Not cleaning away the placeholder will emit another compiler error
                     // let's not do that
                     _unresolvedLabels.RemoveAt(
-                        _unresolvedLabels.FindIndex(((long Position, string LabelName)o) => o.LabelName == reference.Placeholder)
+                        _unresolvedLabels.FindIndex(o => o.LabelName == reference.Placeholder)
                     );
                     continue;
                 }
@@ -619,19 +620,6 @@ namespace DMCompiler.DM {
 
         public void JumpIfFalse(string label) {
             WriteOpcode(DreamProcOpcode.JumpIfFalse);
-            WriteLabel(label);
-        }
-
-        public void JumpIfTrue(string label) {
-            WriteOpcode(DreamProcOpcode.JumpIfTrue);
-            WriteLabel(label);
-        }
-
-        //Jumps to the label and pushes null if the reference is dereferencing null
-        public void JumpIfNullDereference(DMReference reference, string label) {
-            //Either grows the stack by 0 or 1. Assume 0.
-            WriteOpcode(DreamProcOpcode.JumpIfNullDereference);
-            WriteReference(reference, affectStack: false);
             WriteLabel(label);
         }
 

@@ -32,6 +32,7 @@ namespace DMCompiler.DM.Expressions {
     sealed class Not : UnaryOp {
         public Not(Location location, DMExpression expr) : base(location, expr) {
         }
+        public override DMValueType ValType => DMValueType.Num;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!Expr.TryAsConstant(out constant)) return false;

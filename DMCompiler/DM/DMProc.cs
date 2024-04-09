@@ -1,6 +1,7 @@
 using DMCompiler.Bytecode;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using DMCompiler.Compiler;
@@ -127,15 +128,18 @@ namespace DMCompiler.DM {
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
+
+            if (_astDefinition is not null) {
+                foreach (DMASTDefinitionParameter parameter in _astDefinition!.Parameters) {
+                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType, parameter.ReturnPath);
+                }
+            }
         }
 
         public void Compile() {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
 
             if (_astDefinition is not null) { // It's null for initialization procs
-                foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType, parameter.ReturnPath);
-                }
 
                 // Typechecking
                 DreamPath? parentPath = null;
@@ -271,6 +275,10 @@ namespace DMCompiler.DM {
             } else {
                 _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType, returnPath));
             }
+        }
+
+        public bool TryGetParameter(string name, [NotNullWhen(true)] out LocalVariable? param) {
+            return _parameters.TryGetValue(name, out param);
         }
 
         public void ResolveCodeLabelReferences() {

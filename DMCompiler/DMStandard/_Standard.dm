@@ -70,7 +70,7 @@ proc/range(Dist, Center) as /list|null // NOTE: Not sure if return types have BY
 proc/ref(Object) as text
 proc/replacetext(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
 proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|null
-proc/rgb(R, G, B, A) as text|null
+proc/rgb(R, G, B, A, space) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
 proc/roll(ndice = 1, sides) as num
 proc/round(A, B) as num

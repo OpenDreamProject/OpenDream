@@ -57,7 +57,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+            var argumentInfo = _arguments.EmitArguments(dmObject, proc, null);
 
             _expr.EmitPushValue(dmObject, proc);
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
@@ -83,8 +83,7 @@ namespace DMCompiler.DM.Expressions {
                 proc.PushNull();
                 return;
             }
-
-            var argumentInfo = arguments.EmitArguments(dmObject, proc);
+            var argumentInfo = arguments.EmitArguments(dmObject, proc, DMObjectTree.GetNewProc(pathInfo.Value.Id));
 
             switch (pathInfo.Value.Type) {
                 case ConstantPath.PathType.TypeReference:
@@ -196,7 +195,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argInfo = _arguments.EmitArguments(dmObject, proc);
+            DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
+            var argInfo = _arguments.EmitArguments(dmObject, proc, dmProc);
 
             proc.Gradient(argInfo.Type, argInfo.StackSize);
         }
@@ -208,7 +208,8 @@ namespace DMCompiler.DM.Expressions {
     /// rgb(x, y, z, a, space)
     internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argInfo = arguments.EmitArguments(dmObject, proc);
+            DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
+            var argInfo = arguments.EmitArguments(dmObject, proc, dmProc);
 
             proc.Rgb(argInfo.Type, argInfo.StackSize);
         }
@@ -644,7 +645,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argumentInfo = _procArgs.EmitArguments(dmObject, proc);
+            var argumentInfo = _procArgs.EmitArguments(dmObject, proc, null);
 
             _b?.EmitPushValue(dmObject, proc);
             _a.EmitPushValue(dmObject, proc);

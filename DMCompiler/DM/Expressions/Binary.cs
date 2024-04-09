@@ -420,6 +420,9 @@ namespace DMCompiler.DM.Expressions {
         public Or(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
 
+        // LHS can never make the expression null, only RHS can
+        public override DMValueType ValType => (LHS.ValType & ~DMValueType.Null) | RHS.ValType;
+
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (LHS.TryAsConstant(out var lhs) && lhs.IsTruthy()) {
                 constant = lhs;
@@ -444,6 +447,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class And : BinaryOp {
         public And(Location location, DMExpression lhs, DMExpression rhs)
             : base(location, lhs, rhs) { }
+
+        public override DMValueType ValType => RHS.ValType | DMValueType.Num;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (LHS.TryAsConstant(out var lhs) && !lhs.IsTruthy()) {

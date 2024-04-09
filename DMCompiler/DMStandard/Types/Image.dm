@@ -58,7 +58,7 @@
 	var/icon
 	var/icon_state
 
-	var/atom/loc
+	var/atom/loc as area|turf|obj|mob|null
 
 	// The ref does not mention the pixel_x and pixel_y args...
 	New(icon, loc, icon_state, layer, dir, pixel_x, pixel_y)

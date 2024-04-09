@@ -24,9 +24,9 @@
 	proc/Find_char(haystack, start = 1, end = 0)
 		set opendream_unimplemented = TRUE
 
-	proc/Replace(haystack, replacement, start = 1, end = 0)
+	proc/Replace(haystack, replacement, start = 1, end = 0) as null|text
 
-	proc/Replace_char(haystack, replacement, start = 1, end = 0)
+	proc/Replace_char(haystack, replacement, start = 1, end = 0) as null|text
 		set opendream_unimplemented = TRUE
 		return haystack
 

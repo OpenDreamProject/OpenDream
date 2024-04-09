@@ -5,7 +5,7 @@ proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
 proc/animate(Object, time, loop, easing, flags) as null
 proc/ascii2text(N) as text
 proc/block(atom/Start, atom/End, StartZ, EndX=Start, EndY=End, EndZ=StartZ) as /list
-proc/ceil(A) as num
+proc/ceil(A as num) as num
 proc/ckey(Key) as text|null
 proc/ckeyEx(Text) as text|null
 proc/clamp(Value, Low, High) as /list|num|null
@@ -26,11 +26,11 @@ proc/findlasttext(Haystack, Needle, Start = 1, End = 0) as num
 proc/findlasttextEx(Haystack, Needle, Start = 1, End = 0) as num
 proc/flick(Icon, Object)
 proc/flist(Path) as /list
-proc/floor(A) as num
-proc/fract(n) as num
+proc/floor(A as num) as num
+proc/fract(n as num) as num
 proc/ftime(File, IsCreationTime = 0) as num
 proc/gradient(A, index)
-proc/hascall(Object, ProcName) as num
+proc/hascall(Object, ProcName as text) as num
 proc/html_decode(HtmlText) as text
 proc/html_encode(PlainText) as text
 proc/icon_states(Icon, mode = 0) as text|null
@@ -73,10 +73,10 @@ proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|nu
 proc/rgb(R, G, B, A, space) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
 proc/roll(ndice = 1, sides) as num
-proc/round(A, B) as num
+proc/round(A as num|null, B as num|null) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
-proc/sleep(Delay)
+proc/sleep(Delay as num|null)
 proc/sorttext(T1, T2) as num
 proc/sorttextEx(T1, T2) as num
 proc/sound(file, repeat = 0, wait, channel, volume)
@@ -91,7 +91,7 @@ proc/text2ascii(T, pos = 1) as text
 proc/text2ascii_char(T, pos = 1) as text
 proc/text2file(Text, File)
 proc/text2num(T, radix = 10) as num|null
-proc/text2path(T)
+proc/text2path(T as text|null) as path
 proc/time2text(timestamp, format) as text
 proc/trimtext(Text) as text|null
 proc/trunc(n) as num
@@ -174,17 +174,17 @@ proc/get_dist(atom/Loc1, atom/Loc2) as num
 	var/distY = Loc2.y - Loc1.y
 	return round(sqrt(distX ** 2 + distY ** 2))
 
-proc/get_step_towards(atom/movable/Ref, /atom/Trg)
+proc/get_step_towards(atom/movable/Ref as obj|mob|null, /atom/Trg as mob|obj|turf|area|null) as turf|num
 	var/dir = get_dir(Ref, Trg)
 
 	return get_step(Ref, dir)
 
-proc/get_step_away(atom/movable/Ref, /atom/Trg, Max = 5)
+proc/get_step_away(atom/movable/Ref as obj|mob|null, /atom/Trg as mob|obj|turf|area|null, Max = 5 as num) as turf|num
 	var/dir = turn(get_dir(Ref, Trg), 180)
 
 	return get_step(Ref, dir)
 
-proc/get_step_rand(atom/movable/Ref)
+proc/get_step_rand(atom/movable/Ref as obj|mob|null) as turf|num
 	// BYOND's implementation seems to be heavily weighted in favor of Ref's dir.
 	var/dir = pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
 
@@ -200,10 +200,10 @@ proc/ohearers(Depth = world.view, Center = usr) as /list
 	//TODO: Actual cursed ohearers implementation
 	return oviewers(Depth, Center)
 
-proc/step_towards(atom/movable/Ref, /atom/Trg, Speed) as num
+proc/step_towards(atom/movable/Ref as obj|mob|null, /atom/Trg, Speed) as num
 	return Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))
 
-proc/step_rand(atom/movable/Ref, Speed=0)
+proc/step_rand(atom/movable/Ref as obj|mob|null, Speed=0 as num) as num
 	var/target = get_step_rand(Ref)
 	return Ref.Move(target, get_dir(Ref, target))
 
@@ -214,7 +214,7 @@ proc/jointext(list/List as /list|text, Glue as text|null, Start = 1 as num, End 
 		return List
 	CRASH("jointext was passed a non-list, non-text value")
 
-proc/lentext(T) as num
+proc/lentext(T as text|null) as num
 	return length(T)
 
 proc/winshow(player, window, show=1)

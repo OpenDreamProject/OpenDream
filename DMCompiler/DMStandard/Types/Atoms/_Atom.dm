@@ -14,7 +14,7 @@
 	var/tmp/list/vis_locs = null as opendream_unimplemented
 	var/list/vis_contents = null
 
-	var/tmp/atom/loc
+	var/tmp/atom/loc as area|turf|obj|mob|null
 	var/dir = SOUTH
 	var/tmp/x = 0
 	var/tmp/y = 0

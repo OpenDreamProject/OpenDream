@@ -18,6 +18,12 @@ public abstract class DMASTExpression(Location location) : DMASTNode(location) {
     }
 }
 
+/// <summary>
+/// Used when there was an error parsing an expression
+/// </summary>
+/// <remarks>Emit an error code before creating!</remarks>
+public sealed class DMASTInvalidExpression(Location location) : DMASTExpression(location);
+
 public sealed class DMASTVoid(Location location) : DMASTExpression(location);
 
 public sealed class DMASTIdentifier(Location location, string identifier) : DMASTExpression(location) {
@@ -139,9 +145,9 @@ public sealed class DMASTNewExpr(Location location, DMASTExpression expression, 
     public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 
-public sealed class DMASTNewInferred(Location location, DMASTCallParameter[] parameters)
+public sealed class DMASTNewInferred(Location location, DMASTCallParameter[]? parameters)
     : DMASTExpression(location) {
-    public readonly DMASTCallParameter[] Parameters = parameters;
+    public readonly DMASTCallParameter[]? Parameters = parameters;
 }
 
 public sealed class DMASTTernary(Location location, DMASTExpression a, DMASTExpression b, DMASTExpression c)

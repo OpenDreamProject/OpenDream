@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Text;
 using DMCompiler.Bytecode;
@@ -9,23 +10,16 @@ namespace DMCompiler.Compiler.DM;
 
 public partial class DMParser {
     /// <summary>
-    /// A special override of Error() since, for DMParser, we know we are in a compilation context and can make use of error codes.
+    /// If the expression is null, emit an error and set it to a new <see cref="DMASTInvalidExpression" />
     /// </summary>
-    /// <remarks>
-    /// Should only be called AFTER <see cref="DMCompiler"/> has built up its list of pragma configurations.
-    /// </remarks>
-    /// <returns> True if this will raise an error, false if not. You can use this return value to help improve error emission around this (depending on how permissive we're being)</returns>
-    protected bool Error(WarningCode code, string message) {
-        ErrorLevel level = DMCompiler.CodeToLevel(code);
-        if (Emissions.Count < MAX_EMISSIONS_RECORDED)
-            Emissions.Add(new CompilerEmission(level, code, Current().Location, message));
-        return level == ErrorLevel.Error;
-    }
+    /// <param name="expression">The expression that must have a value</param>
+    /// <param name="errorMessage">Message to error with if the expression is null</param>
+    protected void RequireExpression([NotNull] ref DMASTExpression? expression, string? errorMessage = null) {
+        if (expression != null)
+            return;
 
-    /// <inheritdoc cref="Parser{SourceType}.Error(string, bool)"/>
-    [Obsolete("This is not a desirable way for DMParser to emit an error, as errors should emit an error code and not cause unnecessary throws. Use DMParser's overrides of this method, instead.")]
-    protected new void Error(string message, bool throwException = true) {
-        base.Error(message, throwException);
+        Emit(WarningCode.MissingExpression, CurrentLoc, errorMessage ?? "Expected an expression");
+        expression = new DMASTInvalidExpression(CurrentLoc);
     }
 
     protected bool PeekDelimiter() {
@@ -58,19 +52,19 @@ public partial class DMParser {
     }
 
     private void ConsumeRightParenthesis() {
-        //A missing right parenthesis has to subtract 1 from the lexer's bracket nesting counter
-        //To keep indentation working correctly
+        // A missing right parenthesis has to subtract 1 from the lexer's bracket nesting counter
+        // To keep indentation working correctly
         if (!Check(TokenType.DM_RightParenthesis)) {
             ((DMLexer)_lexer).BracketNesting--;
-            Error("Expected ')'");
+            Emit(WarningCode.BadToken, "Expected ')'");
         }
     }
 
     private void ConsumeRightBracket() {
-        //Similar to ConsumeRightParenthesis()
+        // Similar to ConsumeRightParenthesis()
         if (!Check(TokenType.DM_RightBracket)) {
             ((DMLexer)_lexer).BracketNesting--;
-            Error("Expected ']'");
+            Emit(WarningCode.BadToken, "Expected ']'");
         }
     }
 
@@ -137,7 +131,8 @@ public partial class DMParser {
                         string escapeSequence = string.Empty;
 
                         if (i == tokenValue.Length - 1) {
-                            Error("Invalid escape sequence");
+                            Emit(WarningCode.BadToken, "Invalid escape sequence");
+                            break;
                         }
 
                         c = tokenValue[++i];
@@ -157,8 +152,10 @@ public partial class DMParser {
                             int utfCodeLength = Math.Min(utfCodeDigitsExpected.Value, tokenValue.Length - i);
                             var utfCode = tokenValue.AsSpan(i, utfCodeLength);
                             if (utfCodeLength < utfCodeDigitsExpected.Value || !TryConvertUtfCodeToString(utfCode, ref stringBuilder)) {
-                                Error($"Invalid Unicode macro \"\\{c}{utfCode}\"");
+                                Emit(WarningCode.BadToken, $"Invalid Unicode macro \"\\{c}{utfCode}\"");
+                                break;
                             }
+
                             i += utfCodeLength - 1; // -1, cause we have i++ in the current 'for' expression
                         } else if (char.IsLetter(c)) {
                             while (i < tokenValue.Length && char.IsLetter(tokenValue[i])) {
@@ -177,7 +174,8 @@ public partial class DMParser {
                                 case "proper":
                                 case "improper":
                                     if (stringBuilder.Length != 0) {
-                                        Error($"Escape sequence \"\\{escapeSequence}\" must come at the beginning of the string");
+                                        Emit(WarningCode.BadToken, $"Escape sequence \"\\{escapeSequence}\" must come at the beginning of the string");
+                                        break;
                                     }
 
                                     skipSpaces = true;
@@ -258,7 +256,7 @@ public partial class DMParser {
 
                                 case "Her":
                                 case "her":
-                                    Error("\"Her\" is a grammatically ambiguous pronoun. Use \\him or \\his instead");
+                                    Emit(WarningCode.BadToken, "\"Her\" is a grammatically ambiguous pronoun. Use \\him or \\his instead");
                                     break;
 
                                 case "himself":
@@ -294,7 +292,7 @@ public partial class DMParser {
                                         stringBuilder.Append('\t');
                                         stringBuilder.Append(escapeSequence.Skip(1).ToArray());
                                     } else if (!DMLexer.ValidEscapeSequences.Contains(escapeSequence)) { // This only exists to allow unimplements to fallthrough w/o a direct error
-                                        Error($"Invalid escape sequence \"\\{escapeSequence}\"");
+                                        Emit(WarningCode.BadToken, $"Invalid escape sequence \"\\{escapeSequence}\"");
                                     }
 
                                     break;
@@ -325,7 +323,7 @@ public partial class DMParser {
                                     stringBuilder.Append(escapeSequence);
                                     break;
                                 default: //Unimplemented escape sequence
-                                    Error("Invalid escape sequence \"\\" + escapeSequence + "\"");
+                                    Emit(WarningCode.BadToken, "Invalid escape sequence \"\\" + escapeSequence + "\"");
                                     break;
                             }
                         }

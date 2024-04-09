@@ -424,7 +424,7 @@ internal static class DMExpressionBuilder {
                 }
 
                 var arguments = new ArgumentList(location, dmObject, proc, scopeIdentifier.CallArguments, inferredPath);
-                return new ProcCall(location, new GlobalProc(location, bIdentifier), arguments);
+                return new ProcCall(location, new GlobalProc(location, bIdentifier), arguments, dmObject);
             }
 
             // ::vars, special case
@@ -561,10 +561,10 @@ internal static class DMExpressionBuilder {
         var args = new ArgumentList(procCall.Location, dmObject, proc, procCall.Parameters);
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(dmObject);
-            return new ProcCall(procCall.Location, target, args, returnType);
+            return new ProcCall(procCall.Location, target, args, dmObject, returnType);
         }
 
-        return new ProcCall(procCall.Location, target, args);
+        return new ProcCall(procCall.Location, target, args, dmObject);
     }
 
     private static DMExpression BuildAssign(DMASTAssign assign, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
@@ -639,7 +639,7 @@ internal static class DMExpressionBuilder {
                             callOperation.Parameters);
 
                         var globalProc = new GlobalProc(expr.Location, callOperation.Identifier);
-                        expr = new ProcCall(expr.Location, globalProc, argumentList);
+                        expr = new ProcCall(expr.Location, globalProc, argumentList, dmObject);
                         break;
 
                     case DMASTDereference.FieldOperation:

@@ -84,6 +84,8 @@ namespace DMCompiler.DM.Expressions {
     /// This is an LValue _and_ a proc!
     /// </summary>
     sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) : LValue(location, path) {
+        public DMProc Proc => proc;
+
         public override DMValueType ValType => proc.ReturnTypes;
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -93,7 +95,16 @@ namespace DMCompiler.DM.Expressions {
 
     // ..
     sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _proc) : DMExpression(location) {
-        public override DMValueType ValType => _dmObject?.GetParentProcType(_proc.Name, out _) ?? DMValueType.Anything;
+        public override DMValueType ValType => _dmObject?.GetBaseProcType(_proc.Name, out _) ?? DMValueType.Anything;
+
+        public override DreamPath? ValPath {
+            get {
+                _dmObject.GetBaseProcType(_proc.Name, out var outPath);
+                return outPath;
+            }
+        }
+
+        public string Name => _proc.Name;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
@@ -113,14 +124,46 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x(y, z, ...)
-    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMValueType valType = DMValueType.Anything) : DMExpression(location) {
+    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMObject dmObject, DMValueType valType = DMValueType.Anything) : DMExpression(location) {
         public override bool PathIsFuzzy => Path == null;
-        public override DMValueType ValType => valType == DMValueType.Anything ? target.ValType : valType;
+        public override DMValueType ValType {
+            get {
+                if (target.ValType != DMValueType.Anything) return target.ValType;
+                (DMObject? parentObject, DMProc? proc) = GetTargetProc(dmObject);
+                if (proc is null) return DMValueType.Anything;
+                if (parentObject is null) { // global proc
+                    return proc.ReturnTypes;
+                }
+                return parentObject.GetBaseProcType(proc.Name, out _) ?? DMValueType.Anything;
+            }
+        }
+        public override DreamPath? ValPath {
+            get {
+                if (target.ValPath is not null) return target.ValPath;
+                (DMObject? parentObject, DMProc? proc) = GetTargetProc(dmObject);
+                if (proc is null) return null;
+                if (parentObject is null) { // global proc
+                    return proc.ReturnPath;
+                }
+                parentObject.GetBaseProcType(proc.Name, out var path);
+                return path;
+            }
+        }
 
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
             switch (target) {
                 case Proc procTarget: {
                     return (dmObject, procTarget.GetProc(dmObject));
+                }
+                case ProcSelf procTarget: {
+                    return (dmObject, procTarget.Proc);
+                }
+                case ProcSuper procTarget: {
+                    var parentProcId = dmObject.GetParentProc(procTarget.Name)?[^1];
+                    if(parentProcId is not null) {
+                        return (dmObject, DMObjectTree.AllProcs[parentProcId.Value]);
+                    }
+                    return (null, null);
                 }
 
                 case GlobalProc procTarget: {

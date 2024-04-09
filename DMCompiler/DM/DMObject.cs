@@ -110,22 +110,28 @@ internal sealed class DMObject {
         return proc;
     }
 
-    public DMValueType? GetParentProcType(string name, out DreamPath? path) {
+    public List<int>? GetBaseProc(string name) {
+        var proc = Procs.GetValueOrDefault(name);
         var parent = Parent?.GetProcs(name);
-        path = null;
-        var returnType = DMValueType.Anything;
         while (parent is not null) {
-            var parentProc = DMObjectTree.AllProcs[parent[^1]];
-            if (parentProc.ReturnTypes != DMValueType.Anything) {
-                path = parentProc.ReturnPath;
-                return parentProc.ReturnTypes;
-            }
-            parent = parentProc.GetParentObj()?.GetProcs(name) ?? null;
-            if (parent is null) {
-                path = parentProc.ReturnPath;
-                return parentProc?.ReturnTypes ?? null;
+            proc = parent;
+            parent = Parent?.GetProcs(name);
+            if (parent is null || parent[0] == proc[0]) {
+                break;
             }
         }
+        return proc;
+    }
+
+    public DMValueType? GetBaseProcType(string name, out DreamPath? path) {
+        var parent = GetBaseProc(name)?[0];
+        if (parent is not null)
+        {
+            var parentProc = DMObjectTree.AllProcs[parent.Value];
+            path = parentProc.ReturnPath;
+            return parentProc.ReturnTypes;
+        }
+        path = null;
         return null;
     }
 
@@ -160,7 +166,7 @@ internal sealed class DMObject {
     }
 
     public DMValueType GetReturnType(string name) {
-        var procId = GetProcs(name)?[^1];
+        var procId = GetProcs(name)?[0];
         return procId is null ? DMValueType.Anything : GetReturnType(procId.Value);
     }
 

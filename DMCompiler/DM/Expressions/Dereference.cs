@@ -82,28 +82,45 @@ namespace DMCompiler.DM.Expressions {
         }
 
         private void EmitOperation(DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
+            DMObject? operationParentObject = null;
+            // We have to infer some things about the operation here.
+            if (Expression?.NestedPath is not null) {
+                operationParentObject = DMObjectTree.GetDMObject(Expression.NestedPath.Value, false);
+            }
             switch (operation) {
                 case FieldOperation fieldOperation:
+                    if (operationParentObject is not null) {
+                        var derefedVariable = operationParentObject.GetVariable(fieldOperation.Identifier);
+                        _valType = derefedVariable?.ValType ?? DMValueType.Anything;
+                        _valPath = derefedVariable?.ValPath;
+                    }
                     if (fieldOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                        _valType |= DMValueType.Null;
                     }
                     proc.DereferenceField(fieldOperation.Identifier);
-                    _valType = dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything;
                     break;
 
                 case IndexOperation indexOperation:
                     if (indexOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                        _valType |= DMValueType.Null;
                     }
                     indexOperation.Index.EmitPushValue(dmObject, proc);
                     proc.DereferenceIndex();
                     break;
 
                 case CallOperation callOperation:
+                    if(operationParentObject is not null) {
+                        _valType = operationParentObject.GetBaseProcType(callOperation.Identifier, out _valPath);
+                    } else {
+                        _valType = proc.ReturnTypes;
+                        _valPath = proc.ReturnPath;
+                    }
                     if (callOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+                        _valType |= DMValueType.Null;
                     }
-                    _valType = proc.ReturnTypes;
                     var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, null);
                     proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                     break;

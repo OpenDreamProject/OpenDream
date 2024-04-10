@@ -51,9 +51,56 @@ namespace DMCompiler.DM.Expressions {
         public override bool PathIsFuzzy => Path == null;
 
         private readonly Operation[] _operations;
-        private DMValueType? _valType;
-
-        public override DMValueType ValType => _valType ?? DMValueType.Anything;
+        public override DMValueType ValType => ValPair.ValType;
+        public override DreamPath? ValPath => ValPair.ValPath;
+        private (DMValueType ValType, DreamPath? ValPath) ValPair {
+            get {
+                DMValueType outType = DMValueType.Anything;
+                DreamPath? outPath = null;
+                var isSafe = false;
+                for(int i=0; i<_operations.Length; i++) {
+                    if (_operations[i].Safe) {
+                        isSafe = true;
+                        break;
+                    }
+                }
+                DMObject? operationParentObject = null;
+                // We have to infer some things about the operation here.
+                if (_operations.Length > 1) { // Take the second to last's path.
+                    var parentPath = _operations[^2].Path;
+                    if (parentPath is not null) {
+                        operationParentObject = DMObjectTree.GetDMObject(parentPath.Value, false);
+                    }
+                }
+                if (operationParentObject is null && Expression?.NestedPath is not null) { // Otherwise, fall back to the nested path.
+                    operationParentObject = DMObjectTree.GetDMObject(Expression.NestedPath.Value, false);
+                }
+                switch (_operations[^1]) {
+                    case FieldOperation fieldOperation:
+                        if (operationParentObject is null) {
+                            break;
+                        }
+                        var derefedVariable = operationParentObject.GetVariable(fieldOperation.Identifier);
+                        outType = derefedVariable?.ValType ?? DMValueType.Anything;
+                        outPath = derefedVariable?.ValPath;
+                        break;
+                    case CallOperation callOperation:
+                        if(operationParentObject is null) {
+                            break;
+                        }
+                        outType = operationParentObject.GetBaseProcType(callOperation.Identifier, out outPath) ?? DMValueType.Anything;
+                        break;
+                    case IndexOperation:
+                        break;
+                    default:
+                        throw new InvalidOperationException("Unimplemented dereference operation");
+                }
+                if (isSafe && outType != DMValueType.Anything) {
+                    outType |= DMValueType.Null;
+                }
+                return (outType, outPath);
+            }
+        }
 
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
@@ -82,21 +129,10 @@ namespace DMCompiler.DM.Expressions {
         }
 
         private void EmitOperation(DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
-            DMObject? operationParentObject = null;
-            // We have to infer some things about the operation here.
-            if (Expression?.NestedPath is not null) {
-                operationParentObject = DMObjectTree.GetDMObject(Expression.NestedPath.Value, false);
-            }
             switch (operation) {
                 case FieldOperation fieldOperation:
-                    if (operationParentObject is not null) {
-                        var derefedVariable = operationParentObject.GetVariable(fieldOperation.Identifier);
-                        _valType = derefedVariable?.ValType ?? DMValueType.Anything;
-                        _valPath = derefedVariable?.ValPath;
-                    }
                     if (fieldOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                        _valType |= DMValueType.Null;
                     }
                     proc.DereferenceField(fieldOperation.Identifier);
                     break;
@@ -104,24 +140,26 @@ namespace DMCompiler.DM.Expressions {
                 case IndexOperation indexOperation:
                     if (indexOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                        _valType |= DMValueType.Null;
                     }
                     indexOperation.Index.EmitPushValue(dmObject, proc);
                     proc.DereferenceIndex();
                     break;
 
                 case CallOperation callOperation:
-                    if(operationParentObject is not null) {
-                        _valType = operationParentObject.GetBaseProcType(callOperation.Identifier, out _valPath);
-                    } else {
-                        _valType = proc.ReturnTypes;
-                        _valPath = proc.ReturnPath;
-                    }
                     if (callOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                        _valType |= DMValueType.Null;
                     }
-                    var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, null);
+                    DMObject? operationParentObject = null;
+                    // We have to infer some things about the operation here.
+                    if (Expression?.NestedPath is not null) {
+                        operationParentObject = DMObjectTree.GetDMObject(Expression.NestedPath.Value, false);
+                    }
+                    var targetProcId = operationParentObject?.GetProcs(callOperation.Identifier)?[^1];
+                    DMProc? targetProc = null;
+                    if (targetProcId is not null) {
+                        targetProc = DMObjectTree.AllProcs[targetProcId.Value];
+                    }
+                    var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, targetProc);
                     proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                     break;
 

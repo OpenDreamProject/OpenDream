@@ -190,7 +190,7 @@ namespace DMCompiler.DM {
                 }
             }
             // We could determine the return types but they don't match
-            else if ((ReturnTypes & type) == 0) {
+            else if (ReturnTypes != DMValueType.Anything && !ReturnTypes.HasFlag(type)) { // all bits in type must be in returntypes
                 DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type \"{type.ToString().ToLower()}\", expected \"{ReturnTypes.ToString().ToLower()}\"");
             }
         }

@@ -242,9 +242,9 @@ internal static class DMObjectBuilder {
 
         if (variable is null) {
             if (varDefinition.IsStatic) {
-                variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType);
+                variable = varObject.CreateGlobalVariable(varDefinition.Type, varDefinition.Name, varDefinition.IsConst, varDefinition.ValType, varDefinition.ValPath);
             } else {
-                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst, varDefinition.IsTmp, varDefinition.ValType);
+                variable = new DMVariable(varDefinition.Type, varDefinition.Name, false, varDefinition.IsConst, varDefinition.IsTmp, varDefinition.ValType, varDefinition.ValPath);
                 varObject.Variables[variable.Name] = variable;
                 if(varDefinition.IsConst){
                     varObject.ConstVariables ??= new HashSet<string>();

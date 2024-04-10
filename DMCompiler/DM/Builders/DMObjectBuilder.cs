@@ -58,8 +58,6 @@ internal static class DMObjectBuilder {
                     } catch (UnknownIdentifierException e) {
                         // For step 6
                         lateProcVarDefs.Add((procStatic.DMObject, procStatic.Proc, procStatic.VarDecl, procStatic.Id, e));
-                    } catch (CompileErrorException e) {
-                        DMCompiler.Emit(e.Error);
                     } finally {
                         DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
                     }
@@ -161,8 +159,10 @@ internal static class DMObjectBuilder {
             case DMASTObjectVarOverride varOverride:
                 // parent_type is treated as part of the object definition rather than an actual var override
                 if (varOverride.VarName == "parent_type") {
-                    if (varOverride.Value is not DMASTConstantPath parentTypePath)
-                        throw new CompileErrorException(varOverride.Location, "Expected a constant path");
+                    if (varOverride.Value is not DMASTConstantPath parentTypePath) {
+                        DMCompiler.Emit(WarningCode.BadExpression, varOverride.Location, "Expected a constant path");
+                        break; // Ignore it
+                    }
 
                     var parentType = DMObjectTree.GetDMObject(parentTypePath.Value.Path);
 
@@ -230,11 +230,6 @@ internal static class DMObjectBuilder {
             // TODO: no, bad. instance field declarations should have a proc assigned to them.
             expression = DMExpression.Create(varObject, varDefinition.IsGlobal ? DMObjectTree.GlobalInitProc : null,
                 varDefinition.Value, varDefinition.Type);
-        } catch (UnknownIdentifierException) {
-            throw; // This should be handled by the calling code
-        } catch (CompileErrorException e) {
-            DMCompiler.Emit(e.Error);
-            return;
         } finally {
             DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
         }
@@ -270,7 +265,7 @@ internal static class DMObjectBuilder {
                 // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
                 case "tag": {
                     if (varObject.IsSubtypeOf(DreamPath.Datum)) {
-                        throw new CompileErrorException(varOverride.Location,
+                        DMCompiler.Emit(WarningCode.BadExpression, varOverride.Location,
                             "var \"tag\" cannot be set to a value at compile-time");
                     }
 

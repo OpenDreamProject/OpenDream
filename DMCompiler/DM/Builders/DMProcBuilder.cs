@@ -253,8 +253,10 @@ namespace DMCompiler.DM.Builders {
             }
 
             // oh no.
-            if (constant is null)
-                throw new CompileErrorException(statementSet.Location, $"'{attribute}' attribute must be a constant"); // FIXME: Manual promotion of errors would be cool here
+            if (constant is null) {
+                DMCompiler.Emit(WarningCode.BadExpression, statementSet.Location, $"'{attribute}' attribute must be a constant");
+                return;
+            }
 
             // Check if it was 'set x in y' or whatever
             // (which is illegal for everything except setting src to something)
@@ -305,23 +307,28 @@ namespace DMCompiler.DM.Builders {
                     break;
                 case "name":
                     if (constant is not Expressions.String nameStr) {
-                        throw new CompileErrorException(statementSet.Location, "name attribute must be a string");
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location, "name attribute must be a string");
+                        break;
                     }
 
                     proc.VerbName = nameStr.Value;
                     break;
                 case "category":
-                    proc.VerbCategory = constant switch {
-                        Expressions.String str => str.Value,
-                        Expressions.Null => null,
-                        _ => throw new CompileErrorException(statementSet.Location, "category attribute must be a string or null")
-                    };
+                    if (constant is Expressions.String str) {
+                        proc.VerbCategory = str.Value;
+                    } else if (constant is Null) {
+                        proc.VerbCategory = null;
+                    } else {
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location,
+                            "category attribute must be a string or null");
+                    }
 
                     break;
                 case "desc":
                     // TODO: verb.desc is supposed to be printed when you type the verb name and press F1. Check the ref for details.
                     if (constant is not Expressions.String descStr) {
-                        throw new CompileErrorException(statementSet.Location, "desc attribute must be a string");
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location, "desc attribute must be a string");
+                        break;
                     }
 
                     proc.VerbDesc = descStr.Value;
@@ -329,8 +336,9 @@ namespace DMCompiler.DM.Builders {
                 case "invisibility":
                     // The ref says 0-101 for atoms and 0-100 for verbs
                     // BYOND doesn't clamp the actual var value but it does seem to treat out-of-range values as their extreme
-                    if (constant is not Expressions.Number invisNum) {
-                        throw new CompileErrorException(statementSet.Location, "invisibility attribute must be an int");
+                    if (constant is not Number invisNum) {
+                        DMCompiler.Emit(WarningCode.BadExpression, constant.Location, "invisibility attribute must be an int");
+                        break;
                     }
 
                     proc.Invisibility = Convert.ToSByte(Math.Clamp(MathF.Floor(invisNum.Value), 0f, 100f));
@@ -370,14 +378,9 @@ namespace DMCompiler.DM.Builders {
 
             DMExpression value;
             if (varDeclaration.Value != null) {
-                try {
-                    value = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
-                } catch (CompileErrorException e) {
-                    DMCompiler.Emit(e.Error);
-                    value = new Expressions.Null(varDeclaration.Location);
-                }
+                value = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
             } else {
-                value = new Expressions.Null(varDeclaration.Location);
+                value = new Null(varDeclaration.Location);
             }
 
             bool successful;

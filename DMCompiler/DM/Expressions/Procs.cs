@@ -13,7 +13,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, "attempt to use proc as value");
+            DMCompiler.Emit(WarningCode.BadExpression, Location, "attempt to use proc as value");
+            proc.Error();
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -73,22 +74,20 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // ..
-    sealed class ProcSuper : DMExpression {
-        public ProcSuper(Location location) : base(location) { }
-
+    internal sealed class ProcSuper(Location location) : DMExpression(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride)
-            {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+            if ((proc.Attributes & ProcAttributes.IsOverride) != ProcAttributes.IsOverride) {
                 // Don't emit if lateral proc overrides exist
                 if (dmObject.GetProcs(proc.Name)!.Count == 1) {
-                    DMCompiler.Emit(WarningCode.PointlessParentCall, Location, "Calling parents via ..() in a proc definition does nothing");
+                    DMCompiler.Emit(WarningCode.PointlessParentCall, Location,
+                        "Calling parents via ..() in a proc definition does nothing");
                 }
-
             }
+
             return DMReference.SuperProc;
         }
     }

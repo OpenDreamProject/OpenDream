@@ -55,7 +55,7 @@ internal abstract class DMExpression(Location location) {
     // May throw if this expression is unable to be referenced
     // The emitted code will jump to endLabel after pushing `null` to the stack in the event of a short-circuit
     public virtual DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
-        throw new CompileErrorException(Location, $"attempt to reference r-value");
+        throw new CompileErrorException(Location, "attempt to reference r-value");
     }
 
     /// <summary>

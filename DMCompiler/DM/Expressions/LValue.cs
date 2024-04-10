@@ -3,12 +3,8 @@ using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
-    abstract class LValue : DMExpression {
-        public override DreamPath? Path { get; }
-
-        protected LValue(Location location, DreamPath? path) : base(location) {
-            Path = path;
-        }
+    internal abstract class LValue(Location location, DreamPath? path) : DMExpression(location) {
+        public override DreamPath? Path { get; } = path;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             string endLabel = proc.NewLabelName();
@@ -20,7 +16,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public virtual void EmitPushInitial(DMObject dmObject, DMProc proc) {
-            throw new CompileErrorException(Location, $"Can't get initial value of {this}");
+            DMCompiler.Emit(WarningCode.BadExpression, Location, $"Can't get initial value of {this}");
+            proc.Error();
         }
     }
 
@@ -146,17 +143,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Id of global field
-    sealed class GlobalField : LValue {
-        int Id { get; }
-
-        public GlobalField(Location location, DreamPath? path, int id)
-            : base(location, path) {
-            Id = id;
-        }
-
-        public void EmitPushIsSaved(DMProc proc) {
-            throw new CompileErrorException(Location, "issaved() on globals is unimplemented");
-        }
+    internal sealed class GlobalField(Location location, DreamPath? path, int id) : LValue(location, path) {
+        private int Id { get; } = id;
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.CreateGlobal(Id);

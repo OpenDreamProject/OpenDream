@@ -1,3 +1,4 @@
+using System;
 using DMCompiler.Bytecode;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
@@ -128,7 +129,9 @@ namespace DMCompiler.DM.Expressions {
                 _container.EmitPushValue(dmObject, proc);
             } else {
                 if (DMCompiler.Settings.NoStandard) {
-                    throw new CompileErrorException(Location, "Implicit locate() container is not available with --no-standard");
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Implicit locate() container is not available with --no-standard");
+                    proc.Error();
+                    return;
                 }
 
                 DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
@@ -156,7 +159,9 @@ namespace DMCompiler.DM.Expressions {
                 _container.EmitPushValue(dmObject, proc);
             } else {
                 if (DMCompiler.Settings.NoStandard) {
-                    throw new CompileErrorException(Location, "Implicit locate() container is not available with --no-standard");
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Implicit locate() container is not available with --no-standard");
+                    proc.Error();
+                    return;
                 }
 
                 DMReference world = DMReference.CreateGlobal(dmObject.GetGlobalVariableId("world").Value);
@@ -307,15 +312,9 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // issaved(x)
-    sealed class IsSaved : DMExpression {
-        private readonly DMExpression _expr;
-
-        public IsSaved(Location location, DMExpression expr) : base(location) {
-            _expr = expr;
-        }
-
+    internal sealed class IsSaved(Location location, DMExpression expr) : DMExpression(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            switch (_expr) {
+            switch (expr) {
                 case Dereference deref:
                     deref.EmitPushIsSaved(dmObject, proc);
                     return;
@@ -326,7 +325,9 @@ namespace DMCompiler.DM.Expressions {
                     proc.PushFloat(0);
                     return;
                 default:
-                    throw new CompileErrorException(Location, $"can't get saved value of {_expr}");
+                    DMCompiler.Emit(WarningCode.BadArgument, expr.Location, $"can't get saved value of {expr}");
+                    proc.Error();
+                    return;
             }
         }
     }
@@ -564,46 +565,32 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // input(...)
-    sealed class Input : DMExpression {
-        private readonly DMExpression[] _arguments;
-        private readonly DMValueType _types;
-        private readonly DMExpression? _list;
-
-        public Input(Location location, DMExpression[] arguments, DMValueType types,
-            DMExpression? list) : base(location) {
-            if (arguments.Length is 0 or > 4) {
-                throw new CompileErrorException(location, "input() must have 1 to 4 arguments");
-            }
-
-            _arguments = arguments;
-            _types = types;
-            _list = list;
-        }
-
+    internal sealed class Input(Location location, DMExpression[] arguments, DMValueType types, DMExpression? list)
+        : DMExpression(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             // Push input's four arguments, pushing null for the missing ones
             for (int i = 3; i >= 0; i--) {
-                if (i < _arguments.Length) {
-                    _arguments[i].EmitPushValue(dmObject, proc);
+                if (i < arguments.Length) {
+                    arguments[i].EmitPushValue(dmObject, proc);
                 } else {
                     proc.PushNull();
                 }
             }
 
             // The list of values to be selected from (or null for none)
-            if (_list != null) {
-                _list.EmitPushValue(dmObject, proc);
+            if (list != null) {
+                list.EmitPushValue(dmObject, proc);
             } else {
                 proc.PushNull();
             }
 
-            proc.Prompt(_types);
+            proc.Prompt(types);
         }
     }
 
     // initial(x)
     internal class Initial(Location location, DMExpression expr) : DMExpression(location) {
-        protected DMExpression Expression = expr;
+        protected readonly DMExpression Expression = expr;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             if (Expression is LValue lValue) {
@@ -611,7 +598,8 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            throw new CompileErrorException(Location, $"can't get initial value of {Expression}");
+            DMCompiler.Emit(WarningCode.BadArgument, Expression.Location, $"can't get initial value of {Expression}");
+            proc.Error();
         }
     }
 

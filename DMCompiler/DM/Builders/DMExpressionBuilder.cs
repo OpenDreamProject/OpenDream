@@ -895,6 +895,9 @@ internal static class DMExpressionBuilder {
             input.Types ??= DMValueType.Text;
         }
 
+        if (arguments.Length is 0 or > 4)
+            return BadExpression(WarningCode.InvalidArgumentCount, input.Location, "input() must have 1 to 4 arguments");
+
         return new Input(input.Location, arguments, input.Types.Value, list);
     }
 

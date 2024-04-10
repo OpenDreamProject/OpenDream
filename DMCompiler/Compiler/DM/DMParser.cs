@@ -1711,8 +1711,8 @@ namespace DMCompiler.Compiler.DM {
                 var type = AsTypes(out DreamPath? valPath, true);
                 var dmType = DMObjectTree.GetDMObject(path.Path, false);
                 // TODO: Figure out a clean way to do this only if "path.Path" is a subtype of datum/ instead of a var/. IsDescendentOf() is insufficient
-                if (type is not null && type != DMValueType.Anything && (value is null || value is DMASTConstantNull) && (dmType?.IsSubtypeOf(DreamPath.Datum) ?? false)) {
-                    DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"{_currentPath}: Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
+                if (type is not null && type != DMValueType.Anything && (value is null or DMASTConstantNull) && (dmType?.IsSubtypeOf(DreamPath.Datum) ?? false)) {
+                    DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
                     type |= DMValueType.Null;
                 }
 

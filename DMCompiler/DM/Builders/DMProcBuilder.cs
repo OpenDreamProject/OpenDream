@@ -424,12 +424,12 @@ namespace DMCompiler.DM.Builders {
                             var splitter = ((proc.Attributes & ProcAttributes.IsOverride) == ProcAttributes.IsOverride) ? "/" : "/proc/";
                             if (proc.ReturnPath == DreamPath.List) {
                                 if(expr is not List && (expr is not Dereference deref || deref.Expression.NestedPath != DreamPath.List))
-                                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{proc.Name}(): Invalid return type \"{expr}\", expected \"/list\"");
+                                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{dmObject?.Path.ToString() ?? "Unknown"}{splitter}{proc.Name}(): Invalid return type \"{expr}\", expected \"/list\"");
                             } else {
                                 var exprName = expr.Path?.ToString() ?? expr.ToString();
                                 // Allow subtypes
                                 if (expr.Path is null || !expr.Path.Value.IsDescendantOf(proc.ReturnPath ?? DreamPath.Root)) {
-                                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{proc.Name}(): Invalid return type \"{exprName}\", expected \"{(proc.ReturnPath is null ? "path" : proc.ReturnPath)}\"");
+                                    DMCompiler.Emit(WarningCode.InvalidReturnType, statement.Location, $"{dmObject?.Path.ToString() ?? "Unknown"}{splitter}{proc.Name}(): Invalid return type \"{exprName}\", expected \"{(proc.ReturnPath is null ? "path" : proc.ReturnPath)}\"");
                                 }
                             }
                         }

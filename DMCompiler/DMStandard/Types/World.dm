@@ -19,11 +19,11 @@
 	var/tick_usage
 	var/loop_checks = 0 as opendream_unimplemented
 
-	var/maxx = null as num|null
-	var/maxy = null as num|null
-	var/maxz = null as num|null
+	var/maxx = null
+	var/maxy = null
+	var/maxz = null
 	var/icon_size = 32 as num
-	var/view = 5 as text|num
+	var/view = 5
 	var/movement_mode = LEGACY_MOVEMENT_MODE as opendream_unimplemented
 
 	var/byond_version = DM_VERSION

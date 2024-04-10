@@ -73,7 +73,7 @@ proc/replacetextEx(Haystack, Needle, Replacement, Start = 1, End = 0) as text|nu
 proc/rgb(R, G, B, A, space) as text|null
 proc/rgb2num(color, space = COLORSPACE_RGB) as /list
 proc/roll(ndice = 1, sides) as num
-proc/round(A as num|null, B as num|null) as num
+proc/round(A, B) as num
 proc/sha1(input) as text|null
 proc/shutdown(Addr,Natural = 0)
 proc/sleep(Delay as num|null)
@@ -174,17 +174,17 @@ proc/get_dist(atom/Loc1, atom/Loc2) as num
 	var/distY = Loc2.y - Loc1.y
 	return round(sqrt(distX ** 2 + distY ** 2))
 
-proc/get_step_towards(atom/movable/Ref as obj|mob|null, /atom/Trg as mob|obj|turf|area|null) as turf|num
+proc/get_step_towards(atom/movable/Ref as obj|mob|null, /atom/Trg as mob|obj|turf|area|null) as turf|null
 	var/dir = get_dir(Ref, Trg)
 
 	return get_step(Ref, dir)
 
-proc/get_step_away(atom/movable/Ref as obj|mob|null, /atom/Trg as mob|obj|turf|area|null, Max = 5 as num) as turf|num
+proc/get_step_away(atom/movable/Ref as obj|mob|null, /atom/Trg as mob|obj|turf|area|null, Max = 5 as num) as turf|null
 	var/dir = turn(get_dir(Ref, Trg), 180)
 
 	return get_step(Ref, dir)
 
-proc/get_step_rand(atom/movable/Ref as obj|mob|null) as turf|num
+proc/get_step_rand(atom/movable/Ref as obj|mob|null) as turf|null // the ref is incorrect about this returning 0
 	// BYOND's implementation seems to be heavily weighted in favor of Ref's dir.
 	var/dir = pick(NORTH, SOUTH, EAST, WEST, NORTHEAST, SOUTHEAST, SOUTHWEST, NORTHWEST)
 
@@ -207,7 +207,8 @@ proc/step_rand(atom/movable/Ref as obj|mob|null, Speed=0 as num) as num
 	var/target = get_step_rand(Ref)
 	return Ref.Move(target, get_dir(Ref, target))
 
-proc/jointext(list/List as /list|text, Glue as text|null, Start = 1 as num, End = 0 as num) as text
+// This should only return as text, but currently we can't do the inference necessary to prove that to the compiler
+proc/jointext(list/List as /list|text, Glue as text|null, Start = 1 as num, End = 0 as num) as text|/list
 	if(islist(List))
 		return List.Join(Glue, Start, End)
 	if(istext(List))

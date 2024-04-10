@@ -109,20 +109,8 @@ public struct CompilerEmission {
 }
 
 [Obsolete("This is not a desirable way for the compiler to emit an error. Use CompileAbortException or ForceError() if it needs to be fatal, or an DMCompiler.Emit() otherwise.")]
-public class CompileErrorException : Exception {
-    public CompilerEmission Error;
-
-    public CompileErrorException(CompilerEmission error) : base(error.Message) {
-        Error = error;
-    }
-
-    public CompileErrorException(Location location, string message) : base(message) {
-        Error = new CompilerEmission(ErrorLevel.Error, location, message);
-    }
-
-    public CompileErrorException(string message) {
-        Error = new CompilerEmission(ErrorLevel.Error, Location.Unknown, message);
-    }
+public class CompileErrorException(Location location, string message) : Exception(message) {
+    public CompilerEmission Error = new(ErrorLevel.Error, location, message);
 }
 
 
@@ -131,17 +119,8 @@ public class CompileErrorException : Exception {
 /// This should be ideally used for exceptions that are the fault of the compiler itself, <br/>
 /// like an abnormal state being reached or something.
 /// </summary>
-public sealed class CompileAbortException : CompileErrorException {
-    public CompileAbortException(CompilerEmission error) : base(error) {
-    }
+public sealed class CompileAbortException(Location location, string message)
+    : CompileErrorException(location, message);
 
-    public CompileAbortException(Location location, string message) : base(location, message) {
-    }
-
-    public CompileAbortException(string message) : base(message) {
-    }
-}
-
-public sealed class UnknownIdentifierException(Location location, string identifierName) : CompileErrorException(location, $"Unknown identifier \"{identifierName}\"") {
-    public string IdentifierName = identifierName;
-}
+public sealed class UnknownIdentifierException(Location location, string identifierName)
+    : CompileErrorException(location, $"Unknown identifier \"{identifierName}\"");

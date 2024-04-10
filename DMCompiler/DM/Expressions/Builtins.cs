@@ -6,6 +6,19 @@ using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
+    /// <summary>
+    /// Used when there was an error generating an expression
+    /// </summary>
+    /// <remarks>Emit an error code before creating!</remarks>
+    internal sealed class BadExpression(Location location) : DMExpression(location) {
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            // It's normal to have this expression exist when there are errors in the code
+            // But in the runtime we say it's a compiler bug because the compiler should never have output it
+            proc.PushString("Encountered a bad expression (compiler bug!)");
+            proc.Throw();
+        }
+    }
+
     // "abc[d]"
     sealed class StringFormat : DMExpression {
         string Value { get; }

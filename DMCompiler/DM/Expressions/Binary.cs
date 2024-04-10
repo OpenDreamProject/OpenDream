@@ -525,8 +525,19 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
+            // TODO: Handle this message->text coercion more gracefully somewhere central, like AsTypes
+            var leftType = LHS.ValType;
+            if (leftType.HasFlag(DMValueType.Message)) {
+                leftType &= ~DMValueType.Message;
+                leftType |= DMValueType.Text;
+            }
+            var rightType = RHS.ValType;
+            if (rightType.HasFlag(DMValueType.Message)) {
+                rightType &= ~DMValueType.Message;
+                rightType |= DMValueType.Text;
+            }
 
-            if ((LHS.ValType & RHS.ValType) == 0 && LHS.ValType != DMValueType.Anything && LHS.ValType != DMValueType.Unimplemented) {
+            if ((leftType & rightType) == 0 && LHS.ValType != DMValueType.Anything && !LHS.ValType.HasFlag(DMValueType.Unimplemented)) {
                 if (!DMCompiler.Settings.SkipAnythingTypecheck || RHS.ValType != DMValueType.Anything) {
                     DMCompiler.Emit(WarningCode.InvalidVarType, Location, $"Invalid var type \"{RHS.ValType.ToString().ToLower()}\", expected \"{LHS.ValType.ToString().ToLower()}\"");
                 } else if (LHS.ValType.HasFlag(DMValueType.Path) && !(RHS.ValPath?.IsDescendantOf(LHS.ValPath ?? DreamPath.Root) ?? false)) {

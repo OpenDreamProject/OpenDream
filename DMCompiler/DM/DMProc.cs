@@ -166,6 +166,12 @@ namespace DMCompiler.DM {
                 DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, expr.Location, "color, message, and file return types are currently unsupported.");
                 return;
             }
+            // For the purposes of TypeMaker, Message is equivalent to Text.
+            if (type.HasFlag(DMValueType.Message))
+            {
+                type &= ~DMValueType.Message;
+                type |= DMValueType.Text;
+            }
 
             var splitter = _astDefinition?.IsOverride ?? false ? "/" : "/proc/";
             // We couldn't determine the expression's return type for whatever reason

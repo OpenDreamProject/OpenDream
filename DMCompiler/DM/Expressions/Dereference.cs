@@ -51,52 +51,62 @@ namespace DMCompiler.DM.Expressions {
         public override bool PathIsFuzzy => Path == null;
 
         private readonly Operation[] _operations;
+        private DMObject? _operationParentObject;
+        protected DMObject? OperationParentObject {
+            get {
+                if (_operationParentObject is null) {
+                    // We have to infer some things about the operation here.
+                    DreamPath? parentPath = null;
+                    for(int i=_operations.Length - 1; i>= 0; i--) {
+                        if (_operations[i].Path is not null) {
+                            parentPath = _operations[i].Path;
+                            break;
+                        }
+                    }
+                    if (parentPath is not null) {
+                        _operationParentObject = DMObjectTree.GetDMObject(parentPath.Value, false);
+                    }
+                    if (_operationParentObject is null && Expression?.NestedPath is not null) { // Otherwise, fall back to the nested path.
+                        _operationParentObject = DMObjectTree.GetDMObject(Expression.NestedPath.Value, false);
+                    }
+                }
+                return _operationParentObject;
+            }
+        }
         public override DMValueType ValType => ValPair.ValType;
         public override DreamPath? ValPath => ValPair.ValPath;
         private (DMValueType ValType, DreamPath? ValPath) ValPair {
             get {
                 DMValueType outType = DMValueType.Anything;
                 DreamPath? outPath = null;
-                var isSafe = false;
-                for(int i=0; i<_operations.Length; i++) {
-                    if (_operations[i].Safe) {
-                        isSafe = true;
-                        break;
-                    }
-                }
-                DMObject? operationParentObject = null;
-                // We have to infer some things about the operation here.
-                if (_operations.Length > 1) { // Take the second to last's path.
-                    var parentPath = _operations[^2].Path;
-                    if (parentPath is not null) {
-                        operationParentObject = DMObjectTree.GetDMObject(parentPath.Value, false);
-                    }
-                }
-                if (operationParentObject is null && Expression?.NestedPath is not null) { // Otherwise, fall back to the nested path.
-                    operationParentObject = DMObjectTree.GetDMObject(Expression.NestedPath.Value, false);
-                }
                 switch (_operations[^1]) {
                     case FieldOperation fieldOperation:
-                        if (operationParentObject is null) {
+                        if (OperationParentObject is null) {
                             break;
                         }
-                        var derefedVariable = operationParentObject.GetVariable(fieldOperation.Identifier);
+                        var derefedVariable = OperationParentObject.GetVariable(fieldOperation.Identifier);
                         outType = derefedVariable?.ValType ?? DMValueType.Anything;
                         outPath = derefedVariable?.ValPath;
                         break;
                     case CallOperation callOperation:
-                        if(operationParentObject is null) {
+                        if(OperationParentObject is null) {
                             break;
                         }
-                        outType = operationParentObject.GetBaseProcType(callOperation.Identifier, out outPath) ?? DMValueType.Anything;
+                        outType = OperationParentObject.GetBaseProcType(callOperation.Identifier, out outPath) ?? DMValueType.Anything;
                         break;
                     case IndexOperation:
                         break;
                     default:
                         throw new InvalidOperationException("Unimplemented dereference operation");
                 }
-                if (isSafe && outType != DMValueType.Anything) {
-                    outType |= DMValueType.Null;
+                if (outType == DMValueType.Anything) {
+                    return (outType, outPath);
+                }
+                for(int i=0; i < _operations.Length; i++) {
+                    if (_operations[i].Safe) {
+                        outType |= DMValueType.Null;
+                        break;
+                    }
                 }
                 return (outType, outPath);
             }
@@ -149,12 +159,7 @@ namespace DMCompiler.DM.Expressions {
                     if (callOperation.Safe) {
                         ShortCircuitHandler(proc, endLabel, shortCircuitMode);
                     }
-                    DMObject? operationParentObject = null;
-                    // We have to infer some things about the operation here.
-                    if (Expression?.NestedPath is not null) {
-                        operationParentObject = DMObjectTree.GetDMObject(Expression.NestedPath.Value, false);
-                    }
-                    var targetProcId = operationParentObject?.GetProcs(callOperation.Identifier)?[^1];
+                    var targetProcId = OperationParentObject?.GetProcs(callOperation.Identifier)?[^1];
                     DMProc? targetProc = null;
                     if (targetProcId is not null) {
                         targetProc = DMObjectTree.AllProcs[targetProcId.Value];

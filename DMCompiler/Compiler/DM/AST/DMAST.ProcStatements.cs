@@ -15,7 +15,15 @@ public abstract class DMASTProcStatement(Location location) : DMASTNode(location
     }
 }
 
+/// Lone semicolon, analogous to null statements in C.
+/// Main purpose is to suppress EmptyBlock emissions.
 public sealed class DMASTNullProcStatement(Location location) : DMASTProcStatement(location);
+
+/// <summary>
+/// Used when there was an error parsing a statement
+/// </summary>
+/// <remarks>Emit an error code before creating!</remarks>
+public sealed class DMASTInvalidProcStatement(Location location) : DMASTProcStatement(location);
 
 public sealed class DMASTProcStatementExpression(Location location, DMASTExpression expression)
     : DMASTProcStatement(location) {

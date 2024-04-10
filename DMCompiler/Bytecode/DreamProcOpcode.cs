@@ -20,7 +20,7 @@ public enum DreamProcOpcode : byte {
     Call = 0xA,
     MultiplyReference = 0xB,
     [OpcodeMetadata(stackDelta: -1)] JumpIfFalse = 0xC,
-    [OpcodeMetadata(stackDelta: -1)] JumpIfTrue = 0xD,
+    // 0xD
     Jump = 0xE,
     [OpcodeMetadata(stackDelta: -1)] CompareEquals = 0xF,
     [OpcodeMetadata(stackDelta: -1)] Return = 0x10,
@@ -87,7 +87,7 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(stackDelta: -1)] Spawn = 0x4D,
     [OpcodeMetadata(stackDelta: -1)] OutputReference = 0x4E,
     [OpcodeMetadata(stackDelta: -2)] Output = 0x4F,
-    JumpIfNullDereference = 0x50,
+    // 0x50
     [OpcodeMetadata(stackDelta: -1)] Pop = 0x51,
     Prob = 0x52,
     [OpcodeMetadata(stackDelta: -1)] IsSaved = 0x53,

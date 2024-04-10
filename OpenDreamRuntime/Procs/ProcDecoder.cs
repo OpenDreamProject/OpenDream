@@ -124,7 +124,6 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.SwitchCaseRange:
             case DreamProcOpcode.Jump:
             case DreamProcOpcode.JumpIfFalse:
-            case DreamProcOpcode.JumpIfTrue:
             case DreamProcOpcode.PushType:
             case DreamProcOpcode.PushProc:
             case DreamProcOpcode.MassConcatenation:
@@ -133,7 +132,6 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
             case DreamProcOpcode.TryNoValue:
                 return (opcode, ReadInt());
 
-            case DreamProcOpcode.JumpIfNullDereference:
             case DreamProcOpcode.JumpIfTrueReference:
             case DreamProcOpcode.JumpIfFalseReference:
             case DreamProcOpcode.Enumerate:
@@ -178,19 +176,13 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                 text.Append('\'');
                 break;
 
-            case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
-                text.Append(reference);
-                text.AppendFormat(" 0x{0:x}", jumpPosition);
-                break;
-
             case (DreamProcOpcode.Spawn
                     or DreamProcOpcode.BooleanOr
                     or DreamProcOpcode.BooleanAnd
                     or DreamProcOpcode.SwitchCase
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
-                    or DreamProcOpcode.JumpIfFalse
-                    or DreamProcOpcode.JumpIfTrue, int jumpPosition):
+                    or DreamProcOpcode.JumpIfFalse, int jumpPosition):
                 text.AppendFormat("0x{0:x}", jumpPosition);
                 break;
 
@@ -216,8 +208,6 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
 
     public static int? GetJumpDestination(ITuple instruction) {
         switch (instruction) {
-            case (DreamProcOpcode.JumpIfNullDereference, DMReference reference, int jumpPosition):
-                return jumpPosition;
             case (DreamProcOpcode.Spawn
                     or DreamProcOpcode.BooleanOr
                     or DreamProcOpcode.BooleanAnd
@@ -225,7 +215,6 @@ public struct ProcDecoder(IReadOnlyList<string> strings, byte[] bytecode) {
                     or DreamProcOpcode.SwitchCaseRange
                     or DreamProcOpcode.Jump
                     or DreamProcOpcode.JumpIfFalse
-                    or DreamProcOpcode.JumpIfTrue
                     or DreamProcOpcode.TryNoValue, int jumpPosition):
                 return jumpPosition;
             case (DreamProcOpcode.Try, int jumpPosition, DMReference dmReference):

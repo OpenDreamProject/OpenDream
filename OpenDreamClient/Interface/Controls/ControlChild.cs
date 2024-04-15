@@ -88,7 +88,7 @@ internal sealed class ControlChild : InterfaceControl {
         _grid.SplitFraction = ChildDescriptor.Splitter / 100f;
     }
 
-    public override bool TryGetProperty(string property, out string value) {
+    public override bool TryGetProperty(string property, out DMFProperty value) {
         switch (property) {
             case "splitter":
                 value = $"{_grid.SplitFraction * 100}";

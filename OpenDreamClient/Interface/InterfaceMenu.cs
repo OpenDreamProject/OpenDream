@@ -137,7 +137,7 @@ public sealed class InterfaceMenu : InterfaceElement {
             return menuButton;
         }
 
-        public override bool TryGetProperty(string property, out string value) {
+        public override bool TryGetProperty(string property, out DMFProperty value) {
             switch (property) {
                 case "command":
                     value = Command;
@@ -146,16 +146,16 @@ public sealed class InterfaceMenu : InterfaceElement {
                     value = Category ?? "";
                     return true;
                 case "can-check":
-                    value = MenuElementDescriptor.CanCheck.ToString();
+                    value = MenuElementDescriptor.CanCheck;
                     return true;
                 case "is-checked":
-                    value = MenuElementDescriptor.IsChecked.ToString();
+                    value = MenuElementDescriptor.IsChecked;
                     return true;
                 case "group":
-                    value = MenuElementDescriptor.Group ?? "";
+                    value = MenuElementDescriptor.Group;
                     return true;
                 case "index":
-                    value = MenuElementDescriptor.Index.ToString();
+                    value = MenuElementDescriptor.Index;
                     return true;
                 default:
                     return base.TryGetProperty(property, out value);

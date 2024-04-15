@@ -24,13 +24,13 @@ public sealed class InterfaceDescriptor {
 [Virtual, ImplicitDataDefinitionForInheritors]
 public partial class ElementDescriptor {
     [DataField("type")]
-    public string _type;
+    public DMFPropertyString _type;
 
     [DataField("id")]
-    protected string _id;
+    protected DMFPropertyString _id;
 
     [DataField("name")]
-    protected string? _name;
+    protected DMFPropertyString _name;
 
     public string Id {
         get => string.IsNullOrEmpty(_id) ? _id = Guid.NewGuid().ToString() : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.

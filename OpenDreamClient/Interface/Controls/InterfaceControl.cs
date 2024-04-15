@@ -31,14 +31,14 @@ public abstract class InterfaceControl : InterfaceElement {
     protected abstract Control CreateUIElement();
 
     protected override void UpdateElementDescriptor() {
-        UIElement.Name = ControlDescriptor.Name;
+        UIElement.Name = ControlDescriptor.Name.AsRaw();
 
-        var pos = ControlDescriptor.Pos.GetValueOrDefault();
+        var pos = ControlDescriptor.Pos;
         LayoutContainer.SetMarginLeft(UIElement, pos.X);
         LayoutContainer.SetMarginTop(UIElement, pos.Y);
 
         if (ControlDescriptor.Size is { } size)
-            UIElement.SetSize = size;
+            UIElement.SetSize = new Vector2(size.X, size.Y);
 
         _window?.UpdateAnchors();
 
@@ -55,21 +55,21 @@ public abstract class InterfaceControl : InterfaceElement {
             }
         }
 
-        UIElement.Visible = ControlDescriptor.IsVisible;
+        UIElement.Visible = ControlDescriptor.IsVisible.Value;
         // TODO: enablement
         //UIControl.IsEnabled = !_controlDescriptor.IsDisabled;
     }
 
-    public override bool TryGetProperty(string property, out string value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         switch (property) {
             case "size":
-                value = $"{UIElement.Size.X}x{UIElement.Size.Y}";
+                value = new DMFPropertyVec2(UIElement.Size);
                 return true;
             case "is-disabled":
-                value = ControlDescriptor.IsDisabled.ToString();
+                value = ControlDescriptor.IsDisabled;
                 return true;
             case "pos":
-                value = $"{UIElement.Position.X},{UIElement.Position.Y}";
+                value = new DMFPropertyVec2(UIElement.Position);
                 return true;
             default:
                 return base.TryGetProperty(property, out value);

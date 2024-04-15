@@ -40,7 +40,7 @@ internal sealed class ControlTab(ControlDescriptor controlDescriptor, ControlWin
         }
     }
 
-    public override bool TryGetProperty(string property, out string value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         switch (property) {
             case "current-tab":
                 var currentTab = _tab.GetChild(_tab.CurrentTab);

@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -281,42 +282,42 @@ public sealed class ControlWindow : InterfaceControl {
         UpdateAnchors();
     }
 
-    public override bool TryGetProperty(string property, out string value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         switch (property) {
             case "inner-size":
-                value = $"{_canvas.Width}x{_canvas.Height}";
+                value = new DMFPropertyVec2((int)_canvas.Width, (int)_canvas.Height);
                 return true;
             case "outer-size":
                 if(_myWindow.osWindow is not null){
-                    value = $"{_myWindow.osWindow.Width}x{_myWindow.osWindow.Height}";
+                    value = new DMFPropertyVec2((int)_myWindow.osWindow.Width, (int)_myWindow.osWindow.Height);
                     return true;
                 } else if(_myWindow.clydeWindow is not null){
-                    value = $"{_myWindow.clydeWindow.Size.X}x{_myWindow.clydeWindow.Size.Y}";
+                    value = new DMFPropertyVec2(_myWindow.clydeWindow.Size);
                     return true;
                 } else {
-                    value = $"{UIElement.Size.X}x{UIElement.Size.Y}";
+                    value = new DMFPropertyVec2(UIElement.Size);
                     return true;
                 }
             case "is-minimized":
                 if(_myWindow.osWindow?.ClydeWindow != null){
-                    value = _myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                    value = new DMFPropertyBool(_myWindow.osWindow.ClydeWindow.IsMinimized);
                     return true;
                 } else if(_myWindow.clydeWindow is not null){
-                    value = _myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                    value = new DMFPropertyBool(_myWindow.clydeWindow.IsMinimized);
                     return true;
                 } else {
-                    value = "false";
+                    value = new DMFPropertyBool(false);
                     return true;
                 }
             case "is-maximized": //TODO this is currently "not isMinimised" because RT doesn't expose a maximised check
                 if(_myWindow.osWindow?.ClydeWindow != null){
-                    value = !_myWindow.osWindow.ClydeWindow.IsMinimized ? "true" : "false";
+                    value = new DMFPropertyBool(!_myWindow.osWindow.ClydeWindow.IsMinimized);
                     return true;
                 } else if(_myWindow.clydeWindow is not null){
-                    value = !_myWindow.clydeWindow.IsMinimized ? "true" : "false";
+                    value = new DMFPropertyBool(!_myWindow.clydeWindow.IsMinimized);
                     return true;
                 } else {
-                    value = "false";
+                    value = new DMFPropertyBool(false);
                     return true;
                 }
             default:

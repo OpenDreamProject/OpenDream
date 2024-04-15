@@ -6,6 +6,9 @@ public abstract class DMFProperty {
     public abstract string AsJSON();
     public abstract string AsJSONDM();
     public abstract string AsRaw();
+    public override string ToString() {
+        return AsRaw();
+    }
 }
 
 public sealed class DMFPropertyString : DMFProperty {
@@ -96,6 +99,11 @@ public sealed class DMFPropertyVec2 : DMFProperty {
         string[] parts = value.Split(',');
         X = int.Parse(parts[0]);
         Y = int.Parse(parts[1]);
+    }
+
+    public DMFPropertyVec2(Vector2 value) {
+        X = (int)value.X;
+        Y = (int)value.Y;
     }
 
     public override string AsArg() {

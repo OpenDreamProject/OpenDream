@@ -241,7 +241,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         MsgPromptResponse response = new() {
             PromptId = message.PromptId,
             Type = DreamValueType.Text,
-            Value = element?.Type ?? string.Empty
+            Value = element?.Type.AsRaw() ?? string.Empty
         };
 
         _netManager.ClientSendMessage(response);
@@ -331,23 +331,23 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
             if (window != null) {
                 foreach (InterfaceControl element in window.ChildControls) {
-                    if (element.Id == elementId) return element;
+                    if (element.Id.AsRaw() == elementId) return element;
                 }
             }
         } else {
             string elementId = split[0];
 
             foreach (ControlWindow window in Windows.Values) {
-                if (window.Id == elementId)
+                if (window.Id.AsRaw() == elementId)
                     return window;
 
                 foreach (InterfaceControl element in window.ChildControls) {
-                    if (element.Id == elementId) return element;
+                    if (element.Id.AsRaw() == elementId) return element;
                 }
             }
 
             foreach (InterfaceMenu menu in Menus.Values) {
-                if (menu.Id == elementId)
+                if (menu.Id.AsRaw() == elementId)
                     return menu;
 
                 if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
@@ -355,7 +355,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             foreach (var macroSet in MacroSets.Values) {
-                if (macroSet.Id == elementId)
+                if (macroSet.Id.AsRaw() == elementId)
                     return macroSet;
 
                 if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
@@ -549,7 +549,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         if(conditionalElement is null)
                             _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
                         else
-                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value, StringComparison.InvariantCultureIgnoreCase)) {
+                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.AsRaw().Equals(winSet.Value, StringComparison.InvariantCultureIgnoreCase)) {
                                 foreach(DMFWinSet statement in winSet.TrueStatements) {
                                     string? statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);
@@ -622,11 +622,21 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         bool ParseAndTryGet(InterfaceElement element, string query, out string result) {
             //parse "as blah" from query if it's there
             string[] querySplit = query.Split(" as ");
+            DMFProperty propResult;
             if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
-                return element.TryGetProperty(query, out result);
-            else{
-                if(!element.TryGetProperty(querySplit[0], out result))
+                if(element.TryGetProperty(query, out propResult!)){
+                    result = propResult.AsRaw();
+                    return true;
+                }
+                else {
+                    result = "";
                     return false;
+                }
+            else{
+                if(!element.TryGetProperty(querySplit[0], out propResult!)) {
+                    result = "";
+                    return false;
+                }
 /*
 arg
     Value is formatted as if it's an argument on a command line. Numbers are left alone; booleans are 0 or 1; size and position have their X and Y values separated by a space; pretty much everything else is DM-escaped and enclosed in quotes.
@@ -645,21 +655,29 @@ raw
 */
                 switch(querySplit[1]){ //TODO: Implement these
                     case "arg":
+                        result = propResult.AsArg();
                         break;
                     case "escaped":
+                        result = propResult.AsEscaped();
                         break;
                     case "string":
+                        result = propResult.AsString();
                         break;
                     case "params":
+                        result = propResult.AsParams();
                         break;
                     case "json":
+                        result = propResult.AsJSON();
                         break;
                     case "json-dm":
+                        result = propResult.AsJSONDM();
                         break;
                     case "raw":
+                        result = propResult.AsRaw();
                         break;
                     default:
                         _sawmill.Error($"Invalid winget query function \"{querySplit[1]}\" in \"{query}\"");
+                        result = "";
                         return false;
                 }
                 return true;
@@ -821,17 +839,17 @@ raw
             case MacroSetDescriptor macroSetDescriptor:
                 InterfaceMacroSet macroSet = new(macroSetDescriptor, _entitySystemManager, _inputManager, _uiManager);
 
-                MacroSets[macroSet.Id] = macroSet;
+                MacroSets[macroSet.Id.AsRaw()] = macroSet;
                 break;
             case MenuDescriptor menuDescriptor:
                 InterfaceMenu menu = new(menuDescriptor);
 
-                Menus.Add(menu.Id, menu);
+                Menus.Add(menu.Id.AsRaw(), menu);
                 break;
             case WindowDescriptor windowDescriptor:
                 ControlWindow window = new ControlWindow(windowDescriptor);
 
-                Windows.Add(windowDescriptor.Id, window);
+                Windows.Add(windowDescriptor.Id.AsRaw(), window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }

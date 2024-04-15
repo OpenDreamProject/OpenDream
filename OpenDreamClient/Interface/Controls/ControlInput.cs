@@ -23,13 +23,13 @@ internal sealed class ControlInput : InterfaceControl {
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
         ControlDescriptorInput inputDescriptor = (ControlDescriptorInput)ElementDescriptor;
-        _textBox.Text = inputDescriptor.Text ?? "";
+        _textBox.Text = inputDescriptor.Text.AsRaw();
     }
 
-    public override bool TryGetProperty(string property, out string value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         switch (property) {
             case "text":
-                value = _textBox.Text;
+                value = new DMFPropertyString(_textBox.Text);
                 return true;
             default:
                 return base.TryGetProperty(property, out value);

@@ -1,4 +1,5 @@
-﻿using FastAccessors;
+﻿using System.Diagnostics.CodeAnalysis;
+using FastAccessors;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown;
@@ -8,8 +9,8 @@ namespace OpenDreamClient.Interface;
 
 [Virtual]
 public class InterfaceElement {
-    public string Type => ElementDescriptor.Type;
-    public string Id => ElementDescriptor.Id;
+    public DMFPropertyString Type => ElementDescriptor.Type;
+    public DMFPropertyString Id => ElementDescriptor.Id;
 
     public ElementDescriptor ElementDescriptor;
     [Dependency] protected readonly IDreamInterfaceManager _interfaceManager = default!;
@@ -38,7 +39,7 @@ public class InterfaceElement {
     /// <summary>
     /// Attempt to get a DMF property
     /// </summary>
-    public virtual bool TryGetProperty(string property, out DMFProperty? value) {
+    public virtual bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         MappingDataNode original = (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
         original.TryGet(property, out var valueNode);
         if (valueNode != null) {

@@ -11,44 +11,44 @@ namespace OpenDreamClient.Interface.Descriptors;
 [Virtual]
 public partial class ControlDescriptor : ElementDescriptor {
     [DataField("pos")]
-    public Vector2i? Pos;
+    public DMFPropertyVec2 Pos;
     [DataField("size")]
-    public Vector2i? Size;
+    public DMFPropertyVec2 Size;
     [DataField("anchor1")]
-    public Vector2i? Anchor1;
+    public DMFPropertyVec2 Anchor1;
     [DataField("anchor2")]
-    public Vector2i? Anchor2;
+    public DMFPropertyVec2 Anchor2;
     [DataField("background-color", customTypeSerializer: typeof(DMFColorSerializer))]
-    public Color? BackgroundColor;
+    public DMFPropertyColor BackgroundColor;
     [DataField("is-visible")]
-    public bool IsVisible = true;
+    public DMFPropertyBool IsVisible = new DMFPropertyBool(true);
     [DataField("is-default")]
-    public bool IsDefault;
+    public DMFPropertyBool IsDefault = new DMFPropertyBool(false);
     [DataField("is-disabled")]
-    public bool IsDisabled;
+    public DMFPropertyBool IsDisabled = new DMFPropertyBool(false);
     [DataField("saved-params")]
-    public string? SavedParams;
+    public DMFPropertyString SavedParams;
 }
 
 public sealed partial class WindowDescriptor : ControlDescriptor {
     [DataField("is-pane")]
-    public bool IsPane;
+    public DMFPropertyBool IsPane = new DMFPropertyBool(false);
     [DataField("icon")]
-    public string? Icon;
+    public DMFPropertyString Icon;
     [DataField("menu")]
-    public string? Menu;
+    public DMFPropertyString Menu;
     [DataField("title")]
-    public string? Title;
+    public DMFPropertyString Title;
     [DataField("macro")]
-    public string? Macro { get; private set; }
+    public DMFPropertyString Macro { get; private set; }
     [DataField("on-close")]
-    public string? OnClose { get; private set; }
+    public DMFPropertyString OnClose { get; private set; }
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 
     public WindowDescriptor(string id, List<ControlDescriptor>? controlDescriptors = null) {
         ControlDescriptors = controlDescriptors ?? new();
-        Id = id;
+        Id = new DMFPropertyString(id);
     }
 
     [UsedImplicitly]
@@ -88,7 +88,7 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
         if (descriptorType == null)
             return null;
 
-        var child = (ControlDescriptor?) serializationManager.Read(descriptorType, attributes);
+        var child = (ControlDescriptor?)serializationManager.Read(descriptorType, attributes);
         if (child == null)
             return null;
 
@@ -115,25 +115,25 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
 
 public sealed partial class ControlDescriptorChild : ControlDescriptor {
     [DataField("left")]
-    public string? Left;
+    public DMFPropertyString Left;
     [DataField("right")]
-    public string? Right;
+    public DMFPropertyString Right;
     [DataField("is-vert")]
-    public bool IsVert;
+    public DMFPropertyBool IsVert;
     [DataField("splitter")]
-    public float Splitter = 50f;
+    public DMFPropertyNum Splitter = new DMFPropertyNum(50f);
 }
 
 public sealed partial class ControlDescriptorInput : ControlDescriptor {
     [DataField("text")]
-    public string? Text;
+    public DMFPropertyString Text;
 }
 
 public sealed partial class ControlDescriptorButton : ControlDescriptor {
     [DataField("text")]
-    public string? Text;
+    public DMFPropertyString Text;
     [DataField("command")]
-    public string? Command;
+    public DMFPropertyString Command;
 }
 
 public sealed partial class ControlDescriptorOutput : ControlDescriptor {
@@ -141,34 +141,34 @@ public sealed partial class ControlDescriptorOutput : ControlDescriptor {
 
 public sealed partial class ControlDescriptorInfo : ControlDescriptor {
     [DataField("on-show")]
-    public string? OnShowCommand;
+    public DMFPropertyString OnShowCommand;
     [DataField("on-hide")]
-    public string? OnHideCommand;
+    public DMFPropertyString OnHideCommand;
     [DataField("allow-html")]
-    public bool AllowHtml = true; // Supposedly false by default, but it isn't if you're not using BYOND's default skin
+    public DMFPropertyBool AllowHtml = new DMFPropertyBool(true); // Supposedly false by default, but it isn't if you're not using BYOND's default skin
 }
 
 public sealed partial class ControlDescriptorMap : ControlDescriptor {
     [DataField("on-show")]
-    public string? OnShowCommand;
+    public DMFPropertyString OnShowCommand;
     [DataField("on-hide")]
-    public string? OnHideCommand;
+    public DMFPropertyString OnHideCommand;
     [DataField("zoom-mode")]
-    public string ZoomMode = "normal";
+    public DMFPropertyString ZoomMode = new DMFPropertyString("normal");
     [DataField("icon-size")]
-    public int IconSize;
+    public DMFPropertyNum IconSize;
 }
 
 public sealed partial class ControlDescriptorBrowser : ControlDescriptor {
     [DataField("on-show")]
-    public string? OnShowCommand;
+    public DMFPropertyString OnShowCommand;
     [DataField("on-hide")]
-    public string? OnHideCommand;
+    public DMFPropertyString OnHideCommand;
 }
 
 public sealed partial class ControlDescriptorLabel : ControlDescriptor {
     [DataField("text")]
-    public string? Text;
+    public DMFPropertyString Text;
 }
 
 public sealed partial class ControlDescriptorGrid : ControlDescriptor {
@@ -176,29 +176,29 @@ public sealed partial class ControlDescriptorGrid : ControlDescriptor {
 
 public sealed partial class ControlDescriptorTab : ControlDescriptor {
     [DataField("tabs")]
-    public string? Tabs;
+    public DMFPropertyString Tabs;
     [DataField("current-tab")]
-    public string? CurrentTab;
+    public DMFPropertyString CurrentTab;
 }
 
 
 public sealed partial class ControlDescriptorBar : ControlDescriptor {
     [DataField("width")]
-    public int? Width = 10; //width of the progress bar in pixels. In the default EAST dir, this is more accurately thought of as "height"
+    public DMFPropertyNum Width = new DMFPropertyNum(10); //width of the progress bar in pixels. In the default EAST dir, this is more accurately thought of as "height"
     [DataField("dir")]
-    public string? Dir = "east"; //valid values: north/east/south/west/clockwise/cw/counterclockwise/ccw
+    public DMFPropertyString Dir = new DMFPropertyString("east"); //valid values: north/east/south/west/clockwise/cw/counterclockwise/ccw
     [DataField("angle1")]
-    public int? Angle1 = 0; //start angle
+    public DMFPropertyNum Angle1 = new DMFPropertyNum(0); //start angle
     [DataField("angle2")]
-    public int? Angle2 = 180; //end angle
+    public DMFPropertyNum Angle2 = new DMFPropertyNum(180); //end angle
     [DataField("bar-color")]
-    public Color? BarColor = null; //insanely, the default is null which causes the bar not to render regardless of value
+    public DMFPropertyColor? BarColor = null; //insanely, the default is null which causes the bar not to render regardless of value
     [DataField("is-slider")]
-    public bool IsSlider = false;
+    public DMFPropertyBool IsSlider = new DMFPropertyBool(false);
     [DataField("value")]
-    public float? Value = 0f; //position of the progress bar
+    public DMFPropertyNum Value = new DMFPropertyNum(0f); //position of the progress bar
     [DataField("on-change")]
-    public string? OnChange = null;
+    public DMFPropertyString OnChange = null;
 
 }
 

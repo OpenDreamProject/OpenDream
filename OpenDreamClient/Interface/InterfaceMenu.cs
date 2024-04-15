@@ -137,7 +137,7 @@ public sealed class InterfaceMenu : InterfaceElement {
             return menuButton;
         }
 
-        public override bool TryGetProperty(string property, out DMFProperty value) {
+        public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
             switch (property) {
                 case "command":
                     value = Command;

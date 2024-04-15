@@ -10,6 +10,23 @@ public abstract class DMFProperty {
         return AsRaw();
     }
 }
+/*
+arg
+    Value is formatted as if it's an argument on a command line. Numbers are left alone; booleans are 0 or 1; size and position have their X and Y values separated by a space; pretty much everything else is DM-escaped and enclosed in quotes.
+escaped
+    DM-escape the value as if it's in a quoted string but do not include the quotes. Size and position values both use , to separate their X and Y values.
+string
+    Value is formatted as a DM-escaped string with surrounding quotes.
+params
+    Format value for a URL-encoded parameter list (see list2params), escaping characters as needed.
+json
+    JSON formatting. Numbers are left unchanged; size or position values are turned into objects with x and y items; boolean values are true or false.
+json-dm
+    JSON formatting, but DM-escaped so it can be included in a quoted string. Quotes are not included.
+raw
+    Does not change the value's text representation in any way; assumes it's already formatted correctly for the purpose. This is similar to as arg but does no escaping and no quotes.
+*/
+
 
 public sealed class DMFPropertyString : DMFProperty {
     public string Value;

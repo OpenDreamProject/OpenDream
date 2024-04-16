@@ -110,21 +110,23 @@ internal sealed class DMObject {
         return proc;
     }
 
-    public List<int>? GetBaseProc(string name) {
-        var proc = Procs.GetValueOrDefault(name);
+    public int? GetBaseProc(string name) {
+        var procs = Procs.GetValueOrDefault(name);
         var parent = Parent?.GetProcs(name);
+        DMObject? parentObject;
         while (parent is not null) {
-            proc = parent;
-            parent = Parent?.GetProcs(name);
-            if (parent is null || parent[0] == proc[0]) {
+            procs = parent;
+            parentObject = DMObjectTree.AllProcs[procs[0]].GetParentObj();
+            parent = parentObject?.GetProcs(name);
+            if (parent is null || parent[0] == procs[0]) {
                 break;
             }
         }
-        return proc;
+        return procs?[0];
     }
 
     public DMValueType? GetBaseProcType(string name, out DreamPath? path) {
-        var parent = GetBaseProc(name)?[0];
+        var parent = GetBaseProc(name);
         if (parent is not null)
         {
             var parentProc = DMObjectTree.AllProcs[parent.Value];

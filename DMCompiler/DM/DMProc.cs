@@ -160,6 +160,14 @@ namespace DMCompiler.DM {
             return _dmObject.Parent;
         }
 
+        public DMProc GetBaseProc() {
+            var procid = _dmObject.Parent?.GetBaseProc(Name);
+            if (procid is null) {
+                return this;
+            }
+            return DMObjectTree.AllProcs[procid.Value];
+        }
+
         public void ValidateReturnType(DMExpression expr) {
             DMValueType type = expr.ValType;
             if ((ReturnTypes & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {

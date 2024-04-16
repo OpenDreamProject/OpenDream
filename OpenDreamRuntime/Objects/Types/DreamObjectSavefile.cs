@@ -398,9 +398,6 @@ public sealed class DreamObjectSavefile : DreamObject {
     public SFDreamJsonValue SerializeDreamValue(DreamValue val, int objectCount = 0) {
         switch (val.Type) {
             case DreamValue.DreamValueType.String:
-                if(val.TryGetValueAsString(out var valString) && string.IsNullOrEmpty(valString)) 
-                        val = DreamValue.Null;
-                return new SFDreamPrimitive { Value = val };
             case DreamValue.DreamValueType.Float:
                 return new SFDreamPrimitive { Value = val };
             case DreamValue.DreamValueType.DreamType:

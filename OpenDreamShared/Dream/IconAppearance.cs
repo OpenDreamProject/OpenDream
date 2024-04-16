@@ -40,11 +40,11 @@ namespace OpenDreamShared.Dream {
         [ViewVariables] public string? RenderSource;
         [ViewVariables] public string? RenderTarget;
         [ViewVariables] public MouseOpacity MouseOpacity = MouseOpacity.PixelOpaque;
-        [ViewVariables] public List<int> Overlays = new();
-        [ViewVariables] public List<int> Underlays = new();
-        [ViewVariables] public List<NetEntity> VisContents = new();
-        [ViewVariables] public List<DreamFilter> Filters = new();
-        [ViewVariables] public List<int> Verbs = new();
+        [ViewVariables] public List<int> Overlays;
+        [ViewVariables] public List<int> Underlays;
+        [ViewVariables] public List<NetEntity> VisContents;
+        [ViewVariables] public List<DreamFilter> Filters;
+        [ViewVariables] public List<int> Verbs;
         /// <summary> The Transform property of this appearance, in [a,d,b,e,c,f] order</summary>
         [ViewVariables] public float[] Transform = [
             1, 0,   // a d
@@ -52,7 +52,13 @@ namespace OpenDreamShared.Dream {
             0, 0    // c f
         ];
 
-        public IconAppearance() { }
+        public IconAppearance() {
+            Overlays = new();
+            Underlays = new();
+            VisContents = new();
+            Filters = new();
+            Verbs = new();
+        }
 
         public IconAppearance(IconAppearance appearance) {
             Icon = appearance.Icon;

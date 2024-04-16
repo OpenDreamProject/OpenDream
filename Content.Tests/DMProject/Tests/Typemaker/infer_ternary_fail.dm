@@ -1,5 +1,5 @@
 // COMPILE ERROR
-#pragma InvalidVarType error
+#pragma InvalidReturnType error
 /proc/foo() as text
 	var/foo = "hi" as text
 	var/bar = 10 as num

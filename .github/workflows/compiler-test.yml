@@ -51,7 +51,7 @@ jobs:
     - name: Compile Goonstation Master
       run: |
         New-Item goon\+secret\__secret.dme -type file
-        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --version=514.1584
+        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme
     - name: Checkout Paradise Master
       uses: actions/checkout@v2
       with:

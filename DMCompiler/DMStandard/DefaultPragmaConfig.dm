@@ -33,6 +33,7 @@
 #pragma InvalidReturnType warning
 #pragma InvalidVarType warning
 #pragma ImplicitNullType warning
+#pragma LostTypeInfo warning
 
 //3000-3999
 #pragma EmptyBlock notice

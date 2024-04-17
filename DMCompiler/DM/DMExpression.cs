@@ -10,13 +10,7 @@ namespace DMCompiler.DM;
 internal abstract class DMExpression(Location location) {
     public Location Location = location;
 
-    public virtual DMValueType ValType {
-        get { return DMValueType.Anything; }
-        init => value = DMValueType.Anything;
-    }
-
-    private DreamPath? _valPath;
-    public virtual DreamPath? ValPath => _valPath;
+    public virtual DMComplexValueType ValType => DMValueType.Anything;
 
     // TODO: proc and dmObject can be null, address nullability contract
     public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
@@ -166,7 +160,8 @@ sealed class ArgumentList {
             if (targetProc is not null) {
                 if (index < procParams.Length) { // Doesn't cope with variadics
                     var paramName = Expressions[index].Name;
-                    DMValueType? paramType = paramName == null ? (procParams[index].Type ?? DMValueType.Anything) : null; //unnamed arg
+                    DMComplexValueType? paramType = paramName == null ? (procParams[index].Type ?? DMValueType.Anything) : null; //unnamed arg
+
                     if (paramType is null) { // named arg
                         if (targetProc.TryGetParameter(Expressions[index].Name, out var param)) {
                             paramType = param.ExplicitValueType;
@@ -175,12 +170,14 @@ sealed class ArgumentList {
                             paramType = DMValueType.Anything;
                         }
                     }
-                    if (index < procParams.Length && expr.ValType != DMValueType.Anything && paramType != DMValueType.Anything && (expr.ValType & paramType) == 0) {
+
+                    if (index < procParams.Length && !expr.ValType.IsAnything && paramType?.MatchesType(expr.ValType) == false) {
                         var printName = name ?? procParams[index].Name;
-                        DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location, $"{targetProc.Name}(...) argument \"{printName}\": Invalid var value type \"{expr.ValType.ToString().ToLower()}\", expected \"{procParams[index].Type.ToString().ToLower()}\"");
+
+                        DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                            $"{targetProc.Name}(...) argument \"{printName}\": Invalid var value type {expr.ValType}, expected {procParams[index].Type}");
                     }
                 }
-
             }
 
             if (_isKeyed) {

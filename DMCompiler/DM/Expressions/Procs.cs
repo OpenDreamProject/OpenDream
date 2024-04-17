@@ -33,7 +33,7 @@ namespace DMCompiler.DM.Expressions {
             return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
 
-        public DMValueType GetReturnType(DMObject dmObject) {
+        public DMComplexValueType GetReturnType(DMObject dmObject) {
             return dmObject.GetReturnType(_identifier);
         }
     }
@@ -44,12 +44,11 @@ namespace DMCompiler.DM.Expressions {
     /// </remarks>
     internal sealed class GlobalProc : DMExpression {
         private readonly string _name;
-        public override DMValueType ValType { get; init; }
 
+        public override DMComplexValueType ValType => GetProc().ReturnTypes;
 
         public GlobalProc(Location location, string name) : base(location) {
             _name = name;
-            ValType = GetReturnType();
         }
 
         public override string ToString() {
@@ -73,10 +72,6 @@ namespace DMCompiler.DM.Expressions {
 
             return globalProc;
         }
-
-        public DMValueType GetReturnType() {
-            return GetProc().ReturnTypes;
-        }
     }
 
     /// <summary>
@@ -84,7 +79,7 @@ namespace DMCompiler.DM.Expressions {
     /// This is an LValue _and_ a proc!
     /// </summary>
     sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) : LValue(location, path) {
-        public override DMValueType ValType => proc.ReturnTypes;
+        public override DMComplexValueType ValType => proc.ReturnTypes;
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Self;
@@ -93,7 +88,7 @@ namespace DMCompiler.DM.Expressions {
 
     // ..
     sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _proc) : DMExpression(location) {
-        public override DMValueType ValType => _dmObject?.GetParentProcType(_proc.Name, out _) ?? DMValueType.Anything;
+        public override DMComplexValueType ValType => _dmObject?.GetParentProcType(_proc.Name) ?? DMValueType.Anything;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
@@ -113,19 +108,16 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x(y, z, ...)
-    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMValueType valType = DMValueType.Anything) : DMExpression(location) {
+    sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMComplexValueType valType) : DMExpression(location) {
         public override bool PathIsFuzzy => Path == null;
-        public override DMValueType ValType => valType == DMValueType.Anything ? target.ValType : valType;
+        public override DMComplexValueType ValType => valType.IsAnything ? target.ValType : valType;
 
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
             switch (target) {
-                case Proc procTarget: {
+                case Proc procTarget:
                     return (dmObject, procTarget.GetProc(dmObject));
-                }
-
-                case GlobalProc procTarget: {
+                case GlobalProc procTarget:
                     return (null, procTarget.GetProc());
-                }
                 default:
                     return (null, null);
             }

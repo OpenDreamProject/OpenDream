@@ -93,21 +93,19 @@ public struct DreamPath {
         Normalize(true);
     }
 
-    public DMValueType GetATOMType() {
+    public DMValueType GetAtomType() {
         var dmType = DMObjectTree.GetDMObject(this, false);
-        if (dmType is null) return DMValueType.Anything;
-        if (dmType.IsSubtypeOf(DreamPath.Obj)) {
+        if (dmType is null)
+            return DMValueType.Anything;
+
+        if (dmType.IsSubtypeOf(Obj))
             return DMValueType.Obj;
-        }
-        if (dmType.IsSubtypeOf(DreamPath.Mob)) {
+        if (dmType.IsSubtypeOf(Mob))
             return DMValueType.Mob;
-        }
-        if (dmType.IsSubtypeOf(DreamPath.Turf)) {
+        if (dmType.IsSubtypeOf(Turf))
             return DMValueType.Turf;
-        }
-        if (dmType.IsSubtypeOf(DreamPath.Area)) {
+        if (dmType.IsSubtypeOf(Area))
             return DMValueType.Area;
-        }
 
         return DMValueType.Anything;
     }

@@ -313,7 +313,7 @@ internal static class DMObjectBuilder {
 
             DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
             proc.IsVerb = procDefinition.IsVerb;
-            proc.TypeChecked = proc.ReturnTypes != DMValueType.Anything;
+            proc.TypeChecked = !proc.ReturnTypes.IsAnything;
 
             if (procDefinition.ObjectPath == DreamPath.Root) {
                 if(procDefinition.IsOverride) {
@@ -418,7 +418,7 @@ internal static class DMObjectBuilder {
             return;
         }
 
-        if ((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
+        if (variable.ValType.IsCompileTimeReadOnly) {
             DMCompiler.Emit(WarningCode.WriteToConstant, value.Location,
                 $"Var {variable.Name} is a native read-only value which cannot be modified");
         }
@@ -437,14 +437,15 @@ internal static class DMObjectBuilder {
 
     private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression, bool isOverride = false) {
         // Typechecking
-        if (variable.ValType != DMValueType.Anything && variable.ValType != DMValueType.Unimplemented && variable.ValType != DMValueType.CompiletimeReadonly && !variable.ValType.HasFlag(expression.ValType)) {
+        if (!variable.ValType.MatchesType(expression.ValType) && !variable.ValType.IsUnimplemented) {
             if (expression is Null && !isOverride) {
                 DMCompiler.Emit(WarningCode.ImplicitNullType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
                 variable.ValType |= DMValueType.Null;
             } else {
-                DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type \"{expression.ValType.ToString().ToLower()}\", expected \"{variable.ValType.ToString().ToLower()}\"");
+                DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type {expression.ValType}, expected {variable.ValType}");
             }
         }
+
         if (expression.TryAsConstant(out var constant)) {
             variable = variable.WriteToValue(constant);
             return;
@@ -504,8 +505,8 @@ internal static class DMObjectBuilder {
             DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
         } else {
             var initLoc = expression.Location;
-            Expressions.Field field = new Expressions.Field(initLoc, variable, variable.ValType, variable.ValPath);
-            Expressions.Assignment assign = new Expressions.Assignment(initLoc, field, expression);
+            var field = new Field(initLoc, variable, variable.ValType);
+            var assign = new Assignment(initLoc, field, expression);
 
             currentObject.InitializationProcExpressions.Add(assign);
         }

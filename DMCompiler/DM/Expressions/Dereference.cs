@@ -51,9 +51,9 @@ namespace DMCompiler.DM.Expressions {
         public override bool PathIsFuzzy => Path == null;
 
         private readonly Operation[] _operations;
-        private DMValueType? _valType;
+        private DMComplexValueType? _valType;
 
-        public override DMValueType ValType => _valType ?? DMValueType.Anything;
+        public override DMComplexValueType ValType => _valType ?? DMValueType.Anything;
 
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
@@ -263,7 +263,7 @@ namespace DMCompiler.DM.Expressions {
                 if (variable != null) {
                     if (variable.IsConst)
                         return variable.Value.TryAsConstant(out constant);
-                    if (variable.ValType.HasFlag(DMValueType.CompiletimeReadonly)) {
+                    if (variable.ValType.IsCompileTimeReadOnly) {
                         variable.Value.TryAsConstant(out constant!);
                         return true; // MUST be true.
                     }

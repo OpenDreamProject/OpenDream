@@ -2,7 +2,6 @@
 using System;
 using System.Collections.Generic;
 using DMCompiler.Compiler;
-using DMCompiler.Compiler.DM.AST;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM;
@@ -110,22 +109,22 @@ internal sealed class DMObject {
         return proc;
     }
 
-    public DMValueType? GetParentProcType(string name, out DreamPath? path) {
+    public DMComplexValueType? GetParentProcType(string name) {
         var parent = Parent?.GetProcs(name);
-        path = null;
-        var returnType = DMValueType.Anything;
+
         while (parent is not null) {
             var parentProc = DMObjectTree.AllProcs[parent[^1]];
-            if (parentProc.ReturnTypes != DMValueType.Anything) {
-                path = parentProc.ReturnPath;
+
+            if (!parentProc.ReturnTypes.IsAnything) {
                 return parentProc.ReturnTypes;
             }
+
             parent = parentProc.GetParentObj()?.GetProcs(name) ?? null;
             if (parent is null) {
-                path = parentProc.ReturnPath;
-                return parentProc?.ReturnTypes ?? null;
+                return parentProc.ReturnTypes;
             }
         }
+
         return null;
     }
 
@@ -134,8 +133,8 @@ internal sealed class DMObject {
         _verbs.Add(verb);
     }
 
-    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything, DreamPath? valPath = null) {
-        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType, valPath);
+    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMComplexValueType? valType = null) {
+        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType ?? DMValueType.Anything);
 
         GlobalVariables[name] = id;
         return global;
@@ -159,13 +158,10 @@ internal sealed class DMObject {
         return (id == null) ? null : DMObjectTree.Globals[id.Value];
     }
 
-    public DMValueType GetReturnType(string name) {
+    public DMComplexValueType GetReturnType(string name) {
         var procId = GetProcs(name)?[^1];
-        return procId is null ? DMValueType.Anything : GetReturnType(procId.Value);
-    }
 
-    public DMValueType GetReturnType(int procId) {
-        return DMObjectTree.AllProcs[procId].ReturnTypes;
+        return procId is null ? DMValueType.Anything : DMObjectTree.AllProcs[procId.Value].ReturnTypes;
     }
 
     public void CreateInitializationProc() {

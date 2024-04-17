@@ -101,7 +101,7 @@ namespace DMCompiler.DM.Expressions {
 
     // null
     sealed class Null(Location location) : Constant(location) {
-        public override DMValueType ValType => DMValueType.Null;
+        public override DMComplexValueType ValType => DMValueType.Null;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
@@ -146,7 +146,7 @@ namespace DMCompiler.DM.Expressions {
     // 4.0, -4.0
     sealed class Number : Constant {
         public float Value { get; }
-        public override DMValueType ValType => DMValueType.Num;
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public Number(Location location, int value) : base(location) {
             Value = value;
@@ -321,7 +321,7 @@ namespace DMCompiler.DM.Expressions {
     // "abc"
     sealed class String : Constant {
         public string Value { get; }
-        public override DMValueType ValType => DMValueType.Text;
+        public override DMComplexValueType ValType => DMValueType.Text;
 
         public String(Location location, string value) : base(location) {
             Value = value;
@@ -491,8 +491,7 @@ namespace DMCompiler.DM.Expressions {
         /// The DMObject this expression resides in. Used for path searches.
         /// </summary>
         private readonly DMObject _dmObject;
-        public override DMValueType ValType => DMValueType.Path;
-        public override DreamPath? ValPath => Path;
+        public override DMComplexValueType ValType => Value;
 
         public ConstantPath(Location location, DMObject dmObject, DreamPath value)
             : base(location) {

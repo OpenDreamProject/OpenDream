@@ -6,7 +6,7 @@ namespace DMCompiler.DM.Expressions {
     internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
         protected DMExpression LHS { get; } = lhs;
         protected DMExpression RHS { get; } = rhs;
-        public override DMValueType ValType => LHS.ValType;
+        public override DMComplexValueType ValType => LHS.ValType;
     }
 
     #region Simple
@@ -501,12 +501,6 @@ namespace DMCompiler.DM.Expressions {
             EmitOp(dmObject, proc, reference, endLabel);
 
             proc.AddLabel(endLabel);
-
-            if (LHS is ProcSelf self) {
-                if (proc.ReturnTypes != DMValueType.Anything && (proc.ReturnTypes & self.ValType) == 0) {
-                    DMCompiler.Emit(WarningCode.InvalidReturnType, Location, $"{proc.Name}(): Invalid implicit return type {self.ValType}, expected {proc.ReturnTypes}");
-                }
-            }
         }
     }
 
@@ -521,14 +515,16 @@ namespace DMCompiler.DM.Expressions {
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
 
-            if ((LHS.ValType & RHS.ValType) == 0 && LHS.ValType != DMValueType.Anything && LHS.ValType != DMValueType.Unimplemented) {
-                if (DMCompiler.Settings.SkipAnythingTypecheck && RHS.ValType == DMValueType.Anything) return;
-                DMCompiler.Emit(WarningCode.InvalidVarType, Location, $"Invalid var type \"{RHS.ValType.ToString().ToLower()}\", expected \"{LHS.ValType.ToString().ToLower()}\"");
-            } else if (LHS.ValType.HasFlag(DMValueType.Path) && !(RHS.ValPath?.IsDescendantOf(LHS.ValPath ?? DreamPath.Root) ?? false)) {
-                DMCompiler.Emit(WarningCode.InvalidVarType, Location, $"Invalid var path \"{RHS.ValPath?.ToString() ?? "null"}\", expected \"{LHS.ValPath?.ToString() ?? "path"}\"");
+            if (!LHS.ValType.MatchesType(RHS.ValType) && !LHS.ValType.IsUnimplemented) {
+                if (DMCompiler.Settings.SkipAnythingTypecheck && RHS.ValType.IsAnything)
+                    return;
+
+                DMCompiler.Emit(WarningCode.InvalidVarType, Location,
+                    $"Invalid var type {RHS.ValType}, expected {LHS.ValType}");
             }
         }
     }
+
     // x := y
     class AssignmentInto : AssignmentBinaryOp {
         public override DreamPath? Path => LHS.Path;

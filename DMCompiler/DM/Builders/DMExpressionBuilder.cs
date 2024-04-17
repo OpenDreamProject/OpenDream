@@ -365,7 +365,7 @@ internal static class DMExpressionBuilder {
             case "args":
                 return new Args(identifier.Location);
             case "__TYPE__":
-                return new ProcOwnerType(identifier.Location);
+                return new ProcOwnerType(identifier.Location, dmObject);
             case "__IMPLIED_TYPE__":
                 if (inferredPath == null) {
                     DMCompiler.Emit(WarningCode.BadExpression, identifier.Location,
@@ -386,7 +386,7 @@ internal static class DMExpressionBuilder {
 
                     var field = dmObject?.GetVariable(name);
                     if (field != null) {
-                        return new Field(identifier.Location, field, field.ValType, field.ValPath);
+                        return new Field(identifier.Location, field, field.ValType);
                     }
                 }
 
@@ -395,7 +395,7 @@ internal static class DMExpressionBuilder {
 
                     if (globalId != null) {
                         var globalVar = DMObjectTree.Globals[globalId.Value];
-                        var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType, globalVar.ValPath);
+                        var global = new GlobalField(identifier.Location, globalVar.Type, globalId.Value, globalVar.ValType);
                         return global;
                     }
                 }
@@ -424,7 +424,7 @@ internal static class DMExpressionBuilder {
                 }
 
                 var arguments = new ArgumentList(location, dmObject, proc, scopeIdentifier.CallArguments, inferredPath);
-                return new ProcCall(location, new GlobalProc(location, bIdentifier), arguments);
+                return new ProcCall(location, new GlobalProc(location, bIdentifier), arguments, DMValueType.Anything);
             }
 
             // ::vars, special case
@@ -440,8 +440,7 @@ internal static class DMExpressionBuilder {
             return new GlobalField(location,
                 DMObjectTree.Globals[globalId.Value].Type,
                 globalId.Value,
-                globalVar.ValType,
-                globalVar.ValPath);
+                globalVar.ValType);
         }
 
         // Other uses should wait until the scope operator pass
@@ -514,7 +513,7 @@ internal static class DMExpressionBuilder {
                 // B is a static var.
                 // This is the only case a ScopeIdentifier can be an LValue.
                 var globalVar = DMObjectTree.Globals[globalVarId.Value];
-                return new GlobalField(location, globalVar.Type, globalVarId.Value, globalVar.ValType, globalVar.ValPath);
+                return new GlobalField(location, globalVar.Type, globalVarId.Value, globalVar.ValType);
             }
 
             var variable = owner.GetVariable(bIdentifier);
@@ -561,10 +560,11 @@ internal static class DMExpressionBuilder {
         var args = new ArgumentList(procCall.Location, dmObject, proc, procCall.Parameters);
         if (target is Proc targetProc) { // GlobalProc handles returnType itself
             var returnType = targetProc.GetReturnType(dmObject);
+
             return new ProcCall(procCall.Location, target, args, returnType);
         }
 
-        return new ProcCall(procCall.Location, target, args);
+        return new ProcCall(procCall.Location, target, args, DMValueType.Anything);
     }
 
     private static DMExpression BuildAssign(DMASTAssign assign, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
@@ -639,7 +639,7 @@ internal static class DMExpressionBuilder {
                             callOperation.Parameters);
 
                         var globalProc = new GlobalProc(expr.Location, callOperation.Identifier);
-                        expr = new ProcCall(expr.Location, globalProc, argumentList);
+                        expr = new ProcCall(expr.Location, globalProc, argumentList, DMValueType.Anything);
                         break;
 
                     case DMASTDereference.FieldOperation:
@@ -656,7 +656,7 @@ internal static class DMExpressionBuilder {
                         }
 
                         var property = DMObjectTree.Globals[globalId.Value];
-                        expr = new GlobalField(expr.Location, property.Type, globalId.Value, property.ValType, property.ValPath);
+                        expr = new GlobalField(expr.Location, property.Type, globalId.Value, property.ValType);
 
                         prevPath = property.Type;
                         pathIsFuzzy = false;
@@ -711,7 +711,7 @@ internal static class DMExpressionBuilder {
                         if (property == null && fromObject.GetGlobalVariableId(field) is { } globalId) {
                             property = DMObjectTree.Globals[globalId];
 
-                            expr = new GlobalField(expr.Location, property.Type, globalId, property.ValType, property.ValPath);
+                            expr = new GlobalField(expr.Location, property.Type, globalId, property.ValType);
 
                             var newOperationCount = operations.Length - i - 1;
                             if (newOperationCount == 0) {
@@ -722,7 +722,7 @@ internal static class DMExpressionBuilder {
                                 throw new UnknownIdentifierException(deref.Location, field);
                             }
 
-                            if ((property.ValType & DMValueType.Unimplemented) == DMValueType.Unimplemented) {
+                            if (property.ValType.IsUnimplemented) {
                                 DMCompiler.UnimplementedWarning(deref.Location,
                                     $"{prevPath}.{field} is not implemented and will have unexpected behavior");
                             }

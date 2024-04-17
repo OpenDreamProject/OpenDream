@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -23,10 +24,10 @@ internal sealed class ControlChild : InterfaceControl {
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        var newLeftElement = ChildDescriptor.Left != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left, out var leftWindow)
+        var newLeftElement = ChildDescriptor.Left.Value != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var leftWindow)
             ? leftWindow.UIElement
             : null;
-        var newRightElement = ChildDescriptor.Right != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right, out var rightWindow)
+        var newRightElement = ChildDescriptor.Right.Value != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var rightWindow)
             ? rightWindow.UIElement
             : null;
 
@@ -71,27 +72,27 @@ internal sealed class ControlChild : InterfaceControl {
     }
 
     public override void Shutdown() {
-        if (ChildDescriptor.Left != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left, out var left))
+        if (ChildDescriptor.Left.Value != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Left.Value, out var left))
             left.Shutdown();
-        if (ChildDescriptor.Right != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right, out var right))
+        if (ChildDescriptor.Right.Value != null && _interfaceManager.Windows.TryGetValue(ChildDescriptor.Right.Value, out var right))
             right.Shutdown();
     }
 
     private void UpdateGrid() {
-        _grid.Orientation = ChildDescriptor.IsVert
+        _grid.Orientation = ChildDescriptor.IsVert.Value
             ? SplitContainer.SplitOrientation.Horizontal
             : SplitContainer.SplitOrientation.Vertical;
 
         if (_grid.Size == Vector2.Zero)
             return;
 
-        _grid.SplitFraction = ChildDescriptor.Splitter / 100f;
+        _grid.SplitFraction = ChildDescriptor.Splitter.Value / 100f;
     }
 
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         switch (property) {
             case "splitter":
-                value = $"{_grid.SplitFraction * 100}";
+                value = new DMFPropertyNum(_grid.SplitFraction * 100);
                 return true;
             default:
                 return base.TryGetProperty(property, out value);

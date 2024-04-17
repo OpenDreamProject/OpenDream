@@ -27,8 +27,8 @@ public sealed class InterfaceMenu : InterfaceElement {
             if (menuElement.ElementDescriptor is not MenuElementDescriptor menuElementDescriptor)
                 continue;
 
-            if (menuElementDescriptor.Group == group) {
-                menuElementDescriptor.IsChecked = menuElementDescriptor.Id == id;
+            if (menuElementDescriptor.Group.AsRaw() == group) {
+                menuElementDescriptor.IsChecked = new DMFPropertyBool(menuElementDescriptor.Id.AsRaw() == id);
             }
         }
     }
@@ -38,17 +38,17 @@ public sealed class InterfaceMenu : InterfaceElement {
             throw new ArgumentException($"Attempted to add a {descriptor} to a menu", nameof(descriptor));
 
         MenuElement element;
-        if (elementDescriptor.Category == null) {
+        if (elementDescriptor.Category.Value == null) {
             element = new(elementDescriptor, this);
         } else {
-            if (!MenuElements.TryGetValue(elementDescriptor.Category, out var parentMenu)) {
+            if (!MenuElements.TryGetValue(elementDescriptor.Category.Value, out var parentMenu)) {
                 //if category is set but the parent element doesn't exist, create it
                 var parentMenuDescriptor = new MenuElementDescriptor() {
                     Id = elementDescriptor.Category
                 };
 
                 parentMenu = new(parentMenuDescriptor, this);
-                MenuElements.Add(parentMenu.Id, parentMenu);
+                MenuElements.Add(parentMenu.Id.AsRaw(), parentMenu);
             }
 
             //now add this as a child
@@ -56,7 +56,7 @@ public sealed class InterfaceMenu : InterfaceElement {
             parentMenu.Children.Add(element);
         }
 
-        MenuElements.Add(element.Id, element);
+        MenuElements.Add(element.Id.AsRaw(), element);
         CreateMenu(); // Update the menu to include the new child
     }
 
@@ -71,7 +71,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                 continue;
 
             MenuBar.Menu menu = new() {
-                Title = menuElement.ElementDescriptor.Name
+                Title = menuElement.ElementDescriptor.Name.AsRaw()
             };
 
             if (menu.Title?.StartsWith("&") ?? false)

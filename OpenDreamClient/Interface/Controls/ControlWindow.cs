@@ -18,8 +18,8 @@ public sealed class ControlWindow : InterfaceControl {
 
     public readonly List<InterfaceControl> ChildControls = new();
 
-    public string Title => WindowDescriptor.Title ?? (WindowDescriptor.IsDefault ? "OpenDream World" : WindowDescriptor.Id);
-    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro];
+    public string Title => WindowDescriptor.Title.Value ?? (WindowDescriptor.IsDefault.Value ? "OpenDream World" : WindowDescriptor.Id.AsRaw());
+    public InterfaceMacroSet Macro => _interfaceManager.MacroSets[WindowDescriptor.Macro.AsRaw()];
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
@@ -37,17 +37,17 @@ public sealed class ControlWindow : InterfaceControl {
         // Don't call base.UpdateElementDescriptor();
 
         _menuContainer.RemoveAllChildren();
-        if (WindowDescriptor.Menu != null && _interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu, out var menu)) {
+        if (WindowDescriptor.Menu.Value != null && _interfaceManager.Menus.TryGetValue(WindowDescriptor.Menu.Value, out var menu)) {
             _menuContainer.AddChild(menu.MenuBar);
             _menuContainer.Visible = true;
         } else {
             _menuContainer.Visible = false;
         }
 
-        if(!WindowDescriptor.IsPane)
+        if(!WindowDescriptor.IsPane.Value)
             UpdateWindowAttributes(_myWindow);
 
-        if (WindowDescriptor.IsDefault) {
+        if (WindowDescriptor.IsDefault.Value) {
             Macro.SetActive();
         }
     }
@@ -60,16 +60,17 @@ public sealed class ControlWindow : InterfaceControl {
         if(UIElement.Parent is not null)
             UIElement.Orphan();
         window.Children.Add(UIElement);
-        window.SetWidth = ControlDescriptor.Size?.X ?? 640;
-        window.SetHeight = ControlDescriptor.Size?.Y ?? 440;
-        if (ControlDescriptor.Size?.X == 0)
+        //TODO: check if this is needed
+        //window.SetWidth = ControlDescriptor.Size.X ?? 640;
+        //window.SetHeight = ControlDescriptor.Size.Y ?? 440;
+        if (ControlDescriptor.Size.X == 0)
             window.SetWidth = window.MaxWidth;
-        if (ControlDescriptor.Size?.Y == 0)
+        if (ControlDescriptor.Size.Y == 0)
             window.SetHeight = window.MaxHeight;
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
-            if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose)) {
-                _interfaceManager.RunCommand(WindowDescriptor.OnClose);
+            if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose.Value)) {
+                _interfaceManager.RunCommand(WindowDescriptor.OnClose.Value);
             }
 
             _myWindow = (null, _myWindow.clydeWindow);
@@ -171,14 +172,14 @@ public sealed class ControlWindow : InterfaceControl {
 
         //if our window is null or closed, and we are visible, we need to create a new one. Otherwise we need to update the existing one.
         if(osWindow == null && clydeWindow == null) {
-            if (WindowDescriptor.IsVisible) {
+            if (WindowDescriptor.IsVisible.Value) {
                 CreateWindow();
                 return; //we return because CreateWindow() calls UpdateWindowAttributes() again.
             }
         }
 
         if(osWindow != null && !osWindow.IsOpen) {
-            if (WindowDescriptor.IsVisible) {
+            if (WindowDescriptor.IsVisible.Value) {
                 osWindow.Show();
             }
         }
@@ -197,9 +198,9 @@ public sealed class ControlWindow : InterfaceControl {
         }
 
         if (osWindow != null && osWindow.ClydeWindow != null) {
-            osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible;
+            osWindow.ClydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
         } else if (clydeWindow != null) {
-            clydeWindow.IsVisible = WindowDescriptor.IsVisible;
+            clydeWindow.IsVisible = WindowDescriptor.IsVisible.Value;
         }
 
     }

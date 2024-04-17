@@ -1,4 +1,4 @@
-public abstract class DMFProperty {
+public interface DMFProperty {
     public abstract string AsArg();
     public abstract string AsEscaped();
     public abstract string AsString();
@@ -6,7 +6,7 @@ public abstract class DMFProperty {
     public abstract string AsJSON();
     public abstract string AsJSONDM();
     public abstract string AsRaw();
-    public override string ToString() {
+    public string? ToString() {
         return AsRaw();
     }
 }
@@ -28,43 +28,43 @@ raw
 */
 
 
-public sealed class DMFPropertyString : DMFProperty {
-    public string Value;
+public struct DMFPropertyString : DMFProperty {
+    public string? Value;
 
     public DMFPropertyString(string value) {
         Value = value;
     }
 
-    public override string AsArg() {
-        return Value;
+    public string AsArg() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsEscaped() {
-        return Value.Replace("\\", "\\\\").Replace("\"", "\\\"");
+    public string AsEscaped() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsString() {
-        return Value;
+    public string AsString() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsParams() {
-        return Value;
+    public string AsParams() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsJSON() {
-        return "\"" + AsEscaped() + "\"";
+    public string AsJSON() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsJSONDM() {
-        return AsJSON();
+    public string AsJSONDM() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsRaw() {
-        return Value;
+    public string AsRaw() {
+        return Value != null ? Value.ToString() : "";
     }
 }
 
-public sealed class DMFPropertyNum : DMFProperty {
+public struct DMFPropertyNum : DMFProperty {
     public float Value;
 
     public DMFPropertyNum(float value) {
@@ -74,36 +74,36 @@ public sealed class DMFPropertyNum : DMFProperty {
         Value = float.Parse(value);
     }
 
-    public override string AsArg() {
+    public string AsArg() {
         return Value.ToString();
     }
 
-    public override string AsEscaped() {
+    public string AsEscaped() {
         return Value.ToString();
     }
 
-    public override string AsString() {
+    public string AsString() {
         return Value.ToString();
     }
 
-    public override string AsParams() {
+    public string AsParams() {
         return Value.ToString();
     }
 
-    public override string AsJSON() {
+    public string AsJSON() {
         return Value.ToString();
     }
 
-    public override string AsJSONDM() {
+    public string AsJSONDM() {
         return Value.ToString();
     }
 
-    public override string AsRaw() {
+    public string AsRaw() {
         return Value.ToString();
     }
 }
 
-public sealed class DMFPropertyVec2 : DMFProperty {
+public struct DMFPropertyVec2 : DMFProperty {
     public int X;
     public int Y;
 
@@ -123,73 +123,73 @@ public sealed class DMFPropertyVec2 : DMFProperty {
         Y = (int)value.Y;
     }
 
-    public override string AsArg() {
+    public string AsArg() {
         return X.ToString() + "," + Y.ToString();
     }
 
-    public override string AsEscaped() {
+    public string AsEscaped() {
         return X.ToString() + "," + Y.ToString();
     }
 
-    public override string AsString() {
+    public string AsString() {
         return "(" + X.ToString() + ", " + Y.ToString() + ")";
     }
 
-    public override string AsParams() {
+    public string AsParams() {
         return X.ToString() + ", " + Y.ToString();
     }
 
-    public override string AsJSON() {
+    public string AsJSON() {
         return "[" + X.ToString() + "," + Y.ToString() + "]";
     }
 
-    public override string AsJSONDM() {
+    public string AsJSONDM() {
         return "[" + X.ToString() + "," + Y.ToString() + "]";
     }
 
-    public override string AsRaw() {
+    public string AsRaw() {
         return X.ToString() + "," + Y.ToString();
     }
 }
 
-public sealed class DMFPropertyColor : DMFProperty {
+public struct DMFPropertyColor : DMFProperty {
     public string? Value;
 
     public DMFPropertyColor(string? value) {
         Value = value;
     }
 
-    public override string AsArg() {
-        return Value.ToString();
+    public string AsArg() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsEscaped() {
-        return Value.ToString();
+    public string AsEscaped() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsString() {
-        return Value.ToString();
+    public string AsString() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsParams() {
-        return Value.ToString();
+    public string AsParams() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsJSON() {
-        return Value.ToString();
+    public string AsJSON() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsJSONDM() {
-        return Value.ToString();
+    public string AsJSONDM() {
+        return Value != null ? Value.ToString() : "";
     }
 
-    public override string AsRaw() {
-        return Value.ToString();
+    public string AsRaw() {
+        return Value != null ? Value.ToString() : "";
     }
 
 }
 
-public sealed class DMFPropertyBool : DMFProperty {
+public struct DMFPropertyBool : DMFProperty {
     public bool Value;
 
     public DMFPropertyBool(bool value) {
@@ -200,31 +200,31 @@ public sealed class DMFPropertyBool : DMFProperty {
         Value = value.Equals("1") || value.Equals("true", StringComparison.OrdinalIgnoreCase);
     }
 
-    public override string AsArg() {
+    public string AsArg() {
         return Value ? "1" : "0";
     }
 
-    public override string AsEscaped() {
+    public string AsEscaped() {
         return Value ? "1" : "0";
     }
 
-    public override string AsString() {
+    public string AsString() {
         return Value ? "true" : "false";
     }
 
-    public override string AsParams() {
+    public string AsParams() {
         return Value ? "true" : "false";
     }
 
-    public override string AsJSON() {
+    public string AsJSON() {
         return Value ? "true" : "false";
     }
 
-    public override string AsJSONDM() {
+    public string AsJSONDM() {
         return Value ? "true" : "false";
     }
 
-    public override string AsRaw() {
+    public string AsRaw() {
         return Value ? "1" : "0";
     }
 }

@@ -8,11 +8,11 @@ namespace OpenDreamClient.Interface.Controls;
 
 public abstract class InterfaceControl : InterfaceElement {
     public readonly Control UIElement;
-    public bool IsDefault => ControlDescriptor.IsDefault;
-    public Vector2i Size => ControlDescriptor.Size.GetValueOrDefault();
-    public Vector2i Pos => ControlDescriptor.Pos.GetValueOrDefault();
-    public Vector2i? Anchor1 => ControlDescriptor.Anchor1;
-    public Vector2i? Anchor2 => ControlDescriptor.Anchor2;
+    public bool IsDefault => ControlDescriptor.IsDefault.Value;
+    public DMFPropertyVec2 Size => ControlDescriptor.Size;
+    public DMFPropertyVec2 Pos => ControlDescriptor.Pos;
+    public DMFPropertyVec2? Anchor1 => ControlDescriptor.Anchor1;
+    public DMFPropertyVec2? Anchor2 => ControlDescriptor.Anchor2;
 
     protected ControlDescriptor ControlDescriptor => (ControlDescriptor) ElementDescriptor;
 
@@ -31,7 +31,7 @@ public abstract class InterfaceControl : InterfaceElement {
     protected abstract Control CreateUIElement();
 
     protected override void UpdateElementDescriptor() {
-        UIElement.Name = ControlDescriptor.Name.AsRaw();
+        UIElement.Name = ControlDescriptor.Name.Value;
 
         var pos = ControlDescriptor.Pos;
         LayoutContainer.SetMarginLeft(UIElement, pos.X);

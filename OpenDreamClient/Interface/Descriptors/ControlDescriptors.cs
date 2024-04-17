@@ -15,9 +15,9 @@ public partial class ControlDescriptor : ElementDescriptor {
     [DataField("size")]
     public DMFPropertyVec2 Size;
     [DataField("anchor1")]
-    public DMFPropertyVec2 Anchor1;
+    public DMFPropertyVec2? Anchor1;
     [DataField("anchor2")]
-    public DMFPropertyVec2 Anchor2;
+    public DMFPropertyVec2? Anchor2;
     [DataField("background-color", customTypeSerializer: typeof(DMFColorSerializer))]
     public DMFPropertyColor BackgroundColor;
     [DataField("is-visible")]
@@ -62,7 +62,7 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
 
         if (elementTypeValue.Value == "MAIN") {
             attributes.Remove("name");
-            attributes["name"] = new ValueDataNode(Name);
+            attributes["name"] = new ValueDataNode(Name.Value);
 
             // Read the attributes into this descriptor
             serializationManager.Read(attributes, notNullableOverride: true, instanceProvider: () => this);
@@ -99,16 +99,16 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
     public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._id = id;
+        copy._id = new DMFPropertyString(id);
         foreach(var child in this.ControlDescriptors)
             copy.ControlDescriptors.Add(serializationManager.CreateCopy(child, notNullableOverride: false));
         return copy;
     }
 
     public WindowDescriptor WithVisible(ISerializationManager serializationManager, bool visible) {
-        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Id);
+        WindowDescriptor copy = (WindowDescriptor)CreateCopy(serializationManager, Id.AsRaw());
 
-        copy.IsVisible = visible;
+        copy.IsVisible = new DMFPropertyBool(visible);
         return copy;
     }
 }
@@ -198,7 +198,7 @@ public sealed partial class ControlDescriptorBar : ControlDescriptor {
     [DataField("value")]
     public DMFPropertyNum Value = new DMFPropertyNum(0f); //position of the progress bar
     [DataField("on-change")]
-    public DMFPropertyString OnChange = null;
+    public DMFPropertyString OnChange = new DMFPropertyString(null);
 
 }
 

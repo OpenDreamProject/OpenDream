@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -23,7 +24,7 @@ internal sealed class ControlInput : InterfaceControl {
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
         ControlDescriptorInput inputDescriptor = (ControlDescriptorInput)ElementDescriptor;
-        _textBox.Text = inputDescriptor.Text.AsRaw();
+        _textBox.Text = inputDescriptor.Text.Value;
     }
 
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {

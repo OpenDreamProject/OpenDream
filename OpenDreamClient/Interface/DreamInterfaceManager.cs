@@ -241,7 +241,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         MsgPromptResponse response = new() {
             PromptId = message.PromptId,
             Type = DreamValueType.Text,
-            Value = element?.Type.AsRaw() ?? string.Empty
+            Value = element?.Type.Value ?? string.Empty
         };
 
         _netManager.ClientSendMessage(response);
@@ -331,23 +331,23 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
             if (window != null) {
                 foreach (InterfaceControl element in window.ChildControls) {
-                    if (element.Id.AsRaw() == elementId) return element;
+                    if (element.Id.Value == elementId) return element;
                 }
             }
         } else {
             string elementId = split[0];
 
             foreach (ControlWindow window in Windows.Values) {
-                if (window.Id.AsRaw() == elementId)
+                if (window.Id.Value == elementId)
                     return window;
 
                 foreach (InterfaceControl element in window.ChildControls) {
-                    if (element.Id.AsRaw() == elementId) return element;
+                    if (element.Id.Value == elementId) return element;
                 }
             }
 
             foreach (InterfaceMenu menu in Menus.Values) {
-                if (menu.Id.AsRaw() == elementId)
+                if (menu.Id.Value == elementId)
                     return menu;
 
                 if (menu.MenuElements.TryGetValue(elementId, out var menuElement))
@@ -355,7 +355,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             foreach (var macroSet in MacroSets.Values) {
-                if (macroSet.Id.AsRaw() == elementId)
+                if (macroSet.Id.Value == elementId)
                     return macroSet;
 
                 if (macroSet.Macros.TryGetValue(elementId, out var macroElement))
@@ -701,10 +701,10 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     return "true";
                 case "windows":
                     return string.Join(';',
-                        Windows.Where(pair => !((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
+                        Windows.Where(pair => !((WindowDescriptor)pair.Value.ElementDescriptor).IsPane.Value).Select(pair => pair.Key));
                 case "panes":
                     return string.Join(';',
-                        Windows.Where(pair => ((WindowDescriptor)pair.Value.ElementDescriptor).IsPane).Select(pair => pair.Key));
+                        Windows.Where(pair => ((WindowDescriptor)pair.Value.ElementDescriptor).IsPane.Value).Select(pair => pair.Key));
                 case "menus":
                     return string.Join(';', Menus.Keys);
                 case "macros":
@@ -824,17 +824,17 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             case MacroSetDescriptor macroSetDescriptor:
                 InterfaceMacroSet macroSet = new(macroSetDescriptor, _entitySystemManager, _inputManager, _uiManager);
 
-                MacroSets[macroSet.Id.AsRaw()] = macroSet;
+                MacroSets[macroSet.Id.Value] = macroSet;
                 break;
             case MenuDescriptor menuDescriptor:
                 InterfaceMenu menu = new(menuDescriptor);
 
-                Menus.Add(menu.Id.AsRaw(), menu);
+                Menus.Add(menu.Id.Value, menu);
                 break;
             case WindowDescriptor windowDescriptor:
                 ControlWindow window = new ControlWindow(windowDescriptor);
 
-                Windows.Add(windowDescriptor.Id.AsRaw(), window);
+                Windows.Add(windowDescriptor.Id.Value, window);
                 if (window.IsDefault) {
                     DefaultWindow = window;
                 }

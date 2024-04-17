@@ -17,7 +17,7 @@ public sealed class InterfaceDescriptor {
 
     public ElementDescriptor? GetElementDescriptor(string name) {
         return WindowDescriptors.Concat<ElementDescriptor>(MacroSetDescriptors)
-            .Concat(MenuDescriptors).FirstOrDefault(descriptor => descriptor.Name.AsRaw() == name);
+            .Concat(MenuDescriptors).FirstOrDefault(descriptor => descriptor.Name.Value == name);
     }
 }
 
@@ -33,11 +33,11 @@ public partial class ElementDescriptor {
     protected DMFPropertyString _name;
 
     public DMFPropertyString Id {
-        get => _id.AsRaw().Equals("") ? _id = new DMFPropertyString(Guid.NewGuid().ToString()) : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.
+        get => string.IsNullOrEmpty(_id.Value) ? _id = new DMFPropertyString(Guid.NewGuid().ToString()) : _id; //ensure unique ID for all elements. Empty ID elements aren't addressible anyway.
         init => _id = value;
     }
 
-    public DMFPropertyString Name => _name ?? Id;
+    public DMFPropertyString Name => new DMFPropertyString(_name.Value ?? Id.AsRaw());
 
     public DMFPropertyString Type {
         get => _type;

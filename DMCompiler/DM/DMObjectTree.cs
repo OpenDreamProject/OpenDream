@@ -196,14 +196,10 @@ internal static class DMObjectTree {
         if (_globalInitAssigns.Count == 0) return;
 
         foreach (var assign in _globalInitAssigns) {
-            try {
-                GlobalInitProc.DebugSource(assign.Value.Location);
+            GlobalInitProc.DebugSource(assign.Value.Location);
 
-                assign.Value.EmitPushValue(Root, GlobalInitProc);
-                GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
-            } catch (CompileErrorException e) {
-                DMCompiler.Emit(e.Error);
-            }
+            assign.Value.EmitPushValue(Root, GlobalInitProc);
+            GlobalInitProc.Assign(DMReference.CreateGlobal(assign.GlobalId));
         }
 
         GlobalInitProc.ResolveLabels();

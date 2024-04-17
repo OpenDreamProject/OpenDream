@@ -2,23 +2,17 @@ using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
 
 namespace DMCompiler.DM.Expressions {
-    abstract class UnaryOp : DMExpression {
-        protected DMExpression Expr { get; }
-
-        protected UnaryOp(Location location, DMExpression expr) : base(location) {
-            Expr = expr;
-        }
+    internal abstract class UnaryOp(Location location, DMExpression expr) : DMExpression(location) {
+        protected DMExpression Expr { get; } = expr;
     }
 
     // -x
-    sealed class Negate : UnaryOp {
-        public Negate(Location location, DMExpression expr) : base(location, expr) {
-        }
-
+    internal sealed class Negate(Location location, DMExpression expr) : UnaryOp(location, expr) {
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (!Expr.TryAsConstant(out constant)) return false;
+            if (!Expr.TryAsConstant(out constant) || constant is not Number number)
+                return false;
 
-            constant = constant.Negate();
+            constant = new Number(Location, -number.Value);
             return true;
         }
 
@@ -29,14 +23,11 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // !x
-    sealed class Not : UnaryOp {
-        public Not(Location location, DMExpression expr) : base(location, expr) {
-        }
-
+    internal sealed class Not(Location location, DMExpression expr) : UnaryOp(location, expr) {
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!Expr.TryAsConstant(out constant)) return false;
 
-            constant = constant.Not();
+            constant = new Number(Location, constant.IsTruthy() ? 0 : 1);
             return true;
         }
 
@@ -47,14 +38,12 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // ~x
-    sealed class BinaryNot : UnaryOp {
-        public BinaryNot(Location location, DMExpression expr) : base(location, expr) {
-        }
-
+    internal sealed class BinaryNot(Location location, DMExpression expr) : UnaryOp(location, expr) {
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (!Expr.TryAsConstant(out constant)) return false;
+            if (!Expr.TryAsConstant(out constant) || constant is not Number constantNum)
+                return false;
 
-            constant = constant.BinaryNot();
+            constant = new Number(Location, ~(int)constantNum.Value);
             return true;
         }
 
@@ -64,10 +53,7 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    abstract class AssignmentUnaryOp : UnaryOp {
-        protected AssignmentUnaryOp(Location location, DMExpression expr) : base(location, expr) {
-        }
-
+    internal abstract class AssignmentUnaryOp(Location location, DMExpression expr) : UnaryOp(location, expr) {
         protected abstract void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel);
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -81,10 +67,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // ++x
-    sealed class PreIncrement : AssignmentUnaryOp {
-        public PreIncrement(Location location, DMExpression expr) : base(location, expr) {
-        }
-
+    internal sealed class PreIncrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
         protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.PushFloat(1);
             proc.Append(reference);
@@ -92,21 +75,14 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x++
-    sealed class PostIncrement : AssignmentUnaryOp {
-        public PostIncrement(Location location, DMExpression expr) : base(location, expr) {
-        }
-
+    internal sealed class PostIncrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
         protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.Increment(reference);
         }
     }
 
     // --x
-    sealed class PreDecrement : AssignmentUnaryOp {
-        public PreDecrement(Location location, DMExpression expr)
-            : base(location, expr) {
-        }
-
+    internal sealed class PreDecrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
         protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.PushFloat(1);
             proc.Remove(reference);
@@ -114,11 +90,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x--
-    sealed class PostDecrement : AssignmentUnaryOp {
-        public PostDecrement(Location location, DMExpression expr)
-            : base(location, expr) {
-        }
-
+    internal sealed class PostDecrement(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
         protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             proc.Decrement(reference);
         }

@@ -108,19 +108,9 @@ public struct CompilerEmission {
     };
 }
 
-[Obsolete("This is not a desirable way for the compiler to emit an error. Use CompileAbortException or ForceError() if it needs to be fatal, or an DMCompiler.Emit() otherwise.")]
-public class CompileErrorException(Location location, string message) : Exception(message) {
-    public CompilerEmission Error = new(ErrorLevel.Error, location, message);
+// TODO: Find a nicer way to do this
+public sealed class UnknownIdentifierException(Location location, string identifier)
+    : Exception($"Unknown identifier \"{identifier}\" - This message should not be seen") {
+    public readonly Location Location = location;
+    public readonly string Identifier = identifier;
 }
-
-
-/// <summary>
-/// Represents an internal compiler error that should cause parsing for a particular block to cease. <br/>
-/// This should be ideally used for exceptions that are the fault of the compiler itself, <br/>
-/// like an abnormal state being reached or something.
-/// </summary>
-public sealed class CompileAbortException(Location location, string message)
-    : CompileErrorException(location, message);
-
-public sealed class UnknownIdentifierException(Location location, string identifierName)
-    : CompileErrorException(location, $"Unknown identifier \"{identifierName}\"");

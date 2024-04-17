@@ -458,7 +458,7 @@ internal static class DMExpressionBuilder {
         // A must have a type
         if (expression.Path == null)
             return BadExpression(WarningCode.BadExpression, expression.Location,
-                $"Identifier \"{expression.GetNameof(dmObject, proc)}\" does not have a type");
+                $"Identifier \"{expression.GetNameof(dmObject)}\" does not have a type");
 
         var owner = DMObjectTree.GetDMObject(expression.Path.Value, createIfNonexistent: false);
         if (owner == null) {
@@ -826,7 +826,7 @@ internal static class DMExpressionBuilder {
     // nameof(x)
     private static DMExpression BuildNameof(DMASTNameof nameof, DMObject dmObject, DMProc proc, DreamPath? inferredPath) {
         var expr = BuildExpression(nameof.Value, dmObject, proc, inferredPath);
-        if (expr.GetNameof(dmObject, proc) is { } name) {
+        if (expr.GetNameof(dmObject) is { } name) {
             return new String(nameof.Location, name);
         }
 

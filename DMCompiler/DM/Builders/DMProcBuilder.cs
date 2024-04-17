@@ -35,11 +35,7 @@ namespace DMCompiler.DM.Builders {
                     proc.JumpIfFalse(afterDefaultValueCheck);
 
                     //Set default
-                    try {
-                        DMExpression.Emit(dmObject, proc, parameter.Value, parameter.ObjectType);
-                    } catch (CompileErrorException e) {
-                        DMCompiler.Emit(e.Error);
-                    }
+                    DMExpression.Emit(dmObject, proc, parameter.Value, parameter.ObjectType);
                     proc.Assign(parameterRef);
                     proc.Pop();
 
@@ -57,45 +53,27 @@ namespace DMCompiler.DM.Builders {
         /// B.) have no descendant proc which actually has code in it (implying that this proc is just some abstract virtual for it)
         /// </param>
         private void ProcessBlockInner(DMASTProcBlockInner block, bool silenceEmptyBlockWarning = false) {
-            foreach (var stmt in block.SetStatements) { // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
-                Location loc = stmt.Location;
-                try {
-                    ProcessStatement(stmt);
-                    Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
-                } catch (CompileAbortException e) {
-                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                    e.Error.Location = loc;
-                    DMCompiler.Emit(e.Error);
-                    return; // Don't spam the error that will continue to exist
-                } catch (CompileErrorException e) {
-                    //Retreat from the statement when there's an error
-                    DMCompiler.Emit(e.Error);
-                }
+            // Done first because all set statements are "hoisted" -- evaluated before any code in the block is run
+            foreach (var stmt in block.SetStatements) {
+                ProcessStatement(stmt);
+                Debug.Assert(stmt.IsAggregateOr<DMASTProcStatementSet>(), "Non-set statements were located in the block's SetStatements array! This is a bug.");
             }
+
             if(!silenceEmptyBlockWarning && block.Statements.Length == 0) { // If this block has no real statements
                 // Not an error in BYOND, but we do have an emission for this!
-                if(block.SetStatements.Length != 0) { // Give a more articulate message about this, since it's kinda weird
+                if (block.SetStatements.Length != 0) {
+                    // Give a more articulate message about this, since it's kinda weird
                     DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected - set statements are executed outside of, before, and unconditional to, this block");
                 } else {
                     DMCompiler.Emit(WarningCode.EmptyBlock,block.Location,"Empty block detected");
                 }
+
                 return;
             }
 
             foreach (DMASTProcStatement statement in block.Statements) {
                 proc.DebugSource(statement.Location);
-
-                try {
-                    ProcessStatement(statement);
-                } catch (CompileAbortException e) {
-                    // The statement's location info isn't passed all the way down so change the error to make it more accurate
-                    e.Error.Location = statement.Location;
-                    DMCompiler.Emit(e.Error);
-                    return; // Don't spam the error that will continue to exist
-                } catch (CompileErrorException e) {
-                    //Retreat from the statement when there's an error
-                    DMCompiler.Emit(e.Error);
-                }
+                ProcessStatement(statement);
             }
         }
 
@@ -137,7 +115,9 @@ namespace DMCompiler.DM.Builders {
                     foreach (var declare in gregVar.Statements)
                         ProcessStatementVarDeclaration(declare);
                     break;
-                default: throw new CompileAbortException(statement.Location, "Invalid proc statement");
+                default:
+                    DMCompiler.ForcedError(statement.Location, $"Invalid proc statement {statement.GetType()}");
+                    break;
             }
         }
 
@@ -784,14 +764,8 @@ namespace DMCompiler.DM.Builders {
 
                     foreach (DMASTExpression value in switchCaseValues.Values) {
                         Constant GetCaseValue(DMASTExpression expression) {
-                            Constant? constant = null;
-
-                            try {
-                                if (!DMExpression.TryConstant(dmObject, proc, expression, out constant))
-                                    DMCompiler.Emit(WarningCode.HardConstContext, expression.Location, "Expected a constant");
-                            } catch (CompileErrorException e) {
-                                DMCompiler.Emit(e.Error);
-                            }
+                            if (!DMExpression.TryConstant(dmObject, proc, expression, out var constant))
+                                DMCompiler.Emit(WarningCode.HardConstContext, expression.Location, "Expected a constant");
 
                             // Return 0 if unsuccessful so that we can continue compiling
                             return constant ?? new Number(expression.Location, 0.0f);

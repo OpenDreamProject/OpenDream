@@ -1123,10 +1123,12 @@ namespace DMCompiler.DM {
                 case DMReference.Type.Self:
                 case DMReference.Type.Args:
                 case DMReference.Type.Usr:
+                case DMReference.Type.Invalid:
                     break;
 
                 default:
-                    throw new CompileAbortException(Location, $"Invalid reference type {reference.RefType}");
+                    DMCompiler.ForcedError(Location, $"Encountered unknown reference type {reference.RefType}");
+                    break;
             }
         }
 

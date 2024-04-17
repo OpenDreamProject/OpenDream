@@ -279,6 +279,7 @@ public struct DMReference {
     public static readonly DMReference Args = new() { RefType = Type.Args };
     public static readonly DMReference SuperProc = new() { RefType = Type.SuperProc };
     public static readonly DMReference ListIndex = new() { RefType = Type.ListIndex };
+    public static readonly DMReference Invalid = new() { RefType = Type.Invalid };
 
     public enum Type : byte {
         Src,
@@ -294,6 +295,14 @@ public struct DMReference {
         Field,
         SrcField,
         SrcProc,
+
+        /// <summary>
+        /// Something went wrong in the creation of this DMReference, and so this reference is not valid
+        /// </summary>
+        /// <remarks>
+        /// Be sure to emit a compiler error before creating
+        /// </remarks>
+        Invalid
     }
 
     public Type RefType;

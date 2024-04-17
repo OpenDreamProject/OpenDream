@@ -241,7 +241,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         // BYOND says the nameof is invalid if the chain is not purely field operations
-        public override string? GetNameof(DMObject dmObject, DMProc proc) {
+        public override string? GetNameof(DMObject dmObject) {
             return _operations.All(op => op is FieldOperation)
                 ? ((FieldOperation)_operations[^1]).Identifier
                 : null;
@@ -274,17 +274,17 @@ namespace DMCompiler.DM.Expressions {
     // Same as initial(expression?.identifier) except this keeps its type
     internal sealed class ScopeReference(Location location, DMExpression expression, string identifier, DMVariable dmVar)
         : Initial(location, new Dereference(location, dmVar.Type, expression, // Just a little hacky
-            new Dereference.Operation[] {
+            [
                 new Dereference.FieldOperation {
                     Identifier = identifier,
                     Path = dmVar.Type,
                     Safe = true
                 }
-            })
+            ])
         ) {
         public override DreamPath? Path => Expression.Path;
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => dmVar.Name;
+        public override string GetNameof(DMObject dmObject) => dmVar.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (expression is not ConstantPath || dmVar.Value is not Constant varValue) {

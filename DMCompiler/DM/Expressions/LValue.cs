@@ -22,63 +22,45 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // global
-    class Global : LValue {
-        public Global(Location location) : base(location, null) { }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            throw new CompileErrorException(Location, "attempt to use `global` as a reference");
+    internal class Global(Location location) : LValue(location, null) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+            DMCompiler.Emit(WarningCode.BadExpression, Location, "attempt to use `global` as a reference");
+            return DMReference.Invalid;
         }
     }
 
     // src
-    sealed class Src : LValue {
-        public Src(Location location, DreamPath? path)
-            : base(location, path)
-        {}
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+    internal sealed class Src(Location location, DreamPath? path) : LValue(location, path) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
             return DMReference.Src;
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => "src";
+        public override string GetNameof(DMObject dmObject) => "src";
     }
 
     // usr
-    sealed class Usr : LValue {
-        public Usr(Location location)
-            : base(location, DreamPath.Mob)
-        {}
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+    internal sealed class Usr(Location location) : LValue(location, DreamPath.Mob) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
             return DMReference.Usr;
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => "usr";
+        public override string GetNameof(DMObject dmObject) => "usr";
     }
 
     // args
-    sealed class Args : LValue {
-        public Args(Location location)
-            : base(location, DreamPath.List)
-        {}
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+    internal sealed class Args(Location location) : LValue(location, DreamPath.List) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
             return DMReference.Args;
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => "args";
+        public override string GetNameof(DMObject dmObject) => "args";
     }
 
     // Identifier of local variable
-    sealed class Local : LValue {
-        DMProc.LocalVariable LocalVar { get; }
+    internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
+        private DMProc.LocalVariable LocalVar { get; } = localVar;
 
-        public Local(Location location, DMProc.LocalVariable localVar)
-            : base(location, localVar.Type) {
-            LocalVar = localVar;
-        }
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
             if (LocalVar.IsParameter) {
                 return DMReference.CreateArgument(LocalVar.Id);
             } else {
@@ -102,39 +84,32 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => LocalVar.Name;
+        public override string GetNameof(DMObject dmObject) => LocalVar.Name;
     }
 
     // Identifier of field
-    sealed class Field : LValue {
-        public readonly DMVariable Variable;
-
-        public Field(Location location, DMVariable variable)
-            : base(location, variable.Type) {
-            Variable = variable;
-        }
-
+    internal sealed class Field(Location location, DMVariable variable) : LValue(location, variable.Type) {
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
+            proc.PushString(variable.Name);
             proc.Initial();
         }
 
         public void EmitPushIsSaved(DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
+            proc.PushString(variable.Name);
             proc.IsSaved();
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.CreateSrcField(Variable.Name);
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+            return DMReference.CreateSrcField(variable.Name);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => Variable.Name;
+        public override string GetNameof(DMObject dmObject) => variable.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (Variable.IsConst && Variable.Value != null) {
-                return Variable.Value.TryAsConstant(out constant);
+            if (variable is { IsConst: true, Value: not null }) {
+                return variable.Value.TryAsConstant(out constant);
             }
 
             constant = null;
@@ -146,7 +121,7 @@ namespace DMCompiler.DM.Expressions {
     internal sealed class GlobalField(Location location, DreamPath? path, int id) : LValue(location, path) {
         private int Id { get; } = id;
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
             return DMReference.CreateGlobal(Id);
         }
 
@@ -156,7 +131,7 @@ namespace DMCompiler.DM.Expressions {
             EmitPushValue(dmObject, proc);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) {
+        public override string GetNameof(DMObject dmObject) {
             DMVariable global = DMObjectTree.Globals[Id];
             return global.Name;
         }
@@ -172,15 +147,11 @@ namespace DMCompiler.DM.Expressions {
         }
     }
 
-    sealed class GlobalVars : LValue {
-        public GlobalVars(Location location)
-            : base(location, null) {
-        }
-
+    internal sealed class GlobalVars(Location location) : LValue(location, null) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushGlobalVars();
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => "vars";
+        public override string GetNameof(DMObject dmObject) => "vars";
     }
 }

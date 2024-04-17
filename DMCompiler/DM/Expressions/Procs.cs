@@ -5,32 +5,26 @@ using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     // x() (only the identifier)
-    sealed class Proc : DMExpression {
-        private readonly string _identifier;
-
-        public Proc(Location location, string identifier) : base(location) {
-            _identifier = identifier;
-        }
-
+    internal sealed class Proc(Location location, string identifier) : DMExpression(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             DMCompiler.Emit(WarningCode.BadExpression, Location, "attempt to use proc as value");
             proc.Error();
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            if (dmObject.HasProc(_identifier)) {
-                return DMReference.CreateSrcProc(_identifier);
-            } else if (DMObjectTree.TryGetGlobalProc(_identifier, out var globalProc)) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
+            if (dmObject.HasProc(identifier)) {
+                return DMReference.CreateSrcProc(identifier);
+            } else if (DMObjectTree.TryGetGlobalProc(identifier, out var globalProc)) {
                 return DMReference.CreateGlobalProc(globalProc.Id);
             }
 
-            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{_identifier}\"");
+            DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"Type {dmObject.Path} does not have a proc named \"{identifier}\"");
             //Just... pretend there is one for the sake of argument.
-            return DMReference.CreateSrcProc(_identifier);
+            return DMReference.CreateSrcProc(identifier);
         }
 
         public DMProc? GetProc(DMObject dmObject) {
-            var procId = dmObject.GetProcs(_identifier)?[^1];
+            var procId = dmObject.GetProcs(identifier)?[^1];
             return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
         }
     }
@@ -44,7 +38,7 @@ namespace DMCompiler.DM.Expressions {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
         }
 
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
             DMProc globalProc = GetProc();
             return DMReference.CreateGlobalProc(globalProc.Id);
         }
@@ -63,12 +57,8 @@ namespace DMCompiler.DM.Expressions {
     /// . <br/>
     /// This is an LValue _and_ a proc!
     /// </summary>
-    sealed class ProcSelf : LValue {
-        public ProcSelf(Location location)
-            : base(location, null)
-        {}
-
-        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+    internal sealed class ProcSelf(Location location) : LValue(location, null) {
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
             return DMReference.Self;
         }
     }
@@ -93,19 +83,12 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // x(y, z, ...)
-    sealed class ProcCall : DMExpression {
-        private readonly DMExpression _target;
-        private readonly ArgumentList _arguments;
-
+    internal sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments)
+        : DMExpression(location) {
         public override bool PathIsFuzzy => Path == null;
 
-        public ProcCall(Location location, DMExpression target, ArgumentList arguments) : base(location) {
-            _target = target;
-            _arguments = arguments;
-        }
-
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
-            return _target switch {
+            return target switch {
                 Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
                 GlobalProc procTarget => (null, procTarget.GetProc()),
                 _ => (null, null)
@@ -123,14 +106,14 @@ namespace DMCompiler.DM.Expressions {
 
             DMCallArgumentsType argumentsType;
             int argumentStackSize;
-            if (_arguments.Length == 0 && _target is ProcSuper) {
+            if (arguments.Length == 0 && target is ProcSuper) {
                 argumentsType = DMCallArgumentsType.FromProcArguments;
                 argumentStackSize = 0;
             } else {
-                (argumentsType, argumentStackSize) = _arguments.EmitArguments(dmObject, proc);
+                (argumentsType, argumentStackSize) = arguments.EmitArguments(dmObject, proc);
             }
 
-            DMReference procRef = _target.EmitReference(dmObject, proc, endLabel);
+            DMReference procRef = target.EmitReference(dmObject, proc, endLabel);
 
             proc.Call(procRef, argumentsType, argumentStackSize);
             proc.AddLabel(endLabel);
@@ -145,7 +128,7 @@ namespace DMCompiler.DM.Expressions {
                 if (targetProc is null)
                     return;
                 if(targetProc.Name == "matrix") {
-                    switch(_arguments.Length) {
+                    switch(arguments.Length) {
                         case 0:
                         case 1: // NOTE: 'case 1' also ends up referring to the arglist situation. FIXME: Make this lint work for that, too?
                         case 6:
@@ -153,10 +136,10 @@ namespace DMCompiler.DM.Expressions {
                         case 2:
                         case 3: // These imply that they're trying to use the undocumented matrix signatures.
                         case 4: // The lint is to just check that the last argument is a numeric constant that is a valid matrix "opcode."
-                            var lastArg = _arguments.Expressions.Last().Expr;
+                            var lastArg = arguments.Expressions.Last().Expr;
                             if(lastArg.TryAsConstant(out var constant)) {
                                 if(constant is not Number opcodeNumber) {
-                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                                     break;
                                 }
@@ -168,18 +151,18 @@ namespace DMCompiler.DM.Expressions {
                                     //NOTE: This still does let some certain weird opcodes through,
                                     //like a MODIFY with no other operation present.
                                     //Not sure if that is a parity behaviour or not!
-                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                                    DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                     "Arguments for matrix() are invalid - either opcode is invalid or not enough arguments");
                                 }
                             }
                             break;
                         case 5: // BYOND always runtimes but DOES compile, here
-                            DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, _arguments.Location,
+                            DMCompiler.Emit(WarningCode.SuspiciousMatrixCall, arguments.Location,
                                 $"Calling matrix() with 5 arguments will always error when called at runtime");
                             break;
                         default: // BYOND always compiletimes here
-                            DMCompiler.Emit(WarningCode.InvalidArgumentCount, _arguments.Location,
-                                $"Too many arguments to matrix() - got {_arguments.Length} arguments, expecting 6 or less");
+                            DMCompiler.Emit(WarningCode.InvalidArgumentCount, arguments.Location,
+                                $"Too many arguments to matrix() - got {arguments.Length} arguments, expecting 6 or less");
                             break;
 
                     }

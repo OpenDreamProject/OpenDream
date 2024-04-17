@@ -101,11 +101,13 @@ internal static class DMObjectBuilder {
 
         // The vars these reference were never found, emit their errors
         foreach (var lateVarDef in lateVarDefs) {
-            DMCompiler.Emit(lateVarDef.Item3.Error);
+            DMCompiler.Emit(WarningCode.ItemDoesntExist, lateVarDef.Item3.Location,
+                $"Unknown identifier \"{lateVarDef.Item3.Identifier}\"");
         }
 
         foreach (var lateVarDef in lateProcVarDefs) {
-            DMCompiler.Emit(lateVarDef.Item5.Error);
+            DMCompiler.Emit(WarningCode.ItemDoesntExist, lateVarDef.Item3.Location,
+                $"Unknown identifier \"{lateVarDef.Item5.Identifier}\"");
         }
 
         // Step 7: Create each types' initialization proc (initializes vars that aren't constants)
@@ -127,11 +129,7 @@ internal static class DMObjectBuilder {
 
     private static void ProcessBlockInner(DMASTBlockInner blockInner, DMObject? currentObject) {
         foreach (DMASTStatement statement in blockInner.Statements) {
-            try {
-                ProcessStatement(statement, currentObject);
-            } catch (CompileErrorException e) {
-                DMCompiler.Emit(e.Error);
-            }
+            ProcessStatement(statement, currentObject);
         }
     }
 
@@ -193,7 +191,9 @@ internal static class DMObjectBuilder {
 
                 break;
             }
-            default: throw new CompileAbortException(statement.Location, "Invalid object statement");
+            default:
+                DMCompiler.ForcedError(statement.Location, $"Invalid object statement {statement.GetType()}");
+                break;
         }
     }
 
@@ -251,96 +251,82 @@ internal static class DMObjectBuilder {
             }
         }
 
-        try {
-            // why are we passing the variable ref? we aren't using it after this
-            SetVariableValue(varObject, ref variable, varDefinition.Location, expression);
-        } catch (CompileErrorException e) {
-            DMCompiler.Emit(e.Error);
-        }
+        // TODO: why are we passing the variable ref? we aren't using it after this
+        SetVariableValue(varObject, ref variable, varDefinition.Location, expression);
     }
 
     private static void ProcessVarOverride(DMObject? varObject, DMASTObjectVarOverride? varOverride) {
-        try {
-            switch (varOverride.VarName) {
-                // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
-                case "tag": {
-                    if (varObject.IsSubtypeOf(DreamPath.Datum)) {
-                        DMCompiler.Emit(WarningCode.BadExpression, varOverride.Location,
-                            "var \"tag\" cannot be set to a value at compile-time");
-                    }
-
-                    break;
+        switch (varOverride.VarName) {
+            // Keep in mind that anything here, by default, affects all objects, even those who don't inherit from /datum
+            case "tag": {
+                if (varObject.IsSubtypeOf(DreamPath.Datum)) {
+                    DMCompiler.Emit(WarningCode.BadExpression, varOverride.Location,
+                        "var \"tag\" cannot be set to a value at compile-time");
                 }
-            }
 
-            DMVariable? variable;
-            if (varObject.HasLocalVariable(varOverride.VarName)) {
-                variable = varObject.GetVariable(varOverride.VarName);
-            } else if (varObject.HasGlobalVariable(varOverride.VarName)) {
-                variable = varObject.GetGlobalVariable(varOverride.VarName);
-                DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
-            } else {
-                throw new UnknownIdentifierException(varOverride.Location, varOverride.VarName);
+                break;
             }
-
-            OverrideVariableValue(varObject, ref variable, varOverride.Value);
-            varObject.VariableOverrides[variable.Name] = variable;
-        } catch (UnknownIdentifierException) {
-            throw; // Should be handled by calling code
-        } catch (CompileErrorException e) {
-            DMCompiler.Emit(e.Error);
         }
+
+        DMVariable? variable;
+        if (varObject.HasLocalVariable(varOverride.VarName)) {
+            variable = varObject.GetVariable(varOverride.VarName);
+        } else if (varObject.HasGlobalVariable(varOverride.VarName)) {
+            variable = varObject.GetGlobalVariable(varOverride.VarName);
+            DMCompiler.Emit(WarningCode.StaticOverride, varOverride.Location, $"var \"{varOverride.VarName}\" cannot be overridden - it is a global var");
+        } else {
+            throw new UnknownIdentifierException(varOverride.Location, varOverride.VarName);
+        }
+
+        OverrideVariableValue(varObject, ref variable, varOverride.Value);
+        varObject.VariableOverrides[variable.Name] = variable;
     }
 
     private static void ProcessProcDefinition(DMASTProcDefinition procDefinition, DMObject? currentObject) {
         string procName = procDefinition.Name;
-        try {
-            DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
-            bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
-            if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
-                if(!dmObject.HasProcNoInheritance(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
-                    DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it");
-                    return; // TODO: Maybe fallthrough since this error is a little pedantic?
-                }
-                //Otherwise, it's ok
+        DMObject dmObject = DMObjectTree.GetDMObject(currentObject.Path.Combine(procDefinition.ObjectPath));
+        bool hasProc = dmObject.HasProc(procName); // Trying to avoid calling this several times since it's recursive and maybe slow
+        if (!procDefinition.IsOverride && hasProc) { // If this is a define and we already had a proc somehow
+            if(!dmObject.HasProcNoInheritance(procName)) { // If we're inheriting this proc (so making a new define for it at our level is stupid)
+                DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Type {dmObject.Path} already inherits a proc named \"{procName}\" and cannot redefine it");
+                return; // TODO: Maybe fallthrough since this error is a little pedantic?
             }
+            //Otherwise, it's ok
+        }
 
-            DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
-            proc.IsVerb = procDefinition.IsVerb;
+        DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
+        proc.IsVerb = procDefinition.IsVerb;
 
-            if (procDefinition.ObjectPath == DreamPath.Root) {
-                if(procDefinition.IsOverride) {
-                    DMCompiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");
-                    //Continue processing the proc anyhoo, just don't add it.
-                } else {
-                    if (!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
-                        DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
-                        //Again, even though this is likely an error, process the statements anyways.
-                    } else {
-                        DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
-                    }
-                }
+        if (procDefinition.ObjectPath == DreamPath.Root) {
+            if(procDefinition.IsOverride) {
+                DMCompiler.Emit(WarningCode.InvalidOverride, procDefinition.Location, $"Global procs cannot be overridden - '{procDefinition.Name}' override will be ignored");
+                //Continue processing the proc anyhoo, just don't add it.
             } else {
-                dmObject.AddProc(procName, proc);
-            }
-
-            if (procDefinition.Body != null) {
-                foreach (var stmt in GetStatements(procDefinition.Body)) {
-                    // TODO multiple var definitions.
-                    if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
-                        DMVariable variable = proc.CreateGlobalVariable(varDeclaration.Type, varDeclaration.Name, varDeclaration.IsConst, out var globalId);
-                        variable.Value = new Expressions.Null(varDeclaration.Location);
-
-                        StaticProcVars.Add((dmObject, proc, globalId, varDeclaration));
-                    }
+                if (!DMObjectTree.SeenGlobalProcDefinition.Add(procName)) { // Add() is equivalent to Dictionary's TryAdd() for some reason
+                    DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
+                    //Again, even though this is likely an error, process the statements anyways.
+                } else {
+                    DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
                 }
             }
+        } else {
+            dmObject.AddProc(procName, proc);
+        }
 
-            if (procDefinition.IsVerb && (dmObject.IsSubtypeOf(DreamPath.Atom) || dmObject.IsSubtypeOf(DreamPath.Client)) && !DMCompiler.Settings.NoStandard) {
-                dmObject.AddVerb(proc);
+        if (procDefinition.Body != null) {
+            foreach (var stmt in GetStatements(procDefinition.Body)) {
+                // TODO multiple var definitions.
+                if (stmt is DMASTProcStatementVarDeclaration varDeclaration && varDeclaration.IsGlobal) {
+                    DMVariable variable = proc.CreateGlobalVariable(varDeclaration.Type, varDeclaration.Name, varDeclaration.IsConst, out var globalId);
+                    variable.Value = new Expressions.Null(varDeclaration.Location);
+
+                    StaticProcVars.Add((dmObject, proc, globalId, varDeclaration));
+                }
             }
-        } catch (CompileErrorException e) {
-            DMCompiler.Emit(e.Error);
+        }
+
+        if (procDefinition.IsVerb && (dmObject.IsSubtypeOf(DreamPath.Atom) || dmObject.IsSubtypeOf(DreamPath.Client)) && !DMCompiler.Settings.NoStandard) {
+            dmObject.AddVerb(proc);
         }
     }
 
@@ -483,7 +469,11 @@ internal static class DMObjectBuilder {
     private static void EmitInitializationAssign(DMObject currentObject, DMVariable variable, DMExpression expression) {
         if (variable.IsGlobal) {
             int? globalId = currentObject.GetGlobalVariableId(variable.Name);
-            if (globalId == null) throw new CompileAbortException(expression?.Location ?? Location.Unknown, $"Invalid global {currentObject.Path}.{variable.Name}");
+            if (globalId == null) {
+                DMCompiler.Emit(WarningCode.BadExpression, expression?.Location ?? Location.Unknown,
+                    $"Invalid global {currentObject.Path}.{variable.Name}");
+                return;
+            }
 
             DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
         } else {
@@ -528,7 +518,7 @@ internal static class DMObjectBuilder {
 
                     // Success! Remove this one from the list
                     lateProcVarDefs.RemoveAt(i--);
-                } catch (UnknownIdentifierException e) {
+                } catch (UnknownIdentifierException) {
                     // Keep it in the list, try again after the rest have been processed
                 } finally {
                     DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
@@ -542,7 +532,7 @@ internal static class DMObjectBuilder {
 
                     // Success! Remove this one from the list
                     lateOverrides.RemoveAt(i--);
-                } catch (UnknownIdentifierException e) {
+                } catch (UnknownIdentifierException) {
                     // Keep it in the list, try again after the rest have been processed
                 }
             }

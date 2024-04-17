@@ -7,102 +7,17 @@ using DMCompiler.Compiler;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM.Expressions {
-    abstract class Constant : DMExpression {
-        public Constant(Location location) : base(location) { }
-
+    internal abstract class Constant(Location location) : DMExpression(location) {
         public sealed override bool TryAsConstant(out Constant constant) {
             constant = this;
             return true;
         }
 
         public abstract bool IsTruthy();
-
-        #region Unary Operations
-        public Constant Not() {
-            return new Number(Location, IsTruthy() ? 0 : 1);
-        }
-
-        public virtual Constant Negate() {
-            throw new CompileErrorException(Location, $"const operation \"-{this}\" is invalid");
-        }
-
-        public virtual Constant BinaryNot() {
-            throw new CompileErrorException(Location, $"const operation \"~{this}\" is invalid");
-        }
-        #endregion
-
-        #region Binary Operations
-
-        public virtual Constant Add(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} + {rhs}\" is invalid");
-        }
-
-        public virtual Constant Subtract(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} - {rhs}\" is invalid");
-        }
-
-        public virtual Constant Multiply(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} * {rhs}\" is invalid");
-        }
-
-        public virtual Constant Divide(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} / {rhs}\" is invalid");
-        }
-
-        public virtual Constant Modulo(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
-        }
-
-        public virtual Constant ModuloModulo(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} % {rhs}\" is invalid");
-        }
-
-        public virtual Constant Power(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} ** {rhs}\" is invalid");
-        }
-
-        public virtual Constant LeftShift(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} << {rhs}\" is invalid");
-        }
-
-        public virtual Constant RightShift(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} >> {rhs}\" is invalid");
-        }
-
-        public virtual Constant BinaryAnd(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} & {rhs}\" is invalid");
-        }
-
-        public virtual Constant BinaryXor(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} ^ {rhs}\" is invalid");
-        }
-
-        public virtual Constant BinaryOr(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} | {rhs}\" is invalid");
-        }
-
-        public virtual Constant GreaterThan(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} > {rhs}\" is invalid");
-        }
-
-        public virtual Constant GreaterThanOrEqual(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} >= {rhs}\" is invalid");
-        }
-
-        public virtual Constant LessThan(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} < {rhs}\" is invalid");
-        }
-
-        public virtual Constant LessThanOrEqual(Constant rhs) {
-            throw new CompileErrorException(Location, $"const operation \"{this} <= {rhs}\" is invalid");
-        }
-        #endregion
     }
 
     // null
-    sealed class Null : Constant {
-        public Null(Location location) : base(location) { }
-
+    internal sealed class Null(Location location) : Constant(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
         }
@@ -113,38 +28,10 @@ namespace DMCompiler.DM.Expressions {
             json = null;
             return true;
         }
-
-        public override Constant GreaterThan(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.GreaterThan(rhs);
-            }
-            return new Number(Location, (0 > rhsNum.Value) ? 1 : 0);
-        }
-
-        public override Constant GreaterThanOrEqual(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.GreaterThanOrEqual(rhs);
-            }
-            return new Number(Location, (0 >= rhsNum.Value) ? 1 : 0);
-        }
-
-        public override Constant LessThan(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.LessThan(rhs);
-            }
-            return new Number(Location, (0 < rhsNum.Value) ? 1 : 0);
-        }
-
-        public override Constant LessThanOrEqual(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.LessThanOrEqual(rhs);
-            }
-            return new Number(Location, (0 <= rhsNum.Value) ? 1 : 0);
-        }
     }
 
     // 4.0, -4.0
-    sealed class Number : Constant {
+    internal sealed class Number : Constant {
         public float Value { get; }
 
         public Number(Location location, int value) : base(location) {
@@ -177,153 +64,11 @@ namespace DMCompiler.DM.Expressions {
 
             return true;
         }
-
-        public override Constant Negate() {
-            return new Number(Location, -Value);
-        }
-
-        public override Constant BinaryNot() {
-            return new Number(Location, ~(int)Value);
-        }
-
-        public override Constant Add(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, Value + rhsNum.Value);
-        }
-
-        public override Constant Subtract(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, Value - rhsNum.Value);
-        }
-
-        public override Constant Multiply(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, Value * rhsNum.Value);
-        }
-
-        public override Constant Divide(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, Value / rhsNum.Value);
-        }
-
-        public override Constant Modulo(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, Value % rhsNum.Value);
-        }
-
-        public override Constant ModuloModulo(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.ModuloModulo(rhs);
-            }
-
-            // BYOND docs say that A %% B is equivalent to B * fract(A/B)
-            var fraction = Value / rhsNum.Value;
-            fraction -= MathF.Truncate(fraction);
-            return new Number(Location, fraction * rhsNum.Value);
-        }
-
-        public override Constant Power(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, MathF.Pow(Value, rhsNum.Value));
-        }
-
-        public override Constant LeftShift(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, ((int)Value) << ((int)rhsNum.Value));
-        }
-
-        public override Constant RightShift(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, ((int)Value) >> ((int)rhsNum.Value));
-        }
-
-
-        public override Constant BinaryAnd(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, ((int)Value) & ((int)rhsNum.Value));
-        }
-
-
-        public override Constant BinaryXor(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, ((int)Value) ^ ((int)rhsNum.Value));
-        }
-
-
-        public override Constant BinaryOr(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.Add(rhs);
-            }
-
-            return new Number(Location, ((int)Value) | ((int)rhsNum.Value));
-        }
-
-        public override Constant GreaterThan(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.GreaterThan(rhs);
-            }
-            return new Number(Location, (Value > rhsNum.Value) ? 1 : 0);
-        }
-
-        public override Constant GreaterThanOrEqual(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.GreaterThanOrEqual(rhs);
-            }
-            return new Number(Location, (Value >= rhsNum.Value) ? 1 : 0);
-        }
-
-        public override Constant LessThan(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.LessThan(rhs);
-            }
-            return new Number(Location, (Value < rhsNum.Value) ? 1 : 0);
-        }
-
-        public override Constant LessThanOrEqual(Constant rhs) {
-            if (rhs is not Number rhsNum) {
-                return base.LessThanOrEqual(rhs);
-            }
-            return new Number(Location, (Value <= rhsNum.Value) ? 1 : 0);
-        }
     }
 
     // "abc"
-    sealed class String : Constant {
-        public string Value { get; }
-
-        public String(Location location, string value) : base(location) {
-            Value = value;
-        }
+    internal sealed class String(Location location, string value) : Constant(location) {
+        public string Value { get; } = value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushString(Value);
@@ -334,14 +79,6 @@ namespace DMCompiler.DM.Expressions {
         public override bool TryAsJsonRepresentation(out object? json) {
             json = Value;
             return true;
-        }
-
-        public override Constant Add(Constant rhs) {
-            if (rhs is not String rhsString) {
-                return base.Add(rhs);
-            }
-
-            return new String(Location, Value + rhsString.Value);
         }
     }
 
@@ -520,7 +257,7 @@ namespace DMCompiler.DM.Expressions {
             }
         }
 
-        public override string? GetNameof(DMObject dmObject, DMProc proc) => Value.LastElement;
+        public override string? GetNameof(DMObject dmObject) => Value.LastElement;
 
         public override bool IsTruthy() => true;
 
@@ -637,7 +374,7 @@ namespace DMCompiler.DM.Expressions {
             proc.PushProc(referencedProc.Id);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => referencedProc.Name;
+        public override string GetNameof(DMObject dmObject) => referencedProc.Name;
 
         public override bool IsTruthy() => true;
 

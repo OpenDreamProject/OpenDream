@@ -147,37 +147,11 @@ sealed class ArgumentList {
 
         // TODO: Named arguments must come after all ordered arguments
         int stackCount = 0;
-        var procParams = targetProc?.GetDefParams();
         for (var index = 0; index < Expressions.Length; index++) {
             (string? name, DMExpression expr) = Expressions[index];
-            // TODO: See if the static typechecking can be improved
-            // Also right now we don't care if the arg is Anything
-            // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
-            // TODO: We currently silently avoid typechecking "call()()" and "new" args (NewPath is handled)
-            // TODO: We currently don't handle variadic args (e.g. min())
-            // TODO: Dereference.CallOperation does not pass targetProc
-            if (targetProc is not null) {
-                if (index < procParams.Length) { // Doesn't cope with variadic args
-                    var paramName = Expressions[index].Name;
-                    DMComplexValueType? paramType = paramName == null ? (procParams[index].Type ?? DMValueType.Anything) : null; //unnamed arg
 
-                    if (paramType is null) { // named arg
-                        if (targetProc.TryGetParameter(Expressions[index].Name, out var param)) {
-                            paramType = param.ExplicitValueType;
-                        } else if(targetProc.Name != "animate") { // TODO: Remove this check once variadic args are properly supported
-                            DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location, $"{targetProc.Name}(...) argument \"{paramName}\": Unknown argument, typechecking failed");
-                            paramType = DMValueType.Anything;
-                        }
-                    }
-
-                    if (index < procParams.Length && !expr.ValType.IsAnything && paramType?.MatchesType(expr.ValType) == false) {
-                        var printName = name ?? procParams[index].Name;
-
-                        DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
-                            $"{targetProc.Name}(...) argument \"{printName}\": Invalid var value type {expr.ValType}, expected {procParams[index].Type}");
-                    }
-                }
-            }
+            if (targetProc != null)
+                VerifyArgType(targetProc, index, name, expr);
 
             if (_isKeyed) {
                 if (name != null) {
@@ -192,5 +166,38 @@ sealed class ArgumentList {
         }
 
         return (_isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
+    }
+
+    private static void VerifyArgType(DMProc targetProc, int index, string? name, DMExpression expr) {
+        // TODO: See if the static typechecking can be improved
+        // Also right now we don't care if the arg is Anything
+        // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
+        // TODO: We currently silently avoid typechecking "call()()" and "new" args (NewPath is handled)
+        // TODO: We currently don't handle variadic args (e.g. min())
+        // TODO: Dereference.CallOperation does not pass targetProc
+
+        DMProc.LocalVariable? param;
+        if (name != null) {
+            targetProc.Parameters.TryGetValue(name, out param);
+        } else {
+            targetProc.TryGetParameterAtIndex(index, out param);
+        }
+
+        if (param == null) {
+            // TODO: Remove this check once variadic args are properly supported
+            if (targetProc.Name != "animate" && index < targetProc.Parameters.Count) {
+                DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                    $"{targetProc.Name}(...): Unknown argument {(name is null ? $"at index {index}" : $"\"{name}\"")}, typechecking failed");
+            }
+
+            return;
+        }
+
+        DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
+
+        if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType)) {
+            DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
+        }
     }
 }

@@ -74,6 +74,7 @@ namespace DMCompiler.DM {
         public string Name => _astDefinition?.Name ?? "<init>";
         public readonly int Id;
         public readonly Dictionary<string, int> GlobalVariables = new();
+        public IReadOnlyDictionary<string, LocalVariable> Parameters => _parameters;
 
         public VerbSrc? VerbSrc;
         public string? VerbName;
@@ -167,17 +168,17 @@ namespace DMCompiler.DM {
 
                 switch (expr) {
                     case ProcCall:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected \"{ReturnTypes.ToString().ToLower()}\".");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
                         break;
                     case Local:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected \"{ReturnTypes.ToString().ToLower()}\". Consider making this variable constant or adding an explicit \"as {ReturnTypes.ToString().ToLower()}\"");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
                         break;
                     default:
-                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected \"{ReturnTypes.ToString().ToLower()}\". Consider reporting this as a bug on OpenDream's GitHub.");
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
                         break;
                 }
             } else if (!ReturnTypes.MatchesType(type)) { // We could determine the return types but they don't match
-                DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type \"{type.ToString().ToLower()}\", expected \"{ReturnTypes.ToString().ToLower()}\"");
+                DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }
 
@@ -269,7 +270,13 @@ namespace DMCompiler.DM {
             }
         }
 
-        public bool TryGetParameter(string name, [NotNullWhen(true)] out LocalVariable? param) {
+        public bool TryGetParameterAtIndex(int index, [NotNullWhen(true)] out LocalVariable? param) {
+            if (_astDefinition == null || index >= _astDefinition.Parameters.Length) {
+                param = null;
+                return false;
+            }
+
+            var name = _astDefinition.Parameters[index].Name;
             return _parameters.TryGetValue(name, out param);
         }
 
@@ -663,10 +670,6 @@ namespace DMCompiler.DM {
         public void EndScope() {
             DMProcScope destroyedScope = _scopes.Pop();
             DeallocLocalVariables(destroyedScope.LocalVariables.Count);
-        }
-
-        public DMASTDefinitionParameter[] GetDefParams() {
-            return _astDefinition.Parameters;
         }
 
         public void Jump(string label) {

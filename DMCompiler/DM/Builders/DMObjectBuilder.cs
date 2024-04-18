@@ -313,7 +313,6 @@ internal static class DMObjectBuilder {
 
             DMProc proc = DMObjectTree.CreateDMProc(dmObject, procDefinition);
             proc.IsVerb = procDefinition.IsVerb;
-            proc.TypeChecked = !proc.ReturnTypes.IsAnything;
 
             if (procDefinition.ObjectPath == DreamPath.Root) {
                 if(procDefinition.IsOverride) {
@@ -324,7 +323,7 @@ internal static class DMObjectBuilder {
                         DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
                         //Again, even though this is likely an error, process the statements anyways.
                     } else {
-                        DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
+                        DMObjectTree.AddGlobalProc(proc);
                     }
                 }
             } else {

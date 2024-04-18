@@ -25,10 +25,10 @@ public sealed class DMASTProcDefinition : DMASTStatement {
     public readonly bool IsVerb;
     public readonly DMASTDefinitionParameter[] Parameters;
     public readonly DMASTProcBlockInner? Body;
-    public readonly DMComplexValueType ReturnTypes;
+    public readonly DMComplexValueType? ReturnTypes;
 
     public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters,
-        DMASTProcBlockInner? body, DMComplexValueType returnType) : base(location) {
+        DMASTProcBlockInner? body, DMComplexValueType? returnType) : base(location) {
         int procElementIndex = path.FindElement("proc");
 
         if (procElementIndex == -1) {

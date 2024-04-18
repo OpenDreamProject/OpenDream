@@ -102,8 +102,9 @@ namespace DMCompiler.DM {
         private readonly List<SourceInfoJson> _sourceInfo = new();
         private string? _lastSourceFile;
 
-        public DMComplexValueType ReturnTypes;
-        public bool TypeChecked;
+        public bool TypeChecked => !ReturnTypes.IsAnything;
+        public DMComplexValueType? RawReturnTypes => _astDefinition?.ReturnTypes;
+        public DMComplexValueType ReturnTypes => _dmObject.GetProcReturnTypes(Name) ?? DMValueType.Anything;
 
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
@@ -121,7 +122,6 @@ namespace DMCompiler.DM {
             Id = id;
             _dmObject = dmObject;
             _astDefinition = astDefinition;
-            ReturnTypes = _astDefinition?.ReturnTypes ?? DMValueType.Anything;
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
@@ -138,24 +138,14 @@ namespace DMCompiler.DM {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
 
             if (_astDefinition is not null) { // It's null for initialization procs
-                // Typechecking
-                var parent = _dmObject?.GetParentProcType(_astDefinition.Name);
-                if (parent is not null && !parent.Value.IsAnything) {
-                    ReturnTypes = parent.Value;
-                    TypeChecked = true;
-                }
-
                 new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
             }
         }
 
-        public DMObject? GetParentObj() {
-            return _dmObject.Parent;
-        }
-
         public void ValidateReturnType(DMExpression expr) {
             var type = expr.ValType;
-            if ((ReturnTypes.Type & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
+            var returnTypes = _dmObject.GetProcReturnTypes(Name)!.Value;
+            if ((returnTypes.Type & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
                 DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, expr.Location, "color, message, and file return types are currently unsupported.");
                 return;
             }

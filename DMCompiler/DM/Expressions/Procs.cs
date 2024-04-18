@@ -82,7 +82,7 @@ namespace DMCompiler.DM.Expressions {
 
     // ..
     sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _proc) : DMExpression(location) {
-        public override DMComplexValueType ValType => _dmObject?.GetParentProcType(_proc.Name) ?? DMValueType.Anything;
+        public override DMComplexValueType ValType => _dmObject.GetProcReturnTypes(_proc.Name) ?? DMValueType.Anything;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");

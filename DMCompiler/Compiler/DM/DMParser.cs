@@ -227,7 +227,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 // Proc return type
-                var types = AsComplexTypes() ?? DMValueType.Anything;
+                var types = AsComplexTypes();
 
                 DMASTProcBlockInner? procBlock = ProcBlock();
                 if (procBlock is null) {

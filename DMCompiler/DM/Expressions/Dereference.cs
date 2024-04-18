@@ -49,11 +49,9 @@ namespace DMCompiler.DM.Expressions {
         public override DreamPath? Path { get; }
         public override DreamPath? NestedPath { get; }
         public override bool PathIsFuzzy => Path == null;
+        public override DMComplexValueType ValType { get; }
 
         private readonly Operation[] _operations;
-        private DMComplexValueType? _valType;
-
-        public override DMComplexValueType ValType => _valType ?? DMValueType.Anything;
 
         public Dereference(Location location, DreamPath? path, DMExpression expression, Operation[] operations)
             : base(location, null) {
@@ -66,6 +64,30 @@ namespace DMCompiler.DM.Expressions {
             }
 
             NestedPath = _operations[^1].Path;
+            ValType = DetermineValType();
+        }
+
+        private DMComplexValueType DetermineValType() {
+            var type = Expression.ValType;
+            var i = 0;
+            while (!type.IsAnything && i < _operations.Length) {
+                var operation = _operations[i++];
+
+                if (type.TypePath is null || DMObjectTree.GetDMObject(type.TypePath.Value, false) is not { } dmObject) {
+                    // We're dereferencing something without a type-path, this could be anything
+                    type = DMValueType.Anything;
+                    break;
+                }
+
+                type = operation switch {
+                    FieldOperation fieldOperation => dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything,
+                    IndexOperation => DMValueType.Anything, // Lists currently can't be typed, this could be anything
+                    CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier) ?? DMValueType.Anything,
+                    _ => throw new InvalidOperationException("Unimplemented dereference operation")
+                };
+            }
+
+            return type;
         }
 
         private void ShortCircuitHandler(DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -82,28 +104,21 @@ namespace DMCompiler.DM.Expressions {
         }
 
         private void EmitOperation(DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
+            if (operation.Safe) {
+                ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+            }
+
             switch (operation) {
                 case FieldOperation fieldOperation:
-                    if (fieldOperation.Safe) {
-                        ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                    }
                     proc.DereferenceField(fieldOperation.Identifier);
-                    _valType = dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything;
                     break;
 
                 case IndexOperation indexOperation:
-                    if (indexOperation.Safe) {
-                        ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                    }
                     indexOperation.Index.EmitPushValue(dmObject, proc);
                     proc.DereferenceIndex();
                     break;
 
                 case CallOperation callOperation:
-                    if (callOperation.Safe) {
-                        ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                    }
-                    _valType = proc.ReturnTypes;
                     var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, null);
                     proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                     break;

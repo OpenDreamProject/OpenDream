@@ -1,4 +1,4 @@
-/var/world/world = null
+/var/world/world = /world as /world // Set to /world to suppress issues with Typemaker
 
 //These procs should be in alphabetical order, as in DreamProcNativeRoot.cs
 proc/alert(Usr = usr, Message, Title, Button1 = "Ok", Button2, Button3) as text
@@ -138,11 +138,11 @@ proc/replacetextEx_char(Haystack as text, Needle, Replacement, Start = 1, End = 
 	set opendream_unimplemented = TRUE
 	return Haystack
 
-/proc/step(atom/movable/Ref, var/Dir, var/Speed=0) as num
+/proc/step(atom/movable/Ref as /atom/movable, var/Dir, var/Speed=0) as num
 	//TODO: Speed = step_size if Speed is 0
 	return Ref.Move(get_step(Ref, Dir), Dir)
 
-/proc/step_away(atom/movable/Ref, /atom/Trg, Max=5, Speed=0) as num
+/proc/step_away(atom/movable/Ref as /atom/movable, /atom/Trg, Max=5, Speed=0) as num
     return Ref.Move(get_step_away(Ref, Trg, Max), turn(get_dir(Ref, Trg), 180))
 
 /proc/step_to(atom/movable/Ref, atom/Trg, Min = 0, Speed = 0) as num
@@ -200,7 +200,7 @@ proc/ohearers(Depth = world.view, Center = usr) as /list
 	//TODO: Actual cursed ohearers implementation
 	return oviewers(Depth, Center)
 
-proc/step_towards(atom/movable/Ref, /atom/Trg, Speed) as num
+proc/step_towards(atom/movable/Ref as /atom/movable, /atom/Trg, Speed) as num
 	return Ref.Move(get_step_towards(Ref, Trg), get_dir(Ref, Trg))
 
 proc/step_rand(atom/movable/Ref, Speed=0)

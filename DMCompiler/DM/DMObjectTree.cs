@@ -194,8 +194,9 @@ internal static class DMObjectTree {
         return id;
     }
 
-    public static void AddGlobalProc(string name, int id) {
-        GlobalProcs[name] = id; // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
+    public static void AddGlobalProc(DMProc proc) {
+        // Said in this way so it clobbers previous definitions of this global proc (the ..() stuff doesn't work with glob procs)
+        GlobalProcs[proc.Name] = proc.Id;
     }
 
     public static void AddGlobalInitAssign(int globalId, DMExpression value) {

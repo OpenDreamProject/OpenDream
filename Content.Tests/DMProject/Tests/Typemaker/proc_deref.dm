@@ -2,7 +2,7 @@
 /datum/proc/foo() as num
 	return 5
 
-/proc/bar(datum/D) as num
+/proc/bar(datum/D as /datum) as num
 	return D.foo()
 
 /proc/RunTest()

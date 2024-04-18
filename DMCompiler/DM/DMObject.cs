@@ -96,36 +96,17 @@ internal sealed class DMObject {
         return Procs.GetValueOrDefault(name) ?? Parent?.GetProcs(name);
     }
 
-    public List<int>? GetParentProc(string name) {
-        var proc = Procs.GetValueOrDefault(name);
-        var parent = Parent?.GetProcs(name);
-        while (parent is not null) {
-            proc = parent;
-            parent = Parent?.GetProcs(name);
-            if (parent is null || parent[^1] == proc[^1]) {
-                break;
-            }
-        }
-        return proc;
-    }
+    public DMComplexValueType? GetProcReturnTypes(string name) {
+        if (this == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(name, out var globalProc))
+            return globalProc.RawReturnTypes;
+        if (GetProcs(name) is not { } procs)
+            return Parent?.GetProcReturnTypes(name);
 
-    public DMComplexValueType? GetParentProcType(string name) {
-        var parent = Parent?.GetProcs(name);
+        var proc = DMObjectTree.AllProcs[procs[0]];
+        if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
+            return Parent?.GetProcReturnTypes(name) ?? DMValueType.Anything;
 
-        while (parent is not null) {
-            var parentProc = DMObjectTree.AllProcs[parent[^1]];
-
-            if (!parentProc.ReturnTypes.IsAnything) {
-                return parentProc.ReturnTypes;
-            }
-
-            parent = parentProc.GetParentObj()?.GetProcs(name) ?? null;
-            if (parent is null) {
-                return parentProc.ReturnTypes;
-            }
-        }
-
-        return null;
+        return proc.RawReturnTypes;
     }
 
     public void AddVerb(DMProc verb) {

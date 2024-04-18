@@ -85,13 +85,18 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            var argumentInfo = arguments.EmitArguments(dmObject, proc, DMObjectTree.GetNewProc(pathInfo.Value.Id));
+            DMCallArgumentsType argumentsType;
+            int stackSize;
 
             switch (pathInfo.Value.Type) {
                 case ConstantPath.PathType.TypeReference:
+                    var newProc = DMObjectTree.GetNewProc(pathInfo.Value.Id);
+
+                    (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);
                     proc.PushType(pathInfo.Value.Id);
                     break;
                 case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                    (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);
                     proc.PushProc(pathInfo.Value.Id);
                     break;
                 case ConstantPath.PathType.ProcStub:
@@ -99,9 +104,13 @@ namespace DMCompiler.DM.Expressions {
                     DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
                     proc.PushNull();
                     return;
+                default:
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Invalid path info type");
+                    proc.PushNull();
+                    return;
             }
 
-            proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
+            proc.CreateObject(argumentsType, stackSize);
         }
     }
 

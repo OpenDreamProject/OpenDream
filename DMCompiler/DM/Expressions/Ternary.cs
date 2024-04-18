@@ -15,7 +15,7 @@ internal sealed class Ternary : DMExpression {
         _b = b;
         _c = c;
 
-        if (b.ValType.TypePath != null && c.ValType.TypePath != null) {
+        if (b.ValType.TypePath != null && c.ValType.TypePath != null && b.ValType.TypePath != c.ValType.TypePath) {
             DMCompiler.Emit(WarningCode.LostTypeInfo, Location,
                 $"Ternary has type paths {b.ValType.TypePath} and {c.ValType.TypePath} but a value can only have one type path. Using {b.ValType.TypePath}.");
         }

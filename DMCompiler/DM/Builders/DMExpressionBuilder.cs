@@ -358,8 +358,7 @@ internal static class DMExpressionBuilder {
 
         switch (name) {
             case "src":
-                var src = new Src(identifier.Location, dmObject.Path);
-                return src;
+                return new Src(identifier.Location, dmObject.Path);
             case "usr":
                 return new Usr(identifier.Location);
             case "args":
@@ -403,8 +402,6 @@ internal static class DMExpressionBuilder {
                 throw new UnknownIdentifierException(identifier.Location, name);
             }
         }
-
-
     }
 
     private static DMExpression BuildScopeIdentifier(

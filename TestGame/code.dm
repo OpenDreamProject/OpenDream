@@ -198,10 +198,6 @@
 		stat("tick_usage", world.tick_usage)
 		stat("time", world.time)
 
-/datum/var/foo = 5 as num
-
 /world/New()
 	..()
 	world.log << "World loaded!"
-	var/datum/D = new
-	D.foo = 2

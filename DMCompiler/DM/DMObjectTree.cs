@@ -85,6 +85,7 @@ internal static class DMObjectTree {
         var targetProc = obj!.GetProcs("New")[0];
         return AllProcs[targetProc];
     }
+
     public static DMObject? GetDMObject(DreamPath path, bool createIfNonexistent = true) {
         if (_pathToTypeId.TryGetValue(path, out int typeId)) {
             return AllObjects[typeId];

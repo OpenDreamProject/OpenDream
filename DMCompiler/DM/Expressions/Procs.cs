@@ -42,21 +42,15 @@ namespace DMCompiler.DM.Expressions {
     /// This doesn't actually contain the GlobalProc itself;
     /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
     /// </remarks>
-    internal sealed class GlobalProc : DMExpression {
-        private readonly string _name;
-
+    internal sealed class GlobalProc(Location location, string name) : DMExpression(location) {
         public override DMComplexValueType ValType => GetProc().ReturnTypes;
 
-        public GlobalProc(Location location, string name) : base(location) {
-            _name = name;
-        }
-
         public override string ToString() {
-            return $"{_name}()";
+            return $"{name}()";
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{_name}\" as value");
+            DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -65,8 +59,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public DMProc GetProc() {
-            if (!DMObjectTree.TryGetGlobalProc(_name, out var globalProc)) {
-                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{_name}\"");
+            if (!DMObjectTree.TryGetGlobalProc(name, out var globalProc)) {
+                DMCompiler.Emit(WarningCode.ItemDoesntExist, Location, $"No global proc named \"{name}\"");
                 return DMObjectTree.GlobalInitProc; // Just give this, who cares
             }
 
@@ -113,14 +107,11 @@ namespace DMCompiler.DM.Expressions {
         public override DMComplexValueType ValType => valType.IsAnything ? target.ValType : valType;
 
         public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
-            switch (target) {
-                case Proc procTarget:
-                    return (dmObject, procTarget.GetProc(dmObject));
-                case GlobalProc procTarget:
-                    return (null, procTarget.GetProc());
-                default:
-                    return (null, null);
-            }
+            return target switch {
+                Proc procTarget => (dmObject, procTarget.GetProc(dmObject)),
+                GlobalProc procTarget => (null, procTarget.GetProc()),
+                _ => (null, null)
+            };
         }
 
         public override string ToString() {

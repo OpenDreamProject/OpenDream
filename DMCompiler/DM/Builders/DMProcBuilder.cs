@@ -409,9 +409,9 @@ namespace DMCompiler.DM.Builders {
 
         public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
-                var expr = DMExpression.Emit(dmObject, proc, statement.Value);
+                var expr = DMExpression.Create(dmObject, proc, statement.Value);
 
-                // Don't typecheck unimplementeds
+                // Don't type-check unimplemented procs
                 if (proc.TypeChecked && (proc.Attributes & ProcAttributes.Unimplemented) == 0) {
                     if (expr.TryAsConstant(out var exprConst)) {
                         proc.ValidateReturnType(exprConst);
@@ -419,6 +419,8 @@ namespace DMCompiler.DM.Builders {
                         proc.ValidateReturnType(expr);
                     }
                 }
+
+                expr.EmitPushValue(dmObject, proc);
             } else {
                 proc.PushReferenceValue(DMReference.Self); //Default return value
             }
@@ -460,7 +462,7 @@ namespace DMCompiler.DM.Builders {
             proc.StartScope();
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
-                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, new(DMValueType.Anything, null)));
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
                 }
 
                 var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
@@ -617,7 +619,7 @@ namespace DMCompiler.DM.Builders {
             } else if (dmTypes.Value.TypePath != null) {
                 // "as /datum" will perform a check for /datum
                 implicitTypeCheck = dmTypes.Value.TypePath;
-            } else if (dmTypes.Value.Type != DMValueType.Anything) {
+            } else if (!dmTypes.Value.IsAnything) {
                 // "as anything" performs no check. Other values are unimplemented.
                 DMCompiler.UnimplementedWarning(outputVar.Location,
                     $"As type {dmTypes} in for loops is unimplemented. No type check will be performed.");

@@ -17,10 +17,9 @@ internal abstract class DMExpression(Location location) {
         return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
     }
 
-    public static DMExpression Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
+    public static void Emit(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         var expr = Create(dmObject, proc, expression, inferredPath);
         expr.EmitPushValue(dmObject, proc);
-        return expr;
     }
 
     public static bool TryConstant(DMObject dmObject, DMProc proc, DMASTExpression expression, out Expressions.Constant? constant) {
@@ -155,17 +154,17 @@ sealed class ArgumentList {
             // Also right now we don't care if the arg is Anything
             // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
             // TODO: We currently silently avoid typechecking "call()()" and "new" args (NewPath is handled)
-            // TODO: We currently don't handle variadics (e.g. min())
+            // TODO: We currently don't handle variadic args (e.g. min())
             // TODO: Dereference.CallOperation does not pass targetProc
             if (targetProc is not null) {
-                if (index < procParams.Length) { // Doesn't cope with variadics
+                if (index < procParams.Length) { // Doesn't cope with variadic args
                     var paramName = Expressions[index].Name;
                     DMComplexValueType? paramType = paramName == null ? (procParams[index].Type ?? DMValueType.Anything) : null; //unnamed arg
 
                     if (paramType is null) { // named arg
                         if (targetProc.TryGetParameter(Expressions[index].Name, out var param)) {
                             paramType = param.ExplicitValueType;
-                        } else if(targetProc.Name != "animate") { // TODO: Remove this check once variadics are properly supported
+                        } else if(targetProc.Name != "animate") { // TODO: Remove this check once variadic args are properly supported
                             DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location, $"{targetProc.Name}(...) argument \"{paramName}\": Unknown argument, typechecking failed");
                             paramType = DMValueType.Anything;
                         }

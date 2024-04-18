@@ -227,7 +227,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 // Proc return type
-                var types = AsComplexTypes() ?? new(DMValueType.Anything, null);
+                var types = AsComplexTypes() ?? DMValueType.Anything;
 
                 DMASTProcBlockInner? procBlock = ProcBlock();
                 if (procBlock is null) {
@@ -287,7 +287,7 @@ namespace DMCompiler.Compiler.DM {
                         value = new DMASTConstantNull(loc);
                     }
 
-                    var valType = AsComplexTypes() ?? new(DMValueType.Anything, null);
+                    var valType = AsComplexTypes() ?? DMValueType.Anything;
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
@@ -863,7 +863,7 @@ namespace DMCompiler.Compiler.DM {
                     RequireExpression(ref value);
                 }
 
-                var valType = AsComplexTypes() ?? new(DMValueType.Anything, null);
+                var valType = AsComplexTypes() ?? DMValueType.Anything;
 
                 varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
@@ -1709,7 +1709,6 @@ namespace DMCompiler.Compiler.DM {
 
                 var type = AsComplexTypes();
                 var dmType = DMObjectTree.GetDMObject(path.Path, false);
-                // TODO: Figure out a clean way to do this only if "path.Path" is a subtype of datum/ instead of a var/. IsDescendentOf() is insufficient
                 if (type is {Type: not DMValueType.Anything } && (value is null or DMASTConstantNull) && (dmType?.IsSubtypeOf(DreamPath.Datum) ?? false)) {
                     DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
                     type |= DMValueType.Null;
@@ -2662,7 +2661,7 @@ namespace DMCompiler.Compiler.DM {
             if (!AsTypesStart(out var parenthetical))
                 return null;
             if (parenthetical && Check(TokenType.DM_RightParenthesis)) // as ()
-                return new(DMValueType.Anything, null); // TODO: BYOND doesn't allow this for proc return types
+                return DMValueType.Anything; // TODO: BYOND doesn't allow this for proc return types
 
             DMValueType type = DMValueType.Anything;
             DreamPath? path = null;

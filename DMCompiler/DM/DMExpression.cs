@@ -10,6 +10,8 @@ namespace DMCompiler.DM;
 internal abstract class DMExpression(Location location) {
     public Location Location = location;
 
+    public virtual DMComplexValueType ValType => DMValueType.Anything;
+
     // TODO: proc and dmObject can be null, address nullability contract
     public static DMExpression Create(DMObject dmObject, DMProc proc, DMASTExpression expression, DreamPath? inferredPath = null) {
         return DMExpressionBuilder.BuildExpression(expression, dmObject, proc, inferredPath);
@@ -130,7 +132,7 @@ sealed class ArgumentList {
         }
     }
 
-    public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc) {
+    public (DMCallArgumentsType Type, int StackSize) EmitArguments(DMObject dmObject, DMProc proc, DMProc? targetProc) {
         if (Expressions.Length == 0) {
             return (DMCallArgumentsType.None, 0);
         }
@@ -145,7 +147,12 @@ sealed class ArgumentList {
 
         // TODO: Named arguments must come after all ordered arguments
         int stackCount = 0;
-        foreach ((string name, DMExpression expr) in Expressions) {
+        for (var index = 0; index < Expressions.Length; index++) {
+            (string? name, DMExpression expr) = Expressions[index];
+
+            if (targetProc != null)
+                VerifyArgType(targetProc, index, name, expr);
+
             if (_isKeyed) {
                 if (name != null) {
                     proc.PushString(name);
@@ -159,5 +166,38 @@ sealed class ArgumentList {
         }
 
         return (_isKeyed ? DMCallArgumentsType.FromStackKeyed : DMCallArgumentsType.FromStack, stackCount);
+    }
+
+    private static void VerifyArgType(DMProc targetProc, int index, string? name, DMExpression expr) {
+        // TODO: See if the static typechecking can be improved
+        // Also right now we don't care if the arg is Anything
+        // TODO: Make a separate "UnsetStaticType" pragma for whether we should care if it's Anything
+        // TODO: We currently silently avoid typechecking "call()()" and "new" args (NewPath is handled)
+        // TODO: We currently don't handle variadic args (e.g. min())
+        // TODO: Dereference.CallOperation does not pass targetProc
+
+        DMProc.LocalVariable? param;
+        if (name != null) {
+            targetProc.Parameters.TryGetValue(name, out param);
+        } else {
+            targetProc.TryGetParameterAtIndex(index, out param);
+        }
+
+        if (param == null) {
+            // TODO: Remove this check once variadic args are properly supported
+            if (targetProc.Name != "animate" && index < targetProc.Parameters.Count) {
+                DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                    $"{targetProc.Name}(...): Unknown argument {(name is null ? $"at index {index}" : $"\"{name}\"")}, typechecking failed");
+            }
+
+            return;
+        }
+
+        DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
+
+        if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType)) {
+            DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
+                $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
+        }
     }
 }

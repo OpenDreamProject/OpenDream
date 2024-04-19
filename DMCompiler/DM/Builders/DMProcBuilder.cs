@@ -372,6 +372,11 @@ namespace DMCompiler.DM.Builders {
             if (varDeclaration.Value != null) {
                 try {
                     value = DMExpression.Create(dmObject, proc, varDeclaration.Value, varDeclaration.Type);
+
+                    if (!varDeclaration.ValType.MatchesType(value.ValType)) {
+                        DMCompiler.Emit(WarningCode.InvalidVarType, varDeclaration.Location,
+                            $"{varDeclaration.Name}: Invalid var value {value.ValType}, expected {varDeclaration.ValType}");
+                    }
                 } catch (CompileErrorException e) {
                     DMCompiler.Emit(e.Error);
                     value = new Expressions.Null(varDeclaration.Location);
@@ -389,7 +394,7 @@ namespace DMCompiler.DM.Builders {
 
                 successful = proc.TryAddLocalConstVariable(varDeclaration.Name, varDeclaration.Type, constValue);
             } else {
-                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type);
+                successful = proc.TryAddLocalVariable(varDeclaration.Name, varDeclaration.Type, varDeclaration.ValType);
             }
 
             if (!successful) {
@@ -404,7 +409,18 @@ namespace DMCompiler.DM.Builders {
 
         public void ProcessStatementReturn(DMASTProcStatementReturn statement) {
             if (statement.Value != null) {
-                DMExpression.Emit(dmObject, proc, statement.Value);
+                var expr = DMExpression.Create(dmObject, proc, statement.Value);
+
+                // Don't type-check unimplemented procs
+                if (proc.TypeChecked && (proc.Attributes & ProcAttributes.Unimplemented) == 0) {
+                    if (expr.TryAsConstant(out var exprConst)) {
+                        proc.ValidateReturnType(exprConst);
+                    } else {
+                        proc.ValidateReturnType(expr);
+                    }
+                }
+
+                expr.EmitPushValue(dmObject, proc);
             } else {
                 proc.PushReferenceValue(DMReference.Self); //Default return value
             }
@@ -446,7 +462,7 @@ namespace DMCompiler.DM.Builders {
             proc.StartScope();
             {
                 foreach (var decl in FindVarDecls(statementFor.Expression1)) {
-                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null));
+                    ProcessStatementVarDeclaration(new DMASTProcStatementVarDeclaration(statementFor.Location, decl.DeclPath, null, DMValueType.Anything));
                 }
 
                 var initializer = statementFor.Expression1 != null ? DMExpression.Create(dmObject, proc, statementFor.Expression1) : null;
@@ -513,6 +529,10 @@ namespace DMCompiler.DM.Builders {
 
                             var outputVar = DMExpression.Create(dmObject, proc, outputExpr);
                             var list = DMExpression.Create(dmObject, proc, exprIn.RHS);
+
+                            if (outputVar is Local outputLocal) {
+                                outputLocal.LocalVar.ExplicitValueType = statementFor.DMTypes;
+                            }
 
                             ProcessStatementForList(list, outputVar, statementFor.DMTypes, statementFor.Body);
                             break;
@@ -585,7 +605,7 @@ namespace DMCompiler.DM.Builders {
             }
         }
 
-        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMValueType? dmTypes, DMASTProcBlockInner body) {
+        public void ProcessStatementForList(DMExpression list, DMExpression outputVar, DMComplexValueType? dmTypes, DMASTProcBlockInner body) {
             if (outputVar is not LValue lValue) {
                 DMCompiler.Emit(WarningCode.BadExpression, outputVar.Location, "Invalid output var");
                 lValue = null;
@@ -596,10 +616,13 @@ namespace DMCompiler.DM.Builders {
             if (dmTypes == null) {
                 // No "as" means the var's type will be used
                 implicitTypeCheck = lValue?.Path;
-            } else if (dmTypes != DMValueType.Anything) {
+            } else if (dmTypes.Value.TypePath != null) {
+                // "as /datum" will perform a check for /datum
+                implicitTypeCheck = dmTypes.Value.TypePath;
+            } else if (!dmTypes.Value.IsAnything) {
                 // "as anything" performs no check. Other values are unimplemented.
                 DMCompiler.UnimplementedWarning(outputVar.Location,
-                    $"As type \"{dmTypes}\" in for loops is unimplemented. No type check will be performed.");
+                    $"As type {dmTypes} in for loops is unimplemented. No type check will be performed.");
             }
 
             list.EmitPushValue(dmObject, proc);
@@ -942,7 +965,7 @@ namespace DMCompiler.DM.Builders {
             if (tryCatch.CatchParameter != null) {
                 var param = tryCatch.CatchParameter as DMASTProcStatementVarDeclaration;
 
-                if (!proc.TryAddLocalVariable(param.Name, param.Type)) {
+                if (!proc.TryAddLocalVariable(param.Name, param.Type, param.ValType)) {
                     DMCompiler.Emit(WarningCode.DuplicateVariable, param.Location, $"Duplicate var {param.Name}");
                 }
 

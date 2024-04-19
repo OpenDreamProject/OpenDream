@@ -10,6 +10,7 @@ namespace DMCompiler.DM.Expressions {
     sealed class StringFormat : DMExpression {
         string Value { get; }
         DMExpression[] Expressions { get; }
+        public override DMComplexValueType ValType => DMValueType.Text;
 
         public StringFormat(Location location, string value, DMExpression[] expressions) : base(location) {
             Value = value;
@@ -48,6 +49,7 @@ namespace DMCompiler.DM.Expressions {
         private readonly ArgumentList _arguments;
 
         public override bool PathIsFuzzy => Path == null;
+        public override DMComplexValueType ValType => !_expr.ValType.IsAnything ? _expr.ValType : (Path?.GetAtomType() ?? DMValueType.Anything);
 
         public New(Location location, DMExpression expr, ArgumentList arguments) : base(location) {
             _expr = expr;
@@ -55,7 +57,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argumentInfo = _arguments.EmitArguments(dmObject, proc);
+            var argumentInfo = _arguments.EmitArguments(dmObject, proc, null);
 
             _expr.EmitPushValue(dmObject, proc);
             proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
@@ -63,7 +65,18 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // new /x/y/z (...)
-    internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
+    internal sealed class NewPath : DMExpression {
+        private readonly ConstantPath targetPath;
+        private readonly ArgumentList arguments;
+
+        public override DMComplexValueType ValType => targetPath.Value.GetAtomType();
+
+        public NewPath(Location location, ConstantPath targetPath, ArgumentList arguments)
+            : base(location) {
+            this.targetPath = targetPath;
+            this.arguments = arguments;
+        }
+
         public override DreamPath? Path => targetPath.Value;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -72,13 +85,18 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            var argumentInfo = arguments.EmitArguments(dmObject, proc);
+            DMCallArgumentsType argumentsType;
+            int stackSize;
 
             switch (pathInfo.Value.Type) {
                 case ConstantPath.PathType.TypeReference:
+                    var newProc = DMObjectTree.GetNewProc(pathInfo.Value.Id);
+
+                    (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);
                     proc.PushType(pathInfo.Value.Id);
                     break;
                 case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                    (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);
                     proc.PushProc(pathInfo.Value.Id);
                     break;
                 case ConstantPath.PathType.ProcStub:
@@ -86,9 +104,13 @@ namespace DMCompiler.DM.Expressions {
                     DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
                     proc.PushNull();
                     return;
+                default:
+                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Invalid path info type");
+                    proc.PushNull();
+                    return;
             }
 
-            proc.CreateObject(argumentInfo.Type, argumentInfo.StackSize);
+            proc.CreateObject(argumentsType, stackSize);
         }
     }
 
@@ -96,6 +118,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class LocateInferred : DMExpression {
         private readonly DreamPath _path;
         private readonly DMExpression? _container;
+
+        public override DMComplexValueType ValType => _path;
 
         public LocateInferred(Location location, DreamPath path, DMExpression? container) : base(location) {
             _path = path;
@@ -158,6 +182,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class LocateCoordinates : DMExpression {
         private readonly DMExpression _x, _y, _z;
 
+        public override DMComplexValueType ValType => DMValueType.Turf;
+
         public LocateCoordinates(Location location, DMExpression x, DMExpression y, DMExpression z) : base(location) {
             _x = x;
             _y = y;
@@ -182,7 +208,8 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argInfo = _arguments.EmitArguments(dmObject, proc);
+            DMObjectTree.TryGetGlobalProc("gradient", out var dmProc);
+            var argInfo = _arguments.EmitArguments(dmObject, proc, dmProc);
 
             proc.Gradient(argInfo.Type, argInfo.StackSize);
         }
@@ -194,7 +221,8 @@ namespace DMCompiler.DM.Expressions {
     /// rgb(x, y, z, a, space)
     internal sealed class Rgb(Location location, ArgumentList arguments) : DMExpression(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argInfo = arguments.EmitArguments(dmObject, proc);
+            DMObjectTree.TryGetGlobalProc("rgb", out var dmProc);
+            var argInfo = arguments.EmitArguments(dmObject, proc, dmProc);
 
             proc.Rgb(argInfo.Type, argInfo.StackSize);
         }
@@ -263,6 +291,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class AddText : DMExpression {
         private readonly DMExpression[] _parameters;
 
+        public override DMComplexValueType ValType => DMValueType.Text;
+
         public AddText(Location location, DMExpression[] paras) : base(location) {
             _parameters = paras;
         }
@@ -283,6 +313,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class Prob : DMExpression {
         public readonly DMExpression P;
 
+        public override DMComplexValueType ValType => DMValueType.Num;
+
         public Prob(Location location, DMExpression p) : base(location) {
             P = p;
         }
@@ -296,6 +328,8 @@ namespace DMCompiler.DM.Expressions {
     // issaved(x)
     sealed class IsSaved : DMExpression {
         private readonly DMExpression _expr;
+
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public IsSaved(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -323,6 +357,8 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression _expr;
         private readonly DMExpression _path;
 
+        public override DMComplexValueType ValType => DMValueType.Num;
+
         public IsType(Location location, DMExpression expr, DMExpression path) : base(location) {
             _expr = expr;
             _path = path;
@@ -339,6 +375,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class IsTypeInferred : DMExpression {
         private readonly DMExpression _expr;
         private readonly DreamPath _path;
+
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public IsTypeInferred(Location location, DMExpression expr, DreamPath path) : base(location) {
             _expr = expr;
@@ -363,6 +401,7 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression _value;
 
         public override bool PathIsFuzzy => true;
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public IsNull(Location location, DMExpression value) : base(location) {
             _value = value;
@@ -379,6 +418,7 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression _value;
 
         public override bool PathIsFuzzy => true;
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public Length(Location location, DMExpression value) : base(location) {
             _value = value;
@@ -434,6 +474,7 @@ namespace DMCompiler.DM.Expressions {
         private readonly bool _isAssociative;
 
         public override bool PathIsFuzzy => true;
+        public override DMComplexValueType ValType => DreamPath.List;
 
         public List(Location location, (DMExpression? Key, DMExpression Value)[] values) : base(location) {
             _values = values;
@@ -530,6 +571,8 @@ namespace DMCompiler.DM.Expressions {
     sealed class NewList : DMExpression {
         private readonly DMExpression[] _parameters;
 
+        public override DMComplexValueType ValType => DreamPath.List;
+
         public NewList(Location location, DMExpression[] parameters) : base(location) {
             _parameters = parameters;
         }
@@ -555,6 +598,8 @@ namespace DMCompiler.DM.Expressions {
         private readonly DMExpression[] _arguments;
         private readonly DMValueType _types;
         private readonly DMExpression? _list;
+
+        public override DMComplexValueType ValType => _types;
 
         public Input(Location location, DMExpression[] arguments, DMValueType types,
             DMExpression? list) : base(location) {
@@ -620,7 +665,7 @@ namespace DMCompiler.DM.Expressions {
         }
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            var argumentInfo = _procArgs.EmitArguments(dmObject, proc);
+            var argumentInfo = _procArgs.EmitArguments(dmObject, proc, null);
 
             _b?.EmitPushValue(dmObject, proc);
             _a.EmitPushValue(dmObject, proc);
@@ -629,14 +674,14 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // __TYPE__
-    sealed class ProcOwnerType : DMExpression {
-        public ProcOwnerType(Location location)
-            : base(location)
-        {}
+    sealed class ProcOwnerType(Location location, DMObject owner) : DMExpression(location) {
+        private DreamPath? OwnerPath => owner.Path == DreamPath.Root ? null : owner.Path;
+
+        public override DMComplexValueType ValType => (OwnerPath != null) ? OwnerPath.Value : DMValueType.Null;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             // BYOND returns null if this is called in a global proc
-            if (dmObject.Path == DreamPath.Root) {
+            if (owner.Path == DreamPath.Root) {
                 proc.PushNull();
             } else {
                 proc.PushType(dmObject.Id);
@@ -655,6 +700,7 @@ namespace DMCompiler.DM.Expressions {
 
     internal class Sin : DMExpression {
         private readonly DMExpression _expr;
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public Sin(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -684,6 +730,7 @@ namespace DMCompiler.DM.Expressions {
 
     internal class Cos : DMExpression {
         private readonly DMExpression _expr;
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public Cos(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -714,6 +761,8 @@ namespace DMCompiler.DM.Expressions {
     internal class Tan : DMExpression {
         private readonly DMExpression _expr;
 
+        public override DMComplexValueType ValType => DMValueType.Num;
+
         public Tan(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
@@ -742,6 +791,8 @@ namespace DMCompiler.DM.Expressions {
 
     internal class ArcSin : DMExpression {
         private readonly DMExpression _expr;
+
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public ArcSin(Location location, DMExpression expr) : base(location) {
             _expr = expr;
@@ -777,6 +828,8 @@ namespace DMCompiler.DM.Expressions {
     internal class ArcCos : DMExpression {
         private readonly DMExpression _expr;
 
+        public override DMComplexValueType ValType => DMValueType.Num;
+
         public ArcCos(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
@@ -811,6 +864,8 @@ namespace DMCompiler.DM.Expressions {
     internal class ArcTan : DMExpression {
         private readonly DMExpression _expr;
 
+        public override DMComplexValueType ValType => DMValueType.Num;
+
         public ArcTan(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
@@ -840,6 +895,8 @@ namespace DMCompiler.DM.Expressions {
     internal class ArcTan2 : DMExpression {
         private readonly DMExpression _xExpr;
         private readonly DMExpression _yExpr;
+
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public ArcTan2(Location location, DMExpression xExpr, DMExpression yExpr) : base(location) {
             _xExpr = xExpr;
@@ -876,6 +933,8 @@ namespace DMCompiler.DM.Expressions {
     internal class Sqrt : DMExpression {
         private readonly DMExpression _expr;
 
+        public override DMComplexValueType ValType => DMValueType.Num;
+
         public Sqrt(Location location, DMExpression expr) : base(location) {
             _expr = expr;
         }
@@ -910,6 +969,8 @@ namespace DMCompiler.DM.Expressions {
     internal class Log : DMExpression {
         private readonly DMExpression _expr;
         private readonly DMExpression? _baseExpr;
+
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public Log(Location location, DMExpression expr, DMExpression? baseExpr) : base(location) {
             _expr = expr;
@@ -961,6 +1022,8 @@ namespace DMCompiler.DM.Expressions {
 
     internal class Abs : DMExpression {
         private readonly DMExpression _expr;
+
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public Abs(Location location, DMExpression expr) : base(location) {
             _expr = expr;

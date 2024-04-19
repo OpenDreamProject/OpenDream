@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
+using DMCompiler.DM.Expressions;
 
 namespace DMCompiler.DM.Builders;
 
@@ -322,7 +323,7 @@ internal static class DMObjectBuilder {
                         DMCompiler.Emit(WarningCode.DuplicateProcDefinition, procDefinition.Location, $"Global proc {procDefinition.Name} is already defined");
                         //Again, even though this is likely an error, process the statements anyways.
                     } else {
-                        DMObjectTree.AddGlobalProc(proc.Name, proc.Id);
+                        DMObjectTree.AddGlobalProc(proc);
                     }
                 }
             } else {
@@ -416,7 +417,7 @@ internal static class DMObjectBuilder {
             return;
         }
 
-        if ((variable.ValType & DMValueType.CompiletimeReadonly) == DMValueType.CompiletimeReadonly) {
+        if (variable.ValType.IsCompileTimeReadOnly) {
             DMCompiler.Emit(WarningCode.WriteToConstant, value.Location,
                 $"Var {variable.Name} is a native read-only value which cannot be modified");
         }
@@ -427,13 +428,23 @@ internal static class DMObjectBuilder {
 
             DMExpression expression = DMExpression.Create(currentObject, variable.IsGlobal ? DMObjectTree.GlobalInitProc : null, value, variable.Type);
 
-            SetVariableValue(currentObject, ref variable, value.Location, expression);
+            SetVariableValue(currentObject, ref variable, value.Location, expression, true);
         } finally {
             DMExpressionBuilder.CurrentScopeMode = DMExpressionBuilder.ScopeMode.Normal;
         }
     }
 
-    private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression) {
+    private static void SetVariableValue(DMObject currentObject, ref DMVariable variable, Location location, DMExpression expression, bool isOverride = false) {
+        // Typechecking
+        if (!variable.ValType.MatchesType(expression.ValType) && !variable.ValType.IsUnimplemented) {
+            if (expression is Null && !isOverride) {
+                DMCompiler.Emit(WarningCode.ImplicitNullType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Variable is null but not explicitly typed as nullable, append \"|null\" to \"as\". Implicitly treating as nullable.");
+                variable.ValType |= DMValueType.Null;
+            } else {
+                DMCompiler.Emit(WarningCode.InvalidVarType, expression.Location, $"{currentObject.Path.ToString()}.{variable.Name}: Invalid var value type {expression.ValType}, expected {variable.ValType}");
+            }
+        }
+
         if (expression.TryAsConstant(out var constant)) {
             variable = variable.WriteToValue(constant);
             return;
@@ -493,8 +504,8 @@ internal static class DMObjectBuilder {
             DMObjectTree.AddGlobalInitAssign(globalId.Value, expression);
         } else {
             var initLoc = expression.Location;
-            Expressions.Field field = new Expressions.Field(initLoc, variable);
-            Expressions.Assignment assign = new Expressions.Assignment(initLoc, field, expression);
+            var field = new Field(initLoc, variable, variable.ValType);
+            var assign = new Assignment(initLoc, field, expression);
 
             currentObject.InitializationProcExpressions.Add(assign);
         }

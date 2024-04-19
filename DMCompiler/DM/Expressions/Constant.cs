@@ -100,8 +100,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // null
-    sealed class Null : Constant {
-        public Null(Location location) : base(location) { }
+    sealed class Null(Location location) : Constant(location) {
+        public override DMComplexValueType ValType => DMValueType.Null;
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             proc.PushNull();
@@ -146,6 +146,7 @@ namespace DMCompiler.DM.Expressions {
     // 4.0, -4.0
     sealed class Number : Constant {
         public float Value { get; }
+        public override DMComplexValueType ValType => DMValueType.Num;
 
         public Number(Location location, int value) : base(location) {
             Value = value;
@@ -320,6 +321,7 @@ namespace DMCompiler.DM.Expressions {
     // "abc"
     sealed class String : Constant {
         public string Value { get; }
+        public override DMComplexValueType ValType => DMValueType.Text;
 
         public String(Location location, string value) : base(location) {
             Value = value;
@@ -342,6 +344,10 @@ namespace DMCompiler.DM.Expressions {
             }
 
             return new String(Location, Value + rhsString.Value);
+        }
+
+        public override string ToString() {
+            return Value;
         }
     }
 
@@ -478,14 +484,22 @@ namespace DMCompiler.DM.Expressions {
 
     // /a/b/c
     // no, this can't be called "Path" because of CS0542
-    internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
-        public DreamPath Value { get; } = value;
-        public override DreamPath? Path => Value;
+    internal sealed class ConstantPath : Constant {
+        public DreamPath Value { get; }
 
         /// <summary>
         /// The DMObject this expression resides in. Used for path searches.
         /// </summary>
-        private readonly DMObject _dmObject = dmObject;
+        private readonly DMObject _dmObject;
+
+        public override DreamPath? Path => Value;
+        public override DMComplexValueType ValType => Value;
+
+        public ConstantPath(Location location, DMObject dmObject, DreamPath value)
+            : base(location) {
+            _dmObject = dmObject;
+            Value = value;
+        }
 
         public enum PathType {
             TypeReference,

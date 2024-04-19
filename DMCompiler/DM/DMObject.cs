@@ -96,13 +96,26 @@ internal sealed class DMObject {
         return Procs.GetValueOrDefault(name) ?? Parent?.GetProcs(name);
     }
 
+    public DMComplexValueType? GetProcReturnTypes(string name) {
+        if (this == DMObjectTree.Root && DMObjectTree.TryGetGlobalProc(name, out var globalProc))
+            return globalProc.RawReturnTypes;
+        if (GetProcs(name) is not { } procs)
+            return Parent?.GetProcReturnTypes(name);
+
+        var proc = DMObjectTree.AllProcs[procs[0]];
+        if ((proc.Attributes & ProcAttributes.IsOverride) != 0)
+            return Parent?.GetProcReturnTypes(name) ?? DMValueType.Anything;
+
+        return proc.RawReturnTypes;
+    }
+
     public void AddVerb(DMProc verb) {
         _verbs ??= new();
         _verbs.Add(verb);
     }
 
-    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMValueType valType = DMValueType.Anything) {
-        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType);
+    public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, DMComplexValueType? valType = null) {
+        int id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, valType ?? DMValueType.Anything);
 
         GlobalVariables[name] = id;
         return global;
@@ -124,6 +137,12 @@ internal sealed class DMObject {
         int? id = GetGlobalVariableId(name);
 
         return (id == null) ? null : DMObjectTree.Globals[id.Value];
+    }
+
+    public DMComplexValueType GetReturnType(string name) {
+        var procId = GetProcs(name)?[^1];
+
+        return procId is null ? DMValueType.Anything : DMObjectTree.AllProcs[procId.Value].ReturnTypes;
     }
 
     public void CreateInitializationProc() {

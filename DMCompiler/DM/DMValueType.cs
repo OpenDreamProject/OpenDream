@@ -59,7 +59,7 @@ public readonly struct DMComplexValueType {
     }
 
     public bool MatchesType(DMComplexValueType type) {
-        if (IsPath && type.IsPath && type.TypePath!.Value.IsDescendantOf(TypePath!.Value)) {
+        if (IsPath && type.IsPath) {
             var dmObject = DMObjectTree.GetDMObject(type.TypePath!.Value, false);
 
             // Allow subtypes

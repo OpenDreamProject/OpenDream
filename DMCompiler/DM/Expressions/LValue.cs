@@ -32,6 +32,8 @@ internal class Global(Location location) : LValue(location, null) {
 
 // src
 internal sealed class Src(Location location, DreamPath? path) : LValue(location, path) {
+    public override DMComplexValueType ValType => DMValueType.Anything;
+
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Src;
     }
@@ -41,6 +43,9 @@ internal sealed class Src(Location location, DreamPath? path) : LValue(location,
 
 // usr
 internal sealed class Usr(Location location) : LValue(location, DreamPath.Mob) {
+    //According to the docs, Usr is a mob. But it will get set to null by coders to clear refs.
+    public override DMComplexValueType ValType => (DMValueType.Mob | DMValueType.Null);
+
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Usr;
     }
@@ -59,7 +64,10 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
 
 // Identifier of local variable
 internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
-    private DMProc.LocalVariable LocalVar { get; } = localVar;
+    public DMProc.LocalVariable LocalVar { get; }
+
+    // TODO: non-const local var static typing
+    public override DMComplexValueType ValType => LocalVar.ExplicitValueType ?? DMValueType.Anything;
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         if (LocalVar.IsParameter) {
@@ -90,6 +98,8 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar) : 
 
 // Identifier of field
 internal sealed class Field(Location location, DMVariable variable) : LValue(location, variable.Type) {
+    public override DMComplexValueType ValType => valType;
+
     public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
         proc.PushReferenceValue(DMReference.Src);
         proc.PushString(variable.Name);
@@ -116,11 +126,17 @@ internal sealed class Field(Location location, DMVariable variable) : LValue(loc
         constant = null;
         return false;
     }
+
+    public override string ToString() {
+        return variable.Name;
+    }
 }
 
 // Id of global field
 internal sealed class GlobalField(Location location, DreamPath? path, int id) : LValue(location, path) {
     private int Id { get; } = id;
+
+    public override DMComplexValueType ValType => valType;
 
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.CreateGlobal(Id);

@@ -50,6 +50,7 @@ internal class Dereference : LValue {
     public override DreamPath? Path { get; }
     public override DreamPath? NestedPath { get; }
     public override bool PathIsFuzzy => Path == null;
+    public override DMComplexValueType ValType { get; }
 
     private readonly Operation[] _operations;
 
@@ -64,6 +65,30 @@ internal class Dereference : LValue {
         }
 
         NestedPath = _operations[^1].Path;
+        ValType = DetermineValType();
+    }
+
+    private DMComplexValueType DetermineValType() {
+        var type = Expression.ValType;
+        var i = 0;
+        while (!type.IsAnything && i < _operations.Length) {
+            var operation = _operations[i++];
+
+            if (type.TypePath is null || DMObjectTree.GetDMObject(type.TypePath.Value, false) is not { } dmObject) {
+                // We're dereferencing something without a type-path, this could be anything
+                type = DMValueType.Anything;
+                break;
+            }
+
+            type = operation switch {
+                FieldOperation fieldOperation => dmObject.GetVariable(fieldOperation.Identifier)?.ValType ?? DMValueType.Anything,
+                IndexOperation => DMValueType.Anything, // Lists currently can't be typed, this could be anything
+                CallOperation callOperation => dmObject.GetProcReturnTypes(callOperation.Identifier) ?? DMValueType.Anything,
+                _ => throw new InvalidOperationException("Unimplemented dereference operation")
+            };
+        }
+
+        return type;
     }
 
     private void ShortCircuitHandler(DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
@@ -80,32 +105,27 @@ internal class Dereference : LValue {
     }
 
     private void EmitOperation(DMObject dmObject, DMProc proc, Operation operation, string endLabel, ShortCircuitMode shortCircuitMode) {
+        if (operation.Safe) {
+            ShortCircuitHandler(proc, endLabel, shortCircuitMode);
+        }
+
         switch (operation) {
             case FieldOperation fieldOperation:
-                if (fieldOperation.Safe) {
-                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                }
                 proc.DereferenceField(fieldOperation.Identifier);
                 break;
 
             case IndexOperation indexOperation:
-                if (indexOperation.Safe) {
-                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                }
                 indexOperation.Index.EmitPushValue(dmObject, proc);
                 proc.DereferenceIndex();
                 break;
 
             case CallOperation callOperation:
-                if (callOperation.Safe) {
-                    ShortCircuitHandler(proc, endLabel, shortCircuitMode);
-                }
-                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc);
+                var (argumentsType, argumentStackSize) = callOperation.Parameters.EmitArguments(dmObject, proc, null);
                 proc.DereferenceCall(callOperation.Identifier, argumentsType, argumentStackSize);
                 break;
 
-            default:
-                throw new InvalidOperationException("Unimplemented dereference operation");
+        default:
+            throw new InvalidOperationException("Unimplemented dereference operation");
         }
     }
 
@@ -259,7 +279,7 @@ internal class Dereference : LValue {
             if (variable != null) {
                 if (variable.IsConst)
                     return variable.Value.TryAsConstant(out constant);
-                if (variable.ValType.HasFlag(DMValueType.CompiletimeReadonly)) {
+                if (variable.ValType.IsCompileTimeReadOnly) {
                     variable.Value.TryAsConstant(out constant!);
                     return true; // MUST be true.
                 }

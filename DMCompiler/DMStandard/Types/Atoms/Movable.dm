@@ -17,9 +17,9 @@
 
 	proc/Bump(atom/Obstacle)
 
-	proc/Move(atom/NewLoc, Dir=0)
+	proc/Move(atom/NewLoc, Dir=0) as num
 		if (isnull(NewLoc) || loc == NewLoc)
-			return
+			return FALSE
 
 		if (Dir != 0)
 			dir = Dir

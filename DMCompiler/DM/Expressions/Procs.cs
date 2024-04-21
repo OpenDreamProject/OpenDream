@@ -28,6 +28,10 @@ internal sealed class Proc(Location location, string identifier) : DMExpression(
         var procId = dmObject.GetProcs(identifier)?[^1];
         return procId is null ? null : DMObjectTree.AllProcs[procId.Value];
     }
+
+    public DMComplexValueType GetReturnType(DMObject dmObject) {
+        return dmObject.GetReturnType(_identifier);
+    }
 }
 
 /// <remarks>
@@ -35,6 +39,12 @@ internal sealed class Proc(Location location, string identifier) : DMExpression(
 /// this is just a hopped-up string that we eventually deference to get the real global proc during compilation.
 /// </remarks>
 internal sealed class GlobalProc(Location location, string name) : DMExpression(location) {
+    public override DMComplexValueType ValType => GetProc().ReturnTypes;
+
+    public override string ToString() {
+        return $"{name}()";
+    }
+
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"{name}\" as value");
     }
@@ -58,14 +68,18 @@ internal sealed class GlobalProc(Location location, string name) : DMExpression(
 /// . <br/>
 /// This is an LValue _and_ a proc!
 /// </summary>
-internal sealed class ProcSelf(Location location) : LValue(location, null) {
+internal sealed class ProcSelf(Location location, DreamPath? path, DMProc proc) : LValue(location, path) {
+    public override DMComplexValueType ValType => proc.ReturnTypes;
+
     public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {
         return DMReference.Self;
     }
 }
 
 // ..
-internal sealed class ProcSuper(Location location) : DMExpression(location) {
+internal sealed class ProcSuper(Location location, DMObject _dmObject, DMProc _proc) : DMExpression(location) {
+    public override DMComplexValueType ValType => _dmObject.GetProcReturnTypes(_proc.Name) ?? DMValueType.Anything;
+
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         DMCompiler.Emit(WarningCode.InvalidReference, Location, $"Attempt to use proc \"..\" as value");
     }
@@ -84,9 +98,10 @@ internal sealed class ProcSuper(Location location) : DMExpression(location) {
 }
 
 // x(y, z, ...)
-internal sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments)
+internal sealed class ProcCall(Location location, DMExpression target, ArgumentList arguments, DMComplexValueType valType)
     : DMExpression(location) {
     public override bool PathIsFuzzy => Path == null;
+    public override DMComplexValueType ValType => valType.IsAnything ? target.ValType : valType;
 
     public (DMObject? ProcOwner, DMProc? Proc) GetTargetProc(DMObject dmObject) {
         return target switch {
@@ -94,6 +109,10 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
             GlobalProc procTarget => (null, procTarget.GetProc()),
             _ => (null, null)
         };
+    }
+
+    public override string ToString() {
+        return target.ToString()!;
     }
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
@@ -111,7 +130,7 @@ internal sealed class ProcCall(Location location, DMExpression target, ArgumentL
             argumentsType = DMCallArgumentsType.FromProcArguments;
             argumentStackSize = 0;
         } else {
-            (argumentsType, argumentStackSize) = arguments.EmitArguments(dmObject, proc);
+            (argumentsType, argumentStackSize) = arguments.EmitArguments(dmObject, proc, targetProc);
         }
 
         DMReference procRef = target.EmitReference(dmObject, proc, endLabel);

@@ -1,16 +1,18 @@
 using DMCompiler.Bytecode;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using System.Linq;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
+using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {
-        public class LocalVariable(string name, int id, bool isParameter, DreamPath? type, DMValueType? explicitValueType) {
+        public class LocalVariable(string name, int id, bool isParameter, DreamPath? type, DMComplexValueType? explicitValueType) {
             public readonly string Name = name;
             public readonly int Id = id;
             public readonly bool IsParameter = isParameter;
@@ -20,12 +22,12 @@ namespace DMCompiler.DM {
             /// The explicit <see cref="DMValueType"/> for this variable
             /// <code>var/parameter as mob</code>
             /// </summary>
-            public DMValueType? ExplicitValueType = explicitValueType;
+            public DMComplexValueType? ExplicitValueType = explicitValueType;
         }
 
-        public sealed class LocalConstVariable(string name, int id, DreamPath? type, Expressions.Constant value)
-                : LocalVariable(name, id, false, type, null) {
-            public readonly Expressions.Constant Value = value;
+        public sealed class LocalConstVariable(string name, int id, DreamPath? type, Constant value)
+                : LocalVariable(name, id, false, type, value.ValType) {
+            public readonly Constant Value = value;
         }
 
         public class CodeLabel {
@@ -72,6 +74,7 @@ namespace DMCompiler.DM {
         public string Name => _astDefinition?.Name ?? "<init>";
         public readonly int Id;
         public readonly Dictionary<string, int> GlobalVariables = new();
+        public IReadOnlyDictionary<string, LocalVariable> Parameters => _parameters;
 
         public VerbSrc? VerbSrc;
         public string? VerbName;
@@ -99,6 +102,10 @@ namespace DMCompiler.DM {
         private readonly List<SourceInfoJson> _sourceInfo = new();
         private string? _lastSourceFile;
 
+        public bool TypeChecked => !ReturnTypes.IsAnything;
+        public DMComplexValueType? RawReturnTypes => _astDefinition?.ReturnTypes;
+        public DMComplexValueType ReturnTypes => _dmObject.GetProcReturnTypes(Name) ?? DMValueType.Anything;
+
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(new LocalVariableJson { Offset = (int)Bytecode.Position, Add = name });
             return _localVariableIdCounter++;
@@ -119,17 +126,49 @@ namespace DMCompiler.DM {
             Location = astDefinition?.Location ?? Location.Unknown;
             _bytecodeWriter = new BinaryWriter(Bytecode);
             _scopes.Push(new DMProcScope());
+
+            if (_astDefinition is not null) {
+                foreach (DMASTDefinitionParameter parameter in _astDefinition!.Parameters) {
+                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                }
+            }
         }
 
         public void Compile() {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
 
             if (_astDefinition is not null) { // It's null for initialization procs
-                foreach (DMASTDefinitionParameter parameter in _astDefinition.Parameters) {
-                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
-                }
-
                 new DMProcBuilder(_dmObject, this).ProcessProcDefinition(_astDefinition);
+            }
+        }
+
+        public void ValidateReturnType(DMExpression expr) {
+            var type = expr.ValType;
+            var returnTypes = _dmObject.GetProcReturnTypes(Name)!.Value;
+            if ((returnTypes.Type & (DMValueType.Color | DMValueType.File | DMValueType.Message)) != 0) {
+                DMCompiler.Emit(WarningCode.UnsupportedTypeCheck, expr.Location, "color, message, and file return types are currently unsupported.");
+                return;
+            }
+
+            var splitter = _astDefinition?.IsOverride ?? false ? "/" : "/proc/";
+            // We couldn't determine the expression's return type for whatever reason
+            if (type.IsAnything) {
+                if (DMCompiler.Settings.SkipAnythingTypecheck)
+                    return;
+
+                switch (expr) {
+                    case ProcCall:
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Called proc does not have a return type set, expected {ReturnTypes}.");
+                        break;
+                    case Local:
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of non-constant expression, expected {ReturnTypes}. Consider making this variable constant or adding an explicit \"as {ReturnTypes}\"");
+                        break;
+                    default:
+                        DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}.{Name}(): Cannot determine return type of expression \"{expr}\", expected {ReturnTypes}. Consider reporting this as a bug on OpenDream's GitHub.");
+                        break;
+                }
+            } else if (!ReturnTypes.MatchesType(type)) { // We could determine the return types but they don't match
+                DMCompiler.Emit(WarningCode.InvalidReturnType, expr.Location, $"{_dmObject?.Path.ToString() ?? "Unknown"}{splitter}{Name}(): Invalid return type {type}, expected {ReturnTypes}");
             }
         }
 
@@ -177,7 +216,7 @@ namespace DMCompiler.DM {
 
                     procDefinition.Arguments.Add(new ProcArgumentJson {
                         Name = parameter.Name,
-                        Type = argumentType
+                        Type = argumentType.Type
                     });
                 }
             }
@@ -199,7 +238,7 @@ namespace DMCompiler.DM {
         }
 
         public DMVariable CreateGlobalVariable(DreamPath? type, string name, bool isConst, out int id) {
-            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst);
+            id = DMObjectTree.CreateGlobal(out DMVariable global, type, name, isConst, DMValueType.Anything);
 
             GlobalVariables[name] = id;
             return global;
@@ -213,12 +252,22 @@ namespace DMCompiler.DM {
             return null;
         }
 
-        public void AddParameter(string name, DMValueType? valueType, DreamPath? type) {
+        public void AddParameter(string name, DMComplexValueType? valueType, DreamPath? type) {
             if (_parameters.ContainsKey(name)) {
                 DMCompiler.Emit(WarningCode.DuplicateVariable, _astDefinition.Location, $"Duplicate argument \"{name}\"");
             } else {
                 _parameters.Add(name, new LocalVariable(name, _parameters.Count, true, type, valueType));
             }
+        }
+
+        public bool TryGetParameterAtIndex(int index, [NotNullWhen(true)] out LocalVariable? param) {
+            if (_astDefinition == null || index >= _astDefinition.Parameters.Length) {
+                param = null;
+                return false;
+            }
+
+            var name = _astDefinition.Parameters[index].Name;
+            return _parameters.TryGetValue(name, out param);
         }
 
         public void ResolveCodeLabelReferences() {
@@ -306,12 +355,12 @@ namespace DMCompiler.DM {
             _labels.Add(name, Bytecode.Position);
         }
 
-        public bool TryAddLocalVariable(string name, DreamPath? type) {
+        public bool TryAddLocalVariable(string name, DreamPath? type, DMComplexValueType valType) {
             if (_parameters.ContainsKey(name)) //Parameters and local vars cannot share a name
                 return false;
 
             int localVarId = AllocLocalVariable(name);
-            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, null));
+            return _scopes.Peek().LocalVariables.TryAdd(name, new LocalVariable(name, localVarId, false, type, valType));
         }
 
         public bool TryAddLocalConstVariable(string name, DreamPath? type, Expressions.Constant value) {

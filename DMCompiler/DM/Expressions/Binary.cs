@@ -1,12 +1,15 @@
 using System;
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions;
 
 internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
     protected DMExpression LHS { get; } = lhs;
     protected DMExpression RHS { get; } = rhs;
+
+    public override DMComplexValueType ValType => LHS.ValType;
 }
 
 #region Simple
@@ -548,6 +551,14 @@ internal sealed class Assignment(Location location, DMExpression lhs, DMExpressi
     protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
         RHS.EmitPushValue(dmObject, proc);
         proc.Assign(reference);
+
+        if (!LHS.ValType.MatchesType(RHS.ValType) && !LHS.ValType.IsUnimplemented) {
+            if (DMCompiler.Settings.SkipAnythingTypecheck && RHS.ValType.IsAnything)
+                return;
+
+            DMCompiler.Emit(WarningCode.InvalidVarType, Location,
+                $"Invalid var type {RHS.ValType}, expected {LHS.ValType}");
+        }
     }
 }
 

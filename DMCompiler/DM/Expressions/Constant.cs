@@ -19,6 +19,8 @@ internal abstract class Constant(Location location) : DMExpression(location) {
 
 // null
 internal sealed class Null(Location location) : Constant(location) {
+    public override DMComplexValueType ValType => DMValueType.Null;
+
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         proc.PushNull();
     }
@@ -34,6 +36,8 @@ internal sealed class Null(Location location) : Constant(location) {
 // 4.0, -4.0
 internal sealed class Number : Constant {
     public float Value { get; }
+
+    public override DMComplexValueType ValType => DMValueType.Num;
 
     public Number(Location location, int value) : base(location) {
         Value = value;
@@ -70,6 +74,8 @@ internal sealed class Number : Constant {
 // "abc"
 internal sealed class String(Location location, string value) : Constant(location) {
     public string Value { get; } = value;
+
+    public override DMComplexValueType ValType => DMValueType.Text;
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         proc.PushString(Value);
@@ -218,12 +224,14 @@ internal sealed class Resource : Constant {
 // no, this can't be called "Path" because of CS0542
 internal sealed class ConstantPath(Location location, DMObject dmObject, DreamPath value) : Constant(location) {
     public DreamPath Value { get; } = value;
-    public override DreamPath? Path => Value;
 
     /// <summary>
     /// The DMObject this expression resides in. Used for path searches.
     /// </summary>
     private readonly DMObject _dmObject = dmObject;
+
+    public override DreamPath? Path => Value;
+    public override DMComplexValueType ValType => Value;
 
     public enum PathType {
         TypeReference,

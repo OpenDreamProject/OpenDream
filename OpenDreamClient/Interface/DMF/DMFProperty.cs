@@ -1,3 +1,12 @@
+using System.Linq;
+using JetBrains.Annotations;
+using Robust.Shared.Serialization;
+using Robust.Shared.Serialization.Manager;
+using Robust.Shared.Serialization.Markdown;
+using Robust.Shared.Serialization.Markdown.Validation;
+using Robust.Shared.Serialization.Markdown.Value;
+using Robust.Shared.Serialization.TypeSerializers.Interfaces;
+
 public interface DMFProperty {
     public abstract string AsArg();
     public abstract string AsEscaped();
@@ -113,7 +122,15 @@ public struct DMFPropertyVec2 : DMFProperty {
     }
 
     public DMFPropertyVec2(string value) {
+        if(value.Equals("none",StringComparison.InvariantCultureIgnoreCase)){
+            X = 0;
+            Y = 0;
+        }
+
         string[] parts = value.Split(',');
+        if(parts.Count() != 2)
+            parts = value.Split('x');
+
         X = int.Parse(parts[0]);
         Y = int.Parse(parts[1]);
     }
@@ -121,6 +138,12 @@ public struct DMFPropertyVec2 : DMFProperty {
     public DMFPropertyVec2(Vector2 value) {
         X = (int)value.X;
         Y = (int)value.Y;
+    }
+
+
+    public DMFPropertyVec2(Vector2i value) {
+        X = value.X;
+        Y = value.Y;
     }
 
     public string AsArg() {
@@ -243,3 +266,204 @@ public struct DMFPropertyBool : DMFProperty {
         return Value ? "1" : "0";
     }
 }
+
+#region Serializers
+/// TLDR everything is a string passed to the constructor
+
+[TypeSerializer]
+public sealed class DMFPropertyStringSerializer : ITypeSerializer<DMFPropertyString, ValueDataNode>, ITypeCopyCreator<DMFPropertyString>
+{
+    public DMFPropertyString Read(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<DMFPropertyString>? instanceProvider = null)
+    {
+        return new(node.Value);
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        ISerializationContext? context = null)
+    {
+        try {
+            new DMFPropertyString(node.Value);
+            return new ValidatedValueNode(node);
+        } catch (Exception e) {
+            return new ErrorNode(node, e.Message);
+        }
+    }
+
+    public DataNode Write(ISerializationManager serializationManager, DMFPropertyString value,
+        IDependencyCollection dependencies, bool alwaysWrite = false,
+        ISerializationContext? context = null)
+    {
+        return new ValueDataNode(value.AsRaw());
+    }
+
+    [MustUseReturnValue]
+    public DMFPropertyString CreateCopy(ISerializationManager serializationManager, DMFPropertyString source,
+        IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null)
+    {
+        return new(source.AsRaw());
+    }
+}
+
+[TypeSerializer]
+public sealed class DMFPropertyNumSerializer : ITypeSerializer<DMFPropertyNum, ValueDataNode>, ITypeCopyCreator<DMFPropertyNum>
+{
+    public DMFPropertyNum Read(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<DMFPropertyNum>? instanceProvider = null)
+    {
+        return new(node.Value);
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        ISerializationContext? context = null)
+    {
+        try {
+            new DMFPropertyNum(node.Value);
+            return new ValidatedValueNode(node);
+        } catch (Exception e) {
+            return new ErrorNode(node, e.Message);
+        }
+    }
+
+    public DataNode Write(ISerializationManager serializationManager, DMFPropertyNum value,
+        IDependencyCollection dependencies, bool alwaysWrite = false,
+        ISerializationContext? context = null)
+    {
+        return new ValueDataNode(value.AsRaw());
+    }
+
+    [MustUseReturnValue]
+    public DMFPropertyNum CreateCopy(ISerializationManager serializationManager, DMFPropertyNum source,
+        IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null)
+    {
+        return new(source.AsRaw());
+    }
+}
+
+[TypeSerializer]
+public sealed class DMFPropertyVec2Serializer : ITypeSerializer<DMFPropertyVec2, ValueDataNode>, ITypeCopyCreator<DMFPropertyVec2>
+{
+    public DMFPropertyVec2 Read(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<DMFPropertyVec2>? instanceProvider = null)
+    {
+        return new(node.Value);
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        ISerializationContext? context = null)
+    {
+        try {
+            new DMFPropertyVec2(node.Value);
+            return new ValidatedValueNode(node);
+        } catch (Exception e) {
+            return new ErrorNode(node, e.Message);
+        }
+    }
+
+    public DataNode Write(ISerializationManager serializationManager, DMFPropertyVec2 value,
+        IDependencyCollection dependencies, bool alwaysWrite = false,
+        ISerializationContext? context = null)
+    {
+        return new ValueDataNode(value.AsRaw());
+    }
+
+    [MustUseReturnValue]
+    public DMFPropertyVec2 CreateCopy(ISerializationManager serializationManager, DMFPropertyVec2 source,
+        IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null)
+    {
+        return new(source.AsRaw());
+    }
+
+}
+
+[TypeSerializer]
+public sealed class DMFPropertyColorSerializer : ITypeSerializer<DMFPropertyColor, ValueDataNode>, ITypeCopyCreator<DMFPropertyColor>
+{
+    public DMFPropertyColor Read(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<DMFPropertyColor>? instanceProvider = null)
+    {
+        return new(node.Value);
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        ISerializationContext? context = null)
+    {
+        try {
+            new DMFPropertyColor(node.Value);
+            return new ValidatedValueNode(node);
+        } catch (Exception e) {
+            return new ErrorNode(node, e.Message);
+        }
+    }
+
+    public DataNode Write(ISerializationManager serializationManager, DMFPropertyColor value,
+        IDependencyCollection dependencies, bool alwaysWrite = false,
+        ISerializationContext? context = null)
+    {
+        return new ValueDataNode(value.AsRaw());
+    }
+
+    [MustUseReturnValue]
+    public DMFPropertyColor CreateCopy(ISerializationManager serializationManager, DMFPropertyColor source,
+        IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null)
+    {
+        return new(source.AsRaw());
+    }
+}
+
+[TypeSerializer]
+public sealed class DMFPropertyBoolSerializer : ITypeSerializer<DMFPropertyBool, ValueDataNode>, ITypeCopyCreator<DMFPropertyBool>
+{
+    public DMFPropertyBool Read(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        SerializationHookContext hookCtx,
+        ISerializationContext? context = null,
+        ISerializationManager.InstantiationDelegate<DMFPropertyBool>? instanceProvider = null)
+    {
+        return new(node.Value);
+    }
+
+    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node,
+        IDependencyCollection dependencies,
+        ISerializationContext? context = null)
+    {
+        try {
+            new DMFPropertyBool(node.Value);
+            return new ValidatedValueNode(node);
+        } catch (Exception e) {
+            return new ErrorNode(node, e.Message);
+        }
+    }
+
+    public DataNode Write(ISerializationManager serializationManager, DMFPropertyBool value,
+        IDependencyCollection dependencies, bool alwaysWrite = false,
+        ISerializationContext? context = null)
+    {
+        return new ValueDataNode(value.AsRaw());
+    }
+
+    [MustUseReturnValue]
+    public DMFPropertyBool CreateCopy(ISerializationManager serializationManager, DMFPropertyBool source,
+        IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null)
+    {
+        return new(source.AsRaw());
+    }
+}
+
+#endregion

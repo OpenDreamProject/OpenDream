@@ -1,4 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Serialization.Manager;
 
@@ -67,7 +68,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         MenuBar.Menus.Clear();
 
         foreach (MenuElement menuElement in MenuElements.Values) {
-            if (menuElement.Category != null) // We only want the root-level menus here
+            if (string.IsNullOrEmpty(menuElement.Category.Value)) // We only want the root-level menus here
                 continue;
 
             MenuBar.Menu menu = new() {
@@ -88,8 +89,8 @@ public sealed class InterfaceMenu : InterfaceElement {
         public readonly List<MenuElement> Children = new();
 
         private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
-        public string? Category => MenuElementDescriptor.Category;
-        public string Command => MenuElementDescriptor.Command;
+        public DMFPropertyString Category => MenuElementDescriptor.Category;
+        public DMFPropertyString Command => MenuElementDescriptor.Command;
         private readonly InterfaceMenu _menu;
 
         public MenuElement(MenuElementDescriptor data, InterfaceMenu menu) : base(data) {
@@ -97,7 +98,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         }
 
         public MenuBar.MenuEntry CreateMenuEntry() {
-            string text = ElementDescriptor.Name;
+            string text = ElementDescriptor.Name.AsRaw();
             if (text.StartsWith("&"))
                 text = text[1..]; //TODO: First character in name becomes a selection shortcut
 
@@ -115,8 +116,8 @@ public sealed class InterfaceMenu : InterfaceElement {
             if (String.IsNullOrEmpty(text))
                 return new MenuBar.MenuSeparator();
 
-            if(MenuElementDescriptor.CanCheck)
-                if(MenuElementDescriptor.IsChecked)
+            if(MenuElementDescriptor.CanCheck.Value)
+                if(MenuElementDescriptor.IsChecked.Value)
                     text =  text + " ☑";
 
             MenuBar.MenuButton menuButton = new() {
@@ -125,14 +126,14 @@ public sealed class InterfaceMenu : InterfaceElement {
 
 
             menuButton.OnPressed += () => {
-                    if(MenuElementDescriptor.CanCheck)
-                        if(!String.IsNullOrEmpty(MenuElementDescriptor.Group))
-                            _menu.SetGroupChecked(MenuElementDescriptor.Group, MenuElementDescriptor.Id);
+                    if(MenuElementDescriptor.CanCheck.Value)
+                        if(!String.IsNullOrEmpty(MenuElementDescriptor.Group.Value))
+                            _menu.SetGroupChecked(MenuElementDescriptor.Group.Value, MenuElementDescriptor.Id.AsRaw());
                         else
-                            MenuElementDescriptor.IsChecked = !MenuElementDescriptor.IsChecked;
+                            MenuElementDescriptor.IsChecked = new DMFPropertyBool(!MenuElementDescriptor.IsChecked.Value);
                         _menu.CreateMenu();
-                    if(!string.IsNullOrEmpty(MenuElementDescriptor.Command))
-                        _interfaceManager.RunCommand(Command);
+                    if(!string.IsNullOrEmpty(MenuElementDescriptor.Command.Value))
+                        _interfaceManager.RunCommand(Command.AsRaw());
                 };
             return menuButton;
         }
@@ -143,7 +144,7 @@ public sealed class InterfaceMenu : InterfaceElement {
                     value = Command;
                     return true;
                 case "category":
-                    value = Category ?? "";
+                    value = Category;
                     return true;
                 case "can-check":
                     value = MenuElementDescriptor.CanCheck;

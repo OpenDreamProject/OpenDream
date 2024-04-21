@@ -24,7 +24,7 @@ internal sealed class ControlInput : InterfaceControl {
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
         ControlDescriptorInput inputDescriptor = (ControlDescriptorInput)ElementDescriptor;
-        _textBox.Text = inputDescriptor.Text.Value;
+        _textBox.Text = inputDescriptor.Text.AsRaw();
     }
 
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {

@@ -192,7 +192,7 @@ public sealed partial class ControlDescriptorBar : ControlDescriptor {
     [DataField("angle2")]
     public DMFPropertyNum Angle2 = new DMFPropertyNum(180); //end angle
     [DataField("bar-color")]
-    public DMFPropertyColor? BarColor = null; //insanely, the default is null which causes the bar not to render regardless of value
+    public DMFPropertyColor BarColor = new DMFPropertyColor(Color.Transparent); //insanely, the default causes the bar not to render regardless of value
     [DataField("is-slider")]
     public DMFPropertyBool IsSlider = new DMFPropertyBool(false);
     [DataField("value")]

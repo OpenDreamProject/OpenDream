@@ -43,7 +43,7 @@ public abstract class InterfaceControl : InterfaceElement {
         _window?.UpdateAnchors();
 
         if (ControlDescriptor.BackgroundColor is { } bgColor) {
-            var styleBox = new StyleBoxFlat {BackgroundColor = bgColor};
+            var styleBox = new StyleBoxFlat {BackgroundColor = bgColor.Value};
 
             switch (UIElement) {
                 case PanelContainer panel:

@@ -19,10 +19,11 @@ internal sealed class BadExpression(Location location) : DMExpression(location) 
         proc.Throw();
     }
 }
-        public override DMComplexValueType ValType => DMValueType.Text;
 
 // "abc[d]"
 internal sealed class StringFormat(Location location, string value, DMExpression[] expressions) : DMExpression(location) {
+    public override DMComplexValueType ValType => DMValueType.Text;
+
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         foreach (DMExpression expression in expressions) {
             expression.EmitPushValue(dmObject, proc);
@@ -46,7 +47,7 @@ internal sealed class Arglist(Location location, DMExpression expr) : DMExpressi
 // new x (...)
 internal sealed class New(Location location, DMExpression expr, ArgumentList arguments) : DMExpression(location) {
     public override bool PathIsFuzzy => Path == null;
-    public override DMComplexValueType ValType => !_expr.ValType.IsAnything ? _expr.ValType : (Path?.GetAtomType() ?? DMValueType.Anything);
+    public override DMComplexValueType ValType => !expr.ValType.IsAnything ? expr.ValType : (Path?.GetAtomType() ?? DMValueType.Anything);
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         var argumentInfo = arguments.EmitArguments(dmObject, proc, null);
@@ -57,19 +58,9 @@ internal sealed class New(Location location, DMExpression expr, ArgumentList arg
 }
 
 // new /x/y/z (...)
-internal sealed class NewPath : DMExpression {
-        private readonly ConstantPath targetPath;
-        private readonly ArgumentList arguments;
-
-        public override DMComplexValueType ValType => targetPath.Value.GetAtomType();
-
-        public NewPath(Location location, ConstantPath targetPath, ArgumentList arguments)
-            : base(location) {
-            this.targetPath = targetPath;
-            this.arguments = arguments;
-        }
-
+internal sealed class NewPath(Location location, ConstantPath targetPath, ArgumentList arguments) : DMExpression(location) {
     public override DreamPath? Path => targetPath.Value;
+    public override DMComplexValueType ValType => targetPath.Value.GetAtomType();
 
     public override void EmitPushValue(DMObject dmObject, DMProc proc) {
         if (!targetPath.TryResolvePath(out var pathInfo)) {
@@ -84,9 +75,10 @@ internal sealed class NewPath : DMExpression {
             case ConstantPath.PathType.TypeReference:
                 var newProc = DMObjectTree.GetNewProc(pathInfo.Value.Id);
 
-                    (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);proc.PushType(pathInfo.Value.Id);
+                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);proc.PushType(pathInfo.Value.Id);
                 break;
-            case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing(argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);
+            case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
+                (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);
                 proc.PushProc(pathInfo.Value.Id);
                 break;
             case ConstantPath.PathType.ProcStub:
@@ -94,11 +86,11 @@ internal sealed class NewPath : DMExpression {
                 DMCompiler.Emit(WarningCode.BadExpression, Location, "Cannot use \"new\" with a proc stub");
                 proc.PushNull();
                 return;
-        default:
-                    DMCompiler.Emit(WarningCode.BadExpression, Location, "Invalid path info type");
-                    proc.PushNull();
-                    return;
-            }
+            default:
+                DMCompiler.Emit(WarningCode.BadExpression, Location, "Invalid path info type");
+                proc.PushNull();
+                return;
+        }
 
         proc.CreateObject(argumentsType, stackSize);
     }

@@ -64,7 +64,7 @@ internal sealed class Args(Location location) : LValue(location, DreamPath.List)
 
 // Identifier of local variable
 internal sealed class Local(Location location, DMProc.LocalVariable localVar) : LValue(location, localVar.Type) {
-    public DMProc.LocalVariable LocalVar { get; }
+    public DMProc.LocalVariable LocalVar { get; } = localVar;
 
     // TODO: non-const local var static typing
     public override DMComplexValueType ValType => LocalVar.ExplicitValueType ?? DMValueType.Anything;
@@ -97,7 +97,7 @@ internal sealed class Local(Location location, DMProc.LocalVariable localVar) : 
 }
 
 // Identifier of field
-internal sealed class Field(Location location, DMVariable variable) : LValue(location, variable.Type) {
+internal sealed class Field(Location location, DMVariable variable, DMComplexValueType valType) : LValue(location, variable.Type) {
     public override DMComplexValueType ValType => valType;
 
     public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
@@ -133,7 +133,7 @@ internal sealed class Field(Location location, DMVariable variable) : LValue(loc
 }
 
 // Id of global field
-internal sealed class GlobalField(Location location, DreamPath? path, int id) : LValue(location, path) {
+internal sealed class GlobalField(Location location, DreamPath? path, int id,  DMComplexValueType valType) : LValue(location, path) {
     private int Id { get; } = id;
 
     public override DMComplexValueType ValType => valType;

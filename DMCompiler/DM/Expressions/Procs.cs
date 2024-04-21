@@ -30,7 +30,7 @@ internal sealed class Proc(Location location, string identifier) : DMExpression(
     }
 
     public DMComplexValueType GetReturnType(DMObject dmObject) {
-        return dmObject.GetReturnType(_identifier);
+        return dmObject.GetReturnType(identifier);
     }
 }
 

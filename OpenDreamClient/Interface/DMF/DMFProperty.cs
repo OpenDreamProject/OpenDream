@@ -153,38 +153,53 @@ public struct DMFPropertyVec2 : DMFProperty {
 }
 
 public struct DMFPropertyColor : DMFProperty {
-    public string? Value;
+    public Color Value;
 
-    public DMFPropertyColor(string? value) {
+    public DMFPropertyColor(Color value) {
         Value = value;
     }
 
+    public DMFPropertyColor(string stringValue) {
+        if (stringValue.Equals("none", StringComparison.OrdinalIgnoreCase)) {
+            Value = Color.Transparent;
+        } else {
+            var deserializedColor = Color.TryFromName(stringValue, out var color)
+                    ? color :
+                    Color.TryFromHex(stringValue);
+
+            if (deserializedColor is null)
+                throw new Exception($"Value {stringValue} was not a valid DMF color value!");
+            else
+                Value = deserializedColor.Value;
+        }
+    }
+
     public string AsArg() {
-        return Value != null ? Value.ToString() : "";
+        return Value.ToString();
     }
 
     public string AsEscaped() {
-        return Value != null ? Value.ToString() : "";
+        return Value.ToString();
     }
 
     public string AsString() {
-        return Value != null ? Value.ToString() : "";
+        return Value.ToString();
     }
 
     public string AsParams() {
-        return Value != null ? Value.ToString() : "";
+        return Value.ToString();
     }
 
     public string AsJSON() {
-        return Value != null ? Value.ToString() : "";
+        return Value.ToString();
     }
 
     public string AsJSONDM() {
-        return Value != null ? Value.ToString() : "";
+        return Value.ToString();
     }
 
     public string AsRaw() {
-        return Value != null ? Value.ToString() : "";
+        return Value.ToString();
     }
 
 }

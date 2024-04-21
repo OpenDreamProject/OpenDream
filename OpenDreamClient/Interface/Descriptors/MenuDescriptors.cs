@@ -9,8 +9,8 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
     public IReadOnlyList<MenuElementDescriptor> Elements => _elements;
 
     public MenuDescriptor(string id) {
-        Type = "MENU";
-        Id = id;
+        Type = new DMFPropertyString("MENU");
+        Id = new DMFPropertyString(id);
     }
 
     [UsedImplicitly]
@@ -28,7 +28,7 @@ public sealed partial class MenuDescriptor : ElementDescriptor {
     public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._id = id;
+        copy._id = new DMFPropertyString(id);
         return copy;
     }
 }

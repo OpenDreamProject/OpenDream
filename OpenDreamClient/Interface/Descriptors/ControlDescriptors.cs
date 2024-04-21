@@ -18,7 +18,7 @@ public partial class ControlDescriptor : ElementDescriptor {
     public DMFPropertyVec2? Anchor1;
     [DataField("anchor2")]
     public DMFPropertyVec2? Anchor2;
-    [DataField("background-color", customTypeSerializer: typeof(DMFColorSerializer))]
+    [DataField("background-color")]
     public DMFPropertyColor BackgroundColor;
     [DataField("is-visible")]
     public DMFPropertyBool IsVisible = new DMFPropertyBool(true);
@@ -202,29 +202,4 @@ public sealed partial class ControlDescriptorBar : ControlDescriptor {
 
 }
 
-public sealed class DMFColorSerializer : ITypeReader<Color, ValueDataNode> {
-    public Color Read(ISerializationManager serializationManager,
-        ValueDataNode node,
-        IDependencyCollection dependencies,
-        SerializationHookContext hookCtx,
-        ISerializationContext? context = null,
-        ISerializationManager.InstantiationDelegate<Color>? instanceProvider = null) {
-
-        if(node.Value.Equals("none", StringComparison.OrdinalIgnoreCase))
-            return Color.Transparent;
-
-        var deserializedColor = Color.TryFromName(node.Value, out var color)
-                ? color :
-                Color.TryFromHex(node.Value);
-
-        if (deserializedColor is null)
-            throw new Exception($"Value {node.Value} was not a valid DMF color value!");
-        else
-            return deserializedColor.Value;
-    }
-
-    public ValidationNode Validate(ISerializationManager serializationManager, ValueDataNode node, IDependencyCollection dependencies, ISerializationContext? context = null) {
-        throw new NotImplementedException();
-    }
-}
 

@@ -11,15 +11,15 @@ namespace OpenDreamClient.Interface.Descriptors;
 [Virtual]
 public partial class ControlDescriptor : ElementDescriptor {
     [DataField("pos")]
-    public DMFPropertyVec2 Pos;
+    public DMFPropertyVec2 Pos = new DMFPropertyVec2(0, 0);
     [DataField("size")]
-    public DMFPropertyVec2 Size;
+    public DMFPropertyVec2 Size = new DMFPropertyVec2(0, 0);
     [DataField("anchor1")]
     public DMFPropertyVec2? Anchor1;
     [DataField("anchor2")]
     public DMFPropertyVec2? Anchor2;
     [DataField("background-color")]
-    public DMFPropertyColor BackgroundColor;
+    public DMFPropertyColor BackgroundColor = new DMFPropertyColor(Color.Transparent);
     [DataField("is-visible")]
     public DMFPropertyBool IsVisible = new DMFPropertyBool(true);
     [DataField("is-default")]

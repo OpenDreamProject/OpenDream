@@ -30,6 +30,8 @@ internal sealed partial class VerbMenuPopup : Popup {
             foreach (var (verbId, verbSrc, verbInfo) in sorted) {
                 if (verbInfo.IsHidden(false, seeInvisible))
                     continue;
+                if(!verbInfo.ShowInPopupAttribute)
+                    continue;
 
                 AddVerb(verbId, verbSrc, verbInfo);
             }

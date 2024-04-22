@@ -1,0 +1,7 @@
+/proc/RunTest()
+	ASSERT(10 % 5 == 0)
+	ASSERT(20 % 60 == 20)
+	ASSERT(30.8 % 30 == 0)
+	ASSERT(30.1 % 30 == 0)
+	ASSERT(5 % 2.5 == 1)
+	ASSERT(60 % 62.5 == 60)

@@ -2612,9 +2612,9 @@ namespace OpenDreamRuntime.Procs {
         }
 
         private static DreamValue ModulusValues(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
-                if (second.TryGetValueAsFloat(out var secondFloat)) {
-                    return new DreamValue(firstFloat % secondFloat);
+            if (first.TryGetValueAsInteger(out var firstInt) || first.IsNull) {
+                if (second.TryGetValueAsInteger(out var secondInt)) {
+                    return new DreamValue(firstInt % secondInt);
                 }
             }
 

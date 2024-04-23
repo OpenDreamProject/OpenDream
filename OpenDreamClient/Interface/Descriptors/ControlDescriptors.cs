@@ -18,31 +18,81 @@ public partial class ControlDescriptor : ElementDescriptor {
     public DMFPropertyVec2? Anchor1;
     [DataField("anchor2")]
     public DMFPropertyVec2? Anchor2;
-    [DataField("background-color")]
-    public DMFPropertyColor BackgroundColor = new DMFPropertyColor(Color.Transparent);
+
     [DataField("is-visible")]
     public DMFPropertyBool IsVisible = new DMFPropertyBool(true);
+    [DataField("is-transparent")]
+    public DMFPropertyBool IsTransparent = new DMFPropertyBool(false);
+    [DataField("border")]
+    public DMFPropertyString Border =  new DMFPropertyString("none");
+    [DataField("flash")]
+    public DMFPropertyNum Flash = new DMFPropertyNum(0);
+    [DataField("saved-params")]
+    public DMFPropertyString SavedParams; //default varies
+    [DataField("text-color")]
+    public DMFPropertyColor TextColor = new DMFPropertyColor(Color.Black);
+    [DataField("background-color")]
+    public DMFPropertyColor BackgroundColor = new DMFPropertyColor(Color.White);
     [DataField("is-default")]
     public DMFPropertyBool IsDefault = new DMFPropertyBool(false);
     [DataField("is-disabled")]
     public DMFPropertyBool IsDisabled = new DMFPropertyBool(false);
-    [DataField("saved-params")]
-    public DMFPropertyString SavedParams;
+    [DataField("focus")]
+    public DMFPropertyBool Focus = new DMFPropertyBool(false);
+    [DataField("drop-zone")]
+    public DMFPropertyBool DropZone; //default varies
+    [DataField("right-click")]
+    public DMFPropertyBool RightClick = new DMFPropertyBool(false);
+    [DataField("font-family")]
+    public DMFPropertyString FontFamily = new DMFPropertyString("");
+    [DataField("font-size")]
+    public DMFPropertyNum FontSize = new DMFPropertyNum(0);
+    [DataField("font-style")]
+    public DMFPropertyString FontStyle = new DMFPropertyString("");
+    [DataField("on-size")]
+    public DMFPropertyString OnSize = new DMFPropertyString("");
+
 }
 
 public sealed partial class WindowDescriptor : ControlDescriptor {
+    [DataField("can-minimize")]
+    public DMFPropertyBool CanMinimize = new DMFPropertyBool(true);
+    [DataField("can-resize")]
+    public DMFPropertyBool CanResize = new DMFPropertyBool(true);
+    [DataField("is-minimized")]
+    public DMFPropertyBool IsMinimized = new DMFPropertyBool(false);
+    [DataField("is-maximized")]
+    public DMFPropertyBool IsMaximized = new DMFPropertyBool(false);
+    [DataField("alpha")]
+    public DMFPropertyNum Alpha = new DMFPropertyNum(255);
+    [DataField("statusbar")]
+    public DMFPropertyBool StatusBar = new DMFPropertyBool(false);
+    [DataField("transparent-color?")]
+    public DMFPropertyColor? TransparentColor = null;
+    [DataField("can-close")]
+    public DMFPropertyBool CanClose = new DMFPropertyBool(true);
+    [DataField("title")]
+    public DMFPropertyString Title = new DMFPropertyString("");
+    [DataField("titlebar")]
+    public DMFPropertyBool TitleBar = new DMFPropertyBool(true);
+    [DataField("icon")]
+    public DMFPropertyString Icon = new DMFPropertyString("");
+    [DataField("image")]
+    public DMFPropertyString Image = new DMFPropertyString("");
+    [DataField("image-mode")]
+    public DMFPropertyString ImageMode = new DMFPropertyString("stretch");
+    [DataField("keep-aspect")]
+    public DMFPropertyBool KeepAspect = new DMFPropertyBool(false);
+    [DataField("macro")]
+    public DMFPropertyString Macro = new DMFPropertyString("");
+    [DataField("menu")]
+    public DMFPropertyString Menu = new DMFPropertyString("");
+    [DataField("on-close")]
+    public DMFPropertyString OnClose = new DMFPropertyString("");
+    [DataField("can-scroll")]
+    public DMFPropertyString CanScroll = new DMFPropertyString("none");
     [DataField("is-pane")]
     public DMFPropertyBool IsPane = new DMFPropertyBool(false);
-    [DataField("icon")]
-    public DMFPropertyString Icon;
-    [DataField("menu")]
-    public DMFPropertyString Menu;
-    [DataField("title")]
-    public DMFPropertyString Title;
-    [DataField("macro")]
-    public DMFPropertyString Macro { get; private set; }
-    [DataField("on-close")]
-    public DMFPropertyString OnClose { get; private set; }
 
     public readonly List<ControlDescriptor> ControlDescriptors;
 

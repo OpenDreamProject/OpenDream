@@ -222,7 +222,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             }
 
             var cacheFile = _dreamResource.CreateCacheFile(htmlFileName + ".html", pBrowse.HtmlSource);
-            outputBrowser.SetFileSource(cacheFile, true);
+            outputBrowser.SetFileSource(cacheFile);
 
             popup?.Open();
         }

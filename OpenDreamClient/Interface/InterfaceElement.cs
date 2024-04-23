@@ -1,5 +1,4 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using FastAccessors;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown;
@@ -38,6 +37,7 @@ public class InterfaceElement {
 
     /// <summary>
     /// Attempt to get a DMF property
+    /// You only need to create an override for this if the property can't be straight read from the ElementDescriptor
     /// </summary>
     public virtual bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         MappingDataNode original = (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);

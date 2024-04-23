@@ -138,31 +138,6 @@ public sealed class InterfaceMenu : InterfaceElement {
             return menuButton;
         }
 
-        public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
-            switch (property) {
-                case "command":
-                    value = Command;
-                    return true;
-                case "category":
-                    value = Category;
-                    return true;
-                case "can-check":
-                    value = MenuElementDescriptor.CanCheck;
-                    return true;
-                case "is-checked":
-                    value = MenuElementDescriptor.IsChecked;
-                    return true;
-                case "group":
-                    value = MenuElementDescriptor.Group;
-                    return true;
-                case "index":
-                    value = MenuElementDescriptor.Index;
-                    return true;
-                default:
-                    return base.TryGetProperty(property, out value);
-            }
-        }
-
         public override void AddChild(ElementDescriptor descriptor) {
             // Set the child's category to this element
             // TODO: The "parent" and "category" attributes seem to be treated differently in BYOND; not the same thing.

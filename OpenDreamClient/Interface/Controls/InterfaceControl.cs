@@ -65,9 +65,6 @@ public abstract class InterfaceControl : InterfaceElement {
             case "size":
                 value = new DMFPropertyVec2(UIElement.Size);
                 return true;
-            case "is-disabled":
-                value = ControlDescriptor.IsDisabled;
-                return true;
             case "pos":
                 value = new DMFPropertyVec2(UIElement.Position);
                 return true;

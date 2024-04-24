@@ -175,18 +175,50 @@ public sealed partial class ControlDescriptorChild : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorInput : ControlDescriptor {
+    [DataField("multi-line")]
+    public DMFPropertyBool MultiLine = new DMFPropertyBool(false);
+    [DataField("is-password")]
+    public DMFPropertyBool IsPassword = new DMFPropertyBool(false);
+    [DataField("no-command")]
+    public DMFPropertyBool NoCommand = new DMFPropertyBool(false);
     [DataField("text")]
-    public DMFPropertyString Text;
+    public DMFPropertyString Text = new DMFPropertyString("");
+    [DataField("command")]
+    public DMFPropertyString Command = new DMFPropertyString("");
 }
 
 public sealed partial class ControlDescriptorButton : ControlDescriptor {
+    [DataField("is-flat")]
+    public DMFPropertyBool IsFlat = new DMFPropertyBool(false);
+    [DataField("is-checked")]
+    public DMFPropertyBool IsChecked = new DMFPropertyBool(false);
+    [DataField("group")]
+    public DMFPropertyString Group = new DMFPropertyString("");
+    [DataField("button-type")]
+    public DMFPropertyString ButtonType = new DMFPropertyString("pushbutton");
     [DataField("text")]
-    public DMFPropertyString Text;
+    public DMFPropertyString Text = new DMFPropertyString("");
+    [DataField("image")]
+    public DMFPropertyString Image = new DMFPropertyString("");
     [DataField("command")]
-    public DMFPropertyString Command;
+    public DMFPropertyString Command = new DMFPropertyString("");
 }
 
 public sealed partial class ControlDescriptorOutput : ControlDescriptor {
+    [DataField("legacy-size")]
+    public DMFPropertyBool LegacySize = new DMFPropertyBool(false);
+    [DataField("style")]
+    public DMFPropertyString Style = new DMFPropertyString("");
+    [DataField("max-lines")]
+    public DMFPropertyNum MaxLines = new DMFPropertyNum(1000);
+    [DataField("link-color")]
+    public DMFPropertyColor LinkColor = new DMFPropertyColor(Color.Blue);
+    [DataField("visited-color")]
+    public DMFPropertyColor VisitedColor = new DMFPropertyColor(Color.Purple);
+    [DataField("image")]
+    public DMFPropertyString Image = new DMFPropertyString("");
+    [DataField("enable-http-images")]
+    public DMFPropertyBool EnableHTTPImages = new DMFPropertyBool(false);
 }
 
 public sealed partial class ControlDescriptorInfo : ControlDescriptor {
@@ -218,7 +250,17 @@ public sealed partial class ControlDescriptorBrowser : ControlDescriptor {
 
 public sealed partial class ControlDescriptorLabel : ControlDescriptor {
     [DataField("text")]
-    public DMFPropertyString Text;
+    public DMFPropertyString Text = new DMFPropertyString("");
+    [DataField("align")]
+    public DMFPropertyString Align = new DMFPropertyString("center");
+    [DataField("text-wrap")]
+    public DMFPropertyBool TextWrap = new DMFPropertyBool(false);
+    [DataField("image")]
+    public DMFPropertyString Image = new DMFPropertyString("");
+    [DataField("image-mode")]
+    public DMFPropertyString ImageMode = new DMFPropertyString("stretch");
+    [DataField("keep-aspect")]
+    public DMFPropertyBool KeepAspect = new DMFPropertyBool(false);
 }
 
 public sealed partial class ControlDescriptorGrid : ControlDescriptor {

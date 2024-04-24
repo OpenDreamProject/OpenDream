@@ -164,14 +164,20 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorChild : ControlDescriptor {
-    [DataField("left")]
-    public DMFPropertyString Left;
-    [DataField("right")]
-    public DMFPropertyString Right;
+    [DataField("lock")]
+    public DMFPropertyString Lock = new DMFPropertyString("none");
     [DataField("is-vert")]
-    public DMFPropertyBool IsVert;
+    public DMFPropertyBool IsVert = new DMFPropertyBool(false);
     [DataField("splitter")]
     public DMFPropertyNum Splitter = new DMFPropertyNum(50f);
+    [DataField("show-splitter")]
+    public DMFPropertyBool ShowSplitter = new DMFPropertyBool(true);
+    [DataField("left")]
+    public DMFPropertyString Left = new DMFPropertyString("");
+    [DataField("right")]
+    public DMFPropertyString Right = new DMFPropertyString("");
+
+
 }
 
 public sealed partial class ControlDescriptorInput : ControlDescriptor {
@@ -222,30 +228,68 @@ public sealed partial class ControlDescriptorOutput : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorInfo : ControlDescriptor {
-    [DataField("on-show")]
-    public DMFPropertyString OnShowCommand;
-    [DataField("on-hide")]
-    public DMFPropertyString OnHideCommand;
+    [DataField("multi-line")]
+    public DMFPropertyBool MultiLine = new DMFPropertyBool(true);
+    [DataField("highlight-color")]
+    public DMFPropertyColor HighlightColor = new DMFPropertyColor(Color.Green);
+    [DataField("tab-text-color")]
+    public DMFPropertyColor TabTextColor = new DMFPropertyColor(Color.Transparent);
+    [DataField("tab-background-color")]
+    public DMFPropertyColor TabBackgroundColor = new DMFPropertyColor(Color.Transparent);
+    [DataField("prefix-color")]
+    public DMFPropertyColor PrefixColor = new DMFPropertyColor(Color.Transparent);
+    [DataField("suffix-color")]
+    public DMFPropertyColor SuffixColor = new DMFPropertyColor(Color.Transparent);
     [DataField("allow-html")]
     public DMFPropertyBool AllowHtml = new DMFPropertyBool(true); // Supposedly false by default, but it isn't if you're not using BYOND's default skin
+    [DataField("tab-font-family")]
+    public DMFPropertyString TabFontFamily = new DMFPropertyString("");
+    [DataField("tab-font-size")]
+    public DMFPropertyNum TabFontSize = new DMFPropertyNum(0);
+    [DataField("tab-font-style")]
+    public DMFPropertyString TabFontStyle = new DMFPropertyString("");
+    [DataField("on-show")]
+    public DMFPropertyString OnShowCommand = new DMFPropertyString("");
+    [DataField("on-hide")]
+    public DMFPropertyString OnHideCommand = new DMFPropertyString("");
+
 }
 
 public sealed partial class ControlDescriptorMap : ControlDescriptor {
-    [DataField("on-show")]
-    public DMFPropertyString OnShowCommand;
-    [DataField("on-hide")]
-    public DMFPropertyString OnHideCommand;
+    [DataField("view-size")]
+    public DMFPropertyNum ViewSize = new DMFPropertyNum(0);
+    [DataField("style")]
+    public DMFPropertyString Style = new DMFPropertyString("");
+    [DataField("text-mode")]
+    public DMFPropertyBool TextMode = new DMFPropertyBool(false);
+    [DataField("icon-size")]
+    public DMFPropertyNum IconSize = new DMFPropertyNum(0);
+    [DataField("letterbox")]
+    public DMFPropertyBool Letterbox = new DMFPropertyBool(true);
+    [DataField("zoom")]
+    public DMFPropertyNum Zoom = new DMFPropertyNum(0);
     [DataField("zoom-mode")]
     public DMFPropertyString ZoomMode = new DMFPropertyString("normal");
-    [DataField("icon-size")]
-    public DMFPropertyNum IconSize;
+    [DataField("on-show")]
+    public DMFPropertyString OnShowCommand = new DMFPropertyString("");
+    [DataField("on-hide")]
+    public DMFPropertyString OnHideCommand = new DMFPropertyString("");
+
 }
 
 public sealed partial class ControlDescriptorBrowser : ControlDescriptor {
+    [DataField("show-history")]
+    public DMFPropertyBool ShowHistory = new DMFPropertyBool(false);
+    [DataField("show-url")]
+    public DMFPropertyBool ShowURL = new DMFPropertyBool(false);
+    [DataField("use-title")]
+    public DMFPropertyBool UseTitle = new DMFPropertyBool(false);
+    [DataField("auto-format")]
+    public DMFPropertyBool AutoFormat = new DMFPropertyBool(true);
     [DataField("on-show")]
-    public DMFPropertyString OnShowCommand;
+    public DMFPropertyString OnShowCommand = new DMFPropertyString("");
     [DataField("on-hide")]
-    public DMFPropertyString OnHideCommand;
+    public DMFPropertyString OnHideCommand = new DMFPropertyString("");
 }
 
 public sealed partial class ControlDescriptorLabel : ControlDescriptor {
@@ -264,13 +308,44 @@ public sealed partial class ControlDescriptorLabel : ControlDescriptor {
 }
 
 public sealed partial class ControlDescriptorGrid : ControlDescriptor {
+    [DataField("cells")]
+    public DMFPropertyVec2 Cells = new DMFPropertyVec2(0,0);
+    [DataField("cell-span")]
+    public DMFPropertyVec2 CellSpan = new DMFPropertyVec2(1,1);
+    [DataField("is-list")]
+    public DMFPropertyBool IsList = new DMFPropertyBool(false);
+    [DataField("show-lines")]
+    public DMFPropertyString ShowLines = new DMFPropertyString("both");
+    [DataField("style")]
+    public DMFPropertyString Style = new DMFPropertyString("");
+    [DataField("highlight-color")]
+    public DMFPropertyColor HighlightColor = new DMFPropertyColor(Color.Green);
+    [DataField("line-color")]
+    public DMFPropertyColor LineColor = new DMFPropertyColor("#c0c0c0");
+    [DataField("link-color")]
+    public DMFPropertyColor LinkColor = new DMFPropertyColor(Color.Blue);
+    [DataField("visited-color")]
+    public DMFPropertyColor VisitedCOlor = new DMFPropertyColor(Color.Purple);
+    [DataField("current-cell")]
+    public DMFPropertyVec2 CurrentCell = new DMFPropertyVec2(0,0);
+    [DataField("show-names")]
+    public DMFPropertyBool ShowNames = new DMFPropertyBool(true);
+    [DataField("small-icons")]
+    public DMFPropertyBool SmallIcons = new DMFPropertyBool(false);
+    [DataField("enable-http-images")]
+    public DMFPropertyBool EnableHTTPImages = new DMFPropertyBool(false);
 }
 
 public sealed partial class ControlDescriptorTab : ControlDescriptor {
-    [DataField("tabs")]
-    public DMFPropertyString Tabs;
+    [DataField("multi-line")]
+    public DMFPropertyBool MultiLine = new DMFPropertyBool(true);
     [DataField("current-tab")]
-    public DMFPropertyString CurrentTab;
+    public DMFPropertyString CurrentTab = new DMFPropertyString("");
+    [DataField("on-tab")]
+    public DMFPropertyString OnTab = new DMFPropertyString("");
+    [DataField("tabs")]
+    public DMFPropertyString Tabs = new DMFPropertyString("");
+
 }
 
 
@@ -290,7 +365,7 @@ public sealed partial class ControlDescriptorBar : ControlDescriptor {
     [DataField("value")]
     public DMFPropertyNum Value = new DMFPropertyNum(0f); //position of the progress bar
     [DataField("on-change")]
-    public DMFPropertyString OnChange = new DMFPropertyString(null);
+    public DMFPropertyString OnChange = new DMFPropertyString("");
 
 }
 

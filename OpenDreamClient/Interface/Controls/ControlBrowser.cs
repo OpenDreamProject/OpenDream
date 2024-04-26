@@ -72,12 +72,13 @@ internal sealed class ControlBrowser : InterfaceControl {
         for (var i = 0; i < parts.Length; i++) {
             parts[i] = "\""+HttpUtility.JavaScriptStringEncode(HttpUtility.UrlDecode(parts[i]))+"\""; //wrap in quotes and encode for JS
         }
+
         // Insert the values directly into JS and execute it (what could go wrong??)
         _webView.ExecuteJavaScript($"{jsFunction}({string.Join(",", parts)})");
     }
 
-    public void SetFileSource(ResPath filepath, bool userData) {
-        _webView.Url = (userData ? "usr://127.0.0.1/" : "res://127.0.0.1/") + filepath; // hostname must be the localhost IP for TGUI to work properly
+    public void SetFileSource(ResPath filepath) {
+        _webView.Url = "http://127.0.0.1/" + filepath; // hostname must be the localhost IP for TGUI to work properly
     }
 
     private void BeforeBrowseHandler(IBeforeBrowseContext context) {
@@ -108,7 +109,7 @@ internal sealed class ControlBrowser : InterfaceControl {
     private void RequestHandler(IRequestHandlerContext context) {
         Uri newUri = new Uri(context.Url);
 
-        if (newUri.Scheme == "usr") {
+        if (newUri is { Scheme: "http", Host: "127.0.0.1" }) {
             Stream stream;
             HttpStatusCode status;
             var path = new ResPath(newUri.AbsolutePath);
@@ -119,7 +120,7 @@ internal sealed class ControlBrowser : InterfaceControl {
                 stream = Stream.Null;
                 status = HttpStatusCode.NotFound;
             } catch (Exception e) {
-                _sawmill.Error($"Exception while loading file from usr://:\n{e}");
+                _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
                 stream = Stream.Null;
                 status = HttpStatusCode.InternalServerError;
             }

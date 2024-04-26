@@ -286,8 +286,6 @@ namespace DMCompiler.DM.Builders {
                         proc.Attributes &= ~ProcAttributes.HidePopupMenu;
                     else
                         proc.Attributes |= ProcAttributes.HidePopupMenu;
-
-                    DMCompiler.UnimplementedWarning(statementSet.Location, "set popup_menu is not implemented");
                     break;
                 case "instant":
                     if (constant.IsTruthy())

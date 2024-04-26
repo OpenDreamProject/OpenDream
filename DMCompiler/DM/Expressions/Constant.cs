@@ -368,7 +368,8 @@ namespace DMCompiler.DM.Expressions {
 
         public Resource(Location location, string filePath) : base(location) {
             // Treat backslashes as forward slashes on Linux
-            filePath = filePath.Replace('\\', '/');
+            // Also remove "." and ".." from the directory path
+            filePath = System.IO.Path.GetRelativePath(".", filePath.Replace('\\', '/'));
 
             var outputDir = System.IO.Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
             if (string.IsNullOrEmpty(outputDir))

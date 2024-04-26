@@ -37,6 +37,12 @@ public class VerbSystem : EntitySystem {
         public bool HiddenAttribute;
 
         /// <summary>
+        /// If this verb should be shown in the popup menu. Defaults to true.
+        /// <code>set popup_menu = TRUE</code>
+        /// </summary>
+        public bool ShowInPopupAttribute;
+
+        /// <summary>
         /// Where the verb's src must be for the client to be able to execute it.
         /// <code>set src = usr</code>
         /// </summary>

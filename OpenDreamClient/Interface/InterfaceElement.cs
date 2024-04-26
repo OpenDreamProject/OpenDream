@@ -1,8 +1,9 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using OpenDreamClient.Interface.Descriptors;
 using Robust.Shared.Serialization.Manager;
-using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Mapping;
+using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Interface;
 
@@ -40,15 +41,15 @@ public class InterfaceElement {
     /// You only need to create an override for this if the property can't be straight read from the ElementDescriptor
     /// </summary>
     public virtual bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
-        MappingDataNode original = (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
-        original.TryGet(property, out var valueNode);
-        if (valueNode != null) {
-            value = (DMFProperty?)_serializationManager.Read(typeof(DMFProperty), valueNode);
-            return value != null;
-        }else {
-            value = null;
-            return false;
+        MappingDataNode original =
+                (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
+        if (original.TryGet(property, out var node) && _serializationManager.TryGetVariableType(ElementDescriptor.GetType(), property, out var propertyDef)) {
+            value = (DMFProperty?) _serializationManager.Read(propertyDef, node);
+            if(value is not null)
+                return true;
         }
+        value = null;
+        return false;
     }
 
     protected virtual void UpdateElementDescriptor() {

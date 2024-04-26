@@ -15,9 +15,6 @@ public interface DMFProperty {
     public abstract string AsJSON();
     public abstract string AsJSONDM();
     public abstract string AsRaw();
-    public string? ToString() {
-        return AsRaw();
-    }
 }
 /*
 arg
@@ -45,7 +42,7 @@ public struct DMFPropertyString : DMFProperty {
     }
 
     public string AsArg() {
-        return Value != null ? Value.ToString() : "";
+        return Value != null ? "\""+AsEscaped()+"\"" : "\"\"";
     }
 
     public string AsEscaped() {
@@ -70,6 +67,10 @@ public struct DMFPropertyString : DMFProperty {
 
     public string AsRaw() {
         return Value != null ? Value.ToString() : "";
+    }
+
+    public override string ToString() {
+        return AsRaw();
     }
 }
 
@@ -84,31 +85,35 @@ public struct DMFPropertyNum : DMFProperty {
     }
 
     public string AsArg() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsEscaped() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsString() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsParams() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsJSON() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsJSONDM() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsRaw() {
         return Value.ToString();
+    }
+
+    public override string ToString() {
+        return AsRaw();
     }
 }
 
@@ -173,6 +178,10 @@ public struct DMFPropertyVec2 : DMFProperty {
     public string AsRaw() {
         return X.ToString() + "," + Y.ToString();
     }
+
+    public override string ToString() {
+        return AsRaw();
+    }
 }
 
 public struct DMFPropertyColor : DMFProperty {
@@ -198,33 +207,40 @@ public struct DMFPropertyColor : DMFProperty {
     }
 
     public string AsArg() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsEscaped() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsString() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsParams() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsJSON() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsJSONDM() {
-        return Value.ToString();
+        return AsRaw();
     }
 
     public string AsRaw() {
-        return Value.ToString();
+        string? colorName = Value.Name();
+        if(colorName != null)
+            return colorName;
+        else
+            return Value.ToHex();
     }
 
+    public override string ToString() {
+        return AsRaw();
+    }
 }
 
 public struct DMFPropertyBool : DMFProperty {
@@ -264,6 +280,10 @@ public struct DMFPropertyBool : DMFProperty {
 
     public string AsRaw() {
         return Value ? "1" : "0";
+    }
+
+    public override string ToString() {
+        return AsRaw();
     }
 }
 

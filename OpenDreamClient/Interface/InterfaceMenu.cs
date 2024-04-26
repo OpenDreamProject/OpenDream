@@ -39,7 +39,7 @@ public sealed class InterfaceMenu : InterfaceElement {
             throw new ArgumentException($"Attempted to add a {descriptor} to a menu", nameof(descriptor));
 
         MenuElement element;
-        if (elementDescriptor.Category.Value == null) {
+        if (string.IsNullOrEmpty(elementDescriptor.Category.Value)) {
             element = new(elementDescriptor, this);
         } else {
             if (!MenuElements.TryGetValue(elementDescriptor.Category.Value, out var parentMenu)) {
@@ -68,7 +68,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         MenuBar.Menus.Clear();
 
         foreach (MenuElement menuElement in MenuElements.Values) {
-            if (string.IsNullOrEmpty(menuElement.Category.Value)) // We only want the root-level menus here
+            if (!string.IsNullOrEmpty(menuElement.Category.Value)) // We only want the root-level menus here
                 continue;
 
             MenuBar.Menu menu = new() {

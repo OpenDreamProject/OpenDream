@@ -127,11 +127,11 @@
 #define LINEAR_EASING	0
 #define SINE_EASING		1
 #define CIRCULAR_EASING	2
-#define QUAD_EASING		7
 #define CUBIC_EASING	3
 #define BOUNCE_EASING	4
 #define ELASTIC_EASING	5
 #define BACK_EASING		6
+#define QUAD_EASING		7
 #define JUMP_EASING		8
 
 //Undocumented matrix defines (see https://www.byond.com/forum/post/1881375)

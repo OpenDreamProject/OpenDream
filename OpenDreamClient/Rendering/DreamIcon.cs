@@ -95,10 +95,10 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     /// <summary>
     /// Ends the target appearance animation. If appearanceAnimation is null, ends all animations.
     /// </summary>
-    /// <param name="appearanceAnimation"></param>
+    /// <param name="appearanceAnimation">Animation to end</param>
     private void EndAppearanceAnimation(AppearanceAnimation? appearanceAnimation) {
         if (appearanceAnimation == null){
-            if(_appearanceAnimations != null && _appearanceAnimations.Count > 0) {
+            if(_appearanceAnimations?.Count > 0) {
                 Appearance = _appearanceAnimations[^1].EndAppearance;
                 _appearanceAnimations.Clear();
             }
@@ -160,7 +160,6 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             //if it's not the first one, and it's not parallel, break
             if((animation.flags & AnimationFlags.ANIMATION_PARALLEL) == 0 && i != 0)
                 break;
-
 
             float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
             float factor = 0;
@@ -259,7 +258,6 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             transform
             */
 
-
             if (endAppearance.Alpha != _appearance.Alpha) {
                 appearance.Alpha = (byte)Math.Clamp(((1-factor) * _appearance.Alpha) + (factor * endAppearance.Alpha), 0, 255);
             }
@@ -354,15 +352,14 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             }
 
             if (timeFactor >= 1f) {
-                if (animation.loops > 0)
-                {
+                if (animation.loops > 0) {
                     var tempAnimation = _appearanceAnimations[i];
                     tempAnimation.loops--;
                     _appearanceAnimations[i] = tempAnimation;
                 }
                 if (animation.loops == 0) {
                     toRemove ??= new();
-                    toRemove!.Add(animation);
+                    toRemove.Add(animation);
                 }
             }
         }
@@ -426,6 +423,5 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         public int loops = loops;
         public readonly AnimationFlags flags = flags;
         public int delay = delay;
-
     }
 }

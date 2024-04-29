@@ -289,18 +289,19 @@ namespace OpenDreamShared.Dream {
         Back = 6,
         Quad = 7,
         Jump = 8,
-        Ease_In = 64,
-        Ease_Out = 128,
+        EaseIn = 64,
+        EaseOut = 128,
     }
 
     [Flags]
     public enum AnimationFlags {
         None = 0,
-        ANIMATION_END_NOW = 1,
-        ANIMATION_LINEAR_TRANSFORM = 2,
-        ANIMATION_PARALLEL = 4,
-        ANIMATION_RELATIVE = 256,
-        ANIMATION_CONTINUE = 512,
-        ANIMATION_SLICE = 8
+        AnimationEndNow = 1,
+        AnimationLinearTransform = 2,
+        AnimationParallel = 4,
+        AnimationSlice = 8,
+        AnimationRelative = 256,
+        AnimationContinue = 512,
+
     }
 }

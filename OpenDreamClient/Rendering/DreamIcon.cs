@@ -83,7 +83,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             EndAppearanceAnimation(null);
         else
             if(_appearanceAnimations != null && _appearanceAnimations.Count > 0)
-                if((flags & AnimationFlags.ANIMATION_PARALLEL) != 0)
+                if((flags & AnimationFlags.AnimationParallel) != 0)
                     start = _appearanceAnimations[^1].Start; //either that's also a parallel, or its one that this should be parallel with
                 else
                     start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
@@ -158,14 +158,14 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
         for(int i = 0; i < _appearanceAnimations.Count; i++) {
             AppearanceAnimation animation = _appearanceAnimations[i];
             //if it's not the first one, and it's not parallel, break
-            if((animation.flags & AnimationFlags.ANIMATION_PARALLEL) == 0 && i != 0)
+            if((animation.flags & AnimationFlags.AnimationParallel) == 0 && i != 0)
                 break;
 
             float timeFactor = Math.Clamp((float)(DateTime.Now - animation.Start).Ticks / animation.Duration.Ticks, 0.0f, 1.0f);
             float factor = 0;
-            if((animation.Easing & AnimationEasing.Ease_In) != 0)
+            if((animation.Easing & AnimationEasing.EaseIn) != 0)
                 timeFactor = timeFactor/2.0f;
-            if((animation.Easing & AnimationEasing.Ease_Out) != 0)
+            if((animation.Easing & AnimationEasing.EaseOut) != 0)
                 timeFactor = 0.5f+timeFactor/2.0f;
 
             switch (animation.Easing) {
@@ -173,37 +173,37 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                     factor = timeFactor;
                     break;
                 case AnimationEasing.Sine:
-                    factor = (float)Math.Sin(timeFactor * MathF.PI / 2);
+                    factor = MathF.Sin(timeFactor * MathF.PI / 2);
                     break;
                 case AnimationEasing.Circular:
-                    factor = (float)Math.Sqrt(1 - Math.Pow(1 - timeFactor, 2));
+                    factor = MathF.Sqrt(1 - MathF.Pow(1 - timeFactor, 2));
                     break;
                 case AnimationEasing.Cubic:
-                    factor = (float)(1 - Math.Pow(1-timeFactor, 3));
+                    factor = 1 - MathF.Pow(1-timeFactor, 3);
                     break;
                 case AnimationEasing.Bounce: //https://stackoverflow.com/questions/25249829/bouncing-ease-equation-in-c-sharp great match for byond behaviour
                     float bounce = timeFactor*2.75f;
                     if(bounce<1)
-                        factor = (float)Math.Pow(bounce, 2);
+                        factor = MathF.Pow(bounce, 2);
                     else if(bounce<2) {
                         bounce -= 1.5f;
-                        factor = (float)Math.Pow(bounce, 2)+ 0.75f;
+                        factor = MathF.Pow(bounce, 2)+ 0.75f;
                     } else if(bounce<2.5) {
                         bounce -= 2.25f;
-                        factor = (float)Math.Pow(bounce, 2) + 0.9375f;
+                        factor = MathF.Pow(bounce, 2) + 0.9375f;
                     } else {
                         bounce -= 2.625f;
-                        factor = (float)Math.Pow(bounce, 2) + 0.984375f;
+                        factor = MathF.Pow(bounce, 2) + 0.984375f;
                     }
                     break;
                 case AnimationEasing.Elastic: //http://www.java2s.com/example/csharp/system/easing-equation-function-for-an-elastic-exponentially-decaying-sine-w.html with d=1, s=pi/2, c=2, b = -1
-                    factor = (float) (Math.Pow(2, -10 * timeFactor) * Math.Sin((timeFactor - MathF.PI/2) * (2*Math.PI/0.3)) + 1);
+                    factor = MathF.Pow(2, -10 * timeFactor) * MathF.Sin((timeFactor - MathF.PI/2.0f) * (2.0f*MathF.PI/0.3f)) + 1.0f;
                     break;
                 case AnimationEasing.Back: //https://learn.microsoft.com/en-us/dotnet/api/system.windows.media.animation.backease?view=windowsdesktop-8.0
-                    factor = (float)Math.Pow(timeFactor, 3) - timeFactor * MathF.Sin(timeFactor * MathF.PI);
+                    factor = MathF.Pow(timeFactor, 3) - timeFactor * MathF.Sin(timeFactor * MathF.PI);
                     break;
                 case AnimationEasing.Quad:
-                    factor = (float) (1 - Math.Pow(1-timeFactor,2));
+                    factor = 1 - MathF.Pow(1-timeFactor,2);
                     break;
                 case AnimationEasing.Jump:
                     factor = (timeFactor < 1) ? 0 : 1;
@@ -272,28 +272,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
             }
 
             if (!endAppearance.ColorMatrix.Equals(_appearance.ColorMatrix)){
-                appearance.ColorMatrix = new ColorMatrix(
-                    ((1-factor) * _appearance.ColorMatrix.c11) + (factor * endAppearance.ColorMatrix.c11),
-                    ((1-factor) * _appearance.ColorMatrix.c12) + (factor * endAppearance.ColorMatrix.c12),
-                    ((1-factor) * _appearance.ColorMatrix.c13) + (factor * endAppearance.ColorMatrix.c13),
-                    ((1-factor) * _appearance.ColorMatrix.c14) + (factor * endAppearance.ColorMatrix.c14),
-                    ((1-factor) * _appearance.ColorMatrix.c21) + (factor * endAppearance.ColorMatrix.c21),
-                    ((1-factor) * _appearance.ColorMatrix.c22) + (factor * endAppearance.ColorMatrix.c22),
-                    ((1-factor) * _appearance.ColorMatrix.c23) + (factor * endAppearance.ColorMatrix.c23),
-                    ((1-factor) * _appearance.ColorMatrix.c24) + (factor * endAppearance.ColorMatrix.c24),
-                    ((1-factor) * _appearance.ColorMatrix.c31) + (factor * endAppearance.ColorMatrix.c31),
-                    ((1-factor) * _appearance.ColorMatrix.c32) + (factor * endAppearance.ColorMatrix.c32),
-                    ((1-factor) * _appearance.ColorMatrix.c33) + (factor * endAppearance.ColorMatrix.c33),
-                    ((1-factor) * _appearance.ColorMatrix.c34) + (factor * endAppearance.ColorMatrix.c34),
-                    ((1-factor) * _appearance.ColorMatrix.c41) + (factor * endAppearance.ColorMatrix.c41),
-                    ((1-factor) * _appearance.ColorMatrix.c42) + (factor * endAppearance.ColorMatrix.c42),
-                    ((1-factor) * _appearance.ColorMatrix.c43) + (factor * endAppearance.ColorMatrix.c43),
-                    ((1-factor) * _appearance.ColorMatrix.c44) + (factor * endAppearance.ColorMatrix.c44),
-                    ((1-factor) * _appearance.ColorMatrix.c51) + (factor * endAppearance.ColorMatrix.c51),
-                    ((1-factor) * _appearance.ColorMatrix.c52) + (factor * endAppearance.ColorMatrix.c52),
-                    ((1-factor) * _appearance.ColorMatrix.c53) + (factor * endAppearance.ColorMatrix.c53),
-                    ((1-factor) * _appearance.ColorMatrix.c54) + (factor * endAppearance.ColorMatrix.c54)
-                );
+                ColorMatrix.Interpolate(ref _appearance.ColorMatrix, ref endAppearance.ColorMatrix, factor, out appearance.ColorMatrix);
             }
 
 

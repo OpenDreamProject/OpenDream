@@ -75,30 +75,30 @@ namespace OpenDreamRuntime.Procs.Native {
             return await connection.Alert(title, message, button1, button2, button3);
         }
 
-    /* vars:
+        /* vars:
 
-    animate smoothly:
+        animate smoothly:
 
-    alpha
-    color
-    glide_size
-    infra_luminosity
-    layer
-    maptext_width, maptext_height, maptext_x, maptext_y
-    luminosity
-    pixel_x, pixel_y, pixel_w, pixel_z
-    transform
+        alpha
+        color
+        glide_size
+        infra_luminosity
+        layer
+        maptext_width, maptext_height, maptext_x, maptext_y
+        luminosity
+        pixel_x, pixel_y, pixel_w, pixel_z
+        transform
 
-    do not animate smoothly:
+        do not animate smoothly:
 
-    dir
-    icon
-    icon_state
-    invisibility
-    maptext
-    suffix
+        dir
+        icon
+        icon_state
+        invisibility
+        maptext
+        suffix
 
-    */
+        */
         [DreamProc("animate")]
         [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("time", Type = DreamValueTypeFlag.Float)]
@@ -151,7 +151,7 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject<DreamObject>(out var obj)){
                 if(bundle.LastAnimatedObject is null || bundle.LastAnimatedObject.Value.IsNull)
-                    throw new Exception($"animate() called without an object and no previous object to animate {obj}");
+                    throw new Exception($"animate() called without an object and no previous object to animate");
                 else if(!bundle.LastAnimatedObject.Value.TryGetValueAsDreamObject<DreamObject>(out obj))
                     return DreamValue.Null;
                 chainAnim = true;
@@ -166,13 +166,13 @@ namespace OpenDreamRuntime.Procs.Native {
 
             bundle.GetArgument(2, "loop").TryGetValueAsInteger(out int loop);
             bundle.GetArgument(3, "easing").TryGetValueAsInteger(out int easing);
-            if(!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.Ease_In | (int)AnimationEasing.Ease_Out)))
-                throw new ArgumentOutOfRangeException("easing", easing, "Invalid easing value in animate()");
+            if(!Enum.IsDefined(typeof(AnimationEasing), easing & ~((int)AnimationEasing.EaseIn | (int)AnimationEasing.EaseOut)))
+                throw new ArgumentOutOfRangeException("easing", easing, $"Invalid easing value in animate(): {easing}");
             bundle.GetArgument(4, "flags").TryGetValueAsInteger(out int flagsInt);
             var flags = (AnimationFlags)flagsInt;
-            if((flags & (AnimationFlags.ANIMATION_PARALLEL | AnimationFlags.ANIMATION_CONTINUE)) != 0)
+            if((flags & (AnimationFlags.AnimationParallel | AnimationFlags.AnimationContinue)) != 0)
                 chainAnim = true;
-            if((flags & AnimationFlags.ANIMATION_END_NOW) != 0)
+            if((flags & AnimationFlags.AnimationEndNow) != 0)
                 chainAnim = false;
             bundle.GetArgument(5, "delay").TryGetValueAsInteger(out int delay);
 

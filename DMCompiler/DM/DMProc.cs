@@ -273,6 +273,10 @@ namespace DMCompiler.DM {
             }
         }
 
+        public bool TryGetParameterByName(string name, [NotNullWhen(true)] out LocalVariable? param) {
+            return _parameters.TryGetValue(name, out param);
+        }
+
         public bool TryGetParameterAtIndex(int index, [NotNullWhen(true)] out LocalVariable? param) {
             if (_astDefinition == null || index >= _astDefinition.Parameters.Length) {
                 param = null;

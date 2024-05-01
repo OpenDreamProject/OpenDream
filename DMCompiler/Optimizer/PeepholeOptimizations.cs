@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 
@@ -18,12 +17,16 @@ internal class AssignPop : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeReference? assignTarget = (range[0].GetArgs()[0] as AnnotatedBytecodeReference);
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Bytecode index is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeReference? assignTarget = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
+
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.AssignPop,
-                new List<IAnnotatedBytecode> { assignTarget }));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.AssignPop,
+            new List<IAnnotatedBytecode> { assignTarget }));
     }
 }
 
@@ -39,13 +42,23 @@ internal class AssignNull : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeReference? assignTarget = (range[1].GetArgs()[0] as AnnotatedBytecodeReference);
+        // Ensure that we have at least two elements from the starting index to avoid out-of-bound errors
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        // Directly cast and extract the target from the second element's first argument
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)input[index + 1];
+        AnnotatedBytecodeReference? assignTarget = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
+
+        // Remove the original instructions from input
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.NullRef,
-                new List<IAnnotatedBytecode> { assignTarget }));
+
+        // Insert the new instruction with the extracted target as the only argument
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.NullRef,
+            new List<IAnnotatedBytecode> { assignTarget }));
     }
+
 }
 
 // PushReferenceValue [ref]
@@ -60,14 +73,20 @@ internal class PushField : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeReference? pushVal = (range[0].GetArgs()[0] as AnnotatedBytecodeReference);
-        AnnotatedBytecodeString? derefField = (range[1].GetArgs()[0] as AnnotatedBytecodeString);
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeReference? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
+        AnnotatedBytecodeString? derefField = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeString);
+
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushRefAndDereferenceField,
-                new List<IAnnotatedBytecode> { pushVal, derefField }));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushRefAndDereferenceField,
+            new List<IAnnotatedBytecode> { pushVal, derefField }));
     }
+
 }
 
 // PushReferenceValue [ref]
@@ -82,14 +101,20 @@ internal class JumpIfReferenceFalse : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeReference? pushVal = (range[0].GetArgs()[0] as AnnotatedBytecodeReference);
-        AnnotatedBytecodeLabel? jumpLabel = (range[1].GetArgs()[0] as AnnotatedBytecodeLabel);
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeReference? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
+        AnnotatedBytecodeLabel? jumpLabel = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeLabel);
+
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.JumpIfReferenceFalse,
-                new List<IAnnotatedBytecode> { pushVal, jumpLabel }));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.JumpIfReferenceFalse,
+            new List<IAnnotatedBytecode> { pushVal, jumpLabel }));
     }
+
 }
 
 // PushString [string]
@@ -107,22 +132,25 @@ internal class PushNStrings : IPeepholeOptimization {
     public void Apply(List<IAnnotatedBytecode> input, int index) {
         int count = 0;
         int stackDelta = 0;
+
         while (index + count < input.Count && input[index + count] is AnnotatedBytecodeInstruction instruction &&
                instruction.Opcode == DreamProcOpcode.PushString) {
             count++;
         }
 
-        var range = input.GetRange(index, count).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        List<IAnnotatedBytecode> args = new();
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+
         for (int i = 0; i < count; i++) {
-            args.Add(range[i].GetArgs()[0]);
+            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
 
         input.RemoveRange(index, count);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNStrings, stackDelta, args));
     }
+
 }
 
 // PushFloat [float]
@@ -140,22 +168,25 @@ internal class PushNFloats : IPeepholeOptimization {
     public void Apply(List<IAnnotatedBytecode> input, int index) {
         int count = 0;
         int stackDelta = 0;
+
         while (index + count < input.Count && input[index + count] is AnnotatedBytecodeInstruction instruction &&
                instruction.Opcode == DreamProcOpcode.PushFloat) {
             count++;
         }
 
-        var range = input.GetRange(index, count).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        List<IAnnotatedBytecode> args = new();
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+
         for (int i = 0; i < count; i++) {
-            args.Add(range[i].GetArgs()[0]);
+            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
 
         input.RemoveRange(index, count);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNFloats, stackDelta, args));
     }
+
 }
 
 // PushReferenceValue [ref]
@@ -173,22 +204,25 @@ internal class PushNRef : IPeepholeOptimization {
     public void Apply(List<IAnnotatedBytecode> input, int index) {
         int count = 0;
         int stackDelta = 0;
+
         while (index + count < input.Count && input[index + count] is AnnotatedBytecodeInstruction instruction &&
                instruction.Opcode == DreamProcOpcode.PushReferenceValue) {
             count++;
         }
 
-        var range = input.GetRange(index, count).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        List<IAnnotatedBytecode> args = new();
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+
         for (int i = 0; i < count; i++) {
-            args.Add(range[i].GetArgs()[0]);
+            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
 
         input.RemoveRange(index, count);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNRefs, stackDelta, args));
     }
+
 }
 
 
@@ -204,14 +238,20 @@ internal class PushStringFloat : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeString? pushVal1 = (range[0].GetArgs()[0] as AnnotatedBytecodeString);
-        AnnotatedBytecodeFloat? pushVal2 = (range[1].GetArgs()[0] as AnnotatedBytecodeFloat);
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeString? pushVal1 = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeString);
+        AnnotatedBytecodeFloat? pushVal2 = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeFloat);
+
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushStringFloat,
-                new List<IAnnotatedBytecode> { pushVal1, pushVal2 }));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushStringFloat,
+            new List<IAnnotatedBytecode> { pushVal1, pushVal2 }));
     }
+
 }
 
 // PushFloat [float]
@@ -226,14 +266,20 @@ internal class SwitchOnFloat : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeFloat? pushVal = (range[0].GetArgs()[0] as AnnotatedBytecodeFloat);
-        AnnotatedBytecodeLabel? jumpLabel = (range[1].GetArgs()[0] as AnnotatedBytecodeLabel);
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeFloat? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat);
+        AnnotatedBytecodeLabel? jumpLabel = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeLabel);
+
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnFloat,
-                new List<IAnnotatedBytecode> { pushVal, jumpLabel }));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnFloat,
+            new List<IAnnotatedBytecode> { pushVal, jumpLabel }));
     }
+
 }
 
 // PushString [string]
@@ -248,14 +294,20 @@ internal class SwitchOnString : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeString? pushVal = (range[0].GetArgs()[0] as AnnotatedBytecodeString);
-        AnnotatedBytecodeLabel? jumpLabel = (range[1].GetArgs()[0] as AnnotatedBytecodeLabel);
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeString? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeString);
+        AnnotatedBytecodeLabel? jumpLabel = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeLabel);
+
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnString,
-                new List<IAnnotatedBytecode> { pushVal, jumpLabel }));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.SwitchOnString,
+            new List<IAnnotatedBytecode> { pushVal, jumpLabel }));
     }
+
 }
 
 // PushStringFloat [string] [float]
@@ -278,19 +330,20 @@ internal class PushNOfStringFloat : IPeepholeOptimization {
             count++;
         }
 
-        var range = input.GetRange(index, count).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        List<IAnnotatedBytecode> args = new();
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(2 * count + 1);
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+
         for (int i = 0; i < count; i++) {
-            args.Add(range[i].GetArgs()[0]);
-            args.Add(range[i].GetArgs()[1]);
+            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            args.Add(instruction.GetArgs()[0]);
+            args.Add(instruction.GetArgs()[1]);
             stackDelta += 2;
         }
 
         input.RemoveRange(index, count);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNOfStringFloats, stackDelta, args));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNOfStringFloats, stackDelta, args));
     }
+
 }
 
 // PushResource [resource]
@@ -313,17 +366,19 @@ internal class PushNResources : IPeepholeOptimization {
             count++;
         }
 
-        var range = input.GetRange(index, count).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        List<IAnnotatedBytecode> args = new();
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(count + 1);
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
+
         for (int i = 0; i < count; i++) {
-            args.Add(range[i].GetArgs()[0]);
+            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
 
         input.RemoveRange(index, count);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.PushNResources, stackDelta, args));
     }
+
 }
 
 // PushNFloats [count] [float] ... [float]
@@ -338,21 +393,38 @@ internal class CreateListNFloats : IPeepholeOptimization {
     }
 
     public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-        int pushVal2 = ((range[1].GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+        int pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+
         return pushVal1 == pushVal2;
     }
 
+
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-        List<IAnnotatedBytecode> args = new();
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-        args = args.Concat(range[0].GetArgs().GetRange(1, pushVal1)).ToList();
+
+        for (int i = 1; i <= pushVal1 && i < firstInstruction.GetArgs().Count; i++) {
+            args.Add(firstInstruction.GetArgs()[i]);
+        }
+
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNFloats, 1, args));
     }
+
 }
 
 // PushNStrings [count] [string] ... [string]
@@ -367,21 +439,38 @@ internal class CreateListNStrings : IPeepholeOptimization {
     }
 
     public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-        int pushVal2 = ((range[1].GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+        int pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+
         return pushVal1 == pushVal2;
     }
 
+
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-        List<IAnnotatedBytecode> args = new();
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-        args = args.Concat(range[0].GetArgs().GetRange(1, pushVal1)).ToList();
+
+        for (int i = 1; i <= pushVal1 && i < firstInstruction.GetArgs().Count; i++) {
+            args.Add(firstInstruction.GetArgs()[i]);
+        }
+
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNStrings, 1, args));
     }
+
 }
 
 // PushNResources [count] [resource] ... [resource]
@@ -396,21 +485,39 @@ internal class CreateListNResources : IPeepholeOptimization {
     }
 
     public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-        int pushVal2 = ((range[1].GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+        int pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+
         return pushVal1 == pushVal2;
     }
 
+
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-        List<IAnnotatedBytecode> args = new();
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+
+        List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-        args = args.Concat(range[0].GetArgs().GetRange(1, pushVal1)).ToList();
+
+        var firstInstructionArgs = firstInstruction.GetArgs();
+        for (int i = 1; i <= pushVal1 && i < firstInstructionArgs.Count; i++) {
+            args.Add(firstInstructionArgs[i]);
+        }
+
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNResources, 1, args));
     }
+
 }
 
 // PushNRefs [count] [ref] ... [ref]
@@ -425,44 +532,32 @@ internal class CreateListNRefs : IPeepholeOptimization {
     }
 
     public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
-        // Ensure that there are at least two elements from the starting index to avoid out-of-bound errors
         if (index + 1 >= input.Count) {
-            BytecodeIndexOutOfRange();
+            throw new ArgumentOutOfRangeException("Bytecode index is outside the bounds of the input list.");
         }
 
-        // Cast the specific items directly from the input and access their properties
         int pushVal1 = ((((input[index] as AnnotatedBytecodeInstruction)!).GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
         int pushVal2 = ((((input[index + 1] as AnnotatedBytecodeInstruction)!).GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
 
         return pushVal1 == pushVal2;
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    private void BytecodeIndexOutOfRange() {
-        throw new ArgumentOutOfRangeException("Bytecode index is outside the bounds of the input list.");
-    }
-
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        // Ensure there are enough elements from the starting index to avoid out-of-bound errors
         if (index + 1 >= input.Count) {
-            BytecodeIndexOutOfRange();
+            throw new ArgumentOutOfRangeException("Bytecode index is outside the bounds of the input list.");
         }
 
-        // Directly cast and access properties from input
         var firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
 
-        // Create args list with an estimated capacity (1 initial element + pushVal1 additional elements)
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(1 + pushVal1);
         args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
 
-        // Append additional arguments directly from the first instruction's args, starting from index 1 to pushVal1
         var firstInstructionArgs = firstInstruction.GetArgs();
         for (int i = 1; i <= pushVal1 && i < firstInstructionArgs.Count; i++) {
             args.Add(firstInstructionArgs[i]);
         }
 
-        // Replace the original instructions with the new instruction
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNRefs, 1, args));
     }
@@ -498,11 +593,15 @@ internal class IsTypeDirect : IPeepholeOptimization {
     }
 
     public void Apply(List<IAnnotatedBytecode> input, int index) {
-        var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-        AnnotatedBytecodeTypeID? pushVal = (range[0].GetArgs()[0] as AnnotatedBytecodeTypeID);
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
+        }
+
+        var firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeTypeID? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeTypeID);
+
         input.RemoveRange(index, 2);
-        input.Insert(index,
-            new AnnotatedBytecodeInstruction(DreamProcOpcode.IsTypeDirect,
-                new List<IAnnotatedBytecode> { pushVal }));
+        input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.IsTypeDirect,
+            new List<IAnnotatedBytecode> { pushVal }));
     }
 }

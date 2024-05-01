@@ -12,7 +12,7 @@ public interface IAnnotatedBytecode {
     public Location GetLocation();
 }
 
-internal class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
     private List<IAnnotatedBytecode> _args = new();
     public Location Location;
     public DreamProcOpcode Opcode;
@@ -129,7 +129,7 @@ internal class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeVariable : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeVariable : IAnnotatedBytecode {
     public int Exit;
     public bool Exitingscope;
     public Location Location;
@@ -162,7 +162,7 @@ internal class AnnotatedBytecodeVariable : IAnnotatedBytecode {
 }
 
 
-internal class AnnotatedBytecodeInteger : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeInteger : IAnnotatedBytecode {
     public Location Location;
     public int Value;
 
@@ -185,7 +185,7 @@ internal class AnnotatedBytecodeInteger : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeFloat : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeFloat : IAnnotatedBytecode {
     public Location Location;
     public float Value;
 
@@ -208,7 +208,7 @@ internal class AnnotatedBytecodeFloat : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeString : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeString : IAnnotatedBytecode {
     public int ID;
     public Location Location;
     public string Value;
@@ -233,7 +233,7 @@ internal class AnnotatedBytecodeString : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {
     public Location Location;
     public DMCallArgumentsType Value;
 
@@ -256,7 +256,7 @@ internal class AnnotatedBytecodeArgumentType : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeType : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeType : IAnnotatedBytecode {
     public Location Location;
     public DMValueType Value;
 
@@ -279,7 +279,7 @@ internal class AnnotatedBytecodeType : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeTypeID : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeTypeID : IAnnotatedBytecode {
     public Location Location;
     public DreamPath? Path;
     public int TypeID;
@@ -304,7 +304,7 @@ internal class AnnotatedBytecodeTypeID : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeProcID : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeProcID : IAnnotatedBytecode {
     public Location Location;
     public DreamPath? Path;
     public int ProcID;
@@ -329,7 +329,7 @@ internal class AnnotatedBytecodeProcID : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeFormatCount : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeFormatCount : IAnnotatedBytecode {
     public int Count;
     public Location Location;
 
@@ -352,7 +352,7 @@ internal class AnnotatedBytecodeFormatCount : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeStackDelta : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeStackDelta : IAnnotatedBytecode {
     public int Delta;
     public Location Location;
 
@@ -375,7 +375,7 @@ internal class AnnotatedBytecodeStackDelta : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeListSize : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeListSize : IAnnotatedBytecode {
     public Location Location;
     public int Size;
 
@@ -398,7 +398,7 @@ internal class AnnotatedBytecodeListSize : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodePickCount : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodePickCount : IAnnotatedBytecode {
     public int Count;
     public Location Location;
 
@@ -421,7 +421,7 @@ internal class AnnotatedBytecodePickCount : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeConcatCount : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeConcatCount : IAnnotatedBytecode {
     public int Count;
     public Location Location;
 
@@ -444,7 +444,7 @@ internal class AnnotatedBytecodeConcatCount : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeResource : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeResource : IAnnotatedBytecode {
     public Location Location;
     public int ResourceID;
     public string Value;
@@ -469,7 +469,7 @@ internal class AnnotatedBytecodeResource : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeLabel : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeLabel : IAnnotatedBytecode {
     public string LabelName;
     public Location Location;
 
@@ -493,7 +493,7 @@ internal class AnnotatedBytecodeLabel : IAnnotatedBytecode {
 }
 
 
-internal class AnnotatedBytecodeFilter : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeFilter : IAnnotatedBytecode {
     public DreamPath FilterPath;
     public int FilterTypeId;
     public Location Location;
@@ -518,7 +518,7 @@ internal class AnnotatedBytecodeFilter : IAnnotatedBytecode {
     }
 }
 
-internal class AnnotatedBytecodeReference : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeReference : IAnnotatedBytecode {
     public int Index;
     public Location Location;
     public DMReference.Type RefType;

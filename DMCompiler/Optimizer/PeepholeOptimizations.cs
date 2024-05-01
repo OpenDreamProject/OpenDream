@@ -8,7 +8,7 @@ namespace DMCompiler.Optimizer;
 // Assign [ref]
 // Pop
 // -> AssignPop [ref]
-internal class AssignPop : IPeepholeOptimization {
+internal sealed class AssignPop : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.Assign,
@@ -33,7 +33,7 @@ internal class AssignPop : IPeepholeOptimization {
 // PushNull
 // AssignPop [ref]
 // -> AssignNull [ref]
-internal class AssignNull : IPeepholeOptimization {
+internal sealed class AssignNull : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNull,
@@ -64,7 +64,7 @@ internal class AssignNull : IPeepholeOptimization {
 // PushReferenceValue [ref]
 // DereferenceField [field]
 // -> PushRefAndDereferenceField [ref, field]
-internal class PushField : IPeepholeOptimization {
+internal sealed class PushField : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushReferenceValue,
@@ -92,7 +92,7 @@ internal class PushField : IPeepholeOptimization {
 // PushReferenceValue [ref]
 // JumpIfFalse [label]
 // -> JumpIfReferenceFalse [ref] [label]
-internal class JumpIfReferenceFalse : IPeepholeOptimization {
+internal sealed class JumpIfReferenceFalse : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushReferenceValue,
@@ -121,7 +121,7 @@ internal class JumpIfReferenceFalse : IPeepholeOptimization {
 // ...
 // PushString [string]
 // -> PushNStrings [count] [string] ... [string]
-internal class PushNStrings : IPeepholeOptimization {
+internal sealed class PushNStrings : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushString,
@@ -157,7 +157,7 @@ internal class PushNStrings : IPeepholeOptimization {
 // ...
 // PushFloat [float]
 // -> PushNFloats [count] [float] ... [float]
-internal class PushNFloats : IPeepholeOptimization {
+internal sealed class PushNFloats : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -193,7 +193,7 @@ internal class PushNFloats : IPeepholeOptimization {
 // ...
 // PushReferenceValue [ref]
 // -> PushNRef [count] [ref] ... [ref]
-internal class PushNRef : IPeepholeOptimization {
+internal sealed class PushNRef : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushReferenceValue,
@@ -229,7 +229,7 @@ internal class PushNRef : IPeepholeOptimization {
 // PushString [string]
 // PushFloat [float]
 // -> PushStringFloat [string] [float]
-internal class PushStringFloat : IPeepholeOptimization {
+internal sealed class PushStringFloat : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushString,
@@ -257,7 +257,7 @@ internal class PushStringFloat : IPeepholeOptimization {
 // PushFloat [float]
 // SwitchCase [label]
 // -> SwitchOnFloat [float] [label]
-internal class SwitchOnFloat : IPeepholeOptimization {
+internal sealed class SwitchOnFloat : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushFloat,
@@ -285,7 +285,7 @@ internal class SwitchOnFloat : IPeepholeOptimization {
 // PushString [string]
 // SwitchCase [label]
 // -> SwitchOnString [string] [label]
-internal class SwitchOnString : IPeepholeOptimization {
+internal sealed class SwitchOnString : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushString,
@@ -314,7 +314,7 @@ internal class SwitchOnString : IPeepholeOptimization {
 // ...
 // PushStringFloat [string] [float]
 // -> PushArbitraryNOfStringFloat [count] [string] [float] ... [string] [float]
-internal class PushNOfStringFloat : IPeepholeOptimization {
+internal sealed class PushNOfStringFloat : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushStringFloat,
@@ -350,7 +350,7 @@ internal class PushNOfStringFloat : IPeepholeOptimization {
 // ...
 // PushResource [resource]
 // -> PushNResources [count] [resource] ... [resource]
-internal class PushNResources : IPeepholeOptimization {
+internal sealed class PushNResources : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushResource,
@@ -384,7 +384,7 @@ internal class PushNResources : IPeepholeOptimization {
 // PushNFloats [count] [float] ... [float]
 // CreateList [count]
 // -> CreateListNFloats [count] [float] ... [float]
-internal class CreateListNFloats : IPeepholeOptimization {
+internal sealed class CreateListNFloats : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNFloats,
@@ -430,7 +430,7 @@ internal class CreateListNFloats : IPeepholeOptimization {
 // PushNStrings [count] [string] ... [string]
 // CreateList [count]
 // -> CreateListNStrings [count] [string] ... [string]
-internal class CreateListNStrings : IPeepholeOptimization {
+internal sealed class CreateListNStrings : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNStrings,
@@ -476,7 +476,7 @@ internal class CreateListNStrings : IPeepholeOptimization {
 // PushNResources [count] [resource] ... [resource]
 // CreateList [count]
 // -> CreateListNResources [count] [resource] ... [resource]
-internal class CreateListNResources : IPeepholeOptimization {
+internal sealed class CreateListNResources : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNResources,
@@ -523,7 +523,7 @@ internal class CreateListNResources : IPeepholeOptimization {
 // PushNRefs [count] [ref] ... [ref]
 // CreateList [count]
 // -> CreateListNRefs [count] [ref] ... [ref]
-internal class CreateListNRefs : IPeepholeOptimization {
+internal sealed class CreateListNRefs : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushNRefs,
@@ -568,7 +568,7 @@ internal class CreateListNRefs : IPeepholeOptimization {
 // Jump [label1]
 // Jump [label2] <- Dead code
 // -> Jump [label1]
-internal class RemoveJumpFollowedByJump : IPeepholeOptimization {
+internal sealed class RemoveJumpFollowedByJump : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.Jump,
@@ -584,7 +584,7 @@ internal class RemoveJumpFollowedByJump : IPeepholeOptimization {
 // PushType [type]
 // IsType
 // -> IsTypeDirect [type]
-internal class IsTypeDirect : IPeepholeOptimization {
+internal sealed class IsTypeDirect : IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
         return [
             DreamProcOpcode.PushType,

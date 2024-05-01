@@ -260,9 +260,6 @@ public static class DMCompiler {
     }
 
     private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
-        if (Settings.DumpBytecode) {
-            var bytecodeDumpFile = Path.ChangeExtension(outputFile, "dmc");
-        }
 
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
         DreamCompiledJson compiledDream = new DreamCompiledJson {

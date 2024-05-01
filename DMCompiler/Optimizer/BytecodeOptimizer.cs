@@ -1,11 +1,6 @@
-using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
-using DMCompiler.Bytecode;
 
-namespace DMCompiler.DM.Optimizer;
+namespace DMCompiler.Optimizer;
 
 public class BytecodeOptimizer {
     public int StackDepth { get; private set; }

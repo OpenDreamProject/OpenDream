@@ -6,12 +6,12 @@ using System.IO;
 using System.Linq;
 using DMCompiler.Bytecode;
 using DMCompiler.DM.Expressions;
-using DMCompiler.DM.Optimizer;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
 using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
+using DMCompiler.Optimizer;
 
 namespace DMCompiler.DM {
     internal sealed class DMProc {

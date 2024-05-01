@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
+using DMCompiler.DM;
 using DMCompiler.Json;
 
-namespace DMCompiler.DM.Optimizer;
+namespace DMCompiler.Optimizer;
 
 internal class AnnotatedBytecodeSerializer {
     private readonly List<LocalVariableJson> _localVariables = new();
@@ -48,8 +48,15 @@ internal class AnnotatedBytecodeSerializer {
         }
 
         ResolveLabels();
-        // Sort and remove duplicates
-        SourceInfo = SourceInfo.GroupBy(x => x.Line, (key, group) => group.First()).OrderBy(x => x.Offset).ToList();
+
+        // Remove duplicates
+        var uniqueSourceInfo = new HashSet<SourceInfoJson>(SourceInfo, new LineComparer());
+        // Go back to a list and sort
+        var sortedSourceInfo = new List<SourceInfoJson>(uniqueSourceInfo);
+        sortedSourceInfo.Sort((x, y) => x.Offset.CompareTo(y.Offset));
+        // Assign the sorted list back to SourceInfo
+        SourceInfo = sortedSourceInfo;
+
         return Bytecode.ToArray();
     }
 

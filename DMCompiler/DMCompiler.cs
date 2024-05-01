@@ -15,7 +15,6 @@ using System.Text.Json.Serialization;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
-using DMCompiler.DM.Optimizer;
 using DMCompiler.Json;
 
 namespace DMCompiler;

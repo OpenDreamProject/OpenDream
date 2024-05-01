@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 
-namespace DMCompiler.DM.Optimizer {
+namespace DMCompiler.Optimizer {
     // Assign [ref]
     // Pop
     // -> AssignPop [ref]
@@ -423,21 +424,49 @@ namespace DMCompiler.DM.Optimizer {
         }
 
         public bool CheckPreconditions(List<IAnnotatedBytecode> input, int index) {
-            var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-            int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-            int pushVal2 = ((range[1].GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+            // Ensure that there are at least two elements from the starting index to avoid out-of-bound errors
+            if (index + 1 >= input.Count) {
+                BytecodeIndexOutOfRange();
+            }
+
+            // Cast the specific items directly from the input and access their properties
+            int pushVal1 = ((((input[index] as AnnotatedBytecodeInstruction)!).GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+            int pushVal2 = ((((input[index + 1] as AnnotatedBytecodeInstruction)!).GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
+
             return pushVal1 == pushVal2;
         }
 
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        private void BytecodeIndexOutOfRange() {
+            throw new ArgumentOutOfRangeException("Bytecode index is outside the bounds of the input list.");
+        }
+
         public void Apply(List<IAnnotatedBytecode> input, int index) {
-            var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-            int pushVal1 = ((range[0].GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
-            List<IAnnotatedBytecode> args = new();
+            // Ensure there are enough elements from the starting index to avoid out-of-bound errors
+            if (index + 1 >= input.Count) {
+                BytecodeIndexOutOfRange();
+            }
+
+            // Directly cast and access properties from input
+            var firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+            int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
+
+            // Create args list with an estimated capacity (1 initial element + pushVal1 additional elements)
+            List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(1 + pushVal1);
             args.Add(new AnnotatedBytecodeInteger(pushVal1, new Location()));
-            args = args.Concat(range[0].GetArgs().GetRange(1, pushVal1)).ToList();
+
+            // Append additional arguments directly from the first instruction's args, starting from index 1 to pushVal1
+            var firstInstructionArgs = firstInstruction.GetArgs();
+            for (int i = 1; i <= pushVal1 && i < firstInstructionArgs.Count; i++) {
+                args.Add(firstInstructionArgs[i]);
+            }
+
+            // Replace the original instructions with the new instruction
             input.RemoveRange(index, 2);
             input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.CreateListNRefs, 1, args));
         }
+
+
     }
 
     // Jump [label1]

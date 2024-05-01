@@ -1,12 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Text;
 using DMCompiler.Bytecode;
-using DMCompiler.Json;
+using DMCompiler.DM;
 
-namespace DMCompiler.DM.Optimizer {
+namespace DMCompiler.Optimizer {
     public interface IAnnotatedBytecode {
         public void AddArg(IAnnotatedBytecode arg);
         void SetLocation(IAnnotatedBytecode location);

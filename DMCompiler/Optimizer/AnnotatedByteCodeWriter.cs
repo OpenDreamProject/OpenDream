@@ -1,10 +1,10 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
 using DMCompiler.Bytecode;
 using DMCompiler.Compiler;
+using DMCompiler.DM;
 
-namespace DMCompiler.DM.Optimizer {
+namespace DMCompiler.Optimizer {
 /*
  * Provides a wrapper about BinaryWriter that stores information about the bytecode
  * for optimization and debugging.
@@ -48,7 +48,15 @@ namespace DMCompiler.DM.Optimizer {
 
             ResizeStack(metadata.StackDelta);
 
-            _requiredArgs = new Stack<OpcodeArgType>(metadata.RequiredArgs.AsEnumerable().Reverse());
+            var requiredArgs = new Stack<OpcodeArgType>(metadata.RequiredArgs.Count);
+
+            // Reverse the order and push to stack
+            for (int i = metadata.RequiredArgs.Count - 1; i >= 0; i--)
+            {
+                requiredArgs.Push(metadata.RequiredArgs[i]);
+            }
+
+            _requiredArgs = requiredArgs;
         }
 
         /// <summary>

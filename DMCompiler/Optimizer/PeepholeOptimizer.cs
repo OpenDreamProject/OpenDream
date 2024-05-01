@@ -1,9 +1,9 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Runtime.CompilerServices;
 using DMCompiler.Bytecode;
 
-namespace DMCompiler.DM.Optimizer;
+namespace DMCompiler.Optimizer;
 
 internal interface IPeepholeOptimization {
     public ReadOnlySpan<DreamProcOpcode> GetOpcodes();
@@ -27,17 +27,24 @@ internal sealed class PeepholeOptimizer {
 
     /// Setup <see cref="OptimizationTrees"/>
     static PeepholeOptimizer() {
-        var optimizationTypes =
-            typeof(PeepholeOptimizer).Assembly.GetTypes().Where(x => typeof(IPeepholeOptimization).IsAssignableFrom(x));
+        var possibleTypes = typeof(PeepholeOptimizer).Assembly.GetTypes();
+        var optimizationTypes = new List<Type>(possibleTypes.Length);
+        foreach (var type in possibleTypes)
+        {
+            if (typeof(IPeepholeOptimization).IsAssignableFrom(type))
+            {
+                optimizationTypes.Add(type);
+            }
+        }
 
         foreach (var optType in optimizationTypes) {
             if (optType.IsInterface || optType.IsAbstract)
                 continue;
 
-            var opt = (IPeepholeOptimization)Activator.CreateInstance(optType)!;
+            var opt = Unsafe.As<IPeepholeOptimization>(Activator.CreateInstance(optType))!;
             var opcodes = opt.GetOpcodes();
             if (opcodes.Length < 2)
-                throw new Exception($"Peephole optimization {optType} must have at least 2 opcodes");
+                DMCompiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
 
             if (!OptimizationTrees.TryGetValue(opcodes[0], out var treeEntry)) {
                 treeEntry = new() {
@@ -51,7 +58,7 @@ internal sealed class PeepholeOptimizer {
                 if (treeEntry.Children == null || !treeEntry.Children.TryGetValue(opcodes[i], out var child)) {
                     child = new();
 
-                    treeEntry.Children ??= new();
+                    treeEntry.Children ??= new(1);
                     treeEntry.Children.Add(opcodes[i], child);
                 }
 

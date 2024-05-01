@@ -113,6 +113,12 @@ namespace DMCompiler.DM {
             if (_astDefinition?.IsOverride ?? false) Attributes |= ProcAttributes.IsOverride; // init procs don't have AST definitions
             Location = astDefinition?.Location ?? Location.Unknown;
             _scopes.Push(new DMProcScope());
+
+            if (_astDefinition is not null) {
+                foreach (DMASTDefinitionParameter parameter in _astDefinition!.Parameters) {
+                    AddParameter(parameter.Name, parameter.Type, parameter.ObjectType);
+                }
+            }
         }
 
         public string Name => _astDefinition?.Name ?? "<init>";

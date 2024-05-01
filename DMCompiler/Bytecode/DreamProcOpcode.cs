@@ -20,7 +20,7 @@ public enum DreamProcOpcode : byte {
     SwitchCaseRange = 0x5, //This could either shrink the stack by 2 or 3. Assume 2.
     [OpcodeMetadata(1, OpcodeArgType.Reference)]
     PushReferenceValue = 0x6, // TODO: Local refs should be pure, and other refs that aren't modified
-    [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)] // TODO: Is this correct metadata for Rgb?
+    [OpcodeMetadata(0, OpcodeArgType.ArgType, OpcodeArgType.StackDelta)]
     Rgb = 0x7,
     [OpcodeMetadata(-1)]
     Add = 0x8,

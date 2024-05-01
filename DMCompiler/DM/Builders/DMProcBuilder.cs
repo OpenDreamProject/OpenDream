@@ -627,7 +627,7 @@ namespace DMCompiler.DM.Builders {
             if (implicitTypeCheck != null) {
                 if (DMObjectTree.TryGetTypeId(implicitTypeCheck.Value, out var filterTypeId)) {
                     // Create an enumerator that will do the implicit istype() for us
-                    proc.CreateFilteredListEnumerator(filterTypeId);
+                    proc.CreateFilteredListEnumerator(filterTypeId, implicitTypeCheck.Value);
                 } else {
                     DMCompiler.Emit(WarningCode.ItemDoesntExist, outputVar.Location,
                         $"Cannot filter enumeration by type {implicitTypeCheck.Value}, it does not exist");
@@ -666,7 +666,7 @@ namespace DMCompiler.DM.Builders {
             }
 
             if (DMObjectTree.TryGetTypeId(type.Value, out var typeId)) {
-                proc.PushType(typeId);
+                proc.PushType(typeId, type.Value);
                 proc.CreateTypeEnumerator();
             } else {
                 DMCompiler.Emit(WarningCode.ItemDoesntExist, initializer.Location, $"Type {type.Value} does not exist");

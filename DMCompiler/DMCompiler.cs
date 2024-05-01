@@ -306,16 +306,6 @@ public static class DMCompiler {
             compiledDream.GlobalProcs = DMObjectTree.GlobalProcs.Values.ToArray();
         }
 
-        if (Settings.DumpBytecode) {
-            var bytecodeDumpFile = Path.ChangeExtension(outputFile, "dmc");
-            using var bytecodeDumpHandle = File.Create(bytecodeDumpFile);
-            using var bytecodeDumpWriter = new StreamWriter(bytecodeDumpHandle);
-            DMObjectTree.GlobalInitProc.Dump(bytecodeDumpWriter);
-            foreach (var proc in DMObjectTree.AllProcs) {
-                proc.Dump(bytecodeDumpWriter);
-            }
-        }
-
         // Successful serialization
         if (ErrorCount == 0) {
             using var outputFileHandle = File.Create(outputFile);
@@ -374,7 +364,6 @@ public struct DMCompilerSettings {
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;
     public bool Verbose = false;
-    public bool DumpBytecode = false;
     public Dictionary<string, string>? MacroDefines = null;
     /// <summary> A user-provided pragma config file, if one was provided. </summary>
     public string? PragmaFileOverride = null;

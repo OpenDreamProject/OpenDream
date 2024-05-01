@@ -93,11 +93,11 @@ namespace DMCompiler.DM.Expressions {
                     var newProc = DMObjectTree.GetNewProc(pathInfo.Value.Id);
 
                     (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, newProc);
-                    proc.PushType(pathInfo.Value.Id);
+                    proc.PushType(pathInfo.Value.Id, Path);
                     break;
                 case ConstantPath.PathType.ProcReference: // "new /proc/new_verb(Destination)" is a thing
                     (argumentsType, stackSize) = arguments.EmitArguments(dmObject, proc, DMObjectTree.AllProcs[pathInfo.Value.Id]);
-                    proc.PushProc(pathInfo.Value.Id);
+                    proc.PushProc(pathInfo.Value.Id, Path);
                     break;
                 case ConstantPath.PathType.ProcStub:
                 case ConstantPath.PathType.VerbStub:
@@ -133,7 +133,7 @@ namespace DMCompiler.DM.Expressions {
                 return;
             }
 
-            proc.PushType(typeId);
+            proc.PushType(typeId, _path);
 
             if (_container != null) {
                 _container.EmitPushValue(dmObject, proc);
@@ -391,7 +391,7 @@ namespace DMCompiler.DM.Expressions {
             }
 
             _expr.EmitPushValue(dmObject, proc);
-            proc.PushType(typeId);
+            proc.PushType(typeId, _path);
             proc.IsType();
         }
     }
@@ -562,7 +562,7 @@ namespace DMCompiler.DM.Expressions {
                 size.EmitPushValue(dmObject, proc);
             }
 
-            proc.PushType(listTypeId);
+            proc.PushType(listTypeId, DreamPath.List);
             proc.CreateObject(DMCallArgumentsType.FromStack, _sizes.Length);
         }
     }
@@ -684,7 +684,7 @@ namespace DMCompiler.DM.Expressions {
             if (owner.Path == DreamPath.Root) {
                 proc.PushNull();
             } else {
-                proc.PushType(dmObject.Id);
+                proc.PushType(dmObject.Id, dmObject.Path);
             }
         }
 

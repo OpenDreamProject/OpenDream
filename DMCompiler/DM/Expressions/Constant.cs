@@ -517,10 +517,10 @@ namespace DMCompiler.DM.Expressions {
 
             switch (pathInfo.Value.Type) {
                 case PathType.TypeReference:
-                    proc.PushType(pathInfo.Value.Id);
+                    proc.PushType(pathInfo.Value.Id, Value);
                     break;
                 case PathType.ProcReference:
-                    proc.PushProc(pathInfo.Value.Id);
+                    proc.PushProc(pathInfo.Value.Id, Value);
                     break;
                 case PathType.ProcStub:
                 case PathType.VerbStub:
@@ -649,7 +649,7 @@ namespace DMCompiler.DM.Expressions {
     /// </summary>
     internal sealed class ConstantProcReference(Location location, DMProc referencedProc) : Constant(location) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
-            proc.PushProc(referencedProc.Id);
+            proc.PushProc(referencedProc.Id, referencedProc.GetPath());
         }
 
         public override string GetNameof(DMObject dmObject, DMProc proc) => referencedProc.Name;

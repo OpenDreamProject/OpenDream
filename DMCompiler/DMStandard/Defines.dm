@@ -124,15 +124,15 @@
 #define TILE_MOVER		(1<<11)
 
 //animate() easing arg
-#define LINEAR_EASING	1
-#define SINE_EASING		2
-#define CIRCULAR_EASING	3
-#define QUAD_EASING		4
-#define CUBIC_EASING	5
-#define BOUNCE_EASING	6
-#define ELASTIC_EASING	7
-#define BACK_EASING		8
-#define JUMP_EASING		9
+#define LINEAR_EASING	0
+#define SINE_EASING		1
+#define CIRCULAR_EASING	2
+#define CUBIC_EASING	3
+#define BOUNCE_EASING	4
+#define ELASTIC_EASING	5
+#define BACK_EASING		6
+#define QUAD_EASING		7
+#define JUMP_EASING		8
 
 //Undocumented matrix defines (see https://www.byond.com/forum/post/1881375)
 #define MATRIX_COPY 0

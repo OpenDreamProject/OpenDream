@@ -14,8 +14,6 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
-using Robust.Shared.Physics;
-using Microsoft.Extensions.Options;
 
 namespace OpenDreamClient.Rendering;
 

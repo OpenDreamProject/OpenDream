@@ -109,7 +109,14 @@ sealed class ArgumentList {
                     break;
                 case Expressions.Number keyNum:
                     //Replaces an ordered argument
-                    argIndex = (int)keyNum.Value;
+                    var newIdx = (int)keyNum.Value - 1;
+
+                    if (newIdx == argIndex) {
+                        DMCompiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
+                            $"The argument at index {argIndex + 1} is a positional argument with the same index (`{argIndex + 1} = value`). This does not function like a named argument and is likely a mistake.");
+                    }
+
+                    argIndex = newIdx;
                     break;
                 case Expressions.Resource _:
                 case Expressions.ConstantPath _:
@@ -129,6 +136,7 @@ sealed class ArgumentList {
                 _isKeyed = true;
 
             Expressions[argIndex] = (name, value);
+
         }
     }
 
@@ -195,7 +203,8 @@ sealed class ArgumentList {
 
         DMComplexValueType paramType = param.ExplicitValueType ?? DMValueType.Anything;
 
-        if (!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType)) {
+
+        if ((!expr.ValType.IsAnything && !paramType.MatchesType(expr.ValType))) {
             DMCompiler.Emit(WarningCode.InvalidVarType, expr.Location,
                 $"{targetProc.Name}(...) argument \"{param.Name}\": Invalid var value type {expr.ValType}, expected {paramType}");
         }

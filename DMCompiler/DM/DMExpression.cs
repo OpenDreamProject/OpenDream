@@ -113,7 +113,7 @@ sealed class ArgumentList {
 
                     if (newIdx == argIndex) {
                         DMCompiler.Emit(WarningCode.PointlessPositionalArgument, key.Location,
-                            $"The argument at index {argIndex + 1} is a positional argument with a redundant index (`{argIndex + 1} = value` at argument {argIndex}). This does not function like a named argument and is likely a mistake.");
+                            $"The argument at index {argIndex + 1} is a positional argument with a redundant index (`{argIndex + 1} = value` at argument {argIndex + 1}). This does not function like a named argument and is likely a mistake.");
                     }
 
                     argIndex = newIdx;

@@ -227,8 +227,7 @@ namespace DMCompiler.Compiler.DM {
                 Whitespace();
 
                 // Proc return type
-                // TODO: Currently we parse it but don't do anything with this information
-                AsTypes(out _, true);
+                var types = AsComplexTypes();
 
                 DMASTProcBlockInner? procBlock = ProcBlock();
                 if (procBlock is null) {
@@ -259,7 +258,7 @@ namespace DMCompiler.Compiler.DM {
                     procBlock = new DMASTProcBlockInner(loc, procStatements.ToArray(), procBlock.SetStatements);
                 }
 
-                return new DMASTProcDefinition(loc, CurrentPath, parameters.ToArray(), procBlock);
+                return new DMASTProcDefinition(loc, CurrentPath, parameters.ToArray(), procBlock, types);
             }
 
             //Object definition
@@ -288,7 +287,7 @@ namespace DMCompiler.Compiler.DM {
                         value = new DMASTConstantNull(loc);
                     }
 
-                    var valType = AsTypes(out _) ?? DMValueType.Anything;
+                    var valType = AsComplexTypes() ?? DMValueType.Anything;
                     var varDef = new DMASTObjectVarDefinition(loc, varPath, value, valType);
 
                     varDefinitions.Add(varDef);
@@ -864,9 +863,9 @@ namespace DMCompiler.Compiler.DM {
                     RequireExpression(ref value);
                 }
 
-                AsTypes(out _);
+                var valType = AsComplexTypes() ?? DMValueType.Anything;
 
-                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value));
+                varDeclarations.Add(new DMASTProcStatementVarDeclaration(loc, varPath, value, valType));
                 if (allowMultiple && Check(TokenType.DM_Comma)) {
                     Whitespace();
                     varPath = Path();
@@ -1171,7 +1170,7 @@ namespace DMCompiler.Compiler.DM {
 
                 _allowVarDeclExpression = true;
                 DMASTExpression? expr1 = Expression();
-                DMValueType? dmTypes = AsTypes(out _);
+                DMComplexValueType? dmTypes = AsComplexTypes();
                 Whitespace();
                 _allowVarDeclExpression = false;
                 if (expr1 == null) {
@@ -1708,7 +1707,13 @@ namespace DMCompiler.Compiler.DM {
                     value = Expression();
                 }
 
-                var type = AsTypes(out _);
+                var type = AsComplexTypes();
+                var dmType = DMObjectTree.GetDMObject(path.Path, false);
+                if (type is {Type: not DMValueType.Anything } && (value is null or DMASTConstantNull) && (dmType?.IsSubtypeOf(DreamPath.Datum) ?? false)) {
+                    DMCompiler.Emit(WarningCode.ImplicitNullType, loc, $"Variable \"{path.Path}\" is null but not a subtype of atom nor explicitly typed as nullable, append \"|null\" to \"as\". It will implicitly be treated as nullable.");
+                    type |= DMValueType.Null;
+                }
+
                 Whitespace();
 
                 if (Check(TokenType.DM_In)) {
@@ -2502,7 +2507,7 @@ namespace DMCompiler.Compiler.DM {
 
                     case "input": {
                         Whitespace();
-                        DMValueType? types = AsTypes(out _);
+                        DMValueType? types = AsTypes();
                         Whitespace();
                         DMASTExpression? list = null;
 
@@ -2628,71 +2633,113 @@ namespace DMCompiler.Compiler.DM {
             return expression;
         }
 
-        private DMValueType? AsTypes(out DMASTPath? path, bool allowPath = false) {
-            path = null;
-            if (Check(TokenType.DM_As)) {
-                DMValueType type = DMValueType.Anything;
+        private DMValueType? AsTypes() {
+            if (!AsTypesStart(out var parenthetical))
+                return null;
+            if (parenthetical && Check(TokenType.DM_RightParenthesis)) // as ()
+                return DMValueType.Anything; // TODO: BYOND doesn't allow this for proc return types
 
+            DMValueType type = DMValueType.Anything;
+
+            do {
                 Whitespace();
-                bool parenthetical = Check(TokenType.DM_LeftParenthesis);
-                bool closed = false;
+                type |= SingleAsType(out _);
+                Whitespace();
+            } while (Check(TokenType.DM_Bar));
 
-                do {
-                    Whitespace();
-                    Token typeToken = Current();
-
-                    if (parenthetical) {
-                        closed = Check(TokenType.DM_RightParenthesis);
-                        if (closed) break;
-                    }
-
-
-                    if (!Check(new[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
-                        // Proc return types
-                        path = Path();
-                        if (allowPath) {
-                            if (path is null) {
-                                DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
-                            }
-                            type |= DMValueType.Path;
-                        } else {
-                            DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type");
-                        }
-                    } else {
-                        switch (typeToken.Text) {
-                            case "anything": type |= DMValueType.Anything; break;
-                            case "null": type |= DMValueType.Null; break;
-                            case "text": type |= DMValueType.Text; break;
-                            case "obj": type |= DMValueType.Obj; break;
-                            case "mob": type |= DMValueType.Mob; break;
-                            case "turf": type |= DMValueType.Turf; break;
-                            case "num": type |= DMValueType.Num; break;
-                            case "message": type |= DMValueType.Message; break;
-                            case "area": type |= DMValueType.Area; break;
-                            case "color": type |= DMValueType.Color; break;
-                            case "file": type |= DMValueType.File; break;
-                            case "command_text": type |= DMValueType.CommandText; break;
-                            case "sound": type |= DMValueType.Sound; break;
-                            case "icon": type |= DMValueType.Icon; break;
-                            case "opendream_unimplemented": type |= DMValueType.Unimplemented; break;
-                            case "opendream_compiletimereadonly": type |= DMValueType.CompiletimeReadonly; break;
-                            default:
-                            Emit(WarningCode.BadToken, typeToken.Location, $"Invalid value type '{typeToken.Text}'");
-                            break;
-                        }
-                    }
-                    Whitespace();
-                } while (Check(TokenType.DM_Bar));
-
-                if (parenthetical && !closed) {
-                    Whitespace();
-                    ConsumeRightParenthesis();
-                }
-
-                return type;
+            if (parenthetical) {
+                ConsumeRightParenthesis();
             }
 
-            return null;
+            return type;
+        }
+
+        /// <summary>
+        /// AsTypes(), but can handle more complex types such as type paths
+        /// </summary>
+        private DMComplexValueType? AsComplexTypes() {
+            if (!AsTypesStart(out var parenthetical))
+                return null;
+            if (parenthetical && Check(TokenType.DM_RightParenthesis)) // as ()
+                return DMValueType.Anything; // TODO: BYOND doesn't allow this for proc return types
+
+            DMValueType type = DMValueType.Anything;
+            DreamPath? path = null;
+
+            do {
+                Whitespace();
+                type |= SingleAsType(out var pathType, allowPath: true);
+                Whitespace();
+
+                if (pathType != null) {
+                    if (path == null)
+                        path = pathType;
+                    else
+                        DMCompiler.Emit(WarningCode.BadToken, CurrentLoc,
+                            $"Only one type path can be used, ignoring {pathType}");
+                }
+
+            } while (Check(TokenType.DM_Bar));
+
+            if (parenthetical) {
+                ConsumeRightParenthesis();
+            }
+
+            return new(type, path);
+        }
+
+        private bool AsTypesStart(out bool parenthetical) {
+            if (Check(TokenType.DM_As)) {
+                Whitespace();
+                parenthetical = Check(TokenType.DM_LeftParenthesis);
+                return true;
+            }
+
+            parenthetical = false;
+            return false;
+        }
+
+        private DMValueType SingleAsType(out DreamPath? path, bool allowPath = false) {
+            Token typeToken = Current();
+
+            if (!Check(new[] { TokenType.DM_Identifier, TokenType.DM_Null })) {
+                // Proc return types
+                path = Path()?.Path;
+                if (allowPath) {
+                    if (path is null) {
+                        DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type or path");
+                    }
+
+                    return DMValueType.Path;
+                }
+
+                DMCompiler.Emit(WarningCode.BadToken, typeToken.Location, "Expected value type");
+                return 0;
+            }
+
+            path = null;
+            switch (typeToken.Text) {
+                case "anything": return DMValueType.Anything;
+                case "null": return DMValueType.Null;
+                case "text": return DMValueType.Text;
+                case "obj": return DMValueType.Obj;
+                case "mob": return DMValueType.Mob;
+                case "turf": return DMValueType.Turf;
+                case "num": return DMValueType.Num;
+                case "message": return DMValueType.Message;
+                case "area": return DMValueType.Area;
+                case "color": return DMValueType.Color;
+                case "file": return DMValueType.File;
+                case "command_text": return DMValueType.CommandText;
+                case "sound": return DMValueType.Sound;
+                case "icon": return DMValueType.Icon;
+                case "path": return DMValueType.Path;
+                case "opendream_unimplemented": return DMValueType.Unimplemented;
+                case "opendream_compiletimereadonly": return DMValueType.CompiletimeReadonly;
+                default:
+                    Emit(WarningCode.BadToken, typeToken.Location, $"Invalid value type '{typeToken.Text}'");
+                    return 0;
+            }
         }
 
         private bool Delimiter() {

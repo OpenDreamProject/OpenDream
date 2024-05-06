@@ -57,6 +57,11 @@ public enum WarningCode {
     DanglingVarType = 2401, // For types inferred by a particular var definition and nowhere else, that ends up not existing (not forced-fatal because BYOND doesn't always error)
     MissingInterpolatedExpression = 2500, // A text macro is missing a required interpolated expression
     AmbiguousResourcePath = 2600,
+    UnsupportedTypeCheck = 2700,
+    InvalidReturnType = 2701, // Proc static typing
+    InvalidVarType = 2702, // Var static typing
+    ImplicitNullType = 2703, //  Raised when a null variable isn't explicitly statically typed as nullable
+    LostTypeInfo = 2704, // An operation led to lost type information
 
     // 3000 - 3999 are reserved for stylistic configuration.
     EmptyBlock = 3100,

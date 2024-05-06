@@ -29,6 +29,16 @@
 #pragma MissingInterpolatedExpression warning
 #pragma AmbiguousResourcePath warning
 #pragma SuspiciousSwitchCase warning
+// NOTE: The next few pragmas are for OpenDream's experimental type checker
+// This feature is still in development, elevating these pragmas outside of local testing is discouraged
+// An RFC to finalize this feature is coming soon(TM)
+// BEGIN TYPEMAKER
+#pragma UnsupportedTypeCheck notice
+#pragma InvalidReturnType notice
+#pragma InvalidVarType notice
+#pragma ImplicitNullType notice
+#pragma LostTypeInfo notice
+// END TYPEMAKER
 
 //3000-3999
 #pragma EmptyBlock notice

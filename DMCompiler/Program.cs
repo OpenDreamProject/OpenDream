@@ -89,6 +89,7 @@ internal static class Program {
                     PrintHelp();
                     return false;
                 case "suppress-unimplemented": settings.SuppressUnimplementedWarnings = true; break;
+                case "skip-anything-typecheck": settings.SkipAnythingTypecheck = true; break;
                 case "dump-preprocessor": settings.DumpPreprocessor = true; break;
                 case "no-standard": settings.NoStandard = true; break;
                 case "verbose": settings.Verbose = true; break;

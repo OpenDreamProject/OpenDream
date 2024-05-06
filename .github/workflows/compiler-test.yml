@@ -34,29 +34,37 @@ jobs:
       run: dotnet build main/DMCompiler/DMCompiler.csproj --configuration Release --no-restore /m
     - name: Compile TestGame
       run: main\bin\DMCompiler\DMCompiler.exe main\TestGame\environment.dme
-    - name: Checkout /tg/station 88bdabe
+    - name: Checkout /tg/station Master
       uses: actions/checkout@v2
       with:
         repository: tgstation/tgstation
-        ref: 88bdabe53bb85f2a7f54e479f6c4a243650043d5
+        ref: master
         path: tg
-    - name: Compile /tg/station 88bdabe
+    - name: Compile /tg/station Master
       run: main\bin\DMCompiler\DMCompiler.exe tg\tgstation.dme
-    - name: Checkout Goonstation 8c8b527
+    - name: Checkout Goonstation Master
       uses: actions/checkout@v2
       with:
         repository: goonstation/goonstation
-        ref: 8c8b5276f231ae42b3b2390d837cab68af138fa6
+        ref: master
         path: goon
-    - name: Compile Goonstation 8c8b527
+    - name: Compile Goonstation Master
       run: |
         New-Item goon\+secret\__secret.dme -type file
-        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme --version=514.1584
-    - name: Checkout 64-bit Paradise
+        main\bin\DMCompiler\DMCompiler.exe goon\goonstation.dme
+    - name: Checkout Paradise Master
       uses: actions/checkout@v2
       with:
-        repository: ike709/Paradise
-        ref: rustg_64
+        repository: ParadiseSS13/Paradise
+        ref: master
         path: para
-    - name: Compile 64-bit Paradise
+    - name: Compile Paradise Master
       run: main\bin\DMCompiler\DMCompiler.exe para\paradise.dme
+    - name: Checkout Nebula Dev
+      uses: actions/checkout@v2
+      with:
+        repository: NebulaSS13/Nebula
+        ref: dev
+        path: nebula
+    - name: Compile Nebula Dev
+      run: main\bin\DMCompiler\DMCompiler.exe nebula\nebula.dme

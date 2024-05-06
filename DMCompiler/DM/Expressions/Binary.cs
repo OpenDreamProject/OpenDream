@@ -1,17 +1,20 @@
 using System.Diagnostics.CodeAnalysis;
 using DMCompiler.Bytecode;
+using DMCompiler.Compiler;
 
 namespace DMCompiler.DM.Expressions {
     internal abstract class BinaryOp(Location location, DMExpression lhs, DMExpression rhs) : DMExpression(location) {
         protected DMExpression LHS { get; } = lhs;
         protected DMExpression RHS { get; } = rhs;
+        public override DMComplexValueType ValType => LHS.ValType;
     }
 
     #region Simple
     // x + y
     sealed class Add : BinaryOp {
         public Add(Location location, DMExpression lhs, DMExpression rhs)
-            : base(location, lhs, rhs) { }
+            : base(location, lhs, rhs) {
+        }
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
             if (!LHS.TryAsConstant(out var lhs) || !RHS.TryAsConstant(out var rhs)) {
@@ -483,6 +486,7 @@ namespace DMCompiler.DM.Expressions {
     #region Compound Assignment
     internal abstract class AssignmentBinaryOp(Location location, DMExpression lhs, DMExpression rhs)
         : BinaryOp(location, lhs, rhs) {
+
         /// <summary>
         /// Generic interface for emitting the assignment operation. Has its conditionality and reference generation already handled.
         /// </summary>
@@ -510,8 +514,17 @@ namespace DMCompiler.DM.Expressions {
         public override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) {
             RHS.EmitPushValue(dmObject, proc);
             proc.Assign(reference);
+
+            if (!LHS.ValType.MatchesType(RHS.ValType) && !LHS.ValType.IsUnimplemented) {
+                if (DMCompiler.Settings.SkipAnythingTypecheck && RHS.ValType.IsAnything)
+                    return;
+
+                DMCompiler.Emit(WarningCode.InvalidVarType, Location,
+                    $"Invalid var type {RHS.ValType}, expected {LHS.ValType}");
+            }
         }
     }
+
     // x := y
     class AssignmentInto : AssignmentBinaryOp {
         public override DreamPath? Path => LHS.Path;

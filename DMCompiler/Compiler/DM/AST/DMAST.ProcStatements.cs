@@ -29,11 +29,14 @@ public sealed class DMASTProcStatementExpression(Location location, DMASTExpress
     public DMASTExpression Expression = expression;
 }
 
-public sealed class DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression? value)
+public sealed class DMASTProcStatementVarDeclaration(Location location, DMASTPath path, DMASTExpression? value, DMComplexValueType valType)
     : DMASTProcStatement(location) {
     public DMASTExpression? Value = value;
 
     public DreamPath? Type => _varDecl.IsList ? DreamPath.List : _varDecl.TypePath;
+
+    public DMComplexValueType ValType => valType;
+
     public string Name => _varDecl.VarName;
     public bool IsGlobal => _varDecl.IsStatic;
     public bool IsConst => _varDecl.IsConst;
@@ -109,10 +112,10 @@ public sealed class DMASTProcStatementFor(
     DMASTExpression? expr1,
     DMASTExpression? expr2,
     DMASTExpression? expr3,
-    DMValueType? dmTypes,
+    DMComplexValueType? dmTypes,
     DMASTProcBlockInner body) : DMASTProcStatement(location) {
     public DMASTExpression? Expression1 = expr1, Expression2 = expr2, Expression3 = expr3;
-    public DMValueType? DMTypes = dmTypes;
+    public DMComplexValueType? DMTypes = dmTypes;
     public readonly DMASTProcBlockInner Body = body;
 }
 

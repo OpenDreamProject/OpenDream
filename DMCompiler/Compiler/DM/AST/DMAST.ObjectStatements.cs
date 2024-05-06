@@ -25,9 +25,10 @@ public sealed class DMASTProcDefinition : DMASTStatement {
     public readonly bool IsVerb;
     public readonly DMASTDefinitionParameter[] Parameters;
     public readonly DMASTProcBlockInner? Body;
+    public readonly DMComplexValueType? ReturnTypes;
 
     public DMASTProcDefinition(Location location, DreamPath path, DMASTDefinitionParameter[] parameters,
-        DMASTProcBlockInner? body) : base(location) {
+        DMASTProcBlockInner? body, DMComplexValueType? returnType) : base(location) {
         int procElementIndex = path.FindElement("proc");
 
         if (procElementIndex == -1) {
@@ -43,6 +44,7 @@ public sealed class DMASTProcDefinition : DMASTStatement {
         Name = path.LastElement;
         Parameters = parameters;
         Body = body;
+        ReturnTypes = returnType;
     }
 }
 
@@ -50,7 +52,8 @@ public sealed class DMASTObjectVarDefinition(
     Location location,
     DreamPath path,
     DMASTExpression value,
-    DMValueType valType = DMValueType.Anything) : DMASTStatement(location) {
+    DMComplexValueType valType,
+    DreamPath? valPath = null) : DMASTStatement(location) {
     /// <summary>The path of the object that we are a property of.</summary>
     public DreamPath ObjectPath => _varDecl.ObjectPath;
 
@@ -70,7 +73,7 @@ public sealed class DMASTObjectVarDefinition(
     public bool IsConst => _varDecl.IsConst;
     public bool IsTmp => _varDecl.IsTmp;
 
-    public readonly DMValueType ValType = valType;
+    public readonly DMComplexValueType ValType = valType;
 }
 
 public sealed class DMASTMultipleObjectVarDefinitions(Location location, DMASTObjectVarDefinition[] varDefinitions)

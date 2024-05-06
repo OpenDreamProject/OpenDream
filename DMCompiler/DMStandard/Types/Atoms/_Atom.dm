@@ -106,3 +106,6 @@
 		return TRUE
 
 	proc/Stat()
+	
+	New(loc)
+		..()

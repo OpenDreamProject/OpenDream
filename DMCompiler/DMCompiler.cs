@@ -346,6 +346,8 @@ public static class DMCompiler {
 public struct DMCompilerSettings {
     public List<string>? Files = null;
     public bool SuppressUnimplementedWarnings = false;
+    /// <summary> Typechecking won't fail if the RHS type is "as anything" to ease migration, thus only emitting for explicit mismatches (e.g. "num" and "text") </summary>
+    public bool SkipAnythingTypecheck = false;
     public bool NoticesEnabled = false;
     public bool DumpPreprocessor = false;
     public bool NoStandard = false;

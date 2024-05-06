@@ -34,10 +34,8 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // src
-    sealed class Src : LValue {
-        public Src(Location location, DreamPath? path)
-            : base(location, path)
-        {}
+    sealed class Src(Location location, DreamPath? path) : LValue(location, path) {
+        public override DMComplexValueType ValType => DMValueType.Anything;
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Src;
@@ -48,9 +46,11 @@ namespace DMCompiler.DM.Expressions {
 
     // usr
     sealed class Usr : LValue {
+        //According to the docs, Usr is a mob. But it will get set to null by coders to clear refs.
+        public override DMComplexValueType ValType => (DMValueType.Mob | DMValueType.Null);
+
         public Usr(Location location)
-            : base(location, DreamPath.Mob)
-        {}
+            : base(location, DreamPath.Mob) { }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
             return DMReference.Usr;
@@ -74,7 +74,10 @@ namespace DMCompiler.DM.Expressions {
 
     // Identifier of local variable
     sealed class Local : LValue {
-        DMProc.LocalVariable LocalVar { get; }
+        public DMProc.LocalVariable LocalVar { get; }
+
+        // TODO: non-const local var static typing
+        public override DMComplexValueType ValType => LocalVar.ExplicitValueType ?? DMValueType.Anything;
 
         public Local(Location location, DMProc.LocalVariable localVar)
             : base(location, localVar.Type) {
@@ -109,50 +112,47 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // Identifier of field
-    sealed class Field : LValue {
-        public readonly DMVariable Variable;
-
-        public Field(Location location, DMVariable variable)
-            : base(location, variable.Type) {
-            Variable = variable;
-        }
+    sealed class Field(Location location, DMVariable variable, DMComplexValueType valType)
+        : LValue(location, variable.Type) {
+        public override DMComplexValueType ValType => valType;
 
         public override void EmitPushInitial(DMObject dmObject, DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
+            proc.PushString(variable.Name);
             proc.Initial();
         }
 
         public void EmitPushIsSaved(DMProc proc) {
             proc.PushReferenceValue(DMReference.Src);
-            proc.PushString(Variable.Name);
+            proc.PushString(variable.Name);
             proc.IsSaved();
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
-            return DMReference.CreateSrcField(Variable.Name);
+            return DMReference.CreateSrcField(variable.Name);
         }
 
-        public override string GetNameof(DMObject dmObject, DMProc proc) => Variable.Name;
+        public override string GetNameof(DMObject dmObject, DMProc proc) => variable.Name;
 
         public override bool TryAsConstant([NotNullWhen(true)] out Constant? constant) {
-            if (Variable.IsConst && Variable.Value != null) {
-                return Variable.Value.TryAsConstant(out constant);
+            if (variable.IsConst && variable.Value != null) {
+                return variable.Value.TryAsConstant(out constant);
             }
 
             constant = null;
             return false;
         }
+
+        public override string ToString() {
+            return variable.Name;
+        }
     }
 
     // Id of global field
-    sealed class GlobalField : LValue {
-        int Id { get; }
+    sealed class GlobalField(Location location, DreamPath? path, int id, DMComplexValueType valType) : LValue(location, path) {
+        private int Id { get; } = id;
 
-        public GlobalField(Location location, DreamPath? path, int id)
-            : base(location, path) {
-            Id = id;
-        }
+        public override DMComplexValueType ValType => valType;
 
         public void EmitPushIsSaved(DMProc proc) {
             throw new CompileErrorException(Location, "issaved() on globals is unimplemented");

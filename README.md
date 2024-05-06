@@ -35,6 +35,9 @@ To build, one can use a C# compiler (such as MSBuild) to compile the various pro
 ## Testing
 OpenDream makes use of a unit testing framework. You can run these unit tests by running `dotnet test` in the OpenDream directory. This will run all of the RobustToolbox tests, as well as the DM language tests which can be found under `Content.Tests/DMProject/Tests/`. To add to the unit tests, simply create a `.dm` file under the Tests directory with `/proc/RunTest()` as the entry point. Optionally you can also add flags to the test, such as `// COMPILE ERROR` to mark that this test should cause a compile error.
 
+## Requests for Comment
+New features unrelated to BYOND parity go through an RFC process to solicit input from the wider community. The RFCs and more info on the RFC process can be found [here](https://github.com/OpenDreamProject/rfcs).
+
 ## Screenshots
 The following screenshots are taken from a version of Paradise Station with a recompiled 64-bit rustg DLL. This branch of Paradise is available [here](https://github.com/ike709/Paradise/tree/rustg_64).
 

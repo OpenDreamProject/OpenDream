@@ -321,4 +321,36 @@ public struct ColorMatrix {
             c44 = lM41 * rM14 + lM42 * rM24 + lM43 * rM34 + lM44 * rM44
         };
     }
+
+    /// <summary>
+    /// Linearly interpolates between two instances.
+    /// </summary>
+    /// <param name="left">The left operand of the interpolation.</param>
+    /// <param name="right">The right operand of the interpolation.</param>
+    /// <param name="factor">The amount to interpolate between them. 0..1 is equivalent to left..right.</param>
+    /// <param name="result">A new instance that is the result of the interpolation</param>
+    public static void Interpolate(ref ColorMatrix left, ref ColorMatrix right, float factor, out ColorMatrix result) {
+        result = new ColorMatrix(
+                    ((1-factor) * left.c11) + (factor * right.c11),
+                    ((1-factor) * left.c12) + (factor * right.c12),
+                    ((1-factor) * left.c13) + (factor * right.c13),
+                    ((1-factor) * left.c14) + (factor * right.c14),
+                    ((1-factor) * left.c21) + (factor * right.c21),
+                    ((1-factor) * left.c22) + (factor * right.c22),
+                    ((1-factor) * left.c23) + (factor * right.c23),
+                    ((1-factor) * left.c24) + (factor * right.c24),
+                    ((1-factor) * left.c31) + (factor * right.c31),
+                    ((1-factor) * left.c32) + (factor * right.c32),
+                    ((1-factor) * left.c33) + (factor * right.c33),
+                    ((1-factor) * left.c34) + (factor * right.c34),
+                    ((1-factor) * left.c41) + (factor * right.c41),
+                    ((1-factor) * left.c42) + (factor * right.c42),
+                    ((1-factor) * left.c43) + (factor * right.c43),
+                    ((1-factor) * left.c44) + (factor * right.c44),
+                    ((1-factor) * left.c51) + (factor * right.c51),
+                    ((1-factor) * left.c52) + (factor * right.c52),
+                    ((1-factor) * left.c53) + (factor * right.c53),
+                    ((1-factor) * left.c54) + (factor * right.c54)
+                );
+    }
 }

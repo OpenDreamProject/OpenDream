@@ -2,8 +2,8 @@
 	parent_type = /atom/movable
 
 	var/client/client
-	var/key
-	var/tmp/ckey
+	var/key as text|null
+	var/tmp/ckey as text|null
 
 	var/tmp/list/group as opendream_unimplemented
 

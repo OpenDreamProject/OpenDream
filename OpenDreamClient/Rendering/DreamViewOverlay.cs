@@ -14,6 +14,8 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
+using Robust.Shared.Physics;
+using Microsoft.Extensions.Options;
 
 namespace OpenDreamClient.Rendering;
 
@@ -421,6 +423,7 @@ internal sealed class DreamViewOverlay : Overlay {
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
         var frame = iconMetaData.Texture;
 
+
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
             return;
@@ -437,10 +440,10 @@ internal sealed class DreamViewOverlay : Overlay {
 
         if (goFastOverride || icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
             //faster path for rendering unfiltered sprites
-            DrawIconFast(handle, renderTargetSize, frame, pixelPosition, GetBlendAndColorShader(iconMetaData));
+            DrawIconFast(handle, renderTargetSize, frame, pixelPosition, iconMetaData.TransformToApply, GetBlendAndColorShader(iconMetaData));
         } else {
             //Slower path for filtered icons
-            DrawIconSlow(handle, frame, iconMetaData, renderTargetSize, pixelPosition);
+            DrawIconSlow(handle, frame, iconMetaData, renderTargetSize, pixelPosition, iconMetaData.TransformToApply);
         }
     }
 
@@ -787,9 +790,9 @@ internal sealed class DreamViewOverlay : Overlay {
     /// Render a texture without applying any filters, making this faster and cheaper.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void DrawIconFast(DrawingHandleWorld handle, Vector2i renderTargetSize, Texture texture, Vector2 pos, ShaderInstance? shader) {
+    private static void DrawIconFast(DrawingHandleWorld handle, Vector2i renderTargetSize, Texture texture, Vector2 pos, Matrix3 transform, ShaderInstance? shader) {
         handle.UseShader(shader);
-        handle.SetTransform(CreateRenderTargetFlipMatrix(renderTargetSize, pos));
+        handle.SetTransform(Matrix3.CreateTranslation(-texture.Size*0.5f)*transform*Matrix3.CreateTranslation(texture.Size*0.5f)*CreateRenderTargetFlipMatrix(renderTargetSize, pos));
         handle.DrawTextureRect(texture, Box2.FromDimensions(Vector2.Zero, texture.Size));
     }
 
@@ -797,7 +800,7 @@ internal sealed class DreamViewOverlay : Overlay {
     /// A slower method of drawing an icon. This one renders an atom's filters.
     /// Use <see cref="DrawIconFast"/> instead if the icon has no special rendering needs.
     /// </summary>
-    private void DrawIconSlow(DrawingHandleWorld handle, Texture frame, RendererMetaData iconMetaData, Vector2i renderTargetSize, Vector2 pos) {
+    private void DrawIconSlow(DrawingHandleWorld handle, Texture frame, RendererMetaData iconMetaData, Vector2i renderTargetSize, Vector2 pos, Matrix3 transform) {
         //first we do ping pong rendering for the multiple filters
         // TODO: This should determine the size from the filters and their settings, not just double the original
         IRenderTexture ping = RentRenderTarget(frame.Size * 2);
@@ -827,9 +830,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 handle.UseShader(s);
 
                 // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
-                var transform = CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero);
-
-                handle.SetTransform(transform);
+                handle.SetTransform(CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
                 handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
             }, Color.Black.WithAlpha(0));
 
@@ -837,7 +838,7 @@ internal sealed class DreamViewOverlay : Overlay {
         }
 
         //then we draw the actual icon with filters applied
-        DrawIconFast(handle, renderTargetSize, pong.Texture, pos - frame.Size / 2,
+        DrawIconFast(handle, renderTargetSize, pong.Texture, pos - frame.Size / 2, transform,
             //note we apply the color *before* the filters, so we ignore color here
             GetBlendAndColorShader(iconMetaData, ignoreColor: true)
         );

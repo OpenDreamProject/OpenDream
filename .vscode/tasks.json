@@ -1,0 +1,33 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Compile for OpenDream",
+            "type": "shell",
+            "command": "dotnet run -c release --project ./DMCompiler --suppress-unimplemented ${input:path_to_repo}.dme",
+            "group": "build"
+        },
+        {
+            "label": "Run the server",
+            "type": "shell",
+            "command": "dotnet run -c release --project ./OpenDreamServer --cvar opendream.json_path=${input:path_to_repo}.json",
+            "group": "build"
+        },
+        {
+            "label": "Run the client",
+            "type": "shell",
+            "command": "dotnet run -c release --project ./OpenDreamClient",
+            "group": "build"
+        },
+    ],
+    "inputs": [
+        {
+            "id" : "path_to_repo",
+            "description": "Contains the path to the repo you want to run the compile on",
+            "default": "",
+            "type": "promptString"
+        },
+    ]
+}

@@ -427,10 +427,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 break;
 
             default: {
-                // TODO: Arguments are a little more complicated than "split by spaces"
-                // e.g. strings can be passed
-                string[] args = fullCommand.Split(' ', StringSplitOptions.TrimEntries);
-                string command = args[0].ToLowerInvariant(); // Case-insensitive
+                string[] argsRaw = fullCommand.Split(' ', 2, StringSplitOptions.TrimEntries);
+                string command = argsRaw[0].ToLowerInvariant(); // Case-insensitive
 
                 if (!_entitySystemManager.TryGetEntitySystem(out ClientVerbSystem? verbSystem))
                     return;
@@ -438,10 +436,34 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 if (ret is not var (verbId, verbSrc, verbInfo))
                     return;
 
-                if (args.Length == 1) { // No args given; Let the verb system handle the possible prompting
+                if (argsRaw.Length == 1) { // No args given; Let the verb system handle the possible prompting
                     verbSystem.ExecuteVerb(verbSrc, verbId);
                 } else { // Attempt to parse the given arguments
-                    if (args.Length != verbInfo.Arguments.Length + 1) {
+                    List<string> args = new List<string>();
+                    string currentArg = "";
+                    bool stringCapture = false;
+                    for(int i = 0; i < argsRaw[1].Length; i++){
+                        if(argsRaw[1][i] == '\\' && argsRaw[1].Length > i && args[1][i+1] == '"'){
+                            currentArg += "\"";
+                            i++;
+                            if(stringCapture){
+                                args.Add(currentArg);
+                                currentArg = "";
+                            }
+                            stringCapture = !stringCapture;
+                            continue;
+                        }
+                        if(argsRaw[1][i]==' ' && !stringCapture) {
+                            args.Add(currentArg);
+                            currentArg = "";
+                            continue;
+                        }
+                        currentArg += argsRaw[1][i];
+                    }
+                    if(!string.IsNullOrEmpty(currentArg))
+                        args.Add(currentArg);
+
+                    if (args.Count != verbInfo.Arguments.Length + 1) {
                         _sawmill.Error(
                             $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Length - 1}");
                         return;
@@ -483,6 +505,27 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         _netManager.ClientSendMessage(new MsgCommandRepeatStop() { Command = command });
     }
 
+    public string HandleEmbeddedWinget(string? controlId, string value) {
+        string result = value;
+        int startPos = result.IndexOf("[[", StringComparison.Ordinal);
+        while(startPos > -1){
+            int endPos = result.IndexOf("]]", startPos, StringComparison.Ordinal);
+            if(endPos == -1)
+                break;
+            string inner = result.Substring(startPos+2, endPos-startPos-2);
+            string[] elementSplit = inner.Split('.');
+            string innerControlId = controlId ?? "";
+            if(elementSplit.Length > 1){
+                innerControlId = (string.IsNullOrEmpty(innerControlId) ? "" : innerControlId+".")+string.Join(".", elementSplit[..^1]);
+                inner = elementSplit[^1];
+            }
+            string innerResult = WinGet(innerControlId, inner);
+            result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
+            startPos = result.IndexOf("[[", StringComparison.Ordinal);
+        }
+        return result;
+    }
+
     public void WinSet(string? controlId, string winsetParams) {
         DMFParser parser;
         try{
@@ -504,26 +547,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             return true;
         }
 
-        string HandleEmbeddedWinget(string? controlId, string value) {
-            string result = value;
-            int startPos = result.IndexOf("[[", StringComparison.Ordinal);
-            while(startPos > -1){
-                int endPos = result.IndexOf("]]", startPos, StringComparison.Ordinal);
-                if(endPos == -1)
-                    break;
-                string inner = result.Substring(startPos+2, endPos-startPos-2);
-                string[] elementSplit = inner.Split('.');
-                string innerControlId = controlId ?? "";
-                if(elementSplit.Length > 1){
-                    innerControlId = (string.IsNullOrEmpty(innerControlId) ? "" : innerControlId+".")+string.Join(".", elementSplit[..^1]);
-                    inner = elementSplit[^1];
-                }
-                string innerResult = WinGet(innerControlId, inner);
-                result = result.Substring(0, startPos) + innerResult + result.Substring(endPos+2);
-                startPos = result.IndexOf("[[", StringComparison.Ordinal);
-            }
-            return result;
-        }
+
 
         if (string.IsNullOrEmpty(controlId)) {
             List<DMFWinSet> winSets = parser.GlobalWinSet();

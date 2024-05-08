@@ -447,25 +447,25 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                             currentArg += "\"";
                             i++;
                             if(stringCapture){
-                                args.Add(currentArg);
+                                args.Add(HandleEmbeddedWinget(null ,currentArg));
                                 currentArg = "";
                             }
                             stringCapture = !stringCapture;
                             continue;
                         }
                         if(argsRaw[1][i]==' ' && !stringCapture) {
-                            args.Add(currentArg);
+                            args.Add(HandleEmbeddedWinget(null ,currentArg));
                             currentArg = "";
                             continue;
                         }
                         currentArg += argsRaw[1][i];
                     }
                     if(!string.IsNullOrEmpty(currentArg))
-                        args.Add(currentArg);
+                        args.Add(HandleEmbeddedWinget(null ,currentArg));
 
                     if (args.Count != verbInfo.Arguments.Length + 1) {
                         _sawmill.Error(
-                            $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Length - 1}");
+                            $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Count - 1}");
                         return;
                     }
 

@@ -1,4 +1,5 @@
 using System.Linq;
+using System.Text.Encodings.Web;
 using JetBrains.Annotations;
 using Robust.Shared.Serialization;
 using Robust.Shared.Serialization.Manager;
@@ -46,23 +47,37 @@ public struct DMFPropertyString : DMFProperty {
     }
 
     public string AsEscaped() {
-        return Value != null ? Value.ToString() : "";
+        if(Value == null)
+            return "";
+        return Value
+            .Replace("\\", "\\\\")
+            .Replace("\"", "\\\"")
+        ;
+
     }
 
     public string AsString() {
-        return Value != null ? Value.ToString() : "";
+        return AsArg();
     }
 
     public string AsParams() {
-        return Value != null ? Value.ToString() : "";
+        if(Value == null)
+            return "";
+        else
+            return System.Web.HttpUtility.UrlEncode(Value);
     }
 
     public string AsJSON() {
-        return Value != null ? Value.ToString() : "";
+        return AsArg();
     }
 
     public string AsJSONDM() {
-        return Value != null ? Value.ToString() : "";
+        //basically just escaped, quoted, and escaped again
+        var orig = Value;
+        Value = AsArg();
+        var result = AsEscaped();
+        Value = orig;
+        return result;
     }
 
     public string AsRaw() {
@@ -93,7 +108,7 @@ public struct DMFPropertyNum : DMFProperty {
     }
 
     public string AsString() {
-        return AsRaw();
+        return "\""+AsRaw()+"\"";
     }
 
     public string AsParams() {
@@ -152,7 +167,7 @@ public struct DMFPropertyVec2 : DMFProperty {
     }
 
     public string AsArg() {
-        return X.ToString() + "," + Y.ToString();
+        return X.ToString() + " " + Y.ToString();
     }
 
     public string AsEscaped() {
@@ -160,23 +175,23 @@ public struct DMFPropertyVec2 : DMFProperty {
     }
 
     public string AsString() {
-        return "(" + X.ToString() + ", " + Y.ToString() + ")";
+        return "\"" + AsEscaped() + "\"";
     }
 
     public string AsParams() {
-        return X.ToString() + ", " + Y.ToString();
+        return AsEscaped();
     }
 
     public string AsJSON() {
-        return "[" + X.ToString() + "," + Y.ToString() + "]";
+        return "{\"x\":" + X.ToString() + ", \"y\":" + Y.ToString() + "}";
     }
 
     public string AsJSONDM() {
-        return "[" + X.ToString() + "," + Y.ToString() + "]";
+        return "{\\\"x\\\":" + X.ToString() + ", \\\"y\\\":" + Y.ToString() + "}";
     }
 
     public string AsRaw() {
-        return X.ToString() + "," + Y.ToString();
+        return AsArg();
     }
 
     public override string ToString() {
@@ -192,7 +207,7 @@ public struct DMFPropertyColor : DMFProperty {
     }
 
     public DMFPropertyColor(string stringValue) {
-        if (stringValue.Equals("none", StringComparison.OrdinalIgnoreCase)) {
+        if (stringValue.Equals("none", StringComparison.OrdinalIgnoreCase) || string.IsNullOrEmpty(stringValue)) {
             Value = Color.Transparent;
         } else {
             var deserializedColor = Color.TryFromName(stringValue, out var color)
@@ -207,7 +222,7 @@ public struct DMFPropertyColor : DMFProperty {
     }
 
     public string AsArg() {
-        return AsRaw();
+        return AsString();
     }
 
     public string AsEscaped() {
@@ -215,7 +230,7 @@ public struct DMFPropertyColor : DMFProperty {
     }
 
     public string AsString() {
-        return AsRaw();
+        return "\""+AsRaw()+"\"";
     }
 
     public string AsParams() {
@@ -223,19 +238,21 @@ public struct DMFPropertyColor : DMFProperty {
     }
 
     public string AsJSON() {
-        return AsRaw();
+        if(Value == Color.Transparent)
+            return "\"null\"";
+        return AsString();
     }
 
     public string AsJSONDM() {
-        return AsRaw();
+        if(Value == Color.Transparent)
+            return "\"null\"";
+        return AsString();
     }
 
     public string AsRaw() {
-        string? colorName = Value.Name();
-        if(colorName != null)
-            return colorName;
-        else
-            return Value.ToHex();
+        if(Value == Color.Transparent)
+            return "";
+        return Value.ToHexNoAlpha();
     }
 
     public override string ToString() {
@@ -259,15 +276,15 @@ public struct DMFPropertyBool : DMFProperty {
     }
 
     public string AsEscaped() {
-        return Value ? "1" : "0";
+        return AsArg();
     }
 
     public string AsString() {
-        return Value ? "true" : "false";
+        return Value ? "\"true\"" : "\"false\"";
     }
 
     public string AsParams() {
-        return Value ? "true" : "false";
+        return AsArg();
     }
 
     public string AsJSON() {

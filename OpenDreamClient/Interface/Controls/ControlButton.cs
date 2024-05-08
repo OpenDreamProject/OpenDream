@@ -33,7 +33,7 @@ internal sealed class ControlButton : InterfaceControl {
     private void OnButtonClick(BaseButton.ButtonEventArgs args) {
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
-        if (string.IsNullOrEmpty(controlDescriptor.Command.Value)) {
+        if (!string.IsNullOrEmpty(controlDescriptor.Command.Value)) {
             _interfaceManager.RunCommand(controlDescriptor.Command.AsRaw());
         }
     }

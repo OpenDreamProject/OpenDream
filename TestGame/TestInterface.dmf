@@ -39,6 +39,18 @@ menu "menu"
 		name = "Quit"
 		command = ".quit"
 		category = "Menu"
+	elem
+		name = "Show Popup"
+		command = ".winset \"testwindow.is-visible=true\""
+		category = "Menu"
+	elem
+		name = "Hide Popup"
+		command = ".winset \"testwindow.is-visible=false\""
+		category = "Menu"
+	elem
+		name = "Toggle Popup"
+		command = ".winset \"testwindow.is-visible=false?testwindow.is-visible=true:testwindow.is-visible=false\""	
+		category = "Menu"
 
 window "mapwindow"
 	elem "mapwindow"
@@ -124,4 +136,59 @@ window "mainwindow"
 		right = "infowindow"
 		is-vert = true
 
+window "testwindow"
+	elem "testwindow"
+		type = MAIN
+		size = 200x100
+		title = "popup"
+		is-visible = false
+	elem "testwindowlabel"
+		type = LABEL
+		text = "I am a test"
 
+window "wingetwindow"
+	elem "wingetwindow"
+		type = MAIN
+		size = 200x100
+		title = "winget test"
+		is-visible = true
+	elem "wingetinput"
+		type = INPUT
+		pos = 0,0
+		size = 200,20
+		text = "this is some test text"
+	elem "wingetbuttonarg"
+		type = BUTTON
+		pos = 0,20
+		text = "as arg"
+		command = "wingettextverb \"arg: [[wingetwindow.background-color as arg]]\""
+	elem "wingetbuttonesc"
+		type = BUTTON
+		pos = 0,40
+		text = "as escaped"
+		command = "wingettextverb \"escaped: [[wingetwindow.background-color as escaped]]\""
+	elem "wingetbuttonstr"
+		type = BUTTON
+		pos = 0,60
+		text = "as string"
+		command = "wingettextverb \"string: [[wingetwindow.background-color as string]]\""		
+	elem "wingetbuttonpar"
+		type = BUTTON
+		pos = 0,80
+		text = "as params"
+		command = "wingettextverb \"params: [[wingetwindow.background-color as params]]\""	
+	elem "wingetbuttonjson"
+		type = BUTTON
+		pos = 50,20
+		text = "as json"
+		command = "wingettextverb \"json: [[wingetwindow.background-color as json]]\""
+	elem "wingetbuttonjsondm"
+		type = BUTTON
+		pos = 50,40
+		text = "as json-dm"
+		command = "wingettextverb \"json-dm: [[wingetwindow.background-color as json-dm]]\""		
+	elem "wingetbuttonraw"
+		type = BUTTON
+		pos = 50,60
+		text = "as raw"
+		command = "wingettextverb \"raw: [[wingetwindow.background-color as raw]]\""

@@ -192,6 +192,10 @@
 		spawn(20)
 			src << "showing main window"
 			winset(src,"mainwindow","is-visible=true")
+			
+	verb/winget_text_verb(var/rawtext as command_text)
+		set name = "wingettextverb"
+		world << "recieved: [rawtext]"			
 
 /mob/Stat()
 	if (statpanel("Status"))

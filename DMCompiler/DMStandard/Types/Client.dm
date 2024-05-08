@@ -168,3 +168,6 @@
 		set opendream_unimplemented = TRUE
 	proc/SetAPI(Api, Key, Value)
 		set opendream_unimplemented = TRUE
+	proc/RenderIcon(object)
+		set opendream_unimplemented = TRUE
+		return object

@@ -40,7 +40,7 @@ public class InterfaceElement {
     /// </summary>
     public virtual bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
         MappingDataNode original =
-                (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
+                (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor, alwaysWrite: true); //alwayswrite because we want to access all properties, even defaults
         if (original.TryGet(property, out var node) && _serializationManager.TryGetVariableType(ElementDescriptor.GetType(), property, out var propertyDef)) {
             value = (DMFProperty?) _serializationManager.Read(propertyDef, node);
             if(value is not null)

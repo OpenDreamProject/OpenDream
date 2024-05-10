@@ -473,7 +473,7 @@ public sealed class DreamConnection {
         if (CanBe(DreamValueType.Null) && value == null) {
             converted = DreamValue.Null;
             return true;
-        } else if (CanBe(DreamValueType.Text | DreamValueType.Message) && value is string strVal) {
+        } else if (CanBe(DreamValueType.Text | DreamValueType.Message | DreamValueType.CommandText) && value is string strVal) {
             converted = new(strVal);
             return true;
         } else if (CanBe(DreamValueType.Num) && value is float numVal) {

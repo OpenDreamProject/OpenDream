@@ -443,9 +443,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     string currentArg = "";
                     bool stringCapture = false;
                     for(int i = 0; i < argsRaw[1].Length; i++){
-                        if(argsRaw[1][i] == '\\' && argsRaw[1].Length > i && args[1][i+1] == '"'){
+                        if(argsRaw[1][i] == '\"'){
                             currentArg += "\"";
-                            i++;
                             if(stringCapture){
                                 args.Add(HandleEmbeddedWinget(null ,currentArg));
                                 currentArg = "";
@@ -463,9 +462,9 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     if(!string.IsNullOrEmpty(currentArg))
                         args.Add(HandleEmbeddedWinget(null ,currentArg));
 
-                    if (args.Count != verbInfo.Arguments.Length + 1) {
+                    if (args.Count != verbInfo.Arguments.Length) {
                         _sawmill.Error(
-                            $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Count - 1}");
+                            $"Attempted to call a verb with {verbInfo.Arguments.Length} argument(s) with only {args.Count}");
                         return;
                     }
 
@@ -473,12 +472,12 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                     for (int i = 0; i < verbInfo.Arguments.Length; i++) {
                         DreamValueType argumentType = verbInfo.Arguments[i].Types;
 
-                        if (argumentType == DreamValueType.Text) {
-                            arguments[i] = args[i + 1];
+                        if (argumentType is DreamValueType.Text or DreamValueType.Message or DreamValueType.CommandText) {
+                            arguments[i] = args[i];
                         } else if (argumentType == DreamValueType.Num) {
-                            if (!float.TryParse(args[i + 1], out var numArg)) {
+                            if (!float.TryParse(args[i], out var numArg)) {
                                 _sawmill.Error(
-                                    $"Invalid number argument \"{args[i + 1]}\"; ignoring command ({fullCommand})");
+                                    $"Invalid number argument \"{args[i]}\"; ignoring command ({fullCommand})");
                                 return;
                             }
 

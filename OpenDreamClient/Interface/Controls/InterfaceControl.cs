@@ -18,7 +18,6 @@ public abstract class InterfaceControl : InterfaceElement {
 
     private readonly ControlWindow _window;
 
-    [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
     protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor) {
         IoCManager.InjectDependencies(this);
 
@@ -37,13 +36,12 @@ public abstract class InterfaceControl : InterfaceElement {
         LayoutContainer.SetMarginLeft(UIElement, pos.X);
         LayoutContainer.SetMarginTop(UIElement, pos.Y);
 
-        if (ControlDescriptor.Size is { } size)
-            UIElement.SetSize = new Vector2(size.X, size.Y);
+        UIElement.SetSize = new Vector2(ControlDescriptor.Size.X, ControlDescriptor.Size.Y);
 
         _window?.UpdateAnchors();
 
-        if (ControlDescriptor.BackgroundColor is { } bgColor) {
-            var styleBox = new StyleBoxFlat {BackgroundColor = bgColor.Value};
+        if (ControlDescriptor.BackgroundColor.Value != Color.Transparent) { //transparent is default because it's white with 0 alpha, and DMF color can't have none-255 alpha
+            var styleBox = new StyleBoxFlat {BackgroundColor = ControlDescriptor.BackgroundColor.Value};
 
             switch (UIElement) {
                 case PanelContainer panel:

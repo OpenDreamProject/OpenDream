@@ -147,9 +147,7 @@ public struct DMFPropertyVec2 : DMFProperty {
             Y = 0;
         }
 
-        string[] parts = value.Split(',');
-        if(parts.Count() != 2)
-            parts = value.Split('x');
+        string[] parts = value.Split([',','x',' ']);
 
         X = int.Parse(parts[0]);
         Y = int.Parse(parts[1]);

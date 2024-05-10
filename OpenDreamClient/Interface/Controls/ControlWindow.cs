@@ -60,13 +60,16 @@ public sealed class ControlWindow : InterfaceControl {
         if(UIElement.Parent is not null)
             UIElement.Orphan();
         window.Children.Add(UIElement);
-        //TODO: check if this is needed
-        //window.SetWidth = ControlDescriptor.Size.X ?? 640;
-        //window.SetHeight = ControlDescriptor.Size.Y ?? 440;
+
         if (ControlDescriptor.Size.X == 0)
             window.SetWidth = window.MaxWidth;
+        else
+            window.SetWidth = ControlDescriptor.Size.X;
         if (ControlDescriptor.Size.Y == 0)
             window.SetHeight = window.MaxHeight;
+        else
+            window.SetHeight = ControlDescriptor.Size.Y;
+
         window.Closing += _ => {
             // A window can have a command set to be run when it's closed
             if (!string.IsNullOrWhiteSpace(WindowDescriptor.OnClose.Value)) {

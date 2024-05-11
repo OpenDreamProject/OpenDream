@@ -24,11 +24,17 @@ public sealed class DreamObjectClient : DreamObject {
         View = DreamManager.WorldInstance.DefaultView;
     }
 
-    protected override void HandleDeletion() {
-        Connection.Session?.ConnectedClient.Disconnect("Your client object was deleted");
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Client hashset is not threadsafe, this is not a hot path so no reason to change this.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        Connection.Session?.Channel.Disconnect("Your client object was deleted");
         DreamManager.Clients.Remove(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

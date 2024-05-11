@@ -139,7 +139,7 @@ namespace OpenDreamRuntime.Procs {
             }
 
             if (type.ObjectDefinition.IsSubtypeOf(state.Proc.ObjectTree.Datum)) {
-                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.Datums, type));
+                state.EnumeratorStack.Push(new DreamObjectEnumerator(state.DreamManager.IterateDatums(), type));
                 return ProcStatus.Continue;
             }
 

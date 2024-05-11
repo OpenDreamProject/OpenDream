@@ -27,10 +27,16 @@ public class DreamObjectAtom : DreamObject {
         ObjectDefinition.Variables["desc"].TryGetValueAsString(out Desc);
     }
 
-    protected override void HandleDeletion() {
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: RemoveAtom is not threadsafe.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
         AtomManager.RemoveAtom(this);
 
-        base.HandleDeletion();
+        base.HandleDeletion(possiblyThreaded);
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

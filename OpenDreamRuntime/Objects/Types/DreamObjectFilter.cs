@@ -14,8 +14,14 @@ public sealed class DreamObjectFilter : DreamObject {
 
     }
 
-    protected override void HandleDeletion() {
-        base.HandleDeletion();
+    protected override void HandleDeletion(bool possiblyThreaded) {
+        // SAFETY: Attachment dictionary is not threadsafe, no reason to change this.
+        if (possiblyThreaded) {
+            EnterIntoDelQueue();
+            return;
+        }
+
+        base.HandleDeletion(possiblyThreaded);
 
         FilterAttachedTo.Remove(Filter);
     }

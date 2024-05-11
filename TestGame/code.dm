@@ -23,6 +23,17 @@
 /turf/blue
 	icon_state = "turf_blue"
 
+/datum/version
+	var/version
+	var/build
+
+var/const/lib = "E:/Projects/OpenDream/bin/Content.Tests/byondapitest.dll"
+
+/proc/RunTest()
+	var/datum/version/v = new
+	var/result = call_ext(lib, "byond:echo_get_version")(v)
+	world.log << "Real: [result]"
+
 /mob
 	icon = 'icons/mob.dmi'
 	icon_state = "mob"
@@ -33,6 +44,9 @@
 	desc = "Such a beautiful smile."
 	gender = MALE
 	see_invisible = 101
+
+	verb/what()
+		RunTest()
 
 	New()
 		..()

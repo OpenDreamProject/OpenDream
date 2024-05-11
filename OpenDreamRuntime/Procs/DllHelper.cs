@@ -39,9 +39,11 @@ namespace OpenDreamRuntime.Procs
                 return true;
 
             // Simple load didn't pass, try next to dmb.
-            if(!File.Exists(dllName))
-                throw new DllNotFoundException($"FFI: Unable to load DLL {dllName}.");
-            return NativeLibrary.TryLoad(dllName, out dll);
+            var root = resource.RootPath;
+            var fullPath = Path.Combine(root, dllName);
+            if(!File.Exists(fullPath))
+                throw new DllNotFoundException($"FFI: Unable to load {dllName}. File not found at {fullPath}");
+            return NativeLibrary.TryLoad(fullPath, out dll);
         }
     }
 }

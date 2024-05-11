@@ -55,12 +55,15 @@ namespace OpenDreamRuntime {
 
         private DreamCompiledJson _compiledJson;
         public bool Initialized { get; private set; }
+        public bool IsShutDown { get; private set; }
         public GameTick InitializedTick { get; private set; }
 
         private ISawmill _sawmill = default!;
 
         //TODO This arg is awful and temporary until RT supports cvar overrides in unit tests
         public void PreInitialize(string? jsonPath) {
+            ByondApi.Initialize(this);
+
             _sawmill = Logger.GetSawmill("opendream");
 
             InitializeConnectionManager();
@@ -92,6 +95,7 @@ namespace OpenDreamRuntime {
             WorldInstance.Delete();
             ShutdownConnectionManager();
             Initialized = false;
+            IsShutDown = true;
         }
 
         public void Update() {

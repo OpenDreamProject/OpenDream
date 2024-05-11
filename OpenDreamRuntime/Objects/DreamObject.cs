@@ -109,23 +109,15 @@ namespace OpenDreamRuntime.Objects {
             ObjectDefinition = null!;
         }
 
-        private static ConcurrentBag<DreamObject> _delQueue = new();
+
 
         /// <summary>
         ///     Enters the current dream object into a global del queue that is guaranteed to run on the DM thread.
         ///     Use if your deletion handler must be on the DM thread.
         /// </summary>
         protected void EnterIntoDelQueue() {
-            _delQueue.Add(this);
+            DreamManager.DelQueue.Add(this);
         }
-
-        [Access(typeof(DreamManager))]
-        public static void ProcessDelQueue() {
-            while (_delQueue.TryTake(out var obj)) {
-                obj.Delete();
-            }
-        }
-
         /// <summary>
         ///     Del() the object, cleaning up its variables and refs to minimize size until the .NET GC collects it.
         /// </summary>

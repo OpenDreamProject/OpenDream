@@ -51,6 +51,7 @@ namespace OpenDreamRuntime {
         public HashSet<DreamObject> Clients { get; set; } = new();
         // I solemnly swear this benefits from being a linked list (constant remove times without relying on object hash) --kaylie
         public LinkedList<WeakDreamRef> Datums { get; set; } = new();
+        public ConcurrentBag<DreamObject> DelQueue = new();
         public Random Random { get; set; } = new();
         public Dictionary<string, List<DreamObject>> Tags { get; set; } = new();
         public DreamProc ImageConstructor, ImageFactoryProc;
@@ -106,7 +107,13 @@ namespace OpenDreamRuntime {
             _dreamMapManager.UpdateTiles();
             DreamObjectSavefile.FlushAllUpdates();
             WorldInstance.SetVariableValue("cpu", WorldInstance.GetVariable("tick_usage"));
-            DreamObject.ProcessDelQueue();
+            ProcessDelQueue();
+        }
+
+        public void ProcessDelQueue() {
+            while (DelQueue.TryTake(out var obj)) {
+                obj.Delete();
+            }
         }
 
         public bool LoadJson(string? jsonPath) {

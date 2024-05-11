@@ -95,6 +95,9 @@ public sealed class DMTests : ContentUnitTest {
                 Assert.That(returned?.IsTruthy(), Is.True, "Test was expected to return TRUE");
             }
 
+            // Due to how softdels work we need to make sure we clean up /now/.
+            GC.Collect();
+            _dreamMan.Update();
             Cleanup(compiledFile);
             TestContext.WriteLine($"--- PASS {sourceFile}");
         } finally {

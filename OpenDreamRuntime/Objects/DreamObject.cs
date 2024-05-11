@@ -121,7 +121,7 @@ namespace OpenDreamRuntime.Objects {
 
         [Access(typeof(DreamManager))]
         public static void ProcessDelQueue() {
-            foreach (var obj in _delQueue) {
+            while (_delQueue.TryTake(out var obj)) {
                 obj.Delete();
             }
         }

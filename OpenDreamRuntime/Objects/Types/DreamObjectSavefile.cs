@@ -130,6 +130,10 @@ public sealed class DreamObjectSavefile : DreamObject {
             EnterIntoDelQueue();
             return;
         }
+
+        if (Deleted)
+            return;
+
         Close();
         base.HandleDeletion(possiblyThreaded);
     }

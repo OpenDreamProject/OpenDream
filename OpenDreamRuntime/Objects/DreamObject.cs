@@ -129,14 +129,14 @@ namespace OpenDreamRuntime.Objects {
             if (TryGetProc("Del", out var delProc)) {
                 // SAFETY: See associated comment in Datum.dm. This relies on the invariant that this proc is in a
                 //         thread-safe subset of DM (if such a thing exists) or empty. Currently, it is empty.
-                if (possiblyThreaded && delProc.OwningType.Path != "/datum") {
+                var datumBaseProc = delProc.OwningType.Path == "/datum";
+                if (possiblyThreaded && !datumBaseProc) {
                     EnterIntoDelQueue();
                     return; //Whoops, cannot thread.
-                } else {
+                } else if (!datumBaseProc) {
                     DreamThread.Run(delProc, this, null);
                 }
             }
-
 
             HandleDeletion(possiblyThreaded);
         }

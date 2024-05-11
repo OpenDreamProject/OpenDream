@@ -38,6 +38,11 @@ internal static partial class DMOpcodeHandlers {
         Span<ByondApi.CByondValue> args = stackalloc ByondApi.CByondValue[arguments.Count];
         args.Clear();
 
+        for (var i = 0; i < args.Length; i++) {
+            var arg = arguments.GetArgument(i);
+            args[i] = ByondApi.ValueToByondApi(arg);
+        }
+
         ByondApi.CByondValue result;
         fixed (ByondApi.CByondValue* argV = args) {
             result = entryPoint((uint)arguments.Count, argV);

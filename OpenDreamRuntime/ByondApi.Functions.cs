@@ -6,7 +6,7 @@ using System.Runtime.InteropServices;
 namespace OpenDreamRuntime;
 
 public static unsafe partial class ByondApi {
-        [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
+    [UnmanagedCallersOnly(CallConvs = [typeof(CallConvCdecl)])]
     private static byte* Byond_LastError() {
         return PinningIsNotReal("no error"u8);
     }

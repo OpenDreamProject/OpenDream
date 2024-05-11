@@ -23,4 +23,18 @@ public static partial class ByondApi {
                 return DreamValue.Null;
         }
     }
+
+    public static CByondValue ValueToByondApi(DreamValue value) {
+        switch (value.Type) {
+            case DreamValue.DreamValueType.Float:
+                return new CByondValue {
+                    data = new ByondValueData {
+                        num = value.MustGetValueAsFloat()
+                    },
+                    type = ByondValueType.Number
+                };
+            default:
+                throw new ArgumentOutOfRangeException();
+        }
+    }
 }

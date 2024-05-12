@@ -8,17 +8,21 @@ namespace OpenDreamRuntime.Procs
     {
         private static readonly Dictionary<string, nint> LoadedDlls = new();
 
-        public static unsafe delegate* unmanaged<int, byte**, byte*> ResolveDllTarget(
+        public static unsafe delegate* unmanaged[Cdecl]<int, byte**, byte*> ResolveDllTarget(
             DreamResourceManager resource,
             string dllName,
             string funcName)
         {
+            // stdcall convention
+            if (funcName.Contains('@'))
+                throw new NotSupportedException("Stdcall calling convention is not supported in OpenDream");
+
             var dll = GetDll(resource, dllName);
 
             if (!NativeLibrary.TryGetExport(dll, funcName, out var export))
                 throw new MissingMethodException($"FFI: Unable to find symbol {funcName} in library {dllName}");
 
-            return (delegate* unmanaged<int, byte**, byte*>)export;
+            return (delegate* unmanaged[Cdecl]<int, byte**, byte*>)export;
         }
 
         private static nint GetDll(DreamResourceManager resource, string dllName)

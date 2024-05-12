@@ -7,7 +7,7 @@ namespace OpenDreamClient.Resources.ResourceTypes;
 public class DreamResource {
     public readonly int Id;
 
-    protected readonly byte[] Data;
+    protected byte[] Data;
 
     [UsedImplicitly]
     public DreamResource(int id, byte[] data) {
@@ -17,5 +17,9 @@ public class DreamResource {
 
     public void WriteTo(Stream stream) {
         stream.Write(Data);
+    }
+
+    public virtual void UpdateData(byte[] data) {
+        Data = data;
     }
 }

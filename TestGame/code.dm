@@ -202,7 +202,7 @@
 	verb/test_hot_reload_icon()
 		set category = "Test"
 		src << "tyring hot reload of icon..."
-		world.ODHotReloadResource("icons/mob.dmi")
+		world.ODHotReloadResource("icons/turf.dmi")
 		src << "done hot reload of icon!"
 
 /mob/Stat()

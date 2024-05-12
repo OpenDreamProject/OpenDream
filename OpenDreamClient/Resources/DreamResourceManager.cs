@@ -71,12 +71,18 @@ namespace OpenDreamClient.Resources {
         private void RxResource(MsgResource message) {
             if (_loadingResources.ContainsKey(message.ResourceId)) {
                 LoadingResourceEntry entry = _loadingResources[message.ResourceId];
-                DreamResource resource = LoadResourceFromData(
-                    entry.ResourceType,
-                    message.ResourceId,
-                    message.ResourceData);
+                DreamResource resource;
+                if(_resourceCache.ContainsKey(message.ResourceId)){
+                    _resourceCache[message.ResourceId].UpdateData(message.ResourceData); //we update instead of replacing so we don't have to replace the handle in everything that uses it
+                    resource = _resourceCache[message.ResourceId];
+                } else {
+                    resource = LoadResourceFromData(
+                        entry.ResourceType,
+                        message.ResourceId,
+                        message.ResourceData);
+                    _resourceCache[message.ResourceId] = resource;
+                }
 
-                _resourceCache[message.ResourceId] = resource;
                 foreach (Action<DreamResource> callback in entry.LoadCallbacks) {
                     try {
                         callback.Invoke(resource);

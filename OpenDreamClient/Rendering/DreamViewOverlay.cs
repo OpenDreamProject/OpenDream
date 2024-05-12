@@ -790,7 +790,7 @@ internal sealed class DreamViewOverlay : Overlay {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void DrawIconFast(DrawingHandleWorld handle, Vector2i renderTargetSize, Texture texture, Vector2 pos, Matrix3 transform, ShaderInstance? shader) {
         handle.UseShader(shader);
-        handle.SetTransform(Matrix3.CreateTranslation(-texture.Size*0.5f)*transform*Matrix3.CreateTranslation(texture.Size*0.5f)*CreateRenderTargetFlipMatrix(renderTargetSize, pos));
+        handle.SetTransform(Matrix3.CreateTranslation(-(renderTargetSize/2 - pos))*transform*Matrix3.CreateTranslation((renderTargetSize/2 - pos))*CreateRenderTargetFlipMatrix(renderTargetSize, pos));
         handle.DrawTextureRect(texture, Box2.FromDimensions(Vector2.Zero, texture.Size));
     }
 

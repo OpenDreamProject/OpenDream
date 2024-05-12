@@ -115,3 +115,5 @@
 		return 0
 
 	proc/ODHotReloadInterface()
+
+	proc/ODHotReloadResource(var/file_name)

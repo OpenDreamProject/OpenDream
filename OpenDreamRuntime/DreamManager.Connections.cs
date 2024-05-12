@@ -284,6 +284,16 @@ namespace OpenDreamRuntime {
                 connection.Session?.Channel.SendMessage(msgLoadInterface);
             }
         }
+
+        public void HotReloadResource(string fileName){
+            var resource = _dreamResourceManager.LoadResource(fileName, forceReload:true);
+            var msgBrowseResource = new MsgNotifyResourceUpdate() { //send a message that this resource id has been updated, let the clients handle re-requesting it
+                ResourceId = resource.Id
+            };
+            foreach (var connection in _connections.Values) {
+                connection.Session?.Channel.SendMessage(msgBrowseResource);
+            }
+        }
     }
 
 }

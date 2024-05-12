@@ -45,6 +45,7 @@ namespace OpenDreamClient.Resources {
             _netManager.RegisterNetMessage<MsgBrowseResource>(RxBrowseResource);
             _netManager.RegisterNetMessage<MsgRequestResource>();
             _netManager.RegisterNetMessage<MsgResource>(RxResource);
+            _netManager.RegisterNetMessage<MsgNotifyResourceUpdate>(RxResourceUpdateNotification);
         }
 
         public void Shutdown() {
@@ -87,6 +88,15 @@ namespace OpenDreamClient.Resources {
                 _loadingResources.Remove(message.ResourceId);
             } else {
                 throw new Exception($"Received unexpected resource packet for resource id {message.ResourceId}");
+            }
+        }
+
+        private void RxResourceUpdateNotification(MsgNotifyResourceUpdate message) {
+            if (!_loadingResources.ContainsKey(message.ResourceId) && _resourceCache.TryGetValue(message.ResourceId, out var cached)) { //either we're already requesting it, or we don't have it so don't need to update
+                _sawmill.Debug($"Resource id {message.ResourceId} was updated, reloading");
+                _loadingResources[message.ResourceId] = new LoadingResourceEntry(cached.GetType());
+                var msg = new MsgRequestResource() { ResourceId = message.ResourceId };
+                _netManager.ClientSendMessage(msg);
             }
         }
 

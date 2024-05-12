@@ -23,6 +23,7 @@ namespace OpenDreamRuntime.Resources {
             _sawmill = Logger.GetSawmill("opendream.res");
             _netManager.RegisterNetMessage<MsgRequestResource>(RxRequestResource);
             _netManager.RegisterNetMessage<MsgResource>();
+            _netManager.RegisterNetMessage<MsgNotifyResourceUpdate>();
         }
 
         public void Initialize(string rootPath, string[] resources) {

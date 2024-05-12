@@ -221,7 +221,8 @@ namespace OpenDreamRuntime {
         private void RxAckLoadInterface(MsgAckLoadInterface message) {
             // Once the client loaded the interface, move them to in-game.
             var player = _playerManager.GetSessionByChannel(message.MsgChannel);
-            _playerManager.JoinGame(player);
+            if(player.Status != SessionStatus.InGame) //Don't rejoin if this is a hot reload of interface
+                _playerManager.JoinGame(player);
         }
 
         private DreamConnection ConnectionForChannel(INetChannel channel) {
@@ -271,5 +272,18 @@ namespace OpenDreamRuntime {
         public DreamConnection GetConnectionBySession(ICommonSession session) {
             return _connections[session.UserId];
         }
+
+        public void HotReloadInterface() {
+            string? interfaceText = null;
+            if (_compiledJson.Interface != null)
+                interfaceText = _dreamResourceManager.LoadResource(_compiledJson.Interface, forceReload:true).ReadAsString();
+            var msgLoadInterface = new MsgLoadInterface() {
+                InterfaceText = interfaceText
+            };
+            foreach (var connection in _connections.Values) {
+                connection.Session?.Channel.SendMessage(msgLoadInterface);
+            }
+        }
     }
+
 }

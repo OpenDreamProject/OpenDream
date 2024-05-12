@@ -193,6 +193,12 @@
 			src << "showing main window"
 			winset(src,"mainwindow","is-visible=true")
 
+	verb/test_hot_reload()
+		set category = "Test"
+		src << "tyring hot reload of interface..."
+		world.ODHotReloadInterface()
+		src << "done hot reload of interface!"
+
 /mob/Stat()
 	if (statpanel("Status"))
 		stat("tick_usage", world.tick_usage)

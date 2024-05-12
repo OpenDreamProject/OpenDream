@@ -23,6 +23,7 @@ using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp;
 using System.Linq;
+using OpenToolkit.GraphicsLibraryFramework;
 
 namespace OpenDreamClient.Interface;
 
@@ -293,6 +294,8 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
 
         LoadInterfaceFromSource(interfaceText);
         _netManager.ClientSendMessage(new MsgAckLoadInterface());
+        if (_entitySystemManager.TryGetEntitySystem(out ClientVerbSystem? verbSystem))
+            DefaultInfo?.RefreshVerbs(verbSystem);
     }
 
     private void RxUpdateClientInfo(MsgUpdateClientInfo msg) {
@@ -769,11 +772,20 @@ raw
 
     private void Reset() {
         _userInterfaceManager.MainViewport.Visible = false;
-
+        //close windows if they're open, and clear all child uielements
+        foreach (var window in Windows.Values){
+            window.CloseChildWindow();
+            window.UIElement.RemoveAllChildren();
+        }
         Windows.Clear();
         Menus.Clear();
         MacroSets.Clear();
+        //close popups if they're open
+        foreach (var popup in _popupWindows.Values) {
+            popup.Close();
+        }
         _popupWindows.Clear();
+        _inputManager.ResetAllBindings();
     }
 
     private void LoadInterface(InterfaceDescriptor descriptor) {

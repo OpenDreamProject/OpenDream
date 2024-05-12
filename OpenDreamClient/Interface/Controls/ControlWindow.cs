@@ -51,6 +51,14 @@ public sealed class ControlWindow : InterfaceControl {
         }
     }
 
+    /// <summary>
+    /// Closes the window if it is a child window. No effect if it is either a default window or a pane
+    /// </summary>
+    public void CloseChildWindow() {
+        if(_myWindow.osWindow is not null)
+            _myWindow.osWindow.Close();
+    }
+
     public OSWindow CreateWindow() {
         if(_myWindow.osWindow is not null)
             return _myWindow.osWindow;

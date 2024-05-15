@@ -27,17 +27,17 @@ const TYPE_NUMBER: u8 = 0x2A;
 const TYPE_POINTER: u8 = 0x3C;
 
 use api::{u4c, ByondValueData, ByondValueType, CByondValue, CByondXYZ, ByondCallback};
-use core::mem::MaybeUninit;
 use std::ffi::{c_char, c_void};
+use std::sync::OnceLock;
 
-static mut TRAMPOLINES: MaybeUninit<Trampolines> = MaybeUninit::uninit();
+static TRAMPOLINES: OnceLock<Trampolines> = OnceLock::new();
 
 macro_rules! trampolines {
     ( $( fn $name:ident ( $( $param:ident: $paramType:ty ),* ) $(-> $ret:ty )? );* $(;)? ) => {
         $(
             #[no_mangle]
             unsafe extern "C" fn $name( $( $param: $paramType, )* ) $(-> $ret )? {
-                return (TRAMPOLINES.assume_init().$name)($( $param, )*);
+                return (TRAMPOLINES.get().unwrap().$name)($( $param, )*);
             }
         )*
 
@@ -53,7 +53,7 @@ macro_rules! trampolines {
 
 #[no_mangle]
 unsafe extern "C" fn OpenDream_Internal_Init(trampolines: *const Trampolines) {
-    TRAMPOLINES.write(*trampolines);
+    TRAMPOLINES.set(*trampolines).map_err(|_| ()).expect("OpenDream_Internal_Init can only be called once!");
 }
 
 #[no_mangle]

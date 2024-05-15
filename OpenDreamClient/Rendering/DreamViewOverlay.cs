@@ -800,7 +800,6 @@ internal sealed class DreamViewOverlay : Overlay {
         transform.R0C1 /= scaleFactors.X;
         transform.R1C0 /= scaleFactors.Y;
         transform.R1C1 /= scaleFactors.Y;
-        scaleFactors = Vector2.One;
 
         Matrix3 baseTransform =
             Matrix3.CreateTranslation(-(renderTargetSize/2 - pos))

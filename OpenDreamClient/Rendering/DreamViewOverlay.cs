@@ -415,7 +415,7 @@ internal sealed class DreamViewOverlay : Overlay {
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup?.Count > 0) {
             // TODO: Use something better than a hardcoded 64x64 fallback
-            Vector2i ktSize = iconMetaData.Texture?.Size ?? (128,128);
+            Vector2i ktSize = iconMetaData.Texture?.Size ?? (64,64);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
             positionOffset -= ((ktSize/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }

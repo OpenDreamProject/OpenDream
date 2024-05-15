@@ -14,6 +14,7 @@ using Robust.Shared.Map.Components;
 using Robust.Shared.Profiling;
 using Vector3 = Robust.Shared.Maths.Vector3;
 using Dependency = Robust.Shared.IoC.DependencyAttribute;
+using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
 
@@ -790,7 +791,26 @@ internal sealed class DreamViewOverlay : Overlay {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private static void DrawIconFast(DrawingHandleWorld handle, Vector2i renderTargetSize, Texture texture, Vector2 pos, Matrix3 transform, ShaderInstance? shader) {
         handle.UseShader(shader);
-        handle.SetTransform(Matrix3.CreateTranslation(-(renderTargetSize/2 - pos))*transform*Matrix3.CreateTranslation((renderTargetSize/2 - pos))*CreateRenderTargetFlipMatrix(renderTargetSize, pos));
+
+        Vector2 scaleFactors = new Vector2(
+                                MathF.Sqrt(MathF.Pow(transform.R0C0,2) + MathF.Pow(transform.R0C1,2)),
+                                MathF.Sqrt(MathF.Pow(transform.R1C0,2) + MathF.Pow(transform.R1C1,2))
+                            );
+        transform.R0C0 /= scaleFactors.X;
+        transform.R0C1 /= scaleFactors.X;
+        transform.R1C0 /= scaleFactors.Y;
+        transform.R1C1 /= scaleFactors.Y;
+        scaleFactors = Vector2.One;
+
+        Matrix3 baseTransform =
+            Matrix3.CreateTranslation(-(renderTargetSize/2 - pos))
+            *transform
+            *Matrix3.CreateTranslation((renderTargetSize/2 - pos))
+            * Matrix3.CreateScale(scaleFactors);
+        Matrix3 flippedTransform = baseTransform *CreateRenderTargetFlipMatrix(renderTargetSize, pos-((scaleFactors-Vector2.One)*texture.Size/2));
+        if(!scaleFactors.Equals(Vector2.One))
+            Logger.Debug(flippedTransform.ToString());
+        handle.SetTransform(flippedTransform);
         handle.DrawTextureRect(texture, Box2.FromDimensions(Vector2.Zero, texture.Size));
     }
 

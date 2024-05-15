@@ -795,22 +795,22 @@ internal sealed class DreamViewOverlay : Overlay {
     private static void DrawIconFast(DrawingHandleWorld handle, Vector2i renderTargetSize, Texture texture, Vector2 pos, Matrix3 transform, ShaderInstance? shader) {
         handle.UseShader(shader);
 
+        //extract scale component of transform
         Vector2 scaleFactors = new Vector2(
-                                MathF.Sqrt(MathF.Pow(transform.R0C0,2) + MathF.Pow(transform.R0C1,2)),
-                                MathF.Sqrt(MathF.Pow(transform.R1C0,2) + MathF.Pow(transform.R1C1,2))
-                            );
+            MathF.Sqrt(MathF.Pow(transform.R0C0,2) + MathF.Pow(transform.R0C1,2)),
+            MathF.Sqrt(MathF.Pow(transform.R1C0,2) + MathF.Pow(transform.R1C1,2))
+        );
         transform.R0C0 /= scaleFactors.X;
         transform.R0C1 /= scaleFactors.X;
         transform.R1C0 /= scaleFactors.Y;
         transform.R1C1 /= scaleFactors.Y;
 
-        Matrix3 baseTransform =
-            Matrix3.CreateTranslation(-texture.Size/2)
-            *transform
-            *Matrix3.CreateTranslation(texture.Size/2)
-            * Matrix3.CreateScale(scaleFactors);
-        Matrix3 flippedTransform = baseTransform *CreateRenderTargetFlipMatrix(renderTargetSize, pos-((scaleFactors-Vector2.One)*texture.Size/2));
-        handle.SetTransform(flippedTransform);
+        handle.SetTransform(
+            Matrix3.CreateTranslation(-texture.Size/2)  //translate to origin
+            * transform                                 //rotate and translate
+            * Matrix3.CreateTranslation(texture.Size/2) //translate back to original position
+            * Matrix3.CreateScale(scaleFactors)         //scale
+            * CreateRenderTargetFlipMatrix(renderTargetSize, pos-((scaleFactors-Vector2.One)*texture.Size/2))); //flip and apply scale-corrected translation
         handle.DrawTextureRect(texture, Box2.FromDimensions(Vector2.Zero, texture.Size));
     }
 

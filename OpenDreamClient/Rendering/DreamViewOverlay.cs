@@ -416,7 +416,9 @@ internal sealed class DreamViewOverlay : Overlay {
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup?.Count > 0) {
             // TODO: Use something better than a hardcoded 64x64 fallback
-            iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, iconMetaData.Texture?.Size ?? (64,64));
+            Vector2i ktSize = iconMetaData.Texture?.Size ?? (128,128);
+            iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
+            positionOffset -= ((ktSize/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
 
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
@@ -750,8 +752,9 @@ internal sealed class DreamViewOverlay : Overlay {
         iconMetaData.AlphaToApply = 1f;
         iconMetaData.BlendMode = BlendMode.Default;
 
-        List<RendererMetaData> ktItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup!.Count+1);
-        ktItems.Add(iconMetaData);
+        List<RendererMetaData> ktItems = new List<RendererMetaData>(iconMetaData.KeepTogetherGroup!.Count + 1) {
+            iconMetaData
+        };
         ktItems.AddRange(iconMetaData.KeepTogetherGroup);
         iconMetaData.KeepTogetherGroup.Clear();
 
@@ -762,7 +765,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         handle.RenderInRenderTarget(tempTexture, () => {
             foreach (RendererMetaData ktItem in ktItems) {
-                DrawIcon(handle, tempTexture.Size, ktItem, -ktItem.Position);
+                DrawIcon(handle, tempTexture.Size, ktItem, -ktItem.Position+((tempTexture.Size/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f)); //draw the icon in the centre of the KT render target
             }
         }, null);
 
@@ -802,13 +805,11 @@ internal sealed class DreamViewOverlay : Overlay {
         transform.R1C1 /= scaleFactors.Y;
 
         Matrix3 baseTransform =
-            Matrix3.CreateTranslation(-(renderTargetSize/2 - pos))
+            Matrix3.CreateTranslation(-texture.Size/2)
             *transform
-            *Matrix3.CreateTranslation((renderTargetSize/2 - pos))
+            *Matrix3.CreateTranslation(texture.Size/2)
             * Matrix3.CreateScale(scaleFactors);
         Matrix3 flippedTransform = baseTransform *CreateRenderTargetFlipMatrix(renderTargetSize, pos-((scaleFactors-Vector2.One)*texture.Size/2));
-        if(!scaleFactors.Equals(Vector2.One))
-            Logger.Debug(flippedTransform.ToString());
         handle.SetTransform(flippedTransform);
         handle.DrawTextureRect(texture, Box2.FromDimensions(Vector2.Zero, texture.Size));
     }

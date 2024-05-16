@@ -23,7 +23,7 @@
 		return findtext(text, src, start, end)
 
 	proc/Find_char(haystack, start = 1, end = 0)
-		set opendream_unimplimented = TRUE
+		set opendream_unimplemented = TRUE
 	
 	proc/Replace(haystack, replacement, start = 1, end = 0)
 		return replacetext(text, src, replacement, start, end)

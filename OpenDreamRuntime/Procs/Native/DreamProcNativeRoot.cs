@@ -714,27 +714,25 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Needle", Type = DreamValueTypeFlag.String)]
         [DreamProcParameter("Start", Type = DreamValueTypeFlag.Float, DefaultValue = 1)]
         [DreamProcParameter("End", Type = DreamValueTypeFlag.Float, DefaultValue = 0)]
-        public static DreamValue NativeProc_findtext(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
+        public static async Task<DreamValue> NativeProc_findtext(AsyncNativeProc.State state) {
             // TODO This is for handling nulls, check if it works right for other bad types
+            DreamValue haystack = state.GetArgument(0, "Haystack");
+            int start = state.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
+            int end = state.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
             int failCount = 0;
-            if (!bundle.GetArgument(0, "Haystack").TryGetValueAsString(out var text)) {
+
+            if (!haystack.TryGetValueAsString(out var text)) {
                 failCount++;
             }
 
-            DreamValue needleArg = bundle.GetArgument(1, "Needle");
-            DreamObjectRegex? regex = null;
-            if (!needleArg.TryGetValueAsString(out var needle)) {
-                if(!needleArg.TryGetValueAsDreamObject(out regex)) {
-                    failCount++;
-                }
+            DreamValue needleArg = state.GetArgument(1, "Needle");
+            if (needleArg.TryGetValueAsDreamObject<DreamObjectRegex>(out var regexObject)) {
+                // According to the docs, this is the same as /regex.Replace()
+                return await DreamProcNativeRegex.RegexFind(state, regexObject, haystack, start, end);
             }
 
-            if (failCount > 0) {
-                return new DreamValue(failCount == 2 ? 1 : 0);
-            }
-
-            int start = bundle.GetArgument(2, "Start").MustGetValueAsInteger(); //1-indexed
-            int end = bundle.GetArgument(3, "End").MustGetValueAsInteger(); //1-indexed
+            if(!needleArg.TryGetValueAsString(out var needle))
+                return DreamValue.True;
 
             if (start > text.Length || start == 0) return new DreamValue(0);
 
@@ -748,12 +746,6 @@ namespace OpenDreamRuntime.Procs.Native {
 
             if (end == 0 || end > text.Length + 1) {
                 end = text.Length + 1;
-            }
-
-            if (regex is not null) {
-                Match match = regex.Regex.Match(text, start - 1, end - start);
-
-                return match.Success ? new DreamValue(match.Index + 1) : new DreamValue(0);
             }
 
             int needleIndex = text.IndexOf(needle, start - 1, end - start, StringComparison.OrdinalIgnoreCase);

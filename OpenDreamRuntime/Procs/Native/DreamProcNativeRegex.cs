@@ -7,18 +7,24 @@ namespace OpenDreamRuntime.Procs.Native {
     internal static class DreamProcNativeRegex {
         [DreamProc("Find")]
         [DreamProcParameter("haystack", Type = DreamValue.DreamValueTypeFlag.String)]
-        [DreamProcParameter("start", Type = DreamValue.DreamValueTypeFlag.Float | DreamValue.DreamValueTypeFlag.DreamObject)] // BYOND docs say these are uppercase, they're not
+        [DreamProcParameter("start", DefaultValue = 1, Type = DreamValue.DreamValueTypeFlag.Float)] // BYOND docs say these are uppercase, they're not
         [DreamProcParameter("end", DefaultValue = 0, Type = DreamValue.DreamValueTypeFlag.Float)]
-        public static DreamValue NativeProc_Find(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            DreamObjectRegex dreamRegex = (DreamObjectRegex)src!;
-            DreamValue haystack = bundle.GetArgument(0, "haystack");
 
+        public static async Task<DreamValue> NativeProc_Find(AsyncNativeProc.State state) {
+            DreamValue haystack = state.GetArgument(0, "haystack");
+            state.GetArgument(1, "start").TryGetValueAsInteger(out int start);
+            state.GetArgument(2, "end").TryGetValueAsInteger(out int end);
+
+            return await RegexFind(state, state.Src, haystack, start, end);
+        }
+
+        public static async Task<DreamValue> RegexFind(AsyncNativeProc.State state, DreamObject regexInstance, DreamValue haystack, int start, int end) {
+            DreamObjectRegex dreamRegex = (DreamObjectRegex)regexInstance;
             if (!haystack.TryGetValueAsString(out var haystackString)) {
                 haystackString = string.Empty;
             }
 
-            int next = GetNext(src!, bundle.GetArgument(1, "start"), dreamRegex.IsGlobal, haystackString);
-            int end = bundle.GetArgument(2, "end").GetValueAsInteger();
+            int next = GetNext(dreamRegex, start, dreamRegex.IsGlobal, haystackString);
 
             dreamRegex.SetVariable("text", haystack);
 
@@ -35,7 +41,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 dreamRegex.SetVariable("index", new DreamValue(match.Index + 1));
                 dreamRegex.SetVariable("match", new DreamValue(match.Value));
                 if (match.Groups.Count > 0) {
-                    DreamList groupList = bundle.ObjectTree.CreateList(match.Groups.Count);
+                    DreamList groupList = state.ObjectTree.CreateList(match.Groups.Count);
 
                     for (int i = 1; i < match.Groups.Count; i++) {
                         groupList.AddValue(new DreamValue(match.Groups[i].Value));
@@ -140,17 +146,17 @@ namespace OpenDreamRuntime.Procs.Native {
             return await RegexReplace(state, state.Src, haystack, replacement, start, end);
         }
 
-        private static int GetNext(DreamObject regexInstance, DreamValue startParam, bool isGlobal, string haystackString) {
-            if (startParam.IsNull) {
+        private static int GetNext(DreamObject regexInstance, int startParam, bool isGlobal, string haystackString) {
+            if (isGlobal) {
                 if (isGlobal && regexInstance.GetVariable("text").TryGetValueAsString(out string? lastHaystack) && lastHaystack == haystackString) {
                     DreamValue nextVar = regexInstance.GetVariable("next");
 
-                    return (!nextVar.IsNull) ? nextVar.GetValueAsInteger() : 1;
+                    return (!nextVar.IsNull) ? nextVar.MustGetValueAsInteger() : 1;
                 } else {
                     return 1;
                 }
             } else {
-                return startParam.GetValueAsInteger();
+                return startParam;
             }
         }
     }

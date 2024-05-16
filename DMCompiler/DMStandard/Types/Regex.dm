@@ -29,6 +29,6 @@
 		return replacetext(text, src, replacement, start, end)
 
 	proc/Replace_char(haystack, replacement, start = 1, end = 0)
-		set opendream_unimplimented = TRUE
+		set opendream_unimplemented = TRUE
 
 proc/regex(pattern, flags)

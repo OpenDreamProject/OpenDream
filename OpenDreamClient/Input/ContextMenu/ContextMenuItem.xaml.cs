@@ -12,8 +12,6 @@ internal sealed partial class ContextMenuItem : PanelContainer {
     private static readonly StyleBox HoverStyle = new StyleBoxFlat(Color.Gray);
 
     public readonly ClientObjectReference Target;
-    public readonly MetaDataComponent EntityMetaData;
-    public readonly DMISpriteComponent? EntitySprite;
 
     private readonly ContextMenuPopup _menu;
 
@@ -22,8 +20,6 @@ internal sealed partial class ContextMenuItem : PanelContainer {
         RobustXamlLoader.Load(this);
 
         Target = target;
-        EntityMetaData = metadata;
-        EntitySprite = sprite;
         _menu = menu;
 
         NameLabel.Margin = new Thickness(2, 0, 4, 0);

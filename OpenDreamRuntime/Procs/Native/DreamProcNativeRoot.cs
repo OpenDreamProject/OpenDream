@@ -953,7 +953,8 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Object", Type = DreamValueTypeFlag.DreamObject)]
         [DreamProcParameter("ProcName", Type = DreamValueTypeFlag.String)]
         public static DreamValue NativeProc_hascall(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
-            if (!bundle.GetArgument(0, "Object").TryGetValueAsDreamObject(out var obj))
+            var arg = bundle.GetArgument(0, "Object");
+            if (arg.IsNull || !arg.TryGetValueAsDreamObject(out var obj))
                 return new DreamValue(0);
             if(!bundle.GetArgument(1, "ProcName").TryGetValueAsString(out var procName))
                 return new DreamValue(0);
@@ -2146,7 +2147,7 @@ namespace OpenDreamRuntime.Procs.Native {
         }
 
         [DreamProc("rgb2num")]
-        [DreamProcParameter("color", Type = DreamValueTypeFlag.String)]
+        [DreamProcParameter("color", Type = DreamValueTypeFlag.String, DefaultValue = "#FFFFFF")]
         [DreamProcParameter("space", Type = DreamValueTypeFlag.Float, DefaultValue = 0)] // Same value as COLORSPACE_RGB
         public static DreamValue NativeProc_rgb2num(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             if(!bundle.GetArgument(0, "color").TryGetValueAsString(out var color)) {

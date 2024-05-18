@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --configuration Release --no-restore /m > logs/log-${{ matrix.os }}.txt
+      run: dotnet build --configuration Release --no-restore /m > log-${{ matrix.os }}.txt
     - name: Upload log artifacts
       uses: actions/upload-artifact/merge@v4
       with:

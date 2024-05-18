@@ -2,7 +2,7 @@ name: Build, Test & Release
 
 on:
   push:
-    branches: [ master ] # s
+    branches: [ master ]
   pull_request:
     branches: [ master ]
 
@@ -49,6 +49,11 @@ jobs:
     - name: Publish DMCompiler
       if: github.event_name == 'push'
       run: dotnet publish DMCompiler -c Release -o output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+    - name: Clean logs
+      if: github.event_name == 'push'
+      run: |
+        python ./Tools/clean_logs.py output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
+        python ./Tools/clean_logs.py output/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Gzip releases
       if: github.event_name == 'push'
       run: |
@@ -80,3 +85,4 @@ jobs:
         title: "Development Build"
         files: |
           artifacts/*/*.tar.gz
+

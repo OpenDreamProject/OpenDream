@@ -32,7 +32,13 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --configuration Release --no-restore /m
+      run: dotnet build --configuration Release --no-restore /m > logs/log-${{ matrix.os }}.txt
+    - name: Upload log artifacts
+      uses: actions/upload-artifact/merge@v4
+      with:
+        name: build-all
+        retention-days: 1
+        delete-merged: true
     - name: Content.Tests
       shell: pwsh
       run: |
@@ -56,12 +62,11 @@ jobs:
         tar -czvf output/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}.tar.gz -C output OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
     - name: Upload artifact
       if: github.event_name == 'push'
-      uses: actions/upload-artifact/merge@v4
+      uses: actions/upload-artifact@v3
       with:
-        name: build-all
-        retention-days: 1
-        delete-merged: true
+        name: build-${{ matrix.os }}
         path: output/*.tar.gz
+        retention-days: 1
 
   #clean:
   #  needs: build

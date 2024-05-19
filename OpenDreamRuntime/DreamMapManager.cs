@@ -218,12 +218,34 @@ public sealed class DreamMapManager : IDreamMapManager {
     }
 
     public void SetWorldSize(Vector2i size) {
+        Vector2i oldSize = Size;
+
         if (size.X < Size.X || size.Y < Size.Y) {
-            return;
+
+            Size = size;
+
+            foreach (Level ExistingLevel in _levels) {
+                var oldCells = ExistingLevel.Cells;
+
+                ExistingLevel.Cells = new Cell[size.X, size.Y];
+                for (var x = 1; x <= oldSize.X; x++) {
+                    for (var y = 1; y <= oldSize.Y; y++) {
+                        if (x >= size.X || y >= size.Y) {
+                            var deleteCell = oldCells[x, y];
+                            deleteCell.Turf?.Delete();
+
+                            foreach (var movableToDelete in deleteCell.Movables) {
+                                movableToDelete.Delete();
+                            }
+                        } else {
+                            ExistingLevel.Cells[x - 1, y - 1] = oldCells[x - 1, y - 1];
+                        }
+                    }
+                }
+            }
         }
 
         DreamObjectArea defaultArea = GetOrCreateArea(_defaultArea);
-        Vector2i oldSize = Size;
 
         Size = size;
         foreach (Level existingLevel in _levels) {

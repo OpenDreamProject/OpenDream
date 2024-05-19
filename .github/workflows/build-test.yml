@@ -32,14 +32,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --configuration Release --no-restore /m > log-${{ matrix.os }}.txt
-    - name: Upload log artifacts
-      uses: actions/upload-artifact/merge@v4
-      with:
-        path: log-*
-        name: build-all
-        retention-days: 1
-        delete-merged: true
+      run: dotnet build --property WarningLevel=${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }} --configuration Release --no-restore /m # Warnings only for windows build (linux preferred though)
     - name: Content.Tests
       shell: pwsh
       run: |
@@ -68,16 +61,6 @@ jobs:
         name: build-${{ matrix.os }}
         path: output/*.tar.gz
         retention-days: 1
-
-  #clean:
-  #  needs: build
-  #  runs-on: ubuntu-latest
-  #  - name: Clean logs
-  #    if: github.event_name == 'push'
-  #    run: |
-  #      python ./Tools/clean_logs.py output/DMCompiler_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
-  #      python ./Tools/clean_logs.py output/OpenDreamServer_${{ matrix.os == 'windows-latest' && 'win-x64' || 'linux-x64' }}
-
 
   release:
     needs: build

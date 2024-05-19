@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '1' || '0' }} --configuration Release --no-restore /m # Warnings only for windows build (linux preferred though)
+      run: dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '1' || '0' }} --configuration Release --no-restore /m
     - name: Content.Tests
       shell: pwsh
       run: |

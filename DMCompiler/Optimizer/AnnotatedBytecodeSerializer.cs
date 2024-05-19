@@ -13,10 +13,10 @@ internal class AnnotatedBytecodeSerializer {
     private BinaryWriter _bytecodeWriter;
     private Dictionary<string, int> _labels = new();
     private List<(long Position, string LabelName)> _unresolvedLabels = new();
-    private int lastFileID = -1;
+    private int _lastFileId = -1;
     public MemoryStream Bytecode = new();
 
-    private Location? location;
+    private Location? _location;
 
     public List<SourceInfoJson> SourceInfo = new();
 
@@ -32,7 +32,7 @@ internal class AnnotatedBytecodeSerializer {
             } else if (bytecodeChunk is AnnotatedBytecodeLabel label) {
                 SerializeLabel(label);
             } else if (bytecodeChunk is AnnotatedBytecodeVariable localVariable) {
-                if (localVariable.Exitingscope)
+                if (localVariable.ExitingScope)
                     _localVariables.Add(new LocalVariableJson {
                         Offset = (int)Bytecode.Position,
                         Remove = localVariable.Exit
@@ -62,10 +62,10 @@ internal class AnnotatedBytecodeSerializer {
 
 
     private void SerializeInstruction(AnnotatedBytecodeInstruction instruction) {
-        if (instruction.Location.Line != null && (location == null || instruction.Location.Line != location?.Line)) {
+        if (instruction.Location.Line != null && (_location == null || instruction.Location.Line != _location?.Line)) {
             int sourceFileId = DMObjectTree.AddString(instruction.Location.SourceFile);
-            if (lastFileID != sourceFileId) {
-                lastFileID = sourceFileId;
+            if (_lastFileId != sourceFileId) {
+                _lastFileId = sourceFileId;
                 SourceInfo.Add(new SourceInfoJson {
                     Offset = (int)Bytecode.Position,
                     File = sourceFileId,
@@ -78,7 +78,7 @@ internal class AnnotatedBytecodeSerializer {
                 });
             }
 
-            location = instruction.Location;
+            _location = instruction.Location;
         }
 
         _bytecodeWriter.Write((byte)instruction.Opcode);
@@ -118,26 +118,26 @@ internal class AnnotatedBytecodeSerializer {
                 case AnnotatedBytecodePickCount annotatedBytecodePickCount:
                     _bytecodeWriter.Write(annotatedBytecodePickCount.Count);
                     break;
-                case AnnotatedBytecodeProcID annotatedBytecodeProcId:
-                    _bytecodeWriter.Write(annotatedBytecodeProcId.ProcID);
+                case AnnotatedBytecodeProcId annotatedBytecodeProcId:
+                    _bytecodeWriter.Write(annotatedBytecodeProcId.ProcId);
                     break;
                 case AnnotatedBytecodeReference annotatedBytecodeReference:
                     WriteReference(annotatedBytecodeReference);
                     break;
                 case AnnotatedBytecodeResource annotatedBytecodeResource:
-                    _bytecodeWriter.Write(annotatedBytecodeResource.ResourceID);
+                    _bytecodeWriter.Write(annotatedBytecodeResource.ResourceId);
                     break;
                 case AnnotatedBytecodeStackDelta annotatedBytecodeStackDelta:
                     _bytecodeWriter.Write(annotatedBytecodeStackDelta.Delta);
                     break;
                 case AnnotatedBytecodeString annotatedBytecodeString:
-                    _bytecodeWriter.Write(annotatedBytecodeString.ID);
+                    _bytecodeWriter.Write(annotatedBytecodeString.Id);
                     break;
                 case AnnotatedBytecodeType annotatedBytecodeType:
                     _bytecodeWriter.Write((int)annotatedBytecodeType.Value);
                     break;
-                case AnnotatedBytecodeTypeID annotatedBytecodeTypeId:
-                    _bytecodeWriter.Write(annotatedBytecodeTypeId.TypeID);
+                case AnnotatedBytecodeTypeId annotatedBytecodeTypeId:
+                    _bytecodeWriter.Write(annotatedBytecodeTypeId.TypeId);
                     break;
                 default:
                     throw new ArgumentOutOfRangeException();
@@ -150,13 +150,13 @@ internal class AnnotatedBytecodeSerializer {
     }
 
     private void ResolveLabels() {
-        foreach ((long Position, string LabelName) in _unresolvedLabels) {
-            if (_labels.TryGetValue(LabelName, out int labelPosition)) {
-                _bytecodeWriter.Seek((int)Position, SeekOrigin.Begin);
+        foreach ((long position, string labelName) in _unresolvedLabels) {
+            if (_labels.TryGetValue(labelName, out int labelPosition)) {
+                _bytecodeWriter.Seek((int)position, SeekOrigin.Begin);
                 _bytecodeWriter.Write((int)labelPosition);
             } else {
                 DMCompiler.Emit(WarningCode.BadLabel, Location.Internal,
-                    "Label \"" + LabelName + "\" could not be resolved");
+                    "Label \"" + labelName + "\" could not be resolved");
             }
         }
 
@@ -201,7 +201,7 @@ internal class AnnotatedBytecodeSerializer {
         }
     }
 
-    public List<LocalVariableJson> GetLocalVariablesJSON() {
+    public List<LocalVariableJson> GetLocalVariablesJson() {
         return _localVariables;
     }
 }

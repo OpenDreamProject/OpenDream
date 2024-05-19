@@ -407,24 +407,6 @@ public static class StringFormatEncoder {
 
         return ret.ToString();
     }
-
-    public static string PrettyPrint(string input) {
-        StringBuilder ret = new StringBuilder(input.Length);
-        foreach (char c in input) {
-            if (Decode(c, out var suffix)) {
-                ret.Append($"[{SuffixToString(suffix)}]");
-            } else {
-                ret.Append(c);
-            }
-        }
-
-        return ret.ToString();
-    }
-
-    public static string SuffixToString(FormatSuffix? suffix) {
-        if (suffix == null) return "null";
-        return suffix.ToString()!;
-    }
 }
 
 /// <summary>

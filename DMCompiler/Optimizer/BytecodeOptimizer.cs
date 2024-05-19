@@ -1,13 +1,11 @@
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 
 namespace DMCompiler.Optimizer;
 
 public class BytecodeOptimizer {
-    public int StackDepth { get; private set; }
-
-    public List<IAnnotatedBytecode> Optimize(List<IAnnotatedBytecode> input, string errorPath, out int stackDepth) {
+    public List<IAnnotatedBytecode> Optimize(List<IAnnotatedBytecode> input) {
         if (input.Count == 0) {
-            stackDepth = 0;
             return input;
         }
 
@@ -15,65 +13,35 @@ public class BytecodeOptimizer {
         JoinAndForwardLabels(input);
         RemoveUnreferencedLabels(input);
         PeepholeOptimizer.RunPeephole(input);
-        stackDepth = RecalculateStackDepth(input);
         return input;
     }
 
-    private static int RecalculateStackDepth(List<IAnnotatedBytecode> input) {
-        int stackDepth = 0;
-        int maxStackDepth = 1; // Guard against some higgs-buggsons
-        for (int i = 0; i < input.Count; i++) {
-            if (input[i] is AnnotatedBytecodeInstruction instruction) {
-                stackDepth += instruction.StackSizeDelta;
-                if (stackDepth > maxStackDepth) {
-                    maxStackDepth = stackDepth;
-                }
-            }
-        }
-
-        return maxStackDepth;
-    }
-
-
     private static void RemoveUnreferencedLabels(List<IAnnotatedBytecode> input) {
         Dictionary<string, int> labelReferences = new();
-        List<IAnnotatedBytecode> output = new();
-        int removed = 0;
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeLabel label) {
                 labelReferences.TryAdd(label.LabelName, 0);
-                output.Add(label);
             } else if (input[i] is AnnotatedBytecodeInstruction instruction) {
-                output.Add(instruction);
                 if (TryGetLabelName(instruction, out string? labelName)) {
-                    if (labelReferences.ContainsKey(labelName)) {
+                    if (!labelReferences.TryAdd(labelName, 1)) {
                         labelReferences[labelName]++;
-                    } else {
-                        labelReferences.Add(labelName, 1);
                     }
                 }
-            } else {
-                output.Add(input[i]);
             }
         }
 
-        for (int i = 0; i < output.Count; i++) {
-            if (output[i] is AnnotatedBytecodeLabel label) {
+        for (int i = 0; i < input.Count; i++) {
+            if (input[i] is AnnotatedBytecodeLabel label) {
                 if (labelReferences[label.LabelName] == 0) {
-                    output.RemoveAt(i);
+                    input.RemoveAt(i);
                     i--;
-                    removed++;
                 }
             }
         }
-
-        input.Clear();
-        input.AddRange(output);
     }
 
     private static void JoinAndForwardLabels(List<IAnnotatedBytecode> input) {
         Dictionary<string, string> labelAliases = new();
-        List<IAnnotatedBytecode> output = new();
         for (int i = 0; i < input.Count; i++) {
             if (input[i] is AnnotatedBytecodeLabel label) {
                 string finalLabelName = label.LabelName;
@@ -90,9 +58,7 @@ public class BytecodeOptimizer {
         }
 
         for (int i = 0; i < input.Count; i++) {
-            if (input[i] is AnnotatedBytecodeLabel label) {
-                output.Add(label);
-            } else if (input[i] is AnnotatedBytecodeInstruction instruction) {
+            if (input[i] is AnnotatedBytecodeInstruction instruction) {
                 if (TryGetLabelName(instruction, out string? labelName)) {
                     if (labelAliases.ContainsKey(labelName)) {
                         List<IAnnotatedBytecode> args = instruction.GetArgs();
@@ -103,24 +69,14 @@ public class BytecodeOptimizer {
                             }
                         }
 
-                        output.Add(new AnnotatedBytecodeInstruction(instruction, args));
-                    } else {
-                        output.Add(instruction);
+                        input[i] = new AnnotatedBytecodeInstruction(instruction, args);
                     }
-                } else {
-                    output.Add(instruction);
                 }
-            } else {
-                output.Add(input[i]);
             }
         }
-
-        input.Clear();
-        input.AddRange(output);
     }
 
-
-    private static bool TryGetLabelName(AnnotatedBytecodeInstruction instruction, out string? labelName) {
+    private static bool TryGetLabelName(AnnotatedBytecodeInstruction instruction, [NotNullWhen(true)] out string? labelName) {
         foreach (var arg in instruction.GetArgs()) {
             if (arg is not AnnotatedBytecodeLabel label)
                 continue;

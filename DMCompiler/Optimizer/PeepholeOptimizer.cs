@@ -29,10 +29,8 @@ internal sealed class PeepholeOptimizer {
     static PeepholeOptimizer() {
         var possibleTypes = typeof(PeepholeOptimizer).Assembly.GetTypes();
         var optimizationTypes = new List<Type>(possibleTypes.Length);
-        foreach (var type in possibleTypes)
-        {
-            if (typeof(IPeepholeOptimization).IsAssignableFrom(type))
-            {
+        foreach (var type in possibleTypes) {
+            if (typeof(IPeepholeOptimization).IsAssignableFrom(type)) {
                 optimizationTypes.Add(type);
             }
         }

@@ -1,15 +1,11 @@
 using DMCompiler.Bytecode;
-using System;
 using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
-using System.IO;
 using System.Linq;
-using DMCompiler.Bytecode;
 using DMCompiler.DM.Expressions;
 using DMCompiler.Compiler;
 using DMCompiler.Compiler.DM.AST;
 using DMCompiler.DM.Builders;
-using DMCompiler.DM.Expressions;
 using DMCompiler.Json;
 using DMCompiler.Optimizer;
 
@@ -38,8 +34,6 @@ namespace DMCompiler.DM {
             public readonly long AnnotatedByteOffset;
             public readonly int Id;
             public readonly string Name;
-
-            public int ReferencedCount;
 
             public string LabelName => $"{Name}_{Id}_codelabel";
 
@@ -137,10 +131,6 @@ namespace DMCompiler.DM {
             }
         }
 
-        public DreamPath GetPath() {
-            return _dmObject.Path;
-        }
-
         public void Compile() {
             DMCompiler.VerbosePrint($"Compiling proc {_dmObject?.Path.ToString() ?? "Unknown"}.{Name}()");
 
@@ -204,8 +194,7 @@ namespace DMCompiler.DM {
 
             BytecodeOptimizer optimizer = new();
 
-            var bytecodelist = optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode(),
-                $"{_dmObject.Path.PathString}{Name}", out int stackDepth);
+            var bytecodelist = optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 
             //procDefinition.MaxStackSize = optimizer.GetMaxStackSize();
             procDefinition.MaxStackSize = AnnotatedBytecode.GetMaxStackSize();
@@ -238,7 +227,7 @@ namespace DMCompiler.DM {
             }
 
             if (_localVariableNames.Count > 0) {
-                procDefinition.Locals = serializer.GetLocalVariablesJSON();
+                procDefinition.Locals = serializer.GetLocalVariablesJson();
             }
 
             procDefinition.SourceInfo = serializer.SourceInfo;
@@ -930,14 +919,14 @@ namespace DMCompiler.DM {
             WriteResource(value);
         }
 
-        public void PushType(int typeId, DreamPath? type) {
+        public void PushType(int typeId) {
             WriteOpcode(DreamProcOpcode.PushType);
-            WriteTypeId(typeId, type);
+            WriteTypeId(typeId);
         }
 
-        public void PushProc(int procId, DreamPath? proc) {
+        public void PushProc(int procId) {
             WriteOpcode(DreamProcOpcode.PushProc);
-            WriteProcId(procId, proc);
+            WriteProcId(procId);
         }
 
         public void PushNull() {
@@ -1081,12 +1070,12 @@ namespace DMCompiler.DM {
             AnnotatedBytecode.WriteResource(value, _writerLocation);
         }
 
-        private void WriteTypeId(int typeId, DreamPath? type) {
-            AnnotatedBytecode.WriteTypeId(typeId, type, _writerLocation);
+        private void WriteTypeId(int typeId) {
+            AnnotatedBytecode.WriteTypeId(typeId, _writerLocation);
         }
 
-        private void WriteProcId(int procId, DreamPath? proc) {
-            AnnotatedBytecode.WriteProcId(procId, proc, _writerLocation);
+        private void WriteProcId(int procId) {
+            AnnotatedBytecode.WriteProcId(procId, _writerLocation);
         }
 
         private void WriteFloat(float value) {
@@ -1110,7 +1099,7 @@ namespace DMCompiler.DM {
         }
 
         private void WriteFilterID(int filterId, DreamPath filter) {
-            AnnotatedBytecode.WriteFilterID(filterId, filter, _writerLocation);
+            AnnotatedBytecode.WriteFilterId(filterId, filter, _writerLocation);
         }
 
         private void WriteStackDelta(int delta) {

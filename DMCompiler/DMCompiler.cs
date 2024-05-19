@@ -21,8 +21,6 @@ namespace DMCompiler;
 
 //TODO: Make this not a static class
 public static class DMCompiler {
-    public static string StandardLibraryDirectory = "";
-    public static string MainDirectory = "";
     public static int ErrorCount;
     public static int WarningCount;
     public static DMCompilerSettings Settings;
@@ -108,14 +106,15 @@ public static class DMCompiler {
 
                 preproc.IncludeFile(includeDir, fileName);
             }
-            MainDirectory = Path.GetDirectoryName(files[0]) ?? string.Empty;
+
             string compilerDirectory = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location) ?? string.Empty;
             string dmStandardDirectory = Path.Join(compilerDirectory, "DMStandard");
-            StandardLibraryDirectory = dmStandardDirectory;
+
             // Push DMStandard to the top of the stack, prioritizing it.
             if (!Settings.NoStandard) {
                 preproc.IncludeFile(dmStandardDirectory, "_Standard.dm");
             }
+
             // Push the pragma config file to the tippy-top of the stack, super-duper prioritizing it, since it governs some compiler behaviour.
             string pragmaName;
             string pragmaDirectory;
@@ -126,10 +125,12 @@ public static class DMCompiler {
                 pragmaDirectory = dmStandardDirectory;
                 pragmaName = "DefaultPragmaConfig.dm";
             }
+
             if(!File.Exists(Path.Join(pragmaDirectory,pragmaName))) {
                 ForcedError($"Configuration file '{pragmaName}' not found.");
                 return null;
             }
+
             preproc.IncludeFile(pragmaDirectory,pragmaName);
             return preproc;
         }
@@ -259,7 +260,6 @@ public static class DMCompiler {
     }
 
     private static string SaveJson(List<DreamMapJson> maps, string interfaceFile, string outputFile) {
-
         var jsonRep = DMObjectTree.CreateJsonRepresentation();
         DreamCompiledJson compiledDream = new DreamCompiledJson {
             Metadata = new DreamCompiledJsonMetadata { Version = OpcodeVerifier.GetOpcodesHash() },

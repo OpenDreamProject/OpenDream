@@ -21,9 +21,7 @@ internal class AnnotatedByteCodeWriter {
     private bool _negativeStackSizeError;
     private Stack<OpcodeArgType> _requiredArgs = new();
 
-    public long Position {
-        get => _annotatedBytecode.Count;
-    }
+    public long Position => _annotatedBytecode.Count;
 
     public List<IAnnotatedBytecode> GetAnnotatedBytecode() {
         return _annotatedBytecode;
@@ -52,8 +50,7 @@ internal class AnnotatedByteCodeWriter {
         var requiredArgs = new Stack<OpcodeArgType>(metadata.RequiredArgs.Count);
 
         // Reverse the order and push to stack
-        for (int i = metadata.RequiredArgs.Count - 1; i >= 0; i--)
-        {
+        for (int i = metadata.RequiredArgs.Count - 1; i >= 0; i--) {
             requiredArgs.Push(metadata.RequiredArgs[i]);
         }
 
@@ -93,16 +90,16 @@ internal class AnnotatedByteCodeWriter {
     /// <summary>
     /// Writes argument classification to the stream
     /// </summary>
-    /// <param name="argtype">The argument type to write</param>
+    /// <param name="argType">The argument type to write</param>
     /// <param name="location">The location of the integer in the source code</param>
-    public void WriteArgumentType(DMCallArgumentsType argtype, Location location) {
+    public void WriteArgumentType(DMCallArgumentsType argType, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ArgType) {
             DMCompiler.ForcedError(location, "Expected argument type argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeArgumentType(argtype, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeArgumentType(argType, location));
     }
 
     /// <summary>
@@ -149,7 +146,7 @@ internal class AnnotatedByteCodeWriter {
 
         _requiredArgs.Pop();
         int stringId = DMObjectTree.AddString(value);
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(value, stringId, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeString(stringId, location));
     }
 
     /// <summary>
@@ -160,7 +157,7 @@ internal class AnnotatedByteCodeWriter {
     /// <param name="filterPath">The datum path of the filter</param>
     /// <param name="location">The location of the filter in the source code</param>
     ///
-    public void WriteFilterID(int filterTypeId, DreamPath filterPath, Location location) {
+    public void WriteFilterId(int filterTypeId, DreamPath filterPath, Location location) {
         _location = location;
 
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.FilterId) {
@@ -232,8 +229,6 @@ internal class AnnotatedByteCodeWriter {
             _labels.Add(reference.Placeholder, label.AnnotatedByteOffset);
             AddLabel(reference.Placeholder);
 
-            label.ReferencedCount += 1;
-
             // I was thinking about going through to replace all the placeholers
             // with the actual label.LabelName, but it means I need to modify
             // _unresolvedLabels, being a list of tuple objects. Fuck that noise
@@ -284,28 +279,28 @@ internal class AnnotatedByteCodeWriter {
 
         _requiredArgs.Pop();
         int stringId = DMObjectTree.AddString(value);
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(value, stringId, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeResource(stringId, location));
     }
 
-    public void WriteTypeId(int typeId, DreamPath? path, Location location) {
+    public void WriteTypeId(int typeId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.TypeId) {
             DMCompiler.ForcedError(location, "Expected TypeID argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeID(typeId, path, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeId(typeId, location));
     }
 
 
-    public void WriteProcId(int procId, DreamPath? path, Location location) {
+    public void WriteProcId(int procId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ProcId) {
             DMCompiler.ForcedError(location, "Expected ProcID argument");
         }
 
         _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeProcID(procId, path, location));
+        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeProcId(procId, location));
     }
 
     public void WriteFormatCount(int formatCount, Location location) {
@@ -338,7 +333,6 @@ internal class AnnotatedByteCodeWriter {
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(count, location));
     }
 
-
     public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {
@@ -361,17 +355,17 @@ internal class AnnotatedByteCodeWriter {
 
 
             case DMReference.Type.Field:
-                int fieldID = DMObjectTree.AddString(reference.Name);
+                int fieldId = DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, location));
+                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
                 ResizeStack(affectStack ? -1 : 0);
                 break;
 
             case DMReference.Type.SrcProc:
             case DMReference.Type.SrcField:
-                fieldID = DMObjectTree.AddString(reference.Name);
+                fieldId = DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]
-                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldID, location));
+                    .AddArg(new AnnotatedBytecodeReference(reference.RefType, fieldId, location));
                 break;
 
             case DMReference.Type.ListIndex:

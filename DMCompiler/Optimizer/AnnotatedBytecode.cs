@@ -63,13 +63,13 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         }
 
         for (int i = 0; i < metadata.RequiredArgs.Count; i++) {
-            if (!matchArgs(metadata.RequiredArgs[i], args[i])) {
+            if (!MatchArgs(metadata.RequiredArgs[i], args[i])) {
                 throw new Exception($"Expected arg {i} to be {metadata.RequiredArgs[i]}, got {args[i].GetType()}");
             }
         }
     }
 
-    private bool matchArgs(OpcodeArgType requiredArg, IAnnotatedBytecode arg) {
+    private bool MatchArgs(OpcodeArgType requiredArg, IAnnotatedBytecode arg) {
         switch (requiredArg) {
 
             case OpcodeArgType.ArgType:
@@ -79,9 +79,9 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
             case OpcodeArgType.Resource:
                 return arg is AnnotatedBytecodeResource;
             case OpcodeArgType.TypeId:
-                return arg is AnnotatedBytecodeTypeID;
+                return arg is AnnotatedBytecodeTypeId;
             case OpcodeArgType.ProcId:
-                return arg is AnnotatedBytecodeProcID;
+                return arg is AnnotatedBytecodeProcId;
             case OpcodeArgType.FilterId:
                 return arg is AnnotatedBytecodeFilter;
             case OpcodeArgType.ListSize:
@@ -131,19 +131,19 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
 
 internal sealed class AnnotatedBytecodeVariable : IAnnotatedBytecode {
     public int Exit;
-    public bool Exitingscope;
+    public bool ExitingScope;
     public Location Location;
-    public string Name;
+    public string? Name;
 
     public AnnotatedBytecodeVariable(string name, Location location) {
         Name = name;
         Location = location;
-        Exitingscope = false;
+        ExitingScope = false;
     }
 
-    public AnnotatedBytecodeVariable(int popoff, Location location) {
-        Exitingscope = true;
-        Exit = popoff;
+    public AnnotatedBytecodeVariable(int popOff, Location location) {
+        ExitingScope = true;
+        Exit = popOff;
         Location = location;
     }
 
@@ -209,13 +209,11 @@ internal sealed class AnnotatedBytecodeFloat : IAnnotatedBytecode {
 }
 
 internal sealed class AnnotatedBytecodeString : IAnnotatedBytecode {
-    public int ID;
+    public int Id;
     public Location Location;
-    public string Value;
 
-    public AnnotatedBytecodeString(string value, int id, Location location) {
-        Value = value;
-        ID = id;
+    public AnnotatedBytecodeString(int id, Location location) {
+        Id = id;
         Location = location;
     }
 
@@ -279,14 +277,12 @@ internal sealed class AnnotatedBytecodeType : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeTypeID : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeTypeId : IAnnotatedBytecode {
     public Location Location;
-    public DreamPath? Path;
-    public int TypeID;
+    public int TypeId;
 
-    public AnnotatedBytecodeTypeID(int typeID, DreamPath? path, Location location) {
-        TypeID = typeID;
-        Path = path;
+    public AnnotatedBytecodeTypeId(int typeId, Location location) {
+        TypeId = typeId;
         Location = location;
     }
 
@@ -304,14 +300,12 @@ internal sealed class AnnotatedBytecodeTypeID : IAnnotatedBytecode {
     }
 }
 
-internal sealed class AnnotatedBytecodeProcID : IAnnotatedBytecode {
+internal sealed class AnnotatedBytecodeProcId : IAnnotatedBytecode {
     public Location Location;
-    public DreamPath? Path;
-    public int ProcID;
+    public int ProcId;
 
-    public AnnotatedBytecodeProcID(int procID, DreamPath? path, Location location) {
-        ProcID = procID;
-        Path = path;
+    public AnnotatedBytecodeProcId(int procId, Location location) {
+        ProcId = procId;
         Location = location;
     }
 
@@ -446,12 +440,10 @@ internal sealed class AnnotatedBytecodeConcatCount : IAnnotatedBytecode {
 
 internal sealed class AnnotatedBytecodeResource : IAnnotatedBytecode {
     public Location Location;
-    public int ResourceID;
-    public string Value;
+    public int ResourceId;
 
-    public AnnotatedBytecodeResource(string value, int rid, Location location) {
-        Value = value;
-        ResourceID = rid;
+    public AnnotatedBytecodeResource(int rid, Location location) {
+        ResourceId = rid;
         Location = location;
     }
 

@@ -598,7 +598,7 @@ internal sealed class IsTypeDirect : IPeepholeOptimization {
         }
 
         var firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeTypeID? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeTypeID);
+        AnnotatedBytecodeTypeId? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeTypeId);
 
         input.RemoveRange(index, 2);
         input.Insert(index, new AnnotatedBytecodeInstruction(DreamProcOpcode.IsTypeDirect,

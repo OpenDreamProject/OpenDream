@@ -38,15 +38,12 @@ public sealed class SourceInfoJson {
     public int Line { get; set; }
 }
 
-public class LineComparer : IEqualityComparer<SourceInfoJson>
-{
-    public bool Equals(SourceInfoJson x, SourceInfoJson y)
-    {
-        return x.Line == y.Line;
+public class LineComparer : IEqualityComparer<SourceInfoJson> {
+    public bool Equals(SourceInfoJson? x, SourceInfoJson? y) {
+        return x?.Line == y?.Line;
     }
 
-    public int GetHashCode(SourceInfoJson obj)
-    {
+    public int GetHashCode(SourceInfoJson obj) {
         return obj.Line.GetHashCode();
     }
 }

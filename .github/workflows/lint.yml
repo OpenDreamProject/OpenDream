@@ -22,8 +22,9 @@ jobs:
       - name: Setup Resharper
         run: dotnet tool install -g JetBrains.ReSharper.GlobalTools
       - name: Run Linter
-        run: jb inspectcode OpenDream.sln -o="output.json" --project="OpenDream*"
+        run: jb inspectcode OpenDream.sln -o="output.json" --project="OpenDream*;DM*" --no-swea
       - name: Annotate Lints
         uses: equisoft-actions/sarif-annotator@v1.5.0
         with:
           sarif-path: ./output.json
+          limit: 200

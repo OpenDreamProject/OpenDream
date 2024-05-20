@@ -220,7 +220,6 @@ namespace OpenDreamRuntime {
 
                         // SAFETY: Infallible! idx is always unique and add can only fail if this is not the case.
                         ReferenceIDsToDreamObject.TryAdd(idx, new WeakDreamRef(refObject));
-
                     } else {
                         idx = id;
                     }

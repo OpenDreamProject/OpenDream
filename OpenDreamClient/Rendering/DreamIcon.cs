@@ -2,7 +2,6 @@
 using OpenDreamClient.Resources.ResourceTypes;
 using OpenDreamShared.Dream;
 using OpenDreamShared.Resources;
-using Robust.Client.Animations;
 using Robust.Client.Graphics;
 using Robust.Shared.Timing;
 using System.Linq;
@@ -91,8 +90,10 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                     start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
 
         _appearanceAnimations ??= new List<AppearanceAnimation>();
-        if(_appearanceAnimations.Count == 0) //only valid on the first animation
+        if(_appearanceAnimations.Count == 0) {//only valid on the first animation
+            Logger.Debug("setting loops to {0}", loops);
             _appearanceAnimationsLoops = loops;
+        }
 
         for(int i=_appearanceAnimations.Count-1; i>=0; i--) //there can be only one last-in-sequence, and it might not be the last element of the list because it could be added to mid-loop
             if(_appearanceAnimations[i].LastInSequence) {

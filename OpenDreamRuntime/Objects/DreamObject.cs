@@ -110,7 +110,6 @@ namespace OpenDreamRuntime.Objects {
         }
 
 
-
         /// <summary>
         ///     Enters the current dream object into a global del queue that is guaranteed to run on the DM thread.
         ///     Use if your deletion handler must be on the DM thread.

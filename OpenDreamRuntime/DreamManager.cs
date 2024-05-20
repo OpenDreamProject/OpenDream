@@ -218,7 +218,7 @@ namespace OpenDreamRuntime {
                         idx = Interlocked.Increment(ref _dreamObjectRefIdCounter);
                         refObject.RefID = idx;
 
-                        // SAFETY: Infalliable! idx is always unique and add can only fail if this is not the case.
+                        // SAFETY: Infallible! idx is always unique and add can only fail if this is not the case.
                         ReferenceIDsToDreamObject.TryAdd(idx, new WeakDreamRef(refObject));
 
                     } else {

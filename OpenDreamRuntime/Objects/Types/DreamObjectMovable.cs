@@ -204,5 +204,4 @@ public class DreamObjectMovable : DreamObjectAtom {
                 throw new ArgumentException($"Invalid loc {loc}");
         }
     }
-
 }

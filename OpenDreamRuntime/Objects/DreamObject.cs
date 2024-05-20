@@ -117,6 +117,7 @@ namespace OpenDreamRuntime.Objects {
         protected void EnterIntoDelQueue() {
             DreamManager.DelQueue.Add(this);
         }
+        
         /// <summary>
         ///     Del() the object, cleaning up its variables and refs to minimize size until the .NET GC collects it.
         /// </summary>

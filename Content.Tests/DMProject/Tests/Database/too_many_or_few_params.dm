@@ -1,5 +1,5 @@
 /proc/RunTest()
-	var/database/db = new("database.db")
+	var/database/db = new("params.db")
 
 	var/database/query/query = new("CREATE TABLE test (id int)", 1, "foo", 1.5)
 	query.Execute(db)
@@ -11,5 +11,4 @@
 
 	ASSERT(query.Error()) // but there is an error for too few parameters
 
-	fdel("database.db")
-	
+	fdel("params.db")

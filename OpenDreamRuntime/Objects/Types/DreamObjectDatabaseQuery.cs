@@ -22,6 +22,11 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
 
     }
 
+    protected override void HandleDeletion() {
+        CloseReader();
+        base.HandleDeletion();
+    }
+
     /// <summary>
     /// Sets up the SQLiteCommand, setting up parameters when provided.
     /// Supports strings and floats from DMcode.
@@ -92,8 +97,8 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         try {
             var name = _reader.GetName(id);
             return new DreamValue(name);
-        } catch (SqliteException exception) {
-            _errorCode = exception.SqliteErrorCode;
+        } catch (IndexOutOfRangeException exception) {
+            _errorCode = 1;
             _errorMessage = exception.Message;
         }
 
@@ -123,7 +128,7 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
     /// <param name="database">The <see cref="DreamObjectDatabase"/> that this query is being run against.</param>
     public void ExecuteCommand(DreamObjectDatabase database) {
         if (!database.TryGetConnection(out var connection)) {
-            return;
+            throw new DMCrashRuntime("Bad database");
         }
 
         if (_command == null) {
@@ -146,10 +151,6 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         _reader?.Read();
     }
 
-    public void Reset() {
-        // TODO: this
-    }
-
     /// <summary>
     /// Attempts to fetch the value of a specific column.
     /// </summary>
@@ -162,8 +163,16 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
             return false;
         }
 
-        value = GetDreamValueFromDbObject(_reader.GetValue(column));
-        return true;
+        try {
+            value = GetDreamValueFromDbObject(_reader.GetValue(column));
+            return true;
+        } catch (Exception exception) {
+            _errorCode = 1;
+            _errorMessage = exception.Message;
+        }
+
+        value = DreamValue.Null;
+        return false;
     }
 
     public Dictionary<string, DreamValue>? CurrentRowData() {
@@ -180,8 +189,8 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
 
                 dict[name] = GetDreamValueFromDbObject(value);
             }
-        } catch (SqliteException exception) {
-            _errorCode = exception.SqliteErrorCode;
+        } catch (InvalidOperationException exception) {
+            _errorCode = 1;
             _errorMessage = exception.Message;
         }
 

@@ -201,7 +201,7 @@
 
 	verb/test_hot_reload_icon()
 		set category = "Test"
-		src << "tyring hot reload of icon..."
+		src << "trying hot reload of icon..."
 		world.ODHotReloadResource("icons/turf.dmi")
 		src << "done hot reload of icon!"
 

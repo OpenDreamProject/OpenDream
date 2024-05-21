@@ -33,6 +33,8 @@ public sealed class DreamObjectTree {
     public TreeEntry Matrix { get; private set; }
     public TreeEntry Exception { get; private set; }
     public TreeEntry Savefile { get; private set; }
+    public TreeEntry Database { get; private set; }
+    public TreeEntry DatabaseQuery { get; private set; }
     public TreeEntry Regex { get; private set; }
     public TreeEntry Filter { get; private set; }
     public TreeEntry Icon { get; private set; }
@@ -139,6 +141,10 @@ public sealed class DreamObjectTree {
             return CreateList();
         if (type == Savefile)
             return new DreamObjectSavefile(Savefile.ObjectDefinition);
+        if (type == Database)
+            return new DreamObjectDatabase(Database.ObjectDefinition);
+        if (type == DatabaseQuery)
+            return new DreamObjectDatabaseQuery(DatabaseQuery.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Matrix))
             return new DreamObjectMatrix(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Sound))
@@ -275,6 +281,8 @@ public sealed class DreamObjectTree {
         Matrix = GetTreeEntry("/matrix");
         Exception = GetTreeEntry("/exception");
         Savefile = GetTreeEntry("/savefile");
+        Database = GetTreeEntry("/database");
+        DatabaseQuery = GetTreeEntry("/database/query");
         Regex = GetTreeEntry("/regex");
         Filter = GetTreeEntry("/dm_filter");
         Icon = GetTreeEntry("/icon");

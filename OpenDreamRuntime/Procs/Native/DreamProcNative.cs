@@ -148,6 +148,24 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_Profile);
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_SetConfig);
 
+            objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_Close);
+            objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_Error);
+            objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_ErrorMsg);
+            objectTree.SetNativeProc(objectTree.Database, DreamProcNativeDatabase.NativeProc_Open);
+
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Add);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Clear);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Close);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Columns);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Error);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_ErrorMsg);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_Execute);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_GetColumn);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_GetRowData);
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_NextRow);
+
+            objectTree.SetNativeProc(objectTree.DatabaseQuery, DreamProcNativeDatabaseQuery.NativeProc_RowsAffected);
+
             SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Reboot);
         }
 

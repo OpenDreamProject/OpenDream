@@ -22,6 +22,12 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
 
     }
 
+    /// <summary>
+    /// Sets up the SQLiteCommand, setting up parameters when provided.
+    /// Supports strings and floats from DMcode.
+    /// </summary>
+    /// <param name="command">The command text of the SQLite command, with placeholders denoted by '?'</param>
+    /// <param name="values">The values to be substituted into the command</param>
     public void SetupCommand(string command, ReadOnlySpan<DreamValue> values) {
         _command = new SqliteCommand(ParseCommandText(command));
 
@@ -55,6 +61,10 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         }
     }
 
+    /// <summary>
+    /// Gets the names of all the columns in the current query
+    /// </summary>
+    /// <returns>A list of <see cref="DreamValue"/>s containing the names of the columns in the query</returns>
     public List<DreamValue> GetAllColumns() {
         if (_reader is null) {
             return [];
@@ -69,6 +79,11 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
 
     }
 
+    /// <summary>
+    /// Gets the name of a single column in the current query
+    /// </summary>
+    /// <param name="id">The column ordinal value.</param>
+    /// <returns>A <see cref="DreamValue"/> of the name of the column.</returns>
     public DreamValue GetColumn(int id) {
         if (_reader is null) {
             return DreamValue.Null;
@@ -102,6 +117,10 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         return _errorMessage;
     }
 
+    /// <summary>
+    /// Executes the currently held query against the SQLite database
+    /// </summary>
+    /// <param name="database">The <see cref="DreamObjectDatabase"/> that this query is being run against.</param>
     public void ExecuteCommand(DreamObjectDatabase database) {
         if (!database.TryGetConnection(out var connection)) {
             return;
@@ -131,6 +150,12 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         // TODO: this
     }
 
+    /// <summary>
+    /// Attempts to fetch the value of a specific column.
+    /// </summary>
+    /// <param name="column">The ordinal column number</param>
+    /// <param name="value">The out variable to be populated with the <see cref="DreamValue"/>of the result.</param>
+    /// <returns></returns>
     public bool TryGetColumn(int column, out DreamValue value) {
         if (_reader is null) {
             value = DreamValue.Null;
@@ -167,17 +192,28 @@ public sealed class DreamObjectDatabaseQuery(DreamObjectDefinition objectDefinit
         return _reader?.RecordsAffected ?? 0;
     }
 
-    private DreamValue GetDreamValueFromDbObject(object value) {
+    /// <summary>
+    /// Converts a <see cref="object"/> retrieved from the SQLite database to a <see cref="DreamValue"/> containing the value.
+    /// </summary>
+    /// <param name="value">The <see cref="object"/> from the database.</param>
+    /// <returns>A <see cref="DreamValue"/> containing the value.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Unsupported data type</exception>
+    private static DreamValue GetDreamValueFromDbObject(object value) {
         return value switch {
             float floatValue => new DreamValue(floatValue),
             double doubleValue => new DreamValue(doubleValue),
             long longValue => new DreamValue(longValue),
             int intValue => new DreamValue(intValue),
             string stringValue => new DreamValue(stringValue),
-            _ => throw new ArgumentOutOfRangeException(),
+            _ => throw new ArgumentOutOfRangeException(nameof(value)),
         };
     }
 
+    /// <summary>
+    /// Builds a new string, converting '?' characters to expressions we can bind to later
+    /// </summary>
+    /// <param name="text">The raw command text</param>
+    /// <returns>A <see cref="string"/> with the characters converted</returns>
     private static string ParseCommandText(string text) {
 
         var newString = new StringBuilder();

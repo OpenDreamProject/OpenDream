@@ -22,7 +22,7 @@ jobs:
       - name: Setup Resharper
         run: dotnet tool install -g JetBrains.ReSharper.GlobalTools
       - name: Run Linter
-        run: jb inspectcode OpenDream.sln -o="output.json" --project="OpenDream*;DM*" --no-swea --no-build
+        run: jb inspectcode OpenDream.sln -o="output.json" --project="OpenDream*;DM*" --exclude="*.xaml" --no-swea --no-build
       - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: output.json

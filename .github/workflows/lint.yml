@@ -19,12 +19,10 @@ jobs:
         uses: actions/setup-dotnet@v1
         with:
           dotnet-version: 8.0.100
-      - name: Install dependencies
-        run: dotnet restore
       - name: Setup Resharper
         run: dotnet tool install -g JetBrains.ReSharper.GlobalTools
       - name: Run Linter
-        run: jb inspectcode OpenDream.sln -o="output.json" --project="OpenDream*;DM*" --no-swea --no-build
+        run: jb inspectcode OpenDream.sln -o="output.json" --project="OpenDream*;DM*" --no-swea
       - uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: output.json

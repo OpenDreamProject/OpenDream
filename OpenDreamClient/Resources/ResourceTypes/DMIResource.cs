@@ -8,7 +8,7 @@ using SixLabors.ImageSharp.PixelFormats;
 namespace OpenDreamClient.Resources.ResourceTypes;
 
 public sealed class DMIResource : DreamResource {
-    private static readonly byte[] _pngHeader = { 0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA };
+    private static readonly byte[] PngHeader = [0x89, 0x50, 0x4E, 0x47, 0xD, 0xA, 0x1A, 0xA];
 
     public Texture Texture;
     public Vector2i IconSize;
@@ -55,10 +55,10 @@ public sealed class DMIResource : DreamResource {
     }
 
     private bool IsValidPNG() {
-        if (Data.Length < _pngHeader.Length) return false;
+        if (Data.Length < PngHeader.Length) return false;
 
-        for (int i=0; i<_pngHeader.Length; i++) {
-            if (Data[i] != _pngHeader[i]) return false;
+        for (int i=0; i<PngHeader.Length; i++) {
+            if (Data[i] != PngHeader[i]) return false;
         }
 
         return true;

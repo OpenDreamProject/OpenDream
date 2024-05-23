@@ -1077,15 +1077,10 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProcParameter("Loc1", Type = DreamValueTypeFlag.DreamObject)]
         public static DreamValue NativeProc_isloc(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             foreach (var arg in bundle.Arguments) {
-                if (!arg.TryGetValueAsDreamObject(out var loc))
-                    return DreamValue.False;
-                if (loc is null)
-                    return DreamValue.False;
-
-                bool isLoc = loc is DreamObjectMob or DreamObjectTurf or DreamObjectArea ||
-                             loc.IsSubtypeOf(bundle.ObjectTree.Obj);
-
-                if (!isLoc)
+                // The DM reference says "mobs, objs, turfs, or areas"
+                // You might think this excludes /atom/movable, but it does not
+                // So test for any DreamObjectAtom type
+                if (!arg.TryGetValueAsDreamObject<DreamObjectAtom>(out _))
                     return DreamValue.False;
             }
 

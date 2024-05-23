@@ -47,7 +47,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
     private int _animationFrame;
     private TimeSpan _animationFrameTime = gameTiming.CurTime;
     private List<AppearanceAnimation>? _appearanceAnimations;
-    private int _appearanceAnimationsLoops = 0;
+    private int _appearanceAnimationsLoops;
     private Box2? _cachedAABB;
 
     public DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem appearanceSystem, int appearanceId,
@@ -90,8 +90,6 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                     start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
 
         _appearanceAnimations ??= new List<AppearanceAnimation>();
-        if(_appearanceAnimations.Count == 0) {//only valid on the first animation
-            Logger.Debug("setting loops to {0}", loops);
             _appearanceAnimationsLoops = loops;
         }
 

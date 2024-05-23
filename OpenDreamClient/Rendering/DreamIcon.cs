@@ -90,6 +90,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, ClientAppearanceSystem a
                     start = _appearanceAnimations[^1].Start + _appearanceAnimations[^1].Duration; //if it's not parallel, it's chained
 
         _appearanceAnimations ??= new List<AppearanceAnimation>();
+        if(_appearanceAnimations.Count == 0) {//only valid on the first animation
             _appearanceAnimationsLoops = loops;
         }
 

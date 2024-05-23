@@ -1,0 +1,26 @@
+name: Lint
+
+on:
+  pull_request:
+    branches: [master]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+      - name: Setup submodule
+        run: |
+          git submodule update --init --recursive
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 8.0.100
+      - name: Setup Resharper
+        run: dotnet tool install -g JetBrains.ReSharper.GlobalTools
+      - name: Run Linter
+        run: jb inspectcode OpenDream.sln -o="output.json" --project="OpenDream*;DM*" --no-swea
+      - uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: output.json

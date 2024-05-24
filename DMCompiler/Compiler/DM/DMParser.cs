@@ -245,7 +245,7 @@ namespace DMCompiler.Compiler.DM {
 
                 if (path.IsOperator) {
                     DMCompiler.UnimplementedWarning(procBlock.Location,
-                        "Operator overloads are not implemented. They will be defined but never called.");
+                        "Most operator overloads are not implemented. They will be defined but never called.");
 
                     List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                     Location tokenLoc = procBlock.Location;

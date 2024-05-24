@@ -1,3 +1,5 @@
+// issue #1752
+
 /proc/RunTest()
     var/matrix/M1 = new()
     var/matrix/M2 = new()

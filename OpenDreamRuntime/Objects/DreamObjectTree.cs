@@ -141,10 +141,10 @@ public sealed class DreamObjectTree {
             return CreateList();
         if (type == Savefile)
             return new DreamObjectSavefile(Savefile.ObjectDefinition);
-        if (type == Database)
-            return new DreamObjectDatabase(Database.ObjectDefinition);
-        if (type == DatabaseQuery)
-            return new DreamObjectDatabaseQuery(DatabaseQuery.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(DatabaseQuery))
+            return new DreamObjectDatabaseQuery(type.ObjectDefinition);
+        if (type.ObjectDefinition.IsSubtypeOf(Database))
+            return new DreamObjectDatabase(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Matrix))
             return new DreamObjectMatrix(type.ObjectDefinition);
         if (type.ObjectDefinition.IsSubtypeOf(Sound))

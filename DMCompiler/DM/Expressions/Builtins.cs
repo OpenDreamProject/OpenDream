@@ -154,6 +154,7 @@ namespace DMCompiler.DM.Expressions {
     sealed class Locate : DMExpression {
         private readonly DMExpression _path;
         private readonly DMExpression? _container;
+        public override bool PathIsFuzzy => true;
 
         public Locate(Location location, DMExpression path, DMExpression? container) : base(location) {
             _path = path;

@@ -6,6 +6,7 @@ using OpenDreamRuntime.Objects.Types;
 using OpenDreamRuntime.Procs;
 using OpenDreamRuntime.Rendering;
 using OpenDreamShared.Dream;
+using Robust.Server.GameObjects;
 using Robust.Shared.Map;
 using Robust.Shared.Map.Components;
 using Robust.Shared.Utility;
@@ -23,6 +24,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
     // Set in Initialize
     private ServerAppearanceSystem _appearanceSystem = default!;
+    private SharedMapSystem _mapSystem = default!;
 
     public Vector2i Size { get; private set; }
     public int Levels => _levels.Count;
@@ -38,6 +40,7 @@ public sealed class DreamMapManager : IDreamMapManager {
 
     public void Initialize() {
         _appearanceSystem = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+        _mapSystem = _entitySystemManager.GetEntitySystem<MapSystem>();
 
         DreamObjectDefinition worldDefinition = _objectTree.World.ObjectDefinition;
 
@@ -78,7 +81,7 @@ public sealed class DreamMapManager : IDreamMapManager {
                 tiles.Add( (tileUpdate.Key, tileUpdate.Value) );
             }
 
-            level.Grid.SetTiles(tiles);
+            _mapSystem.SetTiles(level.Grid, tiles);
             level.QueuedTileUpdates.Clear();
         }
     }
@@ -251,9 +254,9 @@ public sealed class DreamMapManager : IDreamMapManager {
 
             for (int z = Levels + 1; z <= levels; z++) {
                 MapId mapId = new(z);
-                _mapManager.CreateMap(mapId);
+                _mapSystem.CreateMap(mapId);
 
-                MapGridComponent grid = _mapManager.CreateGrid(mapId);
+                var grid = _mapManager.CreateGridEntity(mapId);
                 Level level = new Level(z, grid, defaultArea, Size);
                 _levels.Add(level);
 
@@ -364,11 +367,11 @@ public sealed class DreamMapManager : IDreamMapManager {
 public interface IDreamMapManager {
     public sealed class Level {
         public readonly int Z;
-        public readonly MapGridComponent Grid;
+        public readonly Entity<MapGridComponent> Grid;
         public Cell[,] Cells;
         public readonly Dictionary<Vector2i, Tile> QueuedTileUpdates = new();
 
-        public Level(int z, MapGridComponent grid, DreamObjectArea area, Vector2i size) {
+        public Level(int z, Entity<MapGridComponent> grid, DreamObjectArea area, Vector2i size) {
             Z = z;
             Grid = grid;
 

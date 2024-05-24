@@ -686,7 +686,12 @@ namespace OpenDreamRuntime.Procs {
             } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
                 output = IconOperationAdd(state, first, second);
             } else if (first.TryGetValueAsDreamObject(out var firstDreamObject)) {
-                output = firstDreamObject!.OperatorAdd(second);
+                ProcStatus result = firstDreamObject!.OperatorAdd(second, state, out DreamValue? maybeOutput);
+                if (result == ProcStatus.Continue) {
+                    output = maybeOutput!.Value;
+                } else {
+                    return result;
+                }
             } else if (first.TryGetValueAsType(out _) || first.TryGetValueAsProc(out _)) {
                 output = default; // Always errors
             } else if (second.IsNull) {
@@ -842,9 +847,14 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.Type == DreamValue.DreamValueType.DreamObject) {              // Object | y
+            if (first.TryGetValueAsDreamObject(out DreamObject? firstDreamObject)) {              // Object | y
                 if (!first.IsNull) {
-                    state.Push(first.MustGetValueAsDreamObject()!.OperatorOr(second));
+                    ProcStatus result = firstDreamObject!.OperatorOr(second, state, out DreamValue? maybeOutput);
+                    if (result == ProcStatus.Continue) {
+                        state.Push(maybeOutput!.Value);
+                    } else {
+                        return result;
+                    }
                 } else {
                     state.Push(DreamValue.Null);
                 }
@@ -1111,7 +1121,19 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            state.Push(MultiplyValues(first, second));
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
+                state.Push(new DreamValue(firstFloat * secondFloat));
+            } else if (first.TryGetValueAsDreamObject(out var firstDreamObject)) {
+                ProcStatus result = firstDreamObject!.OperatorMultiply(second, state, out DreamValue? maybeOutput);
+                if (result == ProcStatus.Continue) {
+                    state.Push(maybeOutput!.Value);
+                } else {
+                    return result;
+                }
+            } else {
+                throw new Exception($"Invalid multiply operation on {first} and {second}");
+            }
             return ProcStatus.Continue;
         }
 
@@ -1119,18 +1141,22 @@ namespace OpenDreamRuntime.Procs {
             DreamReference reference = state.ReadReference();
             DreamValue second = state.Pop();
             DreamValue first = state.GetReferenceValue(reference, peek: true);
-            DreamValue result = MultiplyValues(first, second);
-
+            DreamValue result;
+            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
+                var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
+                result = new DreamValue(firstFloat * secondFloat);
+            } else {
+                throw new Exception($"Invalid multiply operation on {first} and {second}");
+            }
             state.AssignReference(reference, result);
             state.Push(result);
             return ProcStatus.Continue;
         }
 
         public static ProcStatus Negate(DMProcState state) {
-            float value = state.Pop().UnsafeGetValueAsFloat();
-
+            DreamValue first = state.Pop();
+            float value = first.UnsafeGetValueAsFloat();
             state.Push(new DreamValue(-value));
-
             return ProcStatus.Continue;
         }
 
@@ -1186,7 +1212,12 @@ namespace OpenDreamRuntime.Procs {
                     output = new(firstFloat - secondFloat);
                 }
             } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
-                output = firstObject!.OperatorSubtract(second); // Not null because of the above first.IsNull check
+                ProcStatus result = firstObject!.OperatorSubtract(second, state, out DreamValue? maybeOutput);
+                if (result == ProcStatus.Continue) {
+                    output = maybeOutput!.Value;
+                } else {
+                    return result;
+                }
             }
 
             if (output.Type != 0) {
@@ -2555,18 +2586,6 @@ namespace OpenDreamRuntime.Procs {
                     throw new Exception("Invalid less than comparison between " + first + " and " + second);
                 }
             }
-        }
-
-        private static DreamValue MultiplyValues(DreamValue first, DreamValue second) {
-            if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
-                var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
-
-                return new(firstFloat * secondFloat);
-            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
-                return firstObject!.OperatorMultiply(second); // Not null because of the above first.IsNull check
-            }
-
-            throw new Exception($"Invalid multiply operation on {first} and {second}");
         }
 
         private static DreamValue DivideValues(DreamValue first, DreamValue second) {

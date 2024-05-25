@@ -823,9 +823,13 @@ public sealed class DreamVisContentsList : DreamList {
     public override void AddValue(DreamValue value) {
         EntityUid entity;
         if (value.TryGetValueAsDreamObject<DreamObjectMovable>(out var movable)) {
+            if(_visContents.Contains(movable))
+                return; // vis_contents cannot contain duplicates
             _visContents.Add(movable);
             entity = movable.Entity;
         } else if (value.TryGetValueAsDreamObject<DreamObjectTurf>(out var turf)) {
+            if(_visContents.Contains(turf))
+                return; // vis_contents cannot contain duplicates
             _visContents.Add(turf);
             entity = EntityUid.Invalid; // TODO: Support turfs in vis_contents
         } else {

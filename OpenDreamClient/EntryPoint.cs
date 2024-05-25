@@ -77,12 +77,6 @@ namespace OpenDreamClient {
 
             _dreamInterface.Initialize();
             IoCManager.Resolve<IDreamSoundEngine>().Initialize();
-
-            if (_configurationManager.GetCVar(CVars.DisplayCompat))
-                _dreamInterface.OpenAlert(
-                    "Compatibility Mode Warning",
-                    "You are using compatibility mode. Clicking in-game objects is not supported in this mode.",
-                    "Ok", null, null, null);
         }
 
         protected override void Dispose(bool disposing) {

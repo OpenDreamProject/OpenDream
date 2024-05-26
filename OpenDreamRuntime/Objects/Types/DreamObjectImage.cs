@@ -11,6 +11,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
+    private DreamList _filters;
     private EntityUid _entity = EntityUid.Invalid;
 
     /// <summary>
@@ -29,9 +30,11 @@ public sealed class DreamObjectImage : DreamObject {
             // /mutable_appearance.overlays and /mutable_appearance.underlays are normal lists
             _overlays = ObjectTree.CreateList();
             _underlays = ObjectTree.CreateList();
+            _filters = ObjectTree.CreateList();
         } else {
             _overlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, false);
             _underlays = new DreamOverlaysList(ObjectTree.List.ObjectDefinition, this, AppearanceSystem, true);
+            _filters = new DreamFilterList(ObjectTree.List.ObjectDefinition, this);
         }
     }
 
@@ -80,6 +83,9 @@ public sealed class DreamObjectImage : DreamObject {
                 return true;
             case "underlays":
                 value = new(_underlays);
+                return true;
+            case "filters":
+                value = new(_filters);
                 return true;
             default: {
                 if (AtomManager.IsValidAppearanceVar(varName)) {
@@ -174,6 +180,22 @@ public sealed class DreamObjectImage : DreamObject {
                     }
                 } else if (!value.IsNull) {
                     _underlays.AddValue(value);
+                }
+
+                break;
+            }
+            case "filters": {
+                value.TryGetValueAsDreamList(out var valueList);
+
+                _filters.Cut();
+
+                if (valueList != null) {
+                    // TODO: This should postpone UpdateAppearance until after everything is added
+                    foreach (DreamValue underlayValue in valueList.GetValues()) {
+                        _filters.AddValue(underlayValue);
+                    }
+                } else if (!value.IsNull) {
+                    _filters.AddValue(value);
                 }
 
                 break;

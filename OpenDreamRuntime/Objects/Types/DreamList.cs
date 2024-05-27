@@ -647,24 +647,24 @@ public sealed class VerbsList(DreamObjectTree objectTree, AtomManager atomManage
 }
 
 // atom.overlays or atom.underlays list
-// Operates on an atom's appearance
+// Operates on an object's appearance
 public sealed class DreamOverlaysList : DreamList {
     [Dependency] private readonly AtomManager _atomManager = default!;
     private readonly ServerAppearanceSystem? _appearanceSystem;
 
-    private readonly DreamObject _atom;
+    private readonly DreamObject _owner;
     private readonly bool _isUnderlays;
 
-    public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject atom, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
+    public DreamOverlaysList(DreamObjectDefinition listDef, DreamObject owner, ServerAppearanceSystem? appearanceSystem, bool isUnderlays) : base(listDef, 0) {
         IoCManager.InjectDependencies(this);
 
-        _atom = atom;
+        _owner = owner;
         _appearanceSystem = appearanceSystem;
         _isUnderlays = isUnderlays;
     }
 
     public override List<DreamValue> GetValues() {
-        var appearance = _atomManager.MustGetAppearance(_atom);
+        var appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null || _appearanceSystem == null)
             return new List<DreamValue>();
 
@@ -681,7 +681,7 @@ public sealed class DreamOverlaysList : DreamList {
     }
 
     public override void Cut(int start = 1, int end = 0) {
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             List<int> overlaysList = GetOverlaysList(appearance);
             int count = overlaysList.Count + 1;
             if (end == 0 || end > count) end = count;
@@ -715,7 +715,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             overlayAppearance ??= new IconAppearance();
 
@@ -727,7 +727,7 @@ public sealed class DreamOverlaysList : DreamList {
         if (_appearanceSystem == null)
             return;
 
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             IconAppearance? overlayAppearance = CreateOverlayAppearance(_atomManager, value, appearance.Icon);
             if (overlayAppearance == null || !_appearanceSystem.TryGetAppearanceId(overlayAppearance, out var id))
                 return;
@@ -745,7 +745,7 @@ public sealed class DreamOverlaysList : DreamList {
         _isUnderlays ? appearance.Underlays : appearance.Overlays;
 
     private IconAppearance GetAppearance() {
-        IconAppearance? appearance = _atomManager.MustGetAppearance(_atom);
+        IconAppearance? appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null)
             throw new Exception("Atom has no appearance");
 
@@ -862,20 +862,20 @@ public sealed class DreamVisContentsList : DreamList {
 }
 
 // atom.filters list
-// Operates on an atom's appearance
+// Operates on an object's appearance
 public sealed class DreamFilterList : DreamList {
     [Dependency] private readonly AtomManager _atomManager = default!;
     [Dependency] private readonly ISerializationManager _serializationManager = default!;
 
-    private readonly DreamObjectAtom _atom;
+    private readonly DreamObject _owner;
 
-    public DreamFilterList(DreamObjectDefinition listDef, DreamObjectAtom atom) : base(listDef, 0) {
+    public DreamFilterList(DreamObjectDefinition listDef, DreamObject owner) : base(listDef, 0) {
         IoCManager.InjectDependencies(this);
-        _atom = atom;
+        _owner = owner;
     }
 
     public override void Cut(int start = 1, int end = 0) {
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             int filterCount = appearance.Filters.Count + 1;
             if (end == 0 || end > filterCount) end = filterCount;
 
@@ -890,7 +890,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public void SetFilter(int index, DreamFilter filter) {
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             if (index < 1 || index > appearance.Filters.Count)
                 throw new Exception($"Cannot index {index} on filter list");
 
@@ -935,7 +935,7 @@ public sealed class DreamFilterList : DreamList {
         DreamFilter copy = _serializationManager.CreateCopy(filter, notNullableOverride: true); // Adding a filter creates a copy
 
         DreamObjectFilter.FilterAttachedTo[copy] = this;
-        _atomManager.UpdateAppearance(_atom, appearance => {
+        _atomManager.UpdateAppearance(_owner, appearance => {
             appearance.Filters.Add(copy);
         });
     }
@@ -945,7 +945,7 @@ public sealed class DreamFilterList : DreamList {
     }
 
     private IconAppearance GetAppearance() {
-        IconAppearance? appearance = _atomManager.MustGetAppearance(_atom);
+        IconAppearance? appearance = _atomManager.MustGetAppearance(_owner);
         if (appearance == null)
             throw new Exception("Atom has no appearance");
 

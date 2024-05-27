@@ -48,6 +48,9 @@
 		usr << "menus: [json_encode(winget(usr, null, "menus"))]"
 		usr << "macros: [json_encode(winget(usr, null, "macros"))]"
 
+	verb/browse_rsc_test()
+		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
+		usr << browse("<p><img src=mobicon.png></p>Oh look, it's you!","window=honk")
 
 	verb/rotate()
 		for(var/i in 1 to 8)

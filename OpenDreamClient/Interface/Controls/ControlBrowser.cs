@@ -113,7 +113,10 @@ internal sealed class ControlBrowser : InterfaceControl {
             Stream stream;
             HttpStatusCode status;
             var path = new ResPath(newUri.AbsolutePath);
-            try {
+            if(!_dreamResource.EnsureCacheFile(newUri.AbsolutePath)) {
+                stream = Stream.Null;
+                status = HttpStatusCode.NotFound;
+            } else try {
                 stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
                 status = HttpStatusCode.OK;
             } catch (FileNotFoundException) {

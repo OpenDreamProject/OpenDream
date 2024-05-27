@@ -11,7 +11,7 @@ public sealed class DreamObjectImage : DreamObject {
     private DreamObject? _loc;
     private DreamList _overlays;
     private DreamList _underlays;
-    private DreamList _filters;
+    private readonly DreamList _filters;
     private EntityUid _entity = EntityUid.Invalid;
 
     /// <summary>

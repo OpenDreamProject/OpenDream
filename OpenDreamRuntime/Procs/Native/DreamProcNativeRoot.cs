@@ -197,6 +197,58 @@ namespace OpenDreamRuntime.Procs.Native {
             var invisibility = bundle.GetArgument(24, "invisibility");
             var suffix = bundle.GetArgument(25, "suffix");
 
+            if((flags & AnimationFlags.AnimationRelative) != 0){
+                // This works for maptext_x/y/width/height, pixel_x/y/w/z, luminosity, layer, alpha, transform, and color. For transform and color, the current value is multiplied by the new one. Vars not in this list are simply changed as if this flag is not present.
+                if(!pixelX.IsNull)
+                    pixelX = new(pixelX.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_x").UnsafeGetValueAsFloat());
+                if(!pixelY.IsNull)
+                    pixelY = new(pixelY.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_y").UnsafeGetValueAsFloat());
+                if(!pixelZ.IsNull)
+                    pixelZ = new(pixelZ.UnsafeGetValueAsFloat() + obj.GetVariable("pixel_z").UnsafeGetValueAsFloat());
+                if(!maptextWidth.IsNull)
+                    maptextWidth = new(maptextWidth.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_width").UnsafeGetValueAsFloat());
+                if(!maptextHeight.IsNull)
+                    maptextHeight = new(maptextHeight.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_height").UnsafeGetValueAsFloat());
+                if(!maptextX.IsNull)
+                    maptextX = new(maptextX.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_x").UnsafeGetValueAsFloat());
+                if(!maptextY.IsNull)
+                    maptextY = new(maptextY.UnsafeGetValueAsFloat() + obj.GetVariable("maptext_y").UnsafeGetValueAsFloat());
+                if(!luminosity.IsNull)
+                    luminosity = new(luminosity.UnsafeGetValueAsFloat() + obj.GetVariable("luminosity").UnsafeGetValueAsFloat());
+                if(!layer.IsNull)
+                    layer = new(layer.UnsafeGetValueAsFloat() + obj.GetVariable("layer").UnsafeGetValueAsFloat());
+                if(!alpha.IsNull)
+                    alpha = new(alpha.UnsafeGetValueAsFloat() + obj.GetVariable("alpha").UnsafeGetValueAsFloat());
+                if(!transform.IsNull) {
+                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformObj) && obj.GetVariable("transform").TryGetValueAsDreamObject<DreamObjectMatrix>(out var objTransform)){
+                        transform = objTransform.OperatorMultiply(transform);
+                    }
+                }
+                if(!color.IsNull) {
+                    ColorMatrix cMatrix;
+                    if(color.TryGetValueAsString(out var colorStr) && Color.TryParse(colorStr, out var colorObj)){
+                        cMatrix = new ColorMatrix(colorObj);
+                    } else if (color.TryGetValueAsDreamList(out var colorList) && DreamProcNativeHelpers.TryParseColorMatrix(colorList, out cMatrix)){
+                        //parsed as colormatrix
+                    } else {
+                        cMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                    }
+                    ColorMatrix objCMatrix;
+                    DreamValue objColor = obj.GetVariable("color");
+                    if(objColor.TryGetValueAsString(out var objColorStr) && Color.TryParse(objColorStr, out var objColorObj)){
+                        objCMatrix = new ColorMatrix(objColorObj);
+                    } else if (objColor.TryGetValueAsDreamList(out var objColorList) && DreamProcNativeHelpers.TryParseColorMatrix(objColorList, out objCMatrix)){
+                        //parsed as colormatrix
+                    } else {
+                        objCMatrix = ColorMatrix.Identity; //fallback to identity if invalid
+                    }
+                    ColorMatrix.Multiply(ref objCMatrix, ref cMatrix, out var resultMatrix);
+                    color = new DreamValue(new DreamList(bundle.ObjectTree.List.ObjectDefinition, resultMatrix.GetValues().Select(x => new DreamValue(x)).ToList(), null));
+                }
+
+
+            }
+
             bundle.AtomManager.AnimateAppearance(obj, TimeSpan.FromMilliseconds(time * 100), (AnimationEasing)easing, loop, flags, delay, chainAnim,
             appearance => {
                 if (!pixelX.IsNull) {

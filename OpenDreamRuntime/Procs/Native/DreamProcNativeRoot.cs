@@ -220,7 +220,7 @@ namespace OpenDreamRuntime.Procs.Native {
                 if(!alpha.IsNull)
                     alpha = new(alpha.UnsafeGetValueAsFloat() + obj.GetVariable("alpha").UnsafeGetValueAsFloat());
                 if(!transform.IsNull) {
-                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var transformObj) && obj.GetVariable("transform").TryGetValueAsDreamObject<DreamObjectMatrix>(out var objTransform)){
+                    if(transform.TryGetValueAsDreamObject<DreamObjectMatrix>(out var _) && obj.GetVariable("transform").TryGetValueAsDreamObject<DreamObjectMatrix>(out var objTransform)){
                         transform = objTransform.OperatorMultiply(transform);
                     }
                 }

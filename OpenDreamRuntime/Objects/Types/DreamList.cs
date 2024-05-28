@@ -889,7 +889,7 @@ public sealed class DreamFilterList : DreamList {
         return appearance.Filters.IndexOf(filter) + 1;
     }
 
-    public void SetFilter(int index, DreamFilter filter) {
+    public void SetFilter(int index, DreamFilter? filter) {
         _atomManager.UpdateAppearance(_owner, appearance => {
             if (index < 1 || index > appearance.Filters.Count)
                 throw new Exception($"Cannot index {index} on filter list");
@@ -897,8 +897,13 @@ public sealed class DreamFilterList : DreamList {
             DreamFilter oldFilter = appearance.Filters[index - 1];
 
             DreamObjectFilter.FilterAttachedTo.Remove(oldFilter);
-            appearance.Filters[index - 1] = filter;
-            DreamObjectFilter.FilterAttachedTo[filter] = this;
+
+            if (filter == null) { // Setting an index to null is the same as removing it ("filters[1] = null")
+                appearance.Filters.RemoveAt(index - 1);
+            } else {
+                appearance.Filters[index - 1] = filter;
+                DreamObjectFilter.FilterAttachedTo[filter] = this;
+            }
         });
     }
 
@@ -917,15 +922,17 @@ public sealed class DreamFilterList : DreamList {
     }
 
     public override void SetValue(DreamValue key, DreamValue value, bool allowGrowth = false) {
-        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
+        if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject) &&!value.IsNull)
             throw new Exception($"Cannot set value of filter list to {value}");
         if (!key.TryGetValueAsInteger(out var filterIndex) || filterIndex < 1)
             throw new Exception($"Invalid index into filter list: {key}");
 
-        SetFilter(filterIndex, filterObject.Filter);
+        SetFilter(filterIndex, filterObject?.Filter);
     }
 
     public override void AddValue(DreamValue value) {
+        if (value.IsNull) // "filters += null" is just ignored
+            return;
         if (!value.TryGetValueAsDreamObject<DreamObjectFilter>(out var filterObject))
             throw new Exception($"Cannot add {value} to filter list");
 

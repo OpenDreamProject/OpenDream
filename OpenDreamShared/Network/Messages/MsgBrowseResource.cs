@@ -8,7 +8,7 @@ public sealed class MsgBrowseResource : NetMessage {
     // TODO: Browse should be on its own channel or something.
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
-    public string Filename = String.Empty;
+    public string Filename = string.Empty;
     public int DataHash;
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {

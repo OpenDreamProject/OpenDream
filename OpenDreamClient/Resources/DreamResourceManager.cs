@@ -70,7 +70,6 @@ namespace OpenDreamClient.Resources {
             _sawmill.Debug($"Received cache check for {message.Filename}");
             if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))){ //TODO CHECK HASH
                 _sawmill.Debug($"Cache hit for {message.Filename}");
-                return;
             } else {
                 _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
                 _activeBrowseRscRequests.Add(message.Filename);

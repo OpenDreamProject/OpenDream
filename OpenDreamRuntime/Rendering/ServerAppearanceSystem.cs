@@ -10,6 +10,7 @@ namespace OpenDreamRuntime.Rendering;
 public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<IconAppearance, int> _appearanceToId = new();
     private readonly Dictionary<int, IconAppearance> _idToAppearance = new();
+    private readonly Dictionary<IconAppearance, int> _appearanceRefCounts = new();
     private int _appearanceIdCounter;
 
     /// <summary>
@@ -37,6 +38,47 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
         }
     }
 
+    public void IncreaseAppearanceRefCount(IconAppearance appearance) {
+        lock (_lock) {
+            if (!_appearanceRefCounts.TryGetValue(appearance, out int count)) {
+                count = 0;
+            }
+            _appearanceRefCounts[appearance] = count + 1;
+        }
+    }
+    public void IncreaseAppearanceRefCount(int appearanceId) {
+        if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
+            return;
+        }
+
+        IncreaseAppearanceRefCount(appearance);
+    }
+
+    public void DecreaseAppearanceRefCount(IconAppearance appearance) {
+        lock (_lock) {
+            if (!_appearanceRefCounts.TryGetValue(appearance, out int count)) {
+                throw new InvalidOperationException("Appearance ref count is already 0");
+            }
+
+            if (count == 1) {
+                _appearanceRefCounts.Remove(appearance);
+                _appearanceToId.Remove(appearance);
+                if(_appearanceToId.TryGetValue(appearance, out int id))
+                    _idToAppearance.Remove(id);
+                RaiseNetworkEvent(new RemoveAppearanceEvent(id));
+                //let the GC sort out the rest
+            } else {
+                _appearanceRefCounts[appearance] = count - 1;
+            }
+        }
+    }
+    public void DecreaseAppearanceRefCount(int appearanceId) {
+        if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
+            return;
+        }
+
+        DecreaseAppearanceRefCount(appearance);
+    }
     public int AddAppearance(IconAppearance appearance) {
         lock (_lock) {
             if (!_appearanceToId.TryGetValue(appearance, out int appearanceId)) {
@@ -45,7 +87,6 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                 _idToAppearance.Add(appearanceId, appearance);
                 RaiseNetworkEvent(new NewAppearanceEvent(appearanceId, appearance));
             }
-
             return appearanceId;
         }
     }

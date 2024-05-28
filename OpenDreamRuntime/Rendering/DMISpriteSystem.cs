@@ -1,4 +1,5 @@
-﻿using OpenDreamShared.Rendering;
+﻿using OpenDreamShared.Dream;
+using OpenDreamShared.Rendering;
 using Robust.Shared.GameStates;
 
 namespace OpenDreamRuntime.Rendering;
@@ -17,5 +18,22 @@ public sealed class DMISpriteSystem : EntitySystem {
         }
 
         args.State = new SharedDMISpriteComponent.DMISpriteComponentState(appearanceId, component.ScreenLocation);
+    }
+
+    public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, IconAppearance appearance, bool dirty = true) {
+        DMISpriteComponent component = ent.Comp;
+        _appearance.IncreaseAppearanceRefCount(appearance);
+        if(component.Appearance is not null)
+            _appearance.DecreaseAppearanceRefCount(component.Appearance);
+
+        component.Appearance = appearance;
+        if(dirty)
+            Dirty(ent, component);
+    }
+
+    public void SetSpriteScreenLocation(Entity<DMISpriteComponent> ent, ScreenLocation screenLocation) {
+        DMISpriteComponent component = ent.Comp;
+        component.ScreenLocation = screenLocation;
+        Dirty(ent, component);
     }
 }

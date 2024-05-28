@@ -36,6 +36,8 @@ public sealed class AtomManager {
     private ServerVerbSystem VerbSystem => _verbSystem ??= _entitySystemManager.GetEntitySystem<ServerVerbSystem>();
     private ServerAppearanceSystem? _appearanceSystem;
     private ServerVerbSystem? _verbSystem;
+    private DMISpriteSystem DMISpriteSystem => _dmiSpriteSystem ??= _entitySystemManager.GetEntitySystem<DMISpriteSystem>();
+    private DMISpriteSystem? _dmiSpriteSystem;
 
     // ReSharper disable ForCanBeConvertedToForeach (the collections could be added to)
     public IEnumerable<DreamObjectAtom> EnumerateAtoms(TreeEntry? filterType = null) {
@@ -191,7 +193,7 @@ public sealed class AtomManager {
         var entity = _entityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
 
         DMISpriteComponent sprite = _entityManager.AddComponent<DMISpriteComponent>(entity);
-        sprite.SetAppearance(GetAppearanceFromDefinition(movable.ObjectDefinition));
+        DMISpriteSystem.SetSpriteAppearance(new(entity, sprite), GetAppearanceFromDefinition(movable.ObjectDefinition));
 
         _entityToAtom.Add(entity, movable);
         return entity;
@@ -473,7 +475,6 @@ public sealed class AtomManager {
     public void UpdateAppearance(DreamObject atom, Action<IconAppearance> update) {
         var appearance = MustGetAppearance(atom);
         appearance = (appearance != null) ? new(appearance) : new(); // Clone the appearance
-
         update(appearance);
         SetAtomAppearance(atom, appearance);
     }
@@ -482,10 +483,18 @@ public sealed class AtomManager {
         if (atom is DreamObjectTurf turf) {
             _dreamMapManager.SetTurfAppearance(turf, appearance);
         } else if (atom is DreamObjectMovable movable) {
-            movable.SpriteComponent.SetAppearance(appearance);
+            DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance);
         } else if (atom is DreamObjectImage image) {
             image.Appearance = appearance;
         }
+    }
+
+    public void SetMovableScreenLoc(DreamObjectMovable movable, ScreenLocation screenLocation) {
+        DMISpriteSystem.SetSpriteScreenLocation(new(movable.Entity, movable.SpriteComponent), screenLocation);
+    }
+
+    public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, IconAppearance appearance) {
+        DMISpriteSystem.SetSpriteAppearance(ent, appearance);
     }
 
     public void AnimateAppearance(DreamObject atom, TimeSpan duration, AnimationEasing easing, int loop, AnimationFlags flags, int delay, bool chainAnim, Action<IconAppearance> animate) {
@@ -497,7 +506,7 @@ public sealed class AtomManager {
         animate(appearance);
 
         // Don't send the updated appearance to clients, they will animate it
-        movable.SpriteComponent.SetAppearance(appearance, dirty: false);
+        DMISpriteSystem.SetSpriteAppearance(new(movable.Entity, movable.SpriteComponent), appearance, dirty: false);
 
         NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
 

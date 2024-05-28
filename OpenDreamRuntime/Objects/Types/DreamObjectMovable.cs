@@ -23,13 +23,7 @@ public class DreamObjectMovable : DreamObjectAtom {
     private string? ScreenLoc {
         get => _screenLoc;
         set {
-            _screenLoc = value;
-            if (!EntityManager.TryGetComponent<DMISpriteComponent>(Entity, out var sprite))
-                return;
-
-            sprite.ScreenLocation = !string.IsNullOrEmpty(value) ?
-                                        new ScreenLocation(value) :
-                                        new ScreenLocation(0, 0, 0, 0);
+            AtomManager.SetMovableScreenLoc(this, !string.IsNullOrEmpty(value) ? new ScreenLocation(value) : new ScreenLocation(0, 0, 0, 0));
         }
     }
 

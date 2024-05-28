@@ -600,6 +600,7 @@ public sealed class AtomManager {
         }
 
         _definitionAppearanceCache.Add(def, appearance);
+        AppearanceSystem.IncreaseAppearanceRefCount(appearance);
         return appearance;
     }
 

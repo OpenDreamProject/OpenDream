@@ -224,6 +224,7 @@ namespace OpenDreamRuntime {
                 refType = RefType.DreamAppearance;
                 _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
                 idx = (int)_appearanceSystem.AddAppearance(appearance);
+                _appearanceSystem.IncreaseAppearanceRefCount(appearance);
             } else if (value.TryGetValueAsDreamResource(out var refRsc)) {
                 refType = RefType.DreamResource;
                 idx = refRsc.Id;

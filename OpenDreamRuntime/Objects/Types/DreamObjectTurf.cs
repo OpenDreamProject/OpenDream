@@ -67,13 +67,14 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
     }
 
     public void SetAppearanceId(int appearanceId) {
+        AppearanceSystem!.IncreaseAppearanceRefCount(appearanceId);
         if (_appearanceId != -1) {
             AppearanceSystem!.DecreaseAppearanceRefCount(_appearanceId);
         }
 
         _appearanceId = appearanceId;
 
-        AppearanceSystem!.IncreaseAppearanceRefCount(_appearanceId);
+
 
     }
 }

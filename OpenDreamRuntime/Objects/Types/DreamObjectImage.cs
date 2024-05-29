@@ -61,19 +61,22 @@ public sealed class DreamObjectImage : DreamObject {
             argIndex = 2;
         }
 
+        iconAppearance = Appearance!; //mutate the appearance and then set it at the end to handle ref counts and client update
         foreach (string argName in IconCreationArgs) {
             var arg = args.GetArgument(argIndex++);
             if (arg.IsNull)
                 continue;
 
-            AtomManager.SetAppearanceVar(Appearance, argName, arg);
+            AtomManager.SetAppearanceVar(iconAppearance, argName, arg);
             if (argName == "dir") {
                 // If a dir is explicitly given in the constructor then overlays using this won't use their owner's dir
                 // Setting dir after construction does not affect this
                 // This is undocumented and I hate it
-                Appearance.InheritsDirection = false;
+                iconAppearance.InheritsDirection = false;
             }
         }
+        AppearanceSystem!.AddAppearance(iconAppearance); // this is a no-op if the appearance is already in the system
+        Appearance = iconAppearance;
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {
@@ -242,10 +245,10 @@ public sealed class DreamObjectImage : DreamObject {
     }
 
     public void SetAppearance(IconAppearance? appearance) {
-        if(_appearance is not null)
-            AppearanceSystem!.DecreaseAppearanceRefCount(_appearance);
         if(appearance is not null)
             AppearanceSystem!.IncreaseAppearanceRefCount(appearance);
+        if(_appearance is not null)
+            AppearanceSystem!.DecreaseAppearanceRefCount(_appearance);
         _appearance = appearance;
     }
 

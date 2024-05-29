@@ -4,9 +4,9 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly int X, Y, Z;
     public readonly IDreamMapManager.Cell Cell;
     public readonly TurfContentsList Contents;
-    public int AppearanceId { get => _appearanceId; set => SetAppearanceId(value); }
+    public int AppearanceId { get => _appearanceId!.Value; set => SetAppearanceId(value); }
 
-    private int _appearanceId = -1;
+    private int? _appearanceId = null;
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z, IDreamMapManager.Cell cell) : base(objectDefinition) {
         X = x;
@@ -68,8 +68,8 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
 
     public void SetAppearanceId(int appearanceId) {
         AppearanceSystem!.IncreaseAppearanceRefCount(appearanceId);
-        if (_appearanceId != -1) {
-            AppearanceSystem!.DecreaseAppearanceRefCount(_appearanceId);
+        if (_appearanceId is not null) {
+            AppearanceSystem!.DecreaseAppearanceRefCount(_appearanceId.Value);
         }
 
         _appearanceId = appearanceId;

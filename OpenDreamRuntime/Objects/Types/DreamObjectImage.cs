@@ -61,11 +61,13 @@ public sealed class DreamObjectImage : DreamObject {
             argIndex = 2;
         }
 
-        iconAppearance = Appearance!; //mutate the appearance and then set it at the end to handle ref counts and client update
+        iconAppearance = null; //mutate the appearance and then set it at the end to handle ref counts and client update
         foreach (string argName in IconCreationArgs) {
             var arg = args.GetArgument(argIndex++);
             if (arg.IsNull)
                 continue;
+            if (iconAppearance is null)
+                iconAppearance = new(Appearance!);
 
             AtomManager.SetAppearanceVar(iconAppearance, argName, arg);
             if (argName == "dir") {
@@ -75,8 +77,10 @@ public sealed class DreamObjectImage : DreamObject {
                 iconAppearance.InheritsDirection = false;
             }
         }
-        AppearanceSystem!.AddAppearance(iconAppearance); // this is a no-op if the appearance is already in the system
-        Appearance = iconAppearance;
+        if (iconAppearance is not null) {
+            AppearanceSystem!.AddAppearance(iconAppearance); // this is a no-op if the appearance is already in the system
+            Appearance = iconAppearance;
+        }
     }
 
     protected override bool TryGetVar(string varName, out DreamValue value) {

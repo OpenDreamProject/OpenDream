@@ -218,7 +218,9 @@ public sealed class DreamObjectImage : DreamObject {
             }
             default:
                 if (AtomManager.IsValidAppearanceVar(varName)) {
-                    AtomManager.SetAppearanceVar(Appearance!, varName, value);
+                    IconAppearance iconAppearance = new(Appearance!);
+                    AtomManager.SetAppearanceVar(iconAppearance, varName, value);
+                    Appearance = iconAppearance;
                     if(_entity != EntityUid.Invalid) {
                         DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
                         AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);

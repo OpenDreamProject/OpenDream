@@ -6,7 +6,7 @@ using Robust.Shared.Map;
 namespace OpenDreamRuntime.Objects.Types;
 
 public sealed class DreamObjectImage : DreamObject {
-    private IconAppearance? _appearance = null;
+    private IconAppearance? _appearance;
     public IconAppearance? Appearance { get => _appearance; set => SetAppearance(value); }
 
     private DreamObject? _loc;
@@ -66,8 +66,7 @@ public sealed class DreamObjectImage : DreamObject {
             var arg = args.GetArgument(argIndex++);
             if (arg.IsNull)
                 continue;
-            if (iconAppearance is null)
-                iconAppearance = new(Appearance!);
+            iconAppearance ??= new(Appearance!);
 
             AtomManager.SetAppearanceVar(iconAppearance, argName, arg);
             if (argName == "dir") {

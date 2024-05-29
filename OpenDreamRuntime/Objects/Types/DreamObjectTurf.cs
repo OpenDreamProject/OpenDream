@@ -6,7 +6,7 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
     public readonly TurfContentsList Contents;
     public int AppearanceId { get => _appearanceId!.Value; set => SetAppearanceId(value); }
 
-    private int? _appearanceId = null;
+    private int? _appearanceId;
 
     public DreamObjectTurf(DreamObjectDefinition objectDefinition, int x, int y, int z, IDreamMapManager.Cell cell) : base(objectDefinition) {
         X = x;

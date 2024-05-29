@@ -13,6 +13,8 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<IconAppearance, int> _appearanceRefCounts = new();
     private int _appearanceIdCounter;
 
+    private ISawmill _sawmill = default!;
+
     /// <summary>
     /// This system is used by the PVS thread, we need to be thread-safe
     /// </summary>
@@ -22,6 +24,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     public override void Initialize() {
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
+        _sawmill ??= Logger.GetSawmill("ServerAppearanceSystem");
     }
 
     public override void Shutdown() {
@@ -34,15 +37,14 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus == SessionStatus.InGame) {
-            RaiseNetworkEvent(new AllAppearancesEvent(_idToAppearance), e.Session.ConnectedClient);
+            _sawmill.Debug($"Sending {_idToAppearance.Count} appearances to {e.Session.Channel.UserName}");
+            RaiseNetworkEvent(new AllAppearancesEvent(_idToAppearance), e.Session.Channel);
         }
     }
 
     public void IncreaseAppearanceRefCount(IconAppearance appearance) {
         lock (_lock) {
-            if (!_appearanceRefCounts.TryGetValue(appearance, out int count)) {
-                count = 0;
-            }
+            int count = _appearanceRefCounts.GetValueOrDefault(appearance, 0);
             foreach(var overlayid in appearance.Overlays) {
                 IncreaseAppearanceRefCount(overlayid);
             }
@@ -54,8 +56,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     }
     public void IncreaseAppearanceRefCount(int appearanceId) {
         if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
-            Logger.Debug($"Appearance id:{appearanceId} not found in _idToAppearance, skipping add.");
-            return;
+            throw new InvalidOperationException("Trying to increase ref count of an appearance that doesn't exist.");
         }
 
         IncreaseAppearanceRefCount(appearance);
@@ -88,8 +89,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     }
     public void DecreaseAppearanceRefCount(int appearanceId) {
         if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
-            Logger.Debug($"Appearance id:{appearanceId} not found in _idToAppearance, skipping removal.");
-            return;
+            throw new InvalidOperationException("Trying to decrease ref count of an appearance that doesn't exist.");
         }
 
         DecreaseAppearanceRefCount(appearance);

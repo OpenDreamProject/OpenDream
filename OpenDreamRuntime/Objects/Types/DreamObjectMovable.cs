@@ -22,9 +22,7 @@ public class DreamObjectMovable : DreamObjectAtom {
 
     private string? ScreenLoc {
         get => _screenLoc;
-        set {
-            AtomManager.SetMovableScreenLoc(this, !string.IsNullOrEmpty(value) ? new ScreenLocation(value) : new ScreenLocation(0, 0, 0, 0));
-        }
+        set => SetScreenLoc(value);
     }
 
     private string? _screenLoc;
@@ -191,5 +189,10 @@ public class DreamObjectMovable : DreamObjectAtom {
             default:
                 throw new ArgumentException($"Invalid loc {loc}");
         }
+    }
+
+    private void SetScreenLoc(string? screenLoc) {
+        _screenLoc = screenLoc;
+        AtomManager.SetMovableScreenLoc(this, !string.IsNullOrEmpty(screenLoc) ? new ScreenLocation(screenLoc) : new ScreenLocation(0, 0, 0, 0));
     }
 }

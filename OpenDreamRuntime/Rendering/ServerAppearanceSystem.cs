@@ -13,7 +13,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<IconAppearance, int> _appearanceRefCounts = new();
     private int _appearanceIdCounter;
 
-    private ISawmill _sawmill = default!;
+    private ISawmill? _sawmill;
 
     /// <summary>
     /// This system is used by the PVS thread, we need to be thread-safe
@@ -24,7 +24,6 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     public override void Initialize() {
         _playerManager.PlayerStatusChanged += OnPlayerStatusChanged;
-        _sawmill ??= Logger.GetSawmill("ServerAppearanceSystem");
     }
 
     public override void Shutdown() {
@@ -37,6 +36,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus == SessionStatus.InGame) {
+            _sawmill ??= Logger.GetSawmill("ServerAppearanceSystem");
             _sawmill.Debug($"Sending {_idToAppearance.Count} appearances to {e.Session.Channel.UserName}");
             RaiseNetworkEvent(new AllAppearancesEvent(_idToAppearance), e.Session.Channel);
         }

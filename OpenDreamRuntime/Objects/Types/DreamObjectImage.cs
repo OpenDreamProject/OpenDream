@@ -244,7 +244,8 @@ public sealed class DreamObjectImage : DreamObject {
         if(_entity == EntityUid.Invalid) {
             _entity = EntityManager.SpawnEntity(null, new MapCoordinates(0, 0, MapId.Nullspace));
             DMISpriteComponent sprite = EntityManager.AddComponent<DMISpriteComponent>(_entity);
-            AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);
+            if(Appearance is not null)
+                AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);
         }
         return _entity;
     }

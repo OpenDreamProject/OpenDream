@@ -5,16 +5,18 @@ using Robust.Shared.GameStates;
 namespace OpenDreamRuntime.Rendering;
 
 public sealed class DMISpriteSystem : EntitySystem {
-    [Dependency] private readonly ServerAppearanceSystem _appearance = default!;
+    private ServerAppearanceSystem? _appearance;
+    [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
     public override void Initialize() {
         SubscribeLocalEvent<DMISpriteComponent, ComponentGetState>(GetComponentState);
+        _appearance = _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
     }
 
     private void GetComponentState(EntityUid uid, DMISpriteComponent component, ref ComponentGetState args) {
         int? appearanceId = null;
         if (component.Appearance != null) {
-            appearanceId = _appearance.AddAppearance(component.Appearance);
+            appearanceId = _appearance?.AddAppearance(component.Appearance);
         }
 
         args.State = new SharedDMISpriteComponent.DMISpriteComponentState(appearanceId, component.ScreenLocation);
@@ -22,9 +24,9 @@ public sealed class DMISpriteSystem : EntitySystem {
 
     public void SetSpriteAppearance(Entity<DMISpriteComponent> ent, IconAppearance appearance, bool dirty = true) {
         DMISpriteComponent component = ent.Comp;
-        _appearance.IncreaseAppearanceRefCount(appearance);
+        _appearance?.IncreaseAppearanceRefCount(appearance);
         if(component.Appearance is not null)
-            _appearance.DecreaseAppearanceRefCount(component.Appearance);
+            _appearance?.DecreaseAppearanceRefCount(component.Appearance);
 
         component.Appearance = appearance;
         if(dirty)

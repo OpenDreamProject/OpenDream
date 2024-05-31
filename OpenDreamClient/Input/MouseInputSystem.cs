@@ -8,6 +8,8 @@ using Robust.Client.GameObjects;
 using Robust.Client.Graphics;
 using Robust.Client.Input;
 using Robust.Client.UserInterface;
+using Robust.Shared;
+using Robust.Shared.Configuration;
 using Robust.Shared.Input;
 using Robust.Shared.Input.Binding;
 using Robust.Shared.Map;
@@ -22,6 +24,7 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
     [Dependency] private readonly EntityLookupSystem _lookupSystem = default!;
     [Dependency] private readonly IEntityManager _entityManager = default!;
     [Dependency] private readonly MapSystem _mapSystem = default!;
+    [Dependency] private readonly IConfigurationManager _configurationManager = default!;
 
     private DreamViewOverlay? _dreamViewOverlay;
     private ContextMenuPopup _contextMenu = default!;
@@ -84,6 +87,9 @@ internal sealed class MouseInputSystem : SharedMouseInputSystem {
 
         var mapCoords = viewport.ScreenToMap(args.PointerLocation.Position);
         var mousePos = (args.RelativePixelPosition - viewportBox.TopLeft) / viewportBox.Size * viewport.ViewportSize;
+
+        if(_configurationManager.GetCVar(CVars.DisplayCompat))
+            return null; //Compat mode causes crashes with RT's GetPixel because OpenGL ES doesn't support GetTexImage()
         var lookupColor = _dreamViewOverlay.MouseMap.GetPixel((int)mousePos.X, (int)mousePos.Y);
         var underMouse = _dreamViewOverlay.MouseMapLookup.GetValueOrDefault(lookupColor);
         if (underMouse == null)

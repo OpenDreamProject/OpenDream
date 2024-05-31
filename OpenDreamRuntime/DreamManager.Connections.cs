@@ -54,6 +54,8 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgPromptList>();
             _netManager.RegisterNetMessage<MsgPromptResponse>(RxPromptResponse);
             _netManager.RegisterNetMessage<MsgBrowseResource>();
+            _netManager.RegisterNetMessage<MsgBrowseResourceRequest>(RxBrowseResourceRequest);
+            _netManager.RegisterNetMessage<MsgBrowseResourceResponse>();
             _netManager.RegisterNetMessage<MsgBrowse>();
             _netManager.RegisterNetMessage<MsgTopic>(RxTopic);
             _netManager.RegisterNetMessage<MsgWinSet>();
@@ -222,6 +224,11 @@ namespace OpenDreamRuntime {
             // Once the client loaded the interface, move them to in-game.
             var player = _playerManager.GetSessionByChannel(message.MsgChannel);
             _playerManager.JoinGame(player);
+        }
+
+        private void RxBrowseResourceRequest(MsgBrowseResourceRequest message) {
+            var connection = ConnectionForChannel(message.MsgChannel);
+            connection.HandleBrowseResourceRequest(message.Filename);
         }
 
         private DreamConnection ConnectionForChannel(INetChannel channel) {

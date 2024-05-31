@@ -77,7 +77,7 @@ public sealed class DreamConnection {
     [ViewVariables] private string _selectedStatPanel;
     [ViewVariables] private readonly Dictionary<int, Action<DreamValue>> _promptEvents = new();
     [ViewVariables] private int _nextPromptEvent = 1;
-
+    private readonly Dictionary<string, DreamResource> _permittedBrowseRscFiles = new();
     private DreamObjectMob? _mob;
     private DreamObjectMovable? _eye;
 
@@ -399,10 +399,25 @@ public sealed class DreamConnection {
 
         var msg = new MsgBrowseResource() {
             Filename = filename,
-            Data = resource.ResourceData
+            DataHash = resource.ResourceData.Length //TODO: make a quick hash that can work clientside too
         };
+        _permittedBrowseRscFiles.Add(filename, resource);
 
-        Session?.ConnectedClient.SendMessage(msg);
+        Session?.Channel.SendMessage(msg);
+    }
+
+    public void HandleBrowseResourceRequest(string filename) {
+        if(_permittedBrowseRscFiles.TryGetValue(filename, out var dreamResource)) {
+            var msg = new MsgBrowseResourceResponse() {
+                Filename = filename,
+                Data = dreamResource.ResourceData! //honestly if this is null, something mega fucked up has happened and we should error hard
+            };
+            _permittedBrowseRscFiles.Remove(filename);
+            Session?.Channel.SendMessage(msg);
+        } else {
+            _sawmill.Error($"Client({Session}) requested a browse_rsc file they had not been permitted to request ({filename}).");
+        }
+
     }
 
     public void Browse(string? body, string? options) {

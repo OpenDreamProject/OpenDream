@@ -4,7 +4,6 @@ using OpenDreamClient.Resources.ResourceTypes;
 using Robust.Shared.Configuration;
 using Robust.Shared.ContentPack;
 using Robust.Shared.Network;
-using Robust.Shared.Timing;
 using Robust.Shared.Utility;
 
 namespace OpenDreamClient.Resources {
@@ -23,6 +22,7 @@ namespace OpenDreamClient.Resources {
         /// <typeparam name="T">The type of resource to load as.</typeparam>
         void LoadResourceAsync<T>(int resourceId, Action<T> onLoadCallback) where T : DreamResource;
         ResPath GetCacheFilePath(string filename);
+        public bool EnsureCacheFile(string filename, int timeoutSeconds = 5);
     }
 
     internal sealed class DreamResourceManager : IDreamResourceManager {
@@ -38,11 +38,14 @@ namespace OpenDreamClient.Resources {
 
         private ISawmill _sawmill = default!;
 
+        private readonly HashSet<string> _activeBrowseRscRequests = new();
+
         public void Initialize() {
             _sawmill = Logger.GetSawmill("opendream.res");
             InitCacheDirectory();
 
             _netManager.RegisterNetMessage<MsgBrowseResource>(RxBrowseResource);
+            _netManager.RegisterNetMessage<MsgBrowseResourceResponse>(RxBrowseResourceResponse);
             _netManager.RegisterNetMessage<MsgRequestResource>();
             _netManager.RegisterNetMessage<MsgResource>(RxResource);
         }
@@ -64,7 +67,23 @@ namespace OpenDreamClient.Resources {
         }
 
         private void RxBrowseResource(MsgBrowseResource message) {
-            CreateCacheFile(message.Filename, message.Data);
+            _sawmill.Debug($"Received cache check for {message.Filename}");
+            if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))){ //TODO CHECK HASH
+                _sawmill.Debug($"Cache hit for {message.Filename}");
+            } else {
+                _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
+                _activeBrowseRscRequests.Add(message.Filename);
+                _netManager.ServerChannel?.SendMessage(new MsgBrowseResourceRequest(){ Filename = message.Filename});
+            }
+        }
+
+        private void RxBrowseResourceResponse(MsgBrowseResourceResponse message) {
+            if(_activeBrowseRscRequests.Contains(message.Filename)) {
+                _activeBrowseRscRequests.Remove(message.Filename);
+                CreateCacheFile(message.Filename, message.Data);
+            } else {
+                _sawmill.Error($"Recieved a browse_rsc response for a file we didn't ask for: {message.Filename}");
+            }
         }
 
         private void RxResource(MsgResource message) {
@@ -121,7 +140,7 @@ namespace OpenDreamClient.Resources {
                 _netManager.ClientSendMessage(msg);
 
                 var timeout = _cfg.GetCVar(OpenDreamCVars.DownloadTimeout);
-                Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
+                Robust.Shared.Timing.Timer.Spawn(TimeSpan.FromSeconds(timeout), () => {
                     if (_loadingResources.ContainsKey(resourceId)) {
                         _sawmill.Warning(
                             $"Resource id {resourceId} was requested, but is still not received {timeout} seconds later.");
@@ -161,6 +180,31 @@ namespace OpenDreamClient.Resources {
             var path = _cacheDirectory / new ResPath(filename).Filename;
             _resourceManager.UserData.WriteAllBytes(path, data);
             return new ResPath(filename);
+        }
+
+        /// <summary>
+        /// Blocking check for the existence of a cached file from `browse_rsc()`. Returns true when the file is ready, or returns false if the file is not ready within timeoutSeconds.
+        /// </summary>
+        /// <param name="filename">filepath of the cached resource (eg `./foo.png`)</param>
+        /// <param name="timeoutSeconds">how long to block for while waiting for the resource. Default 5 seconds.</param>
+        /// <returns></returns>
+        public bool EnsureCacheFile(string filename, int timeoutSeconds = 5) {
+            var actualPath = GetCacheFilePath(filename);
+            if(_resourceManager.UserData.Exists(actualPath)) {
+                return true;
+            } else {
+                if(_activeBrowseRscRequests.Contains(actualPath.Filename)) {
+                    //block until the file arrives for like 5 seconds, then give up
+                    DateTime thresholdTime = DateTime.Now.AddSeconds(timeoutSeconds);
+                    while(!_resourceManager.UserData.Exists(actualPath) && DateTime.Now < thresholdTime) {
+                        _netManager.ProcessPackets(); //todo this should be sleep
+                    }
+                    return _resourceManager.UserData.Exists(actualPath);
+                } else {
+                    _sawmill.Error("Cache was ensured for a file that does not exist in cache and is not requested. Probably someobody called browse() without browse_rsc() first.");
+                    return false;
+                }
+            }
         }
 
         private DreamResource? GetCachedResource(int resourceId) {

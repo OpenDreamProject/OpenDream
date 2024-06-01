@@ -1,4 +1,5 @@
 ﻿using JetBrains.Annotations;
+using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 using Robust.Shared.Serialization.Markdown.Value;
@@ -48,7 +49,6 @@ public partial class ControlDescriptor : ElementDescriptor {
     public DMFPropertyString FontStyle = new("");
     [DataField("on-size")]
     public DMFPropertyString OnSize = new("");
-
 }
 
 public sealed partial class WindowDescriptor : ControlDescriptor {
@@ -221,7 +221,7 @@ public sealed partial class ControlDescriptorOutput : ControlDescriptor {
     [DataField("image")]
     public DMFPropertyString Image = new("");
     [DataField("enable-http-images")]
-    public DMFPropertyBool EnableHTTPImages = new(false);
+    public DMFPropertyBool EnableHttpImages = new(false);
 }
 
 public sealed partial class ControlDescriptorInfo : ControlDescriptor {
@@ -278,7 +278,7 @@ public sealed partial class ControlDescriptorBrowser : ControlDescriptor {
     [DataField("show-history")]
     public DMFPropertyBool ShowHistory = new(false);
     [DataField("show-url")]
-    public DMFPropertyBool ShowURL = new(false);
+    public DMFPropertyBool ShowUrl = new(false);
     [DataField("use-title")]
     public DMFPropertyBool UseTitle = new(false);
     [DataField("auto-format")]
@@ -330,7 +330,7 @@ public sealed partial class ControlDescriptorGrid : ControlDescriptor {
     [DataField("small-icons")]
     public DMFPropertyBool SmallIcons = new(false);
     [DataField("enable-http-images")]
-    public DMFPropertyBool EnableHTTPImages = new(false);
+    public DMFPropertyBool EnableHttpImages = new(false);
 }
 
 public sealed partial class ControlDescriptorTab : ControlDescriptor {
@@ -342,7 +342,6 @@ public sealed partial class ControlDescriptorTab : ControlDescriptor {
     public DMFPropertyString OnTab = new("");
     [DataField("tabs")]
     public DMFPropertyString Tabs = new("");
-
 }
 
 
@@ -363,7 +362,6 @@ public sealed partial class ControlDescriptorBar : ControlDescriptor {
     public DMFPropertyNum Value = new(0f); //position of the progress bar
     [DataField("on-change")]
     public DMFPropertyString OnChange = new("");
-
 }
 
 

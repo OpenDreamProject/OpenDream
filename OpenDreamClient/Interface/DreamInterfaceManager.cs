@@ -643,7 +643,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
         bool ParseAndTryGet(InterfaceElement element, string query, out string result) {
             //parse "as blah" from query if it's there
             string[] querySplit = query.Split(" as ");
-            DMFProperty propResult;
+            IDMFProperty propResult;
             if(querySplit.Length != 2) //must be "thing as blah" or "thing". Anything else is invalid.
                 if(element.TryGetProperty(query, out propResult!)){
                     result = propResult.AsRaw();
@@ -672,10 +672,10 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         result = propResult.AsParams();
                         break;
                     case "json":
-                        result = propResult.AsJSON();
+                        result = propResult.AsJson();
                         break;
                     case "json-dm":
-                        result = propResult.AsJSONDM();
+                        result = propResult.AsJsonDM();
                         break;
                     case "raw":
                         result = propResult.AsRaw();

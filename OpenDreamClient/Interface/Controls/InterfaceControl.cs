@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -58,7 +59,7 @@ public abstract class InterfaceControl : InterfaceElement {
         //UIControl.IsEnabled = !_controlDescriptor.IsDisabled;
     }
 
-    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "size":
                 value = new DMFPropertyVec2(UIElement.Size);

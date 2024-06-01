@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -89,7 +90,7 @@ internal sealed class ControlChild : InterfaceControl {
         _grid.SplitFraction = ChildDescriptor.Splitter.Value / 100f;
     }
 
-    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "splitter":
                 value = new DMFPropertyNum(_grid.SplitFraction * 100);

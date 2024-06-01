@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -286,16 +287,16 @@ public sealed class ControlWindow : InterfaceControl {
         UpdateAnchors();
     }
 
-    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "inner-size":
                 value = new DMFPropertyVec2((int)_canvas.Width, (int)_canvas.Height);
                 return true;
             case "outer-size":
-                if(_myWindow.osWindow is not null){
+                if (_myWindow.osWindow is not null) {
                     value = new DMFPropertyVec2((int)_myWindow.osWindow.Width, (int)_myWindow.osWindow.Height);
                     return true;
-                } else if(_myWindow.clydeWindow is not null){
+                } else if (_myWindow.clydeWindow is not null) {
                     value = new DMFPropertyVec2(_myWindow.clydeWindow.Size);
                     return true;
                 } else {
@@ -303,10 +304,10 @@ public sealed class ControlWindow : InterfaceControl {
                     return true;
                 }
             case "is-minimized":
-                if(_myWindow.osWindow?.ClydeWindow != null){
+                if (_myWindow.osWindow?.ClydeWindow != null) {
                     value = new DMFPropertyBool(_myWindow.osWindow.ClydeWindow.IsMinimized);
                     return true;
-                } else if(_myWindow.clydeWindow is not null){
+                } else if (_myWindow.clydeWindow is not null) {
                     value = new DMFPropertyBool(_myWindow.clydeWindow.IsMinimized);
                     return true;
                 } else {
@@ -314,10 +315,10 @@ public sealed class ControlWindow : InterfaceControl {
                     return true;
                 }
             case "is-maximized": //TODO this is currently "not isMinimised" because RT doesn't expose a maximised check
-                if(_myWindow.osWindow?.ClydeWindow != null){
+                if (_myWindow.osWindow?.ClydeWindow != null) {
                     value = new DMFPropertyBool(!_myWindow.osWindow.ClydeWindow.IsMinimized);
                     return true;
-                } else if(_myWindow.clydeWindow is not null){
+                } else if (_myWindow.clydeWindow is not null) {
                     value = new DMFPropertyBool(!_myWindow.clydeWindow.IsMinimized);
                     return true;
                 } else {

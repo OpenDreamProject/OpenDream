@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics.CodeAnalysis;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -7,6 +8,7 @@ namespace OpenDreamClient.Interface.Controls;
 
 internal sealed class ControlInput : InterfaceControl {
     private LineEdit _textBox;
+
     public ControlInput(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
 
     protected override Control CreateUIElement() {
@@ -27,7 +29,7 @@ internal sealed class ControlInput : InterfaceControl {
         _textBox.Text = inputDescriptor.Text.AsRaw();
     }
 
-    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "text":
                 value = new DMFPropertyString(_textBox.Text);

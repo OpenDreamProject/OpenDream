@@ -1,6 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
@@ -41,7 +42,7 @@ internal sealed class ControlTab(ControlDescriptor controlDescriptor, ControlWin
         }
     }
 
-    public override bool TryGetProperty(string property, [NotNullWhen(true)] out DMFProperty? value) {
+    public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "current-tab":
                 var currentTab = _tab.GetChild(_tab.CurrentTab);

@@ -1,4 +1,5 @@
 ﻿using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Serialization.Manager;
 
@@ -125,15 +126,15 @@ public sealed class InterfaceMenu : InterfaceElement {
 
 
             menuButton.OnPressed += () => {
-                    if(MenuElementDescriptor.CanCheck.Value)
-                        if(!string.IsNullOrEmpty(MenuElementDescriptor.Group.Value))
-                            _menu.SetGroupChecked(MenuElementDescriptor.Group.Value, MenuElementDescriptor.Id.AsRaw());
-                        else
-                            MenuElementDescriptor.IsChecked = new DMFPropertyBool(!MenuElementDescriptor.IsChecked.Value);
-                        _menu.CreateMenu();
-                    if(!string.IsNullOrEmpty(MenuElementDescriptor.Command.Value))
-                        _interfaceManager.RunCommand(Command.AsRaw());
-                };
+                if(MenuElementDescriptor.CanCheck.Value)
+                    if(!string.IsNullOrEmpty(MenuElementDescriptor.Group.Value))
+                        _menu.SetGroupChecked(MenuElementDescriptor.Group.Value, MenuElementDescriptor.Id.AsRaw());
+                    else
+                        MenuElementDescriptor.IsChecked = new DMFPropertyBool(!MenuElementDescriptor.IsChecked.Value);
+                _menu.CreateMenu();
+                if(!string.IsNullOrEmpty(MenuElementDescriptor.Command.Value))
+                    _interfaceManager.RunCommand(Command.AsRaw());
+            };
             return menuButton;
         }
 

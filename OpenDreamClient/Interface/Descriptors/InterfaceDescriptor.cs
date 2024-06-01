@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
@@ -37,7 +38,7 @@ public partial class ElementDescriptor {
         init => _id = value;
     }
 
-    public DMFPropertyString Name => new DMFPropertyString(_name.Value ?? Id.AsRaw());
+    public DMFPropertyString Name => new(_name.Value ?? Id.AsRaw());
 
     public DMFPropertyString Type {
         get => _type;

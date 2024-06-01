@@ -1,4 +1,5 @@
 ﻿using JetBrains.Annotations;
+using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 

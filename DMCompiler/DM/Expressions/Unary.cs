@@ -123,4 +123,32 @@ namespace DMCompiler.DM.Expressions {
             proc.Decrement(reference);
         }
     }
+
+    // &x
+    internal sealed class PointerRef(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) { }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            Expr.EmitPushValue(dmObject, proc);
+            DMCompiler.UnimplementedWarning(location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+        }
+
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            return Expr.EmitReference(dmObject, proc, endLabel, shortCircuitMode);
+        }
+    }
+
+    // *x
+    internal sealed class PointerDeref(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
+        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) { }
+
+        public override void EmitPushValue(DMObject dmObject, DMProc proc) {
+            Expr.EmitPushValue(dmObject, proc);
+            DMCompiler.UnimplementedWarning(location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+        }
+
+        public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode) {
+            return Expr.EmitReference(dmObject, proc, endLabel, shortCircuitMode);
+        }
+    }
 }

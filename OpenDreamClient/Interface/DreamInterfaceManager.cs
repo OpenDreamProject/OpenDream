@@ -546,8 +546,6 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             return true;
         }
 
-
-
         if (string.IsNullOrEmpty(controlId)) {
             List<DMFWinSet> winSets = parser.GlobalWinSet();
 
@@ -650,8 +648,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                 if(element.TryGetProperty(query, out propResult!)){
                     result = propResult.AsRaw();
                     return true;
-                }
-                else {
+                } else {
                     result = "";
                     return false;
                 }

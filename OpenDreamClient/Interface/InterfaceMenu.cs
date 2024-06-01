@@ -126,7 +126,7 @@ public sealed class InterfaceMenu : InterfaceElement {
 
             menuButton.OnPressed += () => {
                     if(MenuElementDescriptor.CanCheck.Value)
-                        if(!String.IsNullOrEmpty(MenuElementDescriptor.Group.Value))
+                        if(!string.IsNullOrEmpty(MenuElementDescriptor.Group.Value))
                             _menu.SetGroupChecked(MenuElementDescriptor.Group.Value, MenuElementDescriptor.Id.AsRaw());
                         else
                             MenuElementDescriptor.IsChecked = new DMFPropertyBool(!MenuElementDescriptor.IsChecked.Value);

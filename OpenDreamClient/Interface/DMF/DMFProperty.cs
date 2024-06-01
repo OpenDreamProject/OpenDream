@@ -15,6 +15,7 @@ public interface DMFProperty {
     public abstract string AsJSONDM();
     public abstract string AsRaw();
 }
+
 /*
 arg
     Value is formatted as if it's an argument on a command line. Numbers are left alone; booleans are 0 or 1; size and position have their X and Y values separated by a space; pretty much everything else is DM-escaped and enclosed in quotes.
@@ -32,7 +33,6 @@ raw
     Does not change the value's text representation in any way; assumes it's already formatted correctly for the purpose. This is similar to as arg but does no escaping and no quotes.
 */
 
-
 public struct DMFPropertyString : DMFProperty {
     public string? Value;
 
@@ -49,9 +49,7 @@ public struct DMFPropertyString : DMFProperty {
             return "";
         return Value
             .Replace("\\", "\\\\")
-            .Replace("\"", "\\\"")
-        ;
-
+            .Replace("\"", "\\\"");
     }
 
     public string AsString() {
@@ -79,7 +77,7 @@ public struct DMFPropertyString : DMFProperty {
     }
 
     public string AsRaw() {
-        return Value != null ? Value.ToString() : "";
+        return Value ?? "";
     }
 
     public override string ToString() {
@@ -122,7 +120,7 @@ public struct DMFPropertyNum : DMFProperty {
     }
 
     public string AsRaw() {
-        return Value.ToString();
+        return Value.ToString(CultureInfo.InvariantCulture);
     }
 
     public override string ToString() {
@@ -143,6 +141,7 @@ public struct DMFPropertyVec2 : DMFProperty {
         if(value.Equals("none",StringComparison.InvariantCultureIgnoreCase)){
             X = 0;
             Y = 0;
+            return;
         }
 
         string[] parts = value.Split([',','x',' ']);
@@ -155,7 +154,6 @@ public struct DMFPropertyVec2 : DMFProperty {
         X = (int)value.X;
         Y = (int)value.Y;
     }
-
 
     public DMFPropertyVec2(Vector2i value) {
         X = value.X;

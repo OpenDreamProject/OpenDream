@@ -43,7 +43,8 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     }
     private IconAppearance? _appearance;
 
-    public Texture? CachedTexture => _pong?.Texture;
+    public Texture? CachedTexture { get; private set; }
+    public Vector2 TextureRenderOffset = Vector2.Zero;
 
     private int _animationFrame;
     private TimeSpan _animationFrameTime = gameTiming.CurTime;
@@ -62,23 +63,25 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             return null;
 
         var animationFrame = AnimationFrame;
-        if (_pong != null && !_textureDirty)
-            return _pong.Texture;
+        if (CachedTexture != null && !_textureDirty)
+            return CachedTexture;
 
         var frame = DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
-        if (frame == null)
-            return null;
-        if ((Appearance.Filters.Count == 0 && iconMetaData.ColorToApply == Color.White &&
-             iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)))
-            return frame;
+        if (frame == null) {
+            CachedTexture = null;
+        } else if ((Appearance.Filters.Count == 0 && iconMetaData.ColorToApply == Color.White &&
+             iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))) {
+            TextureRenderOffset = Vector2.Zero;
+            CachedTexture = frame;
+        } else {
+            CachedTexture = GetTextureInner(viewOverlay, handle, iconMetaData, frame);
+        }
 
         _textureDirty = false;
-
-        return GetTextureInner(viewOverlay, handle, iconMetaData, frame);
+        return CachedTexture;
     }
 
     private Texture GetTextureInner(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, AtlasTexture frame) {
-        //first we do ping pong rendering for the multiple filters
         if (_ping?.Size != frame.Size * 2 || _pong == null) {
             // TODO: This should determine the size from the filters and their settings, not just double the original
             _ping = clyde.CreateRenderTarget(frame.Size * 2, new(RenderTargetColorFormat.Rgba8Srgb));
@@ -116,6 +119,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             (_ping, _pong) = (_pong, _ping);
         }
 
+        TextureRenderOffset = -(_pong.Texture.Size / 2 - frame.Size / 2);
         return _pong.Texture;
     }
 

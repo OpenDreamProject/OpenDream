@@ -430,6 +430,9 @@ internal sealed class DreamViewOverlay : Overlay {
         if (frame == null)
             return;
 
+        if (iconMetaData.MainIcon != null)
+            pixelPosition += iconMetaData.MainIcon.TextureRenderOffset;
+
         DrawIconFast(handle, renderTargetSize, frame, pixelPosition, iconMetaData.TransformToApply,
             GetBlendAndColorShader(iconMetaData, ignoreColor: true));
     }

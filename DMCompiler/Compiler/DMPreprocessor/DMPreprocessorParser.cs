@@ -334,7 +334,6 @@ internal static class DMPreprocessorParser {
                             "Expected ')' to end fexists() expression");
                     }
 
-
                     var filePath = Path.GetRelativePath(".", fexistsInner.Value.ToString().Replace('\\', '/'));
 
                     var outputDir = Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";

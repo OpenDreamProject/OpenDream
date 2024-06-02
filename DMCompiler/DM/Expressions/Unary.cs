@@ -125,9 +125,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // &x
-    internal sealed class PointerRef(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
-        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) { }
-
+    internal sealed class PointerRef(Location location, DMExpression expr) : UnaryOp(location, expr) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             Expr.EmitPushValue(dmObject, proc);
             DMCompiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
@@ -139,9 +137,7 @@ namespace DMCompiler.DM.Expressions {
     }
 
     // *x
-    internal sealed class PointerDeref(Location location, DMExpression expr) : AssignmentUnaryOp(location, expr) {
-        protected override void EmitOp(DMObject dmObject, DMProc proc, DMReference reference, string endLabel) { }
-
+    internal sealed class PointerDeref(Location location, DMExpression expr) : UnaryOp(location, expr) {
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             Expr.EmitPushValue(dmObject, proc);
             DMCompiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");

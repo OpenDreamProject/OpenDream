@@ -323,8 +323,8 @@ internal static class DMPreprocessorParser {
 
                     Token fexistsInner = Current();
 
-                    if (fexistsInner.Type != TokenType.DM_Resource && fexistsInner.Type != TokenType.DM_ConstantString) {
-                        Error($"Unexpected token {fexistsInner.PrintableText} - resource path expected");
+                    if (fexistsInner.Type != TokenType.DM_ConstantString) {
+                        Error($"Unexpected token {fexistsInner.PrintableText} - file path expected");
                         return DegenerateValue;
                     }
 

@@ -11,9 +11,9 @@ internal static class Program {
 
 
 
-        var test = "abc";
+        Console.WriteLine("abc");
 
 
-        var test2 = "def";
+        Console.WriteLine("def");
     }
 }

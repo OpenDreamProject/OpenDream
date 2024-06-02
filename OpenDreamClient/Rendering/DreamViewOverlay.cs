@@ -59,7 +59,7 @@ internal sealed class DreamViewOverlay : Overlay {
     private readonly List<RendererMetaData> _spriteContainer = new();
 
     private readonly Dictionary<BlendMode, ShaderInstance> _blendModeInstances;
-    private static ShaderInstance _colorInstance = default!;
+    public static ShaderInstance ColorInstance = default!;
 
     private readonly Dictionary<Vector2i, List<IRenderTexture>> _renderTargetCache = new();
 
@@ -92,7 +92,7 @@ internal sealed class DreamViewOverlay : Overlay {
 
         _sawmill.Debug("Loading shaders...");
         BlockColorInstance = _protoManager.Index<ShaderPrototype>("blockcolor").InstanceUnique();
-        _colorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
+        ColorInstance = _protoManager.Index<ShaderPrototype>("color").InstanceUnique();
         _blendModeInstances = new(6) {
             {BlendMode.Default, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_DEFAULT (Same as BLEND_OVERLAY when there's no parent)
             {BlendMode.Overlay, _protoManager.Index<ShaderPrototype>("blend_overlay").InstanceUnique()}, //BLEND_OVERLAY
@@ -146,11 +146,12 @@ internal sealed class DreamViewOverlay : Overlay {
         var sight = mobSight?.Sight ?? 0;
 
         var worldHandle = args.WorldHandle;
+        var worldAABB = args.WorldAABB;
 
         using (_prof.Group("lookup")) {
             //TODO use a sprite tree.
             //the scaling is to attempt to prevent pop-in, by rendering sprites that are *just* offscreen
-            _lookupSystem.GetEntitiesIntersecting(args.MapId, args.WorldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
+            _lookupSystem.GetEntitiesIntersecting(args.MapId, worldAABB.Scale(1.2f), EntitiesInView, MapLookupFlags);
         }
 
         var eyeTile = _mapSystem.GetTileRef(gridUid, grid, eyeCoords);
@@ -158,12 +159,12 @@ internal sealed class DreamViewOverlay : Overlay {
 
         RefreshRenderTargets(args.WorldHandle, viewportSize);
 
-        CollectVisibleSprites(tiles, gridUid, grid, eyeTile, seeVis, sight, args.WorldAABB);
+        CollectVisibleSprites(tiles, gridUid, grid, eyeTile, seeVis, sight, worldAABB);
         ClearPlanes();
-        ProcessSprites(worldHandle, viewportSize, args.WorldAABB);
+        ProcessSprites(worldHandle, viewportSize, worldAABB);
 
         //Final draw
-        DrawPlanes(worldHandle, args.WorldAABB);
+        DrawPlanes(worldHandle, worldAABB);
 
         //At this point all the sprites have been rendered to the base target, now we just draw it to the viewport!
         worldHandle.DrawTexture(
@@ -412,39 +413,25 @@ internal sealed class DreamViewOverlay : Overlay {
         if (icon == null)
             return;
 
+        var frame = iconMetaData.GetTexture(this, handle);
+
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup?.Count > 0) {
             // TODO: Use something better than a hardcoded 64x64 fallback
-            Vector2i ktSize = iconMetaData.Texture?.Size ?? (64,64);
+            Vector2i ktSize = frame?.Size ?? (64,64);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
+            frame = iconMetaData.TextureOverride;
             positionOffset -= ((ktSize/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
 
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
-        var frame = iconMetaData.Texture;
-
 
         //if frame is null, this doesn't require a draw, so return NOP
         if (frame == null)
             return;
 
-        //go fast when the only filter is color, and we don't have more color things to consider
-        bool goFastOverride = false;
-        if (icon.Appearance != null && iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
-            iconMetaData.ColorToApply == Color.White && iconMetaData.AlphaToApply.Equals(1.0f) &&
-            icon.Appearance.Filters is [{ FilterType: "color" }]) {
-            DreamFilterColor colorFilter = (DreamFilterColor)icon.Appearance.Filters[0];
-            iconMetaData.ColorMatrixToApply = colorFilter.Color;
-            goFastOverride = true;
-        }
-
-        if (goFastOverride || icon.Appearance == null || icon.Appearance.Filters.Count == 0) {
-            //faster path for rendering unfiltered sprites
-            DrawIconFast(handle, renderTargetSize, frame, pixelPosition, iconMetaData.TransformToApply, GetBlendAndColorShader(iconMetaData));
-        } else {
-            //Slower path for filtered icons
-            DrawIconSlow(handle, frame, iconMetaData, renderTargetSize, pixelPosition, iconMetaData.TransformToApply);
-        }
+        DrawIconFast(handle, renderTargetSize, frame, pixelPosition, iconMetaData.TransformToApply,
+            GetBlendAndColorShader(iconMetaData, ignoreColor: true));
     }
 
     /// <summary>
@@ -814,57 +801,6 @@ internal sealed class DreamViewOverlay : Overlay {
     }
 
     /// <summary>
-    /// A slower method of drawing an icon. This one renders an atom's filters.
-    /// Use <see cref="DrawIconFast"/> instead if the icon has no special rendering needs.
-    /// </summary>
-    private void DrawIconSlow(DrawingHandleWorld handle, Texture frame, RendererMetaData iconMetaData, Vector2i renderTargetSize, Vector2 pos, Matrix3 transform) {
-        //first we do ping pong rendering for the multiple filters
-        // TODO: This should determine the size from the filters and their settings, not just double the original
-        IRenderTexture ping = RentRenderTarget(frame.Size * 2);
-        IRenderTexture pong = RentRenderTarget(ping.Size);
-
-        handle.RenderInRenderTarget(pong, () => {
-            //we can use the color matrix shader here, since we don't need to blend
-            //also because blend mode is none, we don't need to clear
-            var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
-                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
-                : iconMetaData.ColorMatrixToApply;
-
-            ShaderInstance colorShader = _colorInstance.Duplicate();
-            colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
-            colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
-            colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
-            handle.UseShader(colorShader);
-
-            handle.SetTransform(CreateRenderTargetFlipMatrix(pong.Size, frame.Size / 2));
-            handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
-        }, Color.Black.WithAlpha(0));
-
-        foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
-            ShaderInstance s = _appearanceSystem.GetFilterShader(filterId, RenderSourceLookup);
-
-            handle.RenderInRenderTarget(ping, () => {
-                handle.UseShader(s);
-
-                // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
-                handle.SetTransform(CreateRenderTargetFlipMatrix(pong.Size, Vector2.Zero));
-                handle.DrawTextureRect(pong.Texture, new Box2(Vector2.Zero, pong.Size));
-            }, Color.Black.WithAlpha(0));
-
-            (ping, pong) = (pong, ping);
-        }
-
-        //then we draw the actual icon with filters applied
-        DrawIconFast(handle, renderTargetSize, pong.Texture, pos - frame.Size / 2, transform,
-            //note we apply the color *before* the filters, so we ignore color here
-            GetBlendAndColorShader(iconMetaData, ignoreColor: true)
-        );
-
-        ReturnRenderTarget(ping);
-        _renderTargetsToReturn.Push(pong);
-    }
-
-    /// <summary>
     /// Creates a transformation matrix that counteracts RT's
     /// <see cref="DrawingHandleBase.RenderInRenderTarget(IRenderTarget,Action,System.Nullable{Robust.Shared.Maths.Color})"/> quirks
     /// <br/>
@@ -901,7 +837,6 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public MouseOpacity MouseOpacity;
     public Texture? TextureOverride;
 
-    public Texture? Texture => TextureOverride ?? MainIcon?.CurrentFrame;
     public bool IsPlaneMaster => (AppearanceFlags & AppearanceFlags.PlaneMaster) != 0;
     public bool HasRenderSource => !string.IsNullOrEmpty(RenderSource);
     public bool ShouldPassMouse => HasRenderSource && (AppearanceFlags & AppearanceFlags.PassMouse) != 0;
@@ -931,6 +866,9 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         MouseOpacity = MouseOpacity.Transparent;
         TextureOverride = null;
     }
+
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle) =>
+        TextureOverride ?? MainIcon?.GetTexture(viewOverlay, handle, this);
 
     public int CompareTo(RendererMetaData? other) {
         if (other == null)

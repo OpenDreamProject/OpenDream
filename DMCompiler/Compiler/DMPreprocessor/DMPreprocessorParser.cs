@@ -1,6 +1,7 @@
 ﻿using DMCompiler.Compiler.DM;
 using System;
 using System.Collections.Generic;
+using System.IO;
 
 namespace DMCompiler.Compiler.DMPreprocessor;
 
@@ -313,6 +314,39 @@ internal static class DMPreprocessorParser {
                     }
 
                     return _defines!.ContainsKey(definedInner.Text) ? 1.0f : 0.0f;
+                }
+                else if (token.Text == "fexists") {
+                    Advance();
+                    if (!Check(TokenType.DM_LeftParenthesis)) {
+                        Error("Expected '(' to begin fexists() expression");
+                        return DegenerateValue;
+                    }
+
+                    Token fexistsInner = Current();
+
+                    if (fexistsInner.Type != TokenType.DM_Resource && fexistsInner.Type != TokenType.DM_ConstantString) {
+                        Error($"Unexpected token {fexistsInner.PrintableText} - resource path expected");
+                        return DegenerateValue;
+                    }
+
+                    Advance();
+                    if (!Check(TokenType.DM_RightParenthesis)) {
+                        DMCompiler.Emit(WarningCode.DefinedMissingParen, token.Location,
+                            "Expected ')' to end fexists() expression");
+                    }
+
+                    Console.WriteLine(Directory.GetCurrentDirectory());
+
+                    var filePath = Path.GetRelativePath(".", fexistsInner.Value.ToString().Replace('\\', '/'));
+
+                    var outputDir = Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
+                    if (string.IsNullOrEmpty(outputDir))
+                        outputDir = "./";
+
+                    filePath = Path.Combine(outputDir, filePath);
+
+                    var meep =  File.Exists(filePath) ? 1.0f : 0.0f;
+                    return meep;
                 }
 
                 Error($"Unexpected identifier {token.PrintableText} in preprocessor expression");

@@ -314,8 +314,7 @@ internal static class DMPreprocessorParser {
                     }
 
                     return _defines!.ContainsKey(definedInner.Text) ? 1.0f : 0.0f;
-                }
-                else if (token.Text == "fexists") {
+                } else if (token.Text == "fexists") {
                     Advance();
                     if (!Check(TokenType.DM_LeftParenthesis)) {
                         Error("Expected '(' to begin fexists() expression");

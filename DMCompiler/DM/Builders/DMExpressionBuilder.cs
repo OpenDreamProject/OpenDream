@@ -227,6 +227,10 @@ internal static class DMExpressionBuilder {
                 return new PreDecrement(preDecrement.Location, BuildExpression(preDecrement.Value, dmObject, proc, inferredPath));
             case DMASTPostDecrement postDecrement:
                 return new PostDecrement(postDecrement.Location, BuildExpression(postDecrement.Value, dmObject, proc, inferredPath));
+            case DMASTPointerRef pointerRef:
+                return new PointerRef(pointerRef.Location, BuildExpression(pointerRef.Value, dmObject, proc, inferredPath));
+            case DMASTPointerDeref pointerDeref:
+                return new PointerDeref(pointerDeref.Location, BuildExpression(pointerDeref.Value, dmObject, proc, inferredPath));
             case DMASTGradient gradient:
                 return new Gradient(gradient.Location,
                     new ArgumentList(gradient.Location, dmObject, proc, gradient.Parameters));

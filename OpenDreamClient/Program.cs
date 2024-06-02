@@ -7,5 +7,13 @@ internal static class Program {
         ContentStart.StartLibrary(args, new GameControllerOptions {
             Sandboxing = true
         });
+
+
+
+
+        var test = "abc";
+
+
+        var test2 = "def";
     }
 }

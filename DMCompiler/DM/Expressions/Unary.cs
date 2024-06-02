@@ -144,7 +144,7 @@ namespace DMCompiler.DM.Expressions {
 
         public override void EmitPushValue(DMObject dmObject, DMProc proc) {
             Expr.EmitPushValue(dmObject, proc);
-            DMCompiler.UnimplementedWarning(location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
+            DMCompiler.UnimplementedWarning(Location, "Pointers are currently unimplemented and identifiers will be treated as normal variables.");
         }
 
         public override DMReference EmitReference(DMObject dmObject, DMProc proc, string endLabel, ShortCircuitMode shortCircuitMode = ShortCircuitMode.KeepNull) {

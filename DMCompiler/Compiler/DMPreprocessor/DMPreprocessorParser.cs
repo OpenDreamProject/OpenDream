@@ -342,8 +342,7 @@ internal static class DMPreprocessorParser {
 
                     filePath = Path.Combine(outputDir, filePath);
 
-                    var meep =  File.Exists(filePath) ? 1.0f : 0.0f;
-                    return meep;
+                    return File.Exists(filePath) ? 1.0f : 0.0f;
                 }
 
                 Error($"Unexpected identifier {token.PrintableText} in preprocessor expression");

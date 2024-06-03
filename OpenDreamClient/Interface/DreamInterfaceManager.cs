@@ -570,7 +570,7 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
                         if(conditionalElement is null)
                             _sawmill.Error($"Invalid element on ternary condition \"{elementId}\"");
                         else
-                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.AsRaw().Equals(winSet.Value, StringComparison.InvariantCultureIgnoreCase)) {
+                            if(conditionalElement.TryGetProperty(winSet.Attribute, out var conditionalCheckValue) && conditionalCheckValue.Equals(winSet.Value)) {
                                 foreach(DMFWinSet statement in winSet.TrueStatements) {
                                     string? statementElementId = statement.Element ?? elementId;
                                     InterfaceElement? statementElement = FindElementWithId(statementElementId);

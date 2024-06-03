@@ -10,6 +10,7 @@ using Robust.Shared.Serialization.TypeSerializers.Interfaces;
 namespace OpenDreamClient.Interface.DMF;
 
 public interface IDMFProperty {
+    public bool Equals(string comparison);
     public string AsArg();
     public string AsEscaped();
     public string AsString();
@@ -82,6 +83,10 @@ public struct DMFPropertyString(string value) : IDMFProperty {
     public override string ToString() {
         return AsRaw();
     }
+
+    public bool Equals(string comparison) {
+        return comparison.Equals(Value, StringComparison.InvariantCulture);
+    }
 }
 
 public struct DMFPropertyNum(float value) : IDMFProperty {
@@ -127,6 +132,11 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
 
     public override string ToString() {
         return AsRaw();
+    }
+
+    public bool Equals(string comparison) {
+        DMFPropertyNum comparisonNum = new(comparison);
+        return comparisonNum.Value == Value;
     }
 }
 
@@ -193,6 +203,11 @@ public struct DMFPropertyVec2 : IDMFProperty {
     public override string ToString() {
         return AsRaw();
     }
+
+    public bool Equals(string comparison) {
+        DMFPropertyVec2 comparisonVec = new(comparison);
+        return comparisonVec.X == X && comparisonVec.Y == Y;
+    }
 }
 
 public struct DMFPropertyColor : IDMFProperty {
@@ -254,6 +269,11 @@ public struct DMFPropertyColor : IDMFProperty {
     public override string ToString() {
         return AsRaw();
     }
+
+    public bool Equals(string comparison) {
+        DMFPropertyColor comparisonColor = new(comparison);
+        return comparisonColor.Value == Value;
+    }
 }
 
 public struct DMFPropertyBool(bool value) : IDMFProperty {
@@ -292,6 +312,11 @@ public struct DMFPropertyBool(bool value) : IDMFProperty {
 
     public override string ToString() {
         return AsRaw();
+    }
+
+    public bool Equals(string comparison) {
+        DMFPropertyBool comparisonBool = new(comparison);
+        return comparisonBool.Value == Value;
     }
 }
 

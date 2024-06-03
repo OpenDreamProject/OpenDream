@@ -263,6 +263,8 @@ namespace DMCompiler.DM.Expressions {
                     DMCompiler.ForcedWarning(Location, "Weighted pick() with one argument");
                 }
 
+                DMCompiler.Emit(WarningCode.PickWeightedSyntax, Location, "Use of weighted pick() syntax");
+
                 foreach (PickValue pickValue in _values) {
                     DMExpression weight = pickValue.Weight ?? DMExpression.Create(dmObject, proc, new DMASTConstantInteger(Location, 100)); //Default of 100
 

@@ -70,6 +70,8 @@ resharper_place_simple_property_pattern_on_single_line = false
 resharper_show_autodetect_configure_formatting_tip = false
 resharper_space_within_single_line_array_initializer_braces = false
 resharper_use_indent_from_vs = false
+resharper_csharp_keep_blank_lines_in_code = 1
+resharper_csharp_keep_blank_lines_in_declarations = 1
 
 [*.{dm, dme, dmm, dmf}]
 indent_style = tab

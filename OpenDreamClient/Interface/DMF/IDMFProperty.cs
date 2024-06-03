@@ -90,8 +90,7 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
     public DMFPropertyNum(string value) : this(0) {
         try {
             Value = float.Parse(value);
-        }
-        catch {
+        } catch {
             int lastValidPos = value.LastIndexOfAny("0123456789".ToCharArray());
             Value = float.Parse(value.Substring(0, lastValidPos+1));
             Logger.GetSawmill("opendream.interface").Warning($"Invalid value in DMFPropertyNum '{value}'. Parsed as '{Value}'. {lastValidPos}");

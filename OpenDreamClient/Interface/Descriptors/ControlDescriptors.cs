@@ -30,7 +30,7 @@ public partial class ControlDescriptor : ElementDescriptor {
     [DataField("text-color")]
     public DMFPropertyColor TextColor = new(Color.Black);
     [DataField("background-color")]
-    public DMFPropertyColor BackgroundColor = new(Color.White);
+    public DMFPropertyColor BackgroundColor = new(Color.Transparent);
     [DataField("is-default")]
     public DMFPropertyBool IsDefault = new(false);
     [DataField("is-disabled")]
@@ -65,7 +65,7 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
     [DataField("statusbar")]
     public DMFPropertyBool StatusBar = new(false);
     [DataField("transparent-color")]
-    public DMFPropertyColor? TransparentColor = null;
+    public DMFPropertyColor TransparentColor = new(Color.Transparent);
     [DataField("can-close")]
     public DMFPropertyBool CanClose = new(true);
     [DataField("title")]

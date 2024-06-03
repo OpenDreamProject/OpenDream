@@ -51,6 +51,10 @@ menu "menu"
 		name = "Toggle Popup"
 		command = ".winset \"testwindow.is-visible=false?testwindow.is-visible=true:testwindow.is-visible=false\""	
 		category = "Menu"
+	elem
+		name = "Toggle WingetTest"
+		command = ".winset \"wingetwindow.is-visible=false?wingetwindow.is-visible=true:wingetwindow.is-visible=false\""	
+		category = "Menu"
 
 window "mapwindow"
 	elem "mapwindow"
@@ -151,7 +155,7 @@ window "wingetwindow"
 		type = MAIN
 		size = 200x180
 		title = "winget test"
-		is-visible = true
+		is-visible = false
 	elem "wingetinput"
 		type = INPUT
 		pos = 5,0
@@ -162,40 +166,40 @@ window "wingetwindow"
 		pos = 0,40
 		size = 0,20
 		text = "as arg"
-		command = "wingettextverb \"arg: [[wingetwindow.background-color as arg]]\""
+		command = "wingettextverb \"arg: [[wingetinput.text as arg]]\""
 	elem "wingetbuttonesc"
 		type = BUTTON
 		pos = 0,60
 		size = 0,20
 		text = "as escaped"
-		command = "wingettextverb \"escaped: [[wingetwindow.background-color as escaped]]\""
+		command = "wingettextverb \"escaped: [[wingetinput.text as escaped]]\""
 	elem "wingetbuttonstr"
 		type = BUTTON
 		pos = 0,80
 		size = 0,20
 		text = "as string"
-		command = "wingettextverb \"string: [[wingetwindow.background-color as string]]\""		
+		command = "wingettextverb \"string: [[wingetinput.text as string]]\""		
 	elem "wingetbuttonpar"
 		type = BUTTON
 		pos = 0,100
 		size = 0,20
 		text = "as params"
-		command = "wingettextverb \"params: [[wingetwindow.background-color as params]]\""	
+		command = "wingettextverb \"params: [[wingetinput.text as params]]\""	
 	elem "wingetbuttonjson"
 		type = BUTTON
 		pos = 0,120
 		size = 0,20
 		text = "as json"
-		command = "wingettextverb \"json: [[wingetwindow.background-color as json]]\""
+		command = "wingettextverb \"json: [[wingetinput.text as json]]\""
 	elem "wingetbuttonjsondm"
 		type = BUTTON
 		pos = 0,140
 		size = 0,20
 		text = "as json-dm"
-		command = "wingettextverb \"json-dm: [[wingetwindow.background-color as json-dm]]\""		
+		command = "wingettextverb \"json-dm: [[wingetinput.text as json-dm]]\""		
 	elem "wingetbuttonraw"
 		type = BUTTON
 		pos = 0,160
 		size = 0,20
 		text = "as raw"
-		command = "wingettextverb \"raw: [[wingetwindow.background-color as raw]]\""
+		command = "wingettextverb \"raw: [[wingetinput.text as raw]]\""

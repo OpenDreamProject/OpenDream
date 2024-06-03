@@ -19,6 +19,7 @@ public abstract class InterfaceControl : InterfaceElement {
 
     private readonly ControlWindow _window;
 
+    [SuppressMessage("ReSharper", "VirtualMemberCallInConstructor")]
     protected InterfaceControl(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor) {
         IoCManager.InjectDependencies(this);
 

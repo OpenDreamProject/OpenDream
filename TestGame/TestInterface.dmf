@@ -146,6 +146,7 @@ window "testwindow"
 		size = 200x100
 		title = "popup"
 		is-visible = false
+		font-size = 6pt
 	elem "testwindowlabel"
 		type = LABEL
 		text = "I am a test"

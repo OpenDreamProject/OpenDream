@@ -401,7 +401,7 @@ public sealed class DreamConnection {
             Filename = filename,
             DataHash = resource.ResourceData.Length //TODO: make a quick hash that can work clientside too
         };
-        _permittedBrowseRscFiles.Add(filename, resource);
+        _permittedBrowseRscFiles[filename] = resource;
 
         Session?.Channel.SendMessage(msg);
     }

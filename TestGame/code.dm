@@ -50,6 +50,7 @@
 
 	verb/browse_rsc_test()
 		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
+		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
 		usr << browse("<p><img src=mobicon.png></p>Oh look, it's you!","window=honk")
 
 	verb/rotate()

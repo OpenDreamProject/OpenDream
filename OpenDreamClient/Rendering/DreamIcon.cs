@@ -430,6 +430,9 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     /// <returns>The final texture</returns>
     private Texture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
         if (_ping?.Size != frame.Size * 2 || _pong == null) {
+            _ping?.Dispose();
+            _pong?.Dispose();
+
             // TODO: This should determine the size from the filters and their settings, not just double the original
             _ping = clyde.CreateRenderTarget(frame.Size * 2, new(RenderTargetColorFormat.Rgba8Srgb));
             _pong = clyde.CreateRenderTarget(_ping.Size, new(RenderTargetColorFormat.Rgba8Srgb));

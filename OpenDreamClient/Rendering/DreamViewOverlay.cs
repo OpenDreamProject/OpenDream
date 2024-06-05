@@ -433,7 +433,6 @@ internal sealed class DreamViewOverlay : Overlay {
         if (iconMetaData.MainIcon != null)
             pixelPosition += iconMetaData.MainIcon.TextureRenderOffset;
 
-
         handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
 
         //extract scale component of transform

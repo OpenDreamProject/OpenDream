@@ -8,7 +8,7 @@ using System.Linq;
 
 namespace OpenDreamClient.Rendering;
 
-internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem) {
+internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem) : IDisposable {
     public delegate void SizeChangedEventHandler();
 
     public List<DreamIcon> Overlays { get; } = new();
@@ -43,6 +43,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     }
     private IconAppearance? _appearance;
 
+    // TODO: We could cache these per-appearance instead of per-atom
     public Texture? CachedTexture { get; private set; }
     public Vector2 TextureRenderOffset = Vector2.Zero;
 
@@ -56,6 +57,11 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     public DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppearanceSystem appearanceSystem, int appearanceId,
         AtomDirection? parentDir = null) : this(gameTiming, clyde, appearanceSystem) {
         SetAppearance(appearanceId, parentDir);
+    }
+
+    public void Dispose() {
+        _ping?.Dispose();
+        _pong?.Dispose();
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
@@ -74,55 +80,13 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             TextureRenderOffset = Vector2.Zero;
             CachedTexture = frame;
         } else {
-            CachedTexture = GetTextureInner(viewOverlay, handle, iconMetaData, frame);
+            CachedTexture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
         }
 
         if (textureOverride == null)
             _textureDirty = false;
 
         return CachedTexture;
-    }
-
-    private Texture GetTextureInner(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
-        if (_ping?.Size != frame.Size * 2 || _pong == null) {
-            // TODO: This should determine the size from the filters and their settings, not just double the original
-            _ping = clyde.CreateRenderTarget(frame.Size * 2, new(RenderTargetColorFormat.Rgba8Srgb));
-            _pong = clyde.CreateRenderTarget(_ping.Size, new(RenderTargetColorFormat.Rgba8Srgb));
-        }
-
-        handle.RenderInRenderTarget(_pong, () => {
-            //we can use the color matrix shader here, since we don't need to blend
-            //also because blend mode is none, we don't need to clear
-            var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
-                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
-                : iconMetaData.ColorMatrixToApply;
-
-            ShaderInstance colorShader = DreamViewOverlay.ColorInstance.Duplicate();
-            colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
-            colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
-            colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
-            handle.UseShader(colorShader);
-
-            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_pong.Size, frame.Size / 2));
-            handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
-        }, Color.Black.WithAlpha(0));
-
-        foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
-            ShaderInstance s = appearanceSystem.GetFilterShader(filterId, viewOverlay.RenderSourceLookup);
-
-            handle.RenderInRenderTarget(_ping, () => {
-                handle.UseShader(s);
-
-                // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
-                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_pong.Size, Vector2.Zero));
-                handle.DrawTextureRect(_pong.Texture, new Box2(Vector2.Zero, _pong.Size));
-            }, Color.Black.WithAlpha(0));
-
-            (_ping, _pong) = (_pong, _ping);
-        }
-
-        TextureRenderOffset = -(_pong.Texture.Size / 2 - frame.Size / 2);
-        return _pong.Texture;
     }
 
     public void SetAppearance(int? appearanceId, AtomDirection? parentDir = null) {
@@ -457,6 +421,53 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
 
             Underlays.Add(underlay);
         }
+    }
+
+    /// <summary>
+    /// Perform a full (slower) render of this icon's texture, including filters and color
+    /// </summary>
+    /// <remarks>In a separate method to avoid allocations when not executed</remarks>
+    /// <returns>The final texture</returns>
+    private Texture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
+        if (_ping?.Size != frame.Size * 2 || _pong == null) {
+            // TODO: This should determine the size from the filters and their settings, not just double the original
+            _ping = clyde.CreateRenderTarget(frame.Size * 2, new(RenderTargetColorFormat.Rgba8Srgb));
+            _pong = clyde.CreateRenderTarget(_ping.Size, new(RenderTargetColorFormat.Rgba8Srgb));
+        }
+
+        handle.RenderInRenderTarget(_pong, () => {
+            //we can use the color matrix shader here, since we don't need to blend
+            //also because blend mode is none, we don't need to clear
+            var colorMatrix = iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)
+                ? new ColorMatrix(iconMetaData.ColorToApply.WithAlpha(iconMetaData.AlphaToApply))
+                : iconMetaData.ColorMatrixToApply;
+
+            ShaderInstance colorShader = DreamViewOverlay.ColorInstance.Duplicate();
+            colorShader.SetParameter("colorMatrix", colorMatrix.GetMatrix4());
+            colorShader.SetParameter("offsetVector", colorMatrix.GetOffsetVector());
+            colorShader.SetParameter("isPlaneMaster",iconMetaData.IsPlaneMaster);
+            handle.UseShader(colorShader);
+
+            handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_pong.Size, frame.Size / 2));
+            handle.DrawTextureRect(frame, new Box2(Vector2.Zero, frame.Size));
+        }, Color.Black.WithAlpha(0));
+
+        foreach (DreamFilter filterId in iconMetaData.MainIcon!.Appearance!.Filters) {
+            ShaderInstance s = appearanceSystem.GetFilterShader(filterId, viewOverlay.RenderSourceLookup);
+
+            handle.RenderInRenderTarget(_ping, () => {
+                handle.UseShader(s);
+
+                // Technically this should be ping.Size, but they are the same size so avoid the extra closure alloc
+                handle.SetTransform(DreamViewOverlay.CreateRenderTargetFlipMatrix(_pong.Size, Vector2.Zero));
+                handle.DrawTextureRect(_pong.Texture, new Box2(Vector2.Zero, _pong.Size));
+            }, Color.Black.WithAlpha(0));
+
+            (_ping, _pong) = (_pong, _ping);
+        }
+
+        TextureRenderOffset = -(_pong.Texture.Size / 2 - frame.Size / 2);
+        return _pong.Texture;
     }
 
     private void CheckSizeChange() {

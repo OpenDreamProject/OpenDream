@@ -15,6 +15,7 @@ public sealed class DMISpriteSystem : EntitySystem {
     public override void Initialize() {
         SubscribeLocalEvent<DMISpriteComponent, ComponentAdd>(HandleComponentAdd);
         SubscribeLocalEvent<DMISpriteComponent, ComponentHandleState>(HandleComponentState);
+        SubscribeLocalEvent<DMISpriteComponent, ComponentRemove>(HandleComponentRemove);
     }
 
     private void OnIconSizeChanged(EntityUid uid) {
@@ -34,5 +35,9 @@ public sealed class DMISpriteSystem : EntitySystem {
 
         component.ScreenLocation = state.ScreenLocation;
         component.Icon.SetAppearance(state.AppearanceId);
+    }
+
+    private static void HandleComponentRemove(EntityUid uid, DMISpriteComponent component, ref ComponentRemove args) {
+        component.Icon.Dispose();
     }
 }

@@ -58,15 +58,15 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         SetAppearance(appearanceId, parentDir);
     }
 
-    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData) {
+    public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
         if (Appearance == null || DMI == null)
-            return null;
+            return textureOverride;
 
         var animationFrame = AnimationFrame;
-        if (CachedTexture != null && !_textureDirty)
+        if (textureOverride == null && CachedTexture != null && !_textureDirty)
             return CachedTexture;
 
-        var frame = DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
+        var frame = textureOverride ?? DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
         if (frame == null) {
             CachedTexture = null;
         } else if ((Appearance.Filters.Count == 0 && iconMetaData.ColorToApply == Color.White &&
@@ -77,11 +77,13 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             CachedTexture = GetTextureInner(viewOverlay, handle, iconMetaData, frame);
         }
 
-        _textureDirty = false;
+        if (textureOverride == null)
+            _textureDirty = false;
+
         return CachedTexture;
     }
 
-    private Texture GetTextureInner(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, AtlasTexture frame) {
+    private Texture GetTextureInner(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
         if (_ping?.Size != frame.Size * 2 || _pong == null) {
             // TODO: This should determine the size from the filters and their settings, not just double the original
             _ping = clyde.CreateRenderTarget(frame.Size * 2, new(RenderTargetColorFormat.Rgba8Srgb));

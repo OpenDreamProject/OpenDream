@@ -70,7 +70,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
         if (frame == null) {
             CachedTexture = null;
         } else if ((Appearance.Filters.Count == 0 && iconMetaData.ColorToApply == Color.White &&
-             iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity))) {
+             iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)) && iconMetaData.AlphaToApply.Equals(1.0f)) {
             TextureRenderOffset = Vector2.Zero;
             CachedTexture = frame;
         } else {

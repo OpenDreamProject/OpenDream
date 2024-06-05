@@ -433,8 +433,27 @@ internal sealed class DreamViewOverlay : Overlay {
         if (iconMetaData.MainIcon != null)
             pixelPosition += iconMetaData.MainIcon.TextureRenderOffset;
 
-        DrawIconFast(handle, renderTargetSize, frame, pixelPosition, iconMetaData.TransformToApply,
-            GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+
+        handle.UseShader(GetBlendAndColorShader(iconMetaData, ignoreColor: true));
+
+        //extract scale component of transform
+        var transform = iconMetaData.TransformToApply;
+        Vector2 scaleFactors = new Vector2(
+            MathF.Sqrt(MathF.Pow(transform.R0C0,2) + MathF.Pow(transform.R0C1,2)),
+            MathF.Sqrt(MathF.Pow(transform.R1C0,2) + MathF.Pow(transform.R1C1,2))
+        );
+        transform.R0C0 /= scaleFactors.X;
+        transform.R0C1 /= scaleFactors.X;
+        transform.R1C0 /= scaleFactors.Y;
+        transform.R1C1 /= scaleFactors.Y;
+
+        handle.SetTransform(
+            Matrix3.CreateTranslation(-frame.Size/2)  //translate to origin
+            * transform                                       //rotate and translate
+            * Matrix3.CreateTranslation(frame.Size/2)       //translate back to original position
+            * Matrix3.CreateScale(scaleFactors)               //scale
+            * CreateRenderTargetFlipMatrix(renderTargetSize, pixelPosition-((scaleFactors-Vector2.One)*frame.Size/2))); //flip and apply scale-corrected translation
+        handle.DrawTextureRect(frame, Box2.FromDimensions(Vector2.Zero, frame.Size));
     }
 
     /// <summary>
@@ -775,32 +794,6 @@ internal sealed class DreamViewOverlay : Overlay {
 
         _renderTargetsToReturn.Push(ktTexture);
         return ktTexture.Texture;
-    }
-
-    /// <summary>
-    /// Render a texture without applying any filters, making this faster and cheaper.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static void DrawIconFast(DrawingHandleWorld handle, Vector2i renderTargetSize, Texture texture, Vector2 pos, Matrix3 transform, ShaderInstance? shader) {
-        handle.UseShader(shader);
-
-        //extract scale component of transform
-        Vector2 scaleFactors = new Vector2(
-            MathF.Sqrt(MathF.Pow(transform.R0C0,2) + MathF.Pow(transform.R0C1,2)),
-            MathF.Sqrt(MathF.Pow(transform.R1C0,2) + MathF.Pow(transform.R1C1,2))
-        );
-        transform.R0C0 /= scaleFactors.X;
-        transform.R0C1 /= scaleFactors.X;
-        transform.R1C0 /= scaleFactors.Y;
-        transform.R1C1 /= scaleFactors.Y;
-
-        handle.SetTransform(
-            Matrix3.CreateTranslation(-texture.Size/2)  //translate to origin
-            * transform                                 //rotate and translate
-            * Matrix3.CreateTranslation(texture.Size/2) //translate back to original position
-            * Matrix3.CreateScale(scaleFactors)         //scale
-            * CreateRenderTargetFlipMatrix(renderTargetSize, pos-((scaleFactors-Vector2.One)*texture.Size/2))); //flip and apply scale-corrected translation
-        handle.DrawTextureRect(texture, Box2.FromDimensions(Vector2.Zero, texture.Size));
     }
 
     /// <summary>

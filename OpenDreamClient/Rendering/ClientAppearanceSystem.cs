@@ -19,6 +19,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IDreamResourceManager _dreamResourceManager = default!;
     [Dependency] private readonly TransformSystem _transformSystem = default!;
     [Dependency] private readonly IGameTiming _gameTiming = default!;
+    [Dependency] private readonly IClyde _clyde = default!;
 
     public override void Initialize() {
         SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
@@ -49,7 +50,7 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         int appearanceId = turfId - 1;
 
         if (!_turfIcons.TryGetValue(appearanceId, out var icon)) {
-            icon = new DreamIcon(_gameTiming, this, appearanceId);
+            icon = new DreamIcon(_gameTiming, _clyde, this, appearanceId);
             _turfIcons.Add(appearanceId, icon);
         }
 

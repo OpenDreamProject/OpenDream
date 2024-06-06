@@ -77,7 +77,7 @@ internal sealed class DreamPlane(IRenderTexture mainRenderTarget) : IDisposable 
             if (sprite.MouseOpacity == MouseOpacity.Transparent || sprite.ShouldPassMouse)
                 continue;
 
-            var texture = sprite.Texture;
+            var texture = sprite.GetTexture(overlay, handle);
             if (texture == null)
                 continue;
 

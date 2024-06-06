@@ -19,7 +19,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        Viewport.StretchMode = MapDescriptor.ZoomMode switch {
+        Viewport.StretchMode = MapDescriptor.ZoomMode.Value switch {
             "blur" => ScalingViewportStretchMode.Bilinear,
             "distort" => ScalingViewportStretchMode.Nearest,
 
@@ -36,9 +36,9 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
         var viewHeight = Math.Max(view.Height, 1);
 
         Viewport.ViewportSize = new Vector2i(viewWidth, viewHeight) * EyeManager.PixelsPerMeter;
-        if (MapDescriptor.IconSize != 0) {
+        if (MapDescriptor.IconSize.Value != 0) {
             // BYOND supports a negative number here (flips the view), but we're gonna enforce a positive number instead
-            var iconSize = Math.Max(MapDescriptor.IconSize, 1);
+            var iconSize = Math.Max(MapDescriptor.IconSize.Value, 1);
 
             Viewport.SetWidth = iconSize * viewWidth;
             Viewport.SetHeight = iconSize * viewHeight;
@@ -60,7 +60,7 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
                 OnHideEvent();
             }
         };
-        if(ControlDescriptor.IsVisible)
+        if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
@@ -83,15 +83,15 @@ public sealed class ControlMap(ControlDescriptor controlDescriptor, ControlWindo
 
     public void OnShowEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     public void OnHideEvent() {
         ControlDescriptorMap controlDescriptor = (ControlDescriptorMap)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

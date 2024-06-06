@@ -54,7 +54,7 @@ internal sealed class ControlBrowser : InterfaceControl {
             }
         };
 
-        if(ControlDescriptor.IsVisible)
+        if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
@@ -170,15 +170,15 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     private void OnShowEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     private void OnHideEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

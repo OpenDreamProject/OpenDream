@@ -1,0 +1,206 @@
+macro "macro"
+	elem 
+		name = "North+REP"
+		command = ".north"
+	elem 
+		name = "South+REP"
+		command = ".south"
+	elem 
+		name = "East+REP"
+		command = ".east"
+	elem 
+		name = "West+REP"
+		command = ".west"
+	elem 
+		name = "Northeast+REP"
+		command = ".northeast"
+	elem 
+		name = "Northwest+REP"
+		command = ".northwest"
+	elem 
+		name = "Southeast+REP"
+		command = ".southeast"
+	elem 
+		name = "Southwest+REP"
+		command = ".southwest"
+	elem 
+		name = "Center+REP"
+		command = ".center"
+
+menu "menu"
+	elem 
+		name = "Menu"
+		command = ""
+	elem
+		name = "Screenshot"
+		command = ".screenshot"
+		category = "Menu"
+	elem
+		name = "Quit"
+		command = ".quit"
+		category = "Menu"
+	elem
+		name = "Show Popup"
+		command = ".winset \"testwindow.is-visible=true\""
+		category = "Menu"
+	elem
+		name = "Hide Popup"
+		command = ".winset \"testwindow.is-visible=false\""
+		category = "Menu"
+	elem
+		name = "Toggle Popup"
+		command = ".winset \"testwindow.is-visible=false?testwindow.is-visible=true:testwindow.is-visible=false\""	
+		category = "Menu"
+	elem
+		name = "Toggle WingetTest"
+		command = ".winset \"wingetwindow.is-visible=false?wingetwindow.is-visible=true:wingetwindow.is-visible=false\""	
+		category = "Menu"
+
+window "mapwindow"
+	elem "mapwindow"
+		type = MAIN
+		pos = 0,0
+		size = 640x480
+		is-pane = true
+	elem "map"
+		type = MAP
+		pos = 0,0
+		size = 640x480
+		anchor1 = 0,0
+		anchor2 = 100,100
+		is-default = true
+
+window "infowindow"
+	elem "infowindow"
+		type = MAIN
+		pos = 0,0
+		size = 640x480
+		is-pane = true
+	elem "info"
+		type = CHILD
+		pos = 0,0
+		size = 640x480
+		anchor1 = 0,0
+		anchor2 = 100,100
+		left = "statwindow"
+		right = "outputwindow"
+		is-vert = false
+
+window "outputwindow"
+	elem "outputwindow"
+		type = MAIN
+		pos = 0,0
+		size = 640x480
+		is-pane = true
+	elem "output"
+		type = OUTPUT
+		pos = 0,0
+		size = 0x0
+		anchor1 = 0,0
+		anchor2 = 100,100
+		is-default = true
+	elem "input"
+		type = INPUT
+		pos = 0,460
+		size = 640x20
+		anchor1 = 0,100
+		anchor2 = 100,100
+		background-color = #d3b5b5
+		is-default = true
+
+window "statwindow"
+	elem "statwindow"
+		type = MAIN
+		pos = 0,0
+		size = 640x480
+		is-pane = true
+	elem "stat"
+		type = INFO
+		pos = 0,0
+		size = 0x0
+		anchor1 = 0,0
+		anchor2 = 100,100
+		is-default = true
+
+window "mainwindow"
+	elem "mainwindow"
+		type = MAIN
+		size = 800x400
+		is-default = true
+		menu = "menu"
+		macro = "macro"
+		icon = "icons/mob.dmi"
+	elem "split"
+		type = CHILD
+		pos = 3,0
+		size = 0x0
+		anchor1 = 0,0
+		anchor2 = 100,100
+		left = "mapwindow"
+		right = "infowindow"
+		is-vert = true
+
+window "testwindow"
+	elem "testwindow"
+		type = MAIN
+		size = 200x100
+		title = "popup"
+		is-visible = false
+		font-size = 6pt
+	elem "testwindowlabel"
+		type = LABEL
+		text = "I am a test"
+
+window "wingetwindow"
+	elem "wingetwindow"
+		type = MAIN
+		size = 200x180
+		title = "winget test"
+		is-visible = false
+	elem "wingetinput"
+		type = INPUT
+		pos = 5,0
+		size = 190,19
+		text = "this is some test text"
+	elem "wingetbuttonarg"
+		type = BUTTON
+		pos = 0,40
+		size = 0,20
+		text = "as arg"
+		command = "wingettextverb \"arg: [[wingetinput.text as arg]]\""
+	elem "wingetbuttonesc"
+		type = BUTTON
+		pos = 0,60
+		size = 0,20
+		text = "as escaped"
+		command = "wingettextverb \"escaped: [[wingetinput.text as escaped]]\""
+	elem "wingetbuttonstr"
+		type = BUTTON
+		pos = 0,80
+		size = 0,20
+		text = "as string"
+		command = "wingettextverb \"string: [[wingetinput.text as string]]\""		
+	elem "wingetbuttonpar"
+		type = BUTTON
+		pos = 0,100
+		size = 0,20
+		text = "as params"
+		command = "wingettextverb \"params: [[wingetinput.text as params]]\""	
+	elem "wingetbuttonjson"
+		type = BUTTON
+		pos = 0,120
+		size = 0,20
+		text = "as json"
+		command = "wingettextverb \"json: [[wingetinput.text as json]]\""
+	elem "wingetbuttonjsondm"
+		type = BUTTON
+		pos = 0,140
+		size = 0,20
+		text = "as json-dm"
+		command = "wingettextverb \"json-dm: [[wingetinput.text as json-dm]]\""		
+	elem "wingetbuttonraw"
+		type = BUTTON
+		pos = 0,160
+		size = 0,20
+		text = "as raw"
+		command = "wingettextverb \"raw: [[wingetinput.text as raw]]\""

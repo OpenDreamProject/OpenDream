@@ -1,4 +1,6 @@
-﻿using OpenDreamClient.Interface.Descriptors;
+﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
@@ -6,12 +8,14 @@ namespace OpenDreamClient.Interface;
 
 [Virtual]
 public class InterfaceElement {
-    public string Type => ElementDescriptor.Type;
-    public string Id => ElementDescriptor.Id;
+    public DMFPropertyString Type => ElementDescriptor.Type;
+    public DMFPropertyString Id => ElementDescriptor.Id;
 
     public ElementDescriptor ElementDescriptor;
+
     [Dependency] protected readonly IDreamInterfaceManager _interfaceManager = default!;
     [Dependency] private readonly ISerializationManager _serializationManager = default!;
+
     protected InterfaceElement(ElementDescriptor elementDescriptor) {
         ElementDescriptor = elementDescriptor;
         IoCManager.InjectDependencies(this);
@@ -35,17 +39,18 @@ public class InterfaceElement {
 
     /// <summary>
     /// Attempt to get a DMF property
+    /// You only need to create an override for this if the property can't be straight read from the ElementDescriptor
     /// </summary>
-    public virtual bool TryGetProperty(string property, out string value) {
-        MappingDataNode original = (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);
-        original.TryGet(property, out var valueNode);
-        if (valueNode != null) {
-            value = valueNode.ToString();
-            return true;
-        }else {
-            value = string.Empty;
-            return false;
+    public virtual bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
+        MappingDataNode original =
+                (MappingDataNode)_serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor, alwaysWrite: true); //alwayswrite because we want to access all properties, even defaults
+        if (original.TryGet(property, out var node) && _serializationManager.TryGetVariableType(ElementDescriptor.GetType(), property, out var propertyDef)) {
+            value = (IDMFProperty?) _serializationManager.Read(propertyDef, node);
+            if(value is not null)
+                return true;
         }
+        value = null;
+        return false;
     }
 
     protected virtual void UpdateElementDescriptor() {

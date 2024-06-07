@@ -321,10 +321,10 @@ internal static class DMPreprocessorParser {
                         return DegenerateValue;
                     }
 
-                    Token fexistsInner = Current();
+                    Token fExistsInner = Current();
 
-                    if (fexistsInner.Type != TokenType.DM_ConstantString) {
-                        Error($"Unexpected token {fexistsInner.PrintableText} - file path expected");
+                    if (fExistsInner.Type != TokenType.DM_ConstantString) {
+                        Error($"Unexpected token {fExistsInner.PrintableText} - file path expected");
                         return DegenerateValue;
                     }
 
@@ -334,9 +334,9 @@ internal static class DMPreprocessorParser {
                             "Expected ')' to end fexists() expression");
                     }
 
-                    var filePath = Path.GetRelativePath(".", fexistsInner.Value!.ToString().Replace('\\', '/'));
+                    var filePath = Path.GetRelativePath(".", fExistsInner.Value!.ToString()!.Replace('\\', '/'));
 
-                    var outputDir = Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/";
+                    var outputDir = Path.Combine(Path.GetDirectoryName(DMCompiler.Settings.Files?[0]) ?? "/", Path.GetDirectoryName(fExistsInner.Location.SourceFile) ?? "/");
                     if (string.IsNullOrEmpty(outputDir))
                         outputDir = "./";
 

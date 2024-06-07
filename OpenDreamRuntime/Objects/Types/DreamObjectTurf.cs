@@ -73,8 +73,5 @@ public sealed class DreamObjectTurf : DreamObjectAtom {
         }
 
         _appearanceId = appearanceId;
-
-
-
     }
 }

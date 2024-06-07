@@ -48,12 +48,15 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
             foreach(var overlayid in appearance.Overlays) {
                 IncreaseAppearanceRefCount(overlayid);
             }
+
             foreach(var underlayid in appearance.Underlays) {
                 IncreaseAppearanceRefCount(underlayid);
             }
+
             _appearanceRefCounts[appearance] = count + 1;
         }
     }
+
     public void IncreaseAppearanceRefCount(int appearanceId) {
         if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
             throw new InvalidOperationException("Trying to increase ref count of an appearance that doesn't exist.");
@@ -72,13 +75,16 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
                 foreach(var overlayid in appearance.Overlays) {
                     DecreaseAppearanceRefCount(overlayid);
                 }
+
                 foreach(var underlayid in appearance.Underlays) {
                     DecreaseAppearanceRefCount(underlayid);
                 }
+
                 if(_appearanceToId.TryGetValue(appearance, out int id)) {
                     _idToAppearance.Remove(id);
                     RaiseNetworkEvent(new RemoveAppearanceEvent(id));
                 }
+
                 _appearanceRefCounts.Remove(appearance);
                 _appearanceToId.Remove(appearance);
                 //let the GC sort out the rest

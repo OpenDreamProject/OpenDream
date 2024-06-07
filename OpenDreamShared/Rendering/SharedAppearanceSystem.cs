@@ -17,6 +17,7 @@ public abstract class SharedAppearanceSystem : EntitySystem {
         public int AppearanceId { get; } = appearanceId;
         public IconAppearance Appearance { get; } = appearance;
     }
+
     [Serializable, NetSerializable]
     public sealed class RemoveAppearanceEvent(int appearanceId) : EntityEventArgs {
         public int AppearanceId { get; } = appearanceId;

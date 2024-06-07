@@ -2,6 +2,7 @@
 using OpenDreamShared.Rendering;
 
 namespace OpenDreamRuntime.Rendering;
+
 [RegisterComponent]
 public sealed partial class DMISpriteComponent : SharedDMISpriteComponent {
     [ViewVariables]

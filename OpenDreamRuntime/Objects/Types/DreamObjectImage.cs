@@ -51,6 +51,7 @@ public sealed class DreamObjectImage : DreamObject {
                 Logger.GetSawmill("opendream.image")
                     .Warning($"Attempted to create an /image from {icon}. This is invalid and a default image was created instead.");
         }
+
         if(iconAppearance is not null)
             Appearance = iconAppearance;
 
@@ -222,7 +223,7 @@ public sealed class DreamObjectImage : DreamObject {
                     Appearance = iconAppearance;
                     if(_entity != EntityUid.Invalid) {
                         DMISpriteComponent sprite = EntityManager.GetComponent<DMISpriteComponent>(_entity);
-                        AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance);
+                        AtomManager.SetSpriteAppearance(new(_entity, sprite), Appearance!);
                     }
                     break;
                 }

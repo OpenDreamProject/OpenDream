@@ -93,6 +93,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
             }
         }
     }
+
     public void DecreaseAppearanceRefCount(int appearanceId) {
         if (!_idToAppearance.TryGetValue(appearanceId, out IconAppearance? appearance)) {
             throw new InvalidOperationException("Trying to decrease ref count of an appearance that doesn't exist.");

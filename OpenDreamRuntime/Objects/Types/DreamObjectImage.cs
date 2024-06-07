@@ -77,6 +77,7 @@ public sealed class DreamObjectImage : DreamObject {
                 iconAppearance.InheritsDirection = false;
             }
         }
+
         if (iconAppearance is not null) {
             AppearanceSystem!.AddAppearance(iconAppearance); // this is a no-op if the appearance is already in the system
             Appearance = iconAppearance;

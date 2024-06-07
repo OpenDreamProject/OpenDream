@@ -413,17 +413,15 @@ internal sealed class DreamViewOverlay : Overlay {
         if (icon == null)
             return;
 
-        var frame = iconMetaData.GetTexture(this, handle);
-
         //KEEP_TOGETHER groups
         if (iconMetaData.KeepTogetherGroup?.Count > 0) {
             // TODO: Use something better than a hardcoded 64x64 fallback
-            Vector2i ktSize = frame?.Size ?? (64,64);
+            Vector2i ktSize = iconMetaData.MainIcon?.DMI?.IconSize ?? (64,64);
             iconMetaData.TextureOverride = ProcessKeepTogether(handle, iconMetaData, ktSize);
-            frame = iconMetaData.TextureOverride;
             positionOffset -= ((ktSize/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f); //correct for KT group texture offset
         }
 
+        var frame = iconMetaData.GetTexture(this, handle);
         var pixelPosition = (iconMetaData.Position + positionOffset) * EyeManager.PixelsPerMeter;
 
         //if frame is null, this doesn't require a draw, so return NOP
@@ -768,13 +766,12 @@ internal sealed class DreamViewOverlay : Overlay {
         ktItems.Sort();
         //draw it onto an additional render target that we can return immediately for correction of transform
         IRenderTexture tempTexture = RentRenderTarget(size);
-        ClearRenderTarget(tempTexture, handle, Color.Transparent);
 
         handle.RenderInRenderTarget(tempTexture, () => {
             foreach (RendererMetaData ktItem in ktItems) {
                 DrawIcon(handle, tempTexture.Size, ktItem, -ktItem.Position+((tempTexture.Size/EyeManager.PixelsPerMeter) - Vector2.One) * new Vector2(0.5f)); //draw the icon in the centre of the KT render target
             }
-        }, null);
+        }, Color.Transparent);
 
         //but keep the handle to the final KT group's render target so we don't override it later in the render cycle
         IRenderTexture ktTexture = RentRenderTarget(tempTexture.Size);

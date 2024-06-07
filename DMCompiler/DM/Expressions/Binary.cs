@@ -7,6 +7,7 @@ namespace DMCompiler.DM.Expressions {
         protected DMExpression LHS { get; } = lhs;
         protected DMExpression RHS { get; } = rhs;
         public override DMComplexValueType ValType => LHS.ValType;
+        public override bool PathIsFuzzy => true;
     }
 
     #region Simple

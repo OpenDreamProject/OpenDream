@@ -1,4 +1,5 @@
 ﻿using JetBrains.Annotations;
+using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
 using Robust.Shared.Serialization.Markdown.Mapping;
 
@@ -9,8 +10,8 @@ public sealed partial class MacroSetDescriptor : ElementDescriptor {
     public IReadOnlyList<MacroDescriptor> Macros => _macros;
 
     public MacroSetDescriptor(string id) {
-        Type = "MACRO_SET";
-        Id = id;
+        Type = new DMFPropertyString("MACRO_SET");
+        Id = new DMFPropertyString(id);
     }
 
     [UsedImplicitly]
@@ -28,7 +29,7 @@ public sealed partial class MacroSetDescriptor : ElementDescriptor {
     public override ElementDescriptor CreateCopy(ISerializationManager serializationManager, string id) {
         var copy = serializationManager.CreateCopy(this, notNullableOverride: true);
 
-        copy._id = id;
+        copy._id = new DMFPropertyString(id);
         return copy;
     }
 }

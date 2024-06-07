@@ -27,14 +27,14 @@ internal sealed class ControlButton : InterfaceControl {
 
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
-        _button.Text = controlDescriptor.Text;
+        _button.Text = controlDescriptor.Text.AsRaw();
     }
 
     private void OnButtonClick(BaseButton.ButtonEventArgs args) {
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
-        if (controlDescriptor.Command != null) {
-            _interfaceManager.RunCommand(controlDescriptor.Command);
+        if (!string.IsNullOrEmpty(controlDescriptor.Command.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.Command.AsRaw());
         }
     }
 }

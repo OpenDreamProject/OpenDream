@@ -65,26 +65,35 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     }
 
     public Texture? GetTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture? textureOverride = null) {
-        if (Appearance == null || DMI == null)
-            return textureOverride;
+        Texture? frame;
 
-        var animationFrame = AnimationFrame;
-        if (textureOverride == null && CachedTexture != null && !_textureDirty)
-            return CachedTexture;
+        if (textureOverride == null) {
+            if (Appearance == null || DMI == null)
+                return null;
 
-        var frame = textureOverride ?? DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
+            var animationFrame = AnimationFrame;
+            if (CachedTexture != null && !_textureDirty)
+                return CachedTexture;
+
+            _textureDirty = false;
+            frame = DMI.GetState(Appearance.IconState)?.GetFrames(Appearance.Direction)[animationFrame];
+        } else {
+            frame = textureOverride;
+        }
+
+        var canSkipFullRender = Appearance?.Filters.Count is 0 or null &&
+                                    iconMetaData.ColorToApply == Color.White &&
+                                    iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity) &&
+                                    iconMetaData.AlphaToApply.Equals(1.0f);
+
         if (frame == null) {
             CachedTexture = null;
-        } else if ((Appearance.Filters.Count == 0 && iconMetaData.ColorToApply == Color.White &&
-             iconMetaData.ColorMatrixToApply.Equals(ColorMatrix.Identity)) && iconMetaData.AlphaToApply.Equals(1.0f)) {
+        } else if (canSkipFullRender) {
             TextureRenderOffset = Vector2.Zero;
             CachedTexture = frame;
         } else {
             CachedTexture = FullRenderTexture(viewOverlay, handle, iconMetaData, frame);
         }
-
-        if (textureOverride == null)
-            _textureDirty = false;
 
         return CachedTexture;
     }
@@ -181,7 +190,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             elapsedTime -= frames[_animationFrame].Delay;
             _animationFrameTime += frames[_animationFrame].Delay;
             _animationFrame++;
-            _textureDirty = true;
+            DirtyTexture();
 
             if (_animationFrame >= frames.Length) _animationFrame -= frames.Length;
         }
@@ -387,7 +396,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     }
 
     private void UpdateIcon() {
-        _textureDirty = true;
+        DirtyTexture();
 
         if (Appearance == null) {
             DMI = null;
@@ -426,7 +435,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     /// <summary>
     /// Perform a full (slower) render of this icon's texture, including filters and color
     /// </summary>
-    /// <remarks>In a separate method to avoid allocations when not executed</remarks>
+    /// <remarks>In a separate method to avoid closure allocations when not executed</remarks>
     /// <returns>The final texture</returns>
     private Texture FullRenderTexture(DreamViewOverlay viewOverlay, DrawingHandleWorld handle, RendererMetaData iconMetaData, Texture frame) {
         if (_ping?.Size != frame.Size * 2 || _pong == null) {
@@ -481,6 +490,11 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
             _cachedAABB = aabb;
             SizeChanged?.Invoke();
         }
+    }
+
+    private void DirtyTexture() {
+        _textureDirty = true;
+        CachedTexture = null;
     }
 
     private struct AppearanceAnimation(DateTime start, TimeSpan duration, IconAppearance endAppearance, AnimationEasing easing, int loops, AnimationFlags flags, int delay) {

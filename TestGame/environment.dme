@@ -6,6 +6,7 @@
 // BEGIN_PREFERENCES
 // END_PREFERENCES
 // BEGIN_INCLUDE
+#include "TestInterface.dmf"
 #include "code.dm"
 #include "renderer_tests.dm"
 #include "map_z1.dmm"

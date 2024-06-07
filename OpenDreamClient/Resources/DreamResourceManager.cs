@@ -71,6 +71,8 @@ namespace OpenDreamClient.Resources {
             if(_resourceManager.UserData.Exists(GetCacheFilePath(message.Filename))){ //TODO CHECK HASH
                 _sawmill.Debug($"Cache hit for {message.Filename}");
             } else {
+                if(_activeBrowseRscRequests.Contains(message.Filename)) //we've already requested it, don't need to do it again
+                    return;
                 _sawmill.Debug($"Cache miss for {message.Filename}, requesting from server.");
                 _activeBrowseRscRequests.Add(message.Filename);
                 _netManager.ServerChannel?.SendMessage(new MsgBrowseResourceRequest(){ Filename = message.Filename});

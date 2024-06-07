@@ -50,6 +50,7 @@
 
 	verb/browse_rsc_test()
 		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
+		usr << browse_rsc('icons/mob.dmi', "mobicon.png")
 		usr << browse("<p><img src=mobicon.png></p>Oh look, it's you!","window=honk")
 
 	verb/rotate()
@@ -195,6 +196,10 @@
 		spawn(20)
 			src << "showing main window"
 			winset(src,"mainwindow","is-visible=true")
+			
+	verb/winget_text_verb(var/rawtext as command_text)
+		set name = "wingettextverb"
+		world << "recieved: [rawtext]"			
 
 /mob/Stat()
 	if (statpanel("Status"))

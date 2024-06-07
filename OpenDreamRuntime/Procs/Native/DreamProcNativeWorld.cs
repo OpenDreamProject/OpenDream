@@ -185,7 +185,6 @@ namespace OpenDreamRuntime.Procs.Native {
             return DreamValue.Null;
         }
 
-
         [DreamProc("ODHotReloadInterface")]
         public static DreamValue NativeProc_ODHotReloadInterface(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             var dreamManager = IoCManager.Resolve<DreamManager>();

@@ -75,6 +75,7 @@ namespace OpenDreamRuntime.Resources {
                         resource = new DreamResource(resourceId, resourcePath, resourcePath);
                         break;
                 }
+
                 return resource;
             }
 

@@ -29,7 +29,6 @@ public sealed class ControlWindow : InterfaceControl {
 
     private (OSWindow? osWindow, IClydeWindow? clydeWindow) _myWindow;
 
-
     public ControlWindow(WindowDescriptor windowDescriptor) : base(windowDescriptor, null) {
         IoCManager.InjectDependencies(this);
     }

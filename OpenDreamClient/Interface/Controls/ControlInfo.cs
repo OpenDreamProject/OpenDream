@@ -5,6 +5,7 @@ using OpenDreamClient.Interface.Controls.UI;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.Html;
 using OpenDreamShared.Dream;
+using Robust.Client.Graphics;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Input;
@@ -21,6 +22,9 @@ internal class InfoPanel : Control {
         PanelName = name;
         TabContainer.SetTabTitle(this, name);
     }
+
+    public virtual void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
+    }
 }
 
 internal sealed class StatPanel : InfoPanel {
@@ -32,7 +36,10 @@ internal sealed class StatPanel : InfoPanel {
         private readonly IEntitySystemManager _entitySystemManager;
         private readonly FormattedMessage _nameText = new();
         private readonly FormattedMessage _valueText = new();
+        private string _name = string.Empty;
+        private string _value = string.Empty;
         private string? _atomRef;
+        private Color _textColor = Color.Black;
 
         public StatEntry(ControlInfo owner, IEntitySystemManager entitySystemManager) {
             _owner = owner;
@@ -53,29 +60,41 @@ internal sealed class StatPanel : InfoPanel {
             ValueLabel.SetMessage(_valueText);
         }
 
-        public void UpdateLabels(string name, string value, string? atomRef) {
+        public void SetTextColor(Color textColor) {
+            if (_textColor == textColor)
+                return;
+
+            _textColor = textColor;
+            UpdateLabels();
+        }
+
+        public void SetLabels(string name, string value, string? atomRef) {
             // TODO: Tabs should align with each other.
             //       Probably should be done by RT, but it just ignores them currently.
-            name = name.Replace("\t", "    ");
-            value = value.Replace("\t", "    ");
+            _name = name.Replace("\t", "    ");
+            _value = value.Replace("\t", "    ");
             _atomRef = atomRef;
 
+            UpdateLabels();
+        }
+
+        private void UpdateLabels() {
             _nameText.Clear();
             _valueText.Clear();
 
             // Use the default color and font
-            _nameText.PushColor(Color.Black);
-            _valueText.PushColor(Color.Black);
+            _nameText.PushColor(_textColor);
+            _valueText.PushColor(_textColor);
             _nameText.PushTag(new MarkupNode("font", null, null));
             _valueText.PushTag(new MarkupNode("font", null, null));
 
             if (_owner.InfoDescriptor.AllowHtml.Value) {
                 // TODO: Look into using RobustToolbox's markup parser once it's customizable enough
-                HtmlParser.Parse(name, _nameText);
-                HtmlParser.Parse(value, _valueText);
+                HtmlParser.Parse(_name, _nameText);
+                HtmlParser.Parse(_value, _valueText);
             } else {
-                _nameText.AddText(name);
-                _valueText.AddText(value);
+                _nameText.AddText(_name);
+                _valueText.AddText(_value);
             }
 
             NameLabel.SetMessage(_nameText);
@@ -112,7 +131,18 @@ internal sealed class StatPanel : InfoPanel {
             HScrollEnabled = false,
             Children = { _grid }
         };
+
         AddChild(scrollViewer);
+    }
+
+    public override void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
+        base.UpdateElementDescriptor(descriptor);
+
+        var textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
+
+        foreach (var entry in _entries) {
+            entry.SetTextColor(textColor);
+        }
     }
 
     public void UpdateLines(List<(string Name, string Value, string? AtomRef)> lines) {
@@ -122,7 +152,7 @@ internal sealed class StatPanel : InfoPanel {
             if (i < lines.Count) {
                 var line = lines[i];
 
-                entry.UpdateLabels(line.Name, line.Value, line.AtomRef);
+                entry.SetLabels(line.Name, line.Value, line.AtomRef);
             } else {
                 entry.Clear();
             }
@@ -153,6 +183,9 @@ internal sealed class VerbPanel : InfoPanel {
 
     private readonly VerbPanelGrid _grid;
 
+    private Color _highlightColor;
+    private Color _textColor;
+
     public VerbPanel(string name) : base(name) {
         IoCManager.InjectDependencies(this);
         _entitySystemManager.TryGetEntitySystem(out _verbSystem);
@@ -169,6 +202,20 @@ internal sealed class VerbPanel : InfoPanel {
         AddChild(scrollContainer);
     }
 
+    public override void UpdateElementDescriptor(ControlDescriptorInfo descriptor) {
+        base.UpdateElementDescriptor(descriptor);
+
+        _highlightColor = descriptor.HighlightColor.Value;
+        _textColor = (descriptor.TextColor.Value != Color.Transparent) ? descriptor.TextColor.Value : Color.Black;
+
+        foreach (var child in _grid.Children) {
+            if (child is not Button button)
+                continue;
+
+            button.Label.FontColorOverride = _textColor;
+        }
+    }
+
     public void RefreshVerbs(IEnumerable<(int, ClientObjectReference, VerbSystem.VerbInfo)> verbs) {
         _grid.Children.Clear();
 
@@ -183,8 +230,19 @@ internal sealed class VerbPanel : InfoPanel {
             };
 
             verbButton.Label.Margin = new Thickness(6, 0, 6, 2);
+            verbButton.Label.FontColorOverride = _textColor;
+            verbButton.StyleBoxOverride = new StyleBoxEmpty();
+
             verbButton.OnPressed += _ => {
                 _verbSystem?.ExecuteVerb(src, verbId);
+            };
+
+            verbButton.OnMouseEntered += _ => {
+                verbButton.Label.FontColorOverride = _highlightColor;
+            };
+
+            verbButton.OnMouseExited += _ => {
+                verbButton.Label.FontColorOverride = _textColor;
             };
 
             _grid.Children.Add(verbButton);
@@ -226,6 +284,18 @@ public sealed class ControlInfo : InterfaceControl {
             OnHideEvent();
 
         return _tabControl;
+    }
+
+    protected override void UpdateElementDescriptor() {
+        base.UpdateElementDescriptor();
+
+        // TODO: Set tab background-color and text-color here.
+        //       Ignoring currently since color is our only way of displaying which tab is active.
+
+        foreach (var panel in _statPanels.Values)
+            panel.UpdateElementDescriptor(InfoDescriptor);
+        foreach (var panel in _verbPanels.Values)
+            panel.UpdateElementDescriptor(InfoDescriptor);
     }
 
     public void RefreshVerbs(ClientVerbSystem verbSystem) {
@@ -283,6 +353,7 @@ public sealed class ControlInfo : InterfaceControl {
 
     public void CreateVerbPanel(string name) {
         var panel = new VerbPanel(name);
+        panel.UpdateElementDescriptor(InfoDescriptor);
         _verbPanels.Add(name, panel);
         SortPanels();
     }
@@ -290,6 +361,7 @@ public sealed class ControlInfo : InterfaceControl {
     private StatPanel CreateStatPanel(string name) {
         var panel = new StatPanel(this, _entitySystemManager, name);
         panel.Margin = new Thickness(20, 2);
+        panel.UpdateElementDescriptor(InfoDescriptor);
         _statPanels.Add(name, panel);
         SortPanels();
         return panel;

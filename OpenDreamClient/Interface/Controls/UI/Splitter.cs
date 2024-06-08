@@ -163,6 +163,11 @@ public sealed class Splitter : Container {
     }
 
     private sealed class DragControl : Control {
+        private static readonly StyleBox DragControlStyleBox = new StyleBoxFlat(Color.DarkGray) {
+            BorderColor = Color.Gray,
+            BorderThickness = new(1)
+        };
+
         public event Action<GUIBoundKeyEventArgs>? OnMouseDown;
         public event Action<GUIBoundKeyEventArgs>? OnMouseUp;
         public event Action<GUIMouseMoveEventArgs>? OnMouseMove;
@@ -189,7 +194,7 @@ public sealed class Splitter : Container {
         }
 
         protected override void Draw(DrawingHandleScreen handle) {
-            handle.DrawRect(UIBox2.FromDimensions(Vector2.Zero, PixelSize), Color.Gray, filled: false);
+            DragControlStyleBox.Draw(handle, UIBox2.FromDimensions(Vector2.Zero, PixelSize), UIScale);
         }
     }
 }

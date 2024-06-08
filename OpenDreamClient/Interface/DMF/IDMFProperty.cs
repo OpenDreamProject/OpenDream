@@ -143,7 +143,7 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
 public struct DMFPropertyVec2 : IDMFProperty {
     public int X;
     public int Y;
-    public char delim = ',';
+    public char Delim = ',';
 
     public DMFPropertyVec2(int x, int y) {
         X = x;
@@ -178,7 +178,7 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsEscaped() {
-        return X.ToString() + delim + Y.ToString();
+        return X.ToString() + Delim + Y.ToString();
     }
 
     public string AsString() {
@@ -219,27 +219,28 @@ public struct DMFPropertySize : IDMFProperty {
 
     public DMFPropertySize(int x, int y) {
         _value = new(x, y) {
-            delim = Delim
+            Delim = Delim
         };
     }
 
     public DMFPropertySize(string value) {
         _value = new(value) {
-            delim = Delim
+            Delim = Delim
         };
     }
 
     public DMFPropertySize(Vector2 value) {
         _value = new(value) {
-            delim = Delim
+            Delim = Delim
         };
     }
 
     public DMFPropertySize(Vector2i value) {
         _value = new(value) {
-            delim = Delim
+            Delim = Delim
         };
     }
+
     public string AsArg() {
         return _value.AsArg();
     }
@@ -281,25 +282,25 @@ public struct DMFPropertyPos : IDMFProperty {
 
     public DMFPropertyPos(int x, int y) {
         _value = new(x, y) {
-            delim = Delim
+            Delim = Delim
         };
     }
 
     public DMFPropertyPos(string value) {
         _value = new(value) {
-            delim = Delim
+            Delim = Delim
         };
     }
 
     public DMFPropertyPos(Vector2 value) {
         _value = new(value) {
-            delim = Delim
+            Delim = Delim
         };
     }
 
     public DMFPropertyPos(Vector2i value) {
         _value = new(value) {
-            delim = Delim
+            Delim = Delim
         };
     }
 

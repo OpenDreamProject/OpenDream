@@ -144,6 +144,7 @@ public struct DMFPropertyNum(float value) : IDMFProperty {
 public struct DMFPropertyVec2 : IDMFProperty {
     public int X;
     public int Y;
+    public char delim = ',';
 
     public DMFPropertyVec2(int x, int y) {
         X = x;
@@ -178,10 +179,6 @@ public struct DMFPropertyVec2 : IDMFProperty {
     }
 
     public string AsEscaped() {
-        return AsEscaped(',');
-    }
-
-    public string AsEscaped(char delim) {
         return X.ToString() + delim + Y.ToString();
     }
 
@@ -216,32 +213,40 @@ public struct DMFPropertyVec2 : IDMFProperty {
 }
 
 public struct DMFPropertySize : IDMFProperty {
-    public DMFPropertyVec2 Value;
+    private DMFPropertyVec2 Value;
     public int X {get => Value.X; set => Value.X = value;}
     public int Y {get => Value.Y; set => Value.Y = value;}
-    const char delim = 'x';
+    private const char delim = 'x';
 
     public DMFPropertySize(int x, int y) {
-        Value = new(x,y);
+        Value = new(x, y) {
+            delim = delim
+        };
     }
 
     public DMFPropertySize(string value) {
-        Value = new(value);
+        Value = new(value) {
+            delim = delim
+        };
     }
 
     public DMFPropertySize(Vector2 value) {
-        Value = new(value);
+        Value = new(value) {
+            delim = delim
+        };
     }
 
     public DMFPropertySize(Vector2i value) {
-        Value = new(value);
+        Value = new(value) {
+            delim = delim
+        };
     }
     public string AsArg() {
         return Value.AsArg();
     }
 
     public string AsEscaped() {
-        return Value.AsEscaped(delim);
+        return Value.AsEscaped();
     }
 
     public string AsJson() {
@@ -270,24 +275,33 @@ public struct DMFPropertySize : IDMFProperty {
 }
 
 public struct DMFPropertyPos : IDMFProperty {
-    public DMFPropertyVec2 Value;
+    private DMFPropertyVec2 Value;
     public int X {get => Value.X; set => Value.X = value;}
     public int Y {get => Value.Y; set => Value.Y = value;}
-    const char delim = ',';
+    private const char delim = ',';
+
     public DMFPropertyPos(int x, int y) {
-        Value = new(x,y);
+        Value = new(x, y) {
+            delim = delim
+        };
     }
 
     public DMFPropertyPos(string value) {
-        Value = new(value);
+        Value = new(value) {
+            delim = delim
+        };
     }
 
     public DMFPropertyPos(Vector2 value) {
-        Value = new(value);
+        Value = new(value) {
+            delim = delim
+        };
     }
 
     public DMFPropertyPos(Vector2i value) {
-        Value = new(value);
+        Value = new(value) {
+            delim = delim
+        };
     }
 
     public string AsArg() {
@@ -295,7 +309,7 @@ public struct DMFPropertyPos : IDMFProperty {
     }
 
     public string AsEscaped() {
-        return Value.AsEscaped(delim);
+        return Value.AsEscaped();
     }
 
     public string AsJson() {

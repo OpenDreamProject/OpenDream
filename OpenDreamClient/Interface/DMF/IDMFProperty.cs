@@ -6,7 +6,6 @@ using Robust.Shared.Serialization.Markdown;
 using Robust.Shared.Serialization.Markdown.Validation;
 using Robust.Shared.Serialization.Markdown.Value;
 using Robust.Shared.Serialization.TypeSerializers.Interfaces;
-using YamlDotNet.Core.Tokens;
 
 namespace OpenDreamClient.Interface.DMF;
 

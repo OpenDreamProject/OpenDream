@@ -212,127 +212,127 @@ public struct DMFPropertyVec2 : IDMFProperty {
 }
 
 public struct DMFPropertySize : IDMFProperty {
-    private DMFPropertyVec2 Value;
-    public int X {get => Value.X; set => Value.X = value;}
-    public int Y {get => Value.Y; set => Value.Y = value;}
-    private const char delim = 'x';
+    private DMFPropertyVec2 _value;
+    public int X {get => _value.X; set => _value.X = value;}
+    public int Y {get => _value.Y; set => _value.Y = value;}
+    private const char Delim = 'x';
 
     public DMFPropertySize(int x, int y) {
-        Value = new(x, y) {
-            delim = delim
+        _value = new(x, y) {
+            delim = Delim
         };
     }
 
     public DMFPropertySize(string value) {
-        Value = new(value) {
-            delim = delim
+        _value = new(value) {
+            delim = Delim
         };
     }
 
     public DMFPropertySize(Vector2 value) {
-        Value = new(value) {
-            delim = delim
+        _value = new(value) {
+            delim = Delim
         };
     }
 
     public DMFPropertySize(Vector2i value) {
-        Value = new(value) {
-            delim = delim
+        _value = new(value) {
+            delim = Delim
         };
     }
     public string AsArg() {
-        return Value.AsArg();
+        return _value.AsArg();
     }
 
     public string AsEscaped() {
-        return Value.AsEscaped();
+        return _value.AsEscaped();
     }
 
     public string AsJson() {
-        return Value.AsJson();
+        return _value.AsJson();
     }
 
     public string AsJsonDM() {
-        return Value.AsJsonDM();
+        return _value.AsJsonDM();
     }
 
     public string AsParams() {
-        return Value.AsParams();
+        return _value.AsParams();
     }
 
     public string AsRaw() {
-        return Value.AsRaw();
+        return _value.AsRaw();
     }
 
     public string AsString() {
-        return Value.AsString();
+        return _value.AsString();
     }
 
     public bool Equals(string comparison) {
-        return Value.Equals(comparison);
+        return _value.Equals(comparison);
     }
 }
 
 public struct DMFPropertyPos : IDMFProperty {
-    private DMFPropertyVec2 Value;
-    public int X {get => Value.X; set => Value.X = value;}
-    public int Y {get => Value.Y; set => Value.Y = value;}
-    private const char delim = ',';
+    private DMFPropertyVec2 _value;
+    public int X {get => _value.X; set => _value.X = value;}
+    public int Y {get => _value.Y; set => _value.Y = value;}
+    private const char Delim = ',';
 
     public DMFPropertyPos(int x, int y) {
-        Value = new(x, y) {
-            delim = delim
+        _value = new(x, y) {
+            delim = Delim
         };
     }
 
     public DMFPropertyPos(string value) {
-        Value = new(value) {
-            delim = delim
+        _value = new(value) {
+            delim = Delim
         };
     }
 
     public DMFPropertyPos(Vector2 value) {
-        Value = new(value) {
-            delim = delim
+        _value = new(value) {
+            delim = Delim
         };
     }
 
     public DMFPropertyPos(Vector2i value) {
-        Value = new(value) {
-            delim = delim
+        _value = new(value) {
+            delim = Delim
         };
     }
 
     public string AsArg() {
-        return Value.AsArg();
+        return _value.AsArg();
     }
 
     public string AsEscaped() {
-        return Value.AsEscaped();
+        return _value.AsEscaped();
     }
 
     public string AsJson() {
-        return Value.AsJson();
+        return _value.AsJson();
     }
 
     public string AsJsonDM() {
-        return Value.AsJsonDM();
+        return _value.AsJsonDM();
     }
 
     public string AsParams() {
-        return Value.AsParams();
+        return _value.AsParams();
     }
 
     public string AsRaw() {
-        return Value.AsRaw();
+        return _value.AsRaw();
     }
 
     public string AsString() {
-        return Value.AsString();
+        return _value.AsString();
     }
 
     public bool Equals(string comparison) {
-        return Value.Equals(comparison);
+        return _value.Equals(comparison);
     }
 }
 
@@ -549,7 +549,6 @@ public sealed class DMFPropertyVec2Serializer : ITypeSerializer<DMFPropertyVec2,
         IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null) {
         return new(source.AsRaw());
     }
-
 }
 
 [TypeSerializer]
@@ -584,7 +583,6 @@ public sealed class DMFPropertySizeSerializer : ITypeSerializer<DMFPropertySize,
         IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null) {
         return new(source.AsRaw());
     }
-
 }
 
 [TypeSerializer]
@@ -619,7 +617,6 @@ public sealed class DMFPropertyPosSerializer : ITypeSerializer<DMFPropertyPos, V
         IDependencyCollection dependencies, SerializationHookContext hookCtx, ISerializationContext? context = null) {
         return new(source.AsRaw());
     }
-
 }
 
 [TypeSerializer]

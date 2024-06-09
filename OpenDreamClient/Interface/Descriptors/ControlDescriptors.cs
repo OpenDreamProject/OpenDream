@@ -116,7 +116,6 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
             return this;
         }
 
-
         Type? descriptorType = elementTypeValue.Value switch {
             "MAP" => typeof(ControlDescriptorMap),
             "CHILD" => typeof(ControlDescriptorChild),
@@ -134,6 +133,16 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
 
         if (descriptorType == null)
             return null;
+
+        if (descriptorType == typeof(ControlDescriptorChild)) {
+            // CHILD's top/bottom attributes alias to left/right
+            // Code is duplicated in InterfaceElement.PopulateElementDescriptor()
+            // TODO: A bit hacky. Remove this (may be worth abandoning RT's serialization manager)
+            if (attributes.TryGet("top", out var topValue))
+                attributes["left"] = topValue;
+            if (attributes.TryGet("bottom", out var bottomValue))
+                attributes["right"] = bottomValue;
+        }
 
         var child = (ControlDescriptor?)serializationManager.Read(descriptorType, attributes);
         if (child == null)

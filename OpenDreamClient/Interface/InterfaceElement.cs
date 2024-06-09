@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics.CodeAnalysis;
+using OpenDreamClient.Interface.Controls;
 using OpenDreamClient.Interface.Descriptors;
 using OpenDreamClient.Interface.DMF;
 using Robust.Shared.Serialization.Manager;
@@ -22,6 +23,16 @@ public class InterfaceElement {
     }
 
     public void PopulateElementDescriptor(MappingDataNode node, ISerializationManager serializationManager) {
+        if (GetType() == typeof(ControlChild)) {
+            // CHILD's top/bottom attributes alias to left/right
+            // Code is duplicated in WindowDescriptor.CreateChildDescriptor()
+            // TODO: A bit hacky. Remove this (may be worth abandoning RT's serialization manager)
+            if (node.TryGet("top", out var topValue))
+                node["left"] = topValue;
+            if (node.TryGet("bottom", out var bottomValue))
+                node["right"] = bottomValue;
+        }
+
         try {
             MappingDataNode original =
                 (MappingDataNode)serializationManager.WriteValue(ElementDescriptor.GetType(), ElementDescriptor);

@@ -56,6 +56,7 @@ menu "menu"
 		command = ".winset \"wingetwindow.is-visible=false?wingetwindow.is-visible=true:wingetwindow.is-visible=false\""	
 		category = "Menu"
 
+
 window "mapwindow"
 	elem "mapwindow"
 		type = MAIN
@@ -98,7 +99,8 @@ window "outputwindow"
 		size = 0x0
 		anchor1 = 0,0
 		anchor2 = 100,100
-		is-default = true
+		is-default = true	
+
 	elem "input"
 		type = INPUT
 		pos = 0,460
@@ -146,6 +148,9 @@ window "testwindow"
 		size = 200x100
 		title = "popup"
 		is-visible = false
+	elem "testwindowlabel"
+		type = LABEL
+		text = "I am a test"
 		font-size = 6pt
 	elem "testwindowlabel"
 		type = LABEL
@@ -204,3 +209,4 @@ window "wingetwindow"
 		size = 0,20
 		text = "as raw"
 		command = "wingettextverb \"raw: [[wingetinput.text as raw]]\""
+

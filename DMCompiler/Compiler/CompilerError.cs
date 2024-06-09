@@ -69,6 +69,7 @@ public enum WarningCode {
     UnsafeClientAccess = 3200,
     SuspiciousSwitchCase = 3201, // "else if" cases are actually valid DM, they just spontaneously end the switch context and begin an if-else ladder within the else case of the switch
     AssignmentInConditional = 3202,
+    PickWeightedSyntax = 3203,
 
     // 4000 - 4999 are reserved for runtime configuration. (TODO: Runtime doesn't know about configs yet!)
 }

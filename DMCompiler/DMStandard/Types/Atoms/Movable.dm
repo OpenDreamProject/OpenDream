@@ -24,25 +24,26 @@
 		if (Dir != 0)
 			dir = Dir
 
-		if (!loc.Exit(src, NewLoc))
-			return FALSE
-		// Ensure the atoms on the turf also permit this exit
-		for (var/atom/movable/exiting in loc)
-			if (!exiting.Uncross(src))
+		if(!isnull(loc))
+			if (!loc.Exit(src, NewLoc))
 				return FALSE
+			// Ensure the atoms on the turf also permit this exit
+			for (var/atom/movable/exiting in loc)
+				if (!exiting.Uncross(src))
+					return FALSE
 
 		if (NewLoc.Enter(src, loc))
 			var/atom/oldloc = loc
-			var/area/oldarea = oldloc.loc
+			var/area/oldarea = oldloc?.loc
 			var/area/newarea = NewLoc.loc
 			loc = NewLoc
 
 			// First, call Exited() on the old area
 			if (newarea != oldarea)
-				oldarea.Exited(src, loc)
+				oldarea?.Exited(src, loc)
 
 			// Second, call Exited() on the old turf and Uncrossed() on its contents
-			oldloc.Exited(src, loc)
+			oldloc?.Exited(src, loc)
 			for (var/atom/movable/uncrossed in oldloc)
 				uncrossed.Uncrossed(src)
 

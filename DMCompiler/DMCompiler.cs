@@ -101,6 +101,11 @@ public static class DMCompiler {
             // NB: IncludeFile pushes newly seen files to a stack, so push
             // them in reverse order to process them in forward order.
             for (var i = files.Count - 1; i >= 0; i--) {
+                if (!File.Exists(files[i])) {
+                    Console.WriteLine($"'{files[i]}' does not exist");
+                    return null;
+                }
+
                 string includeDir = Path.GetDirectoryName(files[i]);
                 string fileName = Path.GetFileName(files[i]);
 

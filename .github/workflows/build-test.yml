@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: dotnet restore
     - name: Build
-      run: dotnet build --configuration Release --no-restore /m
+      run: dotnet build --property WarningLevel=${{ matrix.os == 'ubuntu-latest' && '4' || '0' }} --configuration Release --no-restore /m
     - name: Content.Tests
       shell: pwsh
       run: |
@@ -80,3 +80,4 @@ jobs:
         title: "Development Build"
         files: |
           artifacts/*/*.tar.gz
+

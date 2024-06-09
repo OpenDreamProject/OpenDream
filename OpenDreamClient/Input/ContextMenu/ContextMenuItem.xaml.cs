@@ -25,7 +25,7 @@ internal sealed partial class ContextMenuItem : PanelContainer {
         NameLabel.Margin = new Thickness(2, 0, 4, 0);
         NameLabel.Text = metadata.EntityName;
 
-        Icon.Texture = sprite.Icon.CurrentFrame;
+        Icon.Texture = sprite.Icon.CachedTexture;
     }
 
     protected override void MouseEntered() {

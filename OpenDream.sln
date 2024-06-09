@@ -11,6 +11,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "TestGame", "TestGame", "{72
 		TestGame\map_z1.dmm = TestGame\map_z1.dmm
 		TestGame\map_z2.dmm = TestGame\map_z2.dmm
 		TestGame\map_z3.dmm = TestGame\map_z3.dmm
+		TestGame\TestInterface.dmf = TestGame\TestInterface.dmf
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "icons", "icons", "{4F1F4C68-4117-4ECC-8174-D399C1D6C409}"

@@ -20,13 +20,13 @@ internal sealed class ControlBar : InterfaceControl {
         base.UpdateElementDescriptor();
 
         //width
-        float barWidth = BarDescriptor.Width ?? 10f;
+        float barWidth = BarDescriptor.Width.Value;
 
         //TODO dir - these both need RT level changes
         //TODO angles
 
         //is-slider
-        if (BarDescriptor.IsSlider) {
+        if (BarDescriptor.IsSlider.Value) {
             if (_slider is null) {
                 _slider = new Slider {
                     MaxValue = 100,
@@ -35,7 +35,7 @@ internal sealed class ControlBar : InterfaceControl {
                     HorizontalExpand = true,
                     VerticalExpand = (barWidth == 0f),
                     MinHeight = barWidth,
-                    Value = BarDescriptor.Value ?? 0.0f
+                    Value = BarDescriptor.Value.Value
                 };
 
                 _slider.OnValueChanged += OnValueChanged;
@@ -47,12 +47,12 @@ internal sealed class ControlBar : InterfaceControl {
 
                 _container.AddChild(_slider);
             } else {
-                _slider.Value = BarDescriptor.Value ?? 0.0f;
+                _slider.Value = BarDescriptor.Value.Value;
             }
 
             //bar-color
             if (_slider.TryGetStyleProperty<StyleBoxFlat>(Slider.StylePropertyGrabber, out var box)) {
-                box.BackgroundColor = BarDescriptor.BarColor ?? Color.Transparent;
+                box.BackgroundColor = BarDescriptor.BarColor.Value;
                 _slider.GrabberStyleBoxOverride = box;
             }
         } else {
@@ -64,7 +64,7 @@ internal sealed class ControlBar : InterfaceControl {
                     HorizontalExpand = true,
                     VerticalExpand = (barWidth == 0f),
                     MinHeight = barWidth,
-                    Value = BarDescriptor.Value ?? 0.0f
+                    Value = BarDescriptor.Value.Value
                 };
 
                 _bar.OnValueChanged += OnValueChanged;
@@ -76,12 +76,12 @@ internal sealed class ControlBar : InterfaceControl {
 
                 _container.AddChild(_bar);
             } else {
-                _bar.Value = BarDescriptor.Value ?? 0.0f;
+                _bar.Value = BarDescriptor.Value.Value;
             }
 
             //bar-color
             if (_bar.TryGetStyleProperty<StyleBoxFlat>(ProgressBar.StylePropertyForeground, out var box)) {
-                box.BackgroundColor = BarDescriptor.BarColor ?? Color.Transparent;
+                box.BackgroundColor = BarDescriptor.BarColor.Value;
                 _bar.ForegroundStyleBoxOverride = box;
             }
         }
@@ -93,9 +93,9 @@ internal sealed class ControlBar : InterfaceControl {
         //if (_slider is not null && _slider.Grabbed)
         //    return;
 
-        if (BarDescriptor.OnChange != null) {
+        if (!string.IsNullOrEmpty(BarDescriptor.OnChange.Value)) {
             var valueReplaced =
-                BarDescriptor.OnChange.Replace("[[*]]", range.Value.ToString(CultureInfo.InvariantCulture));
+                BarDescriptor.OnChange.Value.Replace("[[*]]", range.Value.ToString(CultureInfo.InvariantCulture));
 
             _interfaceManager.RunCommand(valueReplaced);
         }

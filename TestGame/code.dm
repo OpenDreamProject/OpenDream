@@ -203,7 +203,7 @@
 
 	verb/test_hot_reload()
 		set category = "Test"
-		src << "tyring hot reload of interface..."
+		src << "trying hot reload of interface..."
 		world.ODHotReloadInterface()
 		src << "done hot reload of interface!"
 

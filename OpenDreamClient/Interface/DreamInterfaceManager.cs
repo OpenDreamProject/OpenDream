@@ -799,13 +799,16 @@ internal sealed class DreamInterfaceManager : IDreamInterfaceManager {
             window.CloseChildWindow();
             window.UIElement.RemoveAllChildren();
         }
+
         Windows.Clear();
         Menus.Clear();
         MacroSets.Clear();
+
         //close popups if they're open
         foreach (var popup in _popupWindows.Values) {
             popup.Close();
         }
+
         _popupWindows.Clear();
         _inputManager.ResetAllBindings();
     }

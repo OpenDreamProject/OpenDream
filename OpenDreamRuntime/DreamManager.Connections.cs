@@ -4,9 +4,11 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using OpenDreamRuntime;
 using OpenDreamShared;
 using OpenDreamShared.Network.Messages;
 using Robust.Shared.Configuration;
+using Robust.Shared.Console;
 using Robust.Shared.Enums;
 using Robust.Shared.Network;
 using Robust.Shared.Player;
@@ -284,9 +286,11 @@ namespace OpenDreamRuntime {
             string? interfaceText = null;
             if (_compiledJson.Interface != null)
                 interfaceText = _dreamResourceManager.LoadResource(_compiledJson.Interface, forceReload:true).ReadAsString();
+
             var msgLoadInterface = new MsgLoadInterface() {
                 InterfaceText = interfaceText
             };
+
             foreach (var connection in _connections.Values) {
                 connection.Session?.Channel.SendMessage(msgLoadInterface);
             }
@@ -301,6 +305,30 @@ namespace OpenDreamRuntime {
                 connection.Session?.Channel.SendMessage(msgBrowseResource);
             }
         }
+    }
+}
+
+public sealed class HotReloadInterfaceCommand : IConsoleCommand {
+    // ReSharper disable once StringLiteralTypo
+    public string Command => "hotreloadinterface";
+    public string Description => "Reload the .dmf interface and send the update to all clients";
+    public string Help => "";
+    public bool RequireServerOrSingleplayer => true;
+
+    public void Execute(IConsoleShell shell, string argStr, string[] args) {
+        if(!shell.IsLocal) {
+            shell.WriteError("You cannot use this command as a client. Execute it on the server console.");
+            return;
+        }
+
+        if (args.Length != 0) {
+            shell.WriteError("This command does not take any arguments!");
+            return;
+        }
+
+        DreamManager dreamManager = IoCManager.Resolve<DreamManager>();
+        dreamManager.HotReloadInterface();
+        shell.WriteLine("Reloading interface");
     }
 
 }

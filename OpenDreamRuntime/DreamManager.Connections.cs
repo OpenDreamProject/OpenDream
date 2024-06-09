@@ -284,13 +284,14 @@ namespace OpenDreamRuntime {
             string? interfaceText = null;
             if (_compiledJson.Interface != null)
                 interfaceText = _dreamResourceManager.LoadResource(_compiledJson.Interface, forceReload:true).ReadAsString();
+
             var msgLoadInterface = new MsgLoadInterface() {
                 InterfaceText = interfaceText
             };
+
             foreach (var connection in _connections.Values) {
                 connection.Session?.Channel.SendMessage(msgLoadInterface);
             }
         }
     }
-
 }

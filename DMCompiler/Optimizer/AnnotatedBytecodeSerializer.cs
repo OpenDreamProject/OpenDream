@@ -24,7 +24,6 @@ internal class AnnotatedBytecodeSerializer {
         _bytecodeWriter = new BinaryWriter(Bytecode);
     }
 
-
     public byte[]? Serialize(List<IAnnotatedBytecode> annotatedBytecode) {
         foreach (IAnnotatedBytecode bytecodeChunk in annotatedBytecode) {
             if (bytecodeChunk is AnnotatedBytecodeInstruction instruction) {

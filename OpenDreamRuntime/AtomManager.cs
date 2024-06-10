@@ -35,7 +35,7 @@ public sealed class AtomManager {
     private ServerAppearanceSystem? AppearanceSystem{
                                                     get {
                                                         if(_appearanceSystem is null)
-                                                            _entitySystemManager.TryGetEntitySystem<ServerAppearanceSystem>(out _appearanceSystem);
+                                                            _entitySystemManager.TryGetEntitySystem(out _appearanceSystem);
                                                         return _appearanceSystem;
                                                     }
                                                 }

@@ -291,7 +291,6 @@ internal class AnnotatedByteCodeWriter {
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeId(typeId, location));
     }
 
-
     public void WriteProcId(int procId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ProcId) {

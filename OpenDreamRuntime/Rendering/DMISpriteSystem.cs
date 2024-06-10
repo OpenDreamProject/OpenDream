@@ -10,7 +10,7 @@ public sealed class DMISpriteSystem : EntitySystem {
 
     public override void Initialize() {
         SubscribeLocalEvent<DMISpriteComponent, ComponentGetState>(GetComponentState);
-        _entitySystemManager.TryGetEntitySystem<ServerAppearanceSystem>(out _appearance);
+        _entitySystemManager.TryGetEntitySystem(out _appearance);
     }
 
     private void GetComponentState(EntityUid uid, DMISpriteComponent component, ref ComponentGetState args) {

@@ -44,7 +44,6 @@ internal class AnnotatedByteCodeWriter {
         // the annotated bytecode can be used to generate the raw bytecode again.
         _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(opcode, metadata.StackDelta, location));
 
-
         ResizeStack(metadata.StackDelta);
 
         var requiredArgs = new Stack<OpcodeArgType>(metadata.RequiredArgs.Count);

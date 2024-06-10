@@ -349,7 +349,6 @@ internal class AnnotatedByteCodeWriter {
                     .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                 break;
 
-
             case DMReference.Type.Field:
                 int fieldId = DMObjectTree.AddString(reference.Name);
                 _annotatedBytecode[^1]

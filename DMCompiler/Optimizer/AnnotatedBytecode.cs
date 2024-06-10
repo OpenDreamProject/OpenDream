@@ -71,7 +71,6 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
 
     private bool MatchArgs(OpcodeArgType requiredArg, IAnnotatedBytecode arg) {
         switch (requiredArg) {
-
             case OpcodeArgType.ArgType:
                 return arg is AnnotatedBytecodeArgumentType;
             case OpcodeArgType.StackDelta:

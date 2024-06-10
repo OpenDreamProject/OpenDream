@@ -331,7 +331,6 @@ internal class AnnotatedByteCodeWriter {
         _requiredArgs.Pop();
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(count, location));
     }
-
     public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {

@@ -343,7 +343,6 @@ internal class AnnotatedByteCodeWriter {
                     .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                 break;
 
-
             case DMReference.Type.Global:
             case DMReference.Type.GlobalProc:
                 _annotatedBytecode[^1]

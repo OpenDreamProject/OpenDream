@@ -170,7 +170,6 @@ internal class AnnotatedBytecodeSerializer {
                 _bytecodeWriter.Write((byte)reference.Index);
                 break;
 
-
             case DMReference.Type.Global:
             case DMReference.Type.GlobalProc:
                 _bytecodeWriter.Write(reference.Index);

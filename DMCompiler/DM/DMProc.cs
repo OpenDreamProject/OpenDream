@@ -63,6 +63,7 @@ namespace DMCompiler.DM {
             }
         }
 
+        public string Name => _astDefinition?.Name ?? "<init>";
         public List<string> Parameters = new();
         public Location Location;
         public ProcAttributes Attributes;
@@ -114,8 +115,6 @@ namespace DMCompiler.DM {
                 }
             }
         }
-
-        public string Name => _astDefinition?.Name ?? "<init>";
 
         private int AllocLocalVariable(string name) {
             _localVariableNames.Add(name);

@@ -20,6 +20,7 @@ internal class AnnotatedByteCodeWriter {
     private int _maxStackSize;
     private bool _negativeStackSizeError;
     private Stack<OpcodeArgType> _requiredArgs = new();
+    private Dictionary<string, long> _labels = new();
 
     public long Position => _annotatedBytecode.Count;
 
@@ -55,21 +56,6 @@ internal class AnnotatedByteCodeWriter {
         }
 
         _requiredArgs = requiredArgs;
-    }
-
-    /// <summary>
-    /// Writes an integer to the stream
-    /// </summary>
-    /// <param name="val">The integer to write</param>
-    /// <param name="location">The location of the integer in the source code</param>
-    public void WriteInt(int val, Location location) {
-        _location = location;
-        if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.Int) {
-            DMCompiler.ForcedError(location, "Expected integer argument");
-        }
-
-        _requiredArgs.Pop();
-        _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeInteger(val, location));
     }
 
     /// <summary>
@@ -389,8 +375,6 @@ internal class AnnotatedByteCodeWriter {
     public int GetLength() {
         return _annotatedBytecode.Count;
     }
-
-    private Dictionary<string, long> _labels = new();
 
     public void AddLabel(string name) {
         _labels.TryAdd(name, _annotatedBytecode.Count);

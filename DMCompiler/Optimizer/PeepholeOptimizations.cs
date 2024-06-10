@@ -21,7 +21,7 @@ internal sealed class AssignPop : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Bytecode index is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         AnnotatedBytecodeReference? assignTarget = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
 
         input.RemoveRange(index, 2);
@@ -77,8 +77,8 @@ internal sealed class PushField : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         AnnotatedBytecodeReference? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
         AnnotatedBytecodeString? derefField = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeString);
 
@@ -105,8 +105,8 @@ internal sealed class JumpIfReferenceFalse : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         AnnotatedBytecodeReference? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
         AnnotatedBytecodeLabel? jumpLabel = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeLabel);
 
@@ -142,7 +142,7 @@ internal sealed class PushNStrings : IPeepholeOptimization {
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
 
         for (int i = 0; i < count; i++) {
-            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
             args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
@@ -178,7 +178,7 @@ internal sealed class PushNFloats : IPeepholeOptimization {
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
 
         for (int i = 0; i < count; i++) {
-            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
             args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
@@ -214,7 +214,7 @@ internal sealed class PushNRef : IPeepholeOptimization {
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
 
         for (int i = 0; i < count; i++) {
-            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
             args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
@@ -242,8 +242,8 @@ internal sealed class PushStringFloat : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         AnnotatedBytecodeString? pushVal1 = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeString);
         AnnotatedBytecodeFloat? pushVal2 = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeFloat);
 
@@ -270,8 +270,8 @@ internal sealed class SwitchOnFloat : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         AnnotatedBytecodeFloat? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeFloat);
         AnnotatedBytecodeLabel? jumpLabel = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeLabel);
 
@@ -298,8 +298,8 @@ internal sealed class SwitchOnString : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         AnnotatedBytecodeString? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeString);
         AnnotatedBytecodeLabel? jumpLabel = (secondInstruction.GetArgs()[0] as AnnotatedBytecodeLabel);
 
@@ -334,7 +334,7 @@ internal sealed class PushNOfStringFloat : IPeepholeOptimization {
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
 
         for (int i = 0; i < count; i++) {
-            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
             args.Add(instruction.GetArgs()[0]);
             args.Add(instruction.GetArgs()[1]);
             stackDelta += 2;
@@ -370,7 +370,7 @@ internal sealed class PushNResources : IPeepholeOptimization {
         args.Add(new AnnotatedBytecodeInteger(count, new Location()));
 
         for (int i = 0; i < count; i++) {
-            AnnotatedBytecodeInstruction instruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + i]);
+            AnnotatedBytecodeInstruction instruction = (AnnotatedBytecodeInstruction)(input[index + i]);
             args.Add(instruction.GetArgs()[0]);
             stackDelta++;
         }
@@ -397,8 +397,8 @@ internal sealed class CreateListNFloats : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
         int pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
 
@@ -411,7 +411,7 @@ internal sealed class CreateListNFloats : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
@@ -443,8 +443,8 @@ internal sealed class CreateListNStrings : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
         int pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
 
@@ -457,7 +457,7 @@ internal sealed class CreateListNStrings : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
@@ -489,8 +489,8 @@ internal sealed class CreateListNResources : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
-        AnnotatedBytecodeInstruction secondInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index + 1]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeInstruction secondInstruction = (AnnotatedBytecodeInstruction)(input[index + 1]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
         int pushVal2 = ((secondInstruction.GetArgs()[0] as AnnotatedBytecodeListSize)!).Size;
 
@@ -503,7 +503,7 @@ internal sealed class CreateListNResources : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        AnnotatedBytecodeInstruction firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(pushVal1 + 1);
@@ -547,7 +547,7 @@ internal sealed class CreateListNRefs : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Bytecode index is outside the bounds of the input list.");
         }
 
-        var firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        var firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         int pushVal1 = ((firstInstruction.GetArgs()[0] as AnnotatedBytecodeInteger)!).Value;
 
         List<IAnnotatedBytecode> args = new List<IAnnotatedBytecode>(1 + pushVal1);
@@ -597,7 +597,7 @@ internal sealed class IsTypeDirect : IPeepholeOptimization {
             throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
-        var firstInstruction = Unsafe.As<AnnotatedBytecodeInstruction>(input[index]);
+        var firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
         AnnotatedBytecodeTypeId? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeTypeId);
 
         input.RemoveRange(index, 2);

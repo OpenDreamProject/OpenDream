@@ -175,7 +175,6 @@ internal class AnnotatedBytecodeSerializer {
                 _bytecodeWriter.Write(reference.Index);
                 break;
 
-
             case DMReference.Type.Field:
                 _bytecodeWriter.Write(reference.Index);
                 break;

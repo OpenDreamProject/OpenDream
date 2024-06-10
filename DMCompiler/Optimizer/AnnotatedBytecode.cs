@@ -162,7 +162,6 @@ internal sealed class AnnotatedBytecodeVariable : IAnnotatedBytecode {
     }
 }
 
-
 internal sealed class AnnotatedBytecodeInteger : IAnnotatedBytecode {
     public Location Location;
     public int Value;

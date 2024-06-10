@@ -122,6 +122,14 @@ namespace OpenDreamRuntime.Objects {
 
         #region Variables
         public virtual DreamValue Initial(string name) {
+            switch (name) {
+                case "parent_type": {
+                    return ObjectDefinition.Parent == null ? DreamValue.Null : new DreamValue(ObjectDefinition.Parent.TreeEntry);
+                }
+                case "type": {
+                    return new DreamValue(ObjectDefinition.TreeEntry);
+                }
+            }
             return ObjectDefinition.Variables[name];
         }
 

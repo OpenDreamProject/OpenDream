@@ -228,7 +228,7 @@ internal class AnnotatedByteCodeWriter {
             _labels.Add(reference.Placeholder, label.AnnotatedByteOffset);
             AddLabel(reference.Placeholder);
 
-            // I was thinking about going through to replace all the placeholers
+            // I was thinking about going through to replace all the placeholders
             // with the actual label.LabelName, but it means I need to modify
             // _unresolvedLabels, being a list of tuple objects. Fuck that noise
         }

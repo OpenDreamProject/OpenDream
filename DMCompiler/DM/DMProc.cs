@@ -196,7 +196,6 @@ namespace DMCompiler.DM {
 
             var bytecodelist = optimizer.Optimize(AnnotatedBytecode.GetAnnotatedBytecode());
 
-            //procDefinition.MaxStackSize = optimizer.GetMaxStackSize();
             procDefinition.MaxStackSize = AnnotatedBytecode.GetMaxStackSize();
             AnnotatedBytecodeSerializer serializer = new();
 

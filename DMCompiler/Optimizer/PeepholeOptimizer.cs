@@ -41,8 +41,10 @@ internal sealed class PeepholeOptimizer {
 
             var opt = Unsafe.As<IPeepholeOptimization>(Activator.CreateInstance(optType))!;
             var opcodes = opt.GetOpcodes();
-            if (opcodes.Length < 2)
+            if (opcodes.Length < 2) {
                 DMCompiler.ForcedError(Location.Internal, $"Peephole optimization {optType} must have at least 2 opcodes");
+                continue;
+            }
 
             if (!OptimizationTrees.TryGetValue(opcodes[0], out var treeEntry)) {
                 treeEntry = new() {

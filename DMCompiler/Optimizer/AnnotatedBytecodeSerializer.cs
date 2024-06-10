@@ -59,7 +59,6 @@ internal class AnnotatedBytecodeSerializer {
         return Bytecode.ToArray();
     }
 
-
     private void SerializeInstruction(AnnotatedBytecodeInstruction instruction) {
         if (instruction.Location.Line != null && (_location == null || instruction.Location.Line != _location?.Line)) {
             int sourceFileId = DMObjectTree.AddString(instruction.Location.SourceFile);

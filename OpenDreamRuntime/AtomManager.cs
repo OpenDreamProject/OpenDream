@@ -32,7 +32,13 @@ public sealed class AtomManager {
     private readonly Dictionary<EntityUid, DreamObjectMovable> _entityToAtom = new();
     private readonly Dictionary<DreamObjectDefinition, IconAppearance> _definitionAppearanceCache = new();
 
-    private ServerAppearanceSystem AppearanceSystem => _appearanceSystem ??= _entitySystemManager.GetEntitySystem<ServerAppearanceSystem>();
+    private ServerAppearanceSystem? AppearanceSystem{
+                                                    get {
+                                                        if(_appearanceSystem is null)
+                                                            _entitySystemManager.TryGetEntitySystem<ServerAppearanceSystem>(out _appearanceSystem);
+                                                        return _appearanceSystem;
+                                                    }
+                                                }
     private ServerVerbSystem VerbSystem => _verbSystem ??= _entitySystemManager.GetEntitySystem<ServerVerbSystem>();
     private ServerAppearanceSystem? _appearanceSystem;
     private ServerVerbSystem? _verbSystem;
@@ -448,7 +454,7 @@ public sealed class AtomManager {
     /// <param name="atom">The atom to find the appearance of.</param>
     public IconAppearance? MustGetAppearance(DreamObject atom) {
         return atom switch {
-            DreamObjectTurf turf => AppearanceSystem.MustGetAppearance(turf.AppearanceId),
+            DreamObjectTurf turf => AppearanceSystem?.MustGetAppearance(turf.AppearanceId),
             DreamObjectMovable movable => movable.SpriteComponent.Appearance,
             DreamObjectArea => new IconAppearance(),
             DreamObjectImage image => image.Appearance,
@@ -461,7 +467,7 @@ public sealed class AtomManager {
     /// </summary>
     public bool TryGetAppearance(DreamObject atom, [NotNullWhen(true)] out IconAppearance? appearance) {
         if (atom is DreamObjectTurf turf)
-            appearance = AppearanceSystem.MustGetAppearance(turf.AppearanceId);
+            appearance = AppearanceSystem?.MustGetAppearance(turf.AppearanceId);
         else if (atom is DreamObjectMovable movable)
             appearance = movable.SpriteComponent.Appearance;
         else if (atom is DreamObjectImage image)
@@ -510,7 +516,7 @@ public sealed class AtomManager {
 
         NetEntity ent = _entityManager.GetNetEntity(movable.Entity);
 
-        AppearanceSystem.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim);
+        AppearanceSystem?.Animate(ent, appearance, duration, easing, loop, flags, delay, chainAnim);
     }
 
     public bool TryCreateAppearanceFrom(DreamValue value, [NotNullWhen(true)] out IconAppearance? appearance) {
@@ -600,7 +606,7 @@ public sealed class AtomManager {
         }
 
         _definitionAppearanceCache.Add(def, appearance);
-        AppearanceSystem.IncreaseAppearanceRefCount(appearance);
+        AppearanceSystem?.IncreaseAppearanceRefCount(appearance);
         return appearance;
     }
 

@@ -119,6 +119,7 @@ internal sealed class AnnotatedBytecodeInstruction : IAnnotatedBytecode {
         if (_location != null) return;
         _location = loc.GetLocation();
     }
+    
     public void SetLocation(Location loc) {
         if (_location != null) return;
         _location = loc;

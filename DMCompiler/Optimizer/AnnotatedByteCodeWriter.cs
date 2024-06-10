@@ -45,7 +45,6 @@ internal class AnnotatedByteCodeWriter {
         // the annotated bytecode can be used to generate the raw bytecode again.
         _annotatedBytecode.Add(new AnnotatedBytecodeInstruction(opcode, metadata.StackDelta, location));
 
-
         ResizeStack(metadata.StackDelta);
 
         var requiredArgs = new Stack<OpcodeArgType>(metadata.RequiredArgs.Count);
@@ -215,7 +214,7 @@ internal class AnnotatedByteCodeWriter {
             _labels.Add(reference.Placeholder, label.AnnotatedByteOffset);
             AddLabel(reference.Placeholder);
 
-            // I was thinking about going through to replace all the placeholers
+            // I was thinking about going through to replace all the placeholders
             // with the actual label.LabelName, but it means I need to modify
             // _unresolvedLabels, being a list of tuple objects. Fuck that noise
         }
@@ -278,7 +277,6 @@ internal class AnnotatedByteCodeWriter {
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeTypeId(typeId, location));
     }
 
-
     public void WriteProcId(int procId, Location location) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Peek() != OpcodeArgType.ProcId) {
@@ -318,7 +316,6 @@ internal class AnnotatedByteCodeWriter {
         _requiredArgs.Pop();
         _annotatedBytecode[^1].AddArg(new AnnotatedBytecodeConcatCount(count, location));
     }
-
     public void WriteReference(DMReference reference, Location location, bool affectStack = true) {
         _location = location;
         if (_requiredArgs.Count == 0 || _requiredArgs.Pop() != OpcodeArgType.Reference) {
@@ -332,13 +329,11 @@ internal class AnnotatedByteCodeWriter {
                     .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                 break;
 
-
             case DMReference.Type.Global:
             case DMReference.Type.GlobalProc:
                 _annotatedBytecode[^1]
                     .AddArg(new AnnotatedBytecodeReference(reference.RefType, reference.Index, location));
                 break;
-
 
             case DMReference.Type.Field:
                 int fieldId = DMObjectTree.AddString(reference.Name);

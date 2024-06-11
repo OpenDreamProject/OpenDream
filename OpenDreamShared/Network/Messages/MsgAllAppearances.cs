@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using Lidgren.Network;
 using OpenDreamShared.Dream;
-using Robust.Shared.Log;
 using Robust.Shared.Network;
 using Robust.Shared.Serialization;
 
@@ -200,8 +199,6 @@ public sealed class MsgAllAppearances : NetMessage {
 
             AllAppearances.Add(appearanceId, appearance);
         }
-
-        Logger.Debug($"Received {AllAppearances.Count} appearances");
     }
 
     public override void WriteToBuffer(NetOutgoingMessage buffer, IRobustSerializer serializer) {
@@ -375,7 +372,5 @@ public sealed class MsgAllAppearances : NetMessage {
 
             buffer.Write((byte)Property.End);
         }
-
-        Logger.Debug($"Final size {buffer.LengthBytes}");
     }
 }

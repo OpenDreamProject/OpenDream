@@ -293,7 +293,8 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 if (!invisibility.IsNull) {
                     obj.SetVariableValue("invisibility", invisibility);
-                    invisibility.TryGetValueAsInteger(out appearance.Invisibility);
+                    invisibility.TryGetValueAsInteger(out var invisibilityValue);
+                    appearance.Invisibility = (sbyte)Math.Clamp(invisibilityValue, -127, 127);
                 }
 
                 /* TODO suffix

@@ -67,6 +67,7 @@ namespace OpenDreamRuntime {
             _netManager.RegisterNetMessage<MsgAckLoadInterface>(RxAckLoadInterface);
             _netManager.RegisterNetMessage<MsgSound>();
             _netManager.RegisterNetMessage<MsgUpdateClientInfo>();
+            _netManager.RegisterNetMessage<MsgAllAppearances>();
 
             var topicPort = _config.GetCVar(OpenDreamCVars.TopicPort);
             var worldTopicAddress = new IPEndPoint(IPAddress.Loopback, topicPort);

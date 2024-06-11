@@ -117,6 +117,16 @@ public sealed class MsgAllAppearances : NetMessage {
                     case Property.MouseOpacity:
                         appearance.MouseOpacity = (MouseOpacity)buffer.ReadByte();
                         break;
+                    case Property.ColorMatrix:
+                        appearance.ColorMatrix = new(
+                            buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                            buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                            buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                            buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(),
+                            buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle(), buffer.ReadSingle()
+                        );
+
+                        break;
                     case Property.Overlays: {
                         var overlaysCount = buffer.ReadVariableInt32();
 
@@ -249,8 +259,10 @@ public sealed class MsgAllAppearances : NetMessage {
             }
 
             if (!appearance.ColorMatrix.Equals(IconAppearance.Default.ColorMatrix)) {
-                /*buffer.Write((byte)Property.ColorMatrix);
-                buffer.Write(appearance.ColorMatrix);*/
+                buffer.Write((byte)Property.ColorMatrix);
+
+                foreach (var value in appearance.ColorMatrix.GetValues())
+                    buffer.Write(value);
             }
 
             if (!appearance.Layer.Equals(IconAppearance.Default.Layer)) {

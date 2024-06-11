@@ -295,7 +295,7 @@ public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppeara
             }
 
             if (appearance.Override != IconAppearance.Default.Override) {
-                buffer.Write((byte)Property.BlendMode);
+                buffer.Write((byte)Property.Override);
                 buffer.Write(appearance.Override);
             }
 

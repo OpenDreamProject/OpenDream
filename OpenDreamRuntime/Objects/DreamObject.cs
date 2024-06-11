@@ -124,7 +124,7 @@ namespace OpenDreamRuntime.Objects {
         public virtual DreamValue Initial(string name) {
             switch (name) {
                 case "parent_type": {
-                    return ObjectDefinition.Parent == null ? DreamValue.Null : new DreamValue(ObjectDefinition.Parent.TreeEntry);
+                    return (ObjectDefinition.Parent == null || ObjectDefinition.Parent.TreeEntry == ObjectTree.Root) ? DreamValue.Null : new DreamValue(ObjectDefinition.Parent.TreeEntry);
                 }
                 case "type": {
                     return new DreamValue(ObjectDefinition.TreeEntry);

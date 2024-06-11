@@ -289,7 +289,7 @@ public sealed class AtomManager {
             case "invisibility":
                 value.TryGetValueAsInteger(out int vis);
                 vis = Math.Clamp(vis, -127, 127); // DM ref says [0, 101]. BYOND compiler says [-127, 127]
-                appearance.Invisibility = vis;
+                appearance.Invisibility = (sbyte)vis;
                 break;
             case "opacity":
                 value.TryGetValueAsInteger(out var opacity);

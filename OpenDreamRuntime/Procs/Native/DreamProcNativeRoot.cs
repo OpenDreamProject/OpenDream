@@ -1772,7 +1772,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new DreamValue(bundle.ObjectTree.CreateList());
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
             foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 rangeList.AddValue(new DreamValue(turf));
@@ -1966,7 +1966,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_range(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new DreamValue(bundle.ObjectTree.CreateList());
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
             //Have to include centre
             rangeList.AddValue(new DreamValue(center));

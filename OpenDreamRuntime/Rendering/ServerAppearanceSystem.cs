@@ -34,9 +34,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus == SessionStatus.InGame) {
-            e.Session.Channel.SendMessage(new MsgAllAppearances {
-                AllAppearances = _idToAppearance
-            });
+            e.Session.Channel.SendMessage(new MsgAllAppearances(_idToAppearance));
         }
     }
 

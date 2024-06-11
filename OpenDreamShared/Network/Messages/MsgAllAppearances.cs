@@ -9,7 +9,7 @@ using Robust.Shared.Serialization;
 
 namespace OpenDreamShared.Network.Messages;
 
-public sealed class MsgAllAppearances : NetMessage {
+public sealed class MsgAllAppearances(Dictionary<int, IconAppearance> allAppearances) : NetMessage {
     public override MsgGroups MsgGroup => MsgGroups.EntityEvent;
 
     private enum Property : byte {
@@ -43,7 +43,9 @@ public sealed class MsgAllAppearances : NetMessage {
         End
     }
 
-    public Dictionary<int, IconAppearance> AllAppearances;
+    public Dictionary<int, IconAppearance> AllAppearances = allAppearances;
+
+    public MsgAllAppearances() : this(new()) { }
 
     public override void ReadFromBuffer(NetIncomingMessage buffer, IRobustSerializer serializer) {
         var count = buffer.ReadInt32();

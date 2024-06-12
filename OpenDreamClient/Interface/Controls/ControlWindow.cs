@@ -24,7 +24,7 @@ public sealed class ControlWindow : InterfaceControl {
 
     private WindowDescriptor WindowDescriptor => (WindowDescriptor)ElementDescriptor;
 
-    private Control _menuContainer = default!;
+    private PanelContainer _menuContainer = default!;
     private LayoutContainer _canvas = default!;
 
     private (OSWindow? osWindow, IClydeWindow? clydeWindow) _myWindow;
@@ -277,7 +277,10 @@ public sealed class ControlWindow : InterfaceControl {
             RectClipContent = true,
             Orientation = BoxContainer.LayoutOrientation.Vertical,
             Children = {
-                (_menuContainer = new Control { Margin = new Thickness(4, 0)}),
+                (_menuContainer = new PanelContainer {
+                    PanelOverride = new StyleBoxFlat(Color.White),
+                    HorizontalExpand = true
+                }),
                 (_canvas = new LayoutContainer {
                     InheritChildMeasure = false,
                     VerticalExpand = true

@@ -1865,14 +1865,13 @@ namespace OpenDreamRuntime.Procs.Native {
                     foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, true)) {
                         if (tile == null || tile.IsVisible == false)
                             continue;
-                        if (!bundle.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
+                        if (!bundle.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out _))
                             continue;
 
                         if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
                             view.AddValue(new DreamValue(mob));
                             break;
                         }
-
                     }
                 }
             }
@@ -3087,14 +3086,13 @@ namespace OpenDreamRuntime.Procs.Native {
                     foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, true)) {
                         if (tile == null || tile.IsVisible == false)
                             continue;
-                        if (!bundle.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out var cell))
+                        if (!bundle.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out _))
                             continue;
 
                         if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
                             view.AddValue(new DreamValue(mob));
                             break;
                         }
-
                     }
                 }
             }

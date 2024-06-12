@@ -84,11 +84,11 @@ public sealed class IconAppearance : IEquatable<IconAppearance> {
         Invisibility = appearance.Invisibility;
         Opacity = appearance.Opacity;
         MouseOpacity = appearance.MouseOpacity;
-        Overlays = [..appearance.Overlays];
-        Underlays = [..appearance.Underlays];
-        VisContents = [..appearance.VisContents];
-        Filters = [..appearance.Filters];
-        Verbs = [..appearance.Verbs];
+        Overlays = new(appearance.Overlays);
+        Underlays = new(appearance.Underlays);
+        VisContents = new(appearance.VisContents);
+        Filters = new(appearance.Filters);
+        Verbs = new(appearance.Verbs);
         Override = appearance.Override;
 
         for (int i = 0; i < 6; i++) {

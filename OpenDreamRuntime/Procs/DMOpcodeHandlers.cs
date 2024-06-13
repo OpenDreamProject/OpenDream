@@ -2434,6 +2434,11 @@ namespace OpenDreamRuntime.Procs {
         #region Helpers
         [SuppressMessage("ReSharper", "CompareOfFloatsByEqualityOperator")]
         private static bool IsEqual(DreamValue first, DreamValue second) {
+            // null should only ever be equal to null
+            if (first.IsNull) return second.IsNull;
+            if (second.IsNull) return false; // If this were ever true the above condition would have handled it
+
+            // Now we don't have to worry about null for the rest of this method
             switch (first.Type) {
                 case DreamValue.DreamValueType.DreamObject: {
                     DreamObject? firstValue = first.MustGetValueAsDreamObject();

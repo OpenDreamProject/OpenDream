@@ -14,7 +14,6 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
     private readonly Dictionary<IconAppearance, int> _appearanceRefCounts = new();
     private int _appearanceIdCounter;
 
-    private ISawmill? _sawmill;
 
     /// <summary>
     /// This system is used by the PVS thread, we need to be thread-safe

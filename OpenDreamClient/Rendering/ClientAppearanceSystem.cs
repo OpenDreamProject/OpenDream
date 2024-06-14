@@ -5,6 +5,7 @@ using Robust.Client.Graphics;
 using Robust.Shared.Prototypes;
 using OpenDreamClient.Resources;
 using OpenDreamClient.Resources.ResourceTypes;
+using OpenDreamShared.Network.Messages;
 using Robust.Shared.Timing;
 
 namespace OpenDreamClient.Rendering;
@@ -22,7 +23,6 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
     [Dependency] private readonly IClyde _clyde = default!;
 
     public override void Initialize() {
-        SubscribeNetworkEvent<AllAppearancesEvent>(OnAllAppearances);
         SubscribeNetworkEvent<NewAppearanceEvent>(OnNewAppearance);
         SubscribeNetworkEvent<RemoveAppearanceEvent>(e => _appearances.Remove(e.AppearanceId));
         SubscribeNetworkEvent<AnimationEvent>(OnAnimation);
@@ -33,6 +33,16 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         _appearances.Clear();
         _appearanceLoadCallbacks.Clear();
         _turfIcons.Clear();
+    }
+
+    public void SetAllAppearances(Dictionary<int, IconAppearance> appearances) {
+        _appearances = appearances;
+
+        foreach (KeyValuePair<int, IconAppearance> pair in _appearances) {
+            if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
+                foreach (var callback in callbacks) callback(pair.Value);
+            }
+        }
     }
 
     public void LoadAppearance(int appearanceId, Action<IconAppearance> loadCallback) {
@@ -56,16 +66,6 @@ internal sealed class ClientAppearanceSystem : SharedAppearanceSystem {
         }
 
         return icon;
-    }
-
-    private void OnAllAppearances(AllAppearancesEvent e, EntitySessionEventArgs session) {
-        _appearances = e.Appearances;
-
-        foreach (KeyValuePair<int, IconAppearance> pair in _appearances) {
-            if (_appearanceLoadCallbacks.TryGetValue(pair.Key, out var callbacks)) {
-                foreach (var callback in callbacks) callback(pair.Value);
-            }
-        }
     }
 
     private void OnNewAppearance(NewAppearanceEvent e) {

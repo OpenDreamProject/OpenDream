@@ -3,6 +3,7 @@ using Robust.Server.Player;
 using Robust.Shared.Enums;
 using SharedAppearanceSystem = OpenDreamShared.Rendering.SharedAppearanceSystem;
 using System.Diagnostics.CodeAnalysis;
+using OpenDreamShared.Network.Messages;
 using Robust.Shared.Player;
 
 namespace OpenDreamRuntime.Rendering;
@@ -36,9 +37,7 @@ public sealed class ServerAppearanceSystem : SharedAppearanceSystem {
 
     private void OnPlayerStatusChanged(object? sender, SessionStatusEventArgs e) {
         if (e.NewStatus == SessionStatus.InGame) {
-            _sawmill ??= Logger.GetSawmill("ServerAppearanceSystem");
-            _sawmill.Debug($"Sending {_idToAppearance.Count} appearances to {e.Session.Channel.UserName}");
-            RaiseNetworkEvent(new AllAppearancesEvent(_idToAppearance), e.Session.Channel);
+            e.Session.Channel.SendMessage(new MsgAllAppearances(_idToAppearance));
         }
     }
 

@@ -303,9 +303,9 @@ public sealed class ControlInfo : InterfaceControl {
         _container.PanelOverride = (InfoDescriptor.TabBackgroundColor.Value != Color.Transparent)
             ? new StyleBoxFlat(InfoDescriptor.TabBackgroundColor.Value)
             : null;
-        _tabControl.PanelStyleBoxOverride = (InfoDescriptor.BackgroundColor.Value != Color.Transparent)
-            ? new StyleBoxFlat(InfoDescriptor.BackgroundColor.Value)
-            : null;
+        _tabControl.PanelStyleBoxOverride = new StyleBoxFlat((InfoDescriptor.BackgroundColor.Value != Color.Transparent)
+            ? InfoDescriptor.BackgroundColor.Value
+            : Color.White);
         _tabControl.TabFontColorOverride = (InfoDescriptor.TabTextColor.Value != Color.Transparent)
             ? InfoDescriptor.TabTextColor.Value
             : null;

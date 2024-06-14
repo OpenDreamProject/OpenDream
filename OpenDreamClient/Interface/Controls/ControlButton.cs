@@ -1,14 +1,15 @@
 ﻿using OpenDreamClient.Interface.Descriptors;
+using Robust.Client.Graphics;
+using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
 
 namespace OpenDreamClient.Interface.Controls;
 
-internal sealed class ControlButton : InterfaceControl {
+internal sealed class ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : InterfaceControl(controlDescriptor, window) {
     public const string StyleClassDMFButton = "DMFbutton";
-    private Button _button;
 
-    public ControlButton(ControlDescriptor controlDescriptor, ControlWindow window) : base(controlDescriptor, window) { }
+    private Button _button;
 
     protected override Control CreateUIElement() {
         _button = new Button() {
@@ -16,7 +17,7 @@ internal sealed class ControlButton : InterfaceControl {
         };
 
         _button.OnPressed += OnButtonClick;
-        _button.Label.Margin = new Thickness(0, -3, 0, 0);
+        _button.Label.Margin = new Thickness(0, -4, 0, 0);
         _button.Label.AddStyleClass(StyleClassDMFButton);
 
         return _button;
@@ -28,6 +29,14 @@ internal sealed class ControlButton : InterfaceControl {
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
         _button.Text = controlDescriptor.Text.Value;
+        _button.StyleBoxOverride = new StyleBoxTexture {
+            Texture = IoCManager.Resolve<IResourceCache>().GetResource<TextureResource>("/Textures/Interface/Button.png"),
+            BackgroundColor = controlDescriptor.BackgroundColor.Value,
+            PatchMarginTop = 2,
+            PatchMarginBottom = 2,
+            PatchMarginLeft = 2,
+            PatchMarginRight = 2
+        };
     }
 
     private void OnButtonClick(BaseButton.ButtonEventArgs args) {

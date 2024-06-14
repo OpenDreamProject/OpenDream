@@ -251,11 +251,14 @@ internal sealed class VerbPanel : InfoPanel {
 }
 
 public sealed class ControlInfo : InterfaceControl {
+    public static readonly string StyleClassDMFInfo = "DMFInfo";
+
     public ControlDescriptorInfo InfoDescriptor => (ControlDescriptorInfo)ControlDescriptor;
 
     [Dependency] private readonly IClientNetManager _netManager = default!;
     [Dependency] private readonly IEntitySystemManager _entitySystemManager = default!;
 
+    private PanelContainer _container;
     private TabContainer _tabControl;
     private readonly Dictionary<string, StatPanel> _statPanels = new();
     private readonly SortedDictionary<string, VerbPanel> _verbPanels = new();
@@ -267,7 +270,15 @@ public sealed class ControlInfo : InterfaceControl {
     }
 
     protected override Control CreateUIElement() {
-        _tabControl = new TabContainer();
+        _container = new PanelContainer {
+            Children = {
+                (_tabControl = new TabContainer {
+                    Margin = new(3f, 0f, 3f, 3f)
+                })
+            },
+            StyleClasses = { StyleClassDMFInfo }
+        };
+
         _tabControl.OnTabChanged += OnSelectionChanged;
 
         _tabControl.OnVisibilityChanged += args => {
@@ -283,14 +294,24 @@ public sealed class ControlInfo : InterfaceControl {
         else
             OnHideEvent();
 
-        return _tabControl;
+        return _container;
     }
 
     protected override void UpdateElementDescriptor() {
         base.UpdateElementDescriptor();
 
-        // TODO: Set tab background-color and text-color here.
-        //       Ignoring currently since color is our only way of displaying which tab is active.
+        _container.PanelOverride = (InfoDescriptor.TabBackgroundColor.Value != Color.Transparent)
+            ? new StyleBoxFlat(InfoDescriptor.TabBackgroundColor.Value)
+            : null;
+        _tabControl.PanelStyleBoxOverride = (InfoDescriptor.BackgroundColor.Value != Color.Transparent)
+            ? new StyleBoxFlat(InfoDescriptor.BackgroundColor.Value)
+            : null;
+        _tabControl.TabFontColorOverride = (InfoDescriptor.TabTextColor.Value != Color.Transparent)
+            ? InfoDescriptor.TabTextColor.Value
+            : null;
+        _tabControl.TabFontColorInactiveOverride = (InfoDescriptor.TabTextColor.Value != Color.Transparent)
+            ? InfoDescriptor.TabTextColor.Value
+            : null;
 
         foreach (var panel in _statPanels.Values)
             panel.UpdateElementDescriptor(InfoDescriptor);

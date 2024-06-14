@@ -1862,15 +1862,16 @@ namespace OpenDreamRuntime.Procs.Native {
 
                     ViewAlgorithm.CalculateVisibility(viewData);
 
-                    foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, true)) {
-                        if (tile == null || tile.IsVisible == false)
-                            continue;
-                        if (!bundle.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out _))
-                            continue;
+                    for (int col = 0; col < viewData.GetLength(0); col++) {
+                        for (int row = 0; row < viewData.GetLength(1); row++) {
+                            var tile = viewData[row, col];
+                            if (tile == null || tile.IsVisible == false)
+                                continue;
 
-                        if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
-                            view.AddValue(new DreamValue(mob));
-                            break;
+                            if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                                view.AddValue(new DreamValue(mob));
+                                break;
+                            }
                         }
                     }
                 }
@@ -3083,15 +3084,16 @@ namespace OpenDreamRuntime.Procs.Native {
 
                     ViewAlgorithm.CalculateVisibility(viewData);
 
-                    foreach (var tile in DreamProcNativeHelpers.MakeViewSpiral(viewData, true)) {
-                        if (tile == null || tile.IsVisible == false)
-                            continue;
-                        if (!bundle.MapManager.TryGetCellAt((eyePos.X + tile.DeltaX, eyePos.Y + tile.DeltaY), eyePos.Z, out _))
-                            continue;
+                    for (int col = 0; col < viewData.GetLength(0); col++) {
+                        for (int row = 0; row < viewData.GetLength(1); row++) {
+                            var tile = viewData[row, col];
+                            if (tile == null || tile.IsVisible == false)
+                                continue;
 
-                        if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
-                            view.AddValue(new DreamValue(mob));
-                            break;
+                            if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                                view.AddValue(new DreamValue(mob));
+                                break;
+                            }
                         }
                     }
                 }

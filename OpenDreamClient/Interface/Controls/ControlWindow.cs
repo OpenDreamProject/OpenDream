@@ -205,7 +205,9 @@ public sealed class ControlWindow : InterfaceControl {
             root = _uiMgr.GetWindowRoot(clydeWindow);
 
         if (root != null) {
-            root.BackgroundColor = WindowDescriptor.BackgroundColor.Value;
+            root.BackgroundColor = (WindowDescriptor.BackgroundColor.Value != Color.Transparent)
+                ? WindowDescriptor.BackgroundColor.Value
+                : null;
         }
 
         if (osWindow != null && osWindow.ClydeWindow != null) {

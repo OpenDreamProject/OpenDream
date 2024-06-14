@@ -11,6 +11,7 @@ namespace OpenDreamClient.Interface;
 public static class DreamStylesheet {
     public static Stylesheet Make() {
         var res = IoCManager.Resolve<IResourceCache>();
+        var defaultBackgroundColor = Color.FromHex("#F0F0F0");
         var textureCloseButton = res.GetResource<TextureResource>("/cross.svg.png").Texture;
         var notoSansFont = res.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf");
         var notoSansBoldFont = res.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf");
@@ -57,7 +58,7 @@ public static class DreamStylesheet {
 
         return new Stylesheet(new StyleRule[] {
             Element<WindowRoot>()
-                .Prop("background", Color.White),
+                .Prop(UIRoot.StylePropBackground, defaultBackgroundColor),
 
             Element<PanelContainer>().Class("MapBackground")
                 .Prop("panel", new StyleBoxFlat { BackgroundColor = Color. Black}),
@@ -70,7 +71,7 @@ public static class DreamStylesheet {
                 }),
 
             Element<PanelContainer>().Class(ControlInfo.StyleClassDMFInfo)
-                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat(Color.FromHex("#F0F0F0"))),
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat(defaultBackgroundColor)),
 
             // Default font.
             Element()
@@ -184,8 +185,6 @@ public static class DreamStylesheet {
 
             // TabContainer
             Element<TabContainer>()
-                // Panel style
-                .Prop(TabContainer.StylePropertyPanelStyleBox, new StyleBoxFlat { BackgroundColor = Color.White, BorderThickness = new Thickness(1), BorderColor = Color.Black })
                 // Active tab style
                 .Prop(TabContainer.StylePropertyTabStyleBox, tabButtonActive)
                 // Inactive tab style

@@ -1862,9 +1862,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
                     ViewAlgorithm.CalculateVisibility(viewData);
 
-                    for (int col = 0; col < viewData.GetLength(0); col++) {
-                        for (int row = 0; row < viewData.GetLength(1); row++) {
-                            var tile = viewData[row, col];
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
                             if (tile == null || tile.IsVisible == false)
                                 continue;
 
@@ -3084,9 +3084,9 @@ namespace OpenDreamRuntime.Procs.Native {
 
                     ViewAlgorithm.CalculateVisibility(viewData);
 
-                    for (int col = 0; col < viewData.GetLength(0); col++) {
-                        for (int row = 0; row < viewData.GetLength(1); row++) {
-                            var tile = viewData[row, col];
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
                             if (tile == null || tile.IsVisible == false)
                                 continue;
 

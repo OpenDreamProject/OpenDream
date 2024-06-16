@@ -296,7 +296,9 @@ public enum DreamProcOpcode : byte {
     [OpcodeMetadata(0, OpcodeArgType.TypeId)]
     IsTypeDirect = 0x95,
     [OpcodeMetadata(0, OpcodeArgType.Reference)]
-    NullRef = 0x96
+    NullRef = 0x96,
+    [OpcodeMetadata(0, OpcodeArgType.Reference)]
+    ReturnReferenceValue = 0x97,
 }
 
 /// <summary>

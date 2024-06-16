@@ -72,37 +72,9 @@ internal sealed class PushField : IPeepholeOptimization {
         ];
     }
 
-    // PushReferenceValue [ref]
-    // Return
-    // -> ReturnReferenceValue [ref]
-    internal class ReturnReferenceValue : IPeepholeOptimization {
-        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
-            return [
-                DreamProcOpcode.PushReferenceValue,
-                DreamProcOpcode.Return
-            ];
-        }
-
-        public void Apply(List<IAnnotatedBytecode> input, int index) {
-            var range = input.GetRange(index, 2).Select(x => (AnnotatedBytecodeInstruction)x).ToList();
-            AnnotatedBytecodeReference? pushVal = (range[0].GetArgs()[0] as AnnotatedBytecodeReference);
-            input.RemoveRange(index, 2);
-            input.Insert(index,
-                new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnReferenceValue,
-                    new List<IAnnotatedBytecode> { pushVal }));
-        }
-    }
-
-    // PushString [string]
-    // ...
-    // PushString [string]
-    // -> PushNStrings [count] [string] ... [string]
-    internal class PushNStrings : IPeepholeOptimization {
-        public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
-            return [
-                DreamProcOpcode.PushString,
-                DreamProcOpcode.PushString
-            ];
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        if (index + 1 >= input.Count) {
+            throw new ArgumentOutOfRangeException("Index plus one is outside the bounds of the input list.");
         }
 
         AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
@@ -115,6 +87,27 @@ internal sealed class PushField : IPeepholeOptimization {
             new List<IAnnotatedBytecode> { pushVal, derefField }));
     }
 
+}
+
+// PushReferenceValue [ref]
+// Return
+// -> ReturnReferenceValue [ref]
+internal class ReturnReferenceValue : IPeepholeOptimization {
+    public ReadOnlySpan<DreamProcOpcode> GetOpcodes() {
+        return [
+            DreamProcOpcode.PushReferenceValue,
+            DreamProcOpcode.Return
+        ];
+    }
+
+    public void Apply(List<IAnnotatedBytecode> input, int index) {
+        AnnotatedBytecodeInstruction firstInstruction = (AnnotatedBytecodeInstruction)(input[index]);
+        AnnotatedBytecodeReference? pushVal = (firstInstruction.GetArgs()[0] as AnnotatedBytecodeReference);
+        input.RemoveRange(index, 2);
+        input.Insert(index,
+            new AnnotatedBytecodeInstruction(DreamProcOpcode.ReturnReferenceValue,
+                new List<IAnnotatedBytecode> { pushVal }));
+    }
 }
 
 // PushReferenceValue [ref]

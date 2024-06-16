@@ -223,6 +223,7 @@ internal sealed class DreamViewOverlay : Overlay {
                 current.Plane = icon.Appearance.Plane;
 
             current.Layer = (icon.Appearance.Layer < 0) ? parentIcon.Layer : icon.Appearance.Layer; //FLOAT_LAYER
+            current.FloatLayer = (icon.Appearance.Layer < 0) ? icon.Appearance.Layer : 0;
 
             if (current.BlendMode == BlendMode.Default)
                 current.BlendMode = parentIcon.BlendMode;
@@ -813,6 +814,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
     public Vector2 Position;
     public int Plane; //true plane value may be different from appearance plane value, due to special flags
     public float Layer; //ditto for layer
+    public float FloatLayer; //used for FLOAT_LAYER sorting
     public EntityUid Uid;
     public EntityUid ClickUid; //the UID of the object clicks on this should be passed to (ie, for overlays)
     public bool IsScreen;
@@ -842,6 +844,7 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
         Position = Vector2.Zero;
         Plane = 0;
         Layer = 0;
+        FloatLayer = 0;
         Uid = EntityUid.Invalid;
         ClickUid = EntityUid.Invalid;
         IsScreen = false;
@@ -925,8 +928,8 @@ internal sealed class RendererMetaData : IComparable<RendererMetaData> {
 
         //FLOAT_LAYER must be sorted local to the thing they're floating on, and since all overlays/underlays share their parent's UID, we
         //can do that here.
-        if (MainIcon?.Appearance?.Layer < 0 && other.MainIcon?.Appearance?.Layer < 0) { //if these are FLOAT_LAYER, sort amongst them
-            val = MainIcon.Appearance.Layer.CompareTo(other.MainIcon.Appearance.Layer);
+        if (FloatLayer < 0 && other.FloatLayer < 0) { //if these are FLOAT_LAYER, sort amongst them
+            val = other.FloatLayer.CompareTo(other.FloatLayer);
             if (val != 0) {
                 return val;
             }

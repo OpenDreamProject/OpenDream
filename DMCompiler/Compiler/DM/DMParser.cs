@@ -143,6 +143,15 @@ namespace DMCompiler.Compiler.DM {
             TokenType.DM_ConstantString
         ];
 
+        // TEMPORARY - REMOVE WHEN IT MATCHES THE ABOVE
+        private static readonly TokenType[] ImplementedOperatorOverloadTypes = [
+            TokenType.DM_Plus,
+            TokenType.DM_Minus,
+            TokenType.DM_Star,
+            TokenType.DM_Slash,
+            TokenType.DM_Bar,
+        ];
+
         public DMASTFile File() {
             var loc = Current().Location;
             List<DMASTStatement> statements = new();
@@ -244,9 +253,6 @@ namespace DMCompiler.Compiler.DM {
                 }
 
                 if (path.IsOperator) {
-                    DMCompiler.UnimplementedWarning(procBlock.Location,
-                        "Most operator overloads are not implemented. They will be defined but never called.");
-
                     List<DMASTProcStatement> procStatements = procBlock.Statements.ToList();
                     Location tokenLoc = procBlock.Location;
                     //add ". = src" as the first expression in the operator
@@ -374,6 +380,11 @@ namespace DMCompiler.Compiler.DM {
                                 if (operatorToken is { Type: TokenType.DM_ConstantString, Value: not "" }) {
                                     DMCompiler.Emit(WarningCode.BadToken, operatorToken.Location,
                                         "The quotes in a stringify overload must be empty");
+                                }
+
+                                if (!ImplementedOperatorOverloadTypes.Contains(operatorToken.Type)) {
+                                    DMCompiler.UnimplementedWarning(operatorToken.Location,
+                                        $"operator{operatorToken.PrintableText} overloads are not implemented. They will be defined but never called.");
                                 }
 
                                 operatorFlag = true;

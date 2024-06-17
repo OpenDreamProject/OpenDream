@@ -400,6 +400,16 @@ namespace OpenDreamRuntime.Objects {
             throw new InvalidOperationException($"Multiplication cannot be done between {this} and {b}");
         }
 
+        public virtual ProcStatus OperatorDivide(DreamValue b, DMProcState state, out DreamValue? result) {
+            if(TryGetProc("operator/", out var proc)) {
+                var operatorProcState = proc.CreateState(state.Thread, this, state.Usr, new DreamProcArguments(b));
+                state.Thread.PushProcState(operatorProcState);
+                result = null;
+                return ProcStatus.Called;
+            }
+            throw new InvalidOperationException($"Division cannot be done between {this} and {b}");
+        }
+
         // |
         public virtual ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue? result) {
             if(TryGetProc("operator|", out var proc)) {

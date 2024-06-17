@@ -1,4 +1,5 @@
 ﻿using OpenDreamClient.Interface.Descriptors;
+using OpenDreamClient.Interface.DMF;
 using Robust.Client.UserInterface.Controls;
 using Robust.Shared.Serialization.Manager;
 
@@ -27,8 +28,8 @@ public sealed class InterfaceMenu : InterfaceElement {
             if (menuElement.ElementDescriptor is not MenuElementDescriptor menuElementDescriptor)
                 continue;
 
-            if (menuElementDescriptor.Group == group) {
-                menuElementDescriptor.IsChecked = menuElementDescriptor.Id == id;
+            if (menuElementDescriptor.Group.AsRaw() == group) {
+                menuElementDescriptor.IsChecked = new DMFPropertyBool(menuElementDescriptor.Id.AsRaw() == id);
             }
         }
     }
@@ -38,17 +39,17 @@ public sealed class InterfaceMenu : InterfaceElement {
             throw new ArgumentException($"Attempted to add a {descriptor} to a menu", nameof(descriptor));
 
         MenuElement element;
-        if (elementDescriptor.Category == null) {
+        if (string.IsNullOrEmpty(elementDescriptor.Category.Value)) {
             element = new(elementDescriptor, this);
         } else {
-            if (!MenuElements.TryGetValue(elementDescriptor.Category, out var parentMenu)) {
+            if (!MenuElements.TryGetValue(elementDescriptor.Category.Value, out var parentMenu)) {
                 //if category is set but the parent element doesn't exist, create it
                 var parentMenuDescriptor = new MenuElementDescriptor() {
                     Id = elementDescriptor.Category
                 };
 
                 parentMenu = new(parentMenuDescriptor, this);
-                MenuElements.Add(parentMenu.Id, parentMenu);
+                MenuElements.Add(parentMenu.Id.AsRaw(), parentMenu);
             }
 
             //now add this as a child
@@ -56,7 +57,7 @@ public sealed class InterfaceMenu : InterfaceElement {
             parentMenu.Children.Add(element);
         }
 
-        MenuElements.Add(element.Id, element);
+        MenuElements.Add(element.Id.AsRaw(), element);
         CreateMenu(); // Update the menu to include the new child
     }
 
@@ -67,11 +68,11 @@ public sealed class InterfaceMenu : InterfaceElement {
         MenuBar.Menus.Clear();
 
         foreach (MenuElement menuElement in MenuElements.Values) {
-            if (menuElement.Category != null) // We only want the root-level menus here
+            if (!string.IsNullOrEmpty(menuElement.Category.Value)) // We only want the root-level menus here
                 continue;
 
             MenuBar.Menu menu = new() {
-                Title = menuElement.ElementDescriptor.Name
+                Title = menuElement.ElementDescriptor.Name.AsRaw()
             };
 
             if (menu.Title?.StartsWith("&") ?? false)
@@ -88,8 +89,8 @@ public sealed class InterfaceMenu : InterfaceElement {
         public readonly List<MenuElement> Children = new();
 
         private MenuElementDescriptor MenuElementDescriptor => (MenuElementDescriptor) ElementDescriptor;
-        public string? Category => MenuElementDescriptor.Category;
-        public string Command => MenuElementDescriptor.Command;
+        public DMFPropertyString Category => MenuElementDescriptor.Category;
+        public DMFPropertyString Command => MenuElementDescriptor.Command;
         private readonly InterfaceMenu _menu;
 
         public MenuElement(MenuElementDescriptor data, InterfaceMenu menu) : base(data) {
@@ -97,7 +98,7 @@ public sealed class InterfaceMenu : InterfaceElement {
         }
 
         public MenuBar.MenuEntry CreateMenuEntry() {
-            string text = ElementDescriptor.Name;
+            string text = ElementDescriptor.Name.AsRaw();
             if (text.StartsWith("&"))
                 text = text[1..]; //TODO: First character in name becomes a selection shortcut
 
@@ -115,8 +116,8 @@ public sealed class InterfaceMenu : InterfaceElement {
             if (String.IsNullOrEmpty(text))
                 return new MenuBar.MenuSeparator();
 
-            if(MenuElementDescriptor.CanCheck)
-                if(MenuElementDescriptor.IsChecked)
+            if(MenuElementDescriptor.CanCheck.Value)
+                if(MenuElementDescriptor.IsChecked.Value)
                     text =  text + " ☑";
 
             MenuBar.MenuButton menuButton = new() {
@@ -125,41 +126,16 @@ public sealed class InterfaceMenu : InterfaceElement {
 
 
             menuButton.OnPressed += () => {
-                    if(MenuElementDescriptor.CanCheck)
-                        if(!String.IsNullOrEmpty(MenuElementDescriptor.Group))
-                            _menu.SetGroupChecked(MenuElementDescriptor.Group, MenuElementDescriptor.Id);
-                        else
-                            MenuElementDescriptor.IsChecked = !MenuElementDescriptor.IsChecked;
-                        _menu.CreateMenu();
-                    if(!string.IsNullOrEmpty(MenuElementDescriptor.Command))
-                        _interfaceManager.RunCommand(Command);
-                };
+                if(MenuElementDescriptor.CanCheck.Value)
+                    if(!string.IsNullOrEmpty(MenuElementDescriptor.Group.Value))
+                        _menu.SetGroupChecked(MenuElementDescriptor.Group.Value, MenuElementDescriptor.Id.AsRaw());
+                    else
+                        MenuElementDescriptor.IsChecked = new DMFPropertyBool(!MenuElementDescriptor.IsChecked.Value);
+                _menu.CreateMenu();
+                if(!string.IsNullOrEmpty(MenuElementDescriptor.Command.Value))
+                    _interfaceManager.RunCommand(Command.AsRaw());
+            };
             return menuButton;
-        }
-
-        public override bool TryGetProperty(string property, out string value) {
-            switch (property) {
-                case "command":
-                    value = Command;
-                    return true;
-                case "category":
-                    value = Category ?? "";
-                    return true;
-                case "can-check":
-                    value = MenuElementDescriptor.CanCheck.ToString();
-                    return true;
-                case "is-checked":
-                    value = MenuElementDescriptor.IsChecked.ToString();
-                    return true;
-                case "group":
-                    value = MenuElementDescriptor.Group ?? "";
-                    return true;
-                case "index":
-                    value = MenuElementDescriptor.Index.ToString();
-                    return true;
-                default:
-                    return base.TryGetProperty(property, out value);
-            }
         }
 
         public override void AddChild(ElementDescriptor descriptor) {

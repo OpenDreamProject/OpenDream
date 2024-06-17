@@ -2060,7 +2060,9 @@ namespace DMCompiler.Compiler.DM {
                     TokenType.DM_Exclamation,
                     TokenType.DM_Tilde,
                     TokenType.DM_PlusPlus,
-                    TokenType.DM_MinusMinus
+                    TokenType.DM_MinusMinus,
+                    TokenType.DM_And,
+                    TokenType.DM_Star
                 }, out var unaryToken)) {
                 Whitespace();
                 DMASTExpression? expression = ExpressionUnary(isTernaryB);
@@ -2071,6 +2073,8 @@ namespace DMCompiler.Compiler.DM {
                     case TokenType.DM_Tilde: return new DMASTBinaryNot(loc, expression);
                     case TokenType.DM_PlusPlus: return new DMASTPreIncrement(loc, expression);
                     case TokenType.DM_MinusMinus: return new DMASTPreDecrement(loc, expression);
+                    case TokenType.DM_And: return new DMASTPointerRef(loc, expression);
+                    case TokenType.DM_Star: return new DMASTPointerDeref(loc, expression);
                 }
 
                 Emit(WarningCode.BadToken, loc, $"Problem while handling unary '{unaryToken.PrintableText}'");

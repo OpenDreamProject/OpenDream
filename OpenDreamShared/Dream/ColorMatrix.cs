@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using JetBrains.Annotations;
 
 namespace OpenDreamShared.Dream;
 /// <summary>
@@ -168,17 +169,18 @@ public struct ColorMatrix {
     /// Gets the diagonal values in this matrix. Used for detecting whether this matrix is convertible into a Color.
     /// </summary>
     /// <returns></returns>
+    [Pure]
     public IEnumerable<float> GetDiagonal() {
         yield return c11;
         yield return c22;
         yield return c33;
         yield return c44;
-        yield break;
     }
 
     /// <summary>
     /// Returns all of the values in this struct, in order.
     /// </summary>
+    [Pure]
     public IEnumerable<float> GetValues() {
         yield return c11;
         yield return c12;

@@ -147,6 +147,7 @@ namespace OpenDreamRuntime.Procs.Native {
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_GetConfig);
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_Profile);
             objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_SetConfig);
+            objectTree.SetNativeProc(objectTree.World, DreamProcNativeWorld.NativeProc_ODHotReloadInterface);
 
             SetOverridableNativeProc(objectTree, objectTree.World, DreamProcNativeWorld.NativeProc_Reboot);
         }

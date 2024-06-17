@@ -7,9 +7,7 @@ using Robust.Shared.Map;
 using Robust.Shared.Utility;
 using SixLabors.ImageSharp.PixelFormats;
 
-#nullable enable
-
-namespace OpenDreamClient.Interface.Controls;
+namespace OpenDreamClient.Interface.Controls.UI;
 
 /// <summary>
 ///     Viewport control that has a fixed viewport size and scales it appropriately.

@@ -178,7 +178,7 @@ sealed class ArgumentList {
 
         DMProc.LocalVariable? param;
         if (name != null) {
-            targetProc.Parameters.TryGetValue(name, out param);
+            targetProc.TryGetParameterByName(name, out param);
         } else {
             targetProc.TryGetParameterAtIndex(index, out param);
         }

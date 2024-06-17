@@ -54,7 +54,7 @@ internal sealed class ControlBrowser : InterfaceControl {
             }
         };
 
-        if(ControlDescriptor.IsVisible)
+        if(ControlDescriptor.IsVisible.Value)
             OnShowEvent();
         else
             OnHideEvent();
@@ -113,16 +113,21 @@ internal sealed class ControlBrowser : InterfaceControl {
             Stream stream;
             HttpStatusCode status;
             var path = new ResPath(newUri.AbsolutePath);
-            try {
-                stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
-                status = HttpStatusCode.OK;
-            } catch (FileNotFoundException) {
+            if(!_dreamResource.EnsureCacheFile(newUri.AbsolutePath)) {
                 stream = Stream.Null;
                 status = HttpStatusCode.NotFound;
-            } catch (Exception e) {
-                _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
-                stream = Stream.Null;
-                status = HttpStatusCode.InternalServerError;
+            } else {
+                try {
+                    stream = _resourceManager.UserData.OpenRead(_dreamResource.GetCacheFilePath(newUri.AbsolutePath));
+                    status = HttpStatusCode.OK;
+                } catch (FileNotFoundException) {
+                    stream = Stream.Null;
+                    status = HttpStatusCode.NotFound;
+                } catch (Exception e) {
+                    _sawmill.Error($"Exception while loading file from {newUri}:\n{e}");
+                    stream = Stream.Null;
+                    status = HttpStatusCode.InternalServerError;
+                }
             }
 
             if (!FileExtensionMimeTypes.TryGetValue(path.Extension, out var mimeType))
@@ -165,15 +170,15 @@ internal sealed class ControlBrowser : InterfaceControl {
 
     private void OnShowEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnShowCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnShowCommand.AsRaw());
         }
     }
 
     private void OnHideEvent() {
         ControlDescriptorBrowser controlDescriptor = (ControlDescriptorBrowser)ControlDescriptor;
-        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand)) {
-            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand);
+        if (!string.IsNullOrWhiteSpace(controlDescriptor.OnHideCommand.Value)) {
+            _interfaceManager.RunCommand(controlDescriptor.OnHideCommand.AsRaw());
         }
     }
 }

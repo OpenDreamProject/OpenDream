@@ -1041,6 +1041,7 @@ namespace OpenDreamRuntime.Procs {
                 if (secondFloat == 0) {
                     throw new Exception("Division by zero");
                 }
+
                 state.Push(new(firstFloat / secondFloat));
             } else if (first.TryGetValueAsDreamObject(out var firstDreamObject)) {
                 ProcStatus result = firstDreamObject!.OperatorMultiply(second, state, out DreamValue? maybeOutput);

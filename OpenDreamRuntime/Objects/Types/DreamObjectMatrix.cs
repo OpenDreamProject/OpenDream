@@ -53,6 +53,7 @@ public sealed class DreamObjectMatrix : DreamObject {
     }
 
     #region Operators
+
     public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue? result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);

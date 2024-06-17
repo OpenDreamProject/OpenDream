@@ -375,6 +375,7 @@ namespace OpenDreamRuntime.Objects {
                 result = null;
                 return ProcStatus.Called;
             }
+
             throw new InvalidOperationException($"Addition cannot be done between {this} and {b}");
         }
 
@@ -386,6 +387,7 @@ namespace OpenDreamRuntime.Objects {
                 result = null;
                 return ProcStatus.Called;
             }
+
             throw new InvalidOperationException($"Subtraction cannot be done between {this} and {b}");
         }
 
@@ -397,6 +399,7 @@ namespace OpenDreamRuntime.Objects {
                 result = null;
                 return ProcStatus.Called;
             }
+
             throw new InvalidOperationException($"Multiplication cannot be done between {this} and {b}");
         }
 
@@ -407,6 +410,7 @@ namespace OpenDreamRuntime.Objects {
                 result = null;
                 return ProcStatus.Called;
             }
+
             throw new InvalidOperationException($"Division cannot be done between {this} and {b}");
         }
 
@@ -418,6 +422,7 @@ namespace OpenDreamRuntime.Objects {
                 result = null;
                 return ProcStatus.Called;
             }
+
             throw new InvalidOperationException($"Cannot or {this} and {b}");
         }
 

@@ -145,6 +145,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
                 _appearanceAnimations[i] = lastAnim;
                 break;
             }
+            
         _appearanceAnimations.Add(new AppearanceAnimation(start, duration, endingAppearance, easing, flags, delay, true));
     }
 

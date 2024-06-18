@@ -189,6 +189,7 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
     private void UpdateAnimation() {
         if(DMI == null || Appearance == null)
             return;
+
         DMIParser.ParsedDMIState? dmiState = DMI.Description.GetStateOrDefault(Appearance.IconState);
         if(dmiState == null)
             return;
@@ -407,14 +408,17 @@ internal sealed class DreamIcon(IGameTiming gameTiming, IClyde clyde, ClientAppe
 
             }
         }
+
         if(toRemove != null)
             foreach (AppearanceAnimation animation in toRemove) {
                 EndAppearanceAnimation(animation);
             }
+
         if(toReAdd != null)
             foreach (AppearanceAnimation animation in toReAdd) {
                 _appearanceAnimations.Add(animation);
             }
+
         return appearance;
     }
 

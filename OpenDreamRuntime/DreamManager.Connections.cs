@@ -355,5 +355,4 @@ public sealed class HotReloadResourceCommand : IConsoleCommand {
         shell.WriteLine($"Reloading {args[0]}");
         dreamManager.HotReloadResource(args[0]);
     }
-
 }

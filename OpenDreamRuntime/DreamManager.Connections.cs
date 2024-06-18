@@ -331,7 +331,6 @@ public sealed class HotReloadInterfaceCommand : IConsoleCommand {
         dreamManager.HotReloadInterface();
         shell.WriteLine("Reloading interface");
     }
-
 }
 
 public sealed class HotReloadResourceCommand : IConsoleCommand {

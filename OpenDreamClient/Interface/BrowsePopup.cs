@@ -22,12 +22,12 @@ internal sealed class BrowsePopup {
             new() {
                 new ControlDescriptorBrowser {
                     Id = new DMFPropertyString("browser"),
-                    Size = new DMFPropertyVec2(size),
-                    Anchor1 = new DMFPropertyVec2(0, 0),
-                    Anchor2 = new DMFPropertyVec2(100, 100)
+                    Size = new DMFPropertySize(size),
+                    Anchor1 = new DMFPropertyPos(0, 0),
+                    Anchor2 = new DMFPropertyPos(100, 100)
                 }
             }) {
-                Size = new DMFPropertyVec2(size)
+                Size = new DMFPropertySize(size)
             };
 
         WindowElement = new ControlWindow(popupWindowDescriptor);

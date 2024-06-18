@@ -293,7 +293,8 @@ namespace OpenDreamRuntime.Procs.Native {
 
                 if (!invisibility.IsNull) {
                     obj.SetVariableValue("invisibility", invisibility);
-                    invisibility.TryGetValueAsInteger(out appearance.Invisibility);
+                    invisibility.TryGetValueAsInteger(out var invisibilityValue);
+                    appearance.Invisibility = (sbyte)Math.Clamp(invisibilityValue, -127, 127);
                 }
 
                 /* TODO suffix
@@ -1772,7 +1773,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_orange(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new DreamValue(bundle.ObjectTree.CreateList());
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
             foreach (var turf in DreamProcNativeHelpers.MakeViewSpiral(center, range)) {
                 rangeList.AddValue(new DreamValue(turf));
@@ -1817,7 +1818,7 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("oviewers")]
         [DreamProcParameter("Depth", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
-        public static DreamValue NativeProc_oviewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_oviewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: Change depending on center
             DreamValue depthValue = new DreamValue(5);
             DreamObjectAtom? center = null;
 
@@ -1854,8 +1855,25 @@ namespace OpenDreamRuntime.Procs.Native {
                 if (mob.X == centerPos.X && mob.Y == centerPos.Y)
                     continue;
 
-                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth) {
-                    view.AddValue(new DreamValue(mob));
+                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth && centerPos.Z == mob.Z) {
+                    (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                    var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                    var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                    ViewAlgorithm.CalculateVisibility(viewData);
+
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
+                            if (tile == null || tile.IsVisible == false)
+                                continue;
+
+                            if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                                view.AddValue(new DreamValue(mob));
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 
@@ -1966,7 +1984,7 @@ namespace OpenDreamRuntime.Procs.Native {
         public static DreamValue NativeProc_range(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) {
             (DreamObjectAtom? center, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, usr as DreamObjectAtom, bundle.Arguments);
             if (center is null)
-                return DreamValue.Null; // NOTE: Not sure if parity
+                return new DreamValue(bundle.ObjectTree.CreateList());
             DreamList rangeList = bundle.ObjectTree.CreateList(range.Height * range.Width);
             //Have to include centre
             rangeList.AddValue(new DreamValue(center));
@@ -3025,17 +3043,15 @@ namespace OpenDreamRuntime.Procs.Native {
         [DreamProc("viewers")]
         [DreamProcParameter("Depth", Type = DreamValueTypeFlag.Float)]
         [DreamProcParameter("Center", Type = DreamValueTypeFlag.DreamObject)]
-        public static DreamValue NativeProc_viewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: View obstruction (dense turfs)
+        public static DreamValue NativeProc_viewers(NativeProc.Bundle bundle, DreamObject? src, DreamObject? usr) { //TODO: Change depending on center
             DreamValue depthValue = new DreamValue(5);
-            DreamObject? center = null;
+            DreamObjectAtom? center = null;
 
             //Arguments are optional and can be passed in any order
             if (bundle.Arguments.Length > 0) {
                 DreamValue firstArgument = bundle.GetArgument(0, "Depth");
 
-                if (firstArgument.TryGetValueAsDreamObject(out var firstObj)) {
-                    center = firstObj;
-
+                if (firstArgument.TryGetValueAsDreamObject(out center)) {
                     if (bundle.Arguments.Length > 1) {
                         depthValue = bundle.GetArgument(1, "Center");
                     }
@@ -3048,22 +3064,38 @@ namespace OpenDreamRuntime.Procs.Native {
                 }
             }
 
-            center ??= usr;
+            center ??= usr as DreamObjectAtom;
 
             DreamList view = bundle.ObjectTree.CreateList();
             if (center == null)
                 return new(view);
 
-            int centerX = center.GetVariable("x").MustGetValueAsInteger();
-            int centerY = center.GetVariable("y").MustGetValueAsInteger();
+            var centerPos = bundle.AtomManager.GetAtomPosition(center);
             if (!depthValue.TryGetValueAsInteger(out var depth))
                 depth = 5; //TODO: Default to world.view
 
             foreach (var atom in bundle.AtomManager.EnumerateAtoms(bundle.ObjectTree.Mob)) {
                 var mob = (DreamObjectMob)atom;
 
-                if (Math.Abs(centerX - mob.X) <= depth && Math.Abs(centerY - mob.Y) <= depth) {
-                    view.AddValue(new DreamValue(mob));
+                if (Math.Abs(centerPos.X - mob.X) <= depth && Math.Abs(centerPos.Y - mob.Y) <= depth && centerPos.Z == mob.Z) {
+                    (_, ViewRange range) = DreamProcNativeHelpers.ResolveViewArguments(bundle.DreamManager, mob, bundle.Arguments);
+                    var eyePos = bundle.AtomManager.GetAtomPosition(mob);
+                    var viewData = DreamProcNativeHelpers.CollectViewData(bundle.AtomManager, bundle.MapManager, eyePos, range);
+
+                    ViewAlgorithm.CalculateVisibility(viewData);
+
+                    for (int x = 0; x < viewData.GetLength(0); x++) {
+                        for (int y = 0; y < viewData.GetLength(1); y++) {
+                            var tile = viewData[x, y];
+                            if (tile == null || tile.IsVisible == false)
+                                continue;
+
+                            if (centerPos.X == eyePos.X + tile.DeltaX && eyePos.Y + tile.DeltaY == centerPos.Y) {
+                                view.AddValue(new DreamValue(mob));
+                                break;
+                            }
+                        }
+                    }
                 }
             }
 

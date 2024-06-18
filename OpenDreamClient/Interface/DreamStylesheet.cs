@@ -1,4 +1,5 @@
 using OpenDreamClient.Interface.Controls;
+using OpenDreamClient.Interface.Controls.UI;
 using Robust.Client.Graphics;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
@@ -34,7 +35,7 @@ public static class DreamStylesheet {
             ContentMarginTopOverride = 10
         };
 
-        var tabButtonActive = new StyleBoxTexture {
+        var tabButtonActive = new StyleBoxColoredTexture {
             Texture = res.GetResource<TextureResource>("/Textures/Interface/TabButton.png"),
             PatchMarginTop = 2,
             PatchMarginBottom = 2,
@@ -45,7 +46,7 @@ public static class DreamStylesheet {
             ContentMarginBottomOverride = 5 // The selected button is positioned higher than the rest
         };
 
-        var tabButtonInactive = new StyleBoxTexture {
+        var tabButtonInactive = new StyleBoxColoredTexture {
             Texture = res.GetResource<TextureResource>("/Textures/Interface/TabButton.png"),
             PatchMarginTop = 2,
             PatchMarginBottom = 2,

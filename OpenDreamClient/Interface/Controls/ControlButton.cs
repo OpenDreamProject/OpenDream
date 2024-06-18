@@ -1,5 +1,5 @@
-﻿using OpenDreamClient.Interface.Descriptors;
-using Robust.Client.Graphics;
+﻿using OpenDreamClient.Interface.Controls.UI;
+using OpenDreamClient.Interface.Descriptors;
 using Robust.Client.ResourceManagement;
 using Robust.Client.UserInterface;
 using Robust.Client.UserInterface.Controls;
@@ -29,7 +29,7 @@ internal sealed class ControlButton(ControlDescriptor controlDescriptor, Control
         ControlDescriptorButton controlDescriptor = (ControlDescriptorButton)ElementDescriptor;
 
         _button.Text = controlDescriptor.Text.Value;
-        _button.StyleBoxOverride = new StyleBoxTexture {
+        _button.StyleBoxOverride = new StyleBoxColoredTexture {
             Texture = IoCManager.Resolve<IResourceCache>().GetResource<TextureResource>("/Textures/Interface/Button.png"),
             BackgroundColor = controlDescriptor.BackgroundColor.Value,
             PatchMarginTop = 2,

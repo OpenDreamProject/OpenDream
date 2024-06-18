@@ -53,6 +53,14 @@ public sealed class ControlWindow : InterfaceControl {
         }
     }
 
+    /// <summary>
+    /// Closes the window if it is a child window. No effect if it is either a default window or a pane
+    /// </summary>
+    public void CloseChildWindow() {
+        if(_myWindow.osWindow is not null)
+            _myWindow.osWindow.Close();
+    }
+
     public OSWindow CreateWindow() {
         if(_myWindow.osWindow is not null)
             return _myWindow.osWindow;
@@ -290,17 +298,17 @@ public sealed class ControlWindow : InterfaceControl {
     public override bool TryGetProperty(string property, [NotNullWhen(true)] out IDMFProperty? value) {
         switch (property) {
             case "inner-size":
-                value = new DMFPropertyVec2((int)_canvas.Width, (int)_canvas.Height);
+                value = new DMFPropertySize((int)_canvas.Width, (int)_canvas.Height);
                 return true;
             case "outer-size":
                 if (_myWindow.osWindow is not null) {
-                    value = new DMFPropertyVec2((int)_myWindow.osWindow.Width, (int)_myWindow.osWindow.Height);
+                    value = new DMFPropertySize((int)_myWindow.osWindow.Width, (int)_myWindow.osWindow.Height);
                     return true;
                 } else if (_myWindow.clydeWindow is not null) {
-                    value = new DMFPropertyVec2(_myWindow.clydeWindow.Size);
+                    value = new DMFPropertySize(_myWindow.clydeWindow.Size);
                     return true;
                 } else {
-                    value = new DMFPropertyVec2(UIElement.Size);
+                    value = new DMFPropertySize(UIElement.Size);
                     return true;
                 }
             case "is-minimized":

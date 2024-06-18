@@ -9,13 +9,13 @@ namespace OpenDreamClient.Interface.Descriptors;
 [Virtual]
 public partial class ControlDescriptor : ElementDescriptor {
     [DataField("pos")]
-    public DMFPropertyVec2 Pos = new(0, 0);
+    public DMFPropertyPos Pos = new(0, 0);
     [DataField("size")]
-    public DMFPropertyVec2 Size = new(0, 0);
+    public DMFPropertySize Size = new(0, 0);
     [DataField("anchor1")]
-    public DMFPropertyVec2? Anchor1;
+    public DMFPropertyPos? Anchor1;
     [DataField("anchor2")]
-    public DMFPropertyVec2? Anchor2;
+    public DMFPropertyPos? Anchor2;
 
     [DataField("is-visible")]
     public DMFPropertyBool IsVisible = new(true);
@@ -116,7 +116,6 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
             return this;
         }
 
-
         Type? descriptorType = elementTypeValue.Value switch {
             "MAP" => typeof(ControlDescriptorMap),
             "CHILD" => typeof(ControlDescriptorChild),
@@ -134,6 +133,16 @@ public sealed partial class WindowDescriptor : ControlDescriptor {
 
         if (descriptorType == null)
             return null;
+
+        if (descriptorType == typeof(ControlDescriptorChild)) {
+            // CHILD's top/bottom attributes alias to left/right
+            // Code is duplicated in InterfaceElement.PopulateElementDescriptor()
+            // TODO: A bit hacky. Remove this (may be worth abandoning RT's serialization manager)
+            if (attributes.TryGet("top", out var topValue))
+                attributes["left"] = topValue;
+            if (attributes.TryGet("bottom", out var bottomValue))
+                attributes["right"] = bottomValue;
+        }
 
         var child = (ControlDescriptor?)serializationManager.Read(descriptorType, attributes);
         if (child == null)
@@ -306,9 +315,9 @@ public sealed partial class ControlDescriptorLabel : ControlDescriptor {
 
 public sealed partial class ControlDescriptorGrid : ControlDescriptor {
     [DataField("cells")]
-    public DMFPropertyVec2 Cells = new(0,0);
+    public DMFPropertySize Cells = new(0,0);
     [DataField("cell-span")]
-    public DMFPropertyVec2 CellSpan = new(1,1);
+    public DMFPropertySize CellSpan = new(1,1);
     [DataField("is-list")]
     public DMFPropertyBool IsList = new(false);
     [DataField("show-lines")]
@@ -324,7 +333,7 @@ public sealed partial class ControlDescriptorGrid : ControlDescriptor {
     [DataField("visited-color")]
     public DMFPropertyColor VisitedCOlor = new(Color.Purple);
     [DataField("current-cell")]
-    public DMFPropertyVec2 CurrentCell = new(0,0);
+    public DMFPropertySize CurrentCell = new(0,0);
     [DataField("show-names")]
     public DMFPropertyBool ShowNames = new(true);
     [DataField("small-icons")]

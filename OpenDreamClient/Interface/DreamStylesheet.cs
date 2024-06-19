@@ -10,9 +10,10 @@ using static Robust.Client.UserInterface.StylesheetHelpers;
 namespace OpenDreamClient.Interface;
 
 public static class DreamStylesheet {
+    public static Color DefaultBackgroundColor = Color.FromHex("#F0F0F0");
+
     public static Stylesheet Make() {
         var res = IoCManager.Resolve<IResourceCache>();
-        var defaultBackgroundColor = Color.FromHex("#F0F0F0");
         var textureCloseButton = res.GetResource<TextureResource>("/cross.svg.png").Texture;
         var notoSansFont = res.GetResource<FontResource>("/Fonts/NotoSans-Regular.ttf");
         var notoSansBoldFont = res.GetResource<FontResource>("/Fonts/NotoSans-Bold.ttf");
@@ -59,7 +60,7 @@ public static class DreamStylesheet {
 
         return new Stylesheet(new StyleRule[] {
             Element<WindowRoot>()
-                .Prop(UIRoot.StylePropBackground, defaultBackgroundColor),
+                .Prop(UIRoot.StylePropBackground, DefaultBackgroundColor),
 
             Element<PanelContainer>().Class("MapBackground")
                 .Prop("panel", new StyleBoxFlat { BackgroundColor = Color. Black}),
@@ -72,7 +73,7 @@ public static class DreamStylesheet {
                 }),
 
             Element<PanelContainer>().Class(ControlInfo.StyleClassDMFInfo)
-                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat(defaultBackgroundColor)),
+                .Prop(PanelContainer.StylePropertyPanel, new StyleBoxFlat(DefaultBackgroundColor)),
 
             // Default font.
             Element()

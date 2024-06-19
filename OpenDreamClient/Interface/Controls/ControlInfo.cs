@@ -272,9 +272,7 @@ public sealed class ControlInfo : InterfaceControl {
     protected override Control CreateUIElement() {
         _container = new PanelContainer {
             Children = {
-                (_tabControl = new TabContainer {
-                    Margin = new(3f, 0f, 3f, 3f)
-                })
+                (_tabControl = new TabContainer())
             },
             StyleClasses = { StyleClassDMFInfo }
         };

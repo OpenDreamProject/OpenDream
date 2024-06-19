@@ -58,12 +58,6 @@ public abstract class InterfaceControl : InterfaceElement {
             case Button button:
                 button.StyleBoxOverride = styleBox;
                 break;
-            case TabContainer tabContainer:
-                tabContainer.PanelStyleBoxOverride = styleBox;
-                break;
-            case Splitter splitter:
-                splitter.DragStyleBoxOverride = styleBox;
-                break;
         }
 
         Color? textColor = (ControlDescriptor.TextColor.Value != Color.Black)

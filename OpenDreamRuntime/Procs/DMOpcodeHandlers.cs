@@ -24,13 +24,6 @@ namespace OpenDreamRuntime.Procs {
             return ProcStatus.Continue;
         }
 
-        public static ProcStatus ReturnReferenceValue(DMProcState state) {
-            DreamReference reference = state.ReadReference();
-
-            state.SetReturn(state.GetReferenceValue(reference));
-            return ProcStatus.Returned;
-        }
-
         public static ProcStatus Assign(DMProcState state) {
             DreamReference reference = state.ReadReference();
             DreamValue value = state.Pop();
@@ -1720,6 +1713,13 @@ namespace OpenDreamRuntime.Procs {
 
         public static ProcStatus DebuggerBreakpoint(DMProcState state) {
             return state.DebugManager.HandleBreakpoint(state);
+        }
+
+        public static ProcStatus ReturnReferenceValue(DMProcState state) {
+            DreamReference reference = state.ReadReference();
+
+            state.SetReturn(state.GetReferenceValue(reference));
+            return ProcStatus.Returned;
         }
         #endregion Flow
 

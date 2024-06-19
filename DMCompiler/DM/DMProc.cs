@@ -1131,6 +1131,7 @@ namespace DMCompiler.DM {
 
         private bool LabelExists(string name) {
             return AnnotatedBytecode.LabelExists(name);
+        }
 
         private Dictionary<string, long> GetLabels() {
             return AnnotatedBytecode.GetLabels();

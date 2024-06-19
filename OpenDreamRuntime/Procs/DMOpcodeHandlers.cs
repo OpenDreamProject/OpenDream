@@ -685,10 +685,10 @@ namespace OpenDreamRuntime.Procs {
                 output = second;
             } else if (first.TryGetValueAsDreamResource(out _) || first.TryGetValueAsDreamObject<DreamObjectIcon>(out _)) {
                 output = IconOperationAdd(state, first, second);
-            } else if (first.TryGetValueAsDreamObject(out var firstDreamObject)) {
-                ProcStatus result = firstDreamObject!.OperatorAdd(second, state, out DreamValue? maybeOutput);
+            } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
+                ProcStatus result = firstDreamObject.OperatorAdd(second, state, out DreamValue maybeOutput);
                 if (result == ProcStatus.Continue) {
-                    output = maybeOutput!.Value;
+                    output = maybeOutput;
                 } else {
                     return result;
                 }
@@ -847,11 +847,11 @@ namespace OpenDreamRuntime.Procs {
             DreamValue second = state.Pop();
             DreamValue first = state.Pop();
 
-            if (first.TryGetValueAsDreamObject(out DreamObject? firstDreamObject)) {              // Object | y
+            if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {              // Object | y
                 if (!first.IsNull) {
-                    ProcStatus result = firstDreamObject!.OperatorOr(second, state, out DreamValue? maybeOutput);
+                    ProcStatus result = firstDreamObject.OperatorOr(second, state, out DreamValue maybeOutput);
                     if (result == ProcStatus.Continue) {
-                        state.Push(maybeOutput!.Value);
+                        state.Push(maybeOutput);
                     } else {
                         return result;
                     }
@@ -1043,10 +1043,10 @@ namespace OpenDreamRuntime.Procs {
                 }
 
                 state.Push(new(firstFloat / secondFloat));
-            } else if (first.TryGetValueAsDreamObject(out var firstDreamObject)) {
-                ProcStatus result = firstDreamObject!.OperatorMultiply(second, state, out DreamValue? maybeOutput);
+            } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
+                ProcStatus result = firstDreamObject!.OperatorMultiply(second, state, out DreamValue maybeOutput);
                 if (result == ProcStatus.Continue) {
-                    state.Push(maybeOutput!.Value);
+                    state.Push(maybeOutput);
                 } else {
                     return result;
                 }
@@ -1140,10 +1140,10 @@ namespace OpenDreamRuntime.Procs {
             if (first.TryGetValueAsFloat(out var firstFloat) || first.IsNull) {
                 var secondFloat = second.UnsafeGetValueAsFloat(); // Non-numbers are always treated as 0 here
                 state.Push(new DreamValue(firstFloat * secondFloat));
-            } else if (first.TryGetValueAsDreamObject(out var firstDreamObject)) {
-                ProcStatus result = firstDreamObject!.OperatorMultiply(second, state, out DreamValue? maybeOutput);
+            } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstDreamObject)) {
+                ProcStatus result = firstDreamObject.OperatorMultiply(second, state, out DreamValue maybeOutput);
                 if (result == ProcStatus.Continue) {
-                    state.Push(maybeOutput!.Value);
+                    state.Push(maybeOutput);
                 } else {
                     return result;
                 }
@@ -1227,10 +1227,10 @@ namespace OpenDreamRuntime.Procs {
                 if (second.TryGetValueAsFloat(out var secondFloat) || second.IsNull) {
                     output = new(firstFloat - secondFloat);
                 }
-            } else if (first.TryGetValueAsDreamObject(out var firstObject)) {
-                ProcStatus result = firstObject!.OperatorSubtract(second, state, out DreamValue? maybeOutput);
+            } else if (first.TryGetValueAsDreamObject<DreamObject>(out var firstObject)) {
+                ProcStatus result = firstObject.OperatorSubtract(second, state, out DreamValue maybeOutput);
                 if (result == ProcStatus.Continue) {
-                    output = maybeOutput!.Value;
+                    output = maybeOutput;
                 } else {
                     return result;
                 }

@@ -247,7 +247,7 @@ public class DreamList : DreamObject {
         SetValue(index, value);
     }
 
-    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue? result) {
+    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -266,7 +266,7 @@ public class DreamList : DreamObject {
         return ProcStatus.Continue;
     }
 
-    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue? result) {
+    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
         DreamList listCopy = CreateCopy();
 
         if (b.TryGetValueAsDreamList(out var bList)) {
@@ -281,7 +281,7 @@ public class DreamList : DreamObject {
         return ProcStatus.Continue;
     }
 
-    public override ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue? result) {
+    public override ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue result) {
         DreamList list;
 
         if (b.TryGetValueAsDreamList(out var bList)) {  // List | List

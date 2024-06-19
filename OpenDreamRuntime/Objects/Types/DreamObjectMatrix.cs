@@ -54,7 +54,7 @@ public sealed class DreamObjectMatrix : DreamObject {
 
     #region Operators
 
-    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue? result) {
+    public override ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -86,7 +86,7 @@ public sealed class DreamObjectMatrix : DreamObject {
         return base.OperatorAdd(b, state, out result);
     }
 
-    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue? result) {
+    public override ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);
@@ -118,7 +118,7 @@ public sealed class DreamObjectMatrix : DreamObject {
         return base.OperatorSubtract(b, state, out result);
     }
 
-    public override ProcStatus OperatorMultiply(DreamValue b, DMProcState state, out DreamValue? result) {
+    public override ProcStatus OperatorMultiply(DreamValue b, DMProcState state, out DreamValue result) {
         GetVariable("a").TryGetValueAsFloat(out float lA);
         GetVariable("b").TryGetValueAsFloat(out float lB);
         GetVariable("c").TryGetValueAsFloat(out float lC);

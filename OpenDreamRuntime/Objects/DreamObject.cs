@@ -368,11 +368,11 @@ namespace OpenDreamRuntime.Objects {
 
         #region Operators
         // +
-        public virtual ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue? result) {
+        public virtual ProcStatus OperatorAdd(DreamValue b, DMProcState state, out DreamValue result) {
             if(TryGetProc("operator+", out var proc)) {
                 var operatorProcState = proc.CreateState(state.Thread, this, state.Usr, new DreamProcArguments(b));
                 state.Thread.PushProcState(operatorProcState);
-                result = null;
+                result = DreamValue.Null;
                 return ProcStatus.Called;
             }
 
@@ -380,11 +380,11 @@ namespace OpenDreamRuntime.Objects {
         }
 
         // -
-        public virtual ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue? result) {
+        public virtual ProcStatus OperatorSubtract(DreamValue b, DMProcState state, out DreamValue result) {
             if(TryGetProc("operator-", out var proc)) {
                 var operatorProcState = proc.CreateState(state.Thread, this, state.Usr, new DreamProcArguments(b));
                 state.Thread.PushProcState(operatorProcState);
-                result = null;
+                result = DreamValue.Null;
                 return ProcStatus.Called;
             }
 
@@ -392,22 +392,22 @@ namespace OpenDreamRuntime.Objects {
         }
 
         // *
-        public virtual ProcStatus OperatorMultiply(DreamValue b, DMProcState state, out DreamValue? result) {
+        public virtual ProcStatus OperatorMultiply(DreamValue b, DMProcState state, out DreamValue result) {
             if(TryGetProc("operator*", out var proc)) {
                 var operatorProcState = proc.CreateState(state.Thread, this, state.Usr, new DreamProcArguments(b));
                 state.Thread.PushProcState(operatorProcState);
-                result = null;
+                result = DreamValue.Null;
                 return ProcStatus.Called;
             }
 
             throw new InvalidOperationException($"Multiplication cannot be done between {this} and {b}");
         }
 
-        public virtual ProcStatus OperatorDivide(DreamValue b, DMProcState state, out DreamValue? result) {
+        public virtual ProcStatus OperatorDivide(DreamValue b, DMProcState state, out DreamValue result) {
             if(TryGetProc("operator/", out var proc)) {
                 var operatorProcState = proc.CreateState(state.Thread, this, state.Usr, new DreamProcArguments(b));
                 state.Thread.PushProcState(operatorProcState);
-                result = null;
+                result = DreamValue.Null;
                 return ProcStatus.Called;
             }
 
@@ -415,11 +415,11 @@ namespace OpenDreamRuntime.Objects {
         }
 
         // |
-        public virtual ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue? result) {
+        public virtual ProcStatus OperatorOr(DreamValue b, DMProcState state, out DreamValue result) {
             if(TryGetProc("operator|", out var proc)) {
                 var operatorProcState = proc.CreateState(state.Thread, this, state.Usr, new DreamProcArguments(b));
                 state.Thread.PushProcState(operatorProcState);
-                result = null;
+                result = DreamValue.Null;
                 return ProcStatus.Called;
             }
 
